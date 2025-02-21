@@ -5,7 +5,7 @@ import numpy as np
 from numpy import ndarray
 from joblib import dump, load
 from typing import List, Dict, Any, Generator
-from synutility.SynIO.debug import setup_logging
+from synkit.IO.debug import setup_logging
 
 logger = setup_logging()
 

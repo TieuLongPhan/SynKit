@@ -3,7 +3,7 @@ from rdkit.Chem import AllChem
 import networkx as nx
 from typing import Any, Dict, Optional
 import random
-from synutility.SynIO.debug import setup_logging
+from synkit.IO.debug import setup_logging
 
 logger = setup_logging()
 
