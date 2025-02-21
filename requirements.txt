@@ -10,3 +10,4 @@ rdkit >= 2024.3.3
 pandas>=2.2.0
 requests>=2.32.3
 torch==2.0.1
+numpy==1.26.4
