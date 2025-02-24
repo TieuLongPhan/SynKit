@@ -2,6 +2,7 @@ import re
 from rdkit import Chem
 from typing import Optional
 from synkit.IO.chem_converter import smart_to_gml
+from synkit.Rule.strip_rule import strip_context
 
 
 class MoleculeRule:
@@ -104,7 +105,6 @@ class MoleculeRule:
         rsmi = self.generate_molecule_smart(smiles)
         if rsmi is None:
             return None  # Invalid SMARTS string
-
         # Return the GML representation
         gml = smart_to_gml(
             rsmi,
@@ -113,5 +113,5 @@ class MoleculeRule:
             explicit_hydrogen=explicit_hydrogen,
             rule_name=name,
         )
-        gml = MoleculeRule.remove_edges_from_left_right(gml)
+        gml = strip_context(gml, False)
         return gml
