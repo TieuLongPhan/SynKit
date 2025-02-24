@@ -1,5 +1,6 @@
 from synkit.Rule.parse_rule import find_block, NODE_REGEX, EDGE_REGEX
 
+
 def filter_context(context_lines, left_edges):
     """
     Given the context lines and a set of edges from the left graph, remove edges

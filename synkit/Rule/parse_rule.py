@@ -103,6 +103,7 @@ def filter_context(context_lines, relevant_nodes):
 
     return filtered_context
 
+
 def strip_context(gml_text: str, remove_all: bool = True) -> str:
     """
     Filters or clears the 'context' section of GML-like content based on the remove_all flag.
