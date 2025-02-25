@@ -1,3 +1,4 @@
+import warnings
 from rdkit import Chem
 from pathlib import Path
 from typing import List, Union
@@ -14,6 +15,10 @@ class CoreEngine:
     toolkit. It provides methods for forward and backward prediction based on templates
     library.
     """
+
+    def __init__(self) -> None:
+        warnings.warn("deprecated", DeprecationWarning)
+        pass
 
     @staticmethod
     def generate_reaction_smiles(

@@ -209,7 +209,7 @@ def gml_to_smart(
     sanitize: bool = True,
     explicit_hydrogen: bool = False,
     ignore_hcount_inference: bool = False,
-) -> str:
+) -> Tuple[str, nx.Graph]:
     """
     Converts a GML string back to a SMARTS string by interpreting the graph structures.
 
