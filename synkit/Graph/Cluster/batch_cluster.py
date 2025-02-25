@@ -3,7 +3,7 @@ from operator import eq
 from typing import List, Dict, Any, Tuple, Optional, Callable
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 from synkit._misc import stratified_random_sample
-from synkit.Rule.parse_rule import strip_context
+from synkit.Rule.rule_utils import strip_context
 from synkit.Graph.Cluster.graph_cluster import GraphCluster
 from synkit.Graph.Cluster.morphism import graph_isomorphism, rule_isomorphism
 

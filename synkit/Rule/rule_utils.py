@@ -170,3 +170,22 @@ def strip_context(gml_text: str, remove_all: bool = True) -> str:
     # fmt: on
 
     return "\n".join(new_lines)
+
+
+def _increment_gml_ids(gml_content: str) -> str:
+    """
+    Increment the numerical IDs within a GML content string if node id 0 exists.
+
+    Parameters:
+    - gml_content (str): The GML content as a string.
+
+    Returns:
+    - str: The modified GML content with incremented IDs.
+    """
+    if "node [ id 0 " not in gml_content:
+        return gml_content
+
+    def increment_id(match):
+        return f"{match.group(1)} {int(match.group(2)) + 1}"
+
+    return re.sub(r"(id|source|target) (\d+)", increment_id, gml_content)

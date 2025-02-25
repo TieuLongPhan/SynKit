@@ -1,4 +1,3 @@
-import re
 from typing import List
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.rsmi_utils import (
@@ -11,6 +10,7 @@ from synkit.Chem.Reaction.rsmi_utils import (
 from synkit.IO.chem_converter import gml_to_smart
 from synkit.Rule.molecule_rule import MoleculeRule
 from synkit.Rule.rule_compose import RuleCompose
+from synkit.Rule.rule_utils import _increment_gml_ids
 from mod import ruleGMLString
 
 
@@ -18,25 +18,6 @@ class RuleRBL:
     def __init__(self) -> None:
         """Initialize the RuleRBL class."""
         pass
-
-    @staticmethod
-    def increment_gml_ids(gml_content: str) -> str:
-        """
-        Increment the numerical IDs within a GML content string if node id 0 exists.
-
-        Parameters:
-        - gml_content (str): The GML content as a string.
-
-        Returns:
-        - str: The modified GML content with incremented IDs.
-        """
-        if "node [ id 0 " not in gml_content:
-            return gml_content
-
-        def increment_id(match):
-            return f"{match.group(1)} {int(match.group(2)) + 1}"
-
-        return re.sub(r"(id|source|target) (\d+)", increment_id, gml_content)
 
     def rbl(self, rsmi: str, gml_rule: str, remove_aam: bool = True) -> List[str]:
         """
@@ -63,7 +44,7 @@ class RuleRBL:
 
             if comp_rules:
                 for value in comp_rules:
-                    gml = self.increment_gml_ids(value.getGMLString())
+                    gml = _increment_gml_ids(value.getGMLString())
                     smart = gml_to_smart(gml, explicit_hydrogen=True)[0]
                     if index == 1:
                         smart = reverse_reaction(smart)

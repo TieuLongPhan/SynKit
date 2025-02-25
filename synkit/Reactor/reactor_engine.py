@@ -151,7 +151,8 @@ class ReactorEngine:
         - gml (Any): A graph model or data structure used for applying the reaction transformation.
 
         Returns:
-        - List[str]: A list of valid, normalized, and standardized SMILES strings that match the original reaction SMILES.
+        - List[str]: A list of valid, normalized, and standardized SMILES strings
+        that match the original reaction SMILES.
         """
         # Split the input reaction SMILES into reactants and products
         aam_expand = False

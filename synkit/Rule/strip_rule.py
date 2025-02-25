@@ -1,4 +1,4 @@
-from synkit.Rule.parse_rule import find_block, NODE_REGEX, EDGE_REGEX
+from synkit.Rule.rule_utils import find_block, NODE_REGEX, EDGE_REGEX
 
 
 def filter_context(context_lines, left_edges):

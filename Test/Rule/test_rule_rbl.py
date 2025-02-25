@@ -9,19 +9,6 @@ class TestRuleRBL(unittest.TestCase):
         """Setup for all tests."""
         self.rule_rbl = RuleRBL()
 
-    def test_increment_gml_ids_without_id_zero(self):
-        """Test increment_gml_ids method with no id 0 in input."""
-        gml_content = "node [ id 1 ]"
-        result = self.rule_rbl.increment_gml_ids(gml_content)
-        self.assertEqual(result, gml_content)
-
-    def test_increment_gml_ids_with_id_zero(self):
-        """Test increment_gml_ids method with id 0 in input."""
-        gml_content = "node [ id 0 ] node [ id 1 ]"
-        expected_result = "node [ id 1 ] node [ id 2 ]"
-        result = self.rule_rbl.increment_gml_ids(gml_content)
-        self.assertEqual(result, expected_result)
-
     def test_rbl_missing_product(self):
         """Test rbl method with missing product scenario."""
         rsmi = "CC(Br)C.CB(O)O>>CC(C)C"

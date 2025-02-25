@@ -1,10 +1,11 @@
 import unittest
-from synkit.Rule.parse_rule import (
+from synkit.Rule.rule_utils import (
     find_block,
     get_nodes_from_edges,
     parse_context,
     filter_context,
     strip_context,
+    _increment_gml_ids,
 )
 from synkit.Graph.Cluster.morphism import rule_isomorphism
 
@@ -166,6 +167,19 @@ class TestGMLFunctions(unittest.TestCase):
         self.assertTrue(rule_isomorphism(self.gml_expected, self.gml_h, "monomorphism"))
         output = strip_context(self.gml_h)
         self.assertTrue(rule_isomorphism(self.gml_expected, output))
+
+    def test_increment_gml_ids_without_id_zero(self):
+        """Test increment_gml_ids method with no id 0 in input."""
+        gml_content = "node [ id 1 ]"
+        result = _increment_gml_ids(gml_content)
+        self.assertEqual(result, gml_content)
+
+    def test_increment_gml_ids_with_id_zero(self):
+        """Test increment_gml_ids method with id 0 in input."""
+        gml_content = "node [ id 0 ] node [ id 1 ]"
+        expected_result = "node [ id 1 ] node [ id 2 ]"
+        result = _increment_gml_ids(gml_content)
+        self.assertEqual(result, expected_result)
 
 
 if __name__ == "__main__":
