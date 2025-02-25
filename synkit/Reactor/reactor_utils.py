@@ -1,3 +1,4 @@
+from typing import List
 from collections import Counter
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Graph.Cluster.graph_cluster import GraphCluster
@@ -127,6 +128,39 @@ def _get_reagent(original_smiles: list, output_rsmi: str, invert: bool = False):
 
     # Extract unique reagents
     unique_reagents = list(reagent_difference.elements())
+
+    return unique_reagents
+
+
+def _get_reagent_rsmi(rsmi: str) -> List[str]:
+    """
+    Identifies reagents that appear in both the reactant and product sides of
+    a reaction SMILES string, suggesting these elements are unchanged
+    by the chemical reaction.
+
+    Parameters:
+    - rsmi (str): A reaction SMILES string formatted as "reactants>>products".
+
+    Returns:
+    - List[str]: A list of unique reagents that appear on both sides of the reaction, unchanged.
+    """
+    # Standardize the input reaction SMILES
+    rsmi = Standardize().fit(rsmi)
+
+    # Splitting the standardized rSMI into reactants and products
+    reactants, products = rsmi.split(">>")
+    reactants = reactants.split(".")
+    products = products.split(".")
+
+    # Count occurrences of each molecule in reactants and products
+    reactants_count = Counter(reactants)
+    products_count = Counter(products)
+
+    # Find common elements in reactants and products
+    common_elements = reactants_count & products_count  # Use intersection
+
+    # Extract and return the unique reagents that are common
+    unique_reagents = list(common_elements.elements())
 
     return unique_reagents
 

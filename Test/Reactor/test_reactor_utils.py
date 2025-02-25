@@ -3,6 +3,7 @@ from synkit.IO.chem_converter import smart_to_gml
 from synkit.Reactor.reactor_utils import (
     _get_connected_subgraphs,
     _get_reagent,
+    _get_reagent_rsmi,
     _add_reagent,
     _remove_reagent,
     _calculate_max_depth,
@@ -56,6 +57,12 @@ class TestReactorUtils(unittest.TestCase):
         original = ["CC=O", "O"]
         smart = "[CH2:4]([CH:5]=[O:6])[H:8]>>[CH2:4]=[CH:5][O:6][H:8]"
         reagent = _get_reagent(original, smart)
+        self.assertTrue(reagent == ["O"])
+
+    def test_get_reagents_rsmiles(self):
+        smart = "[CH2:4]([CH:5]=[O:6])[H:8].O>>[CH2:4]=[CH:5][O:6][H:8].O"
+        reagent = _get_reagent_rsmi(smart)
+        print(reagent)
         self.assertTrue(reagent == ["O"])
 
     def test_add_reagent(self):

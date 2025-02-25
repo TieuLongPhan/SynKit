@@ -16,10 +16,10 @@ logger = setup_logging()
 
 def smiles_to_graph(
     smiles: str,
-    drop_non_aam: bool,
-    light_weight: bool,
-    sanitize: bool,
-    use_index_as_atom_map: bool,
+    drop_non_aam: bool = True,
+    light_weight: bool = True,
+    sanitize: bool = True,
+    use_index_as_atom_map: bool = False,
 ) -> Optional[nx.Graph]:
     """
     Helper function to convert SMILES string to a graph using MolToGraph class.

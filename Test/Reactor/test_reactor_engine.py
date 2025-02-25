@@ -5,7 +5,7 @@ from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Reactor.reactor_engine import ReactorEngine
 
 
-class TestAAMInference(unittest.TestCase):
+class TestReactorEngine(unittest.TestCase):
 
     def setUp(self):
         self.rsmi = "BrCc1ccc(Br)cc1.COCCO>>Br.COCCOCc1ccc(Br)cc1"

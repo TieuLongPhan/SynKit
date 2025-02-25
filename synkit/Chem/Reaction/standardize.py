@@ -55,9 +55,11 @@ class Standardize:
         """
         valid_molecules = []
         for smiles in smiles_list:
-            mol = Chem.MolFromSmiles(smiles)
+            mol = Chem.MolFromSmiles(smiles, sanitize=False)
             if mol:
-                valid_molecules.append(mol)
+                Chem.SanitizeMol(mol)
+                if mol:
+                    valid_molecules.append(mol)
         return valid_molecules
 
     @staticmethod
