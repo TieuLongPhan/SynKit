@@ -165,7 +165,7 @@ class NormalizeAAM:
         rsmi = self.fix_rsmi_kekulize(rsmi)
         if fix_aam_indice:
             rsmi = self.fix_aam_rsmi(rsmi)
-        r_graph, p_graph = rsmi_to_graph(rsmi, light_weight=True, sanitize=False)
+        r_graph, p_graph = rsmi_to_graph(rsmi, light_weight=True, sanitize=True)
         its = ITSConstruction().ITSGraph(r_graph, p_graph)
         rc = get_rc(its)
         keep_indice = [
@@ -179,5 +179,5 @@ class NormalizeAAM:
         r_graph, p_graph = its_decompose(subgraph)
         r_mol, p_mol = GraphToMol().graph_to_mol(
             r_graph, sanitize=False
-        ), GraphToMol().graph_to_mol(p_graph, sanitize=False)
+        ), GraphToMol().graph_to_mol(p_graph, sanitize=True)
         return f"{Chem.MolToSmiles(r_mol)}>>{Chem.MolToSmiles(p_mol)}"

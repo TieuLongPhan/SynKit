@@ -16,10 +16,10 @@ logger = setup_logging()
 
 def smiles_to_graph(
     smiles: str,
-    drop_non_aam: bool,
-    light_weight: bool,
-    sanitize: bool,
-    use_index_as_atom_map: bool,
+    drop_non_aam: bool = True,
+    light_weight: bool = True,
+    sanitize: bool = True,
+    use_index_as_atom_map: bool = False,
 ) -> Optional[nx.Graph]:
     """
     Helper function to convert SMILES string to a graph using MolToGraph class.
@@ -209,7 +209,7 @@ def gml_to_smart(
     sanitize: bool = True,
     explicit_hydrogen: bool = False,
     ignore_hcount_inference: bool = False,
-) -> str:
+) -> Tuple[str, nx.Graph]:
     """
     Converts a GML string back to a SMARTS string by interpreting the graph structures.
 
@@ -229,3 +229,37 @@ def gml_to_smart(
         graph_to_rsmi(r, p, rc, sanitize, explicit_hydrogen, ignore_hcount_inference),
         rc,
     )
+
+
+def rsmi_to_its(
+    rsmi: str,
+    drop_non_aam: bool = True,
+    light_weight: bool = True,
+    sanitize: bool = True,
+    use_index_as_atom_map: bool = True,
+) -> nx.Graph:
+    """
+    Converts a reaction SMILES (rSMI) string to an ITS graph representation using specified processing parameters.
+
+    This function processes the input rSMI string into a graph representation of the reaction,
+    considering atom-atom mappings and optionally sanitizing the molecules. It then constructs
+    an Intermediate Transition State (ITS) graph based on the provided parameters.
+
+    Parameters:
+    - rsmi (str): The reaction SMILES string to be converted.
+    - drop_non_aam (bool, optional): If True, non-atom-atom mapped components are dropped. Default is True.
+    - light_weight (bool, optional): If True, reduces the complexity of the graph representation. Default is True.
+    - sanitize (bool, optional): If True, sanitizes the molecules during conversion. Default is True.
+    - use_index_as_atom_map (bool, optional): If True, uses indices as atom mappings. Default is True.
+
+    Returns:
+    - nx.Graph: The ITS graph representing the reaction.
+
+    Raises:
+    - Exception: If an error occurs during the conversion of rSMI to graph or ITS construction, an exception is raised.
+    """
+    r, p = rsmi_to_graph(
+        rsmi, drop_non_aam, light_weight, sanitize, use_index_as_atom_map
+    )
+    its = ITSConstruction.ITSGraph(r, p)
+    return its

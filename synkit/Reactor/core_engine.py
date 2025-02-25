@@ -1,11 +1,13 @@
+import warnings
 from rdkit import Chem
 from pathlib import Path
 from typing import List, Union
 from collections import Counter
 from synkit.IO.data_io import load_gml_as_text
+from synkit.Reactor.reactor_utils import _deduplicateGraphs
 
 import torch
-from mod import *
+from mod import smiles, config, ruleGMLString, DG
 
 
 class CoreEngine:
@@ -14,6 +16,10 @@ class CoreEngine:
     toolkit. It provides methods for forward and backward prediction based on templates
     library.
     """
+
+    def __init__(self) -> None:
+        warnings.warn("deprecated", DeprecationWarning)
+        pass
 
     @staticmethod
     def generate_reaction_smiles(
@@ -78,19 +84,7 @@ class CoreEngine:
         # Convert SMILES strings to molecule objects, avoiding duplicate conversions
         initial_molecules = [smiles(smile, add=False) for smile in (initial_smiles)]
 
-        def deduplicateGraphs(initial):
-            res = []
-            for cand in initial:
-                for a in res:
-                    if cand.isomorphism(a) != 0:
-                        res.append(a)  # the one we had already
-                        break
-                else:
-                    # didn't find any isomorphic, use the new one
-                    res.append(cand)
-            return res
-
-        initial_molecules = deduplicateGraphs(initial_molecules)
+        initial_molecules = _deduplicateGraphs(initial_molecules)
 
         initial_molecules = sorted(
             initial_molecules, key=lambda molecule: molecule.numVertices, reverse=False

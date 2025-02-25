@@ -8,3 +8,4 @@ test_mod.py
 test_format.py
 *dev_zone
 *.pkl.gz
+dev_scripts/*

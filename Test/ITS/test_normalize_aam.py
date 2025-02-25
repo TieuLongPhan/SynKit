@@ -1,6 +1,7 @@
 import unittest
 import networkx as nx
 from synkit.ITS.normalize_aam import NormalizeAAM
+from synkit.ITS.aam_validator import AAMValidator
 
 
 class TestNormalizeAAM(unittest.TestCase):
@@ -55,7 +56,8 @@ class TestNormalizeAAM(unittest.TestCase):
             + "([CH3:4])[H:6])[H:5]"
         )
         result = self.normalizer.fit(input_rsmi)
-        self.assertEqual(result, expected_output)
+        print(result)
+        self.assertTrue(AAMValidator().smiles_check(result, expected_output))
 
 
 # Run the unittest
