@@ -2,7 +2,7 @@ import unittest
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.ITS.aam_validator import AAMValidator
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Reactor.aam_reactor import AAMReactor
+from synkit.Reactor.reactor_engine import ReactorEngine
 
 
 class TestAAMInference(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestAAMInference(unittest.TestCase):
             + ">>[CH3:1][CH2:2][CH2:3][NH2:5].[Cl:4][H:6]"
         )
         # Test forward
-        output_rsmi = AAMReactor._inference(rsmi, gml, invert=True)[0]
+        output_rsmi = ReactorEngine._inference(rsmi, gml, invert=True)[0]
         self.assertTrue(AAMValidator.smiles_check(output_rsmi, expected_rsmi, "ITS"))
 
     def test_inference_aam_expand_backward(self):
@@ -40,7 +40,7 @@ class TestAAMInference(unittest.TestCase):
             + ">>[CH3:1][CH2:2][CH2:3][NH2:5].[Cl:4][H:6]"
         )
         # Test backward
-        output_rsmi = AAMReactor._inference(rsmi, gml, invert=True)[0]
+        output_rsmi = ReactorEngine._inference(rsmi, gml, invert=True)[0]
         self.assertTrue(AAMValidator.smiles_check(output_rsmi, expected_rsmi, "ITS"))
 
     def test_inference_aam_expand_with_reagent_forward(self):
@@ -52,9 +52,9 @@ class TestAAMInference(unittest.TestCase):
             + ">>[CH3:1][CH2:2][CH2:3][NH2:5].[Cl:4][H:6].[OH2:7]"
         )
         # Test forward
-        output_rsmi = AAMReactor._inference(rsmi, gml, complete_aam=True, invert=False)[
-            0
-        ]
+        output_rsmi = ReactorEngine._inference(
+            rsmi, gml, complete_aam=True, invert=False
+        )[0]
         self.assertTrue(AAMValidator.smiles_check(output_rsmi, expected_rsmi, "ITS"))
 
     def test_inference_aam_expand_with_reagent_backward(self):
@@ -66,9 +66,9 @@ class TestAAMInference(unittest.TestCase):
             + ">>[CH3:1][CH2:2][CH2:3][NH2:5].[Cl:4][H:6].[OH2:7]"
         )
         # Test backward
-        output_rsmi = AAMReactor._inference(rsmi, gml, complete_aam=True, invert=True)[
-            0
-        ]
+        output_rsmi = ReactorEngine._inference(
+            rsmi, gml, complete_aam=True, invert=True
+        )[0]
         self.assertTrue(AAMValidator.smiles_check(output_rsmi, expected_rsmi, "ITS"))
 
     def test_inference_smiles_forward(self):
@@ -76,7 +76,7 @@ class TestAAMInference(unittest.TestCase):
         reactants, _ = self.rsmi.split(">>")
 
         # Test forward reaction inference
-        output_rsmis = AAMReactor._inference(reactants, self.gml)
+        output_rsmis = ReactorEngine._inference(reactants, self.gml)
         # Validate each SMILES string in the output list against the expected results
         # Use 'in' operator to make sure that the output sequence contains expected result
         self.assertTrue(
@@ -92,7 +92,7 @@ class TestAAMInference(unittest.TestCase):
         _, products = self.rsmi.split(">>")
 
         # Test backward reaction inference
-        output_rsmis = AAMReactor._inference(products, self.gml, invert=True)
+        output_rsmis = ReactorEngine._inference(products, self.gml, invert=True)
         print(output_rsmis)
 
         self.assertTrue(
@@ -110,7 +110,7 @@ class TestAAMInference(unittest.TestCase):
 
         # If complete_aam is False, reagent will not have atom map
         # Test forward reaction inference
-        output_rsmis = AAMReactor._inference(reactants, self.gml, complete_aam=False)
+        output_rsmis = ReactorEngine._inference(reactants, self.gml, complete_aam=False)
 
         # Changed validation: Check if the expected reactants
         # and products (without atom mapping for reagents) are present
@@ -139,7 +139,7 @@ class TestAAMInference(unittest.TestCase):
         _, products = rsmi.split(">>")
 
         # Test backward reaction inference
-        output_rsmis = AAMReactor._inference(
+        output_rsmis = ReactorEngine._inference(
             products, self.gml, invert=True, complete_aam=False
         )
         expected_reactants = (
@@ -171,7 +171,7 @@ class TestAAMInference(unittest.TestCase):
         )
 
         # Test forward reaction inference
-        output_rsmis = AAMReactor._inference(reactants, self.gml, complete_aam=True)
+        output_rsmis = ReactorEngine._inference(reactants, self.gml, complete_aam=True)
 
         self.assertTrue(
             any(
@@ -192,7 +192,7 @@ class TestAAMInference(unittest.TestCase):
             + "[CH:9]=[CH:5]1)[O:14][CH2:13][CH2:12][O:11][CH3:10].[OH2:16]"
         )
         # Test backward reaction inference
-        output_rsmis = AAMReactor._inference(
+        output_rsmis = ReactorEngine._inference(
             products, self.gml, invert=True, complete_aam=True
         )
 

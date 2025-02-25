@@ -2,7 +2,7 @@ from typing import List, Dict, Tuple, Union
 from synkit.IO.debug import configure_warnings_and_logs
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Reactor.reactor_utils import _add_reagent, _find_all_paths
-from synkit.Reactor.aam_reactor import AAMReactor
+from synkit.Reactor.reactor_engine import ReactorEngine
 
 configure_warnings_and_logs(True, True)
 
@@ -46,7 +46,7 @@ class MultiSteps:
                     if i == 0
                     else current_rsmi.split(">>")[1].split(".")
                 )
-                o = AAMReactor()._inference(
+                o = ReactorEngine()._inference(
                     smi_lst,
                     current_step_gml,
                     complete_aam=False,
@@ -94,7 +94,7 @@ class MultiSteps:
         steps = []
         for idx, rsmi in enumerate(rsmi_list):
             rules_to_apply = rule_list[order[idx]]
-            new = AAMReactor()._inference(
+            new = ReactorEngine()._inference(
                 rsmi, rules_to_apply, complete_aam=True, check_isomorphic=False
             )[0]
             steps.append(new)

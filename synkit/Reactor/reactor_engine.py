@@ -22,13 +22,13 @@ std = Standardize()
 logger = setup_logging()
 
 
-class AAMReactor:
+class ReactorEngine:
     """
-    AAMReactor is a class for processing and applying reaction transformations on
+    ReactorEngine is a class for processing and applying reaction transformations on
     SMILES strings, managing atom-atom mappings (AAM), and performing clustering
     and deduplication operations on molecular graphs. It offers various static methods
     for processing SMILES and applying reaction rules to generate derivation graphs (DGs).
-    In this version, `AAMReactor` can handle reagents within reactions,
+    In this version, `ReactorEngine` can handle reagents within reactions,
     the complete AAM/ITS can be inferred directly from `ITSExpand`.
 
     Methods:
@@ -41,7 +41,7 @@ class AAMReactor:
 
     def __init__(self) -> None:
         """
-        Initializes the AAMReactor instance. This class does not maintain state and all
+        Initializes the ReactorEngine instance. This class does not maintain state and all
         methods are static, meaning they do not require an instance of the class to be invoked.
         """
         pass
@@ -168,7 +168,7 @@ class AAMReactor:
                 raise ValueError("Input must be string or list of string")
 
         # Apply the reaction transformation based on the graph model (GML)
-        dg = AAMReactor._apply(smiles, gml, invert=invert)
+        dg = ReactorEngine._apply(smiles, gml, invert=invert)
 
         # Get the transformed reaction SMILES from the graph
         transformed_rsmi = list(DGToGML.getReactionSmiles(dg).values())
