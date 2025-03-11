@@ -156,8 +156,9 @@ class NormalizeAAM:
         decompose into separate reactant and product graphs, and generate the corresponding SMILES.
 
         Parameters:
-        rsmi (str): The reaction SMILES string to be processed.
-        fix_aam_indice (bool): Whether to fix the atom mapping numbers. Defaults to True.
+        - rsmi (str): The reaction SMILES string to be processed.
+        - fix_aam_indice (bool): Whether to fix the atom mapping numbers.
+        Defaults to True.
 
         Returns:
         str: The resulting reaction SMILES string with updated atom mappings.

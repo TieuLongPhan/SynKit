@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import List, Union
 from collections import Counter
 from synkit.IO.data_io import load_gml_as_text
-from synkit.Reactor.reactor_utils import _deduplicateGraphs
+from synkit.Reactor.reactor_utils import _deduplicateGraphs, _get_connected_subgraphs
 
 import torch
+import mod
 from mod import smiles, config, ruleGMLString, DG
 
 
@@ -56,24 +57,104 @@ class CoreEngine:
         return results
 
     @staticmethod
-    def perform_reaction(
-        rule_file_path: Union[str, str],
+    def _prediction_wo_reagent(
+        initial_molecules: List[Union[str, object]],
+        rule: mod.libpymod.Rule,
+        print_results: bool = False,
+        verbosity: int = 0,
+    ) -> List[List[str]]:
+        """
+        Applies the reaction rule to the given molecules without considering reagents.
+
+        Parameters:
+        - initial_molecules (List[Union[str, object]]): List of initial molecules represented by SMILES or objects.
+        - rule (mod.libpymod.Rule): The reaction rule to apply.
+        - print_results (bool): Whether to print the results.
+        - verbosity (int): Verbosity level for output.
+
+        Returns:
+        - List[List[str]]: A list of intermediate SMILES strings for the reaction products.
+        """
+        # Initialize the derivation graph and execute the strategy
+        dg = DG(graphDatabase=initial_molecules)
+        config.dg.doRuleIsomorphismDuringBinding = False
+        dg.build().apply(initial_molecules, rule, verbosity=verbosity)
+        if print_results:
+            dg.print()
+
+        temp_results = []
+        for e in dg.edges:
+            productSmiles = [v.graph.smiles for v in e.targets]
+            temp_results.append(productSmiles)
+        del dg
+        return temp_results
+
+    @staticmethod
+    def _prediction_with_reagent(
+        initial_smiles: List[str],
+        initial_molecules: List[Union[str, object]],
+        rule: mod.libpymod.Rule,
+        print_results: bool = False,
+        verbosity: int = 0,
+    ) -> List[List[str]]:
+        """
+        Applies the reaction rule to the given molecules considering the reagents.
+
+        Parameters:
+        - initial_smiles (List[str]): Initial molecules represented as SMILES strings.
+        - initial_molecules (List[Union[str, object]]): List of initial molecules.
+        - rule (mod.libpymod.Rule): The reaction rule to apply.
+        - print_results (bool): Whether to print the results.
+        - verbosity (int): Verbosity level for output.
+
+        Returns:
+        - List[List[str]]: A list of intermediate SMILES strings with reagents included.
+        """
+        dg = DG(graphDatabase=initial_molecules)
+        config.dg.doRuleIsomorphismDuringBinding = False
+        dg.build().apply(initial_molecules, rule, verbosity=verbosity, onlyProper=False)
+        if print_results:
+            dg.print()
+        temp_results, small_educt = [], []
+        for edge in dg.edges:
+            temp_results.append([vertex.graph.smiles for vertex in edge.targets])
+            small_educt.append([vertex.graph.smiles for vertex in edge.sources])
+
+        for key, solution in enumerate(temp_results):
+            educt = small_educt[key]
+            small_educt_counts = Counter(
+                Chem.CanonSmiles(smile) for smile in educt if smile is not None
+            )
+            reagent_counts = Counter([Chem.CanonSmiles(s) for s in initial_smiles])
+            reagent_counts.subtract(small_educt_counts)
+            reagent = [
+                smile
+                for smile, count in reagent_counts.items()
+                for _ in range(count)
+                if count > 0
+            ]
+            solution.extend(reagent)
+        del dg
+        return temp_results
+
+    @staticmethod
+    def _inference(
+        rule_file_path: Union[str, Path],
         initial_smiles: List[str],
         prediction_type: str = "forward",
         print_results: bool = False,
         verbosity: int = 0,
     ) -> List[str]:
         """
-        Applies a specified reaction rule, loaded from a GML file, to a set of initial
-        molecules represented by SMILES strings. The reaction can be simulated in forward
-        or backward direction and repeated multiple times.
+        Applies a specified reaction rule to a set of initial molecules represented by SMILES strings.
+        The reaction can be simulated in forward or backward direction.
 
         Parameters:
-        - rule_file_path (str): Path to the GML file containing the reaction rule.
-        - initial_smiles (List[str]): Initial molecules represented as SMILES strings.
-        - type (str, optional): Direction of the reaction ('forward' for forward,
-        'backward' for backward). Defaults to 'forward'.
-        - print_results (bool): Print results in latex or not. Defaults to False.
+        - rule_file_path (Union[str, Path]): Path to the GML file containing the reaction rule.
+        - initial_smiles (List[str]): Initial molecules as SMILES strings.
+        - prediction_type (str): Direction of the reaction ('forward' or 'backward').
+        - print_results (bool): Whether to print the results.
+        - verbosity (int): Verbosity level for output.
 
         Returns:
         - List[str]: SMILES strings of the resulting molecules or reactions.
@@ -101,46 +182,20 @@ class CoreEngine:
             # print(f"An error occurred while loading the GML file: {e}")
             gml_content = rule_file_path
         reaction_rule = ruleGMLString(gml_content, invert=invert_rule, add=False)
-        # Initialize the derivation graph and execute the strategy
-        dg = DG(graphDatabase=initial_molecules)
-        config.dg.doRuleIsomorphismDuringBinding = False
-        dg.build().apply(initial_molecules, reaction_rule, verbosity=verbosity)
-        if print_results:
-            dg.print()
 
-        temp_results = []
-        for e in dg.edges:
-            productSmiles = [v.graph.smiles for v in e.targets]
-            temp_results.append(productSmiles)
-            # print(productSmiles)
-
-        if len(temp_results) == 0:
-            # print(1)
-            dg = DG(graphDatabase=initial_molecules)
-            # dg.build().execute(strategy, verbosity=8)
-            config.dg.doRuleIsomorphismDuringBinding = False
-            dg.build().apply(
-                initial_molecules, reaction_rule, verbosity=verbosity, onlyProper=False
+        _number_subgraphs = _get_connected_subgraphs(gml_content, invert=invert_rule)
+        if len(initial_molecules) <= _number_subgraphs:
+            temp_results = CoreEngine._prediction_wo_reagent(
+                initial_molecules, reaction_rule, print_results, verbosity
             )
-            temp_results, small_educt = [], []
-            for edge in dg.edges:
-                temp_results.append([vertex.graph.smiles for vertex in edge.targets])
-                small_educt.append([vertex.graph.smiles for vertex in edge.sources])
-
-            for key, solution in enumerate(temp_results):
-                educt = small_educt[key]
-                small_educt_counts = Counter(
-                    Chem.CanonSmiles(smile) for smile in educt if smile is not None
-                )
-                reagent_counts = Counter([Chem.CanonSmiles(s) for s in initial_smiles])
-                reagent_counts.subtract(small_educt_counts)
-                reagent = [
-                    smile
-                    for smile, count in reagent_counts.items()
-                    for _ in range(count)
-                    if count > 0
-                ]
-                solution.extend(reagent)
+        else:
+            temp_results = CoreEngine._prediction_with_reagent(
+                initial_smiles,
+                initial_molecules,
+                reaction_rule,
+                print_results,
+                verbosity,
+            )
 
         reaction_processing_map = {
             "forward": lambda smiles: CoreEngine.generate_reaction_smiles(
