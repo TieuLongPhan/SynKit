@@ -6,3 +6,4 @@ pandas>=2.2.0
 requests>=2.32.3
 torch>=2.2.0
 numpy>=2.2.0
+regex>=2024.11.6
