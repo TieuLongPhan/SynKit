@@ -12,7 +12,7 @@ from synkit.IO.chem_converter import (
     gml_to_smart,
 )
 
-from synkit.Graph.Cluster.morphism import rule_isomorphism
+from synkit.Graph.Cluster.rule_morphism import rule_isomorphism
 
 
 class TestChemicalConversions(unittest.TestCase):

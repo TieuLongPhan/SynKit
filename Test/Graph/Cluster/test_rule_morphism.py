@@ -1,12 +1,10 @@
 import unittest
-from synkit.IO.data_io import load_from_pickle
-from synkit.Graph.Cluster.morphism import graph_isomorphism, rule_isomorphism
+from synkit.Graph.Cluster.rule_morphism import rule_isomorphism, rule_subgraph_morphism
 
 
-class TestRule(unittest.TestCase):
+class TestRulMorphism(unittest.TestCase):
 
     def setUp(self):
-        self.graphs = load_from_pickle("Data/Testcase/graph.pkl.gz")
 
         self.small = """rule [
             ruleID "Small"
@@ -89,18 +87,6 @@ class TestRule(unittest.TestCase):
             "]"
         )
 
-    def test_graph_isomorphism_true(self):
-        result = graph_isomorphism(
-            self.graphs[0]["RC"], self.graphs[3]["RC"], use_defaults=True
-        )
-        self.assertTrue(result)
-
-    def test_graph_isomorphism_false(self):
-        result = graph_isomorphism(
-            self.graphs[0]["RC"], self.graphs[1]["RC"], use_defaults=True
-        )
-        self.assertFalse(result)
-
     def test_rule_isomorphism_isomorphism(self):
         self.assertTrue(rule_isomorphism(self.small, self.small))
         self.assertTrue(rule_isomorphism(self.large, self.large))
@@ -108,9 +94,9 @@ class TestRule(unittest.TestCase):
 
     def test_rule_isomorphism_monomorphism(self):
         # small is a subgraph of large
-        self.assertTrue(rule_isomorphism(self.small, self.large, "monomorphism"))
+        self.assertTrue(rule_subgraph_morphism(self.small, self.large))
         # large is not a subgraph of small
-        self.assertFalse(rule_isomorphism(self.large, self.small, "monomorphism"))
+        self.assertFalse(rule_subgraph_morphism(self.large, self.small))
 
 
 if __name__ == "__main__":

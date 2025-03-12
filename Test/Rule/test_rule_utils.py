@@ -7,7 +7,7 @@ from synkit.Rule.rule_utils import (
     strip_context,
     _increment_gml_ids,
 )
-from synkit.Graph.Cluster.morphism import rule_isomorphism
+from synkit.Graph.Cluster.rule_morphism import rule_isomorphism, rule_subgraph_morphism
 
 
 class TestGMLFunctions(unittest.TestCase):
@@ -164,7 +164,7 @@ class TestGMLFunctions(unittest.TestCase):
 
     def test_strip_context(self):
         self.assertFalse(rule_isomorphism(self.gml_expected, self.gml_h))
-        self.assertTrue(rule_isomorphism(self.gml_expected, self.gml_h, "monomorphism"))
+        self.assertTrue(rule_subgraph_morphism(self.gml_expected, self.gml_h))
         output = strip_context(self.gml_h)
         self.assertTrue(rule_isomorphism(self.gml_expected, output))
 

@@ -263,3 +263,55 @@ def rsmi_to_its(
     )
     its = ITSConstruction.ITSGraph(r, p)
     return its
+
+
+def its_to_gml(
+    its: nx.Graph,
+    core: bool = True,
+    rule_name: str = "rule",
+    reindex: bool = True,
+    explicit_hydrogen: bool = False,
+) -> str:
+    """
+    Converts an ITS graph (reaction graph) to GML format, optionally focusing on the reaction core.
+
+    Parameters:
+    - its (nx.Graph): The input ITS graph representing the reaction.
+    - core (bool, optional): If True, focuses on the reaction core. Defaults to True.
+    - rule_name (str, optional): The name of the reaction rule. Defaults to "rule".
+    - reindex (bool, optional): If True, reindexes the graph nodes. Defaults to True.
+    - explicit_hydrogen (bool, optional): If True, includes explicit hydrogens in the output. Defaults to False.
+
+    Returns:
+    - str: The GML representation of the ITS graph.
+    """
+
+    # Decompose the ITS graph based on whether to focus on the core or not
+    r, p = its_decompose(get_rc(its)) if core else its_decompose(its)
+
+    # Convert the decomposed graph to GML format
+    gml = NXToGML().transform(
+        (r, p, its),
+        reindex=reindex,
+        rule_name=rule_name,
+        explicit_hydrogen=explicit_hydrogen,
+    )
+
+    return gml
+
+
+def gml_to_its(gml: str) -> nx.Graph:
+    """
+    Converts a GML string representation of a reaction back into an ITS graph.
+
+    Parameters:
+    - gml (str): The GML string representing the reaction.
+
+    Returns:
+    - nx.Graph: The resulting ITS graph.
+    """
+
+    # Convert GML back to the ITS graph using the appropriate GML to NX conversion
+    _, _, its = GMLToNX(gml).transform()
+
+    return its

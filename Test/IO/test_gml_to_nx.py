@@ -2,7 +2,7 @@ import unittest
 from synkit.IO.data_io import load_from_pickle
 from synkit.IO.gml_to_nx import GMLToNX
 from synkit.IO.nx_to_gml import NXToGML
-from synkit.Graph.Cluster.morphism import graph_isomorphism
+from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
 
 
 class TestGMLToNX(unittest.TestCase):
