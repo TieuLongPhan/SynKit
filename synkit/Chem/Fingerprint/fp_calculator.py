@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from drfp import DrfpEncoder
 from joblib import Parallel, delayed
 from typing import Optional
 from synkit.IO.debug import setup_logging
@@ -58,19 +57,6 @@ class FPCalculator:
             )
 
     @staticmethod
-    def calculate_drfp(smiles: str) -> np.ndarray:
-        """
-        Calculate the fingerprint vector for a given SMILES string using the DrfpEncoder.
-
-        Parameters:
-        - smiles (str): A SMILES string representing a chemical compound.
-
-        Returns:
-        - np.ndarray: A numpy array representing the fingerprint vector.
-        """
-        return DrfpEncoder.encode(smiles)[0]
-
-    @staticmethod
     def smiles_to_vec(reaction_smiles: str, fp_type: str) -> np.ndarray:
         """
         Convert a SMILES string to a fingerprint vector based on the specified fingerprint type.
@@ -85,10 +71,7 @@ class FPCalculator:
         Raises:
             ValueError: If an unsupported fingerprint type is specified.
         """
-        if fp_type == "drfp":
-            return FPCalculator.calculate_drfp(reaction_smiles)
-        else:
-            return TransformationFP.fit(reaction_smiles, ">>", fp_type, True)
+        return TransformationFP.fit(reaction_smiles, ">>", fp_type, True)
 
     def fit(self) -> pd.DataFrame:
         """
