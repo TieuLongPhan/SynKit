@@ -2,7 +2,6 @@ from rdkit import Chem
 from rdkit.Chem import rdmolops
 from rdkit.Chem.MolStandardize import rdMolStandardize
 from rdkit.Chem.SaltRemover import SaltRemover
-from typing import Optional
 
 
 def normalize_molecule(mol: Chem.Mol) -> Chem.Mol:
@@ -88,7 +87,7 @@ def remove_explicit_hydrogens(mol: Chem.Mol) -> Chem.Mol:
     return Chem.RemoveHs(mol)
 
 
-def remove_radicals_and_add_hydrogens(mol: Chem.Mol) -> Optional[Chem.Mol]:
+def remove_radicals_and_add_hydrogens(mol: Chem.Mol) -> Chem.Mol:
     """
     Remove radicals from a molecule by setting radical electrons to zero and adding hydrogens where needed.
 
@@ -136,29 +135,3 @@ def clear_stereochemistry(mol: Chem.Mol) -> Chem.Mol:
     """
     Chem.RemoveStereochemistry(mol)
     return mol
-
-
-def fix_radical_rsmi(rsmi: str) -> str:
-    """
-    Takes a reaction SMILES string with potential radicals and returns a new reaction SMILES string
-    where all radicals have been replaced by adding hydrogen atoms.
-
-    Parameters:
-    - rsmi (str): A reaction SMILES string containing reactants and products.
-
-    Returns:
-    - str: A reaction SMILES string with radicals replaced by hydrogen atoms.
-    """
-    r, p = rsmi.split(">>")
-    r_mol = Chem.MolFromSmiles(r)
-    p_mol = Chem.MolFromSmiles(p)
-
-    if r_mol is not None and p_mol is not None:
-        r_mol = remove_radicals_and_add_hydrogens(r_mol)
-        p_mol = remove_radicals_and_add_hydrogens(p_mol)
-
-        r_smiles = Chem.MolToSmiles(r_mol) if r_mol else r
-        p_smiles = Chem.MolToSmiles(p_mol) if p_mol else p
-        return f"{r_smiles}>>{p_smiles}"
-    else:
-        return f"{r}>>{p}"  #

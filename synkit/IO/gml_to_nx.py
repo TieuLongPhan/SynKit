@@ -29,7 +29,6 @@ class GMLToNX:
                 "element": element,
                 "charge": charge,
                 "atom_map": node_id,
-                "hcount": 0,
             }
             self.graphs[current_section].add_node(node_id, **node_attributes)
 

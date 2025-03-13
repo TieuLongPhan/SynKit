@@ -9,20 +9,20 @@ class TestNormalizeAAM(unittest.TestCase):
         """Set up for testing."""
         self.normalizer = NormalizeAAM()
 
-    # def test_fix_atom_mapping(self):
-    #     """Test that atom mappings are incremented correctly."""
-    #     input_smiles = "[C:0]([H:1])([H:2])[H:3]"
-    #     expected_smiles = "[C:1]([H:2])([H:3])[H:4]"
-    #     self.assertEqual(
-    #         self.normalizer.fix_atom_mapping(input_smiles), expected_smiles
-    #     )
+    def test_fix_atom_mapping(self):
+        """Test that atom mappings are incremented correctly."""
+        input_smiles = "[C:0]([H:1])([H:2])[H:3]"
+        expected_smiles = "[C:1]([H:2])([H:3])[H:4]"
+        self.assertEqual(
+            self.normalizer.fix_atom_mapping(input_smiles), expected_smiles
+        )
 
-    # def test_fix_rsmi(self):
-    #     """Test that RSMI atom mappings are incremented correctly
-    #     for both reactants and products."""
-    #     input_rsmi = "[C:0]>>[C:1]"
-    #     expected_rsmi = "[C:1]>>[C:2]"
-    #     self.assertEqual(self.normalizer.fix_aam_rsmi(input_rsmi), expected_rsmi)
+    def test_fix_rsmi(self):
+        """Test that RSMI atom mappings are incremented correctly
+        for both reactants and products."""
+        input_rsmi = "[C:0]>>[C:1]"
+        expected_rsmi = "[C:1]>>[C:2]"
+        self.assertEqual(self.normalizer.fix_aam_rsmi(input_rsmi), expected_rsmi)
 
     def test_extract_subgraph(self):
         """Test extraction of a subgraph based on specified indices."""

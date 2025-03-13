@@ -38,6 +38,7 @@ def _get_unique_aam(list_aam: list) -> list:
     return unique
 
 
+@staticmethod
 def _deduplicateGraphs(initial) -> list:
     """
     Deduplicates a list of molecular graphs by checking for isomorphisms.

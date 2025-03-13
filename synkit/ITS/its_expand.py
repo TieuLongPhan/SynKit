@@ -86,4 +86,4 @@ class ITSExpand:
         r, p = its_decompose(its)
 
         # Convert the modified reactants and products back into a reaction SMILES string
-        return graph_to_rsmi(r, p, its, True, False)
+        return graph_to_rsmi(r, p, its, True, False, True)
