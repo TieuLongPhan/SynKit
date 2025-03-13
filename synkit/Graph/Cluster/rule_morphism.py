@@ -46,8 +46,8 @@ def rule_isomorphism(
     """
 
     # Create ruleGMLString objects from the GML strings
-    rule_obj_1 = ruleGMLString(rule_1)
-    rule_obj_2 = ruleGMLString(rule_2)
+    rule_obj_1 = ruleGMLString(rule_1, add=False)
+    rule_obj_2 = ruleGMLString(rule_2, add=False)
 
     return rule_obj_1.isomorphism(rule_obj_2) == 1
 
@@ -74,8 +74,8 @@ def rule_subgraph_morphism(rule_1: str, rule_2: str, filter: bool = False) -> bo
 
     # Create ruleGMLString objects from the GML strings
     try:
-        rule_obj_1 = ruleGMLString(rule_1)
-        rule_obj_2 = ruleGMLString(rule_2)
+        rule_obj_1 = ruleGMLString(rule_1, add=False)
+        rule_obj_2 = ruleGMLString(rule_2, add=False)
     except Exception as e:
         raise Exception(f"Error parsing GML strings: {e}")
 
