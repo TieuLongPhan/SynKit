@@ -1,6 +1,7 @@
 from typing import List, Any, Dict
 from synkit.Reactor.core_engine import CoreEngine
 
+
 class SinglePredictor:
     """
     A class designed for one-step chemical reaction predictions using transformation rules.
@@ -15,7 +16,9 @@ class SinglePredictor:
         """
         pass
 
-    def _single_rule(self, smiles_list: List[str], rule: str, prediction_type: str = "forward") -> List[Any]:
+    def _single_rule(
+        self, smiles_list: List[str], rule: str, prediction_type: str = "forward"
+    ) -> List[Any]:
         """
         Applies a single transformation rule to a list of SMILES strings.
 
@@ -41,7 +44,9 @@ class SinglePredictor:
         )
         return reactions
 
-    def _multiple_rules(self, smiles_list: List[str], rules: List[str], prediction_type: str = "forward") -> List[Any]:
+    def _multiple_rules(
+        self, smiles_list: List[str], rules: List[str], prediction_type: str = "forward"
+    ) -> List[Any]:
         """
         Applies multiple transformation rules to a list of SMILES strings.
 
@@ -59,7 +64,14 @@ class SinglePredictor:
             reactions.extend(reaction)
         return reactions
 
-    def _perform(self, data: List[Dict[str, Any]], rule_data: List[Dict[str, str]], reaction_key: str = "rsmi", rule_key: str = "gml", prediction_type: str = "forward") -> List[Dict[str, Any]]:
+    def _perform(
+        self,
+        data: List[Dict[str, Any]],
+        rule_data: List[Dict[str, str]],
+        reaction_key: str = "rsmi",
+        rule_key: str = "gml",
+        prediction_type: str = "forward",
+    ) -> List[Dict[str, Any]]:
         """
         Performs prediction for each entry in the data using the specified rules.
 
@@ -75,7 +87,10 @@ class SinglePredictor:
         """
         rules = [i[rule_key] for i in rule_data]
         for r in data:
-            initial_smiles_list = r[reaction_key].split(">>")[0].split(".") if prediction_type == "forward" else r[reaction_key].split(">>")[1].split(".")
+            initial_smiles_list = (
+                r[reaction_key].split(">>")[0].split(".")
+                if prediction_type == "forward"
+                else r[reaction_key].split(">>")[1].split(".")
+            )
             r["raw"] = self._multiple_rules(initial_smiles_list, rules, prediction_type)
         return data
-
