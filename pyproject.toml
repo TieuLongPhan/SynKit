@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
     {name="Tieu Long Phan", email="tieu@bioinf.uni-leipzig.de"}
 ]
@@ -25,10 +25,12 @@ dependencies = [
     "networkx>=3.3",
     "seaborn>=0.13.2",
     "requests>=2.32.3",
+    "torch>=2.2.0",
+    "regex>=2024.11.6",
 ]
 
 [project.optional-dependencies]
-all = ["drfp==0.3.6", "xgboost>=2.1.1", "fgutils>=0.1.3", "rxn-chem-utils==1.5.0", "rxn-utils==2.0.0", "rxnmapper==0.3.0"]
+all = ["numpy>=2.2.0"]
 
 [project.urls]
 homepage = "https://github.com/TieuLongPhan/SynKit"

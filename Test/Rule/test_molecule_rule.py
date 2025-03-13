@@ -1,6 +1,6 @@
 import unittest
 from synkit.Rule.molecule_rule import MoleculeRule
-from synkit.Graph.Cluster.morphism import rule_isomorphism
+from synkit.Graph.Cluster.rule_morphism import rule_isomorphism
 
 
 class TestMoleculeRule(unittest.TestCase):

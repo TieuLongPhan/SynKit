@@ -48,7 +48,7 @@ class TestCoreEngine(unittest.TestCase):
 
     def test_perform_reaction_forward(self):
         # Test the perform_reaction method with forward reaction type
-        result = CoreEngine.perform_reaction(
+        result = CoreEngine._inference(
             rule_file_path=self.rule_file_path,
             initial_smiles=self.initial_smiles_fw,
             prediction_type="forward",
@@ -79,7 +79,7 @@ class TestCoreEngine(unittest.TestCase):
 
     def test_perform_reaction_backward(self):
         # Test the perform_reaction method with backward reaction type
-        result = CoreEngine.perform_reaction(
+        result = CoreEngine._inference(
             rule_file_path=self.rule_file_path,
             initial_smiles=self.initial_smiles_bw,
             prediction_type="backward",

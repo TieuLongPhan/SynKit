@@ -34,7 +34,7 @@ jobs:
       run: |
         conda create --name synkit-env python=3.11 -y
         conda activate synkit-env
-        conda install -c jakobandersen -c conda-forge mod
+        conda install -c jakobandersen -c conda-forge mod>=0.17
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       shell: bash -l {0}
