@@ -1,13 +1,12 @@
+import re
 import networkx as nx
 from rdkit import Chem
 from typing import List
 
 from synkit.IO.chem_converter import rsmi_to_graph
 from synkit.IO.graph_to_mol import GraphToMol
-from synkit.Chem.Reaction.fix_aam import FixAAM
-from synkit.Graph.graph_hydrogen import implicit_hydrogen
 from synkit.ITS.its_construction import ITSConstruction
-from synkit.ITS._misc import get_rc
+from synkit.ITS._misc import its_decompose, get_rc
 
 
 class NormalizeAAM:
@@ -22,6 +21,47 @@ class NormalizeAAM:
         Initializes the NormalizeAAM class.
         """
         pass
+
+    @staticmethod
+    def increment(match: re.Match) -> str:
+        """
+        Helper function to increment a matched atom mapping number by 1.
+
+        Parameters:
+        match (re.Match): A regex match object containing the atom mapping number.
+
+        Returns:
+        str: The incremented atom mapping number as a string.
+        """
+        return str(int(match.group()) + 1)
+
+    @staticmethod
+    def fix_atom_mapping(smiles: str) -> str:
+        """
+        Increments each atom mapping number in a SMILES string by 1.
+
+        Parameters:
+        smiles (str): The SMILES string with atom mapping numbers.
+
+        Returns:
+        str: The SMILES string with updated atom mapping numbers.
+        """
+        pattern = re.compile(r"(?<=:)\d+")
+        return pattern.sub(NormalizeAAM.increment, smiles)
+
+    @staticmethod
+    def fix_aam_rsmi(rsmi: str) -> str:
+        """
+        Adjusts atom mapping numbers in both reactant and product parts of a reaction SMILES (RSMI).
+
+        Parameters:
+        rsmi (str): The reaction SMILES string.
+
+        Returns:
+        str: The RSMI with updated atom mappings for both reactants and products.
+        """
+        r, p = rsmi.split(">>")
+        return f"{NormalizeAAM.fix_atom_mapping(r)}>>{NormalizeAAM.fix_atom_mapping(p)}"
 
     @staticmethod
     def fix_rsmi_kekulize(rsmi: str) -> str:
@@ -116,33 +156,28 @@ class NormalizeAAM:
         decompose into separate reactant and product graphs, and generate the corresponding SMILES.
 
         Parameters:
-        - rsmi (str): The reaction SMILES string to be processed.
-        - fix_aam_indice (bool): Whether to fix the atom mapping numbers.
-        Defaults to True.
+        rsmi (str): The reaction SMILES string to be processed.
+        fix_aam_indice (bool): Whether to fix the atom mapping numbers. Defaults to True.
 
         Returns:
         str: The resulting reaction SMILES string with updated atom mappings.
         """
         rsmi = self.fix_rsmi_kekulize(rsmi)
         if fix_aam_indice:
-            rsmi = FixAAM().fix_aam_rsmi(rsmi)
-        r_graph, p_graph = rsmi_to_graph(
-            rsmi,
-            light_weight=True,
-            sanitize=True,
-            use_index_as_atom_map=True,
-            drop_non_aam=True,
-        )
+            rsmi = self.fix_aam_rsmi(rsmi)
+        r_graph, p_graph = rsmi_to_graph(rsmi, light_weight=True, sanitize=True)
         its = ITSConstruction().ITSGraph(r_graph, p_graph)
         rc = get_rc(its)
-        list_hydrogen = []
-        for _, value in rc.nodes(data=True):
-            if value["element"] == "H":
-                list_hydrogen.append(value["atom_map"])
-        r_graph = implicit_hydrogen(r_graph, list_hydrogen)
-        p_graph = implicit_hydrogen(p_graph, list_hydrogen)
-
+        keep_indice = [
+            indice
+            for indice, data in its.nodes(data=True)
+            if indice not in rc.nodes() and data["element"] != "H"
+        ]
+        keep_indice.extend(rc.nodes())
+        subgraph = self.extract_subgraph(its, keep_indice)
+        subgraph = self.reset_indices_and_atom_map(subgraph)
+        r_graph, p_graph = its_decompose(subgraph)
         r_mol, p_mol = GraphToMol().graph_to_mol(
-            r_graph, sanitize=True, use_h_count=True
-        ), GraphToMol().graph_to_mol(p_graph, sanitize=True, use_h_count=True)
+            r_graph, sanitize=False
+        ), GraphToMol().graph_to_mol(p_graph, sanitize=True)
         return f"{Chem.MolToSmiles(r_mol)}>>{Chem.MolToSmiles(p_mol)}"

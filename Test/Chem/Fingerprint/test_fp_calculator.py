@@ -1,5 +1,6 @@
 import unittest
 import pandas as pd
+import numpy as np
 
 from synkit.Chem.Fingerprint.fp_calculator import FPCalculator
 
@@ -58,6 +59,15 @@ class TestFPCalculator(unittest.TestCase):
         self.assertEqual(self.fp_calculator.fp_type, "drfp")
         self.assertEqual(self.fp_calculator.n_jobs, 2)
         self.assertIsNone(self.fp_calculator.save_path)
+
+    def test_calculate_drfp(self):
+        smiles = "C1CCCCC1.CCO.CS(=O)(=O)N1CCN(Cc2ccccc2)CC1.[OH-].[OH-].[Pd+2]>>CS(=O)(=O)N1CCNCC1"
+        fp = self.fp_calculator.calculate_drfp(smiles)
+        self.assertEqual(type(fp), np.ndarray)
+
+    def test_parallel_calculate_drfp(self):
+        results = self.fp_calculator.fit()
+        self.assertEqual(type(results), pd.DataFrame)
 
 
 if __name__ == "__main__":

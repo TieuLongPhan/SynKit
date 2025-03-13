@@ -38,11 +38,9 @@ class RuleRBL:
         molecules = standardized_rsmi.split(">>")
 
         for index, mol in enumerate(molecules):
-            rule = ruleGMLString(gml_rule, invert=(index % 2 != 0), add=False)
+            rule = ruleGMLString(gml_rule, invert=(index % 2 != 0))
             mol_rule = MoleculeRule().generate_molecule_rule(mol)
-            comp_rules = RuleCompose()._compose(
-                ruleGMLString(mol_rule, add=False), rule
-            )
+            comp_rules = RuleCompose()._compose(ruleGMLString(mol_rule), rule)
 
             if comp_rules:
                 for value in comp_rules:
