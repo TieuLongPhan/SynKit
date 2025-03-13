@@ -10,8 +10,11 @@ from synkit.IO.chem_converter import (
     graph_to_rsmi,
     smart_to_gml,
     gml_to_smart,
+    rsmi_to_its,
+    its_to_gml,
+    gml_to_its,
 )
-
+from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
 from synkit.Graph.Cluster.rule_morphism import rule_isomorphism
 
 
@@ -105,7 +108,10 @@ class TestChemicalConversions(unittest.TestCase):
         r, p = rsmi_to_graph(self.rsmi, sanitize=False)
         its = ITSConstruction().ITSGraph(r, p)
         rsmi = graph_to_rsmi(
-            r, p, its, explicit_hydrogen=False, ignore_hcount_inference=True
+            r,
+            p,
+            its,
+            explicit_hydrogen=False,
         )
         self.assertIsInstance(rsmi, str)
         self.assertTrue(AAMValidator.smiles_check(rsmi, self.rsmi, "ITS"))
@@ -137,6 +143,24 @@ class TestChemicalConversions(unittest.TestCase):
         )
         self.assertFalse(AAMValidator.smiles_check(smart, self.rsmi, "ITS"))
         self.assertTrue(AAMValidator.smiles_check(smart, expect, "ITS"))
+
+    def test_rsmi_to_its(self):
+        its_1 = rsmi_to_its(self.rsmi)
+        r, p = rsmi_to_graph(self.rsmi)
+        its_2 = ITSConstruction().ITSGraph(r, p)
+        self.assertTrue(graph_isomorphism(its_1, its_2))
+
+    def test_its_to_gml(self):
+        its = rsmi_to_its(self.rsmi)
+        gml_1 = its_to_gml(its)
+        gml_2 = smart_to_gml(self.rsmi)
+        self.assertTrue(rule_isomorphism(gml_1, gml_2))
+
+    def test_gml_to_its(self):
+        gml = smart_to_gml(self.rsmi)
+        its_1 = rsmi_to_its(self.rsmi)
+        its_2 = gml_to_its(gml)
+        self.assertTrue(graph_isomorphism(its_1, its_2))
 
 
 if __name__ == "__main__":

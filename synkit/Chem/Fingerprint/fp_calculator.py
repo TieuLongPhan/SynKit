@@ -50,6 +50,9 @@ class FPCalculator:
             "fcfp2",
             "fcfp4",
             "fcfp6",
+            "rdk5",
+            "rdk6",
+            "rdk7",
         ]
         if fp_type not in valid_fps:
             raise ValueError(

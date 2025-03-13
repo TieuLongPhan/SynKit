@@ -45,7 +45,10 @@ class TestGMLToNX(unittest.TestCase):
         self.parser_gml._parse_element('node [ id 11 label "N" ]', "context")
         self.parser_gml._parse_element('edge [ source 11 target 35 label "-" ]', "left")
 
-        expected_node = ("11", {"element": "N", "charge": 0, "atom_map": 11})
+        expected_node = (
+            "11",
+            {"element": "N", "charge": 0, "atom_map": 11, "hcount": 0},
+        )
         expected_edge = (11, 35, {"order": 1.0})
 
         actual_node = self.parser_gml.graphs["context"].nodes(data=True)[11]

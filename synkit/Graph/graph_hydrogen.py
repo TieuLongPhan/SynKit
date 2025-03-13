@@ -1,6 +1,7 @@
 import networkx as nx
 from copy import copy
 from typing import Set
+import warnings
 
 
 def implicit_hydrogen(
@@ -8,24 +9,19 @@ def implicit_hydrogen(
 ) -> nx.Graph:
     """
     Adds implicit hydrogens to a molecular graph and removes non-preserved hydrogens.
-
     This function operates on a deep copy of the input graph to avoid in-place modifications.
-    It counts hydrogen neighbors for each non-hydrogen node and adjusts based on hydrogens
-    that need to be preserved. Non-preserved hydrogen nodes are removed from the graph.
-
-    Optionally, this function can reindex the node indices and atom maps to ensure consistency
-    and provide a clean, sequential indexing after all modifications.
+    It counts hydrogen neighbors for each non-hydrogen node and adjusts based on
+    hydrogens that need to be preserved. Non-preserved hydrogen nodes are removed from the graph.
 
     Parameters:
-    graph (nx.Graph): A NetworkX graph representing the molecule. Each node should have
-                      an 'element' attribute representing the element type (e.g., 'C', 'H', etc.)
-                      and an 'atom_map' attribute indicating the atom mapping number.
-    preserve_atom_maps (Set[int]): A set of atom map numbers for hydrogens that should be preserved.
-    reindex (bool): If True, reindexes the node indices and atom maps sequentially after modifications.
+    - graph (nx.Graph): A NetworkX graph representing the molecule, where each node has an 'element'
+      attribute for the element type (e.g., 'C', 'H') and an 'atom_map' attribute for atom mapping.
+    - preserve_atom_maps (Set[int]): Set of atom map numbers for hydrogens that should be preserved.
+    - reindex (bool): If true, reindexes node indices and atom maps sequentially after modifications.
 
     Returns:
-    nx.Graph: A new NetworkX graph with updated hydrogen atoms, where non-preserved hydrogens
-              have been removed and hydrogen counts adjusted for non-hydrogen atoms.
+    - nx.Graph: A new NetworkX graph with updated hydrogen atoms, where non-preserved hydrogens
+      have been removed and hydrogen counts adjusted for non-hydrogen atoms.
     """
     # Create a deep copy of the graph to avoid in-place modifications
     new_graph = copy(graph)
@@ -33,12 +29,13 @@ def implicit_hydrogen(
     # First pass: count hydrogen neighbors for each non-hydrogen node
     for node, data in new_graph.nodes(data=True):
         if data["element"] != "H":  # Skip hydrogen atoms
-            count_h = sum(
+            count_h_explicit = sum(
                 1
                 for neighbor in new_graph.neighbors(node)
                 if new_graph.nodes[neighbor]["element"] == "H"
             )
-            new_graph.nodes[node]["hcount"] = count_h
+            count_h_implicit = data["hcount"]
+            new_graph.nodes[node]["hcount"] = count_h_explicit + count_h_implicit
 
     # List of hydrogens to preserve based on atom map
     preserved_hydrogens = [
@@ -78,20 +75,22 @@ def implicit_hydrogen(
 
 def explicit_hydrogen(graph: nx.Graph) -> nx.Graph:
     """
-    Adds explicit hydrogens to the molecular graph based on hydrogen counts ('hcount')
-    for non-hydrogen atoms and increases the atom_map attribute for each hydrogen added.
-
-    This function assumes that 'hcount' is present for each atom (representing how many
-    hydrogens should be added to that atom) and that the atom_map for existing atoms is valid.
+    Adds explicit hydrogens to the molecular graph based on hydrogen counts ('hcount') for non-hydrogen
+    atoms and increases the 'atom_map' attribute for each hydrogen added. This function assumes that
+    'hcount' is present for each atom (representing how many hydrogens should be added) and that the
+    'atom_map' for existing atoms is valid.
 
     Parameters:
-    graph (nx.Graph): A NetworkX graph representing the molecule. Each node should have
-                      an 'element' attribute representing the element type (e.g., 'C', 'H', etc.),
-                      'hcount' representing the number of hydrogens to add, and 'atom_map' for atom mapping.
+    - graph (nx.Graph): A NetworkX graph representing the molecule, where each node has an 'element'
+      attribute for the element type (e.g., 'C', 'H'), 'hcount' for the number of hydrogens to add,
+      and 'atom_map' for atom mapping.
 
     Returns:
-    nx.Graph: A new NetworkX graph with explicit hydrogen atoms added and atom_map updated.
+    - nx.Graph: A new NetworkX graph with explicit hydrogen atoms added and 'atom_map' updated.
     """
+    warnings.warn(
+        "This function can only work with single graph and cannot guarantee the mapping between G and H"
+    )
     # Create a deep copy of the graph to avoid in-place modifications
     new_graph = copy(graph)
 
