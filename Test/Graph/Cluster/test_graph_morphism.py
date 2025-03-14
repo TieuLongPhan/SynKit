@@ -1,12 +1,22 @@
 import unittest
 from synkit.IO.data_io import load_from_pickle
+from synkit.IO.chem_converter import rsmi_to_its
+from synkit.Graph.ITS._misc import get_rc
 from synkit.Graph.Cluster.graph_morphism import graph_isomorphism, subgraph_isomorphism
 
 
-class TestRule(unittest.TestCase):
+class TestGraphMorphism(unittest.TestCase):
 
     def setUp(self):
         self.graphs = load_from_pickle("Data/Testcase/graph.pkl.gz")
+        rsmi = (
+            "[F:1][C:2]([F:3])([F:4])[c:5]1[cH:6][n:8][c:9]([Cl:10])"
+            + "[c:11]([Br:12])[cH:7]1.[O:13]([CH2:14][Na:16])[H:15]"
+            + ">>[Cl:10][Na:16].[F:1][C:2]([F:3])([F:4])[c:5]1[cH:6]"
+            + "[n:8][c:9]([O:13][CH2:14][H:15])[c:11]([Br:12])[cH:7]1"
+        )
+        self.its = rsmi_to_its(rsmi)
+        self.rc = get_rc(self.its)
 
     def test_graph_isomorphism_true(self):
         result = graph_isomorphism(
@@ -26,6 +36,14 @@ class TestRule(unittest.TestCase):
 
     def test_graph_subgraph_morphism_false(self):
         result = subgraph_isomorphism(self.graphs[0]["RC"], self.graphs[1]["ITS"])
+        self.assertFalse(result)
+
+    def test_subgraph_monomorphism(self):
+        # Is monomorphims
+        result = subgraph_isomorphism(self.rc, self.its, check_type="mono")
+        self.assertTrue(result)
+        # not induce subgraph
+        result = subgraph_isomorphism(self.rc, self.its, check_type="induced")
         self.assertFalse(result)
 
 

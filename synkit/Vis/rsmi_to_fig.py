@@ -4,7 +4,7 @@ from typing import Union, Tuple
 
 from synkit.Vis.graph_visualizer import GraphVisualizer
 from synkit.IO.chem_converter import rsmi_to_graph
-from synkit.ITS.its_construction import ITSConstruction
+from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.gml_to_nx import GMLToNX
 
 vis_graph = GraphVisualizer()

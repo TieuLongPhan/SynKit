@@ -1,3 +1,16 @@
+
+# Changelog v0.0.4
+
+## Highlights
+
+### New Features & Enhancements
+
+#### Refractor source code structure
+- Merging ITS and Graph subpackage
+## Known Limitations
+
+
+
 # Changelog v0.0.3
 
 ## Highlights

@@ -6,7 +6,7 @@ from collections import Counter
 from synkit.IO.data_io import load_gml_as_text
 from synkit.Reactor.reactor_utils import _deduplicateGraphs, _get_connected_subgraphs
 
-import torch
+# import torch
 import mod
 from mod import smiles, config, ruleGMLString, DG
 

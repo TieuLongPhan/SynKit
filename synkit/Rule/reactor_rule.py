@@ -4,8 +4,8 @@ from synkit.IO.chem_converter import gml_to_smart
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
 
-from synkit.ITS.normalize_aam import NormalizeAAM
-from synkit.ITS.its_expand import ITSExpand
+from synkit.Graph.ITS.normalize_aam import NormalizeAAM
+from synkit.Graph.ITS.its_expand import ITSExpand
 
 from synkit.Rule.molecule_rule import MoleculeRule
 from synkit.Rule.rule_compose import RuleCompose

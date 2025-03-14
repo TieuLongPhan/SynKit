@@ -1,6 +1,6 @@
 import unittest
 from synkit.IO.chem_converter import smart_to_gml
-from synkit.ITS.aam_validator import AAMValidator
+from synkit.Graph.ITS.aam_validator import AAMValidator
 from synkit.Rule.reactor_rule import ReactorRule
 
 

@@ -5,10 +5,10 @@ from typing import Optional, Tuple
 from synkit.IO.debug import setup_logging
 from synkit.IO.mol_to_graph import MolToGraph
 from synkit.IO.graph_to_mol import GraphToMol
-from synkit.ITS.its_construction import ITSConstruction
+from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.nx_to_gml import NXToGML
 from synkit.IO.gml_to_nx import GMLToNX
-from synkit.ITS._misc import get_rc, its_decompose
+from synkit.Graph.ITS._misc import get_rc, its_decompose
 from synkit.Graph.graph_hydrogen import implicit_hydrogen
 
 

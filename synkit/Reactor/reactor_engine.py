@@ -1,9 +1,9 @@
 import os
-import torch
+# import torch
 from typing import List, Any
 from synkit.IO.dg_to_gml import DGToGML
 from synkit.IO.debug import setup_logging
-from synkit.ITS.normalize_aam import NormalizeAAM
+from synkit.Graph.ITS.normalize_aam import NormalizeAAM
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
 from synkit.Reactor.reactor_utils import (
@@ -13,7 +13,7 @@ from synkit.Reactor.reactor_utils import (
     _get_reagent,
     _add_reagent,
 )
-from synkit.ITS.its_expand import ITSExpand
+from synkit.Graph.ITS.its_expand import ITSExpand
 from mod import smiles, ruleGMLString, DG, config
 
 

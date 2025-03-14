@@ -2,8 +2,8 @@ import unittest
 import networkx as nx
 
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.ITS.its_construction import ITSConstruction
-from synkit.ITS.aam_validator import AAMValidator
+from synkit.Graph.ITS.its_construction import ITSConstruction
+from synkit.Graph.ITS.aam_validator import AAMValidator
 from synkit.IO.chem_converter import (
     smiles_to_graph,
     rsmi_to_graph,
