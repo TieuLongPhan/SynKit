@@ -1,4 +1,5 @@
 import os
+
 # import torch
 from typing import List, Any
 from synkit.IO.dg_to_gml import DGToGML
