@@ -166,7 +166,7 @@ class SmilesFeaturizer:
         elif fingerprint_type.startswith("rdk"):
             maxPath = int(fingerprint_type[3])
             fp = cls.get_rdk_fp(mol, maxPath, **kwargs)
-        elif fingerprint_type == "avalon":
+        elif fingerprint_type == "ap":
             return cls.mol_to_ap(mol)
         elif fingerprint_type == "torsion":
             return cls.mol_to_torsion(mol)

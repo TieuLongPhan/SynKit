@@ -5,6 +5,26 @@ from synkit.IO.debug import setup_logging
 logger = setup_logging()
 
 
+def count_carbons(smiles: str) -> int:
+    """ "
+    Counts the number of carbon atoms in a molecule given a SMILES string.
+
+    Parameters:
+    - smiles (str): SMILES representation of the molecule.
+
+    Returns:
+    - int: Number of carbon atoms in the molecule if the SMILES string is valid.
+    - str: Error message indicating an invalid SMILES string.
+    """
+    mol = Chem.MolFromSmiles(smiles)
+
+    if mol:
+        carbon_count = sum(1 for atom in mol.GetAtoms() if atom.GetSymbol() == "C")
+        return carbon_count
+    else:
+        return "Invalid SMILES string"
+
+
 def get_max_fragment(smiles: Union[str, List[str]]) -> str:
     """
     Extracts and returns the SMILES string of the largest fragment from a SMILES string or a list of SMILES strings
@@ -138,3 +158,30 @@ def remove_duplicates(smiles_list: List[str]) -> List[str]:
         smiles for smiles in smiles_list if not (smiles in seen or seen.add(smiles))
     ]
     return unique_smiles
+
+
+def process_smiles_list(smiles_list: List[str]) -> List[str]:
+    """
+    Processes a list of SMILES (Simplified Molecular Input Line Entry System) strings,
+    splitting any entries that contain disconnected molecular components
+    (indicated by a '.'), and returns a new list with each component as a separate entry.
+
+    Parameters:
+    - smiles_list (List[str]): A list of SMILES strings, where some entries may contain
+                             disconnected components separated by dots.
+
+    Returns:
+    - List[str]: A new list of SMILES strings with all components separated. This list
+               does not include any original strings that contained dots; instead, it
+               includes their split components.
+    """
+    new_smiles_list = []  # Create a new list to store processed SMILES strings
+    for smiles in smiles_list:
+        if "." in smiles:
+            # Split the SMILES string into components and extend the new list
+            components = smiles.split(".")
+            new_smiles_list.extend(components)
+        else:
+            # Add the unchanged SMILES string to the new list
+            new_smiles_list.append(smiles)
+    return new_smiles_list
