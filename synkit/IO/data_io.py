@@ -275,3 +275,27 @@ def collect_data(num_batches: int, temp_dir: str, file_template: str) -> List[An
         for item in load_from_pickle_generator(file_path):
             collected_data.append(item)
     return collected_data
+
+
+def save_list_to_file(data_list, file_path):
+    """Save a list to a file in JSON format.
+
+    Parameters:
+    - data_list (list): The list to save.
+    - file_path (str): The path to the file where the list will be saved.
+    """
+    with open(file_path, "w") as file:
+        json.dump(data_list, file)
+
+
+def load_list_from_file(file_path):
+    """Load a list from a JSON-formatted file.
+
+    Parameters:
+    - file_path (str): The path to the file to read the list from.
+
+    Returns:
+    - list: The list loaded from the file.
+    """
+    with open(file_path, "r") as file:
+        return json.load(file)
