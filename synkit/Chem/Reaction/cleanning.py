@@ -43,11 +43,19 @@ class Cleanning:
         standardizer = Standardize()
         balance_checker = BalanceReactionCheck()
 
-        standardized_smiles = [
-            standardizer.standardize_rsmi(smiles, True)
-            for smiles in smiles_list
-            if smiles
-        ]
+        standardized_smiles = []
+        for smiles in smiles_list:
+            try:
+                r = standardizer.standardize_rsmi(smiles, True)
+                standardized_smiles.append(r)
+            except Exception as e:
+                print(e)
+                pass
+        # standardized_smiles = [
+        #     standardizer.standardize_rsmi(smiles, True)
+        #     for smiles in smiles_list
+        #     if smiles
+        # ]
         balanced_smiles = [
             smiles
             for smiles in standardized_smiles

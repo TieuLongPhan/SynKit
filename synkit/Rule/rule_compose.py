@@ -121,8 +121,10 @@ class RuleCompose:
         - list: Composed rules from the two provided rules.
         """
         rule_1 = load_gml_as_text(f"{rule_path}/{rule_1_id}.gml")
-        rule_1 = ruleGMLString(rule_1)
-        rule_2 = ruleGMLString(load_gml_as_text(f"{rule_path}/{rule_2_id}.gml"))
+        rule_1 = ruleGMLString(rule_1, add=False)
+        rule_2 = ruleGMLString(
+            load_gml_as_text(f"{rule_path}/{rule_2_id}.gml"), add=False
+        )
         rules_compose = RuleCompose._compose(rule_1, rule_2)
         if rule_path_compose:
             for key, value in enumerate(rules_compose):

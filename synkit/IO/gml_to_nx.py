@@ -1,7 +1,7 @@
 import re
 import networkx as nx
 from typing import Tuple
-from synkit.ITS.its_construction import ITSConstruction
+from synkit.Graph.ITS.its_construction import ITSConstruction
 
 
 class GMLToNX:
@@ -29,6 +29,7 @@ class GMLToNX:
                 "element": element,
                 "charge": charge,
                 "atom_map": node_id,
+                "hcount": 0,
             }
             self.graphs[current_section].add_node(node_id, **node_attributes)
 

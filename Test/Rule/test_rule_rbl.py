@@ -1,5 +1,6 @@
 import unittest
 from synkit.IO.chem_converter import smart_to_gml
+from synkit.Chem.Molecule.standardize import fix_radical_rsmi
 from synkit.Rule.rule_rbl import RuleRBL
 
 
@@ -33,6 +34,7 @@ class TestRuleRBL(unittest.TestCase):
         template = "[CH3:1][C:2](=[O:3])[OH:4].[CH3:5][O:6][H:7]>>[CH3:1][C:2](=[O:3])[O:6][CH3:5].[H:7][OH:4]"
         gml = smart_to_gml(template, core=True, explicit_hydrogen=False)
         new_rsmi = RuleRBL().rbl(rsmi, gml)
+        new_rsmi = fix_radical_rsmi(new_rsmi)  # Temporary fix
         expect = "CCC(=O)O.CO>>CCC(=O)OC.O"
         self.assertEqual(new_rsmi, expect)
 

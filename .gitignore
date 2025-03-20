@@ -9,3 +9,10 @@ test_format.py
 *dev_zone
 *.pkl.gz
 dev_scripts/*
+*.pdf
+out
+summary
+Data/Benchmark/its.json.gz
+Data/Benchmark/rc.json.gz
+*.log
+.coverage
