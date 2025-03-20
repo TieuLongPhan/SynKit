@@ -2,7 +2,7 @@ import unittest
 from synkit.Graph.ITS.aam_validator import AAMValidator
 from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
 from synkit.IO.chem_converter import rsmi_to_graph, graph_to_rsmi
-from synkit.Graph.graph_hydrogen import implicit_hydrogen, explicit_hydrogen
+from synkit.Graph.hydrogen import implicit_hydrogen, explicit_hydrogen
 
 
 class TestGraphH(unittest.TestCase):

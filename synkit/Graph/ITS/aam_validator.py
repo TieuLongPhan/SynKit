@@ -6,9 +6,10 @@ from joblib import Parallel, delayed
 from typing import Dict, List, Tuple, Union, Optional
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
-from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.chem_converter import rsmi_to_graph
-from synkit.Graph.ITS._misc import get_rc, enumerate_tautomers, mapping_success_rate
+from synkit.Graph.ITS.its_decompose import get_rc
+from synkit.Graph.ITS.its_construction import ITSConstruction
+from synkit.Graph.ITS.aam_utils import enumerate_tautomers, mapping_success_rate
 
 
 class AAMValidator:

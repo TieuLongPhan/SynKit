@@ -4,7 +4,7 @@ from synkit.IO.chem_converter import (
     smiles_to_graph,
 )
 
-from synkit.Graph.ITS._misc import its_decompose
+from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_builder import ITSBuilder
 from synkit.Chem.Reaction.standardize import Standardize

@@ -5,9 +5,37 @@
 
 ### New Features & Enhancements
 
-#### Refractor source code structure
-- Merging ITS and Graph subpackage
+#### Refactor Source Code Structure
+- **Merged** the ITS and Graph subpackages for improved modularity.
+- **Separated** `its_decompose` and `get_rc` into a dedicated Python file: `its_decompose.py`.
+- **Created** a new `Utils` subpackage for future utility functions and support tools.
+
+#### Performance Improvements
+- **Optimized** the `BatchCluster` process for faster clustering of reaction centers.
+
+#### Bug Fixes
+- **Fixed** issues with *Subgraph* searching: `networkx` now handles both *monomorphism* and *induced subgraph*, whereas `GML` was limited to *monomorphism* only.
+
+#### New Features
+- **Implemented** `CRN` (Chemical Reaction Networks) in the `Reactor` module.
+- **Implemented** `PathFinder` to find pathways from a starting compound to the target compound in `CRN`.
+- **Introduced** `RetroReactor` in the `Rule` module, enabling the use of A* algorithm to search from target to starting compound without requiring a full system like `CRN`.
+
 ## Known Limitations
+
+### Rule Composition
+- **Bug** in the valence constraint of rule composition.
+- **Partial matching** in rule composition may result in invalid compounds.
+
+### Retro
+- **Directed CRN** can only find one solution, though it is 500 times faster than expanding CRN and using `PathFinder`.
+- **Retro framework** using rule composition may result in invalid compounds.
+
+### Reactor
+- `ReactorEngine` currently only supports **balanced reactions**.
+- **Performance issue**: `ReactorEngine` is slow in certain cases.
+- **Memory leak** in `CoreEngine` when scaled up.
+
 
 
 

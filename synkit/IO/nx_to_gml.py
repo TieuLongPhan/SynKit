@@ -1,6 +1,6 @@
 import networkx as nx
 from typing import Tuple, Dict, List
-from synkit.Graph.ITS._misc import expand_hydrogens
+from synkit.Graph.hydrogen import expand_hydrogens
 
 
 class NXToGML:
