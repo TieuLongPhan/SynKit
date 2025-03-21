@@ -3,7 +3,7 @@ name: Build documentation for GitHub Pages
 on:
   push:
     branches: 
-      - doc
+      - main
 
   workflow_dispatch: # Enable manual action trigger
 
