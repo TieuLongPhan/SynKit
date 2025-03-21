@@ -1,0 +1,34 @@
+name: Build documentation for GitHub Pages 
+
+on:
+  push:
+    branches: 
+      - main
+
+  workflow_dispatch: # Enable manual action trigger
+
+env:
+  PYTHONPATH: .
+
+jobs:
+  build_documentation_for_github_pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip' # caching pip dependencies
+      - run: pip install -r requirements.txt
+      - run: pip install sphinx sphinx-rtd-theme
+      - run: python3 -m sphinx ./doc docs
+      - name: publish doc
+        shell: bash
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "no@mail.tmp"
+          git add -f docs/
+          git commit -m "Doc build"
+          git push --force "https://github.com/TieuLongPhan/SynKit.git" `git subtree split --prefix docs/ main`:gh-pages
