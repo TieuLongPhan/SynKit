@@ -1,6 +1,6 @@
 scikit-learn>=1.4.0
 seaborn>=0.13.2
-fgutils>=0.1.3
+fgutils
 rdkit >= 2024.3.3
 pandas>=2.2.0
 requests>=2.32.3
