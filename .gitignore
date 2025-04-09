@@ -17,3 +17,5 @@ Data/Benchmark/rc.json.gz
 *.log
 .coverage
 dev/*
+*.rdf
+Data/Testcase/hydro/aam.json.gz

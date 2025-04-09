@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "0.0.4"
+version = "0.0.5"
 authors = [
     {name="Tieu Long Phan", email="tieu@bioinf.uni-leipzig.de"}
 ]
@@ -25,12 +25,11 @@ dependencies = [
     "networkx>=3.3",
     "seaborn>=0.13.2",
     "requests>=2.32.3",
-    "torch>=2.2.0",
     "regex>=2024.11.6",
 ]
 
 [project.optional-dependencies]
-all = ["numpy>=2.2.0"]
+all = ["numpy>=2.2.0", "torch>=2.2.0"]
 
 [project.urls]
 homepage = "https://github.com/TieuLongPhan/SynKit"
