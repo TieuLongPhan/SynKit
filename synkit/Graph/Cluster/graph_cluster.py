@@ -127,7 +127,7 @@ class GraphCluster:
         self,
         data: List[Dict],
         rule_key: str = "gml",
-        attribute_key: str = "signature",
+        attribute_key: str = "WLHash",
     ) -> List[Dict]:
         """
         Automatically clusters the rules and assigns them cluster indices based on the

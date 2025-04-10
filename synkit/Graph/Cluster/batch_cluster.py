@@ -152,7 +152,7 @@ class BatchCluster:
         data: List[Dict],
         templates: List[Dict],
         rule_key: str = "gml",
-        attribute_key: str = "signature",
+        attribute_key: str = "WLHash",
     ) -> Tuple[List[Dict], List[Dict]]:
         """
         Processes a list of graph data entries, classifying each based on existing templates.
@@ -175,7 +175,7 @@ class BatchCluster:
         data: List[Dict],
         templates: List[Dict],
         rule_key: str = "gml",
-        attribute_key: str = "signature",
+        attribute_key: str = "WLHash",
         batch_size: Optional[int] = None,
     ) -> Tuple[List[Dict], List[Dict]]:
         """
