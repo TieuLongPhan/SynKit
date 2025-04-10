@@ -19,3 +19,4 @@ Data/Benchmark/rc.json.gz
 dev/*
 *.rdf
 Data/Testcase/hydro/aam.json.gz
+synkit/Chem/FG/*

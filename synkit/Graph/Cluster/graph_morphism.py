@@ -157,7 +157,7 @@ def maximum_connected_common_subgraph(
     graph_2: nx.Graph,
     node_label_names: List[str] = ["element", "charge"],
     node_label_default: List[Any] = ["*", 0],
-    edge_attribute: str = "order",
+    edge_attribute: str = "standard_order",
 ) -> nx.Graph:
     """
     Computes the largest connected common subgraph (MCS) between two graphs using
@@ -219,7 +219,7 @@ def heuristics_MCCS(
     graphs: List[nx.Graph],
     node_label_names: List[str] = ["element", "charge"],
     node_label_default: List[Any] = ["*", 0],
-    edge_attribute: str = "order",
+    edge_attribute: str = "standard_order",
 ) -> nx.Graph:
     """
     Computes the Maximum Connected Common Subgraph (MCCS) over a list of graphs using a heuristic approach.
