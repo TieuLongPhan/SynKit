@@ -1,0 +1,633 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>References &mdash; synkit  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            synkit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">References</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#io-module">IO Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.gml_to_its"><code class="docutils literal notranslate"><span class="pre">gml_to_its()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.gml_to_smart"><code class="docutils literal notranslate"><span class="pre">gml_to_smart()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.graph_to_rsmi"><code class="docutils literal notranslate"><span class="pre">graph_to_rsmi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.graph_to_smi"><code class="docutils literal notranslate"><span class="pre">graph_to_smi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.its_to_gml"><code class="docutils literal notranslate"><span class="pre">its_to_gml()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.rsmi_to_graph"><code class="docutils literal notranslate"><span class="pre">rsmi_to_graph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.rsmi_to_its"><code class="docutils literal notranslate"><span class="pre">rsmi_to_its()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.smart_to_gml"><code class="docutils literal notranslate"><span class="pre">smart_to_gml()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.IO.chem_converter.smiles_to_graph"><code class="docutils literal notranslate"><span class="pre">smiles_to_graph()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#graph-module">Graph Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#its-submodule">ITS Submodule</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Graph.ITS.its_construction.ITSConstruction"><code class="docutils literal notranslate"><span class="pre">ITSConstruction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Graph.ITS.its_decompose.compare_graphs"><code class="docutils literal notranslate"><span class="pre">compare_graphs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Graph.ITS.its_decompose.enumerate_tautomers"><code class="docutils literal notranslate"><span class="pre">enumerate_tautomers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Graph.ITS.its_decompose.get_rc"><code class="docutils literal notranslate"><span class="pre">get_rc()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Graph.ITS.its_decompose.its_decompose"><code class="docutils literal notranslate"><span class="pre">its_decompose()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Graph.ITS.its_decompose.mapping_success_rate"><code class="docutils literal notranslate"><span class="pre">mapping_success_rate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Graph.ITS.aam_validator.AAMValidator"><code class="docutils literal notranslate"><span class="pre">AAMValidator</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#cluster-submodule">Cluster Submodule</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reactor-module">Reactor Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#synkit.Reactor.path_finder.PathFinder"><code class="docutils literal notranslate"><span class="pre">PathFinder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#synkit.Reactor.path_finder.PathFinder.search_paths"><code class="docutils literal notranslate"><span class="pre">PathFinder.search_paths()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#rule-module">Rule Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#vis-module">Vis Module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">synkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">References</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/references.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="references">
+<h1>References<a class="headerlink" href="#references" title="Link to this heading"></a></h1>
+<section id="io-module">
+<h2>IO Module<a class="headerlink" href="#io-module" title="Link to this heading"></a></h2>
+<p>The <cite>IO</cite> module provides tools for handling input and output operations related to the chemical converter. It allows seamless interaction with various chemical data formats.</p>
+<dl class="py function" id="module-synkit.IO.chem_converter">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.gml_to_its">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">gml_to_its</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gml</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graph</span></span></span><a class="headerlink" href="#synkit.IO.chem_converter.gml_to_its" title="Link to this definition"></a></dt>
+<dd><p>Converts a GML string representation of a reaction back into an ITS graph.</p>
+<p>Parameters:
+- gml (str): The GML string representing the reaction.</p>
+<p>Returns:
+- nx.Graph: The resulting ITS graph.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.gml_to_smart">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">gml_to_smart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gml</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sanitize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">explicit_hydrogen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Graph</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#synkit.IO.chem_converter.gml_to_smart" title="Link to this definition"></a></dt>
+<dd><p>Converts a GML string back to a SMARTS string by interpreting the graph structures.</p>
+<p>Parameters:
+- gml (str): The GML string to convert.
+- sanitize (bool): Specifies whether the molecule should be sanitized upon conversion.
+- explicit_hydrogen (bool): Controls whether hydrogens are explicitly represented
+in the output.</p>
+<p>Returns:
+- str: The corresponding SMARTS string.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.graph_to_rsmi">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">graph_to_rsmi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">its</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sanitize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">explicit_hydrogen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#synkit.IO.chem_converter.graph_to_rsmi" title="Link to this definition"></a></dt>
+<dd><p>Converts graphs of reactants and products into a reaction SMILES string.</p>
+<p>Parameters:
+- r (nx.Graph): Graph of the reactants.
+- p (nx.Graph): Graph of the products.
+- its (nx.Graph): Imaginary transition state graph, optional.
+- sanitize (bool): If True, sanitizes molecules upon conversion.
+- explicit_hydrogen (bool): If True, includes explicit hydrogens in the output.
+- use_h_count (bool): If True, considers hydrogen counts in the conversion.</p>
+<p>Returns:
+- str: Reaction SMILES string representing the conversion from reactants to products.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.graph_to_smi">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">graph_to_smi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sanitize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preserve_atom_maps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#synkit.IO.chem_converter.graph_to_smi" title="Link to this definition"></a></dt>
+<dd><p>Converts a NetworkX graph to a SMILES string.</p>
+<p>Parameters:
+- graph (nx.Graph): NetworkX graph representation of the molecule.
+- sanitize (bool): If True, sanitizes the molecule (default: True).
+- use_h_count (bool): If True, considers hydrogen count during conversion (default: False).
+- preserve_atom_maps (list): List of atom maps to preserve specific atoms, usually hydrogens.</p>
+<p>Returns:
+- str: SMILES string representation of the molecule or an error message.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.its_to_gml">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">its_to_gml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">its</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">core</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rule'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reindex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">explicit_hydrogen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#synkit.IO.chem_converter.its_to_gml" title="Link to this definition"></a></dt>
+<dd><p>Converts an ITS graph (reaction graph) to GML format, optionally focusing on the reaction core.</p>
+<p>Parameters:
+- its (nx.Graph): The input ITS graph representing the reaction.
+- core (bool, optional): If True, focuses on the reaction core. Defaults to True.
+- rule_name (str, optional): The name of the reaction rule. Defaults to “rule”.
+- reindex (bool, optional): If True, reindexes the graph nodes. Defaults to True.
+- explicit_hydrogen (bool, optional): If True, includes explicit hydrogens in the output. Defaults to False.</p>
+<p>Returns:
+- str: The GML representation of the ITS graph.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.rsmi_to_graph">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">rsmi_to_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rsmi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_non_aam</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">light_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sanitize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_index_as_atom_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Graph</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Graph</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#synkit.IO.chem_converter.rsmi_to_graph" title="Link to this definition"></a></dt>
+<dd><p>Converts reactant and product SMILES strings from a reaction SMILES (RSMI) format
+to graph representations.</p>
+<p>Parameters:
+- rsmi (str): Reaction SMILES string in “reactants&gt;&gt;products” format.
+- drop_non_aam (bool, optional): If True, nodes without atom mapping numbers
+will be dropped.
+- light_weight (bool, optional): If True, creates a light-weight graph.
+- sanitize (bool, optional): If True, sanitizes molecules during conversion.</p>
+<p>Returns:
+- Tuple[Optional[nx.Graph], Optional[nx.Graph]]: A tuple containing t
+he graph representations of the reactants and products.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.rsmi_to_its">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">rsmi_to_its</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rsmi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_non_aam</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">light_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sanitize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_index_as_atom_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graph</span></span></span><a class="headerlink" href="#synkit.IO.chem_converter.rsmi_to_its" title="Link to this definition"></a></dt>
+<dd><p>Converts a reaction SMILES (rSMI) string to an ITS graph representation using specified processing parameters.</p>
+<p>This function processes the input rSMI string into a graph representation of the reaction,
+considering atom-atom mappings and optionally sanitizing the molecules. It then constructs
+an Intermediate Transition State (ITS) graph based on the provided parameters.</p>
+<p>Parameters:
+- rsmi (str): The reaction SMILES string to be converted.
+- drop_non_aam (bool, optional): If True, non-atom-atom mapped components are dropped. Default is True.
+- light_weight (bool, optional): If True, reduces the complexity of the graph representation. Default is True.
+- sanitize (bool, optional): If True, sanitizes the molecules during conversion. Default is True.
+- use_index_as_atom_map (bool, optional): If True, uses indices as atom mappings. Default is True.</p>
+<p>Returns:
+- nx.Graph: The ITS graph representing the reaction.</p>
+<p>Raises:
+- Exception: If an error occurs during the conversion of rSMI to graph or ITS construction, an exception is raised.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.smart_to_gml">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">smart_to_gml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smart</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">core</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sanitize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rule'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reindex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">explicit_hydrogen</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#synkit.IO.chem_converter.smart_to_gml" title="Link to this definition"></a></dt>
+<dd><p>Converts a SMARTS string to GML format, optionally focusing on the reaction core.</p>
+<p>Parameters:
+- smart (str): The SMARTS string representing the reaction.
+- core (bool): Whether to extract and focus on the reaction core. Defaults to True.
+- sanitize (bool): Specifies whether the molecule should be sanitized upon conversion.
+- rule_name (str): The name of the reaction rule. Defaults to “rule”.
+- reindex (bool): Whether to reindex the graph nodes. Defaults to True.
+- explicit_hydrogen (bool): Controls whether hydrogens are explicitly represented
+in the output.</p>
+<p>Returns:
+- str: The GML representation of the reaction.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.IO.chem_converter.smiles_to_graph">
+<span class="sig-prename descclassname"><span class="pre">synkit.IO.chem_converter.</span></span><span class="sig-name descname"><span class="pre">smiles_to_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_non_aam</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">light_weight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sanitize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_index_as_atom_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graph</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#synkit.IO.chem_converter.smiles_to_graph" title="Link to this definition"></a></dt>
+<dd><p>Helper function to convert SMILES string to a graph using MolToGraph class.</p>
+<p>Parameters:
+- smiles (str): SMILES representation of the molecule.
+- drop_non_aam (bool): Whether to drop nodes without atom mapping.
+- light_weight (bool): Whether to create a light-weight graph.
+- sanitize (bool): Whether to sanitize the molecule during conversion.
+- use_index_as_atom_map (bool): Whether to use the index of atoms as atom map numbers</p>
+<p>Returns:
+- nx.Graph or None: The networkx graph representation of the molecule,
+or None if conversion fails.</p>
+</dd></dl>
+
+</section>
+<section id="graph-module">
+<h2>Graph Module<a class="headerlink" href="#graph-module" title="Link to this heading"></a></h2>
+<p>The <cite>Graph</cite> module includes several submodules focused on graph construction, decomposition, and analysis, which are essential for visualizing and processing graph-based data.</p>
+<section id="its-submodule">
+<h3>ITS Submodule<a class="headerlink" href="#its-submodule" title="Link to this heading"></a></h3>
+<p>The <cite>ITS</cite> submodule provides tools for constructing, decomposing, and validating ITS (input-transformation-output) graphs.</p>
+<ul class="simple">
+<li><p><strong>its_construction</strong>: Functions for constructing an ITS graph.</p></li>
+<li><p><strong>its_decompose</strong>: Functions for decomposing an ITS graph.</p></li>
+<li><p><strong>aam_validator</strong>: Functions for comparing ITS graph or AAM.</p></li>
+</ul>
+<dl class="py class" id="module-synkit.Graph.ITS.its_construction">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_construction.ITSConstruction">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">synkit.Graph.ITS.its_construction.</span></span><span class="sig-name descname"><span class="pre">ITSConstruction</span></span><a class="headerlink" href="#synkit.Graph.ITS.its_construction.ITSConstruction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_construction.ITSConstruction.ITSGraph">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ITSGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_aromaticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">balance_its</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graph</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.its_construction.ITSConstruction.ITSGraph" title="Link to this definition"></a></dt>
+<dd><p>Creates a Combined Graph Representation (CGR) from two input graphs G and H.</p>
+<p>This function merges the nodes of G and H, preserving their attributes. Edges are
+added based on their presence in G and/or H, with special labeling for edges
+unique to one graph.</p>
+<p>Parameters:
+- G (nx.Graph): The first input graph.
+- H (nx.Graph): The second input graph.
+- ignore_aromaticity (bool): Whether to ignore aromaticity in the graphs.
+Defaults to False.
+- attributes_defaults (Dict[str, Any]): A dictionary of default attributes
+to use for nodes that are not present in either G or H.</p>
+<p>Returns:
+- nx.Graph: The Combined Graph Representation as a new graph instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_construction.ITSConstruction.add_edges_to_ITS">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_edges_to_ITS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ITS</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">G</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_aromaticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graph</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.its_construction.ITSConstruction.add_edges_to_ITS" title="Link to this definition"></a></dt>
+<dd><p>Adds edges to the Combined Graph Representation (ITS) based on the edges of G and
+H, and returns a new graph without modifying the original ITS.</p>
+<p>Parameters:
+- ITS (nx.Graph): The initial combined graph representation.
+- G (nx.Graph): The first input graph.
+- H (nx.Graph): The second input graph.
+- ignore_aromaticity (bool): Whether to ignore aromaticity in the graphs. Defaults
+to False.</p>
+<p>Returns:
+- nx.Graph: The updated graph with added edges.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_construction.ITSConstruction.add_standard_order_attribute">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_standard_order_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_aromaticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graph</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.its_construction.ITSConstruction.add_standard_order_attribute" title="Link to this definition"></a></dt>
+<dd><p>Adds a ‘standard_order’ attribute to each edge in the provided NetworkX graph.
+This attribute is calculated based on the existing ‘order’ attribute, which should
+be a tuple associated with each edge. The ‘standard_order’ is computed by
+subtracting the second element of the ‘order’ tuple from the first element.
+If any element of the ‘order’ tuple is not an integer (e.g., ‘*’), it is treated
+as 0 for the purpose of this computation.</p>
+<p>Parameters:
+- graph (NetworkX.Graph): A NetworkX graph where each edge has an ‘order’
+attribute formatted as a tuple.</p>
+<p>Returns:
+- NetworkX.Graph: The same graph passed as input, now with a ‘standard_order’
+attribute added to each edge, reflecting the computed standard order derived from
+the ‘order’ attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_construction.ITSConstruction.get_node_attribute">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_node_attribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#synkit.Graph.ITS.its_construction.ITSConstruction.get_node_attribute" title="Link to this definition"></a></dt>
+<dd><p>Retrieves a specific attribute for a node in a graph, returning a default value if
+the attribute is missing.</p>
+<p>Parameters:
+- graph (nx.Graph): The graph from which to retrieve the node attribute.
+- node (int): The node identifier.
+- attribute (str): The attribute to retrieve.
+- default: The default value to return if the attribute is missing.</p>
+<p>Returns:
+- The value of the node attribute, or the default value if the attribute is
+missing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_construction.ITSConstruction.get_node_attributes_with_defaults">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_node_attributes_with_defaults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes_defaults</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.its_construction.ITSConstruction.get_node_attributes_with_defaults" title="Link to this definition"></a></dt>
+<dd><p>Retrieves node attributes from a graph, assigning default values if they are
+missing. Allows for an optional dictionary of attribute-default value pairs to
+specify custom attributes and defaults.</p>
+<p>Parameters:
+- graph (nx.Graph): The graph from which to retrieve node attributes.
+- node (int): The node identifier.
+- attributes_defaults (Dict[str, Any], optional): A dictionary specifying
+attributes and their default values.</p>
+<p>Returns:
+- Tuple: A tuple containing the node attributes in the order specified by
+attributes_defaults.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function" id="module-synkit.Graph.ITS.its_decompose">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_decompose.compare_graphs">
+<span class="sig-prename descclassname"><span class="pre">synkit.Graph.ITS.its_decompose.</span></span><span class="sig-name descname"><span class="pre">compare_graphs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['element',</span> <span class="pre">'aromatic',</span> <span class="pre">'hcount',</span> <span class="pre">'charge',</span> <span class="pre">'neighbors']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_attrs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['order']</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.its_decompose.compare_graphs" title="Link to this definition"></a></dt>
+<dd><p>Compare two graphs based on specified node and edge attributes.</p>
+<p>Parameters:
+- graph1 (nx.Graph): The first graph to compare.
+- graph2 (nx.Graph): The second graph to compare.
+- node_attrs (list): A list of node attribute names to include in the comparison.
+- edge_attrs (list): A list of edge attribute names to include in the comparison.</p>
+<p>Returns:
+- bool: True if both graphs are identical with respect to the specified attributes,
+otherwise False.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_decompose.enumerate_tautomers">
+<span class="sig-prename descclassname"><span class="pre">synkit.Graph.ITS.its_decompose.</span></span><span class="sig-name descname"><span class="pre">enumerate_tautomers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reaction_smiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.its_decompose.enumerate_tautomers" title="Link to this definition"></a></dt>
+<dd><p>Enumerates possible tautomers for reactants while canonicalizing the products in a
+reaction SMILES string. This function first splits the reaction SMILES string into
+reactants and products. It then generates all possible tautomers for the reactants and
+canonicalizes the product molecule. The function returns a list of reaction SMILES
+strings for each tautomer of the reactants combined with the canonical product.</p>
+<p>Parameters:
+- reaction_smiles (str): A SMILES string of the reaction formatted as
+‘reactants&gt;&gt;products’.</p>
+<p>Returns:
+- List[str] | None: A list of SMILES strings for the reaction, with each string
+representing a different
+- tautomer of the reactants combined with the canonicalized products. Returns None if
+an error occurs or if invalid SMILES strings are provided.</p>
+<p>Raises:
+- ValueError: If the provided SMILES strings cannot be converted to molecule objects,
+indicating invalid input.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_decompose.get_rc">
+<span class="sig-prename descclassname"><span class="pre">synkit.Graph.ITS.its_decompose.</span></span><span class="sig-name descname"><span class="pre">get_rc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ITS</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['element',</span> <span class="pre">'charge',</span> <span class="pre">'typesGH',</span> <span class="pre">'atom_map']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bond_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'order'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'standard_order'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Graph</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.its_decompose.get_rc" title="Link to this definition"></a></dt>
+<dd><p>Extracts the reaction center (RC) graph from a given ITS graph by identifying edges
+where the bond order changes, indicating a reaction event.</p>
+<p>Parameters:
+- ITS (nx.Graph): The ITS graph to extract the RC from.
+- element_key (list): List of node attribute keys for atom properties.
+Defaults to [‘element’, ‘charge’, ‘typesGH’].
+- bond_key (str): Edge attribute key for bond order. Defaults to ‘order’.
+- standard_key (str): Edge attribute key for standard order information.
+Defaults to ‘standard_order’.</p>
+<p>Returns:
+- nx.Graph: A new graph representing the reaction center of the ITS.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_decompose.its_decompose">
+<span class="sig-prename descclassname"><span class="pre">synkit.Graph.ITS.its_decompose.</span></span><span class="sig-name descname"><span class="pre">its_decompose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">its_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_share</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'typesGH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_share</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'order'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#synkit.Graph.ITS.its_decompose.its_decompose" title="Link to this definition"></a></dt>
+<dd><p>Decompose an ITS graph into two separate graphs G and H based on shared
+node and edge attributes.</p>
+<p>Parameters:
+- its_graph (nx.Graph): The integrated transition state (ITS) graph.
+- nodes_share (str): Node attribute key that stores tuples with node attributes
+or G and H.
+- edges_share (str): Edge attribute key that stores tuples with edge attributes
+for G and H.</p>
+<p>Returns:
+- Tuple[nx.Graph, nx.Graph]: A tuple containing the two graphs G and H.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.its_decompose.mapping_success_rate">
+<span class="sig-prename descclassname"><span class="pre">synkit.Graph.ITS.its_decompose.</span></span><span class="sig-name descname"><span class="pre">mapping_success_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_mapping_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#synkit.Graph.ITS.its_decompose.mapping_success_rate" title="Link to this definition"></a></dt>
+<dd><p>Calculate the success rate of entries containing atom mappings in a list of data
+strings.</p>
+<p>Parameters:
+- list_mapping_in_data (list of str): List containing strings to be searched for atom
+mappings.</p>
+<p>Returns:
+- float: The success rate of finding atom mappings in the list as a percentage.</p>
+<p>Raises:
+- ValueError: If the input list is empty.</p>
+</dd></dl>
+
+<dl class="py class" id="module-synkit.Graph.ITS.aam_validator">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.aam_validator.AAMValidator">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">synkit.Graph.ITS.aam_validator.</span></span><span class="sig-name descname"><span class="pre">AAMValidator</span></span><a class="headerlink" href="#synkit.Graph.ITS.aam_validator.AAMValidator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.aam_validator.AAMValidator.check_equivariant_graph">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_equivariant_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">its_graphs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Graph</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#synkit.Graph.ITS.aam_validator.AAMValidator.check_equivariant_graph" title="Link to this definition"></a></dt>
+<dd><p>Checks for isomorphism among a list of ITS graphs and
+identifies all pairs of isomorphic graphs.</p>
+<p>Parameters:
+- its_graphs (List[nx.Graph]): A list of ITS graphs.</p>
+<p>Returns:
+- List[Tuple[int, int]]: A list of tuples representing</p>
+<blockquote>
+<div><p>pairs of indices of isomorphic graphs.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>int: The count of unique isomorphic graph pairs found.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.aam_validator.AAMValidator.check_pair">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mapping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapped_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_aromaticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_tautomers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.aam_validator.AAMValidator.check_pair" title="Link to this definition"></a></dt>
+<dd><p>Checks the equivalence between the mapped and ground truth
+values within a given mapping dictionary, using a specified check method.
+The check can optionally ignore aromaticity.</p>
+<p>Parameters:
+- mapping (Dict[str, str]): A dictionary containing the data entries to check.
+- mapped_col (str): The key in the mapping dictionary corresponding
+to the mapped value.
+- ground_truth_col (str): The key in the mapping dictionary corresponding
+to the ground truth value.
+- check_method (str, optional): The method used for checking the equivalence.
+Defaults to ‘RC’.
+- ignore_aromaticity (bool, optional): Flag to indicate whether aromaticity
+should be ignored during the check. Defaults to False.
+- ignore_tautomers (bool, optional): Flag to indicate whether tautomers
+should be ignored during the check. Defaults to False.</p>
+<p>Returns:
+- bool: The result of the check, indicating whether the mapped value is
+equivalent to the ground truth according to the specified method
+and considerations regarding aromaticity.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.aam_validator.AAMValidator.smiles_check">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smiles_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mapped_smile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_aromaticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.aam_validator.AAMValidator.smiles_check" title="Link to this definition"></a></dt>
+<dd><p>Checks the equivalence of mapped SMILES against ground truth
+using reaction center (RC) or ITS graph method.</p>
+<p>Parameters:
+- mapped_smile (str): The mapped SMILES string.
+- ground_truth (str): The ground truth SMILES string.
+- check_method (str): The method used for validation (‘RC’ or ‘ITS’).
+- ignore_aromaticity (bool): Flag to ignore aromaticity in ITS graph construction.</p>
+<p>Returns:
+- bool: True if the mapped SMILES is equivalent to the ground truth,
+False otherwise.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.aam_validator.AAMValidator.smiles_check_tautomer">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">smiles_check_tautomer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mapped_smile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_aromaticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#synkit.Graph.ITS.aam_validator.AAMValidator.smiles_check_tautomer" title="Link to this definition"></a></dt>
+<dd><p>Determines if a given mapped SMILE string is equivalent to any tautomer of
+a ground truth SMILES string using a specified comparison method.</p>
+<p>Parameters:
+- mapped_smile (str): The mapped SMILES string to check against the tautomers of
+the ground truth.
+- ground_truth (str): The reference SMILES string for generating possible
+tautomers.
+- check_method (str): The method used for checking equivalence. Default is ‘RC’.
+Possible values are ‘RC’ for reaction center or ‘ITS’.
+- ignore_aromaticity (bool): Flag to ignore differences in aromaticity between
+the mapped SMILE and the tautomers.Default is False.</p>
+<p>Returns:
+- Optional[bool]: True if the mapped SMILE matches any of the enumerated tautomers
+of the ground truth according to the specified check method.
+Returns False if no match is found.
+Returns None if an error occurs during processing.</p>
+<p>Raises:
+- Exception: If an error occurs during the tautomer enumeration
+or the comparison process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Graph.ITS.aam_validator.AAMValidator.validate_smiles">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">validate_smiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ground_truth_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ground_truth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mapped_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">['rxn_mapper',</span> <span class="pre">'graphormer',</span> <span class="pre">'local_mapper']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_aromaticity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_tautomers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#synkit.Graph.ITS.aam_validator.AAMValidator.validate_smiles" title="Link to this definition"></a></dt>
+<dd><p>Validates collections of mapped SMILES against their ground truths for
+multiple mappers and calculates the accuracy.</p>
+<p>Parameters:
+- data (Union[pd.DataFrame, List[Dict[str, str]]]):
+The input data containing mapped and ground truth SMILES.
+- id_col (str): The name of the column or key containing the reaction ID.
+- ground_truth_col (str): The name of the column or key containing
+the ground truth SMILES.
+- mapped_cols (List[str]): The list of columns or keys containing
+the mapped SMILES for different mappers.
+- check_method (str): The method used for validation (‘RC’ or ‘ITS’).
+- ignore_aromaticity (bool): Flag to ignore aromaticity in ITS graph construction.
+- n_jobs (int): The number of parallel jobs to run.
+- verbose (int): The verbosity level for joblib’s parallel execution.</p>
+<p>Returns:
+- List[Dict[str, Union[str, float, List[bool]]]]: A list of dictionaries, each
+containing the mapper name, accuracy, and individual results for each SMILES pair.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="cluster-submodule">
+<h3>Cluster Submodule<a class="headerlink" href="#cluster-submodule" title="Link to this heading"></a></h3>
+<p>The <cite>Cluster</cite> submodule provides functions for clustering graph data into groups for analysis, including both single and batch clustering techniques.</p>
+<ul class="simple">
+<li><p><strong>graph_cluster</strong>: Functions for clustering a graph into distinct groups.</p></li>
+<li><p><strong>batch_cluster</strong>: Functions for batch processing and clustering multiple graphs.</p></li>
+</ul>
+</section>
+</section>
+<section id="reactor-module">
+<h2>Reactor Module<a class="headerlink" href="#reactor-module" title="Link to this heading"></a></h2>
+<p>The <cite>Reactor</cite> module includes functions for forward and backward prediction in chemical processes, with or without AAM (atomic action model) results.</p>
+<p>This module supports both single-step and multi-step predictions based on graph structures.</p>
+<ul class="simple">
+<li><p><strong>core_engine</strong>: The core engine for forward and backward prediction.</p></li>
+<li><p><strong>reactor_engine</strong>: High-level engine for reaction prediction.</p></li>
+<li><p><strong>crn</strong>: Functions for working with Chemical Reaction Networks.</p></li>
+<li><p><strong>path_finder</strong>: Functions to identify possible reaction paths.</p></li>
+</ul>
+<dl class="py class" id="module-synkit.Reactor.path_finder">
+<dt class="sig sig-object py" id="synkit.Reactor.path_finder.PathFinder">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">synkit.Reactor.path_finder.</span></span><span class="sig-name descname"><span class="pre">PathFinder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reaction_rounds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#synkit.Reactor.path_finder.PathFinder" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="synkit.Reactor.path_finder.PathFinder.search_paths">
+<span class="sig-name descname"><span class="pre">search_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_smiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_smiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'bfs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_solutions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cheapest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#synkit.Reactor.path_finder.PathFinder.search_paths" title="Link to this definition"></a></dt>
+<dd><p>Search for reaction pathways from the input molecule to the target molecule
+using a specified method, optionally limiting the number of solutions.</p>
+<dl class="simple">
+<dt>Additionally, <cite>cheapest</cite> can be set to True or False:</dt><dd><ul class="simple">
+<li><p>If cheapest=True, BFS uses a visited set and A* prunes costlier routes (typical approach).</p></li>
+<li><p>If cheapest=False, BFS does <em>not</em> track visited states (returns more solutions),
+and A* does <em>not</em> prune costlier routes (also returns more solutions).
+(May lead to duplicates or many solutions if cycles exist.)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Parameters:
+- input_smiles (str): SMILES of the starting molecule.
+- target_smiles (str): SMILES of the target molecule.
+- method (str, optional): ‘bfs’, ‘astar’, or ‘mc’.
+- iterations (int, optional): Number of MC iterations (if method=’mc’).
+- max_solutions (int, optional): If set, stop after finding this many solutions.
+- cheapest (bool, optional): Controls pruning.</p>
+<blockquote>
+<div><p>Default True =&gt; standard BFS/A*; False =&gt; “unrestricted” BFS/A*.</p>
+</div></blockquote>
+<p>Returns:
+- List[List[str]]: Each solution path is a list of reaction SMILES from start to target.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="rule-module">
+<h2>Rule Module<a class="headerlink" href="#rule-module" title="Link to this heading"></a></h2>
+<p>The <cite>Rule</cite> module includes functions for rule modification and retrosynthesis, essential for transforming and optimizing chemical reaction pathways.</p>
+<ul class="simple">
+<li><p><strong>rule_compose</strong>: Functions for composing new reaction rules.</p></li>
+<li><p><strong>reactor_rule</strong>: Functions for applying rules to reactor systems.</p></li>
+</ul>
+</section>
+<section id="vis-module">
+<h2>Vis Module<a class="headerlink" href="#vis-module" title="Link to this heading"></a></h2>
+<p>The <cite>Vis</cite> module provides visualization tools for graph-based data and chemical reaction pathways, helping users interpret complex relationships and structures.</p>
+<span class="target" id="module-synkit.Vis"></span></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting_started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Tieu-Long Phan.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
