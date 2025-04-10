@@ -167,11 +167,11 @@ class SmilesFeaturizer:
             maxPath = int(fingerprint_type[3])
             fp = cls.get_rdk_fp(mol, maxPath, **kwargs)
         elif fingerprint_type == "ap":
-            return cls.mol_to_ap(mol)
+            fp = cls.mol_to_ap(mol)
         elif fingerprint_type == "torsion":
-            return cls.mol_to_torsion(mol)
+            fp = cls.mol_to_torsion(mol)
         elif fingerprint_type == "pharm2d":
-            return cls.mol_to_pharm2d(mol)
+            fp = cls.mol_to_pharm2d(mol)
         else:
             raise ValueError(f"Unsupported fingerprint type: {fingerprint_type}")
         if convert_to_array:

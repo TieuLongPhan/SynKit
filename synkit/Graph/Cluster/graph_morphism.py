@@ -1,3 +1,4 @@
+import itertools
 import networkx as nx
 from operator import eq
 from typing import Callable, Optional, List, Any
@@ -149,3 +150,133 @@ def subgraph_isomorphism(
         return matcher.subgraph_is_isomorphic()
     else:
         return matcher.subgraph_is_monomorphic()
+
+
+def maximum_connected_common_subgraph(
+    graph_1: nx.Graph,
+    graph_2: nx.Graph,
+    node_label_names: List[str] = ["element", "charge"],
+    node_label_default: List[Any] = ["*", 0],
+    edge_attribute: str = "standard_order",
+) -> nx.Graph:
+    """
+    Computes the largest connected common subgraph (MCS) between two graphs using
+    subgraph isomorphism based on customizable node and edge attributes.
+
+    The function iterates over subsets of nodes from the smaller graph—starting from the largest
+    possible subgraph size down to 1—and returns the first (largest) candidate that is connected
+    and is isomorphic to a subgraph of the larger graph.
+
+    Parameters:
+    - graph_1 (nx.Graph): The first graph for comparison.
+    - graph_2 (nx.Graph): The second graph for comparison.
+    - node_label_names (List[str]): List of node attribute names used for matching.
+    - node_label_default (List[Any]): Default values for missing node attributes.
+    - edge_attribute (str): The edge attribute to compare.
+
+    Returns:
+    - nx.Graph: A graph representing the largest connected common subgraph found; if none exists,
+      returns an empty graph.
+    """
+    node_match = generic_node_match(
+        node_label_names, node_label_default, [eq] * len(node_label_names)
+    )
+    edge_match = generic_edge_match(edge_attribute, 1, eq)
+
+    # Determine which graph is smaller for efficiency.
+    if graph_1.number_of_nodes() <= graph_2.number_of_nodes():
+        smaller_graph, larger_graph = graph_1, graph_2
+    else:
+        smaller_graph, larger_graph = graph_2, graph_1
+
+    num_nodes_smaller = smaller_graph.number_of_nodes()
+    # Iterate over possible subgraph sizes from the largest to 1.
+    for subgraph_size in range(num_nodes_smaller, 0, -1):
+        for nodes_subset in itertools.combinations(
+            smaller_graph.nodes(), subgraph_size
+        ):
+            candidate_subgraph = smaller_graph.subgraph(nodes_subset)
+            # If the subgraph has more than one node, check it is connected.
+            if candidate_subgraph.number_of_nodes() > 1 and not nx.is_connected(
+                candidate_subgraph
+            ):
+                continue
+
+            # Check for subgraph isomorphism in the larger graph.
+            matcher = GraphMatcher(
+                larger_graph,
+                candidate_subgraph,
+                node_match=node_match,
+                edge_match=edge_match,
+            )
+            if matcher.subgraph_is_isomorphic():
+                return candidate_subgraph.copy()
+
+    return nx.Graph()
+
+
+def heuristics_MCCS(
+    graphs: List[nx.Graph],
+    node_label_names: List[str] = ["element", "charge"],
+    node_label_default: List[Any] = ["*", 0],
+    edge_attribute: str = "standard_order",
+) -> nx.Graph:
+    """
+    Computes the Maximum Connected Common Subgraph (MCCS) over a list of graphs using a heuristic approach.
+
+    This function computes the MCCS between the first two graphs using the
+    `maximum_connected_common_subgraph` function based on customizable node and edge attributes.
+    For more than two graphs, it iteratively updates the common subgraph by calculating the MCCS
+    between the current common subgraph and each subsequent graph. An early exit occurs if the
+    intermediate common subgraph becomes empty.
+
+    Parameters:
+    - graphs (List[nx.Graph]): A list of networkx graphs for which the common subgraph is to be computed.
+    - node_label_names (List[str]): List of node attribute names used for matching.
+    - node_label_default (List[Any]): Default values for missing node attributes.
+    - edge_attribute (str): The edge attribute to compare.
+
+    Returns:
+    - nx.Graph: The maximum connected common subgraph common to all provided graphs. If no common
+      subgraph exists, an empty graph is returned.
+
+    Raises:
+    - ValueError: If the input list of graphs is empty.
+    """
+    if not graphs:
+        raise ValueError("Input list of graphs is empty.")
+
+    if len(graphs) == 1:
+        return graphs[0].copy()
+
+    # Handle the two-graph case explicitly.
+    if len(graphs) == 2:
+        return maximum_connected_common_subgraph(
+            graphs[0],
+            graphs[1],
+            node_label_names=node_label_names,
+            node_label_default=node_label_default,
+            edge_attribute=edge_attribute,
+        )
+
+    # Iteratively compute the MCCS for more than two graphs.
+    current_mcs = maximum_connected_common_subgraph(
+        graphs[0],
+        graphs[1],
+        node_label_names=node_label_names,
+        node_label_default=node_label_default,
+        edge_attribute=edge_attribute,
+    )
+
+    for graph in graphs[2:]:
+        if current_mcs.number_of_nodes() == 0:
+            break  # Early exit if no common subgraph remains.
+        current_mcs = maximum_connected_common_subgraph(
+            current_mcs,
+            graph,
+            node_label_names=node_label_names,
+            node_label_default=node_label_default,
+            edge_attribute=edge_attribute,
+        )
+
+    return current_mcs

@@ -15,4 +15,9 @@ documentation for details.
    :maxdepth: 2
    
    getting_started
+   io
+   graph
+   reactor
+   rule
+   references
 

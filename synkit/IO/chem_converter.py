@@ -9,7 +9,7 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.nx_to_gml import NXToGML
 from synkit.IO.gml_to_nx import GMLToNX
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
-from synkit.Graph.hydrogen import implicit_hydrogen
+from synkit.Graph.Hyrogen._misc import implicit_hydrogen
 
 
 logger = setup_logging()

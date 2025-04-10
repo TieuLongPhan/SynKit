@@ -1,13 +1,11 @@
 import unittest
-import pandas as pd
-
 from synkit.Chem.Fingerprint.fp_calculator import FPCalculator
 
 
 class TestFPCalculator(unittest.TestCase):
     def setUp(self):
         # Sample data setup
-        self.data = pd.DataFrame(
+        self.data = [
             {
                 "smiles": [
                     (
@@ -25,39 +23,36 @@ class TestFPCalculator(unittest.TestCase):
                 ],
                 "ID": [1, 2, 3],
             }
-        )
-        self.smiles_column = "smiles"
+        ]
+        self.smiles_key = "smiles"
         self.fp_type = "drfp"
         self.n_jobs = 2
         self.verbose = 0
-        self.save_path = None
 
         # Instantiate the FPCalculator
         self.fp_calculator = FPCalculator(
-            data=self.data,
-            smiles_column=self.smiles_column,
+            smiles_key=self.smiles_key,
             fp_type=self.fp_type,
             n_jobs=self.n_jobs,
             verbose=self.verbose,
-            save_path=self.save_path,
         )
 
     def test_init_invalid_fp_type(self):
         with self.assertRaises(ValueError):
-            FPCalculator(data=self.data, fp_type="invalid_type")
+            FPCalculator(smiles_key=self.smiles_key, fp_type="invalid_type")
 
     def test_fit_missing_column(self):
         with self.assertRaises(ValueError):
             fp_calculator = FPCalculator(
-                data=pd.DataFrame({"not_smiles": ["C"]}), smiles_column="smiles"
+                smiles_key=self.smiles_key,
+                fp_type=self.fp_type,
             )
-            fp_calculator.fit()
+            fp_calculator.dict_process({"not_smiles": ["C"]}, "smiles")
 
     def test_constructor_and_attribute_assignment(self):
-        self.assertEqual(self.fp_calculator.smiles_column, "smiles")
+        self.assertEqual(self.fp_calculator.smiles_key, "smiles")
         self.assertEqual(self.fp_calculator.fp_type, "drfp")
         self.assertEqual(self.fp_calculator.n_jobs, 2)
-        self.assertIsNone(self.fp_calculator.save_path)
 
 
 if __name__ == "__main__":

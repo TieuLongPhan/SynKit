@@ -5,7 +5,7 @@ from typing import List
 from synkit.IO.chem_converter import rsmi_to_graph
 from synkit.IO.graph_to_mol import GraphToMol
 from synkit.Chem.Reaction.fix_aam import FixAAM
-from synkit.Graph.hydrogen import implicit_hydrogen
+from synkit.Graph.Hyrogen._misc import implicit_hydrogen
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_decompose import get_rc
 
