@@ -63,6 +63,7 @@ class GraphVisualizer:
         aam_key: str = "atom_map",
         standard_order_key: str = "standard_order",
         font_size: int = 12,
+        og: bool = False,
         rule: bool = False,  # New option to remove edges with specific colors
     ):
         """
@@ -127,7 +128,7 @@ class GraphVisualizer:
                     (
                         "red"
                         if data.get(standard_order_key, 0) > 0
-                        else "green" if data.get(standard_order_key, 0) < 0 else "black"
+                        else "green" if data.get(standard_order_key, 0) < 0 else "violet" if og else "black"
                     )
                     for _, _, data in its.edges(data=True)
                 ]
