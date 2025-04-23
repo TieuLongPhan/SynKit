@@ -88,7 +88,9 @@ def remove_explicit_hydrogens(mol: Chem.Mol) -> Chem.Mol:
     return Chem.RemoveHs(mol)
 
 
-def remove_radicals_and_add_hydrogens(mol: Chem.Mol) -> Optional[Chem.Mol]:
+def remove_radicals_and_add_hydrogens(
+    mol: Chem.Mol, removeH=True
+) -> Optional[Chem.Mol]:
     """
     Remove radicals from a molecule by setting radical electrons to zero and adding hydrogens where needed.
 
@@ -98,7 +100,7 @@ def remove_radicals_and_add_hydrogens(mol: Chem.Mol) -> Optional[Chem.Mol]:
     Returns:
     - Chem.Mol: Mol object with radicals removed and necessary hydrogens added.
     """
-    mol = Chem.RemoveHs(mol)  # Remove explicit hydrogens first
+    # mol = Chem.RemoveHs(mol)  # Remove explicit hydrogens first
     for atom in mol.GetAtoms():
         if atom.GetNumRadicalElectrons() > 0:
             atom.SetNumExplicitHs(
@@ -106,7 +108,10 @@ def remove_radicals_and_add_hydrogens(mol: Chem.Mol) -> Optional[Chem.Mol]:
             )
         atom.SetNumRadicalElectrons(0)
     mol = rdmolops.AddHs(mol)  # Add hydrogens back
-    return remove_explicit_hydrogens(mol)
+    if removeH:
+        return remove_explicit_hydrogens(mol)
+    else:
+        return mol
 
 
 def remove_isotopes(mol: Chem.Mol) -> Chem.Mol:
@@ -138,7 +143,7 @@ def clear_stereochemistry(mol: Chem.Mol) -> Chem.Mol:
     return mol
 
 
-def fix_radical_rsmi(rsmi: str) -> str:
+def fix_radical_rsmi(rsmi: str, removeH=True) -> str:
     """
     Takes a reaction SMILES string with potential radicals and returns a new reaction SMILES string
     where all radicals have been replaced by adding hydrogen atoms.
@@ -150,12 +155,13 @@ def fix_radical_rsmi(rsmi: str) -> str:
     - str: A reaction SMILES string with radicals replaced by hydrogen atoms.
     """
     r, p = rsmi.split(">>")
-    r_mol = Chem.MolFromSmiles(r)
-    p_mol = Chem.MolFromSmiles(p)
-
+    r_mol = Chem.MolFromSmiles(r, sanitize=False)
+    p_mol = Chem.MolFromSmiles(p, sanitize=False)
+    Chem.SanitizeMol(r_mol)
+    Chem.SanitizeMol(p_mol)
     if r_mol is not None and p_mol is not None:
-        r_mol = remove_radicals_and_add_hydrogens(r_mol)
-        p_mol = remove_radicals_and_add_hydrogens(p_mol)
+        r_mol = remove_radicals_and_add_hydrogens(r_mol, removeH)
+        p_mol = remove_radicals_and_add_hydrogens(p_mol, removeH)
 
         r_smiles = Chem.MolToSmiles(r_mol) if r_mol else r
         p_smiles = Chem.MolToSmiles(p_mol) if p_mol else p

@@ -31,7 +31,7 @@ def filter_context(context_lines, left_edges):
     return filtered_context
 
 
-def strip_context(gml_text: str, remove_all: bool = True) -> str:
+def strip_context(gml_text: str, remove_all: bool = False) -> str:
     """
     Filters or clears the 'context' section of GML-like content based on the remove_all flag.
     If remove_all is True, all edges in the 'context' section are removed.
