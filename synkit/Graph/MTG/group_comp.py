@@ -102,7 +102,13 @@ class GroupComp:
                     res.append({v1: v2})
         return res
 
-    def get_mapping(self, *, include_singleton: bool = False) -> MappingList:
+    def get_mapping(
+        self,
+        *,
+        include_singleton: bool = False,
+        algorithm: str = "generic",
+        mcs: bool = False,
+    ) -> MappingList:
         """Return all *groupoid‑legal* node‑mappings between G1 and G2.
 
         Steps:
@@ -115,7 +121,11 @@ class GroupComp:
         node_map = node_constraint(self.G1.nodes(data=True), self.G2.nodes(data=True))
         # 2. edge‑based candidates
         mappings = edge_constraint(
-            self.G1.edges(data=True), self.G2.edges(data=True), node_map
+            self.G1.edges(data=True),
+            self.G2.edges(data=True),
+            node_map,
+            algorithm=algorithm,
+            mcs=mcs,
         )
         # 3. fallback single‑node mappings
         if include_singleton or not mappings:
