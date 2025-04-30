@@ -172,7 +172,7 @@ def _edge_constraint_vf2(
     """
     VF2‐style routine, fully in Python (no NetworkX), seeded like VF3 but
     relaxed so it returns the same maximal‐common‐subgraph mappings.
-    The returned dicts will always have their keys sorted ascending (1,2,3,4).
+    The returned dicts will always have their keys sorted ascending.
     """
     # --- build adjacency lists with valid 'order' tuples ---
     adj1: Dict[NodeId, Dict[NodeId, Tuple[int, int]]] = {}
@@ -188,7 +188,7 @@ def _edge_constraint_vf2(
             adj2.setdefault(u, {})[v] = o
             adj2.setdefault(v, {})[u] = (o[1], o[0])
 
-    # --- seed exactly as VF3 does, iterating original edges ---
+    # --- seed exactly as VF3 does ---
     seeds: List[Dict[NodeId, NodeId]] = []
     for u1, v1, d1 in edges1:
         o1 = d1.get("order", ())
@@ -207,8 +207,8 @@ def _edge_constraint_vf2(
     if not seeds:
         return []
 
-    best: List[Dict[NodeId, NodeId]] = []
-    max_edges = 0
+    # --- DFS grouping by using state dict ---
+    state: Dict[str, Any] = {"best": [], "max_edges": 0}
 
     def _dfs(
         idx: int,
@@ -217,19 +217,17 @@ def _edge_constraint_vf2(
         mapped2: Set[NodeId],
         edge_count: int,
     ):
-        nonlocal best, max_edges
-
+        # mutate state
         if idx == len(seeds):
-            if edge_count > max_edges:
-                max_edges = edge_count
-                best.clear()
-                best.append(current.copy())
-            elif edge_count == max_edges:
-                best.append(current.copy())
+            if edge_count > state["max_edges"]:
+                state["max_edges"] = edge_count
+                state["best"] = [current.copy()]
+            elif edge_count == state["max_edges"]:
+                state["best"].append(current.copy())
             return
 
         cand = seeds[idx]
-        # allow it if no node-ID conflict
+        # try including if no node-ID conflict
         if not (set(cand.keys()) & mapped1 or set(cand.values()) & mapped2):
             _dfs(
                 idx + 1,
@@ -238,7 +236,7 @@ def _edge_constraint_vf2(
                 mapped2 | set(cand.values()),
                 edge_count + 1,
             )
-        # also try skipping it
+        # try skipping this seed
         _dfs(idx + 1, current, mapped1, mapped2, edge_count)
 
     # kick off DFS from each seed
@@ -248,7 +246,7 @@ def _edge_constraint_vf2(
     # --- dedupe automorphisms & sort keys ---
     uniq: MappingList = []
     seen: Set[FrozenSet] = set()
-    for m in best:
+    for m in state["best"]:
         key = frozenset(m.items())
         if key in seen:
             continue
@@ -290,11 +288,10 @@ def _edge_constraint_vf3(
     if not seeds:
         return []
 
-    # 2. DFS grouping without nonlocal by using a state dict
+    # 2. DFS grouping by using a state dict
     state: Dict[str, Any] = {"best": [], "max_edges": 0}
 
     def _dfs(idx: int, current: Dict[NodeId, NodeId]):
-        # mutate state instead of nonlocal
         if idx == len(seeds):
             edges = len(current) // 2
             if edges == 0:
