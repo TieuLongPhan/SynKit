@@ -76,14 +76,60 @@ class TestGroupoid(unittest.TestCase):
 
     def test_edge_constraint_no_map(self):
         m1 = edge_constraint(
-            self.test_graph_1[0].edges(data=True), self.test_graph_1[1].edges(data=True)
+            self.test_graph_1[0].edges(data=True),
+            self.test_graph_1[1].edges(data=True),
+            algorithm="bt",
         )
-        self.assertEqual(len(m1), 46)
+        self.assertEqual(len(m1), 46)  # backtracking
+
+        self.assertEqual(
+            len(
+                edge_constraint(
+                    self.test_graph_1[0].edges(data=True),
+                    self.test_graph_1[1].edges(data=True),
+                    algorithm="vf2",
+                )
+            ),
+            30,
+        )  # vf2
+
+        self.assertEqual(
+            len(
+                edge_constraint(
+                    self.test_graph_1[0].edges(data=True),
+                    self.test_graph_1[1].edges(data=True),
+                    algorithm="vf3",
+                )
+            ),
+            30,
+        )  # vf3
 
         m2 = edge_constraint(
             self.test_graph_2[0].edges(data=True), self.test_graph_2[1].edges(data=True)
         )
-        self.assertEqual(len(m2), 2)
+        self.assertEqual(len(m2), 2)  # backtracking
+
+        self.assertEqual(
+            len(
+                edge_constraint(
+                    self.test_graph_2[0].edges(data=True),
+                    self.test_graph_2[1].edges(data=True),
+                    algorithm="vf2",
+                )
+            ),
+            2,
+        )
+
+        self.assertEqual(
+            len(
+                edge_constraint(
+                    self.test_graph_2[0].edges(data=True),
+                    self.test_graph_2[1].edges(data=True),
+                    algorithm="vf3",
+                )
+            ),
+            2,
+        )
 
     def test_edge_constraint_map(self):
         m0 = node_constraint(
@@ -95,6 +141,30 @@ class TestGroupoid(unittest.TestCase):
             m0,
         )
         self.assertEqual(len(m1), 4)
+
+        self.assertEqual(
+            len(
+                edge_constraint(
+                    self.test_graph_1[0].edges(data=True),
+                    self.test_graph_1[1].edges(data=True),
+                    m0,
+                    algorithm="vf2",
+                )
+            ),
+            1,
+        )
+
+        self.assertEqual(
+            len(
+                edge_constraint(
+                    self.test_graph_1[0].edges(data=True),
+                    self.test_graph_1[1].edges(data=True),
+                    m0,
+                    algorithm="vf3",
+                )
+            ),
+            1,
+        )
 
         m0 = node_constraint(
             self.test_graph_2[0].nodes(data=True), self.test_graph_2[1].nodes(data=True)

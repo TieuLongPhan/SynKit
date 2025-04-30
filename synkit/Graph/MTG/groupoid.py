@@ -78,190 +78,6 @@ def node_constraint(
     return mapping
 
 
-# def edge_constraint(
-#     edges1: Iterable[Edge],
-#     edges2: Iterable[Edge],
-#     node_mapping: Mapping[NodeId, List[NodeId]] | None = None,
-# ) -> MappingList:
-#     """Find disjoint edge-merge mappings under the groupoid order rule.
-
-#     For each edge e1=(u1,v1,attrs1) and e2=(u2,v2,attrs2):
-#       - attrs1['order'][1] == attrs2['order'][0]
-#       - if node_mapping provided: u2 in node_mapping[u1] and v2 in node_mapping[v1]
-
-#     Performs a maximum set-packing via backtracking so that returned mappings
-#     have no shared endpoints on either side.
-
-#     Returns
-#     -------
-#     List of node mappings (dict G1_node -> G2_node) for each valid composition.
-#     """
-#     # 1. Build candidate pairs
-#     candidates: List[Tuple[Edge, Edge]] = []
-#     for u1, v1, a1 in edges1:
-#         order1 = a1.get("order", (None, None))
-#         if len(order1) < 2:
-#             continue
-#         a2_val = order1[1]
-#         for u2, v2, a2 in edges2:
-#             order2 = a2.get("order", (None, None))
-#             if len(order2) < 2:
-#                 continue
-#             b1_val = order2[0]
-#             if a2_val != b1_val:
-#                 continue
-#             if node_mapping is not None:
-#                 if u2 not in node_mapping.get(u1, []):
-#                     continue
-#                 if v2 not in node_mapping.get(v1, []):
-#                     continue
-#             candidates.append(((u1, v1, a1), (u2, v2, a2)))
-
-#     # 2. Backtracking for disjoint sets
-#     pair_sets: List[List[Tuple[Edge, Edge]]] = []
-
-#     def _backtrack(
-#         chosen: List[Tuple[Edge, Edge]], remaining: List[Tuple[Edge, Edge]]
-#     ) -> None:
-#         if not remaining:
-#             if chosen:
-#                 pair_sets.append(chosen.copy())
-#             return
-#         first, *rest = remaining
-#         e1, e2 = first
-#         # include: drop conflicts
-#         filtered = [p for p in rest if p[0] != e1 and p[1] != e2]
-#         _backtrack(chosen + [first], filtered)
-#         # exclude
-#         _backtrack(chosen, rest)
-
-#     _backtrack([], candidates)
-
-#     # 3. Convert to mapping list and dedupe
-#     mapping_list: MappingList = []
-#     seen: Set[frozenset] = set()
-#     for matching in pair_sets:
-#         m: Dict[NodeId, NodeId] = {}
-#         for (u1, v1, _), (u2, v2, _) in matching:
-#             m[u1] = u2
-#             m[v1] = v2
-#         key = frozenset(m.items())
-#         if key not in seen:
-#             seen.add(key)
-#             mapping_list.append(m)
-#     return mapping_list
-
-
-# from typing import Iterable, Mapping, List, Dict, Any, Tuple, TypeVar, Optional, Set
-
-# # Type variables
-# NodeId = TypeVar('NodeId')
-# # Edge represented as (node1, node2, attributes)
-# Edge = Tuple[NodeId, NodeId, Mapping[str, Any]]
-# # Resulting list of node mappings
-# MappingList = List[Dict[NodeId, NodeId]]
-
-
-# def edge_constraint(
-#     edges1: Iterable[Edge],
-#     edges2: Iterable[Edge],
-#     node_mapping: Optional[Mapping[NodeId, List[NodeId]]] = None,
-# ) -> MappingList:
-#     """
-#     Compute maximum common subgraph mappings under groupoid order constraints.
-
-#     Identifies edge-to-edge correspondences (e1 -> e2) satisfying:
-#       - e1.attrs['order'][1] == e2.attrs['order'][0]
-#       - If `node_mapping` is provided, then u2 in node_mapping[u1] and v2 in node_mapping[v1].
-
-#     Seeks the largest set of disjoint edge pairs (no shared endpoints
-#     on either graph) via backtracking, and returns only those mappings
-#     that achieve maximal edge count.
-
-#     Parameters
-#     ----------
-#     edges1 : Iterable[Edge]
-#         Edges of first graph as (u, v, attrs).
-#     edges2 : Iterable[Edge]
-#         Edges of second graph as (u, v, attrs).
-#     node_mapping : Optional[Mapping[NodeId, List[NodeId]]], optional
-#         Pre-existing node correspondences (default: None).
-
-#     Returns
-#     -------
-#     MappingList
-#         A list of node-to-node mappings for each maximum matching.
-#         Each mapping dict maps nodes of graph1 to nodes of graph2.
-#     """
-#     # Step 1: build all candidate edge-pairings
-#     candidates: List[Tuple[Edge, Edge]] = []
-#     for u1, v1, a1 in edges1:
-#         order1 = a1.get('order', (None, None))
-#         if len(order1) < 2:
-#             continue
-#         needed = order1[1]
-#         for u2, v2, a2 in edges2:
-#             order2 = a2.get('order', (None, None))
-#             if len(order2) < 2 or order2[0] != needed:
-#                 continue
-#             if node_mapping:
-#                 if u2 not in node_mapping.get(u1, []):
-#                     continue
-#                 if v2 not in node_mapping.get(v1, []):
-#                     continue
-#             candidates.append(((u1, v1, a1), (u2, v2, a2)))
-
-#     # Step 2: backtracking to find disjoint sets of edge-pairs maximizing size
-#     best_sets: List[List[Tuple[Edge, Edge]]] = []
-#     max_size: int = 0
-
-#     def _backtrack(
-#         chosen: List[Tuple[Edge, Edge]],
-#         remaining: List[Tuple[Edge, Edge]]
-#     ) -> None:
-#         nonlocal best_sets, max_size
-#         if not remaining:
-#             count = len(chosen)
-#             if count > 0:
-#                 if count > max_size:
-#                     max_size = count
-#                     best_sets = [chosen.copy()]
-#                 elif count == max_size:
-#                     best_sets.append(chosen.copy())
-#             return
-#         first, *rest = remaining
-#         (u1, v1, _), (u2, v2, _) = first
-#         # Include first: remove any pairs sharing endpoints
-#         filtered = []
-#         for (x1, y1, _), (x2, y2, _) in rest:
-#             if x1 in (u1, v1) or y1 in (u1, v1) or x2 in (u2, v2) or y2 in (u2, v2):
-#                 continue
-#             filtered.append(((x1, y1, _), (x2, y2, _)))
-#         _backtrack(chosen + [first], filtered)
-#         # Exclude first
-#         _backtrack(chosen, rest)
-
-#     _backtrack([], candidates)
-
-#     # Step 3: convert best_sets to unique node mappings
-#     mapping_list: MappingList = []
-#     seen: Set[frozenset] = set()
-#     for match in best_sets:
-#         m: Dict[NodeId, NodeId] = {}
-#         for (u1, v1, _), (u2, v2, _) in match:
-#             m[u1] = u2
-#             m[v1] = v2
-#         key = frozenset(m.items())
-#         if key not in seen:
-#             seen.add(key)
-#             mapping_list.append(m)
-
-#     return mapping_list
-
-
-# ---------------------------------------------------------------------------
-# Helper – original back‑tracking implementation (kept for reference / fallback)
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # Back‑tracking implementation (legacy / fallback)
 # ---------------------------------------------------------------------------
@@ -344,7 +160,7 @@ def _edge_constraint_backtracking(
 
 
 # ---------------------------------------------------------------------------
-# VF2 – full sub‑graph isomorphism via NetworkX
+# VF2
 # ---------------------------------------------------------------------------
 
 
@@ -353,53 +169,94 @@ def _edge_constraint_vf2(
     edges2: Iterable[Edge],
     node_mapping: Optional[Mapping[NodeId, List[NodeId]]] = None,
 ) -> MappingList:
-    """Use NetworkX's VF2 to find maximum edge‑count isomorphisms."""
-    g1, g2 = nx.Graph(), nx.Graph()
+    """
+    VF2‐style routine, fully in Python (no NetworkX), seeded like VF3 but
+    relaxed so it returns the same maximal‐common‐subgraph mappings.
+    The returned dicts will always have their keys sorted ascending (1,2,3,4).
+    """
+    # --- build adjacency lists with valid 'order' tuples ---
+    adj1: Dict[NodeId, Dict[NodeId, Tuple[int, int]]] = {}
     for u, v, data in edges1:
-        g1.add_edge(u, v, **dict(data))
+        o = data.get("order", ())
+        if isinstance(o, tuple) and len(o) >= 2:
+            adj1.setdefault(u, {})[v] = o
+            adj1.setdefault(v, {})[u] = (o[1], o[0])
+    adj2: Dict[NodeId, Dict[NodeId, Tuple[int, int]]] = {}
     for u, v, data in edges2:
-        g2.add_edge(u, v, **dict(data))
+        o = data.get("order", ())
+        if isinstance(o, tuple) and len(o) >= 2:
+            adj2.setdefault(u, {})[v] = o
+            adj2.setdefault(v, {})[u] = (o[1], o[0])
 
-    def edge_match(a1: Mapping[str, Any], a2: Mapping[str, Any]) -> bool:
-        o1 = a1.get("order", (None, None))
-        o2 = a2.get("order", (None, None))
-        return len(o1) >= 2 and len(o2) >= 2 and o1[1] == o2[0]
-
-    gm = nx.algorithms.isomorphism.GraphMatcher(
-        g1, g2, node_match=lambda *_: True, edge_match=edge_match
-    )
-
-    max_edges = 0
-    best: MappingList = []
-
-    for iso in gm.subgraph_isomorphisms_iter():
-        # honour pre‑mapping constraint
-        if node_mapping and any(
-            iso[src] not in node_mapping.get(src, []) for src in iso
-        ):
+    # --- seed exactly as VF3 does, iterating original edges ---
+    seeds: List[Dict[NodeId, NodeId]] = []
+    for u1, v1, d1 in edges1:
+        o1 = d1.get("order", ())
+        if not (isinstance(o1, tuple) and len(o1) >= 2):
             continue
-        # count matched edges (orientation‑independent)
-        ecount = sum(
-            1
-            for u, v in g1.edges
-            if u in iso and v in iso and g2.has_edge(iso[u], iso[v])
-        )
-        if ecount == 0:
-            continue  # ignore isolated node maps
-        if ecount > max_edges:
-            max_edges = ecount
-            best = [dict(iso)]
-        elif ecount == max_edges:
-            best.append(dict(iso))
+        need = o1[1]
+        for u2, v2, d2 in edges2:
+            o2 = d2.get("order", ())
+            if not (isinstance(o2, tuple) and len(o2) >= 2) or o2[0] != need:
+                continue
+            if node_mapping and (
+                u2 not in node_mapping.get(u1, []) or v2 not in node_mapping.get(v1, [])
+            ):
+                continue
+            seeds.append({u1: u2, v1: v2})
+    if not seeds:
+        return []
 
-    # dedupe (automorphisms may repeat)
+    best: List[Dict[NodeId, NodeId]] = []
+    max_edges = 0
+
+    def _dfs(
+        idx: int,
+        current: Dict[NodeId, NodeId],
+        mapped1: Set[NodeId],
+        mapped2: Set[NodeId],
+        edge_count: int,
+    ):
+        nonlocal best, max_edges
+
+        if idx == len(seeds):
+            if edge_count > max_edges:
+                max_edges = edge_count
+                best.clear()
+                best.append(current.copy())
+            elif edge_count == max_edges:
+                best.append(current.copy())
+            return
+
+        cand = seeds[idx]
+        # allow it if no node-ID conflict
+        if not (set(cand.keys()) & mapped1 or set(cand.values()) & mapped2):
+            _dfs(
+                idx + 1,
+                {**current, **cand},
+                mapped1 | set(cand.keys()),
+                mapped2 | set(cand.values()),
+                edge_count + 1,
+            )
+        # also try skipping it
+        _dfs(idx + 1, current, mapped1, mapped2, edge_count)
+
+    # kick off DFS from each seed
+    for i, seed in enumerate(seeds):
+        _dfs(i, seed.copy(), set(seed.keys()), set(seed.values()), 1)
+
+    # --- dedupe automorphisms & sort keys ---
     uniq: MappingList = []
     seen: Set[frozenset] = set()
     for m in best:
-        k = frozenset(m.items())
-        if k not in seen:
-            seen.add(k)
-            uniq.append(m)
+        key = frozenset(m.items())
+        if key in seen:
+            continue
+        seen.add(key)
+        # rebuild with keys in ascending order
+        sorted_map = {u: m[u] for u in sorted(m.keys())}
+        uniq.append(sorted_map)
+
     return uniq
 
 
