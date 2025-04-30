@@ -4,7 +4,7 @@ from collections import OrderedDict
 from typing import List, Set, Dict, Any, Tuple, Optional, Callable
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
-from synkit.Rule.rule_utils import strip_context
+from synkit.Rule.Modify.rule_utils import strip_context
 from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
 from synkit.Graph.Cluster.rule_morphism import rule_isomorphism
 

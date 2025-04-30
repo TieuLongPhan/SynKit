@@ -2,7 +2,7 @@ import unittest
 from synkit.IO.dg_to_gml import DGToGML
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Reactor.reactor_engine import ReactorEngine
+from synkit.Synthesis.Reactor.reactor_engine import ReactorEngine
 
 
 class TestGMLToNX(unittest.TestCase):

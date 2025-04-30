@@ -1,19 +1,46 @@
-import networkx as nx
+"""syn_rule.py
+================
+Immutable description of a reaction template (SynRule) with canonical forms
+and optional implicit‐hydrogen stripping.
+
+Key features
+------------
+* **Fragment decomposition** – splits the ITS graph into rc, left, and right.
+* **Implicit H‐handling** – converts explicit H nodes into hcount + h_pairs.
+* **Canonicalisation** – wraps rc/left/right in SynGraph for stable signatures.
+* **Value‑object semantics** – `__eq__`/`__hash__` use fragment signatures.
+
+Quick start
+-----------
+>>> from synkit.Graph.syn_rule import SynRule
+>>> rule = SynRule.from_smart("[CH3:1]C>>[CH2:1]C")
+>>> rule.left.signature, rule.right.signature
+('abc123...', 'def456...')
+
+"""
+
+from __future__ import annotations
 from typing import Optional, Tuple
-from synkit.IO.chem_converter import rsmi_to_its, gml_to_its
-from synkit.Graph.ITS.its_decompose import its_decompose
+
+import networkx as nx
+
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
+from synkit.Graph.ITS.its_decompose import its_decompose
+
+from synkit.IO.chem_converter import rsmi_to_its, gml_to_its
+
+__all__ = ["SynRule"]
 
 
 class SynRule:
     """
-    Immutable description of a reaction template.
+    Immutable reaction template: rc, left, and right fragments as SynGraph Object.
 
     Parameters
     ----------
     rc_graph : nx.Graph
-        Raw reaction-centre (ITS) graph.
+        Raw reaction-centre (RC) graph.
     name : str, default ``"rule"``
         Identifier for the rule.
     canonicaliser : Optional[GraphCanonicaliser]
@@ -25,12 +52,16 @@ class SynRule:
         integer ``hcount`` attribute and record cross-fragment hydrogen pairs
         in a ``h_pairs`` attribute.
 
-    Notes
-    -----
-    •  **rc**, **left**, and **right** are always returned as
-       :class:`~synkit.Graph.syn_graph.SynGraph` wrappers.
-    •  ``canonical_smiles`` is a pair of hex digests *(left, right)*
-       when *canon=True*; otherwise ``None``.
+    Attributes
+    ----------
+    rc : SynGraph
+        Wrapped reaction‐centre graph.
+    left : SynGraph
+        Wrapped left fragment.
+    right : SynGraph
+        Wrapped right fragment.
+    canonical_smiles : Optional[Tuple[str,str]]
+        Pair of left/right fragment SHA‐256 signatures (or None if canon=False).
     """
 
     # ------------------------------------------------------------------ #
@@ -46,7 +77,7 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
     ) -> "SynRule":
-        """Build from an ITS-compatible reaction **SMILES/SMARTS** string."""
+        """Instantiate from a SMARTS string."""
         return cls(
             rsmi_to_its(smart),
             name=name,
@@ -65,7 +96,7 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
     ) -> "SynRule":
-        """Build from a **GML** string."""
+        """Instantiate from a GML string."""
         return cls(
             gml_to_its(gml),
             name=name,
@@ -91,14 +122,15 @@ class SynRule:
         self._implicit_h = implicit_h
         self._canonicaliser = canonicaliser or GraphCanonicaliser()
 
-        # ---------- split into fragments BEFORE any wrapping ------------ #
+        # Fragment decomposition
         rc_graph = rc.copy()
         left_graph, right_graph = its_decompose(rc_graph)
 
+        # Optional H-stripping
         if self._implicit_h:
             self._strip_explicit_h(rc_graph, left_graph, right_graph)
 
-        # rc_graph = ITSConstruction().ITSGraph(left_graph, right_graph)
+        # Update typesGH tuples with new hcount
         for node, att in rc_graph.nodes(data=True):
             # unpack the old tuples
             t0, t1 = att["typesGH"]
@@ -207,7 +239,7 @@ class SynRule:
         )
 
     # ================================================================== #
-    # Convenience                                                        #
+    # Public API                                                         #
     # ================================================================== #
     def help(self) -> None:
         """Pretty-print raw / canonical contents for quick inspection."""
