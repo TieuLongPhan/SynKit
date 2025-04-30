@@ -9,7 +9,7 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.nx_to_gml import NXToGML
 from synkit.IO.gml_to_nx import GMLToNX
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
-from synkit.Graph.hydrogen import implicit_hydrogen
+from synkit.Graph.Hyrogen._misc import implicit_hydrogen
 
 
 logger = setup_logging()
@@ -111,66 +111,6 @@ def rsmi_to_graph(
         return (None, None)
 
 
-# def graph_to_rsmi(
-#     r: nx.Graph,
-#     p: nx.Graph,
-#     its: nx.Graph,
-#     sanitize: bool = True,
-#     explicit_hydrogen: bool = False,
-#     ignore_hcount_inference: bool = False,
-# ) -> str:
-#     """
-#     Converts graph representations of reactants and products into a
-#     reaction SMILES string.
-
-#     Parameters:
-#     - r (nx.Graph): Graph of the reactants.
-#     - p (nx.Graph): Graph of the products.
-#     - its (nx.Graph): Intermediate transition state graph, relevant for hydrogen count
-#     inference.
-#     - sanitize (bool): Specifies whether the molecule should be sanitized upon conversion.
-#     - explicit_hydrogen (bool): Controls whether hydrogens are explicitly represented in
-#     the output.
-#     - ignore_hcount_inference (bool): If false, hydrogens counts are inferred from
-#     the ITS graph.
-
-#     Returns:
-#     - str: Reaction SMILES string representing the conversion from reactants to products.
-#     """
-#     # Initialize a GraphToMol converter
-#     converter = GraphToMol()
-
-#     if not explicit_hydrogen:
-#         # Decide whether to infer hydrogen count based on the ITS graph
-#         if ignore_hcount_inference:
-#             r_mol = converter.graph_to_mol(r, sanitize=sanitize, use_h_count=True)
-#             p_mol = converter.graph_to_mol(p, sanitize=sanitize, use_h_count=True)
-#         else:
-#             rc = get_rc(its)
-#             r = remove_explicit_hydrogen(r, rc.nodes())
-#             p = remove_explicit_hydrogen(p, rc.nodes())
-#             r_mol = converter.graph_to_mol(r, sanitize=sanitize, use_h_count=True)
-#             p_mol = converter.graph_to_mol(p, sanitize=sanitize, use_h_count=True)
-#     else:
-#         r_mol = converter.graph_to_mol(
-#             r, sanitize=sanitize, use_h_count=ignore_hcount_inference
-#         )
-#         p_mol = converter.graph_to_mol(
-#             p, sanitize=sanitize, use_h_count=ignore_hcount_inference
-#         )
-
-#     # Convert RDKit Mol objects to SMILES and format them into a reaction SMILES string
-#     try:
-#         r_smiles = Chem.MolToSmiles(r_mol)
-#         p_smiles = Chem.MolToSmiles(p_mol)
-#         reaction_smiles = f"{r_smiles}>>{p_smiles}"
-#     except Exception as e:
-#         # Handle errors gracefully
-#         reaction_smiles = "Error in generating SMILES: " + str(e)
-
-#     return reaction_smiles
-
-
 def graph_to_smi(graph: nx.Graph, sanitize: bool = True, preserve_atom_maps: list = []):
     """
     Converts a NetworkX graph to a SMILES string.
@@ -196,6 +136,7 @@ def graph_to_smi(graph: nx.Graph, sanitize: bool = True, preserve_atom_maps: lis
         return Chem.MolToSmiles(mol)
     except Exception as e:
         return f"Error in generating SMILES: {str(e)}"
+        # return ''
 
 
 def graph_to_rsmi(

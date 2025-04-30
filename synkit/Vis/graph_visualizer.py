@@ -63,6 +63,7 @@ class GraphVisualizer:
         aam_key: str = "atom_map",
         standard_order_key: str = "standard_order",
         font_size: int = 12,
+        og: bool = False,
         rule: bool = False,  # New option to remove edges with specific colors
     ):
         """
@@ -103,8 +104,8 @@ class GraphVisualizer:
             edge_colors = [
                 (
                     "red"
-                    if data.get(standard_order_key, 0) > 0
-                    else "green" if data.get(standard_order_key, 0) < 0 else "black"
+                    if (val := data.get(standard_order_key, 0)) > 0
+                    else "green" if val < 0 else "violet" if og else "black"
                 )
                 for _, _, data in its.edges(data=True)
             ]
@@ -126,8 +127,8 @@ class GraphVisualizer:
                 edge_colors = [
                     (
                         "red"
-                        if data.get(standard_order_key, 0) > 0
-                        else "green" if data.get(standard_order_key, 0) < 0 else "black"
+                        if (val := data.get(standard_order_key, 0)) > 0
+                        else "green" if val < 0 else "violet" if og else "black"
                     )
                     for _, _, data in its.edges(data=True)
                 ]
@@ -151,7 +152,7 @@ class GraphVisualizer:
             )
             for n, d in its.nodes(data=True)
         }
-        edge_labels = self._determine_edge_labels(its, bond_char, bond_key)
+        edge_labels = self._determine_edge_labels(its, bond_char, bond_key, og)
 
         nx.draw_networkx_labels(
             its, positions, labels=labels, font_size=font_size, ax=ax
@@ -174,7 +175,7 @@ class GraphVisualizer:
         return positions
 
     def _determine_edge_labels(
-        self, its: nx.Graph, bond_char: dict, bond_key: str
+        self, its: nx.Graph, bond_char: dict, bond_key: str, og: bool = False
     ) -> dict:
         edge_labels = {}
         for u, v, data in its.edges(data=True):
@@ -182,8 +183,11 @@ class GraphVisualizer:
             bc1, bc2 = bond_char.get(bond_codes[0], "∅"), bond_char.get(
                 bond_codes[1], "∅"
             )
-            if bc1 != bc2:
+            if og:
                 edge_labels[(u, v)] = f"({bc1},{bc2})"
+            else:
+                if bc1 != bc2:
+                    edge_labels[(u, v)] = f"({bc1},{bc2})"
         return edge_labels
 
     def plot_as_mol(

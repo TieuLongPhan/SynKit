@@ -1,7 +1,7 @@
 import os
 import logging
 import warnings
-from rdkit import rdBase
+from rdkit import rdBase, RDLogger
 
 
 def setup_logging(log_level: str = "INFO", log_filename: str = None) -> logging.Logger:
@@ -73,6 +73,7 @@ def configure_warnings_and_logs(
     if disable_rdkit_logs:
         rdBase.DisableLog("rdApp.error")
         rdBase.DisableLog("rdApp.warning")
+        RDLogger.DisableLog("rdApp.warning")
     else:
         rdBase.EnableLog("rdApp.error")
         rdBase.EnableLog("rdApp.warning")

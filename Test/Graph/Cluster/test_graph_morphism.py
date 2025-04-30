@@ -2,7 +2,12 @@ import unittest
 from synkit.IO.data_io import load_from_pickle
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Graph.ITS.its_decompose import get_rc
-from synkit.Graph.Cluster.graph_morphism import graph_isomorphism, subgraph_isomorphism
+from synkit.Graph.Cluster.graph_morphism import (
+    graph_isomorphism,
+    subgraph_isomorphism,
+    maximum_connected_common_subgraph,
+    heuristics_MCCS,
+)
 
 
 class TestGraphMorphism(unittest.TestCase):
@@ -45,6 +50,21 @@ class TestGraphMorphism(unittest.TestCase):
         # not induce subgraph
         result = subgraph_isomorphism(self.rc, self.its, check_type="induced")
         self.assertFalse(result)
+
+    def test_maximum_connected_common_subgraph(self):
+        mcs = maximum_connected_common_subgraph(
+            self.graphs[0]["RC"], self.graphs[1]["RC"]
+        )
+        self.assertEqual(mcs.number_of_nodes(), 3)
+        self.assertGreater(
+            self.graphs[0]["RC"].number_of_nodes(), mcs.number_of_nodes()
+        )
+
+    def test_heuristics_MCCS(self):
+        graphs = [value["RC"] for value in self.graphs]
+        mcs = heuristics_MCCS(graphs[:3])
+        self.assertEqual(mcs.number_of_nodes(), 1)
+        self.assertGreater(graphs[0].number_of_nodes(), mcs.number_of_nodes())
 
 
 if __name__ == "__main__":
