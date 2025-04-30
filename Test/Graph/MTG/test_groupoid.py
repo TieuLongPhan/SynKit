@@ -78,7 +78,7 @@ class TestGroupoid(unittest.TestCase):
         m1 = edge_constraint(
             self.test_graph_1[0].edges(data=True), self.test_graph_1[1].edges(data=True)
         )
-        self.assertEqual(len(m1), 321)
+        self.assertEqual(len(m1), 46)
 
         m2 = edge_constraint(
             self.test_graph_2[0].edges(data=True), self.test_graph_2[1].edges(data=True)
@@ -94,7 +94,7 @@ class TestGroupoid(unittest.TestCase):
             self.test_graph_1[1].edges(data=True),
             m0,
         )
-        self.assertEqual(len(m1), 6)
+        self.assertEqual(len(m1), 4)
 
         m0 = node_constraint(
             self.test_graph_2[0].nodes(data=True), self.test_graph_2[1].nodes(data=True)

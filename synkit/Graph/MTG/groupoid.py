@@ -480,8 +480,8 @@ def edge_constraint(
     edges2: Iterable[Edge],
     node_mapping: Optional[Mapping[NodeId, List[NodeId]]] = None,
     *,
-    algorithm: str = "vf2",
-    mcs: bool = True,
+    algorithm: str = "bt",
+    mcs: bool = False,
 ) -> MappingList:
     """Return node‑mappings under the groupoid order rule.
 

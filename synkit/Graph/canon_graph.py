@@ -21,7 +21,7 @@ Quick start
 >>> G.add_node(1, element="C"); G.add_node(2, element="O")
 >>> G.add_edge(1, 2, order=1)
 >>> canon = GraphCanonicaliser().canonicalise_graph(G)
->>> canon.canonical_smiles  # the SHA‑256 digest
+>>> canon.canonical_hash  # the SHA‑256 digest
 '0df9e34a7c3cd9b35c0ba5f5cbe7598e'
 >>> # Get the canonicalised graph (nodes renumbered & sorted):
 >>> CG = canon.canonical_graph
@@ -56,7 +56,7 @@ def _node_key(node_id: Any, data: Dict[str, Any]) -> Tuple:
         data.get("atom_map", 0),
         data.get("hcount", 0),
         tuple(data.get("typesGH", ())),
-        # node_id,
+        node_id,
     )
 
 
@@ -92,24 +92,21 @@ class GraphCanonicaliser:
         self._edge_sort_key = edge_sort_key
 
     def canonical_signature(self, graph: nx.Graph) -> str:
-        """Compute stable SHA‑256 digest for *graph*."""
-        nodes_sorted = sorted(
-            graph.nodes(data=True), key=lambda x: self._node_sort_key(*x)
+        """Compute SHA‑256 signature after relabeling nodes/edges canonically."""
+        # first create a canonical graph (reindexed nodes)
+        canon = self.make_canonical_graph(graph)
+        # serialize nodes and edges of the canonical graph
+        nodes = sorted(canon.nodes(data=True), key=lambda x: self._node_sort_key(*x))
+        edges = sorted(canon.edges(data=True), key=lambda x: self._edge_sort_key(*x))
+        node_str = ";".join(
+            f"{nid}:{self._node_sort_key(nid,data)}" for nid, data in nodes
         )
-        edges_sorted = sorted(
-            graph.edges(data=True), key=lambda x: self._edge_sort_key(*x)
+        edge_str = ";".join(
+            f"{(u,v)}:{self._edge_sort_key(u,v,data)}" for u, v, data in edges
         )
+        return _digest(f"N[{node_str}]|E[{edge_str}]")
 
-        node_repr = ";".join(
-            f"{nid}:{self._node_sort_key(nid,data)}" for nid, data in nodes_sorted
-        )
-        edge_repr = ";".join(
-            f"{sorted((u,v))}:{self._edge_sort_key(u,v,data)}"
-            for u, v, data in edges_sorted
-        )
-        return _digest(f"N[{node_repr}]|E[{edge_repr}]")
-
-    graph_canonical_smiles = canonical_signature  # alias
+    graph_canonical_hash = canonical_signature  # alias
 
     def make_canonical_graph(self, graph: nx.Graph) -> nx.Graph:
         """Return a new, re‑labelled graph whose nodes and edges are
@@ -139,7 +136,7 @@ class GraphCanonicaliser:
         return tuple(
             sorted(
                 (self.canonicalise_graph(g) for g in graphs),
-                key=lambda x: x.canonical_smiles,
+                key=lambda x: x.canonical_hash,
             )
         )
 
@@ -163,22 +160,22 @@ class CanonicalGraph:
     def __init__(self, graph: nx.Graph, canon: GraphCanonicaliser) -> None:
         self._original: nx.Graph = graph
         self._canonical_graph: nx.Graph = canon.make_canonical_graph(graph)
-        self._canonical_smiles: str = canon.canonical_signature(graph)
+        self._canonical_hash: str = canon.canonical_signature(self._canonical_graph)
 
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, CanonicalGraph)
-            and self.canonical_smiles == other.canonical_smiles
+            and self.canonical_hash == other.canonical_hash
         )
 
     def __hash__(self) -> int:
-        return hash(self.canonical_smiles)
+        return hash(self.canonical_hash)
 
     def __str__(self) -> str:
         return (
             f"<CanonicalGraph nodes={self._canonical_graph.number_of_nodes()}"
             f" edges={self._canonical_graph.number_of_edges()}"
-            f" sig={self.canonical_smiles[:8]}>"
+            f" sig={self.canonical_hash[:8]}>"
         )
 
     __repr__ = __str__
@@ -194,9 +191,9 @@ class CanonicalGraph:
         return self._canonical_graph
 
     @property
-    def canonical_smiles(self) -> str:
+    def canonical_hash(self) -> str:
         """32‑hex‑char SHA‑256 digest serving as canonical ID."""
-        return self._canonical_smiles
+        return self._canonical_hash
 
     def help(self) -> None:
         """Print original & canonical graphs' nodes/edges."""

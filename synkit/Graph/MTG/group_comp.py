@@ -106,7 +106,7 @@ class GroupComp:
         self,
         *,
         include_singleton: bool = False,
-        algorithm: str = "generic",
+        algorithm: str = "bt",
         mcs: bool = False,
     ) -> MappingList:
         """Return all *groupoid‑legal* node‑mappings between G1 and G2.

@@ -1,12 +1,36 @@
+"""synkit.Graph.syn_graph
+======================
+
+Wrapper around `networkx.Graph` providing both original and canonical forms,
+plus a SHA‑256 signature for fast isomorphism checks.
+
+Key features
+------------
+* **Value‑object semantics** – `__eq__` and `__hash__` use the canonical signature,
+  so graphs can be used in sets/dicts.
+* **Lazy canonicalisation** – canonical graph & signature are computed once on demand
+  (cached internally) to avoid upfront cost when not needed.
+* **Transparent delegation** – any unknown attribute/method is forwarded to the raw graph.
+
+Example
+-------
+>>> G = nx.Graph(); G.add_node(1, element='C')
+>>> SG = SynGraph(G)
+>>> SG.signature   # 32‑hex SHA‑256 digest
+'8dc1f7b843e447ff4b67bf0ccc175f63'
+>>> SG.canonical  # relabelled, sorted graph
+<networkx.Graph with 1 nodes>
+>>>
+"""
+
+from __future__ import annotations
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
+
 import networkx as nx
-from typing import (
-    Any,
-    Optional,
-    Iterable,
-    Tuple,
-    Union,
-)
+
 from synkit.Graph.canon_graph import GraphCanonicaliser
+
+__all__ = ["SynGraph"]
 
 
 class SynGraph:
@@ -51,13 +75,11 @@ class SynGraph:
         self._do_canon: bool = canon
 
         if self._do_canon:
-            # build & store canonical graph + signature
+            # build & store canonical graph
             self._canonical: nx.Graph = self._canonicaliser.make_canonical_graph(graph)
-            self._signature: str = self._canonicaliser.canonical_signature(graph)
         else:
             # skip canonicalisation
             self._canonical = None
-            self._signature = None
 
     def __getattr__(self, name: str) -> Any:
         """
@@ -92,58 +114,53 @@ class SynGraph:
     @property
     def signature(self) -> Optional[str]:
         """SHA-256 hex digest of the canonical form, or None."""
-        return self._signature
+        return self._canonicaliser.canonical_signature(self._raw)
 
-    def get_nodes(self, data: bool = True) -> Iterable[Union[Any, Tuple[Any, dict]]]:
+    def get_nodes(
+        self, data: bool = True
+    ) -> Iterable[Union[Any, Tuple[Any, Dict[str, Any]]]]:
         """
-        Return nodes from the graph.
+        Yield nodes from the original graph.
 
-        Parameters:
-        - data (bool): If True, yields (node, data_dict);
-                       otherwise yields just node IDs.
+        Parameters
+        ----------
+        data : bool, default True
+            If True, yield (node, data_dict), else just node IDs.
         """
         return self._raw.nodes(data=data)
 
     def get_edges(
         self, data: bool = True
-    ) -> Iterable[Union[Tuple[Any, Any], Tuple[Any, Any, dict]]]:
+    ) -> Iterable[Union[Tuple[Any, Any], Tuple[Any, Any, Dict[str, Any]]]]:
         """
-        Return edges from the graph.
+        Yield edges from the original graph.
 
-        Parameters:
-        - data (bool): If True, yields (u, v, data_dict);
-                       otherwise yields (u, v) pairs.
+        Parameters
+        ----------
+        data : bool, default True
+            If True, yield (u, v, data_dict), else just (u, v).
         """
         return self._raw.edges(data=data)
 
     def __repr__(self) -> str:
-        """
-        Compact summary:
-          SynGraph(|V|={v1}, |E|={e1})
-
-        Where:
-        - v1 = number of nodes in the raw graph
-        - e1 = number of edges in the raw graph
-        """
         try:
-            v1 = self._raw.number_of_nodes()
-            e1 = self._raw.number_of_edges()
+            v = self._raw.number_of_nodes()
+            e = self._raw.number_of_edges()
         except Exception:
-            v1 = e1 = 0
-
-        return f"SynGraph(|V|={v1}, |E|={e1})"
+            v = e = 0
+        return f"<SynGraph |V|={v} |E|={e} sig={self.signature[:8]}>"
 
     def help(self) -> None:
         """
-        Print a quick reference for the SynGraph API.
+        Print a summary of the SynGraph API.
         """
         print(
             "SynGraph Help\n"
-            "-------------\n"
-            "raw            original networkx.Graph\n"
-            "canonical      canonicalized networkx.Graph (or None)\n"
-            "signature      SHA-256 hex digest (or None)\n"
-            "get_nodes()    nodes (with data by default)\n"
-            "get_edges()    edges (with data by default)\n"
-            "Any other attribute is forwarded to .raw\n"
+            "----------\n"
+            "raw          original networkx.Graph\n"
+            "canonical    canonical networkx.Graph\n"
+            "signature    SHA-256 hex digest\n"
+            "get_nodes()  nodes (with data)\n"
+            "get_edges()  edges (with data)\n"
+            "__eq__/__hash__ use signature for comparisons"
         )

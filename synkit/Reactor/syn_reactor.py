@@ -30,7 +30,7 @@ from synkit.IO.chem_converter import (
     graph_to_smi,
 )
 
-from synkit.Graph.syn_rule import SynRule
+from synkit.Rule.syn_rule import SynRule
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose

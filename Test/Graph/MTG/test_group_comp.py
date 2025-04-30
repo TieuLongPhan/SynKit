@@ -21,12 +21,12 @@ class TestGroupComp(unittest.TestCase):
     def test_get_mapping(self):
         g = GroupComp(self.test_graph_1[0], self.test_graph_1[1])
         m = g.get_mapping(include_singleton=False)
-        self.assertEqual(len(m), 6)
+        self.assertEqual(len(m), 4)
 
     def test_get_mapping_singleton(self):
         g = GroupComp(self.test_graph_1[0], self.test_graph_1[1])
         m = g.get_mapping(include_singleton=True)
-        self.assertEqual(len(m), 12)
+        self.assertEqual(len(m), 10)
 
     def test_get_mapping_from_nodes(self):
         m0 = node_constraint(
