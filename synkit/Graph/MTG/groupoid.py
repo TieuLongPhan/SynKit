@@ -1,7 +1,7 @@
 from __future__ import annotations
 import networkx as nx
 from collections import defaultdict
-from typing import Iterable, Mapping, List, Dict, Any, Tuple, TypeVar, Optional, Set
+from typing import Iterable, Mapping, List, Dict, Any, Tuple, Optional, Set, FrozenSet
 
 # ==============================================================================
 # Type Aliases
@@ -146,7 +146,7 @@ def _edge_constraint_backtracking(
 
     # 4. convert → mapping list & dedupe ------------------------------------
     mappings: MappingList = []
-    seen: Set[frozenset] = set()
+    seen: Set[FrozenSet] = set()
     for match_set in pair_sets:
         m: Dict[NodeId, NodeId] = {}
         for (u1, v1, _), (u2, v2, _) in match_set:
@@ -247,7 +247,7 @@ def _edge_constraint_vf2(
 
     # --- dedupe automorphisms & sort keys ---
     uniq: MappingList = []
-    seen: Set[frozenset] = set()
+    seen: Set[FrozenSet] = set()
     for m in best:
         key = frozenset(m.items())
         if key in seen:
@@ -290,39 +290,41 @@ def _edge_constraint_vf3(
     if not seeds:
         return []
 
-    # 2. DFS grouping
-    best: List[Dict[NodeId, NodeId]] = []
-    max_edges = 0
+    # 2. DFS grouping without nonlocal by using a state dict
+    state: Dict[str, Any] = {"best": [], "max_edges": 0}
 
     def _dfs(idx: int, current: Dict[NodeId, NodeId]):
-        nonlocal best, max_edges
+        # mutate state instead of nonlocal
         if idx == len(seeds):
             edges = len(current) // 2
             if edges == 0:
                 return
-            if edges > max_edges:
-                max_edges = edges
-                best = [current.copy()]
-            elif edges == max_edges:
-                best.append(current.copy())
+            if edges > state["max_edges"]:
+                state["max_edges"] = edges
+                state["best"] = [current.copy()]
+            elif edges == state["max_edges"]:
+                state["best"].append(current.copy())
             return
+
         cand = seeds[idx]
+        # include this seed if no conflicts
         if not (
             set(cand.keys()) & current.keys()
             or set(cand.values()) & set(current.values())
         ):
             _dfs(idx + 1, {**current, **cand})
+        # always try skipping
         _dfs(idx + 1, current)
 
     _dfs(0, {})
 
-    # dedupe
+    # 3. dedupe
     uniq: MappingList = []
-    seen: Set[frozenset] = set()
-    for m in best:
-        k = frozenset(m.items())
-        if k not in seen:
-            seen.add(k)
+    seen: Set[FrozenSet] = set()
+    for m in state["best"]:
+        key = frozenset(m.items())
+        if key not in seen:
+            seen.add(key)
             uniq.append(m)
     return uniq
 
@@ -344,7 +346,7 @@ def edge_constraint(
 
     Parameters
     ----------
-    algorithm : {'vf2', 'vf3', 'bt'}, default 'vf2'
+    algorithm : {'vf2', 'vf3', 'bt'}, default 'bt'
         Which internal strategy to use.
     mcs : bool, default True
         Only for ``algorithm='bt'`` – if ``True`` keep maximum‑edge mappings, else
@@ -355,5 +357,4 @@ def edge_constraint(
         return _edge_constraint_vf3(edges1, edges2, node_mapping)
     if alg == "bt" or alg == "backtracking":
         return _edge_constraint_backtracking(edges1, edges2, node_mapping, mcs=mcs)
-    # default VF2
     return _edge_constraint_vf2(edges1, edges2, node_mapping)
