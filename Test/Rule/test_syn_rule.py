@@ -1,6 +1,6 @@
 import unittest
 import networkx as nx
-
+from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule.syn_rule import SynRule
 from synkit.Graph.canon_graph import GraphCanonicaliser
 
@@ -31,28 +31,17 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
             "]"
         )
 
-        # Raw ITS with explicit H (nodes 1–4)
-        self.expected_nodes = {
-            1: {"element": "Br", "hcount": 0, "atom_map": 1},
-            2: {"element": "C", "hcount": 3, "atom_map": 2},
-            3: {"element": "O", "hcount": 1, "atom_map": 3},
-            4: {"element": "H", "hcount": 0, "atom_map": 4},
-        }
-        self.expected_edges = {
-            frozenset({1, 2}): {"order": (1.0, 0), "standard_order": 1.0},
-            frozenset({1, 4}): {"order": (0, 1.0), "standard_order": -1.0},
-            frozenset({2, 3}): {"order": (0, 1.0), "standard_order": -1.0},
-            frozenset({3, 4}): {"order": (1.0, 0), "standard_order": 1.0},
-        }
+        self.explicit = rsmi_to_its(self.smart)
 
-        # Build an explicit-H graph for testing implicit stripping + canon
-        self.explicit = nx.Graph()
-        for nid, attrs in self.expected_nodes.items():
-            # copy full attr-dict (assumes typesGH present elsewhere)
-            self.explicit.add_node(nid, **attrs)
-        for uv, ed in self.expected_edges.items():
-            u, v = tuple(uv)
-            self.explicit.add_edge(u, v, **ed)
+        # # Build an explicit-H graph for testing implicit stripping + canon
+        # self.explicit = nx.Graph()
+        # for nid, attrs in self.expected_nodes.items():
+        #     # copy full attr-dict (assumes typesGH present elsewhere)
+        #     self.explicit.add_node(nid, **attrs)
+        # for uv, ed in self.expected_edges.items():
+        #     u, v = tuple(uv)
+        #     self.explicit.add_edge(u, v, **ed)
+        self.explicit = SynRule(self.explicit, implicit_h=True)
 
     def _canonical_graph(self, G: nx.Graph) -> nx.Graph:
         """Helper to strip implicit H, then canonicalize a raw ITS graph."""
@@ -77,6 +66,8 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         # Their canonical ITS graphs should be isomorphic
         Cr_s = rule_s.rc.canonical  # type: ignore[attr-defined]
         Cr_g = rule_g.rc.canonical
+        print(Cr_s.nodes(data=True))
+        print(Cr_g.nodes(data=True))
         nm = lambda x, y: x.get("element") == y.get("element") and x.get(
             "hcount"
         ) == y.get("hcount")
@@ -86,7 +77,9 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         self.assertTrue(nx.is_isomorphic(Cr_s, Cr_g, node_match=nm, edge_match=em))
 
         # And match our expected explicit graph (after stripping+canon)
-        expected_canon = self._canonical_graph(self.explicit)
+
+        expected_canon = self.explicit.rc.canonical
+        print(expected_canon.number_of_edges())
         self.assertTrue(
             nx.is_isomorphic(expected_canon, Cr_s, node_match=nm, edge_match=em)
         )

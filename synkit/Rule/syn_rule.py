@@ -155,52 +155,116 @@ class SynRule:
     # Private utilities                                                  #
     # ================================================================== #
     @staticmethod
+    # def _strip_explicit_h(
+    #     rc: nx.Graph,
+    #     left: nx.Graph,
+    #     right: nx.Graph,
+    # ) -> None:
+    #     """
+    #     Remove explicit hydrogens from *rc*, *left*, *right* and:
+
+    #     1. Ensure every heavy atom has ``hcount`` (initialised to 0).
+    #     2. For each shared hydrogen *H* appearing in **both** *left* and *right*:
+    #        • increment ``hcount`` on its neighbours in each fragment
+    #        • assign an integer pair-ID to the neighbours’ ``h_pairs`` list
+    #     3. Delete *H* from all three graphs (and associated edges).
+
+    #     The pair-ID (1, 2, …) is assigned in sorted **H-node** order, providing
+    #     reproducible numbering across runs.
+    #     """
+    #     # 1) ensure hcount exists
+    #     for g in (rc, left, right):
+    #         for _, data in g.nodes(data=True):
+    #             data["hcount"] = 0
+
+    #     # 2) shared hydrogens (present in both left & right)
+    #     shared_H = sorted(
+    #         n
+    #         for n, d in left.nodes(data=True)
+    #         if d.get("element") == "H" and right.has_node(n)
+    #     )
+
+    #     pair_id = 1
+    #     for h in shared_H:
+    #         # tag neighbours in *all* graphs
+    #         for g in (left, right, rc):
+    #             if g.has_node(h):
+    #                 for nbr in g.neighbors(h):
+    #                     g.nodes[nbr]["hcount"] += 1
+    #                     g.nodes[nbr].setdefault("h_pairs", []).append(pair_id)
+    #                 g.remove_node(h)
+    #         pair_id += 1
+
+    #     # 3) any remaining explicit H unique to one graph
+    #     for g in (rc, left, right):
+    #         lone_H = [n for n, d in g.nodes(data=True) if d.get("element") == "H"]
+    #         for h in lone_H:
+    #             for nbr in g.neighbors(h):
+    #                 g.nodes[nbr]["hcount"] += 1
+    #             g.remove_node(h)
     def _strip_explicit_h(
         rc: nx.Graph,
         left: nx.Graph,
         right: nx.Graph,
     ) -> None:
         """
-        Remove explicit hydrogens from *rc*, *left*, *right* and:
-
-        1. Ensure every heavy atom has ``hcount`` (initialised to 0).
-        2. For each shared hydrogen *H* appearing in **both** *left* and *right*:
-           • increment ``hcount`` on its neighbours in each fragment
-           • assign an integer pair-ID to the neighbours’ ``h_pairs`` list
-        3. Delete *H* from all three graphs (and associated edges).
-
-        The pair-ID (1, 2, …) is assigned in sorted **H-node** order, providing
-        reproducible numbering across runs.
+        Remove explicit hydrogens from rc, left, right—but only when *both*
+        left & right agree the H should be implicit.  Otherwise an H remains
+        explicit in all three graphs.
         """
-        # 1) ensure hcount exists
-        for g in (rc, left, right):
-            for _, data in g.nodes(data=True):
-                data["hcount"] = 0
 
-        # 2) shared hydrogens (present in both left & right)
-        shared_H = sorted(
+        def _removable_on(graph: nx.Graph, h: str) -> bool:
+            # H+ (no neighbors) ⇒ not removable
+            nbrs = list(graph.neighbors(h))
+            if not nbrs:
+                return False
+            # H–H only ⇒ not removable
+            if all(graph.nodes[n].get("element") == "H" for n in nbrs):
+                return False
+            # otherwise bonded to ≥1 heavy ⇒ removable
+            return True
+
+        def _fully_removable(h: str) -> bool:
+            # only remove if BOTH left and right say removable
+            return _removable_on(left, h) and _removable_on(right, h)
+
+        # 1) initialize hcount & h_pairs
+        for g in (rc, left, right):
+            for n, data in g.nodes(data=True):
+                data["hcount"] = 0
+                if data.get("element") != "H":
+                    data.setdefault("h_pairs", [])
+
+        # 2) shared H: only those removable on both sides
+        shared = sorted(
             n
             for n, d in left.nodes(data=True)
-            if d.get("element") == "H" and right.has_node(n)
+            if d.get("element") == "H" and right.has_node(n) and _fully_removable(n)
         )
 
         pair_id = 1
-        for h in shared_H:
-            # tag neighbours in *all* graphs
+        for h in shared:
             for g in (left, right, rc):
-                if g.has_node(h):
-                    for nbr in g.neighbors(h):
+                if not g.has_node(h):
+                    continue
+                for nbr in list(g.neighbors(h)):
+                    if g.nodes[nbr].get("element") != "H":
                         g.nodes[nbr]["hcount"] += 1
+                        # only shared H get pair-IDs
                         g.nodes[nbr].setdefault("h_pairs", []).append(pair_id)
-                    g.remove_node(h)
+                g.remove_node(h)
             pair_id += 1
 
-        # 3) any remaining explicit H unique to one graph
+        # 3) remaining explicit H in any graph: strip only if fully_removable
         for g in (rc, left, right):
-            lone_H = [n for n, d in g.nodes(data=True) if d.get("element") == "H"]
-            for h in lone_H:
-                for nbr in g.neighbors(h):
-                    g.nodes[nbr]["hcount"] += 1
+            for h in [n for n, d in g.nodes(data=True) if d.get("element") == "H"]:
+                if not _fully_removable(h):
+                    # at least one side wants to keep it explicit → skip
+                    continue
+                # else both agree → convert to implicit
+                for nbr in list(g.neighbors(h)):
+                    if g.nodes[nbr].get("element") != "H":
+                        g.nodes[nbr]["hcount"] += 1
                 g.remove_node(h)
 
     # ================================================================== #

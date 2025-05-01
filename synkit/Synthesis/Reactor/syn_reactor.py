@@ -375,6 +375,7 @@ class SynReactor:
         # 1) Record original Δ per atom and collect h_pair memberships.
         orig_delta: Dict[int, int] = {}
         pair_to_nodes: Dict[int, List[int]] = defaultdict(list)
+
         for n, d in rc.nodes(data=True):
             h_pairs = d.get("h_pairs", [])
             hl = d["typesGH"][0][2]
@@ -383,6 +384,8 @@ class SynReactor:
             for pid in h_pairs:
                 if n not in pair_to_nodes[pid]:
                     pair_to_nodes[pid].append(n)
+
+        # print(pair_to_nodes)
         # 2) Build connectivity graph of atoms sharing any PID.
         conn = nx.Graph()
         for nodes in pair_to_nodes.values():
@@ -421,10 +424,21 @@ class SynReactor:
             rc.add_edge(src, h, order=(1, 0), standard_order=1)
             rc.add_edge(h, dst, order=(0, 1), standard_order=-1)
 
-        affected = {n for nodes in pair_to_nodes.values() for n in nodes}
+        affected = [n for nodes in pair_to_nodes.values() for n in nodes]
+        # print(affected)
         for n in affected:
             t0, t1 = rc.nodes[n]["typesGH"]
-            rc.nodes[n]["typesGH"] = (t0[:2] + (0,) + t0[3:], t1[:2] + (0,) + t1[3:])
+            delta_h = t0[2] - t1[2]
+            if delta_h >= 0:
+                t0_h = t0[2] - 1
+                t1_h = t1[2]
+            else:
+                t0_h = t0[2]
+                t1_h = t1[2] - 1
+            rc.nodes[n]["typesGH"] = (
+                t0[:2] + (t0_h,) + t0[3:],
+                t1[:2] + (t1_h,) + t1[3:],
+            )
         return rc
 
     # ------------------------------------------------------------------
