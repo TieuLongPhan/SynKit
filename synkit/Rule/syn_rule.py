@@ -155,53 +155,6 @@ class SynRule:
     # Private utilities                                                  #
     # ================================================================== #
     @staticmethod
-    # def _strip_explicit_h(
-    #     rc: nx.Graph,
-    #     left: nx.Graph,
-    #     right: nx.Graph,
-    # ) -> None:
-    #     """
-    #     Remove explicit hydrogens from *rc*, *left*, *right* and:
-
-    #     1. Ensure every heavy atom has ``hcount`` (initialised to 0).
-    #     2. For each shared hydrogen *H* appearing in **both** *left* and *right*:
-    #        • increment ``hcount`` on its neighbours in each fragment
-    #        • assign an integer pair-ID to the neighbours’ ``h_pairs`` list
-    #     3. Delete *H* from all three graphs (and associated edges).
-
-    #     The pair-ID (1, 2, …) is assigned in sorted **H-node** order, providing
-    #     reproducible numbering across runs.
-    #     """
-    #     # 1) ensure hcount exists
-    #     for g in (rc, left, right):
-    #         for _, data in g.nodes(data=True):
-    #             data["hcount"] = 0
-
-    #     # 2) shared hydrogens (present in both left & right)
-    #     shared_H = sorted(
-    #         n
-    #         for n, d in left.nodes(data=True)
-    #         if d.get("element") == "H" and right.has_node(n)
-    #     )
-
-    #     pair_id = 1
-    #     for h in shared_H:
-    #         # tag neighbours in *all* graphs
-    #         for g in (left, right, rc):
-    #             if g.has_node(h):
-    #                 for nbr in g.neighbors(h):
-    #                     g.nodes[nbr]["hcount"] += 1
-    #                     g.nodes[nbr].setdefault("h_pairs", []).append(pair_id)
-    #                 g.remove_node(h)
-    #         pair_id += 1
-
-    #     # 3) any remaining explicit H unique to one graph
-    #     for g in (rc, left, right):
-    #         lone_H = [n for n, d in g.nodes(data=True) if d.get("element") == "H"]
-    #         for h in lone_H:
-    #             for nbr in g.neighbors(h):
-    #                 g.nodes[nbr]["hcount"] += 1
-    #             g.remove_node(h)
     def _strip_explicit_h(
         rc: nx.Graph,
         left: nx.Graph,

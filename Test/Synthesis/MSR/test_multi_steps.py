@@ -60,7 +60,6 @@ class TestMultiStep(unittest.TestCase):
         ]
         order = list(range(len(rule)))
         all_steps = MultiSteps().multi_step(self.rsmi, rule, order, test["cat"])
-        print(all_steps)
         self.assertTrue(
             all(m is not None for m in all_steps),
             "All mechanism steps should have valid mappings",

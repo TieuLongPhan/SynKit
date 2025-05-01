@@ -33,14 +33,6 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
 
         self.explicit = rsmi_to_its(self.smart)
 
-        # # Build an explicit-H graph for testing implicit stripping + canon
-        # self.explicit = nx.Graph()
-        # for nid, attrs in self.expected_nodes.items():
-        #     # copy full attr-dict (assumes typesGH present elsewhere)
-        #     self.explicit.add_node(nid, **attrs)
-        # for uv, ed in self.expected_edges.items():
-        #     u, v = tuple(uv)
-        #     self.explicit.add_edge(u, v, **ed)
         self.explicit = SynRule(self.explicit, implicit_h=True)
 
     def _canonical_graph(self, G: nx.Graph) -> nx.Graph:
@@ -66,22 +58,28 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         # Their canonical ITS graphs should be isomorphic
         Cr_s = rule_s.rc.canonical  # type: ignore[attr-defined]
         Cr_g = rule_g.rc.canonical
-        print(Cr_s.nodes(data=True))
-        print(Cr_g.nodes(data=True))
-        nm = lambda x, y: x.get("element") == y.get("element") and x.get(
-            "hcount"
-        ) == y.get("hcount")
-        em = lambda a, b: a.get("order") == b.get("order") and a.get(
-            "standard_order"
-        ) == b.get("standard_order")
-        self.assertTrue(nx.is_isomorphic(Cr_s, Cr_g, node_match=nm, edge_match=em))
 
-        # And match our expected explicit graph (after stripping+canon)
+        def node_match(n1_attrs, n2_attrs):
+            """
+            Match if element and hcount agree.
+            """
+            return n1_attrs.get("element") == n2_attrs.get("element") and n1_attrs.get(
+                "hcount"
+            ) == n2_attrs.get("hcount")
 
-        expected_canon = self.explicit.rc.canonical
-        print(expected_canon.number_of_edges())
+        def edge_match(e1_attrs, e2_attrs):
+            """
+            Match if bond order and standard_order agree.
+            """
+            return e1_attrs.get("order") == e2_attrs.get("order") and e1_attrs.get(
+                "standard_order"
+            ) == e2_attrs.get("standard_order")
+
+        iso = nx.is_isomorphic(Cr_s, Cr_g, node_match=node_match, edge_match=edge_match)
         self.assertTrue(
-            nx.is_isomorphic(expected_canon, Cr_s, node_match=nm, edge_match=em)
+            iso,
+            "Canonical ITS graphs from SMART and GML should be isomorphic "
+            "(mismatch in node or edge attributes)",
         )
 
     def test_str_repr(self):
