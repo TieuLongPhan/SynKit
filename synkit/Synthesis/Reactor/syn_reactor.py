@@ -34,6 +34,9 @@ from synkit.Rule.syn_rule import SynRule
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
+from synkit.Graph.ITS.its_construction import ITSConstruction
+
+from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
 
 
 __all__ = ["SynReactor"]
@@ -164,6 +167,8 @@ class SynReactor:
 
         # ---------- canonical SMARTS --------------------------------
         self.smarts: List[str] = [self._to_smarts(g) for g in self.its]
+        if self.invert:
+            self.smarts = [reverse_reaction(rsmi) for rsmi in self.smarts]
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -237,18 +242,60 @@ class SynReactor:
         if isinstance(obj, nx.Graph):
             return SynGraph(obj, GraphCanonicaliser())
         if isinstance(obj, str):
-            graph = smiles_to_graph(obj, use_index_as_atom_map=False)
+            graph = smiles_to_graph(
+                obj, use_index_as_atom_map=False, drop_non_aam=False
+            )
             return SynGraph(graph, GraphCanonicaliser())
         raise TypeError(f"Unsupported input type: {type(obj)}")
 
     def _wrap_template(self, tpl: Union[str, nx.Graph, "SynRule"]) -> SynRule:
-        if isinstance(tpl, SynRule):
+        """
+        Normalize and (optionally) invert a template into a SynRule.
+
+        - If tpl is already a SynRule and no inversion is requested, return it directly.
+        - Otherwise, convert tpl (str → Graph, SynRule → raw Graph, Graph → itself),
+        apply inversion if needed, and wrap in a new SynRule.
+        """
+        # Early return if no inversion and already a SynRule
+        if not self.invert and isinstance(tpl, SynRule):
             return tpl
-        if isinstance(tpl, nx.Graph):
-            return SynRule(tpl, canonicaliser=self._canonicaliser)
-        if isinstance(tpl, str):
-            return SynRule(rsmi_to_its(tpl), canonicaliser=self._canonicaliser)
-        raise TypeError(f"Unsupported template type: {type(tpl)}")
+
+        # Normalize input into a graph
+        if isinstance(tpl, SynRule):
+            graph = tpl.rc.raw
+        elif isinstance(tpl, nx.Graph):
+            graph = tpl
+        elif isinstance(tpl, str):
+            graph = rsmi_to_its(tpl)
+        else:
+            raise TypeError(f"Unsupported template type: {type(tpl)}")
+
+        # Invert if requested
+        if self.invert:
+            graph = self._invert_template(graph)
+
+        # Wrap in SynRule with the canonicaliser
+        return SynRule(graph, canonicaliser=self._canonicaliser)
+
+    def _invert_template(self, tpl: nx.Graph) -> nx.Graph:
+        """
+        Invert the given template graph by decomposing it into ITS components
+        and rebuilding them in reverse order.
+
+        - Decomposes the input template `tpl` into its left and right ITS subgraphs
+        via `its_decompose(tpl)`.
+        - Constructs a new ITS graph with the original right subgraph as the new left
+        and the original left subgraph as the new right, using `ITSConstruction().ITSGraph`.
+        - Does not modify the input graph; returns a fresh inverted graph.
+
+        Parameter:
+            tpl (nx.Graph): The template graph to invert.
+
+        Returns:
+            nx.Graph: A newly constructed ITS graph representing the inversion of `tpl`.
+        """
+        l, r = its_decompose(tpl)
+        return ITSConstruction().ITSGraph(r, l)
 
     # ------------------------------------------------------------------
     # Sub‑graph matching (VF2 with inline H‑count)
@@ -385,7 +432,6 @@ class SynReactor:
                 if n not in pair_to_nodes[pid]:
                     pair_to_nodes[pid].append(n)
 
-        # print(pair_to_nodes)
         # 2) Build connectivity graph of atoms sharing any PID.
         conn = nx.Graph()
         for nodes in pair_to_nodes.values():

@@ -325,3 +325,63 @@ def gml_to_its(gml: str) -> nx.Graph:
     _, _, its = GMLToNX(gml).transform()
 
     return its
+
+
+def its_to_rsmi(
+    its: nx.Graph,
+    sanitize: bool = True,
+    explicit_hydrogen: bool = False,
+) -> str:
+    """
+    Convert an **I**ntermediate/**T**ransition‑**S**tate (ITS) `networkx.Graph`
+    into a reaction‑SMILES (rSMI) string.
+
+    Parameters
+    ----------
+    its : nx.Graph
+        A fully annotated ITS graph.
+        The nodes should carry atom‑map indices and chemical attributes
+        (``element``, ``charge``, etc.), while the edges encode bond orders.
+    sanitize : bool, optional
+        If *True* (default), the reactant and product sub‑graphs are passed
+        through RDKit’s sanitisation pipeline prior to SMILES generation
+        (valence checks, kekulisation, aromaticity perception …).
+        Set to *False* to skip sanitisation when you know the graph is already
+        consistent.
+    explicit_hydrogen : bool, optional
+        When *True* the generated rSMI will contain explicit hydrogens;
+        otherwise (default) hydrogens are implicit.
+
+    Returns
+    -------
+    str
+        A reaction‑SMILES string in the canonical form
+        ``reactants > agents > products``
+        (the *agents* part is left empty by this function).
+
+    Raises
+    ------
+    ValueError
+        If the ITS graph cannot be decomposed into a valid reactant‑product
+        pair or if sanitisation fails.
+
+    Notes
+    -----
+    This is a convenience wrapper around :pyfunc:`its_decompose` and
+    :pyfunc:`graph_to_rsmi`:
+
+    1. **Decompose** the ITS into reactant (*r*) and product (*p*) graphs.
+    2. **Serialise** the pair back to rSMI via :pyfunc:`graph_to_rsmi`.
+
+    Both helper functions must be available in the current namespace.
+
+    Examples
+    --------
+    ```python
+    rsmi = its_to_rsmi(its_graph)                 # default behaviour
+    rsmi_h = its_to_rsmi(its_graph, explicit_hydrogen=True)
+    rsmi_raw = its_to_rsmi(its_graph, sanitize=False)
+    ```
+    """
+    r, p = its_decompose(its)
+    return graph_to_rsmi(r, p, its, sanitize, explicit_hydrogen)
