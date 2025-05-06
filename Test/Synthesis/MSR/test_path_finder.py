@@ -1,6 +1,5 @@
 import unittest
 
-# from synkit.Chem.utils import count_carbons
 from synkit.IO.data_io import load_database
 from synkit.Synthesis.CRN.crn import CRN
 from synkit.Synthesis.MSR.path_finder import PathFinder
@@ -27,7 +26,7 @@ class TestPathFinder(unittest.TestCase):
             rule_list=self.rules, smiles_list=self.smiles, n_repeats=3
         )
 
-        _, solutions = self.crn_instance._build_crn("c1ccccc1", "CC(=O)Nc1ccccc1")
+        solutions = self.crn_instance.rounds
         self.finder = PathFinder(solutions)
 
     def test_initialization(self):

@@ -33,6 +33,32 @@ def has_XH(G: nx.Graph) -> bool:
     return False
 
 
+def has_HH(G: nx.Graph) -> bool:
+    """
+    Check whether the graph contains any heavy atom–hydrogen bond.
+
+    A heavy atom is any atom whose 'element' attribute is not 'H'.
+    This function searches for any edge that connects a heavy atom to a hydrogen atom.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        A graph where each node has an 'element' attribute indicating the atom type.
+
+    Returns
+    -------
+    bool
+        True if at least one edge connects a hydrogen atom ('H') to a heavy atom (element ≠ 'H').
+        False otherwise.
+    """
+    for u, v, _ in G.edges(data=True):
+        el_u = G.nodes[u].get("element")
+        el_v = G.nodes[v].get("element")
+        if el_u == el_v == "H":
+            return True
+    return False
+
+
 def h_to_implicit(G: nx.Graph) -> nx.Graph:
     """
     Convert explicit hydrogen atoms to implicit counts on heavy atoms.

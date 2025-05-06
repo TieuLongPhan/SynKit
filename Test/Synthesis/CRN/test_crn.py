@@ -4,10 +4,13 @@ from synkit.Synthesis.CRN.crn import CRN
 
 
 class TestCRN(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Heavy I/O only once
+        cls.rules = load_database("Data/Testcase/para_rule.json.gz")
+
     def setUp(self):
-        # Define sample data for the tests
-        self.rules = load_database("Data/Testcase/para_rule.json.gz")
-        self.smiles = [
+        self.start_smiles = [
             "c1ccccc1",
             "ClCl",
             "O[Na]",
@@ -15,43 +18,32 @@ class TestCRN(unittest.TestCase):
             "[H][H].[H][H].[H][H]",
             "CC(=O)Cl",
         ]
-        self.crn_instance = CRN(
-            rule_list=self.rules, smiles_list=self.smiles, n_repeats=2
-        )
+        # Auto‑builds CRN on construction
+        self.crn = CRN(self.rules, self.start_smiles, n_repeats=2)
 
-    def test_initialization(self):
-        # Test the __init__ method
+    # ------------------------------------------------------------------ basic
+    def test_initialisation(self):
+        self.assertEqual(self.crn.initial_smiles, self.start_smiles)
+        self.assertEqual(self.crn.rule_list, self.rules)
+        self.assertEqual(self.crn.n_repeats, 2)
+        # rounds are auto‑built
+        self.assertEqual(len(self.crn.rounds), 2)
 
-        self.assertEqual(self.crn_instance.rule_list, self.rules)
-        self.assertEqual(self.crn_instance.smiles_list, self.smiles)
-        self.assertEqual(self.crn_instance.n_repeats, 2)
+    # ------------------------------------------------------------------ rounds
+    def test_product_sets_structure(self):
+        ps = self.crn.product_sets  # Dict[str, List[str]]
+        self.assertEqual(set(ps.keys()), {"Round 1", "Round 2"})
+        # ensure each value is a list of reaction strings containing ">>"
+        for rxn_list in ps.values():
+            self.assertTrue(all(">>" in r for r in rxn_list))
 
-    def test_update_smiles(self):
-        # Test the static method update_smiles
-        updated_smiles = CRN.update_smiles(
-            list_smiles=["C", "CC"],
-            solution=["C>>CC.C", "CC>>CCC"],
-            prune=False,
-            starting_compound="C",
-            target_compound="CCC",
-        )
-        self.assertIn("CC", updated_smiles)
-        self.assertIn("CCC", updated_smiles)
-        self.assertEqual(len(updated_smiles), 3)
-
-    def test_expand(self):
-        expanded = self.crn_instance._expand(self.rules[0:1], self.smiles)
-        print(expanded)
-        self.assertIn("Clc1ccccc1", expanded[1])
-
-    def test_build_crn(self):
-        # This will use the _expand and update_smiles methods indirectly
-        smiles, solutions = self.crn_instance._build_crn(
-            "c1ccccc1", "CC(=O)Nc1ccc(O)cc1"
-        )
-        self.assertTrue(isinstance(solutions, list))
-        self.assertTrue(isinstance(smiles, list))
-        self.assertEqual(len(solutions), self.crn_instance.n_repeats)
+    # ------------------------------------------------------------------ final pool
+    def test_final_smiles_pool(self):
+        final_pool = self.crn.final_smiles
+        # starting molecules should be included
+        self.assertTrue(set(self.start_smiles).issubset(final_pool))
+        # should have grown
+        self.assertGreater(len(final_pool), len(self.start_smiles))
 
 
 if __name__ == "__main__":

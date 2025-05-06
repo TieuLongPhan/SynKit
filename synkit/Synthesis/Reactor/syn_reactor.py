@@ -139,6 +139,7 @@ class SynReactor:
             # Detect explicit‑H constraints on the pattern and pre‑process
             if has_XH(pattern_graph):
                 self._flag_pattern_has_explicit_H = True
+                # self.strategy = Strategy.ALL # force to find all in implicit case
                 pattern_graph = h_to_implicit(pattern_graph)
 
             self._mappings = self._find_subgraph_mappings(
@@ -178,6 +179,7 @@ class SynReactor:
     def smarts_list(self) -> List[str]:
         if self._smarts is None:
             self._smarts = [self._to_smarts(g) for g in self.its_list]
+            self._smarts = [value for value in self._smarts if value]
             if self.invert:
                 self._smarts = [reverse_reaction(rsmi) for rsmi in self._smarts]
         return self._smarts
@@ -659,4 +661,8 @@ class SynReactor:
     @staticmethod
     def _to_smarts(its: nx.Graph) -> str:
         l, r = its_decompose(its)
-        return f"{graph_to_smi(l)}>>{graph_to_smi(r)}"
+        r_smi = graph_to_smi(l)
+        p_smi = graph_to_smi(r)
+        if r_smi is None or p_smi is None:
+            return None
+        return f"{r_smi}>>{p_smi}"
