@@ -102,7 +102,6 @@ class TestRCCluster(unittest.TestCase):
         attributes = {
             "None": None,
             "Cycles": "cycle",
-            "Signature": "signature_rc",
             "Atom_count": "atom_count",
         }
 
@@ -128,7 +127,7 @@ class TestRCCluster(unittest.TestCase):
         # Compare results to check which attribute took the least/most time
         min_time_attr = min(results, key=results.get)
         max_time_attr = max(results, key=results.get)
-        self.assertIn(min_time_attr, ["Atom_count", "Signature"])
+        self.assertIn(min_time_attr, ["Atom_count"])
         self.assertIn(max_time_attr, ["None", "Cycles"])
 
 

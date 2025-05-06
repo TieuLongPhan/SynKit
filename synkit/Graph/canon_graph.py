@@ -57,7 +57,7 @@ from typing import (
     Tuple,
 )
 
-from synkit.IO.chem_converter import gml_to_its, its_to_gml, rsmi_to_its, its_to_rsmi
+from synkit.IO.chem_converter import gml_to_its, its_to_gml
 import networkx as nx
 from networkx.algorithms.graph_hashing import (
     weisfeiler_lehman_subgraph_hashes as _wl_hashes,
@@ -144,6 +144,7 @@ class GraphCanonicaliser:
         *,
         backend: Literal["generic", "wl"] = "generic",
         wl_iterations: int = 3,
+        node_attrs: List[str] = ("element", "aromatic", "charge", "hcount"),
         node_sort_key: T_NodeSortKey = _default_node_key,
         edge_sort_key: T_EdgeSortKey = _default_edge_key,
     ) -> None:
@@ -153,6 +154,7 @@ class GraphCanonicaliser:
         self._wl_k: int = wl_iterations
         self._node_key: T_NodeSortKey = node_sort_key
         self._edge_key: T_EdgeSortKey = edge_sort_key
+        self._wl_node_attrs: Tuple[str, ...] = tuple(node_attrs)
 
     # ------------------------------------------------------------------ #
     # High‑level helpers                                                 #
@@ -231,36 +233,59 @@ class GraphCanonicaliser:
 
     def _canon_wl(self, g: nx.Graph) -> nx.Graph:
         """
-        Weisfeiler–Lehman colour‑refinement back‑end (pure Python).
+        Weisfeiler–Lehman colour-refinement back-end (pure Python).
 
-        The algorithm iteratively hashes each node’s neighbourhood up to
-        *k* hops (``wl_iterations``) and orders nodes by
-        ``(colour, degree, original_id)``.  The final mapping is stable
-        for almost all non‑adversarial graphs.
+        Seeds each node’s initial colour by the tuple of attributes
+        in `self._wl_node_attrs` (e.g. ["element","charge","hcount"]),
+        then runs k iterations of WL and orders nodes by
+        (final_colour, degree, original_id).
+
+        Returns a new graph of the same type as `g`, with nodes relabelled
+        1…N in that order and all original node & edge attributes preserved.
         """
+        # 1) Prepare a working copy if we need composite node labels
+        if self._wl_node_attrs:
+            g2 = g.copy()
+            for n, data in g2.nodes(data=True):
+                # build the initial label tuple
+                data["_wl_init"] = tuple(
+                    data.get(attr, "") for attr in self._wl_node_attrs
+                )
+            node_attr = "_wl_init"
+        else:
+            g2 = g
+            node_attr = "element"
+
+        # 2) Run WL hashing
         wl_hash = _wl_hashes(
-            g,
-            node_attr=(
-                "element"
-                if any("element" in d for _, d in g.nodes(data=True))
-                else None
-            ),
+            g2,
+            node_attr=node_attr,
             iterations=self._wl_k,
         )
-        # use last hash as colour
-        colour: Dict[NodeId, str] = {n: h[-1] for n, h in wl_hash.items()}
+
+        # 3) Extract final hash (last iteration) as the node colour
+        colour: Dict[NodeId, str] = {n: hashes[-1] for n, hashes in wl_hash.items()}
+
+        # 4) Determine node ordering
         order: List[NodeId] = sorted(g, key=lambda n: (colour[n], g.degree[n], n))
         mapping: Dict[NodeId, int] = {old: i + 1 for i, old in enumerate(order)}
 
+        # 5) Build the new graph
         G2 = type(g)()
+        # copy any graph‐level attributes
+        if hasattr(g, "graph"):
+            G2.graph.update(g.graph)
+
+        # add nodes in canonical order
         for old in order:
             G2.add_node(mapping[old], **g.nodes[old])
 
-        for u, v, data in sorted(
+        # add edges, sorted for consistency
+        for u, v, e_attrs in sorted(
             g.edges(data=True),
             key=lambda e: tuple(sorted((mapping[e[0]], mapping[e[1]]))),
         ):
-            G2.add_edge(mapping[u], mapping[v], **data)
+            G2.add_edge(mapping[u], mapping[v], **e_attrs)
 
         return G2
 
@@ -488,45 +513,3 @@ class CanonicalRule:
         print("\nCanonical graph edges and data:")
         for u, v, d in self._canonical_graph.edges(data=True):
             print(f"  ({u},{v}): {d}")
-
-
-def sync_atom_map_with_index(G):
-    """
-    Make each node’s 'atom_map' equal to its own node index.
-
-    Parameters
-    ----------
-    G : networkx.Graph
-        Your molecular graph. Node IDs are assumed to be the indices
-        you want to copy into 'atom_map'.
-
-    Returns
-    -------
-    None
-        The graph is modified in place.
-    """
-    for node in G.nodes:
-        G.nodes[node]["atom_map"] = node
-
-
-def _canon_smart(
-    rsmi: str,
-    backend: str = "wl",
-) -> str:
-    """
-    Return a canonicalised reaction‑SMILES.
-
-    Parameters:
-        rsmi: Reaction SMILES with atom‑mapping.
-        backend: Canonicaliser backend (default ``"wl"``).
-
-    Returns:
-        Canonical rSMI in the form ``reactants > agents > products``.
-
-    Raises:
-        ValueError: If parsing or canonicalisation fails.
-    """
-    its: nx.Graph = rsmi_to_its(rsmi)
-    its = GraphCanonicaliser(backend=backend).canonicalise_graph(its).canonical_graph
-    sync_atom_map_with_index(its)
-    return its_to_rsmi(its)

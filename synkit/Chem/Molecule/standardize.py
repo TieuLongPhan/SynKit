@@ -5,6 +5,30 @@ from rdkit.Chem.SaltRemover import SaltRemover
 from typing import Optional
 
 
+def sanitize_and_canonicalize_smiles(smiles: str) -> str | None:
+    """
+    Sanitize and canonicalize a SMILES string using RDKit.
+
+    Parameters
+    ----------
+    smiles : str
+        Input SMILES string.
+
+    Returns
+    -------
+    str or None
+        Canonical SMILES if valid and sanitizable, else None.
+    """
+    try:
+        mol = Chem.MolFromSmiles(smiles, sanitize=True)
+        if mol is None:
+            return None
+        Chem.SanitizeMol(mol)  # additional safety
+        return Chem.MolToSmiles(mol, canonical=True)
+    except Exception:
+        return None
+
+
 def normalize_molecule(mol: Chem.Mol) -> Chem.Mol:
     """
     Normalize a molecule using RDKit's Normalizer.

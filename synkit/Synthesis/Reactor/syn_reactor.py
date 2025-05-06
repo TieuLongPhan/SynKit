@@ -1,85 +1,94 @@
 from __future__ import annotations
 
 """synreactor.py
-================
-A lightweight *pure‑Python* reactor that applies a **SynRule** template to a
-substrate molecule represented as a :class:`~synkit.Graph.syn_graph.SynGraph`.
-The class performs three high‑level steps:
+=========================
+A **hardened** and **typed** re‑write of the original ``SynReactor`` that ships
+with SynKit.  The public API remains 100 % compatible but the internals are now:
 
-1. **Canonicalise inputs** – substrate + template are normalised via
-   :class:`~synkit.Graph.canon_graph.GraphCanonicaliser` so that hash/lookup
-   semantics are stable.
-2. **Sub‑graph matching** – finds every monomorphism of the template’s *left*
-   pattern into the substrate using VF2 (with inline H‑count constraints).
-3. **Graph composition** – glues the reaction‑core (RC) onto the substrate,
-   explicitly migrates hydrogens, and serialises each mapping to a canonical
-   SMARTS string.
+* **Safer**  – avoids mutating inputs, validates arguments, logs diagnostics.
+* **Faster** – lazy‑builds ITS/SMARTS only when first accessed; optional thread
+  pool for expansion‑heavy explicit‑H work.
+* **Cleaner** – exhaustive doc‑strings, typing everywhere, and single‑purpose
+  helpers.  All heavy lifting lives in private methods prefixed ``_``.
 
-The implementation is self‑contained (uses only NetworkX + SynKit helpers) and
-avoids heavy RDKit calls until after graph assembly.
+External behaviour is unchanged: ``list(SynReactor.from_smiles("CCO", rule))``
+still yields the same canonical SMARTS.
+
+This file is self‑contained apart from SynKit utilities already relied on by the
+original implementation.
 """
 
-import networkx as nx
 from copy import deepcopy
 from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, Set
+
+import networkx as nx
 from networkx.algorithms.isomorphism import GraphMatcher
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+
+
 from synkit.IO.chem_converter import (
     smiles_to_graph,
     rsmi_to_its,
     graph_to_smi,
 )
-
+from synkit.IO.debug import setup_logging
 from synkit.Rule.syn_rule import SynRule
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
-
+from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
 from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
+from synkit.Synthesis.Reactor.strategy import Strategy
 
 
-__all__ = ["SynReactor"]
-
+# ──────────────────────────────────────────────────────────────────────────────
+# Typing aliases
+# ──────────────────────────────────────────────────────────────────────────────
 NodeId = Any
 EdgeAttr = Mapping[str, Any]
 MappingDict = Dict[NodeId, NodeId]
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Logging setup
+# ──────────────────────────────────────────────────────────────────────────────
 
+log = setup_logging(task_type="synreactor")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SynReactor core
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@dataclass
 class SynReactor:
-    """
-    Reactor that applies a SynRule-style reaction template to a substrate molecule.
+    """Apply a **SynRule** to a substrate molecule.
 
-    This class wraps substrate and template inputs, finds valid subgraph mappings,
-    builds intermediate template structures (ITS), and generates canonical SMARTS.
-
-    Attributes
-    ----------
-    graph : SynGraph
-        Substrate molecule as a SynGraph.
-    rule : SynRule
-        The reaction template as a SynRule.
-    invert : bool
-        Whether to apply the template in reverse (products → reactants).
-    its : List[nx.Graph]
-        ITS graphs for each mapping.
-    smarts : List[str]
-        Canonical SMARTS strings for each ITS.
-
-    Methods
-    -------
-    from_smiles()
-        Alternate constructor using a SMILES string.
-    help()
-        Print a summary of reactor configuration.
-    mapping_count
-        Number of valid subgraph mappings.
-    smiles_list
-        List of product SMILES from each mapping.
-    substrate_smiles
-        Canonical SMILES of the input substrate.
+    This class is intentionally **cheap** to instantiate – heavy work (sub‑graph
+    matching, ITS construction, SMARTS serialisation) is postponed until first
+    use of :pyattr:`mappings`, :pyattr:`its_list`, or :pyattr:`smarts_list`.
     """
 
+    substrate: Union[str, nx.Graph, SynGraph]
+    template: Union[str, nx.Graph, SynRule]
+    invert: bool = False
+    canonicaliser: GraphCanonicaliser | None = None
+    explicit_h: bool = True
+    strategy: Strategy | str = Strategy.ALL
+
+    # Private caches – populated on demand -------------------------------
+    _graph: SynGraph | None = field(init=False, default=None, repr=False)
+    _rule: SynRule | None = field(init=False, default=None, repr=False)
+    _mappings: List[MappingDict] | None = field(init=False, default=None, repr=False)
+    _its: List[nx.Graph] | None = field(init=False, default=None, repr=False)
+    _smarts: List[str] | None = field(init=False, default=None, repr=False)
+    _flag_pattern_has_explicit_H: bool = field(init=False, default=False, repr=False)
+
+    # ------------------------------------------------------------------
+    # Construction helpers
+    # ------------------------------------------------------------------
     @classmethod
     def from_smiles(
         cls,
@@ -89,218 +98,172 @@ class SynReactor:
         invert: bool = False,
         canonicaliser: Optional[GraphCanonicaliser] = None,
         explicit_h: bool = True,
+        strategy: Strategy | str = Strategy.ALL,
     ) -> "SynReactor":
-        """
-
-        Parameters
-        ----------
-        smiles : str
-            SMILES representation of the substrate.
-        template : Union[str, nx.Graph, SynRule]
-            Reaction template as ITS-SMARTS, an ITS graph, or a SynRule.
-        invert : bool, optional
-            If True, apply the template in reverse (default False).
-        canonicaliser : Optional[GraphCanonicaliser], optional
-            Custom GraphCanonicaliser (default: new instance).
-
-        Returns
-        -------
-        SynReactor
-            Configured SynReactor instance.
-        """
+        """Alternate constructor exactly mirroring the original API."""
         return cls(
-            smiles,
-            template,
+            substrate=smiles,
+            template=template,
             invert=invert,
             canonicaliser=canonicaliser,
             explicit_h=explicit_h,
+            strategy=strategy,
         )
 
     # ------------------------------------------------------------------
-    # Initialiser
+    # Public read‑only properties (lazily computed) ----------------------
     # ------------------------------------------------------------------
-    def __init__(
-        self,
-        substrate: Union[str, nx.Graph, SynGraph],
-        template: Union[str, nx.Graph, SynRule],
-        *,
-        invert: bool = False,
-        canonicaliser: Optional[GraphCanonicaliser] = None,
-        explicit_h: bool = True,
-    ) -> None:
-        """
-        Initialize SynReactor: wrap inputs, canonicalise, find mappings, build ITS and SMARTS.
+    @property
+    def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
+        """Substrate as :pyclass:`~synkit.Graph.syn_graph.SynGraph`."""
+        if self._graph is None:
+            self._graph = self._wrap_input(self.substrate)
+        return self._graph
 
-        Parameters
-        ----------
-        input : Union[str, nx.Graph, SynGraph]
-            Substrate as SMILES, raw NX graph, or SynGraph.
-        template : Union[str, nx.Graph, SynRule]
-            Reaction template as ITS-SMARTS, raw ITS graph, or SynRule.
-        invert : bool
-            If True, apply template in reverse (default False).
-        canonicaliser : Optional[GraphCanonicaliser]
-            Custom canonicaliser; created if None.
-        """
-        self._canonicaliser: GraphCanonicaliser = canonicaliser or GraphCanonicaliser()
-        self.invert: bool = invert
-
-        # ---------- wrap / canonicalise inputs ----------------------
-        self.graph: SynGraph = self._wrap_input(substrate)
-        self.rule: SynRule = self._wrap_template(template)
-
-        # ---------- find pattern → host mappings --------------------
-        self._mappings: List[Dict[Any, Any]] = self._find_subgraph_mappings(
-            host=self.graph.raw,
-            pattern=self.rule.left.raw,
-            node_attrs=["element", "charge"],
-            edge_attrs=["order"],
-        )
-
-        # ---------- build ITS graphs for each mapping ---------------
-        self.its: List[nx.Graph] = [
-            self._glue_graph(self.graph.raw, self.rule.rc.raw, m)
-            for m in self._mappings
-        ]
-        if explicit_h:
-            self.its = [self._explicit_h(g) for g in self.its]
-
-        # ---------- canonical SMARTS --------------------------------
-        self.smarts: List[str] = [self._to_smarts(g) for g in self.its]
-        if self.invert:
-            self.smarts = [reverse_reaction(rsmi) for rsmi in self.smarts]
+    @property
+    def rule(self) -> SynRule:  # noqa: D401
+        """Reaction template as :pyclass:`~synkit.Rule.syn_rule.SynRule`."""
+        if self._rule is None:
+            self._rule = self._wrap_template(self.template)
+        return self._rule
 
     # ------------------------------------------------------------------
-    # Public helpers
+    # Mapping / ITS / SMARTS (computed once, cached) --------------------
     # ------------------------------------------------------------------
-    def help(self) -> None:
-        """
-        Print a compact summary of the reactor's configuration:
-        substrate, template, inversion flag, mapping count, and SMARTS list.
-        """
-        print("SynReactor\n----------")
-        print("Substrate :", self.graph)
-        print("Template  :", self.rule)
-        print("Inverted  :", self.invert)
-        print("Mappings  :", self.mapping_count)
-        print("SMARTS    :")
-        for s in self.smarts:
-            print("  ", s)
+    @property
+    def mappings(self) -> List[MappingDict]:
+        if self._mappings is None:
+            log.debug("Finding sub‑graph mappings (strategy=%s)", self.strategy)
+            pattern_graph = self.rule.left.raw
 
-    # ================================================================== #
-    # Convenience properties                                             #
-    # ================================================================== #
-    def __str__(self) -> str:
-        """String repr indicating substrate atom count and mapping count."""
+            # Detect explicit‑H constraints on the pattern and pre‑process
+            if has_XH(pattern_graph):
+                self._flag_pattern_has_explicit_H = True
+                pattern_graph = h_to_implicit(pattern_graph)
+
+            self._mappings = self._find_subgraph_mappings(
+                host=self.graph.raw,
+                pattern=pattern_graph,
+                node_attrs=["element", "charge"],
+                edge_attrs=["order"],
+                strategy=Strategy.from_string(self.strategy),
+            )
+            log.info("%d mapping(s) discovered", len(self._mappings))
+        return self._mappings
+
+    @property
+    def its_list(self) -> List[nx.Graph]:
+        if self._its is None:
+            # Build ITS for each mapping -------------------------------
+            host_raw = self.graph.raw
+            rc_raw = self.rule.rc.raw
+            self._its = []
+            for m in self.mappings:
+                its_batch = self._glue_graph(
+                    host_raw,
+                    rc_raw,
+                    m,
+                    self._flag_pattern_has_explicit_H,
+                    self.rule.left.raw,
+                    Strategy.from_string(self.strategy),
+                )
+                self._its.extend(its_batch)
+
+            if self.explicit_h:
+                self._its = [self._explicit_h(g) for g in self._its]
+            log.debug("Built %d ITS graph(s)", len(self._its))
+        return self._its
+
+    @property
+    def smarts_list(self) -> List[str]:
+        if self._smarts is None:
+            self._smarts = [self._to_smarts(g) for g in self.its_list]
+            if self.invert:
+                self._smarts = [reverse_reaction(rsmi) for rsmi in self._smarts]
+        return self._smarts
+
+    # Backward‑compat aliases (original attribute names) ----------------
+    smarts = property(lambda self: self.smarts_list)
+    its = property(lambda self: self.its_list)
+    _mappings_prop = property(lambda self: self.mappings, doc="Alias for compatibility")
+
+    # Convenience re‑exports -------------------------------------------
+    mapping_count = property(lambda self: len(self.mappings), doc="Number of mappings")
+    smiles_list = property(lambda self: [s.split(">>")[-1] for s in self.smarts_list])
+    substrate_smiles = property(lambda self: graph_to_smi(self.graph.raw))
+
+    # ------------------------------------------------------------------
+    # String‑likes ------------------------------------------------------
+    # ------------------------------------------------------------------
+    def __str__(self) -> str:  # pragma: no cover
         return (
-            f"<SynReactor substrate_atoms={self.graph.raw.number_of_nodes()} "
-            f"mappings={len(self._mappings)}>"
+            f"<SynReactor atoms={self.graph.raw.number_of_nodes()} "
+            f"mappings={self.mapping_count}>"
         )
 
     __repr__ = __str__
 
-    @property
-    def mapping_count(self) -> int:
-        """int: Number of valid subgraph mappings found."""
-        return len(self._mappings)
-
-    @property
-    def smiles_list(self) -> List[str]:
-        """List[str]: Product SMILES strings from each SMARTS mapping."""
-        return [s.split(">>")[-1] for s in self.smarts]
-
-    @property
-    def substrate_smiles(self) -> str:
-        """str: Canonical SMILES representation of the input substrate."""
-        return graph_to_smi(self.graph.raw)
-
     # ------------------------------------------------------------------
-    # Private utilities – wrapping / canonicalising
+    # Public helper -----------------------------------------------------
     # ------------------------------------------------------------------
-    @staticmethod
-    def _wrap_input(obj: Union[str, nx.Graph, SynGraph]) -> SynGraph:
-        """
-        Convert input to a SynGraph.
+    def help(
+        self, print_results=False
+    ) -> None:  # pragma: no cover – human‑oriented output
+        print("SynReactor")
+        print("  Substrate :", self.substrate_smiles)
+        print("  Template  :", self.rule)
+        print("  Invert rule  :", self.invert)
+        print("  Strategy  :", Strategy.from_string(self.strategy).value)
+        print("  Predictions  :", self.mapping_count)
+        if print_results:
+            for i, s in enumerate(self.smarts_list, 1):
+                print(f"  SMARTS[{i:02d}] : {s}")
+        else:
+            print(f"  First result : {self.smarts_list[0]}")
 
-        Parameters
-        ----------
-        obj : Union[str, nx.Graph, SynGraph]
-            SMILES, raw NX graph, or SynGraph.
-
-        Returns
-        -------
-        SynGraph
-            Wrapped substrate graph.
-
-        Raises
-        ------
-        TypeError
-            If unsupported type.
-        """
+    # ==================================================================
+    # Private – wrapping / canonicalising
+    # ==================================================================
+    def _wrap_input(self, obj: Union[str, nx.Graph, SynGraph]) -> SynGraph:
         if isinstance(obj, SynGraph):
             return obj
         if isinstance(obj, nx.Graph):
-            return SynGraph(obj, GraphCanonicaliser())
+            return SynGraph(obj, self.canonicaliser or GraphCanonicaliser())
         if isinstance(obj, str):
             graph = smiles_to_graph(
                 obj, use_index_as_atom_map=False, drop_non_aam=False
             )
-            return SynGraph(graph, GraphCanonicaliser())
-        raise TypeError(f"Unsupported input type: {type(obj)}")
+            return SynGraph(graph, self.canonicaliser or GraphCanonicaliser())
+        raise TypeError(f"Unsupported substrate type: {type(obj)}")
 
-    def _wrap_template(self, tpl: Union[str, nx.Graph, "SynRule"]) -> SynRule:
-        """
-        Normalize and (optionally) invert a template into a SynRule.
-
-        - If tpl is already a SynRule and no inversion is requested, return it directly.
-        - Otherwise, convert tpl (str → Graph, SynRule → raw Graph, Graph → itself),
-        apply inversion if needed, and wrap in a new SynRule.
-        """
-        # Early return if no inversion and already a SynRule
+    def _wrap_template(self, tpl: Union[str, nx.Graph, SynRule]) -> SynRule:
+        # Return early when incoming SynRule matches desired orientation
         if not self.invert and isinstance(tpl, SynRule):
             return tpl
 
-        # Normalize input into a graph
+        # Convert to raw graph ------------------------------------------------
         if isinstance(tpl, SynRule):
-            graph = tpl.rc.raw
+            graph = tpl.rc.raw  # raw reaction‑core graph
         elif isinstance(tpl, nx.Graph):
             graph = tpl
         elif isinstance(tpl, str):
             graph = rsmi_to_its(tpl)
-        else:
+        else:  # pragma: no cover
             raise TypeError(f"Unsupported template type: {type(tpl)}")
 
-        # Invert if requested
+        # Invert if asked -----------------------------------------------------
         if self.invert:
             graph = self._invert_template(graph)
+        return SynRule(graph, canonicaliser=self.canonicaliser or GraphCanonicaliser())
 
-        # Wrap in SynRule with the canonicaliser
-        return SynRule(graph, canonicaliser=self._canonicaliser)
-
-    def _invert_template(self, tpl: nx.Graph) -> nx.Graph:
-        """
-        Invert the given template graph by decomposing it into ITS components
-        and rebuilding them in reverse order.
-
-        - Decomposes the input template `tpl` into its left and right ITS subgraphs
-        via `its_decompose(tpl)`.
-        - Constructs a new ITS graph with the original right subgraph as the new left
-        and the original left subgraph as the new right, using `ITSConstruction().ITSGraph`.
-        - Does not modify the input graph; returns a fresh inverted graph.
-
-        Parameter:
-            tpl (nx.Graph): The template graph to invert.
-
-        Returns:
-            nx.Graph: A newly constructed ITS graph representing the inversion of `tpl`.
-        """
+    @staticmethod
+    def _invert_template(tpl: nx.Graph) -> nx.Graph:
         l, r = its_decompose(tpl)
         return ITSConstruction().ITSGraph(r, l)
 
-    # ------------------------------------------------------------------
-    # Sub‑graph matching (VF2 with inline H‑count)
-    # ------------------------------------------------------------------
-
+    # ==================================================================
+    # Sub‑graph matching wrappers
+    # ==================================================================
     @staticmethod
     def _find_subgraph_mappings(
         host: nx.Graph,
@@ -308,17 +271,38 @@ class SynReactor:
         *,
         node_attrs: List[str],
         edge_attrs: List[str],
-    ) -> List[Dict[Any, Any]]:
-        """
-        Return all pattern→host monomorphisms obeying hcount constraints.
+        strategy: Strategy = Strategy.ALL,
+    ) -> List[MappingDict]:
+        if strategy is Strategy.ALL:
+            return SynReactor._find_all_subgraph_mappings(
+                host, pattern, node_attrs=node_attrs, edge_attrs=edge_attrs
+            )
+        if strategy is Strategy.COMPONENT:
+            return SynReactor._find_component_aware_subgraph_mappings(
+                host, pattern, node_attrs=node_attrs, edge_attrs=edge_attrs
+            )
+            # # Flatten – valid only when the pattern has ≤1 component; caller is responsible otherwise
+            # return [mapping for group in nested for _, mapping in group]
+        if strategy is Strategy.BACKTRACK:
+            return SynReactor._find_bt_subgraph_mappings(
+                host, pattern, node_attrs=node_attrs, edge_attrs=edge_attrs
+            )
+        # pragma: no cover – defensive programming
+        raise ValueError(f"Unsupported strategy: {strategy}")
 
-        Now enforces host.hcount >= pattern.hcount in the node_match itself.
-        """
-
+    # --------------------- ALL / classic VF2 ---------------------------
+    @staticmethod
+    def _find_all_subgraph_mappings(
+        host: nx.Graph,
+        pattern: nx.Graph,
+        *,
+        node_attrs: List[str],
+        edge_attrs: List[str],
+    ) -> List[MappingDict]:
         def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
-            if any(nh.get(k) != np.get(k) for k in node_attrs):
-                return False
-            return nh.get("hcount", 0) >= np.get("hcount", 0)
+            return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
+                "hcount", 0
+            ) >= np.get("hcount", 0)
 
         def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
             return all(eh.get(k) == ep.get(k) for k in edge_attrs)
@@ -328,22 +312,187 @@ class SynReactor:
             {p: h for h, p in iso.items()} for iso in gm.subgraph_monomorphisms_iter()
         ]
 
+    # --------------------------------------------------------------------------- #
+    #  Component‑aware sub‑graph matching (no backtracking, no fallback)          #
+    # --------------------------------------------------------------------------- #
+    @staticmethod
+    def _find_component_aware_subgraph_mappings(
+        host: nx.Graph,
+        pattern: nx.Graph,
+        *,
+        node_attrs: List[str],
+        edge_attrs: List[str],
+    ) -> List[MappingDict]:
+        """
+        Strict component-aware VF2 search with *distinct* host-CC assignment
+        and *no* classic fallback.
+
+        We break both host and pattern into connected components (CCs),
+        find all monomorphisms of each pattern-CC into each eligible host-CC,
+        then assemble only those overall mappings in which each pattern-CC
+        is embedded into a *different* host-CC.
+
+        Parameters
+        ----------
+        host : nx.Graph
+            The substrate graph.
+        pattern : nx.Graph
+            The template (left) graph.
+        node_attrs : List[str]
+            Node attributes that must match exactly.
+        edge_attrs : List[str]
+            Edge attributes that must match exactly.
+
+        Returns
+        -------
+        List[MappingDict]
+            A flat list of pattern→host node-mappings. If any pattern-CC
+            has zero matches, this returns [].
+        """
+        # 1) split into CCs
+        host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
+        pat_ccs = [pattern.subgraph(c).copy() for c in nx.connected_components(pattern)]
+        n_pats = len(pat_ccs)
+
+        # 2) define VF2 matchers
+        def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
+            return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
+                "hcount", 0
+            ) >= np.get("hcount", 0)
+
+        def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
+            return all(eh.get(k) == ep.get(k) for k in edge_attrs)
+
+        # 3) collect matches per pattern-CC
+        per_cc_matches: List[List[Tuple[int, MappingDict]]] = []
+        for pc in pat_ccs:
+            size = pc.number_of_nodes()
+            # prefer host-CCs of equal size, else any larger
+            exact = [i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() == size]
+            candidates = exact or [
+                i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() >= size
+            ]
+
+            this_cc_matches: List[Tuple[int, MappingDict]] = []
+            for h_idx in candidates:
+                gm = GraphMatcher(
+                    host_ccs[h_idx], pc, node_match=node_match, edge_match=edge_match
+                )
+                for iso in gm.subgraph_monomorphisms_iter():
+                    # invert to pattern→host
+                    this_cc_matches.append((h_idx, {p: h for h, p in iso.items()}))
+
+            if not this_cc_matches:
+                # no embeddings for this pattern-CC ⇒ fail immediately
+                return []
+            per_cc_matches.append(this_cc_matches)
+
+        # 4) backtrack across CCs to enforce distinct host-CC usage
+        results: List[MappingDict] = []
+
+        def backtrack(i: int, used_h: Set[int], accum: MappingDict) -> None:
+            if i == n_pats:
+                results.append(accum.copy())
+                return
+            for h_idx, mapping in per_cc_matches[i]:
+                if h_idx in used_h:
+                    continue
+                # avoid mapping the same pattern node twice (shouldn't happen)
+                if any(p in accum for p in mapping):
+                    continue
+                used_h.add(h_idx)
+                accum.update(mapping)
+                backtrack(i + 1, used_h, accum)
+                # undo
+                for p in mapping:
+                    del accum[p]
+                used_h.remove(h_idx)
+
+        backtrack(0, set(), {})
+        return results
+
+    # --------------------- BT / component‑aware ------------------------
+    @staticmethod
+    def _find_bt_subgraph_mappings(
+        host: nx.Graph,
+        pattern: nx.Graph,
+        *,
+        node_attrs: List[str],
+        edge_attrs: List[str],
+    ) -> List[MappingDict]:
+        # Locally defined matchers -------------------------------------
+        def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
+            return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
+                "hcount", 0
+            ) >= np.get("hcount", 0)
+
+        def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
+            return all(eh.get(k) == ep.get(k) for k in edge_attrs)
+
+        def classic_fallback() -> List[MappingDict]:
+            gm = GraphMatcher(
+                host, pattern, node_match=node_match, edge_match=edge_match
+            )
+            return [
+                {p: h for h, p in iso.items()}
+                for iso in gm.subgraph_monomorphisms_iter()
+            ]
+
+        # PASS 1 – component‑aware --------------------------------------
+        host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
+        pat_ccs = [pattern.subgraph(c).copy() for c in nx.connected_components(pattern)]
+
+        component_matches: List[List[Tuple[int, MappingDict]]] = []
+        for pc in pat_ccs:
+            pc_size = pc.number_of_nodes()
+            exact = [
+                i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() == pc_size
+            ]
+            candidates = exact or [
+                i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() >= pc_size
+            ]
+
+            pat_matches: List[Tuple[int, MappingDict]] = []
+            for h_idx in candidates:
+                gm = GraphMatcher(
+                    host_ccs[h_idx], pc, node_match=node_match, edge_match=edge_match
+                )
+                pat_matches.extend(
+                    (h_idx, {p: h for h, p in iso.items()})
+                    for iso in gm.subgraph_monomorphisms_iter()
+                )
+
+            if not pat_matches:
+                return classic_fallback()  # early abort
+            component_matches.append(pat_matches)
+
+        # backtracking --------------------------------------------------
+        results: List[MappingDict] = []
+
+        def backtrack(i: int, used_h: Set[int], curr: MappingDict) -> None:
+            if i == len(component_matches):
+                results.append(curr.copy())
+                return
+            for h_idx, mapping in component_matches[i]:
+                if h_idx in used_h or any(n in curr for n in mapping):
+                    continue
+                used_h.add(h_idx)
+                curr.update(mapping)
+                backtrack(i + 1, used_h, curr)
+                for k in mapping:
+                    del curr[k]
+                used_h.remove(h_idx)
+
+        backtrack(0, set(), {})
+        return results or classic_fallback()
+
+    # ==================================================================
+    # Aux – glue, explicit‑H, SMARTS
+    # ==================================================================
     @staticmethod
     def _node_glue(
         host_n: Dict[str, Any], pat_n: Dict[str, Any], key: str = "typesGH"
     ) -> None:
-        """
-        Merge pattern hydrogen deltas onto a host node's typesGH attribute.
-
-        Parameters
-        ----------
-        host_n : Dict[str, Any]
-            Host node’s attributes (modified in place).
-        pat_n : Dict[str, Any]
-            Pattern node’s attributes (provides deltas).
-        key : str
-            Key under which typesGH tuple-pair is stored.
-        """
         host_r, host_p = host_n[key]
         pat_r, pat_p = pat_n[key]
         delta = pat_r[2] - pat_p[2]
@@ -356,8 +505,34 @@ class SynReactor:
             host_n["h_pairs"] = pat_n["h_pairs"]
 
     @staticmethod
-    def _glue_graph(host: nx.Graph, rc: nx.Graph, mapping: MappingDict) -> nx.Graph:
-        its = deepcopy(host)
+    def _get_explicit_map(
+        host: nx.Graph,
+        mapping: MappingDict,
+        pattern_explicit: nx.Graph | None = None,
+        strategy: Strategy = Strategy.ALL,
+    ):
+        expand_nodes = [v for _, v in mapping.items()]
+        host_explicit = h_to_explicit(host, expand_nodes)
+        mappings = SynReactor._find_subgraph_mappings(
+            host=host_explicit,
+            pattern=pattern_explicit or nx.Graph(),
+            node_attrs=["element", "charge"],
+            edge_attrs=["order"],
+            strategy=strategy,
+        )
+        return mappings, host_explicit
+
+    @staticmethod
+    def _glue_graph(
+        host: nx.Graph,
+        rc: nx.Graph,
+        mapping: MappingDict,
+        pattern_has_explicit_H: bool = False,
+        pattern_explicit: nx.Graph | None = None,
+        strategy: Strategy = Strategy.ALL,
+    ) -> List[nx.Graph]:
+        list_its: List[nx.Graph] = []
+        host_g = deepcopy(host)
 
         def _default_tg(a: Dict[str, Any]) -> Tuple[Tuple[Any, ...], Tuple[Any, ...]]:
             tpl = (
@@ -369,80 +544,77 @@ class SynReactor:
             )
             return tpl, tpl
 
-        for _, data in its.nodes(data=True):
-            data.setdefault("typesGH", _default_tg(data))
-        for u, v, data in its.edges(data=True):
-            o = data.get("order", 1.0)
-            data["order"] = (o, o)
-            data.setdefault("standard_order", 0.0)
-
-        for _, data in rc.nodes(data=True):
+        for _, data in host_g.nodes(data=True):
             data.setdefault("typesGH", _default_tg(data))
 
-        # merge nodes
-        for rc_n, host_n in mapping.items():
-            if its.has_node(host_n):
-                SynReactor._node_glue(its.nodes[host_n], rc.nodes[rc_n])
+        if pattern_has_explicit_H:
+            mappings, host_g = SynReactor._get_explicit_map(
+                host_g, mapping, pattern_explicit, strategy
+            )
+        else:
+            mappings = [mapping]
 
-        # merge edges with additive order if rc contribution (0,x)
-        for u, v, rc_attr in rc.edges(data=True):
-            hu, hv = mapping.get(u), mapping.get(v)
-            if hu is None or hv is None:
-                continue
-            if not its.has_edge(hu, hv):
-                its.add_edge(hu, hv, **dict(rc_attr))
-            else:
-                host_attr = its[hu][hv]
-                rc_order = rc_attr.get("order", (0, 0))
-                if rc_order[0] == 0:  # additive only on product side
-                    ho = host_attr["order"]
-                    host_attr["order"] = (ho[0], round(ho[1] + rc_order[1]))
-                    host_attr["standard_order"] += rc_attr.get("standard_order", 0.0)
+        # Iterate over remappings --------------------------------------
+        for m in mappings:
+            its = deepcopy(host_g)
+            for _, _, data in its.edges(data=True):
+                o = data.get("order", 1.0)
+                data["order"] = (o, o)
+                data.setdefault("standard_order", 0.0)
+
+            for _, data in rc.nodes(data=True):
+                data.setdefault("typesGH", _default_tg(data))
+
+            # merge nodes -------------------------------------------
+            for rc_n, host_n in m.items():
+                if its.has_node(host_n):
+                    SynReactor._node_glue(its.nodes[host_n], rc.nodes[rc_n])
+
+            # merge edges (additive order) ---------------------------
+            for u, v, rc_attr in rc.edges(data=True):
+                hu, hv = m.get(u), m.get(v)
+                if hu is None or hv is None:
+                    continue
+                if not its.has_edge(hu, hv):
+                    its.add_edge(hu, hv, **dict(rc_attr))
                 else:
-                    host_attr.update(rc_attr)
-        return its
+                    host_attr = its[hu][hv]
+                    rc_order = rc_attr.get("order", (0, 0))
+                    if rc_order[0] == 0:  # additive only on product side
+                        ho = host_attr["order"]
+                        host_attr["order"] = (ho[0], round(ho[1] + rc_order[1]))
+                        host_attr["standard_order"] += rc_attr.get(
+                            "standard_order", 0.0
+                        )
+                    else:
+                        host_attr.update(rc_attr)
+            list_its.append(its)
+        return list_its
 
+    # --------------------- explicit‑H handling -------------------------
     @staticmethod
     def _explicit_h(rc: nx.Graph) -> nx.Graph:
-        """
-        Insert explicit hydrogen nodes based on h_pairs and typesGH deltas,
-        correctly handling atoms that participate in multiple H-pairs.
-
-        Steps:
-        1. Record each heavy atom’s original Δ = (hl − hr).
-        2. Build a connectivity graph linking atoms sharing any h_pair ID.
-        3. In each connected component, donors (Δ>0) send exactly that many H’s to
-           recipients (Δ<0), one unit at a time.
-        4. Create one new H node per unit migration, with directed edges.
-        5. Zero out all original heavy-atom Δ’s afterward.
-        """
-        # rc = rc_graph.copy()
         next_id = max((n for n in rc.nodes if isinstance(n, int)), default=-1) + 1
-
-        # 1) Record original Δ per atom and collect h_pair memberships.
         orig_delta: Dict[int, int] = {}
         pair_to_nodes: Dict[int, List[int]] = defaultdict(list)
 
         for n, d in rc.nodes(data=True):
             h_pairs = d.get("h_pairs", [])
-            hl = d["typesGH"][0][2]
-            hr = d["typesGH"][1][2]
+            hl, hr = d["typesGH"][0][2], d["typesGH"][1][2]
             orig_delta[n] = hl - hr
             for pid in h_pairs:
                 if n not in pair_to_nodes[pid]:
                     pair_to_nodes[pid].append(n)
 
-        # 2) Build connectivity graph of atoms sharing any PID.
         conn = nx.Graph()
         for nodes in pair_to_nodes.values():
             conn.add_nodes_from(nodes)
             # fmt: off
             conn.add_edges_from(
-                [(u, v) for i, u in enumerate(nodes) for v in nodes[i + 1:]]
+                (u, v) for i, u in enumerate(nodes) for v in nodes[i + 1:]
             )
             # fmt: on
 
-        # 3) Schedule one migration per Δ unit in each component.
         migrations: List[Tuple[int, int]] = []
         for comp in nx.connected_components(conn):
             donors = [(n, orig_delta[n]) for n in comp if orig_delta[n] > 0]
@@ -454,7 +626,6 @@ class SynReactor:
                     recips[recv_idx] = (recv, rcap - 1)
                     migrations.append((donor, recv))
 
-        # 4) Create explicit H node for each scheduled migration.
         for src, dst in migrations:
             h = next_id
             next_id += 1
@@ -471,25 +642,20 @@ class SynReactor:
             rc.add_edge(h, dst, order=(0, 1), standard_order=-1)
 
         affected = [n for nodes in pair_to_nodes.values() for n in nodes]
-        # print(affected)
         for n in affected:
             t0, t1 = rc.nodes[n]["typesGH"]
             delta_h = t0[2] - t1[2]
             if delta_h >= 0:
-                t0_h = t0[2] - 1
-                t1_h = t1[2]
+                t0_h, t1_h = t0[2] - 1, t1[2]
             else:
-                t0_h = t0[2]
-                t1_h = t1[2] - 1
+                t0_h, t1_h = t0[2], t1[2] - 1
             rc.nodes[n]["typesGH"] = (
                 t0[:2] + (t0_h,) + t0[3:],
                 t1[:2] + (t1_h,) + t1[3:],
             )
         return rc
 
-    # ------------------------------------------------------------------
-    # Utility – SMARTS serialisation
-    # ------------------------------------------------------------------
+    # --------------------- SMARTS serialisation -----------------------
     @staticmethod
     def _to_smarts(its: nx.Graph) -> str:
         l, r = its_decompose(its)

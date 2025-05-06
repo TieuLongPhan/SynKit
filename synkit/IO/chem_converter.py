@@ -1,6 +1,6 @@
 import networkx as nx
 from rdkit import Chem
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from synkit.IO.debug import setup_logging
 from synkit.IO.mol_to_graph import MolToGraph
@@ -17,7 +17,7 @@ logger = setup_logging()
 
 def smiles_to_graph(
     smiles: str,
-    drop_non_aam: bool = True,
+    drop_non_aam: bool = False,
     light_weight: bool = True,
     sanitize: bool = True,
     use_index_as_atom_map: bool = False,
@@ -111,21 +111,30 @@ def rsmi_to_graph(
         return (None, None)
 
 
-def graph_to_smi(graph: nx.Graph, sanitize: bool = True, preserve_atom_maps: list = []):
+def graph_to_smi(
+    graph: nx.Graph,
+    sanitize: bool = True,
+    preserve_atom_maps: Optional[List[int]] = None,
+) -> Optional[str]:
     """
-    Converts a NetworkX graph to a SMILES string.
+    Convert a NetworkX molecular graph to a SMILES string.
 
-    Parameters:
-    - graph (nx.Graph): NetworkX graph representation of the molecule.
-    - sanitize (bool): If True, sanitizes the molecule (default: True).
-    - use_h_count (bool): If True, considers hydrogen count during conversion (default: False).
-    - preserve_atom_maps (list): List of atom maps to preserve specific atoms, usually hydrogens.
+    Parameters
+    ----------
+    graph : nx.Graph
+        Graph representation of the molecule. Nodes must have chemical attributes like 'element'.
+    sanitize : bool
+        Whether to perform RDKit sanitization on the resulting molecule.
+    preserve_atom_maps : list of int, optional
+        List of atom map numbers for which hydrogens should be preserved explicitly.
 
-    Returns:
-    - str: SMILES string representation of the molecule or an error message.
+    Returns
+    -------
+    str or None
+        SMILES string representation of the molecule, or None if conversion fails.
     """
     try:
-        if len(preserve_atom_maps) == 0:
+        if preserve_atom_maps is None or len(preserve_atom_maps) == 0:
             mol = GraphToMol().graph_to_mol(graph, sanitize=sanitize, use_h_count=True)
         else:
             graph_imp = implicit_hydrogen(graph, set(preserve_atom_maps))
@@ -135,48 +144,63 @@ def graph_to_smi(graph: nx.Graph, sanitize: bool = True, preserve_atom_maps: lis
 
         return Chem.MolToSmiles(mol)
     except Exception as e:
-        return f"Error in generating SMILES: {str(e)}"
-        # return ''
+        logger.debug(f"Error in generating SMILES: {str(e)}")
+        return None
 
 
 def graph_to_rsmi(
     r: nx.Graph,
     p: nx.Graph,
-    its: nx.Graph = None,
+    its: Optional[nx.Graph] = None,
     sanitize: bool = True,
     explicit_hydrogen: bool = False,
-):
+) -> Optional[str]:
     """
-    Converts graphs of reactants and products into a reaction SMILES string.
+    Convert reactant and product graphs into a reaction SMILES string.
 
-    Parameters:
-    - r (nx.Graph): Graph of the reactants.
-    - p (nx.Graph): Graph of the products.
-    - its (nx.Graph): Imaginary transition state graph, optional.
-    - sanitize (bool): If True, sanitizes molecules upon conversion.
-    - explicit_hydrogen (bool): If True, includes explicit hydrogens in the output.
-    - use_h_count (bool): If True, considers hydrogen counts in the conversion.
+    Parameters
+    ----------
+    r : nx.Graph
+        Graph representing the reactants.
+    p : nx.Graph
+        Graph representing the products.
+    its : nx.Graph, optional
+        Imaginary transition state (ITS) graph. If None, it will be constructed.
+    sanitize : bool
+        Whether to sanitize molecules during conversion.
+    explicit_hydrogen : bool
+        Whether to preserve all hydrogen atoms explicitly in the SMILES output.
 
-    Returns:
-    - str: Reaction SMILES string representing the conversion from reactants to products.
+    Returns
+    -------
+    str or None
+        Reaction SMILES string in the format 'reactants >> products', or None if conversion fails.
     """
-    if explicit_hydrogen:
-        r_smiles = graph_to_smi(r, sanitize)
-        p_smiles = graph_to_smi(p, sanitize)
+    try:
+        if explicit_hydrogen:
+            r_smiles = graph_to_smi(r, sanitize=sanitize)
+            p_smiles = graph_to_smi(p, sanitize=sanitize)
+        else:
+            if its is None:
+                its = ITSConstruction().ITSGraph(r, p)
+            rc = get_rc(its)
+            list_hydrogen = [
+                d["atom_map"] for _, d in rc.nodes(data=True) if d.get("element") == "H"
+            ]
+            r_smiles = graph_to_smi(
+                r, sanitize=sanitize, preserve_atom_maps=list_hydrogen
+            )
+            p_smiles = graph_to_smi(
+                p, sanitize=sanitize, preserve_atom_maps=list_hydrogen
+            )
 
-    else:
-        if its is None:
-            its = ITSConstruction().ITSGraph(r, p)
-        rc = get_rc(its)
-        list_hydrogen = [
-            value["atom_map"]
-            for _, value in rc.nodes(data=True)
-            if value["element"] == "H"
-        ]
-        r_smiles = graph_to_smi(r, sanitize, list_hydrogen)
-        p_smiles = graph_to_smi(p, sanitize, list_hydrogen)
+        if r_smiles is None or p_smiles is None:
+            return None
 
-    return f"{r_smiles}>>{p_smiles}"
+        return f"{r_smiles}>>{p_smiles}"
+    except Exception as e:
+        logger.debug(f"Error in generating reaction SMILES: {str(e)}")
+        return None
 
 
 def smart_to_gml(
@@ -241,40 +265,6 @@ def gml_to_smart(
     )
 
 
-def rsmi_to_its(
-    rsmi: str,
-    drop_non_aam: bool = True,
-    light_weight: bool = True,
-    sanitize: bool = True,
-    use_index_as_atom_map: bool = True,
-) -> nx.Graph:
-    """
-    Converts a reaction SMILES (rSMI) string to an ITS graph representation using specified processing parameters.
-
-    This function processes the input rSMI string into a graph representation of the reaction,
-    considering atom-atom mappings and optionally sanitizing the molecules. It then constructs
-    an Intermediate Transition State (ITS) graph based on the provided parameters.
-
-    Parameters:
-    - rsmi (str): The reaction SMILES string to be converted.
-    - drop_non_aam (bool, optional): If True, non-atom-atom mapped components are dropped. Default is True.
-    - light_weight (bool, optional): If True, reduces the complexity of the graph representation. Default is True.
-    - sanitize (bool, optional): If True, sanitizes the molecules during conversion. Default is True.
-    - use_index_as_atom_map (bool, optional): If True, uses indices as atom mappings. Default is True.
-
-    Returns:
-    - nx.Graph: The ITS graph representing the reaction.
-
-    Raises:
-    - Exception: If an error occurs during the conversion of rSMI to graph or ITS construction, an exception is raised.
-    """
-    r, p = rsmi_to_graph(
-        rsmi, drop_non_aam, light_weight, sanitize, use_index_as_atom_map
-    )
-    its = ITSConstruction.ITSGraph(r, p)
-    return its
-
-
 def its_to_gml(
     its: nx.Graph,
     core: bool = True,
@@ -324,6 +314,43 @@ def gml_to_its(gml: str) -> nx.Graph:
     # Convert GML back to the ITS graph using the appropriate GML to NX conversion
     _, _, its = GMLToNX(gml).transform()
 
+    return its
+
+
+def rsmi_to_its(
+    rsmi: str,
+    drop_non_aam: bool = True,
+    light_weight: bool = True,
+    sanitize: bool = True,
+    use_index_as_atom_map: bool = True,
+    core: bool = False,
+) -> nx.Graph:
+    """
+    Converts a reaction SMILES (rSMI) string to an ITS graph representation using specified processing parameters.
+
+    This function processes the input rSMI string into a graph representation of the reaction,
+    considering atom-atom mappings and optionally sanitizing the molecules. It then constructs
+    an Intermediate Transition State (ITS) graph based on the provided parameters.
+
+    Parameters:
+    - rsmi (str): The reaction SMILES string to be converted.
+    - drop_non_aam (bool, optional): If True, non-atom-atom mapped components are dropped. Default is True.
+    - light_weight (bool, optional): If True, reduces the complexity of the graph representation. Default is True.
+    - sanitize (bool, optional): If True, sanitizes the molecules during conversion. Default is True.
+    - use_index_as_atom_map (bool, optional): If True, uses indices as atom mappings. Default is True.
+
+    Returns:
+    - nx.Graph: The ITS graph representing the reaction.
+
+    Raises:
+    - Exception: If an error occurs during the conversion of rSMI to graph or ITS construction, an exception is raised.
+    """
+    r, p = rsmi_to_graph(
+        rsmi, drop_non_aam, light_weight, sanitize, use_index_as_atom_map
+    )
+    its = ITSConstruction.ITSGraph(r, p)
+    if core:
+        its = get_rc(its)
     return its
 
 

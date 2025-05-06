@@ -22,3 +22,5 @@ Data/Testcase/hydro/aam.json.gz
 synkit/Chem/FG/*
 test_syn_reactor.py
 Data/Benchmark/reactor/*
+*.png
+*.json.gz

@@ -7,15 +7,18 @@ from synkit.Graph.ITS.aam_validator import AAMValidator
 from synkit.IO.chem_converter import (
     smiles_to_graph,
     rsmi_to_graph,
+    graph_to_smi,
     graph_to_rsmi,
     smart_to_gml,
     gml_to_smart,
-    rsmi_to_its,
     its_to_gml,
     gml_to_its,
+    rsmi_to_its,
+    its_to_rsmi,
 )
 from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
 from synkit.Graph.Cluster.rule_morphism import rule_isomorphism
+from synkit.Chem.Reaction.canon_rsmi import CanonRSMI
 
 
 class TestChemicalConversions(unittest.TestCase):
@@ -91,8 +94,6 @@ class TestChemicalConversions(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_rsmi_to_graph_valid(self):
-        # now sanitize = True still keeps hydrogen
-        # Test converting valid reaction SMILES to graphs for reactants and products
         reactants_graph, products_graph = rsmi_to_graph(self.rsmi, sanitize=True)
         self.assertIsInstance(reactants_graph, nx.Graph)
         self.assertEqual(reactants_graph.number_of_nodes(), 4)
@@ -104,8 +105,30 @@ class TestChemicalConversions(unittest.TestCase):
         result = rsmi_to_graph("invalid_format")
         self.assertEqual((None, None), result)
 
+    def test_graph_to_smi_valid(self):
+        g = smiles_to_graph(
+            "[CH2:1]=[CH2:2]",
+            sanitize=True,
+            drop_non_aam=True,
+            use_index_as_atom_map=True,
+        )
+        smi = graph_to_smi(g)
+        self.assertEqual(smi, "[CH2:1]=[CH2:2]")
+
+    def test_graph_to_smi_invalid(self):
+        g = smiles_to_graph(
+            "[CH3:1]=[CH2:2]",
+            sanitize=False,
+            drop_non_aam=True,
+            use_index_as_atom_map=True,
+        )
+        smi = graph_to_smi(g)
+        self.assertIsNone(smi)
+        smi = graph_to_smi(g, sanitize=False)  # unsanitize can return invalid smiles
+        self.assertEqual(smi, "[CH3:1]=[CH2:2]")
+
     def test_graph_to_rsmi(self):
-        r, p = rsmi_to_graph(self.rsmi, sanitize=False)
+        r, p = rsmi_to_graph(self.rsmi, sanitize=True)
         its = ITSConstruction().ITSGraph(r, p)
         rsmi = graph_to_rsmi(
             r,
@@ -116,12 +139,25 @@ class TestChemicalConversions(unittest.TestCase):
         self.assertIsInstance(rsmi, str)
         self.assertTrue(AAMValidator.smiles_check(rsmi, self.rsmi, "ITS"))
 
+    def test_graph_to_invalid_rsmi(self):
+        r, p = rsmi_to_graph(
+            "[CH3:1]=[CH2:2].[H:3][H:4]>>[CH3:1][CH3:2]", sanitize=False
+        )
+        its = ITSConstruction().ITSGraph(r, p)
+        rsmi = graph_to_rsmi(
+            r,
+            p,
+            its,
+            explicit_hydrogen=False,
+        )
+        self.assertIsNone(rsmi, str)
+
     def test_smart_to_gml(self):
-        result = smart_to_gml(self.rsmi, core=False, sanitize=False, reindex=False)
+        result = smart_to_gml(self.rsmi, core=False, sanitize=True, reindex=False)
         self.assertIsInstance(result, str)
         self.assertEqual(result, self.gml)
 
-        result = smart_to_gml(self.rsmi, core=False, sanitize=False, reindex=True)
+        result = smart_to_gml(self.rsmi, core=False, sanitize=True, reindex=True)
         self.assertTrue(rule_isomorphism(result, self.gml))
 
     def test_gml_to_smart(self):
@@ -144,12 +180,6 @@ class TestChemicalConversions(unittest.TestCase):
         self.assertFalse(AAMValidator.smiles_check(smart, self.rsmi, "ITS"))
         self.assertTrue(AAMValidator.smiles_check(smart, expect, "ITS"))
 
-    def test_rsmi_to_its(self):
-        its_1 = rsmi_to_its(self.rsmi)
-        r, p = rsmi_to_graph(self.rsmi)
-        its_2 = ITSConstruction().ITSGraph(r, p)
-        self.assertTrue(graph_isomorphism(its_1, its_2))
-
     def test_its_to_gml(self):
         its = rsmi_to_its(self.rsmi)
         gml_1 = its_to_gml(its)
@@ -161,6 +191,27 @@ class TestChemicalConversions(unittest.TestCase):
         its_1 = rsmi_to_its(self.rsmi)
         its_2 = gml_to_its(gml)
         self.assertTrue(graph_isomorphism(its_1, its_2))
+
+    def test_rsmi_to_its(self):
+        its_1 = rsmi_to_its(self.rsmi)
+        r, p = rsmi_to_graph(self.rsmi)
+        its_2 = ITSConstruction().ITSGraph(r, p)
+        self.assertTrue(graph_isomorphism(its_1, its_2))
+
+    def test_rsmi_to_rc(self):
+        smart = "[CH3:5][CH:1]=[CH2:2].[H:3][H:4]>>[CH3:5][CH2:1][CH3:2]"
+        its = rsmi_to_its(smart)
+        rc = rsmi_to_its(smart, core=True)
+        self.assertFalse(graph_isomorphism(its, rc))
+
+    def test_its_to_rsmi(self):
+        smart = "[CH3:5][CH:1]=[CH2:2].[H:3][H:4]>>[CH3:5][CH:1]([H:3])[CH2:2][H:4]"
+        its = rsmi_to_its(smart)
+        new_smart = its_to_rsmi(its)
+        self.assertEqual(
+            CanonRSMI().canonicalise(smart).canonical_rsmi,
+            CanonRSMI().canonicalise(new_smart).canonical_rsmi,
+        )
 
 
 if __name__ == "__main__":

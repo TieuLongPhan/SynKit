@@ -4,7 +4,9 @@ import warnings
 from rdkit import rdBase, RDLogger
 
 
-def setup_logging(log_level: str = "INFO", log_filename: str = None) -> logging.Logger:
+def setup_logging(
+    log_level: str = "INFO", log_filename: str = None, task_type: str = None
+) -> logging.Logger:
     """
     Configures logging to either the console or a file based on provided parameters.
 
@@ -33,7 +35,7 @@ def setup_logging(log_level: str = "INFO", log_filename: str = None) -> logging.
     if not isinstance(numeric_level, int):
         raise ValueError(f"Invalid log level: {log_level}")
 
-    logger = logging.getLogger()
+    logger = logging.getLogger(task_type)
     logger.handlers.clear()  # Efficiently remove all existing handlers
 
     if log_filename:
