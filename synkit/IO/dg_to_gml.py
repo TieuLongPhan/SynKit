@@ -1,9 +1,17 @@
 import regex
+import importlib.util
 from synkit.IO.debug import setup_logging
 from synkit.Chem.Reaction.standardize import Standardize
-from mod import DGVertexMapper, smiles, Rule
 
 logger = setup_logging()
+
+if importlib.util.find_spec("mod"):
+    from mod import DGVertexMapper, smiles, Rule
+else:
+    DGVertexMapper = None
+    smiles = None
+    Rule = None
+    logger.warning("Optional 'mod' package not found: GML conversion will be limited.")
 
 
 class DGToGML:

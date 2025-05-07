@@ -1,19 +1,46 @@
-import networkx as nx
+"""syn_rule.py
+================
+Immutable description of a reaction template (SynRule) with canonical forms
+and optional implicit‐hydrogen stripping.
+
+Key features
+------------
+* **Fragment decomposition** – splits the ITS graph into rc, left, and right.
+* **Implicit H‐handling** – converts explicit H nodes into hcount + h_pairs.
+* **Canonicalisation** – wraps rc/left/right in SynGraph for stable signatures.
+* **Value‑object semantics** – `__eq__`/`__hash__` use fragment signatures.
+
+Quick start
+-----------
+>>> from synkit.Graph.syn_rule import SynRule
+>>> rule = SynRule.from_smart("[CH3:1]C>>[CH2:1]C")
+>>> rule.left.signature, rule.right.signature
+('abc123...', 'def456...')
+
+"""
+
+from __future__ import annotations
 from typing import Optional, Tuple
-from synkit.IO.chem_converter import rsmi_to_its, gml_to_its
-from synkit.Graph.ITS.its_decompose import its_decompose
+
+import networkx as nx
+
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
+from synkit.Graph.ITS.its_decompose import its_decompose
+
+from synkit.IO.chem_converter import rsmi_to_its, gml_to_its
+
+__all__ = ["SynRule"]
 
 
 class SynRule:
     """
-    Immutable description of a reaction template.
+    Immutable reaction template: rc, left, and right fragments as SynGraph Object.
 
     Parameters
     ----------
     rc_graph : nx.Graph
-        Raw reaction-centre (ITS) graph.
+        Raw reaction-centre (RC) graph.
     name : str, default ``"rule"``
         Identifier for the rule.
     canonicaliser : Optional[GraphCanonicaliser]
@@ -25,12 +52,16 @@ class SynRule:
         integer ``hcount`` attribute and record cross-fragment hydrogen pairs
         in a ``h_pairs`` attribute.
 
-    Notes
-    -----
-    •  **rc**, **left**, and **right** are always returned as
-       :class:`~synkit.Graph.syn_graph.SynGraph` wrappers.
-    •  ``canonical_smiles`` is a pair of hex digests *(left, right)*
-       when *canon=True*; otherwise ``None``.
+    Attributes
+    ----------
+    rc : SynGraph
+        Wrapped reaction‐centre graph.
+    left : SynGraph
+        Wrapped left fragment.
+    right : SynGraph
+        Wrapped right fragment.
+    canonical_smiles : Optional[Tuple[str,str]]
+        Pair of left/right fragment SHA‐256 signatures (or None if canon=False).
     """
 
     # ------------------------------------------------------------------ #
@@ -46,7 +77,7 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
     ) -> "SynRule":
-        """Build from an ITS-compatible reaction **SMILES/SMARTS** string."""
+        """Instantiate from a SMARTS string."""
         return cls(
             rsmi_to_its(smart),
             name=name,
@@ -65,7 +96,7 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
     ) -> "SynRule":
-        """Build from a **GML** string."""
+        """Instantiate from a GML string."""
         return cls(
             gml_to_its(gml),
             name=name,
@@ -91,14 +122,15 @@ class SynRule:
         self._implicit_h = implicit_h
         self._canonicaliser = canonicaliser or GraphCanonicaliser()
 
-        # ---------- split into fragments BEFORE any wrapping ------------ #
+        # Fragment decomposition
         rc_graph = rc.copy()
         left_graph, right_graph = its_decompose(rc_graph)
 
+        # Optional H-stripping
         if self._implicit_h:
             self._strip_explicit_h(rc_graph, left_graph, right_graph)
 
-        # rc_graph = ITSConstruction().ITSGraph(left_graph, right_graph)
+        # Update typesGH tuples with new hcount
         for node, att in rc_graph.nodes(data=True):
             # unpack the old tuples
             t0, t1 = att["typesGH"]
@@ -129,46 +161,63 @@ class SynRule:
         right: nx.Graph,
     ) -> None:
         """
-        Remove explicit hydrogens from *rc*, *left*, *right* and:
-
-        1. Ensure every heavy atom has ``hcount`` (initialised to 0).
-        2. For each shared hydrogen *H* appearing in **both** *left* and *right*:
-           • increment ``hcount`` on its neighbours in each fragment
-           • assign an integer pair-ID to the neighbours’ ``h_pairs`` list
-        3. Delete *H* from all three graphs (and associated edges).
-
-        The pair-ID (1, 2, …) is assigned in sorted **H-node** order, providing
-        reproducible numbering across runs.
+        Remove explicit hydrogens from rc, left, right—but only when *both*
+        left & right agree the H should be implicit.  Otherwise an H remains
+        explicit in all three graphs.
         """
-        # 1) ensure hcount exists
-        for g in (rc, left, right):
-            for _, data in g.nodes(data=True):
-                data["hcount"] = 0
 
-        # 2) shared hydrogens (present in both left & right)
-        shared_H = sorted(
+        def _removable_on(graph: nx.Graph, h: str) -> bool:
+            # H+ (no neighbors) ⇒ not removable
+            nbrs = list(graph.neighbors(h))
+            if not nbrs:
+                return False
+            # H–H only ⇒ not removable
+            if all(graph.nodes[n].get("element") == "H" for n in nbrs):
+                return False
+            # otherwise bonded to ≥1 heavy ⇒ removable
+            return True
+
+        def _fully_removable(h: str) -> bool:
+            # only remove if BOTH left and right say removable
+            return _removable_on(left, h) and _removable_on(right, h)
+
+        # 1) initialize hcount & h_pairs
+        for g in (rc, left, right):
+            for n, data in g.nodes(data=True):
+                data["hcount"] = 0
+                if data.get("element") != "H":
+                    data.setdefault("h_pairs", [])
+
+        # 2) shared H: only those removable on both sides
+        shared = sorted(
             n
             for n, d in left.nodes(data=True)
-            if d.get("element") == "H" and right.has_node(n)
+            if d.get("element") == "H" and right.has_node(n) and _fully_removable(n)
         )
 
         pair_id = 1
-        for h in shared_H:
-            # tag neighbours in *all* graphs
+        for h in shared:
             for g in (left, right, rc):
-                if g.has_node(h):
-                    for nbr in g.neighbors(h):
+                if not g.has_node(h):
+                    continue
+                for nbr in list(g.neighbors(h)):
+                    if g.nodes[nbr].get("element") != "H":
                         g.nodes[nbr]["hcount"] += 1
+                        # only shared H get pair-IDs
                         g.nodes[nbr].setdefault("h_pairs", []).append(pair_id)
-                    g.remove_node(h)
+                g.remove_node(h)
             pair_id += 1
 
-        # 3) any remaining explicit H unique to one graph
+        # 3) remaining explicit H in any graph: strip only if fully_removable
         for g in (rc, left, right):
-            lone_H = [n for n, d in g.nodes(data=True) if d.get("element") == "H"]
-            for h in lone_H:
-                for nbr in g.neighbors(h):
-                    g.nodes[nbr]["hcount"] += 1
+            for h in [n for n, d in g.nodes(data=True) if d.get("element") == "H"]:
+                if not _fully_removable(h):
+                    # at least one side wants to keep it explicit → skip
+                    continue
+                # else both agree → convert to implicit
+                for nbr in list(g.neighbors(h)):
+                    if g.nodes[nbr].get("element") != "H":
+                        g.nodes[nbr]["hcount"] += 1
                 g.remove_node(h)
 
     # ================================================================== #
@@ -207,7 +256,7 @@ class SynRule:
         )
 
     # ================================================================== #
-    # Convenience                                                        #
+    # Public API                                                         #
     # ================================================================== #
     def help(self) -> None:
         """Pretty-print raw / canonical contents for quick inspection."""

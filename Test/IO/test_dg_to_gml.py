@@ -1,10 +1,18 @@
 import unittest
-from synkit.IO.dg_to_gml import DGToGML
+import importlib
+
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Reactor.reactor_engine import ReactorEngine
+from synkit.IO.dg_to_gml import DGToGML
+
+# from synkit.Synthesis.Reactor.reactor_engine import ReactorEngine
+from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 
 
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
+
+
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestGMLToNX(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -23,28 +31,27 @@ class TestGMLToNX(unittest.TestCase):
         self.standardizer = Standardize()
         self.standardized_rsmi = self.standardizer.fit(self.smart)
         self.gml = smart_to_gml(self.smart)
-        self.reactor_engine = ReactorEngine()
         self.dg_to_gml = DGToGML()
 
     def test_getReactionSmiles(self):
-
-        rsmis = self.dg_to_gml.getReactionSmiles(
-            self.reactor_engine._apply(
-                self.standardized_rsmi.split(">>")[0].split("."), self.gml
-            )
-        )
+        reactor = MODReactor(
+            substrate=self.standardized_rsmi.split(">>")[0].split("."),
+            rule_file=self.gml,
+        ).run()
+        dg = reactor.get_dg()
+        rsmis = self.dg_to_gml.getReactionSmiles(dg)
         self.assertIsInstance(rsmis, dict)
         self.assertGreater(len(rsmis), 0)
 
     def test_fit(self):
+        reactor = MODReactor(
+            substrate=self.standardized_rsmi.split(">>")[0].split("."),
+            rule_file=self.gml,
+        ).run()
+        dg = reactor.get_dg()
+        rsmis = self.dg_to_gml.fit(dg=dg, origSmiles=self.standardized_rsmi)
 
-        rsmis = self.dg_to_gml.getReactionSmiles(
-            self.reactor_engine._apply(
-                self.standardized_rsmi.split(">>")[0].split("."), self.gml
-            )
-        )
         self.assertGreater(len(rsmis), 0)
-        self.assertTrue(isinstance(rsmis, dict))
 
 
 if __name__ == "__main__":

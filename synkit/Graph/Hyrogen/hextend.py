@@ -2,7 +2,7 @@ import networkx as nx
 from joblib import Parallel, delayed
 from typing import List, Tuple, Dict
 
-from synkit.Graph.Cluster.graph_cluster import GraphCluster
+from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Hyrogen.hcomplete import HComplete
 
 from synkit.Graph.Feature.wl_hash import WLHash
