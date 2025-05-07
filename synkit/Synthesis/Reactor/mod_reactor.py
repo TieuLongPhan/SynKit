@@ -16,7 +16,7 @@ External behavior is unchanged:
 r = MODReactor("CC.O", "rule.gml", strategy="bt").run()
 smiles = r.get_reaction_smiles()
 """
-
+import importlib.util
 from pathlib import Path
 from collections import Counter
 from typing import Any, List, Optional, Union
@@ -30,13 +30,19 @@ from synkit.Chem.Molecule.standardize import sanitize_and_canonicalize_smiles
 from synkit.Synthesis.Reactor.strategy import Strategy
 from synkit.Synthesis.reactor_utils import _deduplicateGraphs
 
-from mod import smiles, config, ruleGMLString, DG  # always import last
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Logging
 # ──────────────────────────────────────────────────────────────────────────────
 log = setup_logging(task_type="MODReactor")
+if importlib.util.find_spec("mod"):
+    from mod import smiles, ruleGMLString, DG, config
+else:
+    ruleGMLString = None
+    smiles = None
+    DG = None
+    config = None
+    log.warning("Optional 'mod' package not found")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -77,7 +83,7 @@ class MODReactor:
         rule_file: Union[str, Path],
         *,
         invert: bool = False,
-        strategy: Union[str, Strategy] = Strategy.ALL,
+        strategy: Union[str, Strategy] = Strategy.BACKTRACK,
         verbosity: int = 0,
         print_results: bool = False,
     ) -> None:
@@ -433,7 +439,8 @@ class MODReactor:
         """
         reactions: List[str] = []
         for batch in temp_results:
-            joined = separator.join(batch) if batch else ""
-            left, right = (joined, base_smiles) if invert else (base_smiles, joined)
-            reactions.append(f"{left}{arrow}{right}")
+            if all(x is not None for x in batch):
+                joined = separator.join(batch) if batch else ""
+                left, right = (joined, base_smiles) if invert else (base_smiles, joined)
+                reactions.append(f"{left}{arrow}{right}")
         return reactions

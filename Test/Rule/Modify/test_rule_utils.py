@@ -7,7 +7,10 @@ from synkit.Rule.Modify.rule_utils import (
     strip_context,
     _increment_gml_ids,
 )
-from synkit.Graph.Cluster.rule_morphism import rule_isomorphism, rule_subgraph_morphism
+from synkit.Graph.Matcher import GraphMatcherEngine, SubgraphMatch
+import importlib
+
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
 class TestGMLFunctions(unittest.TestCase):
@@ -162,11 +165,22 @@ class TestGMLFunctions(unittest.TestCase):
             self.assertNotIn(e[0], {"5", "6", "7", "8", "9"})
             self.assertNotIn(e[1], {"5", "6", "7", "8", "9"})
 
+    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_strip_context(self):
-        self.assertFalse(rule_isomorphism(self.gml_expected, self.gml_h))
-        self.assertTrue(rule_subgraph_morphism(self.gml_expected, self.gml_h))
+        self.assertFalse(
+            GraphMatcherEngine(backend="rule")._isomorphic_rule(
+                self.gml_expected, self.gml_h
+            )
+        )
+        self.assertTrue(
+            SubgraphMatch().rule_subgraph_morphism(self.gml_expected, self.gml_h)
+        )
         output = strip_context(self.gml_h)
-        self.assertTrue(rule_isomorphism(self.gml_expected, output))
+        self.assertTrue(
+            GraphMatcherEngine(backend="rule")._isomorphic_rule(
+                self.gml_expected, output
+            )
+        )
 
     def test_increment_gml_ids_without_id_zero(self):
         """Test increment_gml_ids method with no id 0 in input."""

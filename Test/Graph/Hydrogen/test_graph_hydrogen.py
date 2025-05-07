@@ -1,6 +1,6 @@
 import unittest
 from synkit.Graph.ITS.aam_validator import AAMValidator
-from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
+from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
 from synkit.IO.chem_converter import rsmi_to_graph, graph_to_rsmi
 from synkit.Graph.Hyrogen._misc import implicit_hydrogen, h_to_explicit
 

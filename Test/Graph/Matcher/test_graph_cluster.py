@@ -1,7 +1,7 @@
 import time
 import unittest
 from synkit.IO.data_io import load_from_pickle
-from synkit.Graph.Cluster.graph_cluster import GraphCluster
+from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Feature.graph_descriptors import GraphDescriptor
 
 

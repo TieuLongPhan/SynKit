@@ -1,5 +1,5 @@
 from typing import List, Dict
-from synkit.Metrics._ranking import (
+from ._ranking import (
     _novelty_rate,
     _coverage,
     _recognition_rate,

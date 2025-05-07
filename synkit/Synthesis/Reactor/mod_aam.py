@@ -228,3 +228,56 @@ class MODAAM:
         except Exception:
             logger.error("Isomorphic deduplication failed; returning unfiltered")
             return smiles
+
+
+def expand_aam(rsmi: str, rule: str) -> List[str]:
+    """
+    Expand Atom–Atom Mapping (AAM) for a given reaction SMARTS/SMILES (rsmi)
+    using a pre‐sanitized GML rule string.
+
+    Parameters
+    ----------
+    rsmi : str
+        Reaction SMILES/SMARTS in 'reactants>>products' form.
+    rule : str
+        A GML rule string (already sanitized upstream).
+
+    Returns
+    -------
+    List[str]
+        All reaction SMILES from MODAAM whose standardized form matches `rsmi`.
+    """
+    std = Standardize()
+
+    # Extract reactant side
+    try:
+        substrate, _ = rsmi.split(">>", 1)
+    except ValueError:
+        logger.error("Invalid rsmi format (missing '>>'): %r", rsmi)
+        return []
+
+    # Run the AAM reactor
+    try:
+        reactor = MODAAM(substrate=substrate, rule_file=rule, check_isomorphic=True)
+        candidates = reactor.get_reaction_smiles()
+    except Exception as e:
+        logger.error("MODAAM failed: %s", e)
+        return []
+
+    # Standardize once and filter + dedupe
+    target = std.fit(rsmi)
+    seen = set()
+    out: List[str] = []
+
+    for sm in candidates:
+        try:
+            std_sm = std.fit(sm)
+        except Exception as e:
+            logger.debug("Skipping unparsable candidate %r: %s", sm, e)
+            continue
+
+        if std_sm == target and sm not in seen:
+            seen.add(sm)
+            out.append(sm)
+
+    return out

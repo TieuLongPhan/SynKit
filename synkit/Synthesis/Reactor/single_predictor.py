@@ -1,5 +1,7 @@
 from typing import List, Any, Dict
-from synkit.Synthesis.Reactor.core_engine import CoreEngine
+
+# from synkit.Synthesis.Reactor.core_engine import CoreEngine
+from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 
 
 class SinglePredictor:
@@ -17,7 +19,7 @@ class SinglePredictor:
         pass
 
     def _single_rule(
-        self, smiles_list: List[str], rule: str, prediction_type: str = "forward"
+        self, smiles_list: List[str], rule: str, invert: bool = False
     ) -> List[Any]:
         """
         Applies a single transformation rule to a list of SMILES strings.
@@ -37,15 +39,13 @@ class SinglePredictor:
         Raises:
         - Exception: If an error occurs during the processing of the rule.
         """
-        reactions = CoreEngine._inference(
-            rule_file_path=rule,
-            initial_smiles=smiles_list,
-            prediction_type=prediction_type,
-        )
+        reactor = MODReactor(smiles_list, rule, invert=invert, strategy="bt")
+        reactor.run()
+        reactions = reactor.get_reaction_smiles()
         return reactions
 
     def _multiple_rules(
-        self, smiles_list: List[str], rules: List[str], prediction_type: str = "forward"
+        self, smiles_list: List[str], rules: List[str], invert: bool = False
     ) -> List[Any]:
         """
         Applies multiple transformation rules to a list of SMILES strings.
@@ -60,7 +60,7 @@ class SinglePredictor:
         """
         reactions = []
         for rule in rules:
-            reaction = self._single_rule(smiles_list, rule, prediction_type)
+            reaction = self._single_rule(smiles_list, rule, invert)
             reactions.extend(reaction)
         return reactions
 
@@ -70,7 +70,7 @@ class SinglePredictor:
         rule_data: List[Dict[str, str]],
         reaction_key: str = "rsmi",
         rule_key: str = "gml",
-        prediction_type: str = "forward",
+        invert: bool = False,
     ) -> List[Dict[str, Any]]:
         """
         Performs prediction for each entry in the data using the specified rules.
@@ -88,9 +88,9 @@ class SinglePredictor:
         rules = [i[rule_key] for i in rule_data]
         for r in data:
             initial_smiles_list = (
-                r[reaction_key].split(">>")[0].split(".")
-                if prediction_type == "forward"
-                else r[reaction_key].split(">>")[1].split(".")
+                r[reaction_key].split(">>")[1].split(".")
+                if invert
+                else r[reaction_key].split(">>")[0].split(".")
             )
-            r["raw"] = self._multiple_rules(initial_smiles_list, rules, prediction_type)
+            r["raw"] = self._multiple_rules(initial_smiles_list, rules, invert)
         return data

@@ -16,9 +16,12 @@ from synkit.IO.chem_converter import (
     rsmi_to_its,
     its_to_rsmi,
 )
-from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
-from synkit.Graph.Cluster.rule_morphism import rule_isomorphism
+from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
+from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
 from synkit.Chem.Reaction.canon_rsmi import CanonRSMI
+import importlib.util
+
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
 class TestChemicalConversions(unittest.TestCase):
@@ -152,24 +155,32 @@ class TestChemicalConversions(unittest.TestCase):
         )
         self.assertIsNone(rsmi, str)
 
+    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_smart_to_gml(self):
         result = smart_to_gml(self.rsmi, core=False, sanitize=True, reindex=False)
         self.assertIsInstance(result, str)
         self.assertEqual(result, self.gml)
 
         result = smart_to_gml(self.rsmi, core=False, sanitize=True, reindex=True)
-        self.assertTrue(rule_isomorphism(result, self.gml))
+        self.assertTrue(
+            GraphMatcherEngine(backend="rule")._isomorphic_rule(result, self.gml)
+        )
 
     def test_gml_to_smart(self):
         smarts, _ = gml_to_smart(self.gml_h)
         self.assertIsInstance(smarts, str)
         self.assertTrue(AAMValidator.smiles_check(smarts, self.rsmi, "ITS"))
 
+    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_smart_to_gml_explicit_hydrogen(self):
         rsmi = "[CH2:1]([H:4])[CH2:2][OH:3]>>[CH2:1]=[CH2:2].[H:4][OH:3]"
         gml = smart_to_gml(rsmi, explicit_hydrogen=True, core=False, sanitize=True)
-        self.assertFalse(rule_isomorphism(gml, self.gml))
-        self.assertTrue(rule_isomorphism(gml, self.gml_h))
+        self.assertFalse(
+            GraphMatcherEngine(backend="rule")._isomorphic_rule(gml, self.gml)
+        )
+        self.assertTrue(
+            GraphMatcherEngine(backend="rule")._isomorphic_rule(gml, self.gml_h)
+        )
 
     def test_gml_to_smart_explicit_hydrogen(self):
         smart, _ = gml_to_smart(self.gml_h, explicit_hydrogen=True)
@@ -180,11 +191,14 @@ class TestChemicalConversions(unittest.TestCase):
         self.assertFalse(AAMValidator.smiles_check(smart, self.rsmi, "ITS"))
         self.assertTrue(AAMValidator.smiles_check(smart, expect, "ITS"))
 
+    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_its_to_gml(self):
         its = rsmi_to_its(self.rsmi)
         gml_1 = its_to_gml(its)
         gml_2 = smart_to_gml(self.rsmi)
-        self.assertTrue(rule_isomorphism(gml_1, gml_2))
+        self.assertTrue(
+            GraphMatcherEngine(backend="rule")._isomorphic_rule(gml_1, gml_2)
+        )
 
     def test_gml_to_its(self):
         gml = smart_to_gml(self.rsmi)

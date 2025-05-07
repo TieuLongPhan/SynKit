@@ -4,9 +4,11 @@ from typing import List, Dict, Any, Tuple, Optional, Callable
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 from synkit.Utils.utils import stratified_random_sample
 from synkit.Rule.Modify.rule_utils import strip_context
-from synkit.Graph.Cluster.graph_cluster import GraphCluster
-from synkit.Graph.Cluster.graph_morphism import graph_isomorphism
-from synkit.Graph.Cluster.rule_morphism import rule_isomorphism
+from synkit.Graph.Matcher.graph_cluster import GraphCluster
+from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
+
+# from synkit.Graph.Matcher.rule_morphism import rule_isomorphism
+from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
 
 
 class BatchCluster:
@@ -15,6 +17,7 @@ class BatchCluster:
         node_label_names: List[str] = ["element", "charge"],
         node_label_default: List[Any] = ["*", 0],
         edge_attribute: str = "order",
+        backend: str = "nx",
     ):
         """
         Initializes an AutoCat instance which uses isomorphism checks for categorizing
@@ -32,18 +35,36 @@ class BatchCluster:
         - ValueError: If the lengths of `node_label_names` and `node_label_default`
           do not match.
         """
+        self.backend = backend.lower()
+        available = self.available_backends()
+        if self.backend not in available:
+            if self.backend == "rule":
+                raise ImportError("MOD is not installed")
+            raise ValueError(f"Unsupported backend: {backend!r}")
         if len(node_label_names) != len(node_label_default):
             raise ValueError(
                 "The lengths of `node_label_names` and `node_label_default` must match."
             )
+        if backend == "nx":
+            self.nodeLabelNames = node_label_names
+            self.nodeLabelDefault = node_label_default
+            self.edgeAttribute = edge_attribute
+            self.nodeMatch = generic_node_match(
+                self.nodeLabelNames, self.nodeLabelDefault, [eq] * len(node_label_names)
+            )
+            self.edgeMatch = generic_edge_match(edge_attribute, 1, eq)
 
-        self.nodeLabelNames = node_label_names
-        self.nodeLabelDefault = node_label_default
-        self.edgeAttribute = edge_attribute
-        self.nodeMatch = generic_node_match(
-            self.nodeLabelNames, self.nodeLabelDefault, [eq] * len(node_label_names)
-        )
-        self.edgeMatch = generic_edge_match(edge_attribute, 1, eq)
+    def available_backends(self) -> List[str]:
+        """
+        Return available backends: always includes 'nx'; adds 'rule' if the 'mod' package is installed.
+        """
+        import importlib.util
+
+        backends = ["nx"]
+        # Check if 'mod' package is importable without executing it
+        if importlib.util.find_spec("mod") is not None:
+            backends.append("rule")
+        return backends
 
     def lib_check(
         self,
@@ -89,7 +110,7 @@ class BatchCluster:
             )
 
             if isinstance(data_rule, str):
-                iso_function = rule_isomorphism
+                iso_function = GraphMatcherEngine()._isomorphic_rule
                 apply_match_args = False
             elif isinstance(data_rule, nx.Graph):
                 iso_function = graph_isomorphism

@@ -5,7 +5,7 @@ from typing import List, Any, Dict, Tuple, Callable
 from synkit.IO.debug import setup_logging
 from synkit.Graph.Feature.wl_hash import WLHash
 from synkit.Graph.Context.radius_expand import RadiusExpand
-from synkit.Graph.Cluster.batch_cluster import BatchCluster
+from synkit.Graph.Matcher.batch_cluster import BatchCluster
 
 logger = setup_logging()
 

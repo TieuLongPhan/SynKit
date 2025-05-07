@@ -2,7 +2,7 @@ import unittest
 from synkit.IO.data_io import load_from_pickle
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Graph.ITS.its_decompose import get_rc
-from synkit.Graph.Cluster.graph_morphism import (
+from synkit.Graph.Matcher.graph_morphism import (
     graph_isomorphism,
     subgraph_isomorphism,
     maximum_connected_common_subgraph,

@@ -21,10 +21,9 @@ original implementation.
 from copy import deepcopy
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union, Set
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import networkx as nx
-from networkx.algorithms.isomorphism import GraphMatcher
 
 
 from synkit.IO.chem_converter import (
@@ -41,6 +40,7 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
 from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
 from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ class SynReactor:
                 # self.strategy = Strategy.ALL # force to find all in implicit case
                 pattern_graph = h_to_implicit(pattern_graph)
 
-            self._mappings = self._find_subgraph_mappings(
+            self._mappings = SubgraphSearchEngine.find_subgraph_mappings(
                 host=self.graph.raw,
                 pattern=pattern_graph,
                 node_attrs=["element", "charge"],
@@ -264,231 +264,6 @@ class SynReactor:
         return ITSConstruction().ITSGraph(r, l)
 
     # ==================================================================
-    # Sub‑graph matching wrappers
-    # ==================================================================
-    @staticmethod
-    def _find_subgraph_mappings(
-        host: nx.Graph,
-        pattern: nx.Graph,
-        *,
-        node_attrs: List[str],
-        edge_attrs: List[str],
-        strategy: Strategy = Strategy.ALL,
-    ) -> List[MappingDict]:
-        if strategy is Strategy.ALL:
-            return SynReactor._find_all_subgraph_mappings(
-                host, pattern, node_attrs=node_attrs, edge_attrs=edge_attrs
-            )
-        if strategy is Strategy.COMPONENT:
-            return SynReactor._find_component_aware_subgraph_mappings(
-                host, pattern, node_attrs=node_attrs, edge_attrs=edge_attrs
-            )
-            # # Flatten – valid only when the pattern has ≤1 component; caller is responsible otherwise
-            # return [mapping for group in nested for _, mapping in group]
-        if strategy is Strategy.BACKTRACK:
-            return SynReactor._find_bt_subgraph_mappings(
-                host, pattern, node_attrs=node_attrs, edge_attrs=edge_attrs
-            )
-        # pragma: no cover – defensive programming
-        raise ValueError(f"Unsupported strategy: {strategy}")
-
-    # --------------------- ALL / classic VF2 ---------------------------
-    @staticmethod
-    def _find_all_subgraph_mappings(
-        host: nx.Graph,
-        pattern: nx.Graph,
-        *,
-        node_attrs: List[str],
-        edge_attrs: List[str],
-    ) -> List[MappingDict]:
-        def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
-            return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
-                "hcount", 0
-            ) >= np.get("hcount", 0)
-
-        def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
-            return all(eh.get(k) == ep.get(k) for k in edge_attrs)
-
-        gm = GraphMatcher(host, pattern, node_match=node_match, edge_match=edge_match)
-        return [
-            {p: h for h, p in iso.items()} for iso in gm.subgraph_monomorphisms_iter()
-        ]
-
-    # --------------------------------------------------------------------------- #
-    #  Component‑aware sub‑graph matching (no backtracking, no fallback)          #
-    # --------------------------------------------------------------------------- #
-    @staticmethod
-    def _find_component_aware_subgraph_mappings(
-        host: nx.Graph,
-        pattern: nx.Graph,
-        *,
-        node_attrs: List[str],
-        edge_attrs: List[str],
-    ) -> List[MappingDict]:
-        """
-        Strict component-aware VF2 search with *distinct* host-CC assignment
-        and *no* classic fallback.
-
-        We break both host and pattern into connected components (CCs),
-        find all monomorphisms of each pattern-CC into each eligible host-CC,
-        then assemble only those overall mappings in which each pattern-CC
-        is embedded into a *different* host-CC.
-
-        Parameters
-        ----------
-        host : nx.Graph
-            The substrate graph.
-        pattern : nx.Graph
-            The template (left) graph.
-        node_attrs : List[str]
-            Node attributes that must match exactly.
-        edge_attrs : List[str]
-            Edge attributes that must match exactly.
-
-        Returns
-        -------
-        List[MappingDict]
-            A flat list of pattern→host node-mappings. If any pattern-CC
-            has zero matches, this returns [].
-        """
-        # 1) split into CCs
-        host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
-        pat_ccs = [pattern.subgraph(c).copy() for c in nx.connected_components(pattern)]
-        n_pats = len(pat_ccs)
-
-        # 2) define VF2 matchers
-        def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
-            return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
-                "hcount", 0
-            ) >= np.get("hcount", 0)
-
-        def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
-            return all(eh.get(k) == ep.get(k) for k in edge_attrs)
-
-        # 3) collect matches per pattern-CC
-        per_cc_matches: List[List[Tuple[int, MappingDict]]] = []
-        for pc in pat_ccs:
-            size = pc.number_of_nodes()
-            # prefer host-CCs of equal size, else any larger
-            exact = [i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() == size]
-            candidates = exact or [
-                i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() >= size
-            ]
-
-            this_cc_matches: List[Tuple[int, MappingDict]] = []
-            for h_idx in candidates:
-                gm = GraphMatcher(
-                    host_ccs[h_idx], pc, node_match=node_match, edge_match=edge_match
-                )
-                for iso in gm.subgraph_monomorphisms_iter():
-                    # invert to pattern→host
-                    this_cc_matches.append((h_idx, {p: h for h, p in iso.items()}))
-
-            if not this_cc_matches:
-                # no embeddings for this pattern-CC ⇒ fail immediately
-                return []
-            per_cc_matches.append(this_cc_matches)
-
-        # 4) backtrack across CCs to enforce distinct host-CC usage
-        results: List[MappingDict] = []
-
-        def backtrack(i: int, used_h: Set[int], accum: MappingDict) -> None:
-            if i == n_pats:
-                results.append(accum.copy())
-                return
-            for h_idx, mapping in per_cc_matches[i]:
-                if h_idx in used_h:
-                    continue
-                # avoid mapping the same pattern node twice (shouldn't happen)
-                if any(p in accum for p in mapping):
-                    continue
-                used_h.add(h_idx)
-                accum.update(mapping)
-                backtrack(i + 1, used_h, accum)
-                # undo
-                for p in mapping:
-                    del accum[p]
-                used_h.remove(h_idx)
-
-        backtrack(0, set(), {})
-        return results
-
-    # --------------------- BT / component‑aware ------------------------
-    @staticmethod
-    def _find_bt_subgraph_mappings(
-        host: nx.Graph,
-        pattern: nx.Graph,
-        *,
-        node_attrs: List[str],
-        edge_attrs: List[str],
-    ) -> List[MappingDict]:
-        # Locally defined matchers -------------------------------------
-        def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
-            return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
-                "hcount", 0
-            ) >= np.get("hcount", 0)
-
-        def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
-            return all(eh.get(k) == ep.get(k) for k in edge_attrs)
-
-        def classic_fallback() -> List[MappingDict]:
-            gm = GraphMatcher(
-                host, pattern, node_match=node_match, edge_match=edge_match
-            )
-            return [
-                {p: h for h, p in iso.items()}
-                for iso in gm.subgraph_monomorphisms_iter()
-            ]
-
-        # PASS 1 – component‑aware --------------------------------------
-        host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
-        pat_ccs = [pattern.subgraph(c).copy() for c in nx.connected_components(pattern)]
-
-        component_matches: List[List[Tuple[int, MappingDict]]] = []
-        for pc in pat_ccs:
-            pc_size = pc.number_of_nodes()
-            exact = [
-                i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() == pc_size
-            ]
-            candidates = exact or [
-                i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() >= pc_size
-            ]
-
-            pat_matches: List[Tuple[int, MappingDict]] = []
-            for h_idx in candidates:
-                gm = GraphMatcher(
-                    host_ccs[h_idx], pc, node_match=node_match, edge_match=edge_match
-                )
-                pat_matches.extend(
-                    (h_idx, {p: h for h, p in iso.items()})
-                    for iso in gm.subgraph_monomorphisms_iter()
-                )
-
-            if not pat_matches:
-                return classic_fallback()  # early abort
-            component_matches.append(pat_matches)
-
-        # backtracking --------------------------------------------------
-        results: List[MappingDict] = []
-
-        def backtrack(i: int, used_h: Set[int], curr: MappingDict) -> None:
-            if i == len(component_matches):
-                results.append(curr.copy())
-                return
-            for h_idx, mapping in component_matches[i]:
-                if h_idx in used_h or any(n in curr for n in mapping):
-                    continue
-                used_h.add(h_idx)
-                curr.update(mapping)
-                backtrack(i + 1, used_h, curr)
-                for k in mapping:
-                    del curr[k]
-                used_h.remove(h_idx)
-
-        backtrack(0, set(), {})
-        return results or classic_fallback()
-
-    # ==================================================================
     # Aux – glue, explicit‑H, SMARTS
     # ==================================================================
     @staticmethod
@@ -515,7 +290,7 @@ class SynReactor:
     ):
         expand_nodes = [v for _, v in mapping.items()]
         host_explicit = h_to_explicit(host, expand_nodes)
-        mappings = SynReactor._find_subgraph_mappings(
+        mappings = SubgraphSearchEngine.find_subgraph_mappings(
             host=host_explicit,
             pattern=pattern_explicit or nx.Graph(),
             node_attrs=["element", "charge"],

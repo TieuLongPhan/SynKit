@@ -2,7 +2,7 @@ import time
 import unittest
 from synkit.IO.data_io import load_from_pickle
 from synkit.Graph.Feature.graph_signature import GraphSignature
-from synkit.Graph.Cluster.batch_cluster import BatchCluster
+from synkit.Graph.Matcher.batch_cluster import BatchCluster
 
 
 class TestBatchCluster(unittest.TestCase):

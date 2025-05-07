@@ -1,7 +1,7 @@
 from typing import List
 from collections import Counter
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Graph.Cluster.graph_cluster import GraphCluster
+from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.IO.chem_converter import rsmi_to_its, gml_to_smart
 
 

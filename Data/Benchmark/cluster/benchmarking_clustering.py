@@ -58,7 +58,7 @@ if __name__ == "__main__":
     from synkit.Graph.Feature.wl_hash import WLHash
     from synkit.IO.data_io import load_database
     from synkit.IO.chem_converter import rsmi_to_its, smart_to_gml
-    from synkit.Graph.Cluster.graph_cluster import GraphCluster
+    from synkit.Graph.Matcher.graph_cluster import GraphCluster
 
     # Configure logging
     def setup_logging():

@@ -3,7 +3,7 @@ import networkx as nx
 from synkit.IO.data_io import load_from_pickle
 from synkit.Graph.ITS.its_decompose import get_rc
 from synkit.Graph.Context.radius_expand import RadiusExpand
-from synkit.Graph.Cluster.graph_morphism import graph_isomorphism, subgraph_isomorphism
+from synkit.Graph.Matcher.graph_morphism import graph_isomorphism, subgraph_isomorphism
 
 
 class TestRadiusExpand(unittest.TestCase):

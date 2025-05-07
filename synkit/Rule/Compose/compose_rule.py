@@ -1,11 +1,22 @@
+import importlib.util
+from synkit.IO.debug import setup_logging
 from typing import List, Set, Any, Dict, Optional
 from synkit.IO.chem_converter import gml_to_smart, smart_to_gml
 from synkit.Rule.Modify.rule_utils import _increment_gml_ids
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.cleanning import Cleanning
 from synkit.Chem.Reaction.rsmi_utils import find_longest_fragment
-from mod import RCMatch, ruleGMLString
-from synkit.Synthesis.Reactor.core_engine import CoreEngine
+
+
+logger = setup_logging()
+
+if importlib.util.find_spec("mod"):
+    from mod import RCMatch, ruleGMLString
+    from synkit.Synthesis.Reactor.mod_reactor import MODReactor
+else:
+    RCMatch = None
+    ruleGMLString = None
+    logger.warning("Optional 'mod' package not found.")
 
 
 class ComposeRule:
@@ -196,7 +207,8 @@ class ComposeRule:
         largest_prod = find_longest_fragment(reference_rsmi.split(">>")[1].split("."))
         cds = []
         for candidate in candidate_rules:
-            inferred_rsmi = CoreEngine()._inference(candidate, initial_smiles)
+            reactor = MODReactor(initial_smiles, candidate).run()
+            inferred_rsmi = reactor.get_reaction_smiles()
             inferred_rsmi = Cleanning.clean_smiles(inferred_rsmi)
             inferred_prod = [i.split(">>")[1].split(".") for i in inferred_rsmi]
             if any(largest_prod in smi for smi in inferred_prod):
