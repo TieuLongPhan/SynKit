@@ -56,10 +56,13 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: bash -l {0}
         run: |
-          conda run -n synkit-env ./lint.sh
+          conda activate synkit-env
+          bash lint.sh
 
 
       # 5) Test
       - name: Test
         shell: bash -l {0}
-        run: conda run -n synkit-env bash pytest.sh
+        run: |
+          conda activate synkit-env
+          bash pytest.sh
