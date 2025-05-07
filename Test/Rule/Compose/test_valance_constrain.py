@@ -6,6 +6,7 @@ import importlib.util
 
 if importlib.util.find_spec("mod"):
     from mod import BondType
+
     MOD_AVAILABLE = True
 else:
     MOD_AVAILABLE = importlib.util.find_spec("mod") is not None

@@ -7,10 +7,12 @@ from synkit.Rule.Compose.rule_compose import RuleCompose
 
 if importlib.util.find_spec("mod"):
     from mod import ruleGMLString
+
     MOD_AVAILABLE = True
 else:
     print("Optional 'mod' package not found")
     MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
+
 
 @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestRuleCompose(unittest.TestCase):
