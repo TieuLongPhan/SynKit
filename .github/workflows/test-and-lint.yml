@@ -15,40 +15,44 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+
     runs-on: ${{ matrix.os }}
 
     steps:
-      # 0) Checkout repository
+      # 0) Check out the code
       - uses: actions/checkout@v3
 
-      # 1) Install Miniconda (downloaded, not the removed “bundled” one)
+      # 1) Install Miniconda (downloaded — the “bundled” version was removed)
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.11
+          miniconda-version: "latest"      # <<–‑‑ mandatory or the action fails
+          python-version: "3.11"
           auto-update-conda: true
-          miniconda-version: "latest"      # <<<–– FIXES the “No installed conda …” error
           environment-file: environment.yml
           activate-environment: synkit-env
-          use-mamba: true                  # fast solver, optional but nice
+          use-mamba: true                  # optional, just faster
 
-      # 2) Install mod only on Linux (skip elsewhere)
+      # 2) Extra Linux‑only dependency: mod ≥ 0.17
       - name: Install mod (Linux only)
         if: matrix.os == 'ubuntu-latest'
         run: conda run -n synkit-env conda install -c jakobandersen -c conda-forge "mod>=0.17" -y
 
-      # 3) Optional extra project deps via pip
-      - name: Install project requirements (pip)
+      # 3) Optional extra project deps via pip (requirements.txt)
+      - name: Install project requirements
         if: hashFiles('requirements.txt') != ''
         run: conda run -n synkit-env pip install -r requirements.txt
 
       # 4) Lint
       - name: Lint
+        shell: bash -l {0}                # works on all runners (Git‑for‑Windows is pre‑installed)
         run: |
           conda run -n synkit-env flake8 . \
             --count --select=E9,F63,F7,F82 --show-source --statistics
-          ./lint.sh
+          # run your custom script *inside* the env so it sees flake8
+          conda run -n synkit-env ./lint.sh
 
       # 5) Test
       - name: Test
+        shell: bash -l {0}
         run: conda run -n synkit-env ./pytest.sh
