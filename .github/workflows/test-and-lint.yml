@@ -1,8 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a 
-# single version of Python
-# For more information see: 
-# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Test & Lint
 
 on:
@@ -16,40 +11,74 @@ permissions:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    # Set up Miniconda
-    - name: Set up Miniconda
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        auto-update-conda: true
-        python-version: 3.11
+      # 1) Install Miniconda on all platforms
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.11
 
-    # Create and activate Conda environment
-    - name: Create and activate environment
-      run: |
-        conda create --name synkit-env python=3.11 -y
-        conda activate synkit-env
-        conda install -c jakobandersen -c conda-forge mod>=0.17
-        pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      shell: bash -l {0}
+      # 2) Create & activate the env
+      - name: Create environment
+        run: |
+          conda create --name synkit-env python=3.11 -y
+        shell: bash -l {0}
 
-    # Lint with flake8
-    - name: Lint with flake8
-      run: |
-        conda activate synkit-env
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        ./lint.sh
-      shell: bash -l {0}
+      # (Note: `setup-miniconda` can auto-activate, but here we do it explicitly for clarity.)
+      - name: Activate environment
+        run: |
+          conda activate synkit-env
+        shell: bash -l {0}
 
-    # Test with pytest
-    - name: Test with pytest
-      run: |
-        conda activate synkit-env
-        ./pytest.sh 
-      shell: bash -l {0}
+      # 3) Install `mod>=0.17` only via conda *on Linux*
+      - name: Install mod via conda (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          conda activate synkit-env
+          conda install -c jakobandersen -c conda-forge mod>=0.17 -y
+        shell: bash -l {0}
+
+      # 4) Not install `mod>=0.17` on macOS
+      - name: Not install mod
+        if: runner.os == 'macOS'
+        run: |
+          conda activate synkit-env
+        shell: bash -l {0}
+
+      # 5) Not Install `mod>=0.17` on Windows
+      - name: Not install mod
+        if: runner.os == 'Windows'
+        run: |
+          conda activate synkit-env
+        shell: powershell
+
+      # 6) Install the rest of your tools
+      - name: Install test & lint deps
+        run: |
+          conda activate synkit-env
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        shell: bash -l {0}
+
+      # 7) Lint
+      - name: Lint with flake8
+        run: |
+          conda activate synkit-env
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          ./lint.sh
+        shell: bash -l {0}
+
+      # 8) Test
+      - name: Test with pytest
+        run: |
+          conda activate synkit-env
+          ./pytest.sh 
+        shell: bash -l {0}

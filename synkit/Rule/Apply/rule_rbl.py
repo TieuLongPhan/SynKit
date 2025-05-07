@@ -1,3 +1,4 @@
+import importlib.util
 from typing import List
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.rsmi_utils import (
@@ -11,7 +12,12 @@ from synkit.IO.chem_converter import gml_to_smart
 from synkit.Rule.Modify.molecule_rule import MoleculeRule
 from synkit.Rule.Modify.rule_utils import _increment_gml_ids
 from synkit.Rule.Compose.rule_compose import RuleCompose
-from mod import ruleGMLString
+
+if importlib.util.find_spec("mod"):
+    from mod import ruleGMLString
+else:
+    ruleGMLString = None
+    print("Optional 'mod' package not found")
 
 
 class RuleRBL:

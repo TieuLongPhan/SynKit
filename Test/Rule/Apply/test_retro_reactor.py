@@ -1,8 +1,12 @@
 import unittest
+import importlib.util
 from synkit.IO.data_io import load_list_from_file
 from synkit.Rule.Apply.retro_reactor import RetroReactor
 
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
+
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestRetroReactor(unittest.TestCase):
     def setUp(self):
         self.retro_reactor = RetroReactor()

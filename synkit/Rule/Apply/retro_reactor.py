@@ -1,4 +1,5 @@
 import heapq
+import importlib.util
 from typing import Dict, List, Tuple
 
 
@@ -10,7 +11,14 @@ from synkit.Chem.utils import (
     filter_smiles,
     count_carbons,
 )
-from mod import ruleGMLString, RCMatch
+
+
+if importlib.util.find_spec("mod"):
+    from mod import ruleGMLString, RCMatch
+else:
+    ruleGMLString = None
+    RCMatch = None
+    print("Optional 'mod' package not found")
 
 
 class RetroReactor:

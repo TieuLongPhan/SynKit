@@ -1,12 +1,17 @@
 import os
 import unittest
 import tempfile
+import importlib.util
 from synkit.IO.chem_converter import smart_to_gml, gml_to_smart
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 
 
-class TestCoreEngine(unittest.TestCase):
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
+
+
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
+class TestMODReactor(unittest.TestCase):
     def setUp(self):
         # Create a temporary directory
         self.temp_dir = tempfile.TemporaryDirectory()

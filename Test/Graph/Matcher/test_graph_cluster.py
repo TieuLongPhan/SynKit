@@ -1,8 +1,11 @@
 import time
 import unittest
+import importlib.util
 from synkit.IO.data_io import load_from_pickle
 from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Feature.graph_descriptors import GraphDescriptor
+
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
 class TestRCCluster(unittest.TestCase):
@@ -84,6 +87,7 @@ class TestRCCluster(unittest.TestCase):
             self.assertIn("class", item)
         self.assertEqual(max_class, 29)  # 30 classes start from 0 so max is 29
 
+    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_fit_gml(self):
         """Test the fit method to ensure it correctly updates data entries with cluster indices."""
 

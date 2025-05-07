@@ -3,8 +3,12 @@ import unittest
 from synkit.IO.data_io import load_database
 from synkit.Synthesis.CRN.crn import CRN
 from synkit.Synthesis.MSR.path_finder import PathFinder
+import importlib.util
+
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestPathFinder(unittest.TestCase):
     def setUp(self):
         # Define a simple reaction round for testing

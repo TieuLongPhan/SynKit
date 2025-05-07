@@ -1,4 +1,5 @@
 import unittest
+import importlib.util
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.Synthesis.reactor_utils import (
     _get_connected_subgraphs,
@@ -12,6 +13,8 @@ from synkit.Synthesis.reactor_utils import (
 )
 
 from synkit.Synthesis.MSR.multi_steps import MultiSteps
+
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
 class TestReactorUtils(unittest.TestCase):
@@ -32,11 +35,13 @@ class TestReactorUtils(unittest.TestCase):
         self.order = [0, 1, 0, -1]
         self.rsmi = "CC=O.CC=O.CCC=O>>CC=O.CC=C(C)C=O.O"
 
+    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_calculate_max_depth(self):
         _, reaction_tree = MultiSteps._process(self.gml, self.order, self.rsmi)
         max_depth = _calculate_max_depth(reaction_tree)
         self.assertEqual(max_depth, 4)
 
+    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_find_all_paths(self):
         results, reaction_tree = MultiSteps._process(self.gml, self.order, self.rsmi)
         target_products = sorted(self.rsmi.split(">>")[1].split("."))

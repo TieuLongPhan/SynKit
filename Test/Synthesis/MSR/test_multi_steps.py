@@ -4,8 +4,12 @@ from synkit.Chem.Reaction.standardize import Standardize
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.Synthesis.reactor_utils import _add_reagent, _find_all_paths
 from synkit.Synthesis.MSR.multi_steps import MultiSteps
+import importlib.util
+
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestMultiStep(unittest.TestCase):
     def setUp(self) -> None:
         smarts = [

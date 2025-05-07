@@ -1,8 +1,12 @@
 import unittest
 from synkit.IO.data_io import load_database
 from synkit.Synthesis.CRN.crn import CRN
+import importlib.util
+
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestCRN(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

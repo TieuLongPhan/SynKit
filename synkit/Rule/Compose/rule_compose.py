@@ -1,10 +1,18 @@
 import os
 import glob
 import logging
+import importlib.util
 from typing import List, Set
 from synkit.Rule.Compose.valence_constrain import ValenceConstrain
 from synkit.IO.data_io import load_gml_as_text
-from mod import RCMatch, ruleGMLString
+
+if importlib.util.find_spec("mod"):
+    from mod import ruleGMLString, RCMatch
+else:
+    ruleGMLString = None
+    RCMatch = None
+    print("Optional 'mod' package not found")
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
