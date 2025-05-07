@@ -43,16 +43,26 @@ jobs:
         if: hashFiles('requirements.txt') != ''
         run: conda run -n synkit-env pip install -r requirements.txt
 
-      # 4) Lint
-      - name: Lint
-        shell: bash -l {0}                # works on all runners (Git‑for‑Windows is pre‑installed)
+      # 4a) Lint on Linux/macOS
+      - name: Lint (Unix)
+        if: matrix.os != 'windows-latest'
+        shell: bash -l {0}
         run: |
           conda run -n synkit-env flake8 . \
             --count --select=E9,F63,F7,F82 --show-source --statistics
-          # run your custom script *inside* the env so it sees flake8
           conda run -n synkit-env ./lint.sh
+
+      # 4b) Lint on Windows
+      - name: Lint (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash -l {0}
+        run: |
+          conda run -n synkit-env flake8 ./ \
+            --count --select=E9,F63,F7,F82 --show-source --statistics
+          conda run -n synkit-env ./lint.sh
+
 
       # 5) Test
       - name: Test
         shell: bash -l {0}
-        run: conda run -n synkit-env ./pytest.sh
+        run: conda run -n synkit-env bash pytest.sh
