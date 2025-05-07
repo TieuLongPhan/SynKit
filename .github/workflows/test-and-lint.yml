@@ -48,9 +48,8 @@ jobs:
         if: matrix.os != 'windows-latest'
         shell: bash -l {0}
         run: |
-          conda run -n synkit-env flake8 . \
-            --count --select=E9,F63,F7,F82 --show-source --statistics
-          conda run -n synkit-env ./lint.sh
+          conda activate synkit-env
+          bash lint.sh
 
       # 4b) Lint on Windows
       - name: Lint (Windows)
