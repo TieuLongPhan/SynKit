@@ -10,75 +10,45 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test-lint:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
+      # 0) Checkout repository
       - uses: actions/checkout@v3
 
-      # 1) Install Miniconda on all platforms
+      # 1) Install Miniconda (downloaded, not the removed “bundled” one)
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-update-conda: true
           python-version: 3.11
+          auto-update-conda: true
+          miniconda-version: "latest"      # <<<–– FIXES the “No installed conda …” error
+          environment-file: environment.yml
+          activate-environment: synkit-env
+          use-mamba: true                  # fast solver, optional but nice
 
-      # 2) Create & activate the env
-      - name: Create environment
-        run: |
-          conda create --name synkit-env python=3.11 -y
-        shell: bash -l {0}
+      # 2) Install mod only on Linux (skip elsewhere)
+      - name: Install mod (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: conda run -n synkit-env conda install -c jakobandersen -c conda-forge "mod>=0.17" -y
 
-      # (Note: `setup-miniconda` can auto-activate, but here we do it explicitly for clarity.)
-      - name: Activate environment
-        run: |
-          conda activate synkit-env
-        shell: bash -l {0}
+      # 3) Optional extra project deps via pip
+      - name: Install project requirements (pip)
+        if: hashFiles('requirements.txt') != ''
+        run: conda run -n synkit-env pip install -r requirements.txt
 
-      # 3) Install `mod>=0.17` only via conda *on Linux*
-      - name: Install mod via conda (Linux only)
-        if: runner.os == 'Linux'
+      # 4) Lint
+      - name: Lint
         run: |
-          conda activate synkit-env
-          conda install -c jakobandersen -c conda-forge mod>=0.17 -y
-        shell: bash -l {0}
-
-      # 4) Not install `mod>=0.17` on macOS
-      - name: Not install mod
-        if: runner.os == 'macOS'
-        run: |
-          conda activate synkit-env
-        shell: bash -l {0}
-
-      # 5) Not Install `mod>=0.17` on Windows
-      - name: Not install mod
-        if: runner.os == 'Windows'
-        run: |
-          conda activate synkit-env
-        shell: powershell
-
-      # 6) Install the rest of your tools
-      - name: Install test & lint deps
-        run: |
-          conda activate synkit-env
-          pip install flake8 pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        shell: bash -l {0}
-
-      # 7) Lint
-      - name: Lint with flake8
-        run: |
-          conda activate synkit-env
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          conda run -n synkit-env flake8 . \
+            --count --select=E9,F63,F7,F82 --show-source --statistics
           ./lint.sh
-        shell: bash -l {0}
 
-      # 8) Test
-      - name: Test with pytest
-        run: |
-          conda activate synkit-env
-          ./pytest.sh 
-        shell: bash -l {0}
+      # 5) Test
+      - name: Test
+        run: conda run -n synkit-env ./pytest.sh

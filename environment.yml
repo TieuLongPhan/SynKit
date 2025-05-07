@@ -1,0 +1,10 @@
+name: synkit-env
+channels:
+  - conda-forge
+  - jakobandersen
+dependencies:
+  - python=3.11
+  - pip
+  - flake8
+  - pytest
+  - mod>=0.17  # [linux]   # installed automatically only on Linux runners
