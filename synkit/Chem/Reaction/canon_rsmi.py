@@ -36,7 +36,7 @@ from rdkit.Chem import MolFromSmiles as _rdkit_MolFromSmiles
 from typing import List, Tuple, Union, Optional
 
 from synkit.Graph.canon_graph import GraphCanonicaliser
-from synkit.IO.chem_converter import graph_to_smi, rsmi_to_graph
+from synkit.IO import graph_to_smi, rsmi_to_graph
 
 
 class CanonRSMI:

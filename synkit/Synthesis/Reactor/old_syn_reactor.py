@@ -31,18 +31,16 @@ from synkit.IO.chem_converter import (
     rsmi_to_its,
     graph_to_smi,
 )
-from synkit.IO import setup_logging
-from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
-
-from synkit.Rule import SynRule
+from synkit.IO.debug import setup_logging
+from synkit.Rule.syn_rule import SynRule
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
-from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
-from synkit.Graph import remove_wildcard_nodes, add_wildcard_subgraph_for_unmapped
+from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
 from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -78,7 +76,6 @@ class SynReactor:
     invert: bool = False
     canonicaliser: GraphCanonicaliser | None = None
     explicit_h: bool = True
-    implicit_temp: bool = False
     strategy: Strategy | str = Strategy.ALL
 
     # Private caches – populated on demand -------------------------------
@@ -88,13 +85,6 @@ class SynReactor:
     _its: List[nx.Graph] | None = field(init=False, default=None, repr=False)
     _smarts: List[str] | None = field(init=False, default=None, repr=False)
     _flag_pattern_has_explicit_H: bool = field(init=False, default=False, repr=False)
-
-    def __post_init__(self):
-        # Enforce consistency: explicit_h only valid when implicit_temp is True
-        if self.implicit_temp and self.explicit_h:
-            raise ValueError(
-                "`explicit_h` cannot be True when `implicit_temp` is False."
-            )
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -108,7 +98,6 @@ class SynReactor:
         invert: bool = False,
         canonicaliser: Optional[GraphCanonicaliser] = None,
         explicit_h: bool = True,
-        implicit_temp: bool = False,
         strategy: Strategy | str = Strategy.ALL,
     ) -> "SynReactor":
         """Alternate constructor exactly mirroring the original API."""
@@ -118,7 +107,6 @@ class SynReactor:
             invert=invert,
             canonicaliser=canonicaliser,
             explicit_h=explicit_h,
-            implicit_temp=implicit_temp,
             strategy=strategy,
         )
 
@@ -153,8 +141,7 @@ class SynReactor:
                 self._flag_pattern_has_explicit_H = True
                 # self.strategy = Strategy.ALL # force to find all in implicit case
                 pattern_graph = h_to_implicit(pattern_graph)
-            if self.implicit_temp:
-                pattern_graph = remove_wildcard_nodes(pattern_graph)
+
             self._mappings = SubgraphSearchEngine.find_subgraph_mappings(
                 host=self.graph.raw,
                 pattern=pattern_graph,
@@ -227,7 +214,6 @@ class SynReactor:
         print("SynReactor")
         print("  Substrate :", self.substrate_smiles)
         print("  Template  :", self.rule)
-        print("  Implicit Template :", self.implicit_temp)
         print("  Invert rule  :", self.invert)
         print("  Strategy  :", Strategy.from_string(self.strategy).value)
         print("  Predictions  :", self.mapping_count)
@@ -269,33 +255,13 @@ class SynReactor:
 
         # Invert if asked -----------------------------------------------------
         if self.invert:
-            if self.implicit_temp:
-                graph = self._invert_template(graph, balance_its=True)
-                return SynRule(
-                    graph,
-                    canonicaliser=self.canonicaliser or GraphCanonicaliser(),
-                    implicit_h=False,
-                )
-            else:
-                graph = self._invert_template(graph, balance_its=False)
-                return SynRule(
-                    graph, canonicaliser=self.canonicaliser or GraphCanonicaliser()
-                )
-        else:
-            if self.implicit_temp:
-                return SynRule(
-                    graph,
-                    canonicaliser=self.canonicaliser or GraphCanonicaliser(),
-                    implicit_h=False,
-                )
-            return SynRule(
-                graph, canonicaliser=self.canonicaliser or GraphCanonicaliser()
-            )
+            graph = self._invert_template(graph)
+        return SynRule(graph, canonicaliser=self.canonicaliser or GraphCanonicaliser())
 
     @staticmethod
-    def _invert_template(tpl: nx.Graph, balance_its: bool = True) -> nx.Graph:
+    def _invert_template(tpl: nx.Graph) -> nx.Graph:
         l, r = its_decompose(tpl)
-        return ITSConstruction().ITSGraph(r, l, balance_its=balance_its)
+        return ITSConstruction().ITSGraph(r, l)
 
     # ==================================================================
     # Aux – glue, explicit‑H, SMARTS
@@ -307,24 +273,9 @@ class SynReactor:
         host_r, host_p = host_n[key]
         pat_r, pat_p = pat_n[key]
         delta = pat_r[2] - pat_p[2]
-        if pat_r[0] == "*":
-            new_r = (pat_r[0],) + host_r[1:2] + (host_r[2],) + host_r[3:]
-        else:
-            new_r = host_r[:2] + (host_r[2],) + host_r[3:]
-        if pat_p[0] == "*":
-            new_p = (
-                (pat_p[0],)
-                + host_p[:2]
-                + (host_r[2] - delta,)
-                + (pat_p[3],)
-                + host_p[4:]
-            )
-        else:
-            new_p = host_p[:2] + (host_r[2] - delta,) + (pat_p[3],) + host_p[4:]
-        # if pat_r[0] == '*':
-        #     host_r[0] = '*'
-        # if pat_p[0] == '*':
-        #     host_p[0] = '*'
+
+        new_r = host_r[:2] + (host_r[2],) + host_r[3:]
+        new_p = host_p[:2] + (host_r[2] - delta,) + (pat_p[3],) + host_p[4:]
         host_n[key] = (new_r, new_p)
 
         if "h_pairs" in pat_n:
@@ -382,12 +333,7 @@ class SynReactor:
 
         # Iterate over remappings --------------------------------------
         for m in mappings:
-
             its = deepcopy(host_g)
-            # This should only work for implict cases
-            if len(m.keys()) < rc.number_of_nodes():
-                its, m = add_wildcard_subgraph_for_unmapped(its, rc, m)
-
             for _, _, data in its.edges(data=True):
                 o = data.get("order", 1.0)
                 data["order"] = (o, o)
@@ -489,11 +435,9 @@ class SynReactor:
     # --------------------- SMARTS serialisation -----------------------
     @staticmethod
     def _to_smarts(its: nx.Graph) -> str:
-        left, right = its_decompose(its)
-        left = remove_wildcard_nodes(left)
-        right = remove_wildcard_nodes(right)
-        r_smi = graph_to_smi(left)
-        p_smi = graph_to_smi(right)
+        l, r = its_decompose(its)
+        r_smi = graph_to_smi(l)
+        p_smi = graph_to_smi(r)
         if r_smi is None or p_smi is None:
             return None
         return f"{r_smi}>>{p_smi}"
