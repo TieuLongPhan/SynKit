@@ -1,6 +1,8 @@
+from typing import List, Optional, Tuple
 import networkx as nx
 from rdkit import Chem
-from typing import List, Optional, Tuple
+from rdkit.Chem import rdChemReactions
+
 
 from synkit.IO.debug import setup_logging
 from synkit.IO.mol_to_graph import MolToGraph
@@ -210,6 +212,7 @@ def smart_to_gml(
     rule_name: str = "rule",
     reindex: bool = True,
     explicit_hydrogen: bool = False,
+    useSmiles: bool = True,
 ) -> str:
     """
     Converts a SMARTS string to GML format, optionally focusing on the reaction core.
@@ -222,11 +225,14 @@ def smart_to_gml(
     - reindex (bool): Whether to reindex the graph nodes. Defaults to True.
     - explicit_hydrogen (bool): Controls whether hydrogens are explicitly represented
     in the output.
+    - useSmiles (bool): Controls whether input is SMILES or SMARTS. Defaults to True.
 
 
     Returns:
     - str: The GML representation of the reaction.
     """
+    if useSmiles is False:
+        smart = rsmarts_to_rsmi(smart)
     r, p = rsmi_to_graph(smart, sanitize=sanitize)
     its = ITSConstruction.ITSGraph(r, p)
     if core:
@@ -245,6 +251,7 @@ def gml_to_smart(
     gml: str,
     sanitize: bool = True,
     explicit_hydrogen: bool = False,
+    useSmiles: bool = True,
 ) -> Tuple[str, nx.Graph]:
     """
     Converts a GML string back to a SMARTS string by interpreting the graph structures.
@@ -254,15 +261,21 @@ def gml_to_smart(
     - sanitize (bool): Specifies whether the molecule should be sanitized upon conversion.
     - explicit_hydrogen (bool): Controls whether hydrogens are explicitly represented
     in the output.
+    - useSmiles (bool): Controls whether output is SMILES or SMARTS. Defaults to True.
+
 
     Returns:
     - str: The corresponding SMARTS string.
     """
     r, p, rc = GMLToNX(gml).transform()
-    return (
-        graph_to_rsmi(r, p, rc, sanitize, explicit_hydrogen),
-        rc,
-    )
+    rsmi = graph_to_rsmi(r, p, rc, sanitize, explicit_hydrogen)
+    if useSmiles is False:
+        rsmi = rsmi_to_rsmarts(rsmi)
+    # return (
+    #     smart,
+    #     rc,
+    # )
+    return rsmi
 
 
 def its_to_gml(
@@ -412,3 +425,25 @@ def its_to_rsmi(
     """
     r, p = its_decompose(its)
     return graph_to_rsmi(r, p, its, sanitize, explicit_hydrogen)
+
+
+def rsmi_to_rsmarts(rsmi: str) -> str:
+    """
+    Convert a mapped reaction SMILES to a reaction SMARTS string.
+    """
+    try:
+        rxn = rdChemReactions.ReactionFromSmarts(rsmi, useSmiles=True)
+        return rdChemReactions.ReactionToSmarts(rxn)
+    except Exception as e:
+        raise ValueError(f"Failed to convert RSMI to RSMARTS: {e}")
+
+
+def rsmarts_to_rsmi(rsmarts: str) -> str:
+    """
+    Convert a reaction SMARTS to a reaction SMILES string.
+    """
+    try:
+        rxn = rdChemReactions.ReactionFromSmarts(rsmarts, useSmiles=False)
+        return rdChemReactions.ReactionToSmiles(rxn)
+    except Exception as e:
+        raise ValueError(f"Failed to convert RSMARTS to RSMI: {e}")

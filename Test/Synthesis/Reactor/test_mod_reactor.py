@@ -63,7 +63,7 @@ class TestMODReactor(unittest.TestCase):
         )
         self.rsmi = Standardize().fit(test_2)
         self.gml_2 = smart_to_gml(test_2, sanitize=True, core=True)
-        self.smart_2 = gml_to_smart(self.gml_2)[0]
+        self.smart_2 = gml_to_smart(self.gml_2)
 
     def tearDown(self):
         # Clean up temporary directory

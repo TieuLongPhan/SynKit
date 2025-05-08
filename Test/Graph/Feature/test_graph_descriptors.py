@@ -183,7 +183,7 @@ class TestGraphDescriptor(unittest.TestCase):
 
         # Run the descriptor function
         results = GraphDescriptor.process_entries_in_parallel(
-            self.data_parallel, "GraphRules", "ITSGraph", n_jobs=4
+            self.data_parallel, "GraphRules", "ITSGraph", n_jobs=1
         )
         self.assertEqual(results[0]["topo"], expected_output["topo"])
         self.assertEqual(results[0]["cycle"], expected_output["cycle"])
