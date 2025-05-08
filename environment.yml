@@ -1,0 +1,9 @@
+name: synkit-env
+channels:
+  - conda-forge
+  - jakobandersen
+dependencies:
+  - python=3.11
+  - pip
+  - flake8
+  - pytest

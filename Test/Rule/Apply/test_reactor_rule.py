@@ -1,9 +1,14 @@
 import unittest
+import importlib.util
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.Graph.ITS.aam_validator import AAMValidator
 from synkit.Rule.Apply.reactor_rule import ReactorRule
 
 
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
+
+
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestReactorRule(unittest.TestCase):
 
     def setUp(self):

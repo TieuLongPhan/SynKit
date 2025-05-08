@@ -1,9 +1,15 @@
+import importlib.util
 import importlib.resources
+
 from typing import List, Tuple
 from synkit.IO.debug import setup_logging
 from synkit.IO.data_io import load_database
 
-from mod import BondType
+if importlib.util.find_spec("mod"):
+    from mod import BondType
+else:
+    BondType = None
+    print("Optional 'mod' package not found")
 
 
 logger = setup_logging()

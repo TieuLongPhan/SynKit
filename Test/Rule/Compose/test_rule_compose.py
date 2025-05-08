@@ -1,11 +1,20 @@
 import os
 import glob
 import unittest
+import importlib.util
 from synkit.IO.data_io import load_gml_as_text
 from synkit.Rule.Compose.rule_compose import RuleCompose
-from mod import ruleGMLString
+
+if importlib.util.find_spec("mod"):
+    from mod import ruleGMLString
+
+    MOD_AVAILABLE = True
+else:
+    print("Optional 'mod' package not found")
+    MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestRuleCompose(unittest.TestCase):
 
     def setUp(self):

@@ -1,3 +1,4 @@
+import importlib.util
 from typing import List
 from synkit.IO.chem_converter import gml_to_smart
 
@@ -16,7 +17,13 @@ from synkit.Synthesis.reactor_utils import (
     _add_reagent,
     _get_reagent_rsmi,
 )
-from mod import ruleGMLString
+
+
+if importlib.util.find_spec("mod"):
+    from mod import ruleGMLString
+else:
+    ruleGMLString = None
+    print("Optional 'mod' package not found")
 
 
 class ReactorRule:

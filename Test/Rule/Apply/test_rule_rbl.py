@@ -1,9 +1,13 @@
 import unittest
+import importlib.util
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.Chem.Molecule.standardize import fix_radical_rsmi
 from synkit.Rule.Apply.rule_rbl import RuleRBL
 
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
+
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestRuleRBL(unittest.TestCase):
 
     def setUp(self):

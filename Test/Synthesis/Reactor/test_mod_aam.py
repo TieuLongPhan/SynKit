@@ -1,11 +1,16 @@
 import unittest
+import importlib.util
 from synkit.IO.chem_converter import smart_to_gml
 from synkit.Graph.ITS.aam_validator import AAMValidator
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Synthesis.Reactor.mod_aam import MODAAM
 
 
-class TestReactorEngine(unittest.TestCase):
+MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
+
+
+@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
+class TestMODAAM(unittest.TestCase):
 
     def setUp(self):
         self.rsmi = "BrCc1ccc(Br)cc1.COCCO>>Br.COCCOCc1ccc(Br)cc1"
