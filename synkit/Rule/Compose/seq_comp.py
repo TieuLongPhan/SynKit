@@ -41,7 +41,7 @@ class SeqComp:
             for that pair, or None if no valid mapping could be computed.
         """
         # Convert each SMARTS string to its GML representation.
-        gml_list = [smart_to_gml(s, sanitize=True) for s in smarts]
+        gml_list = [smart_to_gml(s, sanitize=True, reindex=False) for s in smarts]
         mappings: Dict[str, Optional[dict]] = {}
 
         # Process each consecutive pair in the list.

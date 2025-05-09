@@ -210,7 +210,7 @@ def smart_to_gml(
     core: bool = True,
     sanitize: bool = False,
     rule_name: str = "rule",
-    reindex: bool = True,
+    reindex: bool = False,
     explicit_hydrogen: bool = False,
     useSmiles: bool = True,
 ) -> str:

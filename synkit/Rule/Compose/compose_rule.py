@@ -163,7 +163,9 @@ class ComposeRule:
                     new_rules.append(new)
                 else:
                     new_rules.append(
-                        smart_to_gml(new, sanitize=True, explicit_hydrogen=False)
+                        smart_to_gml(
+                            new, sanitize=True, explicit_hydrogen=False, reindex=False
+                        )
                     )
         return new_rules
 
@@ -198,8 +200,12 @@ class ComposeRule:
         Returns:
         - Optional[str]: The composed rule (in GML) if a valid candidate is found; otherwise, None.
         """
-        rule_1 = smart_to_gml(smart_1, sanitize=True, explicit_hydrogen=False)
-        rule_2 = smart_to_gml(smart_2, sanitize=True, explicit_hydrogen=False)
+        rule_1 = smart_to_gml(
+            smart_1, sanitize=True, explicit_hydrogen=False, reindex=False
+        )
+        rule_2 = smart_to_gml(
+            smart_2, sanitize=True, explicit_hydrogen=False, reindex=False
+        )
         reference_rsmi = self._get_comp_reaction(smart_1, smart_2)
         candidate_rules = self._compose(rule_1, rule_2, return_string=True)
         candidate_rules = [_increment_gml_ids(value) for value in candidate_rules]
