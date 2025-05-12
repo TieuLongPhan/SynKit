@@ -1,4 +1,30 @@
+from rdkit import Chem
+from rdkit.Chem import rdChemReactions
 from typing import List, Tuple, Optional
+
+
+def remove_explicit_H_from_rsmi(rsmi: str) -> str:
+    """
+    Remove explicit [H:...] atoms from a reaction SMILES with atom-atom mapping.
+    Keeps atom mapping intact for non-hydrogen atoms and returns a simplified reaction SMILES.
+
+    Args:
+        rsmi (str): Atom-mapped reaction SMILES with explicit hydrogens.
+
+    Returns:
+        str: Reaction SMILES with implicit hydrogens and AAM preserved.
+    """
+    rxn = rdChemReactions.ReactionFromSmarts(rsmi, useSmiles=True)
+
+    def cleaned_smiles(mols):
+        return ".".join(
+            Chem.MolToSmiles(Chem.RemoveHs(mol), isomericSmiles=True) for mol in mols
+        )
+
+    reactant_smiles = cleaned_smiles(rxn.GetReactants())
+    product_smiles = cleaned_smiles(rxn.GetProducts())
+
+    return f"{reactant_smiles}>>{product_smiles}"
 
 
 def remove_common_reagents(reaction_smiles: str) -> Tuple[Optional[str], Optional[str]]:

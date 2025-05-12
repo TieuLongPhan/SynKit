@@ -59,7 +59,7 @@ class RetroReactor:
         for match_rule in mod_results:
             # In user-defined backward mode, "reactants"
             # appear in smarts.split(">>")[1].
-            smarts = gml_to_smart(match_rule.getGMLString(), sanitize=False)[0]
+            smarts = gml_to_smart(match_rule.getGMLString(), sanitize=False)
             reactants = smarts.split(">>")[1].split(".")
             reactants = get_sanitized_smiles(reactants)
             results_set.update(reactants)

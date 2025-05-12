@@ -74,7 +74,7 @@ class ReactorRule:
         if comp_rules:
             for value in comp_rules:
                 gml = _increment_gml_ids(value.getGMLString())
-                smart = gml_to_smart(gml, explicit_hydrogen=True)[0]
+                smart = gml_to_smart(gml, explicit_hydrogen=True)
                 new_rsmi.append(smart)
 
         unique_rsmi = _get_unique_aam(new_rsmi)

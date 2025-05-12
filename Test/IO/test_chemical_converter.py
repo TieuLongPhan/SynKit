@@ -1,10 +1,10 @@
 import unittest
 import networkx as nx
-
+from rdkit.Chem import rdChemReactions
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Graph.ITS.its_construction import ITSConstruction
-from synkit.Graph.ITS.aam_validator import AAMValidator
-from synkit.IO.chem_converter import (
+from synkit.Chem.Reaction.aam_validator import AAMValidator
+from synkit.IO import (
     smiles_to_graph,
     rsmi_to_graph,
     graph_to_smi,
@@ -15,6 +15,8 @@ from synkit.IO.chem_converter import (
     gml_to_its,
     rsmi_to_its,
     its_to_rsmi,
+    rsmarts_to_rsmi,
+    rsmi_to_rsmarts,
 )
 from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
 from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
@@ -166,10 +168,18 @@ class TestChemicalConversions(unittest.TestCase):
             GraphMatcherEngine(backend="rule")._isomorphic_rule(result, self.gml)
         )
 
-    def test_gml_to_smart(self):
-        smarts, _ = gml_to_smart(self.gml_h)
+    def test_gml_to_rsmi(self):
+        smarts = gml_to_smart(self.gml_h)
         self.assertIsInstance(smarts, str)
         self.assertTrue(AAMValidator.smiles_check(smarts, self.rsmi, "ITS"))
+
+    def test_gml_to_smart(self):
+        rsmi = gml_to_smart(self.gml_h, useSmiles=True)
+        smarts = gml_to_smart(self.gml_h, useSmiles=False)
+        self.assertIsInstance(smarts, str)
+        self.assertNotEqual(rsmi, smarts)
+        self.assertTrue(AAMValidator.smiles_check(smarts, self.rsmi, "ITS"))
+        self.assertTrue(AAMValidator.smiles_check(smarts, rsmi, "ITS"))
 
     @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_smart_to_gml_explicit_hydrogen(self):
@@ -183,7 +193,7 @@ class TestChemicalConversions(unittest.TestCase):
         )
 
     def test_gml_to_smart_explicit_hydrogen(self):
-        smart, _ = gml_to_smart(self.gml_h, explicit_hydrogen=True)
+        smart = gml_to_smart(self.gml_h, explicit_hydrogen=True)
         expect = (
             "[C:1]([H:2])([C:3]([O:4][H:9])([H:7])[H:8])([H:5])[H:6]"
             + ">>[C:1](=[C:3]([H:7])[H:8])([H:5])[H:6].[H:2][O:4][H:9]"
@@ -225,6 +235,30 @@ class TestChemicalConversions(unittest.TestCase):
         self.assertEqual(
             CanonRSMI().canonicalise(smart).canonical_rsmi,
             CanonRSMI().canonicalise(new_smart).canonical_rsmi,
+        )
+
+    def test_rsmi_to_rsmarts_and_back(self):
+        rsmi = "[H:3][O:4].[N:1][C:2]>>[C:2][O:4].[N:1][H:3]"
+
+        # Convert to SMARTS
+        rsmarts = rsmi_to_rsmarts(rsmi)
+        self.assertIsInstance(rsmarts, str)
+        self.assertIn(">>", rsmarts)
+
+        # Convert back to SMILES
+        back_rsmi = rsmarts_to_rsmi(rsmarts)
+        self.assertIsInstance(back_rsmi, str)
+        self.assertIn(">>", back_rsmi)
+
+        # Validate structure equivalence via reaction object
+        rxn_orig = rdChemReactions.ReactionFromSmarts(rsmi, useSmiles=True)
+        rxn_back = rdChemReactions.ReactionFromSmarts(back_rsmi, useSmiles=True)
+
+        self.assertEqual(
+            rxn_orig.GetNumReactantTemplates(), rxn_back.GetNumReactantTemplates()
+        )
+        self.assertEqual(
+            rxn_orig.GetNumProductTemplates(), rxn_back.GetNumProductTemplates()
         )
 
 

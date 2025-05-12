@@ -9,7 +9,7 @@ from networkx.algorithms.isomorphism import generic_node_match, generic_edge_mat
 from synkit.IO.chem_converter import rsmi_to_graph
 from synkit.Graph.ITS.its_decompose import get_rc
 from synkit.Graph.ITS.its_construction import ITSConstruction
-from synkit.Graph.ITS.aam_utils import enumerate_tautomers, mapping_success_rate
+from .aam_utils import enumerate_tautomers, mapping_success_rate
 
 
 class AAMValidator:

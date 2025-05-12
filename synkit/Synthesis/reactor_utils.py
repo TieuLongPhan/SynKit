@@ -85,7 +85,7 @@ def _get_connected_subgraphs(gml: str, invert: bool = False):
         raise ValueError("Invalid GML string provided.")
 
     # Convert GML to 'smart' representation
-    smart, _ = gml_to_smart(gml, sanitize=False)
+    smart = gml_to_smart(gml, sanitize=False)
 
     # Split the 'smart' string by the delimiter '>>' to get the left (r) and right (p) parts
     try:

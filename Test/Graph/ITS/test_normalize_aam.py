@@ -1,7 +1,7 @@
 import unittest
 import networkx as nx
 from synkit.Graph.ITS.normalize_aam import NormalizeAAM
-from synkit.Graph.ITS.aam_validator import AAMValidator
+from synkit.Chem.Reaction.aam_validator import AAMValidator
 
 
 class TestNormalizeAAM(unittest.TestCase):

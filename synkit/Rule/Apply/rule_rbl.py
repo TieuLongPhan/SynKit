@@ -53,7 +53,7 @@ class RuleRBL:
             if comp_rules:
                 for value in comp_rules:
                     gml = _increment_gml_ids(value.getGMLString())
-                    smart = gml_to_smart(gml, explicit_hydrogen=True)[0]
+                    smart = gml_to_smart(gml, explicit_hydrogen=True)
                     if index == 1:
                         smart = reverse_reaction(smart)
                     standardized_smart = standardizer.fit(smart)

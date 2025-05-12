@@ -17,7 +17,7 @@ class TestMoleculeFunctions(unittest.TestCase):
 
     def test_normalize_molecule(self):
         smi = "[Na]OC(=O)c1ccc(C[S+2]([O-])([O-]))cc1"
-        expect = "O=C(O[Na])c1ccc(C[S](=O)=O)cc1"
+        expect = "O=C([O][Na])c1ccc(C[S](=O)=O)cc1"
         mol = Chem.MolFromSmiles(smi)
         normalized_mol = normalize_molecule(mol)
         self.assertIsInstance(normalized_mol, Chem.Mol)
