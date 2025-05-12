@@ -299,3 +299,58 @@ def load_list_from_file(file_path):
     """
     with open(file_path, "r") as file:
         return json.load(file)
+
+
+def save_dg(dg, path: str) -> str:
+    """
+    Save a DG instance to disk using MØD's dump method.
+
+    Parameters
+    ----------
+    dg : DG
+        The derivation graph to save.
+    path : str
+        The file path where the graph will be dumped.
+
+    Returns
+    -------
+    str
+        The path of the dumped file.
+    """
+    try:
+        dump_path = dg.dump(path)
+        logger.info(f"DG saved to {dump_path}")
+        return dump_path
+    except Exception as e:
+        logger.error(f"Error saving DG to {path}: {e}")
+        raise
+
+
+def load_dg(path: str, graph_db: list, rule_db: list):
+    """
+    Load a DG instance from a dumped file.
+
+    Parameters
+    ----------
+    path : str
+        The file path of the dumped graph.
+    graph_db : list
+        List of Graph objects representing the graph database.
+    rule_db : list
+        List of Rule objects required for loading the DG.
+
+    Returns
+    -------
+    DG
+        The loaded derivation graph instance.
+    """
+    from mod import DG
+
+    try:
+
+        dg = DG.load(graphDatabase=graph_db, ruleDatabase=rule_db, f=path)
+        logger.info(f"DG loaded from {path}")
+        return dg
+    except Exception as e:
+        logger.error(f"Error loading DG from {path}: {e}")
+        raise
