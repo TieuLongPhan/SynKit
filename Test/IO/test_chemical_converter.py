@@ -3,7 +3,7 @@ import networkx as nx
 from rdkit.Chem import rdChemReactions
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Graph.ITS.its_construction import ITSConstruction
-from synkit.Graph.ITS.aam_validator import AAMValidator
+from synkit.Chem.Reaction.aam_validator import AAMValidator
 from synkit.IO import (
     smiles_to_graph,
     rsmi_to_graph,

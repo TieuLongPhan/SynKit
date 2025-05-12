@@ -1,5 +1,5 @@
 import unittest
-from synkit.Graph.ITS.aam_validator import AAMValidator
+from synkit.Chem.Reaction.aam_validator import AAMValidator
 
 
 class TestAMMValidator(unittest.TestCase):
