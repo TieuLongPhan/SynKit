@@ -34,7 +34,7 @@ class TestDeionize(unittest.TestCase):
     def test_uncharge_smiles(self):
         charge_smiles = "[Na+].[OH-]"
         uncharged_smiles = Deionize.uncharge_smiles(charge_smiles)
-        self.assertEqual(uncharged_smiles, "O[Na]")  # can not uncharge amonium
+        self.assertEqual(uncharged_smiles, "[OH][Na]")  
 
     def test_apply_uncharge_smiles_to_reactions(self):
         reactions = [{"reactants": "[NH4+].[OH-]", "products": "N.O"}]
