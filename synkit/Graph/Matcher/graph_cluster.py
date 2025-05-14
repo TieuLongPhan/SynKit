@@ -39,7 +39,7 @@ class GraphCluster:
         self.backend = backend.lower()
         available = self.available_backends()
         if self.backend not in available:
-            if self.backend == "rule":
+            if self.backend == "mod":
                 raise ImportError("MOD is not installed")
             raise ValueError(f"Unsupported backend: {backend!r}")
 
@@ -57,17 +57,20 @@ class GraphCluster:
                 [eq for _ in node_label_names],
             )
             self.edgeMatch = generic_edge_match(self.edgeAttribute, 1, eq)
+        else:
+            self.nodeMatch = None
+            self.edgeMatch = None
 
     def available_backends(self) -> List[str]:
         """
-        Return available backends: always includes 'nx'; adds 'rule' if the 'mod' package is installed.
+        Return available backends: always includes 'nx'; adds 'mode' if the 'mod' package is installed.
         """
         import importlib.util
 
         backends = ["nx"]
         # Check if 'mod' package is importable without executing it
         if importlib.util.find_spec("mod") is not None:
-            backends.append("rule")
+            backends.append("mod")
         return backends
 
     def iterative_cluster(

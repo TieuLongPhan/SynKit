@@ -55,10 +55,14 @@ class CanonRSMI:
         self,
         backend: str = "wl",
         wl_iterations: int = 3,
+        morgan_radius: int = 3,
         node_attrs: List[str] = ("element", "aromatic", "charge", "hcount"),
     ):
         self._canon = GraphCanonicaliser(
-            backend=backend, wl_iterations=wl_iterations, node_attrs=node_attrs
+            backend=backend,
+            wl_iterations=wl_iterations,
+            morgan_radius=morgan_radius,
+            node_attrs=node_attrs,
         )
         # internal storage
         self._raw_rsmi: Optional[str] = None
