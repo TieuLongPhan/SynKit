@@ -165,7 +165,7 @@ class TestChemicalConversions(unittest.TestCase):
 
         result = smart_to_gml(self.rsmi, core=False, sanitize=True, reindex=True)
         self.assertTrue(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(result, self.gml)
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(result, self.gml)
         )
 
     def test_gml_to_rsmi(self):
@@ -186,10 +186,10 @@ class TestChemicalConversions(unittest.TestCase):
         rsmi = "[CH2:1]([H:4])[CH2:2][OH:3]>>[CH2:1]=[CH2:2].[H:4][OH:3]"
         gml = smart_to_gml(rsmi, explicit_hydrogen=True, core=False, sanitize=True)
         self.assertFalse(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(gml, self.gml)
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(gml, self.gml)
         )
         self.assertTrue(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(gml, self.gml_h)
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(gml, self.gml_h)
         )
 
     def test_gml_to_smart_explicit_hydrogen(self):
@@ -207,7 +207,7 @@ class TestChemicalConversions(unittest.TestCase):
         gml_1 = its_to_gml(its)
         gml_2 = smart_to_gml(self.rsmi)
         self.assertTrue(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(gml_1, gml_2)
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(gml_1, gml_2)
         )
 
     def test_gml_to_its(self):

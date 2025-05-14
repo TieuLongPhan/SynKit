@@ -54,6 +54,7 @@ from synkit.Graph.ITS import get_rc
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphMatch
 from synkit.Graph.Matcher.sing import SING
 from synkit.Graph.Matcher.turbo_iso import TurboISO
+from synkit.Rule.Modify.rule_utils import strip_context
 
 
 def setup_logging():
@@ -77,7 +78,9 @@ def load_and_prepare(
     for entry in data:
         entry["ITS"] = rsmi_to_its(entry["smart"])
         entry["rc"] = get_rc(entry["ITS"])
-        entry["gml"] = smart_to_gml(entry["smart"], core=False, sanitize=True)
+        entry["gml"] = strip_context(
+            smart_to_gml(entry["smart"], core=False, sanitize=True)
+        )
         entry["gml_rc"] = smart_to_gml(entry["smart"], core=True, sanitize=True)
     return data
 

@@ -51,6 +51,7 @@ from synkit.IO.data_io import load_database
 from synkit.IO.chem_converter import rsmi_to_its, smart_to_gml
 from synkit.Graph.Feature.wl_hash import WLHash
 from synkit.Graph.Matcher.graph_cluster import GraphCluster
+from synkit.Rule.Modify.rule_utils import strip_context
 
 
 def setup_logging():
@@ -72,8 +73,11 @@ def load_and_precompute(
     if limit is not None:
         data = data[:limit]
     for entry in data:
-        entry["ITS"] = rsmi_to_its(entry["smart"])
-        entry["gml"] = smart_to_gml(entry["smart"], core=False, sanitize=True)
+        entry["ITS"] = rsmi_to_its(entry["smart"], core=False)
+        entry["gml"] = strip_context(
+            smart_to_gml(entry["smart"], core=False, sanitize=True)
+        )
+
     return data
 
 
@@ -107,6 +111,8 @@ def cluster_data(
         key,
         attribute_key=sig_key,
     )
+    # if key.lower() == "gml":
+    #     logging.info(f"{clusters}")
     elapsed = time.perf_counter() - t0
     mem_peak = tracemalloc.get_traced_memory()[1]
     tracemalloc.stop()
@@ -239,7 +245,9 @@ def main():
         help="Comma-separated WL iteration counts",
     )
     p.add_argument("--repeat", type=int, default=3)
-    p.add_argument("--max_n", type=str, default="100,300,1000,3000,10000")
+    p.add_argument(
+        "--max_n", type=str, default="100,300,1000,3000,10000,20000,30000,40000"
+    )
     p.add_argument("--limit", type=int, default=None)
     args = p.parse_args()
 

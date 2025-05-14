@@ -86,7 +86,7 @@ class TestMoleculeRule(unittest.TestCase):
 
         result = self.molecule_rule.generate_molecule_rule(smiles)
         self.assertTrue(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(result, expected_output)
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(result, expected_output)
         )
 
     def test_generate_molecule_rule_invalid(self):
@@ -140,7 +140,7 @@ class TestMoleculeRule(unittest.TestCase):
         )
         gml = self.molecule_rule.remove_edges_from_left_right(rule)
         self.assertTrue(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(gml, expected)
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(gml, expected)
         )
 
 

@@ -130,7 +130,7 @@ class GraphMatcherEngine:
     def available_backends() -> List[str]:
         backends = ["nx"]
         if _RULE_AVAILABLE:
-            backends.append("rule")
+            backends.append("mod")
         return backends
 
     # ---------------------------------------------------------------------
