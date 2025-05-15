@@ -17,8 +17,9 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.githubpages",
+    "sphinxcontrib.bibtex",
 ]
-
+bibtex_bibfiles = ["refs.bib"]
 templates_path = ["_templates"]
 exclude_patterns = []
 

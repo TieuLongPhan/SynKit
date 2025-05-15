@@ -62,6 +62,7 @@ import networkx as nx
 from networkx.algorithms.graph_hashing import (
     weisfeiler_lehman_subgraph_hashes as _wl_hashes,
 )
+from .canon_algs import canon_morgan
 
 __all__: list[str] = ["CanonicalGraph", "GraphCanonicaliser", "CanonicalRule"]
 
@@ -83,10 +84,12 @@ def _default_node_key(node_id: NodeId, data: NodeData) -> Tuple[Any, ...]:
     return (
         data.get("element", ""),
         data.get("charge", 0),
-        data.get("atom_map", 0),
+        data.get("aromatic", False),
+        # data.get("atom_map", 0),
         data.get("hcount", 0),
-        tuple(data.get("typesGH", ())),
-        node_id,  # final tie‑breaker
+        # data.get("neighbors", []),
+        # tuple(data.get("typesGH", ())),
+        # node_id,  # final tie‑breaker
     )
 
 
@@ -142,19 +145,22 @@ class GraphCanonicaliser:
     def __init__(
         self,
         *,
-        backend: Literal["generic", "wl"] = "generic",
+        backend: Literal["generic", "wl", "morgan"] = "generic",
         wl_iterations: int = 3,
-        node_attrs: List[str] = ("element", "aromatic", "charge", "hcount"),
+        morgan_radius: int = 3,
+        node_attrs: List[str] = ["element", "aromatic", "charge", "hcount"],
         node_sort_key: T_NodeSortKey = _default_node_key,
         edge_sort_key: T_EdgeSortKey = _default_edge_key,
     ) -> None:
-        if backend not in {"generic", "wl"}:
-            raise ValueError("backend must be 'generic' or 'wl'")
-        self.backend: Literal["generic", "wl"] = backend
+        if backend not in {"generic", "wl", "morgan"}:
+            raise ValueError("backend must be 'generic' or 'wl' or 'morgan' ")
+        self.backend: Literal["generic", "wl", "morgan"] = backend
         self._wl_k: int = wl_iterations
+        self._mg_k: int = morgan_radius
         self._node_key: T_NodeSortKey = node_sort_key
         self._edge_key: T_EdgeSortKey = edge_sort_key
         self._wl_node_attrs: Tuple[str, ...] = tuple(node_attrs)
+        self._mg_node_attrs: List[str] = node_attrs
 
     # ------------------------------------------------------------------ #
     # High‑level helpers                                                 #
@@ -210,9 +216,17 @@ class GraphCanonicaliser:
     # ------------------------------------------------------------------ #
     def _make_canonical_graph(self, g: nx.Graph) -> nx.Graph:
         """Dispatcher that calls the appropriate back‑end."""
-        return (
-            self._canon_generic(g) if self.backend == "generic" else self._canon_wl(g)
-        )
+        if self.backend == "generic":
+            return self._canon_generic(g)
+        elif self.backend == "wl":
+            return self._canon_wl(g)
+        else:
+            return canon_morgan(
+                g, morgan_radius=self._mg_k, node_attributes=self._mg_node_attrs
+            )
+        # return (
+        #     self._canon_generic(g) if self.backend == "generic" else self._canon_wl(g)
+        # )
 
     def _canon_generic(self, g: nx.Graph) -> nx.Graph:
         """Pure attribute‑sort strategy – O(|V| log |V| + |E| log |E|)."""

@@ -1,3 +1,4 @@
+import importlib.util
 import networkx as nx
 from operator import eq
 from collections import OrderedDict
@@ -7,6 +8,9 @@ from networkx.algorithms.isomorphism import generic_node_match, generic_edge_mat
 from synkit.Rule.Modify.rule_utils import strip_context
 from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
 from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
+
+if importlib.util.find_spec("mod") is not None:
+    gm = GraphMatcherEngine(backend="mod")
 
 
 class GraphCluster:
@@ -39,7 +43,7 @@ class GraphCluster:
         self.backend = backend.lower()
         available = self.available_backends()
         if self.backend not in available:
-            if self.backend == "rule":
+            if self.backend == "mod":
                 raise ImportError("MOD is not installed")
             raise ValueError(f"Unsupported backend: {backend!r}")
 
@@ -57,17 +61,20 @@ class GraphCluster:
                 [eq for _ in node_label_names],
             )
             self.edgeMatch = generic_edge_match(self.edgeAttribute, 1, eq)
+        else:
+            self.nodeMatch = None
+            self.edgeMatch = None
 
     def available_backends(self) -> List[str]:
         """
-        Return available backends: always includes 'nx'; adds 'rule' if the 'mod' package is installed.
+        Return available backends: always includes 'nx'; adds 'mode' if the 'mod' package is installed.
         """
         import importlib.util
 
         backends = ["nx"]
         # Check if 'mod' package is importable without executing it
         if importlib.util.find_spec("mod") is not None:
-            backends.append("rule")
+            backends.append("mod")
         return backends
 
     def iterative_cluster(
@@ -94,7 +101,7 @@ class GraphCluster:
         """
         # Determine the appropriate isomorphism function based on rule type
         if isinstance(rules[0], str):
-            iso_function = GraphMatcherEngine(backend="rule")._isomorphic_rule
+            iso_function = gm._isomorphic_rule
             apply_match_args = (
                 False  # rule_isomorphism does not use nodeMatch or edgeMatch
             )
@@ -150,6 +157,7 @@ class GraphCluster:
         data: List[Dict],
         rule_key: str = "gml",
         attribute_key: str = "WLHash",
+        strip: bool = False,
     ) -> List[Dict]:
         """
         Automatically clusters the rules and assigns them cluster indices based on the
@@ -169,7 +177,11 @@ class GraphCluster:
           identification.
         """
         if isinstance(data[0][rule_key], str):
-            rules = [strip_context(entry[rule_key]) for entry in data]
+            if strip:
+                rules = [strip_context(entry[rule_key]) for entry in data]
+            else:
+                rules = [entry[rule_key] for entry in data]
+
         else:
             rules = [entry[rule_key] for entry in data]
 

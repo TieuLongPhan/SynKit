@@ -168,7 +168,7 @@ class TestGMLFunctions(unittest.TestCase):
     @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_strip_context(self):
         self.assertFalse(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(
                 self.gml_expected, self.gml_h
             )
         )
@@ -177,7 +177,7 @@ class TestGMLFunctions(unittest.TestCase):
         )
         output = strip_context(self.gml_h)
         self.assertTrue(
-            GraphMatcherEngine(backend="rule")._isomorphic_rule(
+            GraphMatcherEngine(backend="mod")._isomorphic_rule(
                 self.gml_expected, output
             )
         )

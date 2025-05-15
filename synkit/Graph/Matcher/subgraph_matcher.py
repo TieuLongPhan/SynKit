@@ -276,7 +276,7 @@ class SubgraphMatch:
                 use_filter,
                 check_type,
             )
-        if backend == "rule":
+        if backend == "mod":
             if not _RULE_AVAILABLE:
                 raise ImportError("GML rule backend not installed – pip install mod.")
             return SubgraphMatch.rule_subgraph_morphism(

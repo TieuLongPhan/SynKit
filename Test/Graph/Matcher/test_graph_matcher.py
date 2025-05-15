@@ -78,7 +78,7 @@ class TestGraphMatcherEngine(unittest.TestCase):
             edge_attrs=["order"],
             wl1_filter=False,
             max_mappings=None,
-            backend="rule",
+            backend="mod",
         )
         self.assertTrue(gm_rule._isomorphic_rule(self.small, self.small))
         self.assertTrue(gm_rule._isomorphic_rule(self.large, self.large))
@@ -92,7 +92,7 @@ class TestGraphMatcherEngine(unittest.TestCase):
             edge_attrs=["order"],
             wl1_filter=False,
             max_mappings=None,
-            backend="rule",
+            backend="mod",
         )
         gml1 = its_to_gml(self.rc)
         # permute same as before
@@ -109,7 +109,7 @@ class TestGraphMatcherEngine(unittest.TestCase):
             edge_attrs=["order"],
             wl1_filter=False,
             max_mappings=None,
-            backend="rule",
+            backend="mod",
         )
         # compare original vs with one node removed
         g0 = self.rc.copy()

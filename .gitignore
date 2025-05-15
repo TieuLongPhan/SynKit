@@ -4,16 +4,10 @@
 */catboost_info/*
 *.ipynb
 *.json
-test_mod.py
-test_format.py
-*dev_zone
 *.pkl.gz
-dev_scripts/*
 *.pdf
 out
 summary
-Data/Benchmark/its.json.gz
-Data/Benchmark/rc.json.gz
 *.log
 .coverage
 dev/*
@@ -21,6 +15,8 @@ dev/*
 Data/Testcase/hydro/aam.json.gz
 synkit/Chem/FG/*
 test_syn_reactor.py
-Data/Benchmark/reactor/*
+Data/Benchmark/*
 *.png
 *.json.gz
+run.sh
+docs/*
