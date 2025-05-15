@@ -16,8 +16,9 @@ documentation for details.
    
    getting_started
    io
+   chem
    graph
-   reactor
    rule
+   synthesis
    references
 
