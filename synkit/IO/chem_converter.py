@@ -25,18 +25,20 @@ def smiles_to_graph(
     use_index_as_atom_map: bool = False,
 ) -> Optional[nx.Graph]:
     """
-    Helper function to convert SMILES string to a graph using MolToGraph class.
+    Helper function to convert a SMILES string to a NetworkX graph.
 
-    Parameters:
-    - smiles (str): SMILES representation of the molecule.
-    - drop_non_aam (bool): Whether to drop nodes without atom mapping.
-    - light_weight (bool): Whether to create a light-weight graph.
-    - sanitize (bool): Whether to sanitize the molecule during conversion.
-    - use_index_as_atom_map (bool): Whether to use the index of atoms as atom map numbers
-
-    Returns:
-    - nx.Graph or None: The networkx graph representation of the molecule,
-    or None if conversion fails.
+    :param smiles: SMILES representation of the molecule.
+    :type smiles: str
+    :param drop_non_aam: Whether to drop nodes without atom mapping numbers.
+    :type drop_non_aam: bool
+    :param light_weight: Whether to create a light-weight graph.
+    :type light_weight: bool
+    :param sanitize: Whether to sanitize the molecule during conversion.
+    :type sanitize: bool
+    :param use_index_as_atom_map: Whether to use atom indices as atom-map numbers.
+    :type use_index_as_atom_map: bool
+    :returns: The NetworkX graph representation, or None if conversion fails.
+    :rtype: networkx.Graph or None
     """
 
     try:
@@ -81,19 +83,20 @@ def rsmi_to_graph(
     use_index_as_atom_map: bool = True,
 ) -> Tuple[Optional[nx.Graph], Optional[nx.Graph]]:
     """
-    Converts reactant and product SMILES strings from a reaction SMILES (RSMI) format
-    to graph representations.
+    Convert a reaction SMILES (RSMI) into reactant and product graphs.
 
-    Parameters:
-    - rsmi (str): Reaction SMILES string in "reactants>>products" format.
-    - drop_non_aam (bool, optional): If True, nodes without atom mapping numbers
-    will be dropped.
-    - light_weight (bool, optional): If True, creates a light-weight graph.
-    - sanitize (bool, optional): If True, sanitizes molecules during conversion.
-
-    Returns:
-    - Tuple[Optional[nx.Graph], Optional[nx.Graph]]: A tuple containing t
-    he graph representations of the reactants and products.
+    :param rsmi: Reaction SMILES string in “reactants>>products” format.
+    :type rsmi: str
+    :param drop_non_aam: If True, drop nodes without atom mapping numbers.
+    :type drop_non_aam: bool
+    :param light_weight: If True, create a light-weight graph.
+    :type light_weight: bool
+    :param sanitize: If True, sanitize molecules during conversion.
+    :type sanitize: bool
+    :param use_index_as_atom_map: Whether to use atom indices as atom-map numbers.
+    :type use_index_as_atom_map: bool
+    :returns: A tuple `(reactant_graph, product_graph)`, each a NetworkX graph or None.
+    :rtype: tuple of (networkx.Graph or None, networkx.Graph or None)
     """
     try:
         reactants_smiles, products_smiles = rsmi.split(">>")
@@ -121,19 +124,15 @@ def graph_to_smi(
     """
     Convert a NetworkX molecular graph to a SMILES string.
 
-    Parameters
-    ----------
-    graph : nx.Graph
-        Graph representation of the molecule. Nodes must have chemical attributes like 'element'.
-    sanitize : bool
-        Whether to perform RDKit sanitization on the resulting molecule.
-    preserve_atom_maps : list of int, optional
-        List of atom map numbers for which hydrogens should be preserved explicitly.
-
-    Returns
-    -------
-    str or None
-        SMILES string representation of the molecule, or None if conversion fails.
+    :param graph: Graph representation of the molecule.
+                  Nodes must carry chemical attributes (e.g. ‘element’, atom maps).
+    :type graph: networkx.Graph
+    :param sanitize: Whether to perform RDKit sanitization on the resulting molecule.
+    :type sanitize: bool
+    :param preserve_atom_maps: List of atom-map numbers for which hydrogens remain explicit.
+    :type preserve_atom_maps: list of int or None
+    :returns: SMILES string, or None if conversion fails.
+    :rtype: str or None
     """
     try:
         if preserve_atom_maps is None or len(preserve_atom_maps) == 0:
@@ -160,23 +159,18 @@ def graph_to_rsmi(
     """
     Convert reactant and product graphs into a reaction SMILES string.
 
-    Parameters
-    ----------
-    r : nx.Graph
-        Graph representing the reactants.
-    p : nx.Graph
-        Graph representing the products.
-    its : nx.Graph, optional
-        Imaginary transition state (ITS) graph. If None, it will be constructed.
-    sanitize : bool
-        Whether to sanitize molecules during conversion.
-    explicit_hydrogen : bool
-        Whether to preserve all hydrogen atoms explicitly in the SMILES output.
-
-    Returns
-    -------
-    str or None
-        Reaction SMILES string in the format 'reactants >> products', or None if conversion fails.
+    :param r: Graph representing the reactants.
+    :type r: networkx.Graph
+    :param p: Graph representing the products.
+    :type p: networkx.Graph
+    :param its: Imaginary transition state graph. If None, it will be constructed.
+    :type its: networkx.Graph or None
+    :param sanitize: Whether to sanitize molecules during conversion.
+    :type sanitize: bool
+    :param explicit_hydrogen: Whether to preserve explicit hydrogens in the SMILES.
+    :type explicit_hydrogen: bool
+    :returns: Reaction SMILES string in 'reactants>>products' format or None on failure.
+    :rtype: str or None
     """
     try:
         if explicit_hydrogen:
@@ -208,7 +202,7 @@ def graph_to_rsmi(
 def smart_to_gml(
     smart: str,
     core: bool = True,
-    sanitize: bool = False,
+    sanitize: bool = True,
     rule_name: str = "rule",
     reindex: bool = False,
     explicit_hydrogen: bool = False,
@@ -254,18 +248,18 @@ def gml_to_smart(
     useSmiles: bool = True,
 ) -> Tuple[str, nx.Graph]:
     """
-    Converts a GML string back to a SMARTS string by interpreting the graph structures.
+    Convert a GML string back to a SMARTS string and ITS graph.
 
-    Parameters:
-    - gml (str): The GML string to convert.
-    - sanitize (bool): Specifies whether the molecule should be sanitized upon conversion.
-    - explicit_hydrogen (bool): Controls whether hydrogens are explicitly represented
-    in the output.
-    - useSmiles (bool): Controls whether output is SMILES or SMARTS. Defaults to True.
-
-
-    Returns:
-    - str: The corresponding SMARTS string.
+    :param gml: The GML string to convert.
+    :type gml: str
+    :param sanitize: Whether to sanitize molecules upon conversion.
+    :type sanitize: bool
+    :param explicit_hydrogen: Whether hydrogens are explicitly represented.
+    :type explicit_hydrogen: bool
+    :param useSmiles: If True, output SMILES; otherwise SMARTS.
+    :type useSmiles: bool
+    :returns: A tuple of (SMARTS string, ITS graph).
+    :rtype: tuple of (str, networkx.Graph)
     """
     r, p, rc = GMLToNX(gml).transform()
     rsmi = graph_to_rsmi(r, p, rc, sanitize, explicit_hydrogen)
@@ -286,17 +280,20 @@ def its_to_gml(
     explicit_hydrogen: bool = False,
 ) -> str:
     """
-    Converts an ITS graph (reaction graph) to GML format, optionally focusing on the reaction core.
+    Convert an ITS graph (reaction graph) to GML format.
 
-    Parameters:
-    - its (nx.Graph): The input ITS graph representing the reaction.
-    - core (bool, optional): If True, focuses on the reaction core. Defaults to True.
-    - rule_name (str, optional): The name of the reaction rule. Defaults to "rule".
-    - reindex (bool, optional): If True, reindexes the graph nodes. Defaults to True.
-    - explicit_hydrogen (bool, optional): If True, includes explicit hydrogens in the output. Defaults to False.
-
-    Returns:
-    - str: The GML representation of the ITS graph.
+    :param its: The input ITS graph representing the reaction.
+    :type its: networkx.Graph
+    :param core: If True, focus only on the reaction center. Defaults to True.
+    :type core: bool
+    :param rule_name: Name of the reaction rule. Defaults to "rule".
+    :type rule_name: str
+    :param reindex: If True, reindex graph nodes. Defaults to True.
+    :type reindex: bool
+    :param explicit_hydrogen: If True, include explicit hydrogens. Defaults to False.
+    :type explicit_hydrogen: bool
+    :returns: The GML representation of the ITS graph.
+    :rtype: str
     """
 
     # Decompose the ITS graph based on whether to focus on the core or not
@@ -315,13 +312,12 @@ def its_to_gml(
 
 def gml_to_its(gml: str) -> nx.Graph:
     """
-    Converts a GML string representation of a reaction back into an ITS graph.
+    Convert a GML string representation of a reaction back into an ITS graph.
 
-    Parameters:
-    - gml (str): The GML string representing the reaction.
-
-    Returns:
-    - nx.Graph: The resulting ITS graph.
+    :param gml: The GML string representing the reaction.
+    :type gml: str
+    :returns: The resulting ITS graph.
+    :rtype: networkx.Graph
     """
 
     # Convert GML back to the ITS graph using the appropriate GML to NX conversion
@@ -339,24 +335,23 @@ def rsmi_to_its(
     core: bool = False,
 ) -> nx.Graph:
     """
-    Converts a reaction SMILES (rSMI) string to an ITS graph representation using specified processing parameters.
+    Convert a reaction SMILES (rSMI) string to an ITS graph representation.
 
-    This function processes the input rSMI string into a graph representation of the reaction,
-    considering atom-atom mappings and optionally sanitizing the molecules. It then constructs
-    an Intermediate Transition State (ITS) graph based on the provided parameters.
-
-    Parameters:
-    - rsmi (str): The reaction SMILES string to be converted.
-    - drop_non_aam (bool, optional): If True, non-atom-atom mapped components are dropped. Default is True.
-    - light_weight (bool, optional): If True, reduces the complexity of the graph representation. Default is True.
-    - sanitize (bool, optional): If True, sanitizes the molecules during conversion. Default is True.
-    - use_index_as_atom_map (bool, optional): If True, uses indices as atom mappings. Default is True.
-
-    Returns:
-    - nx.Graph: The ITS graph representing the reaction.
-
-    Raises:
-    - Exception: If an error occurs during the conversion of rSMI to graph or ITS construction, an exception is raised.
+    :param rsmi: The reaction SMILES string.
+    :type rsmi: str
+    :param drop_non_aam: If True, drop non-atom-mapped components.
+    :type drop_non_aam: bool
+    :param light_weight: If True, create a light-weight graph.
+    :type light_weight: bool
+    :param sanitize: If True, sanitize molecules during conversion.
+    :type sanitize: bool
+    :param use_index_as_atom_map: If True, use indices as atom-map numbers.
+    :type use_index_as_atom_map: bool
+    :param core: If True, focus only on the reaction center.
+    :type core: bool
+    :returns: The ITS graph representing the reaction.
+    :rtype: networkx.Graph
+    :raises Exception: If conversion fails.
     """
     r, p = rsmi_to_graph(
         rsmi, drop_non_aam, light_weight, sanitize, use_index_as_atom_map
@@ -373,55 +368,17 @@ def its_to_rsmi(
     explicit_hydrogen: bool = False,
 ) -> str:
     """
-    Convert an **I**ntermediate/**T**ransition‑**S**tate (ITS) `networkx.Graph`
-    into a reaction‑SMILES (rSMI) string.
+    Convert an ITS graph into a reaction SMILES (rSMI) string.
 
-    Parameters
-    ----------
-    its : nx.Graph
-        A fully annotated ITS graph.
-        The nodes should carry atom‑map indices and chemical attributes
-        (``element``, ``charge``, etc.), while the edges encode bond orders.
-    sanitize : bool, optional
-        If *True* (default), the reactant and product sub‑graphs are passed
-        through RDKit’s sanitisation pipeline prior to SMILES generation
-        (valence checks, kekulisation, aromaticity perception …).
-        Set to *False* to skip sanitisation when you know the graph is already
-        consistent.
-    explicit_hydrogen : bool, optional
-        When *True* the generated rSMI will contain explicit hydrogens;
-        otherwise (default) hydrogens are implicit.
-
-    Returns
-    -------
-    str
-        A reaction‑SMILES string in the canonical form
-        ``reactants > agents > products``
-        (the *agents* part is left empty by this function).
-
-    Raises
-    ------
-    ValueError
-        If the ITS graph cannot be decomposed into a valid reactant‑product
-        pair or if sanitisation fails.
-
-    Notes
-    -----
-    This is a convenience wrapper around :pyfunc:`its_decompose` and
-    :pyfunc:`graph_to_rsmi`:
-
-    1. **Decompose** the ITS into reactant (*r*) and product (*p*) graphs.
-    2. **Serialise** the pair back to rSMI via :pyfunc:`graph_to_rsmi`.
-
-    Both helper functions must be available in the current namespace.
-
-    Examples
-    --------
-    ```python
-    rsmi = its_to_rsmi(its_graph)                 # default behaviour
-    rsmi_h = its_to_rsmi(its_graph, explicit_hydrogen=True)
-    rsmi_raw = its_to_rsmi(its_graph, sanitize=False)
-    ```
+    :param its: A fully annotated ITS graph (nodes with atom-map attributes).
+    :type its: networkx.Graph
+    :param sanitize: If True, sanitize prior to SMILES generation.
+    :type sanitize: bool
+    :param explicit_hydrogen: If True, include explicit hydrogens.
+    :type explicit_hydrogen: bool
+    :returns: A canonical reaction-SMILES string ('reactants>agents>products').
+    :rtype: str
+    :raises ValueError: If graph cannot be decomposed or sanitisation fails.
     """
     r, p = its_decompose(its)
     return graph_to_rsmi(r, p, its, sanitize, explicit_hydrogen)
@@ -430,6 +387,12 @@ def its_to_rsmi(
 def rsmi_to_rsmarts(rsmi: str) -> str:
     """
     Convert a mapped reaction SMILES to a reaction SMARTS string.
+
+    :param rsmi: Reaction SMILES input.
+    :type rsmi: str
+    :returns: Reaction SMARTS string.
+    :rtype: str
+    :raises ValueError: If conversion fails.
     """
     try:
         rxn = rdChemReactions.ReactionFromSmarts(rsmi, useSmiles=True)
@@ -441,6 +404,12 @@ def rsmi_to_rsmarts(rsmi: str) -> str:
 def rsmarts_to_rsmi(rsmarts: str) -> str:
     """
     Convert a reaction SMARTS to a reaction SMILES string.
+
+    :param rsmarts: Reaction SMARTS input.
+    :type rsmarts: str
+    :returns: Reaction SMILES string.
+    :rtype: str
+    :raises ValueError: If conversion fails.
     """
     try:
         rxn = rdChemReactions.ReactionFromSmarts(rsmarts, useSmiles=False)

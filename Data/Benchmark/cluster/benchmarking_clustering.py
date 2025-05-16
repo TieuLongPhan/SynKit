@@ -241,7 +241,7 @@ def main():
     p.add_argument(
         "--wl_iters",
         type=str,
-        default="1,2,3",
+        default="0,1,2,3",
         help="Comma-separated WL iteration counts",
     )
     p.add_argument("--repeat", type=int, default=3)
@@ -258,9 +258,9 @@ def main():
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     # logging.info("Test Full...")
-    # test_full(data, wl_iters_list, args.repeat, out_dir)
-    logging.info("Test Scalability...")
-    test_scalability(data, wl_iters_list, Ns, args.repeat, out_dir)
+    test_full(data, wl_iters_list, args.repeat, out_dir)
+    # logging.info("Test Scalability...")
+    # test_scalability(data, wl_iters_list, Ns, args.repeat, out_dir)
 
 
 if __name__ == "__main__":
