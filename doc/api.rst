@@ -48,103 +48,153 @@ Synthesis Module
    :undoc-members:
    :show-inheritance:
 
-.. Graph Module
-.. ============
-.. The `Graph` module includes several submodules focused on graph construction, decomposition, and analysis, which are essential for visualizing and processing graph-based data.
+Graph Module
+============
 
-.. ITS Submodule
-.. -------------
-.. The `ITS` submodule provides tools for constructing, decomposing, and validating ITS (input-transformation-output) graphs.
+ITS Submodule
+-------------
+The `ITS` submodule provides tools for constructing, decomposing, and validating ITS (input-transformation-output) graphs.
 
-.. - **its_construction**: Functions for constructing an ITS graph.
-.. - **its_decompose**: Functions for decomposing an ITS graph.
-.. - **aam_validator**: Functions for comparing ITS graph or AAM.
+- **its_construction**: Functions for constructing an ITS graph.
+- **its_decompose**: Functions for decomposing an ITS graph and extracting reaction center.
 
-.. .. automodule:: synkit.Graph.ITS.its_construction
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+.. automodule:: synkit.Graph.ITS.its_construction
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. .. automodule:: synkit.Graph.ITS.its_decompose
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+.. automodule:: synkit.Graph.ITS.its_decompose
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. .. automodule:: synkit.Graph.ITS.aam_validator
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
 
-.. Cluster Submodule
-.. -----------------
-.. The `Cluster` submodule provides functions for clustering graph data into groups for analysis, including both single and batch clustering techniques.
+Matcher Submodule
+-----------------
 
-.. - **graph_cluster**: Functions for clustering a graph into distinct groups.
-.. - **batch_cluster**: Functions for batch processing and clustering multiple graphs.
+The ``synkit.Graph.Matcher`` package provides comprehensive tools for graph comparison, subgraph search, and clustering. It is organized into four main areas:
 
-.. .. automodule:: synkit.Graph.Cluster.graph_cluster
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+- **Matching Engines**  
+  Perform graph‐to‐graph and subgraph isomorphism checks:  
+  - :py:class:`~synkit.Graph.Matcher.graph_matcher.GraphMatcherEngine`  
+  - :py:class:`~synkit.Graph.Matcher.subgraph_matcher.SubgraphSearchEngine`
 
-.. .. automodule:: synkit.Graph.Cluster.batch_cluster
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+- **Single-Graph Clustering**  
+  Cluster a single graph’s nodes or components:  
+  - :py:mod:`~synkit.Graph.Matcher.graph_cluster`
 
-.. Reactor Module
-.. ==============
-.. The `Reactor` module includes functions for forward and backward prediction in chemical processes, with or without AAM (atomic action model) results.
+- **Batch Clustering**  
+  Process and cluster multiple graphs in parallel:  
+  - :py:mod:`~synkit.Graph.Matcher.batch_cluster`
 
-.. This module supports both single-step and multi-step predictions based on graph structures.
+- **High-Throughput Isomorphism**  
+  Specialized routines for multi-pattern searches in a host graph:  
+  - :py:mod:`~synkit.Graph.Matcher.sing`  
+  - :py:mod:`~synkit.Graph.Matcher.turbo_iso`
 
-.. - **core_engine**: The core engine for forward and backward prediction.
-.. - **reactor_engine**: High-level engine for reaction prediction.
-.. - **crn**: Functions for working with Chemical Reaction Networks.
-.. - **path_finder**: Functions to identify possible reaction paths.
 
-.. .. automodule:: synkit.Reactor.core_engine
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+Matching Engines
+~~~~~~~~~~~~~~~~
 
-.. .. automodule:: synkit.Reactor.reactor_engine
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+.. automodule:: synkit.Graph.Matcher.graph_matcher
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. .. automodule:: synkit.Reactor.crn
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+.. automodule:: synkit.Graph.Matcher.subgraph_matcher
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. .. automodule:: synkit.Reactor.path_finder
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
 
-.. Rule Module
-.. ===========
-.. The `Rule` module includes functions for rule modification and retrosynthesis, essential for transforming and optimizing chemical reaction pathways.
+Clustering
+~~~~~~~~~~
 
-.. - **rule_compose**: Functions for composing new reaction rules.
-.. - **reactor_rule**: Functions for applying rules to reactor systems.
+.. automodule:: synkit.Graph.Matcher.graph_cluster
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. .. automodule:: synkit.Rule.rule_compose
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+.. automodule:: synkit.Graph.Matcher.batch_cluster
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-.. .. automodule:: synkit.Rule.reactor_rule
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
 
-.. Vis Module
-.. ===========
-.. The `Vis` module provides visualization tools for graph-based data and chemical reaction pathways, helping users interpret complex relationships and structures.
+High-Throughput Isomorphism
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. .. automodule:: synkit.Vis
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+.. automodule:: synkit.Graph.Matcher.sing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.Matcher.turbo_iso
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+MTG Submodule
+-------------
+
+.. automodule:: synkit.Graph.MTG.mtg
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+
+Rule Module
+===========
+
+The ``synkit.Rule`` package provides a flexible framework for **reaction rule** manipulation, composition, and application in retrosynthesis and forward‐prediction workflows. It is organized into three main subpackages:
+
+- **Compose**  
+  Build new reaction rules by composing existing ones, supporting both SMARTS‐based and GML workflows.  
+- **Apply**  
+  Apply rules to molecule or reaction graphs for retro‐prediction or forward‐simulation (e.g., in reactor contexts).  
+- **Modify**  
+  Generate artificial rule, edit and adjust rule templates—add or remove explicit hydrogens, adjust contexts, and fine‐tune matching behavior.
+
+.. automodule:: synkit.Rule.Compose.rule_compose
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Rule.Apply.reactor_rule
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Rule.Modify.molecule_rule
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Vis Module
+==========
+
+The ``synkit.Vis`` package offers a suite of **visualization utilities** for both chemical reactions and graph structures, enabling clear interpretation of mechanisms, templates, and network architectures:
+
+- **RXNVis** (:py:class:`~synkit.Vis.rxn_vis.RXNVis`)  
+  Render full reaction schemes with mapped atom‐colors, curved arrows, and publication‐quality layouts.  
+- **RuleVis** (:py:class:`~synkit.Vis.rule_vis.RuleVis`)  
+  Display rule templates (SMARTS/GML) as annotated graph transformations, highlighting bond changes.  
+- **GraphVisualizer** (:py:class:`~synkit.Vis.graph_visualizer.GraphVisualizer`)  
+  General‐purpose NetworkX graph plotting, with support for ITS, MTG, and custom node/edge styling.
+
+.. automodule:: synkit.Vis.rxn_vis
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Vis.rule_vis
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Vis.graph_visualizer
+   :members:
+   :undoc-members:
+   :show-inheritance:

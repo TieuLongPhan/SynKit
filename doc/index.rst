@@ -12,3 +12,4 @@ Welcome to synkit documentation!
    Synthesis Module <synthesis>
    API Reference <api>
    References <reference>
+   Changelog <changelog>
