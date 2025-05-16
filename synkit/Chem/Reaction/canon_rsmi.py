@@ -1,34 +1,3 @@
-"""
-canonical_rsm.py
-===============
-
-A **pure-Python / pure-NetworkX** utility for canonicalizing reaction SMILES
-by expanding atom-maps and deterministically reindexing reaction graphs.
-
-Workflow
----------
-1. **Expand atom-maps** on reactants to ensure each atom has a unique map ID.
-2. **Convert** reaction SMILES to reactant/product NetworkX graphs.
-3. **Canonicalize** the reactant graph using `GraphCanonicaliser` (generic or WL backend).
-4. **Match** atom-map IDs to compute pairwise indices between reactants and products.
-5. **Remap** the product graph to align with the canonical reactant ordering.
-6. **Sync** each node’s `atom_map` attribute to its new graph index.
-7. **Reassemble** the reaction SMILES from the canonical graphs.
-
-Classes
--------
-- `CanonRSMI` – main interface for transforming any `reactants>>products` SMILES into a
-  canonicalized form, preserving all node and edge attributes.
-
-Example
--------
->>> from canonical_rsm import CanonRSMI
->>> canon = CanonRSMI(backend='wl', wl_iterations=5)
->>> result = canon.canonicalise('[CH3:3][CH2:5][OH:10]>>[CH2:3]=[CH2:5].[OH2:10]')
->>> result.canonical_rsmi
->>> '[OH:1][CH2:3][CH3:2]>>[CH2:2]=[CH2:3].[OH2:1]'
-"""
-
 import inspect
 import networkx as nx
 from rdkit import Chem
@@ -41,14 +10,31 @@ from synkit.IO import graph_to_smi, rsmi_to_graph
 
 class CanonRSMI:
     """
-    Canonicalize reaction SMILES by expanding atom-maps and graph-canonicalizing reactants.
+    A **pure-Python / pure-NetworkX** utility for canonicalizing reaction SMILES
+    by expanding atom-maps and deterministically reindexing reaction graphs.
 
-    Parameters
-    ----------
-    backend : {'generic', 'wl'}, default='wl'
-        Backend for `GraphCanonicaliser`.
-    wl_iterations : int, default=3
-        Number of Weisfeiler–Lehman refinement iterations (only for 'wl').
+    Workflow
+    --------
+    1. **Expand atom-maps** on reactants to ensure each atom has a unique map ID.
+    2. **Convert** reaction SMILES to reactant/product NetworkX graphs.
+    3. **Canonicalize** the reactant graph using `GraphCanonicaliser` (generic or WL backend).
+    4. **Match** atom-map IDs to compute pairwise indices between reactants and products.
+    5. **Remap** the product graph to align with the canonical reactant ordering.
+    6. **Sync** each node’s `atom_map` attribute to its new graph index.
+    7. **Reassemble** the reaction SMILES from the canonical graphs.
+
+    Classes
+    -------
+    - `CanonRSMI` – Main interface for transforming any `reactants>>products` SMILES
+      into a canonicalized form, preserving all node and edge attributes.
+
+    Example
+    -------
+    >>> from canonical_rsm import CanonRSMI
+    >>> canon = CanonRSMI(backend='wl', wl_iterations=5)
+    >>> result = canon.canonicalise('[CH3:3][CH2:5][OH:10]>>[CH2:3]=[CH2:5].[OH2:10]')
+    >>> print(result.canonical_rsmi)
+    [OH:1][CH2:3][CH3:2]>>[CH2:2]=[CH2:3].[OH2:1]
     """
 
     def __init__(
@@ -145,11 +131,18 @@ class CanonRSMI:
         G: nx.Graph, node_map: Union[List[int], List[Tuple[int, int]]]
     ) -> nx.Graph:
         """
-        Relabel nodes of G via either:
-          - Ordered list of old IDs → new 1,2,...
-          - List of (new, old) pairs.
-        Returns a copy with all attrs preserved.
+        Remap a product graph to match a canonical reactant ordering:
+
+        :param G: reactant graph
+        :type G: nx.Graph
+        :param mapping:
+            mapping from old product node IDs to new IDs
+        :type mapping: dict[int,int]
+        :returns:
+            remapped product graph
+        :rtype: nx.Graph
         """
+
         if not node_map:
             raise ValueError("node_map must be non-empty")
         if isinstance(node_map[0], int):

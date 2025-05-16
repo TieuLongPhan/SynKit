@@ -11,14 +11,42 @@ The `IO` module provides tools for handling input and output operations related 
    :undoc-members:
    :show-inheritance:
 
-.. Chem Module
-.. =========
-.. The `IO` module provides tools for handling input and output operations related to the chemical converter. It allows seamless interaction with various chemical data formats.
+Chem Module
+===========
+The `Chem` module provides tools for handling input and output operations related to the chemical converter. It allows seamless interaction with various chemical data formats.
 
-.. .. automodule:: synkit.Chem
-..    :members:
-..    :undoc-members:
-..    :show-inheritance:
+.. automodule:: synkit.Chem.Reaction.canon_rsmi
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Reaction.standardize
+   :members:
+   :undoc-members:
+   :show-inheritance:  
+
+.. automodule:: synkit.Chem.Reaction.aam_validator
+   :members:
+   :undoc-members:
+   :show-inheritance:  
+
+Synthesis Module
+================
+
+.. automodule:: synkit.Synthesis.Reactor.syn_reactor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Synthesis.Reactor.mod_reactor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Synthesis.Reactor.mod_aam
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 .. Graph Module
 .. ============

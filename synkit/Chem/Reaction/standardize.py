@@ -3,157 +3,149 @@ from typing import List, Optional, Tuple
 
 
 class Standardize:
+    """
+    A collection of utilities to normalize and filter reaction and molecule SMILES.
+    """
+
     def __init__(self) -> None:
+        """
+        Initialize the Standardize helper.
+        """
         pass
 
     @staticmethod
     def remove_atom_mapping(reaction_smiles: str, symbol: str = ">>") -> str:
         """
-        Removes atom mappings from both reactants and products in a reaction SMILES.
+        Remove atom-map numbers from both sides of a reaction SMILES.
 
-        Parameters:
-        - reaction_smiles (str): A reaction SMILES string with atom mappings.
-        - symbol (str): The symbol that separates reactants and products.
-        Default is '>>'.
-
-        Returns:
-        - str: The reaction SMILES with atom mappings removed.
+        :param reaction_smiles: A reaction SMILES string with atom mappings.
+        :type reaction_smiles: str
+        :param symbol: The separator between reactants and products. Defaults to ">>".
+        :type symbol: str
+        :returns: The reaction SMILES with all atom-map annotations stripped.
+        :rtype: str
+        :raises ValueError: If the input is not in "reactants>>products" format
+                            or contains invalid SMILES.
         """
-        # Split the reaction SMILES into reactants and products
         parts = reaction_smiles.split(symbol)
         if len(parts) != 2:
             raise ValueError(
-                "Invalid reaction SMILES format."
-                + " Expected format: 'reactants>>products'."
+                "Invalid reaction SMILES format. Expected 'reactants>>products'."
             )
 
-        def clean_smiles(smiles: str) -> str:
-            mol = Chem.MolFromSmiles(smiles)  # Convert SMILES to an RDKit mol object
+        def clean_smiles(smi: str) -> str:
+            mol = Chem.MolFromSmiles(smi)
             if mol is None:
-                raise ValueError(f"Invalid SMILES string: {smiles}")
+                raise ValueError(f"Invalid SMILES string: {smi}")
             for atom in mol.GetAtoms():
-                atom.SetAtomMapNum(0)  # Remove atom mapping
-            return Chem.MolToSmiles(mol, True)  # Convert mol back to SMILES
+                atom.SetAtomMapNum(0)
+            return Chem.MolToSmiles(mol, canonical=True)
 
-        # Apply the cleaning function to both reactants and products
-        reactants_clean = clean_smiles(parts[0])
-        products_clean = clean_smiles(parts[1])
-
-        # Combine the cleaned reactants and products back into a reaction SMILES
-        return f"{reactants_clean}{symbol}{products_clean}"
+        react, prod = map(clean_smiles, parts)
+        return f"{react}{symbol}{prod}"
 
     @staticmethod
     def filter_valid_molecules(smiles_list: List[str]) -> List[Chem.Mol]:
         """
-        Filters and returns valid RDKit molecule objects from a list of SMILES strings.
+        Convert a list of SMILES to RDKit Mol objects, keeping only valid molecules.
 
-        Parameters:
-        - smiles_list (List[str]): A list of SMILES strings.
-
-        Returns:
-        - List[Chem.Mol]: A list of valid RDKit molecule objects.
+        :param smiles_list: A list of SMILES strings.
+        :type smiles_list: list of str
+        :returns: A list of sanitized RDKit Mol objects.
+        :rtype: list of rdkit.Chem.Mol
         """
-        valid_molecules = []
-        for smiles in smiles_list:
-            mol = Chem.MolFromSmiles(smiles, sanitize=False)
+        valid = []
+        for smi in smiles_list:
+            mol = Chem.MolFromSmiles(smi, sanitize=False)
             if mol:
-                Chem.SanitizeMol(mol)
-                if mol:
-                    valid_molecules.append(mol)
-        return valid_molecules
+                try:
+                    Chem.SanitizeMol(mol)
+                    valid.append(mol)
+                except Exception:
+                    pass
+        return valid
 
     @staticmethod
     def standardize_rsmi(rsmi: str, stereo: bool = False) -> Optional[str]:
         """
-        Standardizes a reaction SMILES (rSMI) by:
-        - Ensuring all reactants and products are valid molecules.
-        - Sorting the SMILES strings of reactants and products in ascending order.
-        - Optionally considering stereochemistry.
+        Normalize a reaction SMILES by validating, sorting, and optional stereochemistry.
 
-        Parameters:
-        - rsmi (str): The reaction SMILES string to be standardized.
-        - stereo (bool): If True, stereochemical information is included in the SMILES.
-
-        Returns:
-        - Optional[str]: The standardized reaction SMILES,
-        or None if no valid molecules are found.
+        :param rsmi: The reaction SMILES to standardize.
+        :type rsmi: str
+        :param stereo: If True, include stereochemical information. Defaults to False.
+        :type stereo: bool
+        :returns: The standardized reaction SMILES or None if no valid molecules remain.
+        :rtype: str or None
+        :raises ValueError: If the input is not in "reactants>>products" format.
         """
         try:
-            reactants, products = rsmi.split(">>")
+            react_str, prod_str = rsmi.split(">>")
         except ValueError:
             raise ValueError(
-                "Invalid reaction SMILES format."
-                + " Expected format: 'reactants>>products'."
+                "Invalid reaction SMILES format. Expected 'reactants>>products'."
             )
 
-        reactant_molecules = Standardize.filter_valid_molecules(reactants.split("."))
-        product_molecules = Standardize.filter_valid_molecules(products.split("."))
+        react_mols = Standardize.filter_valid_molecules(react_str.split("."))
+        prod_mols = Standardize.filter_valid_molecules(prod_str.split("."))
 
-        if not reactant_molecules or not product_molecules:
+        if not react_mols or not prod_mols:
             return None
 
-        standardized_reactants = ".".join(
-            sorted(
-                Chem.MolToSmiles(mol, isomericSmiles=stereo)
-                for mol in reactant_molecules
-            )
+        sorted_react = ".".join(
+            sorted(Chem.MolToSmiles(m, isomericSmiles=stereo) for m in react_mols)
         )
-        standardized_products = ".".join(
-            sorted(
-                Chem.MolToSmiles(mol, isomericSmiles=stereo)
-                for mol in product_molecules
-            )
+        sorted_prod = ".".join(
+            sorted(Chem.MolToSmiles(m, isomericSmiles=stereo) for m in prod_mols)
         )
 
-        return f"{standardized_reactants}>>{standardized_products}"
+        return f"{sorted_react}>>{sorted_prod}"
 
     def fit(
         self, rsmi: str, remove_aam: bool = True, ignore_stereo: bool = True
     ) -> Optional[str]:
         """
-        Fits the reaction SMILES by removing atom mappings and standardizing the reaction.
+        Full standardization pipeline: remove atom-maps, normalize SMILES, fix H notation.
 
-        Parameters:
-        - rsmi (str): The reaction SMILES string to be processed.
-        - remove_aam (bool): If True, atom mappings are removed from the reaction SMILES.
-        - ignore_stereo (bool): If True, stereochemistry is ignored in the SMILES.
-
-        Returns:
-        - Optional[str]: The processed reaction SMILES, or None if the
-        standardization fails.
+        :param rsmi: The reaction SMILES to process.
+        :type rsmi: str
+        :param remove_aam: If True, strip atom-mapping numbers. Defaults to True.
+        :type remove_aam: bool
+        :param ignore_stereo: If True, drop stereochemistry. Defaults to True.
+        :type ignore_stereo: bool
+        :returns: The processed reaction SMILES or None if standardization fails.
+        :rtype: str or None
         """
         if remove_aam:
             rsmi = self.remove_atom_mapping(rsmi)
 
-        rsmi = self.standardize_rsmi(rsmi, not ignore_stereo)
-        rsmi = rsmi.replace("[HH]", "[H][H]")
-        return rsmi
+        std = self.standardize_rsmi(rsmi, stereo=not ignore_stereo)
+        if std is None:
+            return None
+
+        # Explicitly format double hydrogens
+        return std.replace("[HH]", "[H][H]")
 
     @staticmethod
     def categorize_reactions(
         reactions: List[str], target_reaction: str
     ) -> Tuple[List[str], List[str]]:
         """
-        Sorts a list of reaction SMILES strings into two groups based on
-        their match with a specified target reaction. The categorization process
-        distinguishes between reactions that align with the target reaction
-        and those that do not.
+        Partition a list of reaction SMILES into those matching a target and those not.
 
-        Parameters:
-        - reactions (List[str]): The array of reaction SMILES strings to be categorized.
-        - target_reaction (str): The SMILES string of the target reaction
-                                    used as the benchmark for categorization.
-
-        Returns:
-        - Tuple[List[str], List[str]]: A pair of lists, where the first contains
-                                    reactions matching the target and the second
-                                    comprises non-matching reactions.
+        :param reactions: List of reaction SMILES strings to categorize.
+        :type reactions: list of str
+        :param target_reaction: The benchmark reaction SMILES for matching.
+        :type target_reaction: str
+        :returns: A pair `(matches, non_matches)`:
+                  - `matches`: reactions equal to the standardized target.
+                  - `non_matches`: all others.
+        :rtype: tuple (list of str, list of str)
         """
-        match, not_match = [], []
-        target_reaction = Standardize.standardize_rsmi(target_reaction, stereo=False)
-        for reaction_smiles in reactions:
-            if reaction_smiles == target_reaction:
-                match.append(reaction_smiles)
+        tgt = Standardize.standardize_rsmi(target_reaction, stereo=False)
+        matches, non_matches = [], []
+        for rxn in reactions:
+            if rxn == tgt:
+                matches.append(rxn)
             else:
-                not_match.append(reaction_smiles)
-        return match, not_match
+                non_matches.append(rxn)
+        return matches, non_matches
