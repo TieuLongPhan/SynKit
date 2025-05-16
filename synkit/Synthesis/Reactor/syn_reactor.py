@@ -217,6 +217,12 @@ class SynReactor:
 
     @property
     def its_list(self) -> List[nx.Graph]:
+        """
+        Build ITS graphs for each subgraph mapping.
+
+        :returns: A list of ITS (Internal Transition State) graphs.
+        :rtype: list of networkx.Graph
+        """
         if self._its is None:
             # Build ITS for each mapping -------------------------------
             host_raw = self.graph.raw
@@ -240,6 +246,12 @@ class SynReactor:
 
     @property
     def smarts_list(self) -> List[str]:
+        """
+        Serialise each ITS graph to a reaction-SMARTS string.
+
+        :returns: A list of SMARTS strings (inverted if `invert=True`).
+        :rtype: list of str
+        """
         if self._smarts is None:
             self._smarts = [self._to_smarts(g) for g in self.its_list]
             self._smarts = [value for value in self._smarts if value]
