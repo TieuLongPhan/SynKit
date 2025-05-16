@@ -120,3 +120,40 @@ def add_wildcard_subgraph_for_unmapped(
     # full mapping now includes original and new nodes
     full_map = L_to_G
     return G_ext, full_map
+
+
+def clean_graph_keep_largest_component(graph: nx.Graph) -> nx.Graph:
+    """
+    Return a shallow copy of the input graph with all edges removed
+    where the 'standard_order' attribute is exactly 0, then retain only
+    the largest connected component.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        The input molecular graph.
+
+    Returns
+    -------
+    nx.Graph
+        A modified copy of the original graph with specified edges removed
+        and only the largest connected component preserved.
+    """
+    # Work on a copy to avoid side effects
+    G = graph.copy()
+
+    # Remove edges with 'standard_order' == 0
+    to_remove = [
+        (u, v) for u, v, data in G.edges(data=True) if data.get("standard_order") == 0
+    ]
+    G.remove_edges_from(to_remove)
+
+    # If no nodes remain, return the empty graph
+    if G.number_of_nodes() == 0:
+        return G
+
+    # Identify the largest connected component
+    largest_cc = max(nx.connected_components(G), key=len)
+
+    # Return the subgraph induced by the largest component
+    return G.subgraph(largest_cc).copy()

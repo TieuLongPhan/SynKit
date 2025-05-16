@@ -15,7 +15,7 @@ The ``synkit.Synthesis.Reactor`` submodule supports two backends:
 - **NetworkX-based** reactor  
   :py:class:`~synkit.Synthesis.Reactor.syn_reactor.SynReactor`  
 - **MØD-based** reactor  
-  :py:class:`~synkit.Synthesis.Reactor.mod_reactor.MODReactor`  
+  :py:class:`~synkit.Synthesis.Reactor.mod_reactor.MODReactor` :cite:`andersen2016software`. 
 
 **Reactor parameters**  
 
