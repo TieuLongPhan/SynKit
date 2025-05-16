@@ -209,21 +209,24 @@ def smart_to_gml(
     useSmiles: bool = True,
 ) -> str:
     """
-    Converts a SMARTS string to GML format, optionally focusing on the reaction core.
+    Convert a reaction SMARTS (or SMILES) template into a GML‐encoded DPO rule.
 
-    Parameters:
-    - smart (str): The SMARTS string representing the reaction.
-    - core (bool): Whether to extract and focus on the reaction core. Defaults to True.
-    - sanitize (bool): Specifies whether the molecule should be sanitized upon conversion.
-    - rule_name (str): The name of the reaction rule. Defaults to "rule".
-    - reindex (bool): Whether to reindex the graph nodes. Defaults to True.
-    - explicit_hydrogen (bool): Controls whether hydrogens are explicitly represented
-    in the output.
-    - useSmiles (bool): Controls whether input is SMILES or SMARTS. Defaults to True.
-
-
-    Returns:
-    - str: The GML representation of the reaction.
+    :param smart: The reaction SMARTS or SMILES string.
+    :type smart: str
+    :param core: If True, include only the reaction core in the GML. Defaults to True.
+    :type core: bool
+    :param sanitize: If True, sanitize molecules during conversion. Defaults to True.
+    :type sanitize: bool
+    :param rule_name: Identifier for the output rule. Defaults to "rule".
+    :type rule_name: str
+    :param reindex: If True, reindex graph nodes before exporting. Defaults to False.
+    :type reindex: bool
+    :param explicit_hydrogen: If True, include explicit hydrogen atoms. Defaults to False.
+    :type explicit_hydrogen: bool
+    :param useSmiles: If True, treat input as SMILES; if False, as SMARTS. Defaults to True.
+    :type useSmiles: bool
+    :returns: The GML representation of the reaction rule.
+    :rtype: str
     """
     if useSmiles is False:
         smart = rsmarts_to_rsmi(smart)

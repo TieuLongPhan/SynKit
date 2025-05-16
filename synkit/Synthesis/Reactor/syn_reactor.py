@@ -1,23 +1,5 @@
 from __future__ import annotations
 
-"""synreactor.py
-=========================
-A **hardened** and **typed** re‑write of the original ``SynReactor`` that ships
-with SynKit.  The public API remains 100 % compatible but the internals are now:
-
-* **Safer**  – avoids mutating inputs, validates arguments, logs diagnostics.
-* **Faster** – lazy‑builds ITS/SMARTS only when first accessed; optional thread
-  pool for expansion‑heavy explicit‑H work.
-* **Cleaner** – exhaustive doc‑strings, typing everywhere, and single‑purpose
-  helpers.  All heavy lifting lives in private methods prefixed ``_``.
-
-External behaviour is unchanged: ``list(SynReactor.from_smiles("CCO", rule))``
-still yields the same canonical SMARTS.
-
-This file is self‑contained apart from SynKit utilities already relied on by the
-original implementation.
-"""
-
 from copy import deepcopy
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -66,11 +48,43 @@ log = setup_logging(task_type="synreactor")
 
 @dataclass
 class SynReactor:
-    """Apply a **SynRule** to a substrate molecule.
+    """
+    A **hardened** and **typed** re-write of the original SynReactor,
+    preserving 100% API compatibility but with:
 
-    This class is intentionally **cheap** to instantiate – heavy work (sub‑graph
-    matching, ITS construction, SMARTS serialisation) is postponed until first
-    use of :pyattr:`mappings`, :pyattr:`its_list`, or :pyattr:`smarts_list`.
+    - **Safer**  – avoids mutating inputs, validates arguments, logs diagnostics
+    - **Faster** – lazy builds and optional thread‐pool for explicit‐H work
+    - **Cleaner** – exhaustive doc-strings, full typing, single‐purpose helpers
+
+    Parameters
+    ----------
+    substrate : Union[str, nx.Graph, SynGraph]
+        The input reaction substrate, as SMILES, a raw Graph, or a SynGraph.
+    template : Union[str, nx.Graph, SynRule]
+        Reaction template (SMILES/SMARTS, raw Graph, or SynRule).
+    invert : bool, optional
+        False for forward prediction; True for backward (target→precursors).
+    canonicaliser : Optional[GraphCanonicaliser], optional
+        If provided, used to canonicalise intermediary graphs.
+    explicit_h : bool, default=True
+        If True, render all H’s explicitly in the reaction‐center SMARTS.
+    implicit_temp : bool, default=False
+        If True, treat the input template as an implicit‐H pattern (forces explicit_h=False).
+    strategy : Strategy or str, default=Strategy.ALL
+        Graph‐matching strategy: ALL, COMPONENT (comp), or BACKTRACK (bt).
+
+    Attributes (cached)
+    -------------------
+    graph : SynGraph
+        The substrate, wrapped as a SynGraph.
+    rule : SynRule
+        The reaction template, wrapped as a SynRule.
+    mappings : List[MappingDict]
+        All subgraph‐mapping dicts found (according to `strategy`).
+    its_list : List[nx.Graph]
+        ITS graphs built for each mapping.
+    smarts_list : List[str]
+        SMARTS strings generated from each ITS graph (inverted if `invert`).
     """
 
     substrate: Union[str, nx.Graph, SynGraph]
@@ -111,7 +125,27 @@ class SynReactor:
         implicit_temp: bool = False,
         strategy: Strategy | str = Strategy.ALL,
     ) -> "SynReactor":
-        """Alternate constructor exactly mirroring the original API."""
+        """
+        Alternate constructor: build a SynReactor directly from SMILES.
+
+        :param smiles: SMILES string for the substrate.
+        :type smiles: str
+        :param template: Reaction template (SMILES/SMARTS string, Graph, or SynRule).
+        :type template: str or networkx.Graph or SynRule
+        :param invert: If True, perform backward prediction (target→precursors).
+                       Defaults to False (forward prediction).
+        :type invert: bool
+        :param canonicaliser: Optional GraphCanonicaliser to use for internal graphs.
+        :type canonicaliser: GraphCanonicaliser or None
+        :param explicit_h: If True, keep explicit hydrogens in the reaction center.
+        :type explicit_h: bool
+        :param implicit_temp: If True, treat the template as implicit-H (forces explicit_h=False).
+        :type implicit_temp: bool
+        :param strategy: Matching strategy: ALL, 'comp', or 'bt'. Defaults to ALL.
+        :type strategy: Strategy or str
+        :returns: A new `SynReactor` instance.
+        :rtype: SynReactor
+        """
         return cls(
             substrate=smiles,
             template=template,
@@ -127,14 +161,24 @@ class SynReactor:
     # ------------------------------------------------------------------
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
-        """Substrate as :pyclass:`~synkit.Graph.syn_graph.SynGraph`."""
+        """
+        Lazily wrap the substrate into a SynGraph.
+
+        :returns: The reaction substrate as a `SynGraph`.
+        :rtype: SynGraph
+        """
         if self._graph is None:
             self._graph = self._wrap_input(self.substrate)
         return self._graph
 
     @property
     def rule(self) -> SynRule:  # noqa: D401
-        """Reaction template as :pyclass:`~synkit.Rule.syn_rule.SynRule`."""
+        """
+        Lazily wrap the template into a SynRule.
+
+        :returns: The reaction template as a `SynRule`.
+        :rtype: SynRule
+        """
         if self._rule is None:
             self._rule = self._wrap_template(self.template)
         return self._rule
@@ -144,6 +188,12 @@ class SynReactor:
     # ------------------------------------------------------------------
     @property
     def mappings(self) -> List[MappingDict]:
+        """
+        Find subgraph mappings between substrate and template.
+
+        :returns: A list of node-mapping dictionaries.
+        :rtype: list of dict
+        """
         if self._mappings is None:
             log.debug("Finding sub‑graph mappings (strategy=%s)", self.strategy)
             pattern_graph = self.rule.left.raw
@@ -167,6 +217,12 @@ class SynReactor:
 
     @property
     def its_list(self) -> List[nx.Graph]:
+        """
+        Build ITS graphs for each subgraph mapping.
+
+        :returns: A list of ITS (Internal Transition State) graphs.
+        :rtype: list of networkx.Graph
+        """
         if self._its is None:
             # Build ITS for each mapping -------------------------------
             host_raw = self.graph.raw
@@ -190,6 +246,12 @@ class SynReactor:
 
     @property
     def smarts_list(self) -> List[str]:
+        """
+        Serialise each ITS graph to a reaction-SMARTS string.
+
+        :returns: A list of SMARTS strings (inverted if `invert=True`).
+        :rtype: list of str
+        """
         if self._smarts is None:
             self._smarts = [self._to_smarts(g) for g in self.its_list]
             self._smarts = [value for value in self._smarts if value]

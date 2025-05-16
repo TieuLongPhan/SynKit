@@ -1,294 +1,207 @@
-"""mtg_groupoid.py — Mechanistic Transition Graph (MTG)
-======================================================
-
-This module implements a class for fusing two molecular graphs via a groupoid-based
-edge-composition rule.  Given two NetworkX graphs (G1, G2) and a partial
-node-to-node mapping from G1 → G2, the `MTG` class builds a merged product graph
-G3 as follows:
-
-1. **Node fusion:** Nodes listed in the mapping are identified (intersection);
-   all other nodes are preserved uniquely.  Produces `product_nodes`, plus
-   `map1: G1→G3` and `map2: G2→G3` dictionaries and the `intersection_ids` list.
-2. **Edge insertion & composition:**
-   - Insert edges from G1 (first pass) with no merging.
-   - Insert edges from G2, then apply pair-groupoid composition on edges whose
-     endpoints lie in `intersection_ids`, using the rule:
-       ```
-       (u→v, order=(a1,a2)) + (u→v, order=(b1,b2)) = (u→v, order=(a1,b2))
-       ```
-     if `a2 == b1`.
-   - Deduplicate edges at each step to ensure uniqueness.
-3. **Visualization:** The fused graph can be extracted as a NetworkX `Graph` or
-   `DiGraph` with attributes `order` and computed `standard_order = a1 - a2`.
-
-Public API
-----------
-
-- `MTG(G1, G2, mapping)`: construct fused graph state.
-- `mtg.get_nodes() -> List[Tuple[int, Dict]]`: list of fused nodes and attrs.
-- `mtg.get_edges() -> List[Tuple[int,int,Dict]]`: list of fused edges and attrs.
-- `mtg.get_map1()`, `mtg.get_map2()`: access node-mapping dicts.
-- `mtg.get_graph(directed: bool=False) -> nx.Graph`: export as NetworkX graph.
-- `MTG.help()`, `MTG.__doc__`, `help(MTG)`: built-in documentation.
-
-Dependencies
-------------
-- Python 3.10+
-- `networkx`
-
-"""
-
-from __future__ import annotations
-
 import networkx as nx
 from collections import defaultdict
-from typing import (
-    Dict,
-    List,
-    Tuple,
-    Any,
-    Set,
-    Optional,
-    Union,
-)
+from typing import Dict, List, Tuple, Any, Set, Union
 
-# Type Aliases
-Label = Tuple[int, int]
-Node = Tuple[int, Dict[str, Any]]
-Edge = Tuple[int, int, Dict[str, Any]]
+# -----------------------------------------------------------------------------
+# Type aliases
+# -----------------------------------------------------------------------------
+NodeID = int
+Order = Tuple[float, float]
+Node = Tuple[NodeID, Dict[str, Any]]
+Edge = Tuple[NodeID, NodeID, Dict[str, Any]]
+
+__all__ = ["MTG"]
 
 
 class MTG:
-    """
-    A Molecular Topology Graph for fusing two graphs via groupoid edge-composition.
+    """Fuse two molecular graphs via a pair‑groupoid edge‑composition rule.
 
-    Attributes
+    Parameters
     ----------
-    product_nodes : List[Node]
-        Fused node list in G3, as (node_id, attrs).
-    product_edges : List[Edge]
-        Fused edge list in G3, as (u,v,attrs).
-    map1 : Dict[int,int]
-        Mapping from G1 node IDs → G3 node IDs.
-    map2 : Dict[int,int]
-        Mapping from G2 node IDs → G3 node IDs.
-    intersection_ids : List[int]
-        G3 node IDs that were merged (in both G1 and G2).
+    G1, G2
+        Input :class:`networkx.Graph` (or *DiGraph*) objects.  Nodes must carry an
+        ``"element"`` attribute; edges carry an ``"order"`` 2‑tuple *(x, y)*.
+    mapping
+        A partial node map **G1 → G2** indicating which atoms are chemically
+        identical (intersection).  Keys are node IDs in *G1*, values in *G2*.
 
-    Methods
-    -------
-    get_nodes() -> List[Node]
-        Return fused node list.
-    get_edges() -> List[Edge]
-        Return fused edge list.
-    get_map1() -> Dict[int,int]
-        Return map1.
-    get_map2() -> Dict[int,int]
-        Return map2.
-    get_graph(directed: bool=False) -> Union[nx.Graph, nx.DiGraph]
-        Export fused graph as NetworkX Graph or DiGraph.
-    help() -> None
-        Print module and class documentation.
+    Notes
+    -----
+    1. ``intersection_ids`` are created where mapping ``G1[i] → G2[j]``.
+    2. Edges are inserted in two passes:
+       * *Pass 1* – all edges from *G1* are copied unchanged.
+       * *Pass 2* – edges from *G2* are remapped; when both endpoints are in
+         ``intersection_ids`` **and** their bond orders satisfy the *pair‐
+         groupoid* condition
+
+         ``(a₁, a₂)  +  (b₁, b₂)   with   a₂ == b₁   →   (a₁, b₂)``,
+
+         the edges are *composed* instead of duplicated.
+
+    Examples
+    --------
+    >>> mtg = MTG(G1, G2, {1: 3, 4: 6, 5: 1})
+    >>> fused = mtg.get_graph()
+    >>> fused.nodes(data=True)
+    ...
     """
 
+    # ------------------------------------------------------------------
+    # Construction helpers
+    # ------------------------------------------------------------------
     def __init__(
         self,
         G1: Union[nx.Graph, nx.DiGraph],
         G2: Union[nx.Graph, nx.DiGraph],
-        mapping: Dict[int, int],
+        mapping: Dict[NodeID, NodeID],
     ) -> None:
-        """
-        Initialize MTG by fusing G1 and G2 according to `mapping`.
+        # Store originals
+        self.G1 = G1
+        self.G2 = G2
+        self.mapping12 = mapping  # G1 → G2
 
-        Parameters
-        ----------
-        G1 : networkx.Graph or DiGraph
-            First input graph with node and edge attrs (`order`).
-        G2 : networkx.Graph or DiGraph
-            Second input graph.
-        mapping : dict
-            Partial mapping from G1 node IDs → G2 node IDs to identify.
-        """
-        # Store raw data
-        self.G1_nodes = list(G1.nodes(data=True))
-        self.G2_nodes = list(G2.nodes(data=True))
-        self.G1_edges = [(u, v, data) for u, v, data in G1.edges(data=True)]
-        self.G2_edges = [(u, v, data) for u, v, data in G2.edges(data=True)]
+        # ---- 1. Build fused node set ---------------------------------
+        (
+            self.product_nodes,  # list[(id, attrs)]  in fused graph
+            self.map1,  # G1 id → fused id
+            self.map2,  # G2 id → fused id
+            self.intersection_ids,  # list[fused id]
+        ) = self._fuse_nodes()
 
-        # Fuse nodes
-        (self.product_nodes, self.map1, self.map2, self.intersection_ids) = (
-            self.build_product_graph_nodes(self.G1_nodes, self.G2_nodes, mapping)
+        # ---- 2. Fuse edges with groupoid rule ------------------------
+        fused_edges_step1 = self._insert_edges_from(self.G1.edges(data=True), self.map1)
+        self.product_edges = self._insert_edges_from(
+            self.G2.edges(data=True), self.map2, existing=fused_edges_step1
         )
 
-        # Fuse edges
-        # Step 1: insert G1 edges (no merging)
-        self.product_edges = self.merge_edges_groupoid(
-            self.G1_edges, [], self.map1, merged_idx=set(self.intersection_ids)
-        )
-        # Step 2: insert G2 edges with groupoid merging on intersection
-        self.product_edges = self.merge_edges_groupoid(
-            self.G2_edges,
-            self.product_edges,
-            self.map2,
-            merged_idx=set(self.intersection_ids),
-        )
+    # ------------------------------------------------------------------
+    #  Node fusion
+    # ------------------------------------------------------------------
+    def _fuse_nodes(self):
+        merged: Dict[NodeID, Dict[str, Any]] = {}
+        map1: Dict[NodeID, NodeID] = {}
+        map2: Dict[NodeID, NodeID] = {}
+        used: Set[NodeID] = set()
 
-    @staticmethod
-    def build_product_graph_nodes(
-        graph1_nodes: List[Node], graph2_nodes: List[Node], match: Dict[int, int]
-    ) -> Tuple[List[Node], Dict[int, int], Dict[int, int], List[int]]:
-        """
-        Construct fused node list and mapping dicts.
+        # --- copy G1 directly into fused graph ------------------------
+        for v, attrs in self.G1.nodes(data=True):
+            merged[v] = attrs.copy()
+            map1[v] = v
+            used.add(v)
 
-        Returns
-        -------
-        merged_nodes : List[(id, attrs)]
-        map1         : G1→G3 mapping
-        map2         : G2→G3 mapping
-        intersection : G3 IDs of merged nodes
-        """
-        merged: Dict[int, Dict[str, Any]] = {}
-        map1: Dict[int, int] = {}
-        map2: Dict[int, int] = {}
-        used: Set[int] = set()
+        # inverse mapping: G2 node → G1 node it merges to
+        inv_map = {g2: g1 for g1, g2 in self.mapping12.items()}
+        intersection: List[NodeID] = []
 
-        # Copy G1
-        for v1, attr in graph1_nodes:
-            merged[v1] = attr.copy()
-            map1[v1] = v1
-            used.add(v1)
-
-        inv_match = {v2: v1 for v1, v2 in match.items()}
-        intersection: List[int] = []
-
-        # Merge or add G2
-        for v2, attr in graph2_nodes:
-            if v2 in inv_match:
-                tgt = inv_match[v2]
-                map2[v2] = tgt
+        # --- process G2 nodes -----------------------------------------
+        next_id = max(used) + 1 if used else 0
+        for v, attrs in self.G2.nodes(data=True):
+            if v in inv_map:  # merged node
+                tgt = inv_map[v]
+                map2[v] = tgt
                 intersection.append(tgt)
-            else:
-                nid = v2 if v2 not in used else max(used) + 1
-                merged[nid] = attr.copy()
-                map2[v2] = nid
-                used.add(nid)
+            else:  # unique node from G2
+                while next_id in used:
+                    next_id += 1
+                merged[next_id] = attrs.copy()
+                map2[v] = next_id
+                used.add(next_id)
+                next_id += 1
 
-        nodes: List[Node] = [(nid, merged[nid]) for nid in sorted(merged)]
-        return nodes, map1, map2, intersection
+        nodes_sorted = sorted(merged.items())  # list[(id, attrs)]
+        return nodes_sorted, map1, map2, intersection
 
-    @staticmethod
-    def merge_edges_groupoid(
-        edges_new: List[Edge],
-        edges_existing: List[Edge],
-        map_new_to_prod: Dict[int, int],
-        merged_idx: Optional[Set[int]] = None,
+    # ------------------------------------------------------------------
+    #  Edge insertion & groupoid composition
+    # ------------------------------------------------------------------
+    def _insert_edges_from(
+        self, edge_iter, node_map: Dict[NodeID, NodeID], existing: List[Edge] = None
     ) -> List[Edge]:
-        """
-        Insert and optionally merge edges into the product edge list.
+        """Insert edges into *existing* applying the groupoid rule when possible."""
+        existing = [] if existing is None else existing.copy()
 
-        Parameters
-        ----------
-        edges_new       : New edges to insert (u,v,data) in original G IDs
-        edges_existing  : Existing product edges (u,v,data) in fused IDs
-        map_new_to_prod : Mapping of new-edge node IDs → fused IDs
-        merged_idx      : Nodes for which to apply groupoid merging
+        # Remap and append new edges
+        for u, v, attrs in edge_iter:
+            u3 = node_map[u]
+            v3 = node_map[v]
+            existing.append((u3, v3, attrs.copy()))
 
-        Returns
-        -------
-        List of deduplicated fused edges
-        """
-        # Remap new edges into fused space
-        remapped: List[Edge] = []
-        for u, v, attrs in edges_new:
-            u3 = map_new_to_prod.get(u, u)
-            v3 = map_new_to_prod.get(v, v)
-            remapped.append((u3, v3, attrs.copy()))
+        # Canonicalize keys for undirected graphs
+        def key(u, v):
+            return (u, v) if isinstance(self.G1, nx.DiGraph) else tuple(sorted((u, v)))
 
-        combined: List[Edge] = edges_existing + remapped
-        if merged_idx is None:
-            return MTG._dedupe_edges(combined)
+        # Group edges by (u,v)
+        buckets: Dict[Tuple[NodeID, NodeID], List[Order]] = defaultdict(list)
+        bucket_src: Dict[Tuple[NodeID, NodeID], List[str]] = defaultdict(list)
+        for idx, (u, v, attrs) in enumerate(existing):
+            buckets[key(u, v)].append(tuple(attrs["order"]))
+            bucket_src[key(u, v)].append("G1" if idx < len(self.G1.edges) else "G2")
 
-        # Group orders by key
-        orders: Dict[Tuple[int, int], List[Label]] = defaultdict(list)
-        for u, v, attrs in combined:
-            orders[(u, v)].append(tuple(attrs["order"]))
-
-        fused: List[Edge] = []
-        for (u, v), lst in orders.items():
-            if u in merged_idx and v in merged_idx and len(lst) > 1:
-                # assume two lists: first G1, then G2
-                a1, a2 = lst[0]
-                for b1, b2 in lst[1:]:
+        fused_edges: List[Edge] = []
+        for (u, v), orders in buckets.items():
+            # src = bucket_src[(u, v)]
+            if (
+                u in self.intersection_ids
+                and v in self.intersection_ids
+                and len(orders) >= 2
+            ):
+                # Attempt pair‑wise composition between G1 (first) and any G2 edge
+                made_composite = False
+                for idx2, ord2 in enumerate(orders[1:], start=1):
+                    a1, a2 = orders[0]
+                    b1, b2 = ord2
                     if a2 == b1:
-                        fused.append((u, v, {"order": (a1, b2)}))
+                        fused_edges.append((u, v, {"order": (a1, b2)}))
+                        made_composite = True
+                        break
+                if not made_composite:
+                    # fall back to *all* distinct orders
+                    for ord_ in orders:
+                        fused_edges.append((u, v, {"order": ord_}))
             else:
-                for bef, aft in lst:
-                    fused.append((u, v, {"order": (bef, aft)}))
+                for ord_ in orders:
+                    fused_edges.append((u, v, {"order": ord_}))
 
-        return MTG._dedupe_edges(fused)
+        return self._dedupe_edges(fused_edges)
 
+    # ------------------------------------------------------------------
     @staticmethod
     def _dedupe_edges(edges: List[Edge]) -> List[Edge]:
-        seen: Set[Tuple[int, int, Tuple[int, int]]] = set()
+        seen: Set[Tuple[int, int, Order]] = set()
         out: List[Edge] = []
         for u, v, attrs in edges:
-            key = (u, v, tuple(attrs["order"]))
+            key = (min(u, v), max(u, v), tuple(attrs["order"]))
             if key not in seen:
                 seen.add(key)
-                out.append((u, v, attrs.copy()))
+                out.append((u, v, attrs))
         return out
 
     # ------------------------------------------------------------------
-    # Public API
+    #  Public helpers
     # ------------------------------------------------------------------
     def get_nodes(self) -> List[Node]:
-        """Return fused node list."""
+        """List of `(id, attrs)` for fused graph."""
         return self.product_nodes
 
     def get_edges(self) -> List[Edge]:
-        """Return fused edge list."""
+        """List of `(u, v, attrs)` for fused graph."""
         return self.product_edges
 
-    def get_map1(self) -> Dict[int, int]:
-        """Return G1→G3 node mapping."""
+    def get_map1(self) -> Dict[NodeID, NodeID]:
         return self.map1
 
-    def get_map2(self) -> Dict[int, int]:
-        """Return G2→G3 node mapping."""
+    def get_map2(self) -> Dict[NodeID, NodeID]:
         return self.map2
 
-    def get_graph(self, directed: bool = False) -> Union[nx.Graph, nx.DiGraph]:
-        """
-        Export the fused product as a NetworkX graph.
-
-        Parameters
-        ----------
-        directed : bool
-            If True, return a DiGraph; otherwise a simple Graph.
-
-        Returns
-        -------
-        G : nx.Graph or nx.DiGraph
-            Nodes and edges carry `order` and `standard_order` attributes.
-        """
+    def get_graph(self, *, directed: bool = False):
         G = nx.DiGraph() if directed else nx.Graph()
         G.add_nodes_from(self.product_nodes)
         for u, v, attrs in self.product_edges:
-            order = attrs.get("order", (None, None))
-            attrs["standard_order"] = None if None in order else order[0] - order[1]
+            o = attrs["order"]
+            attrs["standard_order"] = o[0] - o[1] if None not in o else None
             G.add_edge(u, v, **attrs)
         return G
 
-    def help(self) -> None:
-        """Print this class's docstring and methods."""
-        print(self.__doc__)
-        for name in dir(self):
-            if not name.startswith("_"):
-                print(name)
-
-    def __repr__(self) -> str:
-        """Compact summary: MTG(|V|,|E|)."""
+    # ------------------------------------------------------------------
+    def __repr__(self):
         return f"MTG(|V|={len(self.product_nodes)}, |E|={len(self.product_edges)})"
-
-
-# EOF

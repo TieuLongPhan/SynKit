@@ -1,14 +1,15 @@
 Welcome to synkit documentation!
-====================================
+================================
 
 .. toctree::
+   :caption: Contents
    :maxdepth: 1
-   
-   getting_started
-   io
-   chem
-   graph
-   rule
-   synthesis
-   references
 
+   Getting Started <getting_started>
+   IO Conversion Module <io>
+   Chemical Modeling <chem>
+   Graph Module <graph>
+   Synthesis Module <synthesis>
+   API Reference <api>
+   References <reference>
+   Changelog <changelog>

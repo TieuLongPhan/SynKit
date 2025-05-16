@@ -63,11 +63,7 @@ The class :py:class:`~synkit.Chem.Reaction.standardize.Standardize` cleans and n
    print(std_rsmi)
    >> 'CC=O.CC=O>>CC=CC=O.O'
 
-.. _chem-references:
+See Also
+--------
 
-References
-----------
-
-.. bibliography:: refs.bib
-   :style: unsrt
-   :cited:
+- :mod:`synkit.Graph` — graph modeling  
