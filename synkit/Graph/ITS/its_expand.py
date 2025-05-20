@@ -66,14 +66,13 @@ class ITSExpand:
         # Convert reaction SMILES to graph representation of reactants and products
         r, p = rsmi_to_graph(rsmi)
 
-        # Construct the Intermediate Transition State (ITS) graph from reactants and products
+        # Construct the Imaginary Transition State (ITS) graph from reactants and products
         rc = ITSConstruction().ITSGraph(r, p)
         # rc = get_rc(rc)
 
         # Convert a SMILES string to graph; parameters are indicative and function should exist
         G = smiles_to_graph(
             smi,
-            light_weight=light_weight,
             sanitize=True,
             drop_non_aam=False,
             use_index_as_atom_map=False,

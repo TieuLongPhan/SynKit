@@ -85,10 +85,10 @@ class AAMValidator:
         its_graphs, rc_graphs = [], []
         try:
             for rsmi in (mapped_smile, ground_truth):
-                G, H = rsmi_to_graph(
-                    rsmi=rsmi, sanitize=True, drop_non_aam=True, light_weight=True
+                G, H = rsmi_to_graph(rsmi=rsmi, sanitize=True, drop_non_aam=True)
+                its = ITSConstruction().ITSGraph(
+                    G, H, ignore_aromaticity=ignore_aromaticity
                 )
-                its = ITSConstruction.ITSGraph(G, H, ignore_aromaticity)
                 its_graphs.append(its)
                 rc_graphs.append(get_rc(its))
 

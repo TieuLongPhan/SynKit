@@ -25,8 +25,15 @@ class MolToGraph:
 
     def __init__(
         self,
-        node_attrs: Optional[List[str]] = None,
-        edge_attrs: Optional[List[str]] = None,
+        node_attrs: Optional[List[str]] = [
+            "element",
+            "aromatic",
+            "hcount",
+            "charge",
+            "neighbors",
+            "atom_map",
+        ],
+        edge_attrs: Optional[List[str]] = ["order"],
     ) -> None:
         """
         Initialize the MolToGraph helper.

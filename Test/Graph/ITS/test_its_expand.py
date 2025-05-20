@@ -12,6 +12,7 @@ class TestPartialExpand(unittest.TestCase):
             "[CH3:1][CH2:2][CH2:3][Cl:4].[NH2:5][H:6]"
             + ">>[CH3:1][CH2:2][CH2:3][NH2:5].[Cl:4][H:6]"
         )
+        print(output_rsmi)
         self.assertTrue(AAMValidator.smiles_check(output_rsmi, expected_rsmi, "ITS"))
 
 
