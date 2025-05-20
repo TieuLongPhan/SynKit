@@ -102,31 +102,31 @@ Set ``core=True`` to include only the **reaction center**, and ``useSmile=True``
    :linenos:
 
    from synkit.IO import (
-       rsmi_to_its,
-       smart_to_gml,
-       its_to_gml,
-       save_text_as_gml,
-       load_gml_as_text,
+      rsmi_to_its,
+      smart_to_gml,
+      its_to_gml,
+      save_text_as_gml,
+      load_gml_as_text,
    )
 
    # Define the aldol reaction template
    reaction = (
-       '[CH3:1][CH:2]=[O:3].'
-       '[CH:4]([H:7])([H:8])[CH:5]=[O:6]'
-       '>>'
-       '[CH3:1][CH:2]=[CH:4][CH:5]=[O:6].'
-       '[O:3]([H:7])([H:8])'
+      '[CH3:1][CH:2]=[O:3].'
+      '[CH:4]([H:7])([H:8])[CH:5]=[O:6]'
+      '>>'
+      '[CH3:1][CH:2]=[CH:4][CH:5]=[O:6].'
+      '[O:3]([H:7])([H:8])'
    )
 
    # Option 1: Direct SMARTS → GML
-   gml_rule_1 = smart_to_gml(reaction, core=True, useSmile=False)
+   gml_rule_1 = smart_to_gml(reaction, core=True, useSmiles=False)
 
    # Option 2: SMILES → ITS → GML
    its_graph = rsmi_to_its(reaction, core=True)
    gml_rule_2 = its_to_gml(its_graph, core=True)
 
    # Save to disk
-   save_text_as_gml("aldol_rule.gml", gml_rule_2)
+   save_text_as_gml(gml_text=gml_rule_2, file_path="aldol_rule.gml")
 
    # Load back into text
    loaded_rule = load_gml_as_text("aldol_rule.gml")
