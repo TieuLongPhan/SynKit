@@ -8,26 +8,22 @@ def setup_logging(
     log_level: str = "INFO", log_filename: str = None, task_type: str = None
 ) -> logging.Logger:
     """
-    Configures logging to either the console or a file based on provided parameters.
+    Configures logging to either the console or a file, based on provided parameters.
 
-    Parameters
-    ----------
-    log_level : str, optional
-        Logging level to set. Defaults to 'INFO'. Options include 'DEBUG', 'INFO',
-        'WARNING', 'ERROR', 'CRITICAL'.
-    log_filename : str, optional
-        If provided, logs are written to this file. Defaults to None,
-        which logs to console.
+    :param log_level: Logging level to set. Defaults to 'INFO'.
+        Options: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'.
+    :type log_level: str
+    :param log_filename: If provided, logs are written to this file.
+        Defaults to None (logs to console).
+    :type log_filename: str, optional
+    :param task_type: Logger name/namespace. Useful for distinguishing loggers in multi-task settings.
+        Defaults to None.
+    :type task_type: str, optional
 
-    Returns
-    -------
-    logging.Logger
-        Configured logger instance.
+    :returns: Configured logger instance.
+    :rtype: logging.Logger
 
-    Raises
-    ------
-    ValueError
-        If an invalid log level is provided.
+    :raises ValueError: If an invalid log level is provided.
     """
     log_format = "%(asctime)s - %(levelname)s - %(message)s"
     numeric_level = getattr(logging, log_level.upper(), None)
@@ -55,17 +51,16 @@ def configure_warnings_and_logs(
     """
     Configures Python warnings and RDKit log behavior based on input flags.
 
-    Parameters
-    ----------
-    ignore_warnings : bool, optional
-        Whether to suppress Python warnings. Default is False.
-    disable_rdkit_logs : bool, optional
-        Whether to disable RDKit error and warning logs. Default is False.
+    :param ignore_warnings: Whether to suppress all Python warnings. Default is False.
+    :type ignore_warnings: bool
+    :param disable_rdkit_logs: Whether to disable RDKit error and warning logs. Default is False.
+    :type disable_rdkit_logs: bool
 
-    Usage
-    -----
-    This function is useful for controlling verbosity in production or testing, but
-    should be used cautiously during development to avoid missing critical issues.
+    :returns: None
+
+    :usage:
+        Use this function to control verbosity (e.g. in production or testing), but use with
+        caution during development to avoid missing critical issues.
     """
     if ignore_warnings:
         warnings.filterwarnings("ignore")

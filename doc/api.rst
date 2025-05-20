@@ -2,15 +2,6 @@
 API
 ====
 
-IO Module
-=========
-The `IO` module provides tools for handling input and output operations related to the chemical converter. It allows seamless interaction with various chemical data formats.
-
-.. automodule:: synkit.IO.chem_converter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Chem Module
 ===========
 The `Chem` module provides tools for handling input and output operations related to the chemical converter. It allows seamless interaction with various chemical data formats.
@@ -195,6 +186,50 @@ The ``synkit.Vis`` package offers a suite of **visualization utilities** for bot
    :show-inheritance:
 
 .. automodule:: synkit.Vis.graph_visualizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+IO Module
+=========
+The `IO` module provides tools for handling input and output operations related to the chemical converter. It allows seamless interaction with various chemical data formats.
+
+Chemical Conversion
+-------------------
+.. automodule:: synkit.IO.chem_converter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.IO.mol_to_graph
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.IO.graph_to_mol
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.IO.nx_to_gml
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.IO.gml_to_nx
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+IO Functions
+------------
+
+.. automodule:: synkit.IO.data_io
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.IO.data_io
    :members:
    :undoc-members:
    :show-inheritance:
