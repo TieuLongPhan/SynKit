@@ -11,14 +11,13 @@ def setup_logging(
     Configures logging to either the console or a file, based on provided parameters.
 
     :param log_level: Logging level to set. Defaults to 'INFO'.
-        Options: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'.
+                      Options: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'.
     :type log_level: str
-    :param log_filename: If provided, logs are written to this file.
-        Defaults to None (logs to console).
-    :type log_filename: str, optional
+    :param log_filename: If provided, logs are written to this file. Defaults to None (logs to console).
+    :type log_filename: str or None
     :param task_type: Logger name/namespace. Useful for distinguishing loggers in multi-task settings.
-        Defaults to None.
-    :type task_type: str, optional
+                     Defaults to None.
+    :type task_type: str or None
 
     :returns: Configured logger instance.
     :rtype: logging.Logger
