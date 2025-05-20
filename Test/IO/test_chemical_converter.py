@@ -86,7 +86,10 @@ class TestChemicalConversions(unittest.TestCase):
     def test_smiles_to_graph_valid(self):
         # Test converting a valid SMILES to a graph
         result = smiles_to_graph(
-            "[CH3:1][CH2:2][OH:3]", False, True, True, use_index_as_atom_map=True
+            "[CH3:1][CH2:2][OH:3]",
+            False,
+            True,
+            True,
         )
         self.assertIsInstance(result, nx.Graph)
         self.assertEqual(result.number_of_nodes(), 3)
@@ -94,7 +97,10 @@ class TestChemicalConversions(unittest.TestCase):
     def test_smiles_to_graph_invalid(self):
         # Test converting an invalid SMILES string to a graph
         result = smiles_to_graph(
-            "invalid_smiles", True, False, False, use_index_as_atom_map=True
+            "invalid_smiles",
+            True,
+            False,
+            False,
         )
         self.assertIsNone(result)
 

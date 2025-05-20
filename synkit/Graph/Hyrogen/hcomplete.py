@@ -287,7 +287,7 @@ class HComplete:
             current_prod_graph = HComplete.add_hydrogen_nodes_multiple_utils(
                 current_prod_graph, zip(hydrogen_nodes_form, permutation)
             )
-            its = ITSConstruction.ITSGraph(
+            its = ITSConstruction().ITSGraph(
                 current_react_graph,
                 current_prod_graph,
                 ignore_aromaticity=ignore_aromaticity,

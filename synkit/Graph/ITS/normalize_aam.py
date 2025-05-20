@@ -128,7 +128,6 @@ class NormalizeAAM:
             rsmi = FixAAM().fix_aam_rsmi(rsmi)
         r_graph, p_graph = rsmi_to_graph(
             rsmi,
-            light_weight=True,
             sanitize=True,
             use_index_as_atom_map=True,
             drop_non_aam=True,

@@ -5,9 +5,18 @@ from typing import Dict
 
 class GraphToMol:
     """
-    Converts a NetworkX graph representation of a molecule into an RDKit molecule object,
-    considering specific node and edge attributes for the construction of the molecule.
-    This includes handling different bond orders and optional hydrogen counts on nodes.
+    Converts a NetworkX graph representation of a molecule into an RDKit molecule object.
+
+    This class reconstructs RDKit molecules from node and edge attributes in a graph,
+    correctly interpreting atom types, charges, mapping numbers, bond orders, and optionally
+    explicit hydrogen counts.
+
+    :param node_attributes: Mapping of expected attribute names to node keys in the graph. For example,
+        {"element": "element", "charge": "charge", "atom_map": "atom_map"}.
+    :type node_attributes: Dict[str, str]
+    :param edge_attributes: Mapping of expected attribute names to edge keys in the graph.
+        For example, {"order": "order"}.
+    :type edge_attributes: Dict[str, str]
     """
 
     def __init__(
@@ -22,9 +31,12 @@ class GraphToMol:
         """
         Initializes the GraphToMol object with mappings for node and edge attributes.
 
-        Parameters:
-        - node_attributes (Dict[str, str]): Mapping of attribute names to node keys in the graph.
-        - edge_attributes (Dict[str, str]): Mapping of attribute names to edge keys in the graph.
+        :param node_attributes: Mapping from desired atom attribute names to graph node keys.
+            E.g. {"element": "element", "charge": "charge", "atom_map": "atom_map"}
+        :type node_attributes: Dict[str, str]
+        :param edge_attributes: Mapping from desired bond attribute names to graph edge keys.
+            E.g. {"order": "order"}
+        :type edge_attributes: Dict[str, str]
         """
         self.node_attributes = node_attributes
         self.edge_attributes = edge_attributes
@@ -39,14 +51,20 @@ class GraphToMol:
         """
         Converts a NetworkX graph into an RDKit molecule.
 
-        Parameters:
-        - graph (nx.Graph): The molecule graph.
-        - ignore_bond_order (bool): If True, all bonds are treated as single.
-        - sanitize (bool): If True, attempts to sanitize the molecule.
-        - use_h_count (bool): If True, adjusts hydrogen counts using the 'hcount' attribute.
+        :param graph: The NetworkX graph representing the molecule.
+        :type graph: nx.Graph
+        :param ignore_bond_order: If True, all bonds are created as single bonds regardless of edge attributes.
+            Defaults to False.
+        :type ignore_bond_order: bool
+        :param sanitize: If True, the resulting RDKit molecule will be sanitized after construction.
+            Defaults to True.
+        :type sanitize: bool
+        :param use_h_count: If True, the 'hcount' attribute (if present) will be used to set explicit hydrogen counts
+            on atoms. Defaults to False.
+        :type use_h_count: bool
 
-        Returns:
-        - Chem.Mol: An RDKit molecule object constructed from the graph.
+        :returns: An RDKit molecule constructed from the graph's nodes and edges.
+        :rtype: Chem.Mol
         """
         mol = Chem.RWMol()
         node_to_idx: Dict[int, int] = {}
@@ -95,11 +113,10 @@ class GraphToMol:
         """
         Converts a numerical bond order into the corresponding RDKit BondType.
 
-        Parameters:
-        - order (float): The bond order.
-
-        Returns:
-        - Chem.BondType: The corresponding RDKit bond type for the given order.
+        :param order: The numerical bond order (typically 1, 2, or 3).
+        :type order: float
+        :returns: The corresponding RDKit bond type (single, double, triple, or aromatic).
+        :rtype: Chem.BondType
         """
         if order == 1:
             return Chem.BondType.SINGLE

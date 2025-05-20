@@ -5,10 +5,24 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 
 
 class GMLToNX:
+    """
+    Parses GML-like text and transforms it into three NetworkX graphs
+    representing the left, right, and context graphs of a chemical reaction step.
+
+    :param gml_text: The GML-like text to parse.
+    :type gml_text: str
+
+    :ivar graphs: A dictionary containing 'left', 'right', and 'context' NetworkX graphs.
+    :vartype graphs: dict[str, nx.Graph]
+    """
+
     def __init__(self, gml_text: str):
         """
         Initializes a GMLToNX object that can parse GML-like text into separate
         NetworkX graphs representing different stages or components of a chemical reaction.
+
+        :param gml_text: The GML-like text to be parsed.
+        :type gml_text: str
         """
         self.gml_text = gml_text
         self.graphs = {"left": nx.Graph(), "context": nx.Graph(), "right": nx.Graph()}
@@ -17,6 +31,11 @@ class GMLToNX:
         """
         Parses a line of GML-like text to extract node or edge data and adds it to the
         current section's graph.
+
+        :param line: A single line of GML-like text.
+        :type line: str
+        :param current_section: Which section ('left', 'right', 'context') to add the node/edge to.
+        :type current_section: str
         """
         label_to_order = {"-": 1, ":": 1.5, "=": 2, "#": 3}
         tokens = line.split()
@@ -43,6 +62,12 @@ class GMLToNX:
     def _extract_element_and_charge(self, label: str) -> Tuple[str, int]:
         """
         Extracts the chemical element and its charge from a node label.
+
+        :param label: The label string from a GML node (e.g., 'N+', 'O2-', etc.).
+        :type label: str
+
+        :returns: A tuple of (element symbol, formal charge).
+        :rtype: tuple[str, int]
         """
         match = re.match(r"([A-Za-z*]+)(\d+)?([+-])?$", label)
         if not match:
@@ -61,6 +86,8 @@ class GMLToNX:
         Ensures that all nodes and edges in 'context' appear in both 'left' and 'right'.
         We do not remove edges from left or right if they are not in context.
         We only add missing context nodes and edges to left and right.
+
+        :returns: None
         """
         # Add missing context nodes to left and right
         for node, ndata in self.graphs["context"].nodes(data=True):
@@ -88,6 +115,9 @@ class GMLToNX:
     def transform(self) -> Tuple[nx.Graph, nx.Graph, nx.Graph]:
         """
         Transforms the GML-like text into three NetworkX graphs: left, right, and context.
+
+        :returns: A tuple of (left_graph, right_graph, context_graph), each a NetworkX graph.
+        :rtype: tuple[nx.Graph, nx.Graph, nx.Graph]
         """
         current_section = None
         lines = self.gml_text.split("\n")
@@ -105,7 +135,9 @@ class GMLToNX:
         self._synchronize_nodes_and_edges()
 
         # Create the ITS graph
-        its_graph = ITSConstruction.ITSGraph(self.graphs["left"], self.graphs["right"])
+        its_graph = ITSConstruction().ITSGraph(
+            self.graphs["left"], self.graphs["right"]
+        )
 
         # Restore node attributes in ITS graph from left (or right)
         for n in its_graph.nodes():
@@ -113,7 +145,7 @@ class GMLToNX:
                 for k, v in self.graphs["left"].nodes[n].items():
                     its_graph.nodes[n][k] = v
 
-        self.graphs["context"] = ITSConstruction.ITSGraph(
+        self.graphs["context"] = ITSConstruction().ITSGraph(
             self.graphs["left"], self.graphs["right"]
         )
 

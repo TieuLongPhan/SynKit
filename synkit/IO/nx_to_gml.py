@@ -1,89 +1,90 @@
 import networkx as nx
-from typing import Tuple, Dict, List
+from typing import Tuple, List
 from synkit.Graph.Hyrogen._misc import h_to_explicit
 
 
 class NXToGML:
+    """
+    Converts NetworkX graph representations of chemical reactions to GML (Graph Modelling Language) strings.
+    Useful for exporting reaction rules in a standard graph format.
+
+    This class provides static methods for converting individual graphs, sets of reaction graphs, and
+    managing charge/attribute changes in the export process.
+    """
 
     def __init__(self) -> None:
+        """
+        Initializes an NXToGML object.
+        """
         pass
 
     @staticmethod
-    def _charge_to_string(charge):
+    def _charge_to_string(charge: int) -> str:
         """
         Converts an integer charge into a string representation.
 
-        Parameters:
-        - charge (int): The charge value, which can be positive, negative, or zero.
+        :param charge: The charge value, which can be positive, negative, or zero.
+        :type charge: int
 
-        Returns:
-        - str: The string representation of the charge.
+        :returns: The string representation of the charge (e.g. '+', '2+', '-', '3-', '').
+        :rtype: str
         """
         if charge > 0:
-            return (
-                "+" if charge == 1 else f"{charge}+"
-            )  # '+' for +1, '2+', '3+', etc., for higher values
+            return "+" if charge == 1 else f"{charge}+"
         elif charge < 0:
-            return (
-                "-" if charge == -1 else f"{-charge}-"
-            )  # '-' for -1, '2-', '3-', etc., for lower values
+            return "-" if charge == -1 else f"{-charge}-"
         else:
-            return ""  # No charge symbol for neutral atoms
+            return ""
 
     @staticmethod
     def _find_changed_nodes(
-        graph1: nx.Graph, graph2: nx.Graph, attributes: list = ["charge"]
-    ) -> list:
+        graph1: nx.Graph, graph2: nx.Graph, attributes: List[str] = ["charge"]
+    ) -> List[int]:
         """
         Identifies nodes with changes in specified attributes between two NetworkX graphs.
 
-        Parameters:
-        - graph1 (nx.Graph): The first NetworkX graph.
-        - graph2 (nx.Graph): The second NetworkX graph.
-        - attributes (list): A list of attribute names to check for changes.
+        :param graph1: The first NetworkX graph.
+        :type graph1: nx.Graph
+        :param graph2: The second NetworkX graph.
+        :type graph2: nx.Graph
+        :param attributes: List of attribute names to check for changes.
+        :type attributes: list[str]
 
-        Returns:
-        - list: Node identifiers that have changes in the specified attributes.
+        :returns: Node identifiers that have changes in the specified attributes.
+        :rtype: list[int]
         """
         changed_nodes = []
-
-        # Iterate through nodes in the first graph
         for node in graph1.nodes():
-            # Ensure the node exists in both graphs
             if node in graph2:
-                # Check each specified attribute for changes
                 for attr in attributes:
                     value1 = graph1.nodes[node].get(attr, None)
                     value2 = graph2.nodes[node].get(attr, None)
-
                     if value1 != value2:
                         changed_nodes.append(node)
                         break
-
         return changed_nodes
 
     @staticmethod
     def _convert_graph_to_gml(
         graph: nx.Graph,
         section: str,
-        changed_node_ids: List,
+        changed_node_ids: List[int],
         explicit_hydrogen: bool = False,
     ) -> str:
         """
-        Convert a NetworkX graph to a GML string representation, focusing on nodes for the
-        'context' section and on nodes and edges for the 'left' or 'right' sections.
+        Converts a NetworkX graph to a GML string for a specific reaction section.
 
-        Parameters:
-        - graph (nx.Graph): The NetworkX graph to be converted.
-        - section (str): The section name in the GML output, typically "left", "right", or
-        "context".
-        - changed_node_ids (List): list of nodes change attribute
-        - explicit_hydrogen (bool): Whether to explicitly include hydrogen atoms
-        in the output.
+        :param graph: The NetworkX graph to be converted.
+        :type graph: nx.Graph
+        :param section: The section name in the GML output ('left', 'right', or 'context').
+        :type section: str
+        :param changed_node_ids: List of nodes with changed attributes.
+        :type changed_node_ids: list[int]
+        :param explicit_hydrogen: Whether to explicitly include hydrogen atoms in the output.
+        :type explicit_hydrogen: bool
 
-
-        Returns:
-        str: The GML string representation of the graph for the specified section.
+        :returns: The GML string representation of the graph for the specified section.
+        :rtype: str
         """
         order_to_label = {1: "-", 1.5: ":", 2: "=", 3: "#"}
         gml_str = f"   {section} [\n"
@@ -130,22 +131,27 @@ class NXToGML:
         R: nx.Graph,
         K: nx.Graph,
         rule_name: str,
-        changed_node_ids: List,
+        changed_node_ids: List[int],
         explicit_hydrogen: bool,
     ) -> str:
         """
-        Generate a GML string representation for a chemical rule, including its left,
-        context, and right graphs.
+        Generates a GML string for a chemical rule, including left, context, and right graphs.
 
-        Parameters:
-        - L (nx.Graph): The left graph.
-        - R (nx.Graph): The right graph.
-        - K (nx.Graph): The context graph.
-        - rule_name (str): The name of the rule.
-        - explicit_hydrogen (bool): Whether to explicitly include hydrogen atoms in the output.
+        :param L: The left graph.
+        :type L: nx.Graph
+        :param R: The right graph.
+        :type R: nx.Graph
+        :param K: The context graph.
+        :type K: nx.Graph
+        :param rule_name: The name of the rule.
+        :type rule_name: str
+        :param changed_node_ids: List of nodes with changed attributes.
+        :type changed_node_ids: list[int]
+        :param explicit_hydrogen: Whether to explicitly include hydrogen atoms in the output.
+        :type explicit_hydrogen: bool
 
-        Returns:
-        - str: The GML string representation of the rule.
+        :returns: The GML string representation of the rule.
+        :rtype: str
         """
         gml_str = "rule [\n"
         gml_str += f'   ruleID "{rule_name}"\n'
@@ -164,33 +170,32 @@ class NXToGML:
         reindex: bool = False,
         attributes: List[str] = ["charge"],
         explicit_hydrogen: bool = False,
-    ) -> Dict[str, str]:
+    ) -> str:
         """
-        Process a dictionary of graph rules to generate GML strings for each rule, with an
-        option to reindex nodes and edges.
+        Processes a triple of reaction graphs to generate a GML string rule, with options for node
+        reindexing and explicit hydrogen expansion.
 
-        Parameters:
-        - graph_rules (Dict[str, Tuple[nx.Graph, nx.Graph, nx.Graph]]): A dictionary
-        mapping rule names to tuples of (L, R, K) graphs.
-        - reindex (bool): If true, reindex node IDs based on the L graph sequence.
-        - explicit_hydrogen (bool): Whether to explicitly include hydrogen atoms in the output.
+        :param graph_rules: Tuple containing (L, R, K) reaction graphs.
+        :type graph_rules: tuple[nx.Graph, nx.Graph, nx.Graph]
+        :param rule_name: The rule name to use in the output.
+        :type rule_name: str
+        :param reindex: Whether to reindex node IDs based on the L graph sequence.
+        :type reindex: bool
+        :param attributes: List of attribute names to check for node changes.
+        :type attributes: list[str]
+        :param explicit_hydrogen: Whether to explicitly include hydrogen atoms in the output.
+        :type explicit_hydrogen: bool
 
-
-        Returns:
-        - Dict[str, str]: A dictionary mapping rule names to their GML string
-        representations.
+        :returns: The GML string representing the chemical rule.
+        :rtype: str
         """
         L, R, K = graph_rules
         if explicit_hydrogen:
-            # K = expand_hydrogens(K)
             K = h_to_explicit(K, nodes=None)
         if reindex:
-            # Create an index mapping from L graph
             index_mapping = {
                 old_id: new_id for new_id, old_id in enumerate(L.nodes(), 1)
             }
-
-            # Apply the mapping to L, R, and K graphs
             L = nx.relabel_nodes(L, index_mapping)
             R = nx.relabel_nodes(R, index_mapping)
             K = nx.relabel_nodes(K, index_mapping)

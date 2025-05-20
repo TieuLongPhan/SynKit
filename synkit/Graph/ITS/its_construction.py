@@ -1,5 +1,5 @@
 import networkx as nx
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Optional, List
 from copy import deepcopy
 
 
@@ -211,3 +211,107 @@ class ITSConstruction:
                 new_graph[u][v]["standard_order"] = 0
 
         return new_graph
+
+    @staticmethod
+    def construct(
+        G: nx.Graph,
+        H: nx.Graph,
+        *,
+        ignore_aromaticity: bool = False,
+        balance_its: bool = True,
+        node_attrs: Optional[List[str]] = None,
+        edge_attrs: Optional[List[str]] = None,
+    ) -> nx.Graph:
+        """
+        Constructs an ITS (Imaginary Transition State) graph from two input graphs,
+        and annotates each node and edge with a tuple: ((G attributes...), (H attributes...)).
+
+        The order of attributes in the tuple is defined by `node_attrs` and `edge_attrs`.
+        Users are responsible for remembering the order.
+
+        :param G: The first input NetworkX graph (typically the reactant).
+        :type G: nx.Graph
+        :param H: The second input NetworkX graph (typically the product).
+        :type H: nx.Graph
+        :param ignore_aromaticity: If True, aromaticity is ignored in edge comparison.
+        :type ignore_aromaticity: bool
+        :param balance_its: If True, balances the ITS size using node count.
+        :type balance_its: bool
+        :param node_attrs: List of node attributes for the tuple (order matters!).
+        :type node_attrs: list[str] or None
+        :param edge_attrs: List of edge attributes for the tuple (order matters!).
+        :type edge_attrs: list[str] or None
+
+        :returns: The constructed ITS NetworkX graph with `typesGH` tuples on nodes and edges.
+        :rtype: nx.Graph
+        """
+        if node_attrs is None:
+            node_attrs = [
+                "element",
+                "charge",
+                "atom_map",
+                "hcount",
+                "aromatic",
+                "neighbors",
+            ]
+        if edge_attrs is None:
+            edge_attrs = ["order"]
+
+        # Construct initial ITS graph using the existing method
+        its = ITSConstruction.ITSGraph(
+            G, H, ignore_aromaticity=ignore_aromaticity, balance_its=balance_its
+        )
+
+        # Attach node typesGH as a tuple: ((G attributes...), (H attributes...))
+        for n in its.nodes():
+            g_attrs = tuple(
+                G.nodes[n].get(attr, 0) if n in G.nodes else 0 for attr in node_attrs
+            )
+            h_attrs = tuple(
+                H.nodes[n].get(attr, 0) if n in H.nodes else 0 for attr in node_attrs
+            )
+            its.nodes[n]["typesGH"] = (g_attrs, h_attrs)
+
+        its = ITSConstruction.add_edges_to_ITS(its, G, H, ignore_aromaticity)
+
+        return its
+
+    def typesGH(self) -> Dict[str, Dict[str, Tuple[Any, Any]]]:
+        """
+        Returns the types and default values for selected node and edge attributes, useful for
+        interpreting the 'typesGH' annotation on ITS graphs.
+
+        :returns: Dictionary with node and edge attribute types and defaults, e.g.
+                  {"node": {attr: (type, 0)}, "edge": {attr: (type, 0)}}
+        :rtype: dict[str, dict[str, tuple[type, Any]]]
+        """
+        node_prop_types: Dict[str, Any] = {
+            "element": str,
+            "charge": int,
+            "atom_map": int,
+            "hcount": int,
+            "in_ring": int,
+            "radical": int,
+            "isomer": str,
+            "partial_charge": float,
+            "hybridization": str,
+            "implicit_hcount": int,
+            "neighbors": list,
+            "aromatic": int,
+        }
+        edge_prop_types: Dict[str, Any] = {
+            "order": float,
+            "ez_isomer": str,
+            "bond_type": str,
+            "conjugated": int,
+            "in_ring": int,
+        }
+        sel_nodes = {
+            a: node_prop_types.get(a, int) for a in getattr(self, "node_attrs", [])
+        }
+        sel_edges = {
+            a: edge_prop_types.get(a, int) for a in getattr(self, "edge_attrs", [])
+        }
+        node_defaults = {k: (tp, 0) for k, tp in sel_nodes.items()}
+        edge_defaults = {k: (tp, 0) for k, tp in sel_edges.items()}
+        return {"node": node_defaults, "edge": edge_defaults}

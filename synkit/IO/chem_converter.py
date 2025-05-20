@@ -20,9 +20,17 @@ logger = setup_logging()
 def smiles_to_graph(
     smiles: str,
     drop_non_aam: bool = False,
-    light_weight: bool = True,
     sanitize: bool = True,
     use_index_as_atom_map: bool = False,
+    node_attrs: Optional[List[str]] = [
+        "element",
+        "aromatic",
+        "hcount",
+        "charge",
+        "neighbors",
+        "atom_map",
+    ],
+    edge_attrs: Optional[List[str]] = ["order"],
 ) -> Optional[nx.Graph]:
     """
     Helper function to convert a SMILES string to a NetworkX graph.
@@ -59,9 +67,9 @@ def smiles_to_graph(
                 return None
 
         # Convert molecule to graph
-        graph_converter = MolToGraph()
-        graph = graph_converter.mol_to_graph(
-            mol, drop_non_aam, light_weight, use_index_as_atom_map
+        graph_converter = MolToGraph(node_attrs=node_attrs, edge_attrs=edge_attrs)
+        graph = graph_converter.transform(
+            mol, drop_non_aam=drop_non_aam, use_index_as_atom_map=use_index_as_atom_map
         )
         if graph is None:
             logger.warning(f"Failed to convert molecule to graph for SMILES: {smiles}")
@@ -78,9 +86,17 @@ def smiles_to_graph(
 def rsmi_to_graph(
     rsmi: str,
     drop_non_aam: bool = True,
-    light_weight: bool = True,
     sanitize: bool = True,
     use_index_as_atom_map: bool = True,
+    node_attrs: Optional[List[str]] = [
+        "element",
+        "aromatic",
+        "hcount",
+        "charge",
+        "neighbors",
+        "atom_map",
+    ],
+    edge_attrs: Optional[List[str]] = ["order"],
 ) -> Tuple[Optional[nx.Graph], Optional[nx.Graph]]:
     """
     Convert a reaction SMILES (RSMI) into reactant and product graphs.
@@ -103,12 +119,18 @@ def rsmi_to_graph(
         r_graph = smiles_to_graph(
             reactants_smiles,
             drop_non_aam,
-            light_weight,
             sanitize,
             use_index_as_atom_map,
+            node_attrs,
+            edge_attrs,
         )
         p_graph = smiles_to_graph(
-            products_smiles, drop_non_aam, light_weight, sanitize, use_index_as_atom_map
+            products_smiles,
+            drop_non_aam,
+            sanitize,
+            use_index_as_atom_map,
+            node_attrs,
+            edge_attrs,
         )
         return (r_graph, p_graph)
     except ValueError:
@@ -231,7 +253,7 @@ def smart_to_gml(
     if useSmiles is False:
         smart = rsmarts_to_rsmi(smart)
     r, p = rsmi_to_graph(smart, sanitize=sanitize)
-    its = ITSConstruction.ITSGraph(r, p)
+    its = ITSConstruction().ITSGraph(r, p)
     if core:
         its = get_rc(its)
         r, p = its_decompose(its)
@@ -332,10 +354,18 @@ def gml_to_its(gml: str) -> nx.Graph:
 def rsmi_to_its(
     rsmi: str,
     drop_non_aam: bool = True,
-    light_weight: bool = True,
     sanitize: bool = True,
     use_index_as_atom_map: bool = True,
     core: bool = False,
+    node_attrs: Optional[List[str]] = [
+        "element",
+        "aromatic",
+        "hcount",
+        "charge",
+        "neighbors",
+        "atom_map",
+    ],
+    edge_attrs: Optional[List[str]] = ["order"],
 ) -> nx.Graph:
     """
     Convert a reaction SMILES (rSMI) string to an ITS graph representation.
@@ -357,9 +387,9 @@ def rsmi_to_its(
     :raises Exception: If conversion fails.
     """
     r, p = rsmi_to_graph(
-        rsmi, drop_non_aam, light_weight, sanitize, use_index_as_atom_map
+        rsmi, drop_non_aam, sanitize, use_index_as_atom_map, node_attrs, edge_attrs
     )
-    its = ITSConstruction.ITSGraph(r, p)
+    its = ITSConstruction().ITSGraph(r, p)
     if core:
         its = get_rc(its)
     return its
