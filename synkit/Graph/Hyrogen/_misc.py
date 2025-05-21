@@ -91,7 +91,22 @@ def h_to_implicit(G: nx.Graph) -> nx.Graph:
     return H2
 
 
-def h_to_explicit(G: nx.Graph, nodes: List[int] = None) -> nx.Graph:
+def normalize_edge_orders(G: nx.Graph) -> None:
+    """
+    In-place normalize all edge attributes in G:
+      - If 'order' is a float or int, replace it with (order, order).
+      - If 'standard_order' is missing, set it to 0.0.
+    """
+    for _, _, data in G.edges(data=True):
+        o = data.get("order")
+        # Wrap scalar orders into tuples
+        if isinstance(o, (int, float)):
+            data["order"] = (float(o), float(o))
+        if "standard_order" not in data:
+            data["standard_order"] = 0.0
+
+
+def h_to_explicit(G: nx.Graph, nodes: List[int] = None, its: bool = False) -> nx.Graph:
     """
     Convert implicit hydrogen counts on heavy atoms into explicit hydrogen nodes.
 
@@ -146,6 +161,8 @@ def h_to_explicit(G: nx.Graph, nodes: List[int] = None) -> nx.Graph:
             tgh_list = [list(row) for row in tgh]
             tgh_list[0][2] -= count  # Assume hcount is stored at position [0][2]
             H2.nodes[heavy]["typesGH"] = tuple(tuple(row) for row in tgh_list)
+    if its:
+        normalize_edge_orders(H2)
 
     return H2
 
