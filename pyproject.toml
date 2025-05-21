@@ -30,7 +30,11 @@ dependencies = [
 
 [project.optional-dependencies]
 all = ["numpy>=2.2.0", "torch>=2.2.0"]
-
+docs = [
+  "sphinx>=6.0",
+  "sphinx-rtd-theme",
+  "sphinxcontrib-bibtex",
+]
 [project.urls]
 homepage = "https://github.com/TieuLongPhan/SynKit"
 source = "https://github.com/TieuLongPhan/SynKit"

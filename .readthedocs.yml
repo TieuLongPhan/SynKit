@@ -12,8 +12,7 @@ python:
     # install your package so autodoc can import it
     - method: pip
       path: .
-    # install Sphinx and theme/extensions
-    - requirements: doc/requirements.txt
+    - extra_requirements: docs
 
 sphinx:
   configuration: doc/conf.py
