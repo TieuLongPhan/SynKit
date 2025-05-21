@@ -1,7 +1,7 @@
 # .readthedocs.yml
 # Read the Docs configuration for SynKit documentation
 
-version: 2
+version: 0.0.8
 
 build:
   os: ubuntu-22.04
@@ -12,10 +12,7 @@ python:
     # install your package so autodoc can import it
     - method: pip
       path: .
-    # install runtime dependencies
-    - requirements: requirements.txt
-    # install Sphinx and theme/extensions
-    - requirements: doc/requirements.txt
+    - extra_requirements: docs
 
 sphinx:
   configuration: doc/conf.py
