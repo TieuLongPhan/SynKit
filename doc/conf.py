@@ -1,12 +1,13 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+
+sys.path.insert(0, os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
-project   = "synkit"
-author    = "Tieu-Long Phan"
-release   = "0.0.8"
-version   = release
+project = "synkit"
+author = "Tieu-Long Phan"
+release = "0.0.8"
+version = release
 
 # -- General configuration ---------------------------------------------------
 extensions = [

@@ -392,7 +392,13 @@ def rsmi_to_its(
     :raises Exception: If conversion fails.
     """
     r, p = rsmi_to_graph(
-        rsmi, drop_non_aam, sanitize, use_index_as_atom_map, node_attrs, edge_attrs, explicit_hydrogen
+        rsmi,
+        drop_non_aam,
+        sanitize,
+        use_index_as_atom_map,
+        node_attrs,
+        edge_attrs,
+        explicit_hydrogen,
     )
     its = ITSConstruction().ITSGraph(r, p)
     if core:
