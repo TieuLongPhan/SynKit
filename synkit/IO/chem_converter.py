@@ -11,7 +11,7 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.nx_to_gml import NXToGML
 from synkit.IO.gml_to_nx import GMLToNX
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
-from synkit.Graph.Hyrogen._misc import implicit_hydrogen
+from synkit.Graph.Hyrogen._misc import implicit_hydrogen, h_to_explicit
 
 
 logger = setup_logging()
@@ -97,6 +97,7 @@ def rsmi_to_graph(
         "atom_map",
     ],
     edge_attrs: Optional[List[str]] = ["order"],
+    explicit_hydrogen: bool = False,
 ) -> Tuple[Optional[nx.Graph], Optional[nx.Graph]]:
     """
     Convert a reaction SMILES (RSMI) into reactant and product graphs.
@@ -132,6 +133,9 @@ def rsmi_to_graph(
             node_attrs,
             edge_attrs,
         )
+        if explicit_hydrogen:
+            r_graph = h_to_explicit(r_graph)
+            p_graph = h_to_explicit(p_graph)
         return (r_graph, p_graph)
     except ValueError:
         logger.error(f"Invalid RSMI format: {rsmi}")
@@ -366,6 +370,7 @@ def rsmi_to_its(
         "atom_map",
     ],
     edge_attrs: Optional[List[str]] = ["order"],
+    explicit_hydrogen: bool = False,
 ) -> nx.Graph:
     """
     Convert a reaction SMILES (rSMI) string to an ITS graph representation.
@@ -387,7 +392,7 @@ def rsmi_to_its(
     :raises Exception: If conversion fails.
     """
     r, p = rsmi_to_graph(
-        rsmi, drop_non_aam, sanitize, use_index_as_atom_map, node_attrs, edge_attrs
+        rsmi, drop_non_aam, sanitize, use_index_as_atom_map, node_attrs, edge_attrs, explicit_hydrogen
     )
     its = ITSConstruction().ITSGraph(r, p)
     if core:
