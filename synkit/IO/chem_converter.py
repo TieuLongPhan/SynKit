@@ -97,7 +97,6 @@ def rsmi_to_graph(
         "atom_map",
     ],
     edge_attrs: Optional[List[str]] = ["order"],
-    explicit_hydrogen: bool = False,
 ) -> Tuple[Optional[nx.Graph], Optional[nx.Graph]]:
     """
     Convert a reaction SMILES (RSMI) into reactant and product graphs.
@@ -133,9 +132,6 @@ def rsmi_to_graph(
             node_attrs,
             edge_attrs,
         )
-        if explicit_hydrogen:
-            r_graph = h_to_explicit(r_graph)
-            p_graph = h_to_explicit(p_graph)
         return (r_graph, p_graph)
     except ValueError:
         logger.error(f"Invalid RSMI format: {rsmi}")
@@ -373,28 +369,39 @@ def rsmi_to_its(
     explicit_hydrogen: bool = False,
 ) -> nx.Graph:
     """
-    Convert a reaction SMILES (rSMI) string to an ITS graph representation.
+    Convert a reaction SMILES (rSMI) to an ITS (Imaginary Transition State) graph.
 
-    :param rsmi: The reaction SMILES string.
+    :param rsmi: The reaction SMILES string, optionally containing atom-map labels.
     :type rsmi: str
-    :param drop_non_aam: If True, drop non-atom-mapped components.
+    :param drop_non_aam: If True, discard any molecular fragments without atom-atom maps.
     :type drop_non_aam: bool
-    :param light_weight: If True, create a light-weight graph.
-    :type light_weight: bool
-    :param sanitize: If True, sanitize molecules during conversion.
+    :param sanitize: If True, perform molecule sanitization (valence checks, kekulization).
     :type sanitize: bool
-    :param use_index_as_atom_map: If True, use indices as atom-map numbers.
+    :param use_index_as_atom_map: If True, override atom-map labels by atom indices.
     :type use_index_as_atom_map: bool
-    :param core: If True, focus only on the reaction center.
+    :param core: If True, return only the reaction-center subgraph of the ITS.
     :type core: bool
-    :returns: The ITS graph representing the reaction.
+    :param node_attrs: Node attributes to include in the ITS graph (e.g., element, charge).
+    :type node_attrs: list[str]
+    :param edge_attrs: Edge attributes to include in the ITS graph (e.g., order).
+    :type edge_attrs: list[str]
+    :param explicit_hydrogen: If True, convert implicit hydrogens to explicit nodes.
+    :type explicit_hydrogen: bool
+    :returns: A NetworkX graph representing the complete or core ITS.
     :rtype: networkx.Graph
-    :raises Exception: If conversion fails.
+    :raises ValueError: If the SMILES string is invalid or graph construction fails.
     """
     r, p = rsmi_to_graph(
-        rsmi, drop_non_aam, sanitize, use_index_as_atom_map, node_attrs, edge_attrs, explicit_hydrogen
+        rsmi,
+        drop_non_aam,
+        sanitize,
+        use_index_as_atom_map,
+        node_attrs,
+        edge_attrs,
     )
     its = ITSConstruction().ITSGraph(r, p)
+    if explicit_hydrogen:
+        its = h_to_explicit(its, None, True)
     if core:
         its = get_rc(its)
     return its
