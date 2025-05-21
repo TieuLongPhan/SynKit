@@ -1,5 +1,6 @@
 Welcome to synkit documentation!
 ================================
+This is documentation for synkit version |version| (release |release|).
 
 .. toctree::
    :caption: Contents
