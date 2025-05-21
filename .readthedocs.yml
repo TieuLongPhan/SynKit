@@ -1,17 +1,23 @@
-# Tell RTD to use v2 of the config schema (not your project version)
+# Read the Docs configuration file
+# https://docs.readthedocs.io/en/stable/config-file/v2.html
+
+# 1) Tell RTD this is v2 of the schema
 version: 2
 
+# 2) Pick your build image and interpreter
 build:
   os: ubuntu-22.04
+  tools:
+    python: "3.11"
 
+# 3) Install your package + any doc-only extras
 python:
-  version: 3.11
   install:
-    # Install your package along with the "docs" extras
     - method: pip
       path: .
       extra_requirements: docs
 
+# 4) Point Sphinx at your conf.py and choose HTML
 sphinx:
   configuration: doc/conf.py
   builder: html
