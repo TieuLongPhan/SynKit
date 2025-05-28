@@ -3,13 +3,12 @@ import networkx as nx
 from rdkit import Chem
 from rdkit.Chem import rdChemReactions
 
-
 from synkit.IO.debug import setup_logging
 from synkit.IO.mol_to_graph import MolToGraph
 from synkit.IO.graph_to_mol import GraphToMol
-from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.nx_to_gml import NXToGML
 from synkit.IO.gml_to_nx import GMLToNX
+from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
 from synkit.Graph.Hyrogen._misc import implicit_hydrogen, h_to_explicit
 

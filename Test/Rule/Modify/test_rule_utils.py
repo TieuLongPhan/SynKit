@@ -7,7 +7,8 @@ from synkit.Rule.Modify.rule_utils import (
     strip_context,
     _increment_gml_ids,
 )
-from synkit.Graph.Matcher import GraphMatcherEngine, SubgraphMatch
+from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
+from synkit.Graph.Matcher.subgraph_matcher import SubgraphMatch
 import importlib
 
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None

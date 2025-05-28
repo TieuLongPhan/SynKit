@@ -15,7 +15,8 @@ python:
   install:
     - method: pip
       path: .
-      extra_requirements: docs
+      extra_requirements: 
+        - docs
 
 # 4) Point Sphinx at your conf.py and choose HTML
 sphinx:

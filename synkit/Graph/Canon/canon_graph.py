@@ -62,8 +62,8 @@ import networkx as nx
 from networkx.algorithms.graph_hashing import (
     weisfeiler_lehman_subgraph_hashes as _wl_hashes,
 )
-from .Canon.canon_algs import canon_morgan
-from .Canon.nauty import NautyCanonicalizer
+from .canon_algs import canon_morgan
+from .nauty import NautyCanonicalizer
 
 __all__: list[str] = ["CanonicalGraph", "GraphCanonicaliser", "CanonicalRule"]
 

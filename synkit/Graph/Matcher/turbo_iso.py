@@ -189,11 +189,14 @@ class TurboISO:
         # iterate over root candidates
         for hroot in C[root]:
             # build candidate region around hroot within radius
-            region = set(
-                nx.single_source_shortest_path_length(
-                    self.G, hroot, cutoff=radius
-                ).keys()
-            )
+            if nx.is_connected(Q):
+                region = set(
+                    nx.single_source_shortest_path_length(
+                        self.G, hroot, cutoff=radius
+                    ).keys()
+                )
+            else:
+                region = set(self.G.nodes())
             mapping[root] = hroot
             used.add(hroot)
             if backtrack(1, region):

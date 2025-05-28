@@ -7,7 +7,11 @@ from synkit.IO.chem_converter import rsmi_to_graph
 class TestCanonRSMI(unittest.TestCase):
     def setUp(self):
         # Use generic backend for deterministic behavior
-        self.canon = CanonRSMI(backend="wl", wl_iterations=5)
+        self.canon = CanonRSMI(
+            backend="wl",
+            wl_iterations=5,
+            node_attrs=["element", "aromatic", "charge", "hcount", "neighbors"],
+        )
         # Example reaction SMILES with atom-map labels
         self.input_rsmi = "[CH3:3][CH2:5][OH:10]>>[CH2:3]=[CH2:5].[OH2:10]"
         # After expand_aam and canonicalisation, since backend is generic,

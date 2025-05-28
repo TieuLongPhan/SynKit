@@ -9,11 +9,13 @@ class Strategy(str, Enum):
       - ALL:       classic VF2 on the whole graph
       - COMPONENT: component-aware only (no cross-CC backtracking)
       - BACKTRACK: component-aware with backtracking across CCs
+      - PARTIAL:   partial matching (mcs)
     """
 
     ALL = "all"
     COMPONENT = "comp"
     BACKTRACK = "bt"
+    PARTIAL = "partial"
 
     @classmethod
     def from_string(cls, value: Union[str, "Strategy"]) -> "Strategy":
