@@ -77,7 +77,7 @@ def benchmark_smart_canonicalisation(
 if __name__ == "__main__":
     from synkit.Chem import CanonRSMI
 
-    from synkit.IO import load_database, save_dict_to_json
+    from synkit.IO import load_database, save_database,save_dict_to_json
 
     print(project_root)
     df = load_database(f"{project_root}/Data/Benchmark/benchmark.json.gz")[:]

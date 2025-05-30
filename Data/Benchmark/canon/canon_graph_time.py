@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     # load first 100 records
     db_path = Path(project_root) / "Data" / "Benchmark" / "benchmark.json.gz"
-    df = load_database(str(db_path))[:10]
+    df = load_database(str(db_path))[:]
     logger.info("Loaded %d records for graph canonicalisation", len(df))
 
     # build ITS graphs

@@ -129,7 +129,7 @@ def test_full(
     Full dataset clustering: compare ITS and GML with WL hashing.
     """
     methods = [("ITS", wl) for wl in wl_iters_list] + [
-        ("gml", wl) for wl in wl_iters_list
+        ("gml", wl) for wl in wl_iters_list[1:]
     ]
 
     records = []
