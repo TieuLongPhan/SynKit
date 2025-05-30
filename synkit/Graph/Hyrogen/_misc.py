@@ -1,7 +1,7 @@
 from copy import copy
 import networkx as nx
 from operator import eq
-from typing import List, Any, Set, Tuple
+from typing import List, Set, Any, Tuple
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
 from synkit.Graph.Feature.graph_descriptors import GraphDescriptor

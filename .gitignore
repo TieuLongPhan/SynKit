@@ -20,3 +20,4 @@ Data/Benchmark/*
 *.json.gz
 run.sh
 docs/*
+run_rdcanon.py

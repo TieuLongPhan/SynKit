@@ -1,6 +1,6 @@
 import unittest
 from synkit.Rule.Modify.molecule_rule import MoleculeRule
-from synkit.Graph.Matcher import GraphMatcherEngine
+from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
 import importlib
 
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None

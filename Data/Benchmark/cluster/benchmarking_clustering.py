@@ -129,7 +129,7 @@ def test_full(
     Full dataset clustering: compare ITS and GML with WL hashing.
     """
     methods = [("ITS", wl) for wl in wl_iters_list] + [
-        ("gml", wl) for wl in wl_iters_list
+        ("gml", wl) for wl in wl_iters_list[1:]
     ]
 
     records = []
@@ -257,10 +257,10 @@ def main():
     data = load_and_precompute(Path(args.data), limit=args.limit)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    # logging.info("Test Full...")
+    logging.info("Test Full...")
     test_full(data, wl_iters_list, args.repeat, out_dir)
-    # logging.info("Test Scalability...")
-    # test_scalability(data, wl_iters_list, Ns, args.repeat, out_dir)
+    logging.info("Test Scalability...")
+    test_scalability(data, wl_iters_list, Ns[1:], args.repeat, out_dir)
 
 
 if __name__ == "__main__":
