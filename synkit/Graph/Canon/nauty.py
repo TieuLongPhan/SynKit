@@ -73,7 +73,7 @@ class NautyCanonicalizer:
 
         mapping = {v: i + 1 for i, v in enumerate(perm)}
         G_can = nx.relabel_nodes(G, mapping, copy=True)
-        self._update_atom_map(G_can)
+        # self._update_atom_map(G_can)
 
         results = [G_can]
         if return_perm:
