@@ -254,6 +254,50 @@ This example builds two reaction-center ITS graphs, computes their MCS mapping, 
    (C) Composite ITS graph "gluing" both transformations  
    (D) Mechanistic Transition Graph (MTG) showing step-wise mechanism  
 
+Context graph
+-------------
+
+The ``synkit.Graph.Context`` submodule provides tools for expanding reaction center graphs to include nearest neighbors, enabling context‑aware analysis of reaction networks.
+
+.. code-block:: python
+   :caption: Context graph expansion example
+   :linenos:
+
+   from synkit.IO import rsmi_to_its
+   from synkit.Graph.Context.radius_expand import RadiusExpand
+   from synkit.Vis.graph_visualizer import GraphVisualizer
+
+   smart = (
+       '[CH3:1][O:2][C:3](=[O:4])[CH:5]([CH2:6][CH2:7][CH2:8][CH2:9]'
+       '[NH:10][C:11](=[O:12])[O:13][CH2:14][c:15]1[cH:16][cH:17]'
+       '[cH:18][cH:19][cH:20]1)[NH:21][C:22](=[O:23])[NH:24][c:25]1'
+       '[cH:26][c:27]([O:28][CH3:29])[cH:30][c:31]([C:32]([CH3:33])'
+       '([CH3:34])[CH3:35])[c:36]1[OH:37].[OH:38][H:39]>>'
+       '[C:11](=[O:12])([O:13][CH2:14][c:15]1[cH:16][cH:17][cH:18]'
+       '[cH:19][cH:20]1)[OH:38].[CH3:1][O:2][C:3](=[O:4])[CH:5]'
+       '([CH2:6][CH2:7][CH2:8][CH2:9][NH:10][H:39])[NH:21][C:22]'
+       '(=[O:23])[NH:24][c:25]1[cH:26][c:27]([O:28][CH3:29])[cH:30]'
+       '[c:31]([C:32]([CH3:33])([CH3:34])[CH3:35])[c:36]1[OH:37]'
+   )
+   its = rsmi_to_its(smart)
+   rc  = rsmi_to_its(smart, core=True)
+   exp = RadiusExpand()
+   k1  = exp.extract_k(its, n_knn=1)
+
+   gv = GraphVisualizer()
+   gv.visualize_its_grid([rc, k1])
+
+.. container:: figure
+
+   .. image:: ./figures/context.png
+      :alt: Context graph expansion example
+      :align: center
+      :width: 1000px
+
+   *Figure:*  
+   (A) Minimal reaction center subgraph obtained by contracting all atoms that participate directly in bond‑order changes.  
+   Nodes are colour‑coded by element; edges in **red** indicate bonds being broken, while edges in **blue** mark bonds being formed.  
+   (B) First shell ($k=1$) context expansion: every reaction center atom is augmented with all of its immediate neighbours.
 
 
 See Also

@@ -1,13 +1,32 @@
 import os
 import sys
 
+# -- Path setup --------------------------------------------------------------
+# Add project root to sys.path to import the package
 sys.path.insert(0, os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
 project = "synkit"
 author = "Tieu-Long Phan"
-release = "0.0.8"
-version = release
+
+# Dynamically detect version:
+# 1) Try package metadata (requires pip install -e .)
+# 2) Fallback to synkit.__version__ if available
+# 3) Default to known release if neither works
+from importlib.metadata import version as _get_version, PackageNotFoundError
+
+
+try:
+    release = _get_version("synkit")
+except PackageNotFoundError:
+    try:
+        import synkit
+        release = synkit.__version__
+    except (ImportError, AttributeError):
+        # Fallback default
+        release = "0.0.9"
+# Use only major.minor for short version
+version = ".".join(release.split('.')[:2])
 
 # -- General configuration ---------------------------------------------------
 extensions = [
