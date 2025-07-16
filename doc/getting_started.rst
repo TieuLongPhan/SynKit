@@ -66,7 +66,7 @@ After installation, verify that **synkit** is available and check its version:
 
 .. code-block:: bash
 
-   python -c "import synkit; print(synkit.__version__)"
+   python -c "import importlib.metadata as m; print(m.version('synkit'))"
    # Should print the installed synkit version
 
 Further Resources
