@@ -1,3 +1,4 @@
+from typing import Optional
 import networkx as nx
 import hashlib
 from synkit.IO import setup_logging
@@ -6,9 +7,36 @@ logger = setup_logging()
 
 
 class NautyCanonicalizer:
+    """
+    Perform Nauty‑style canonicalization of a NetworkX graph, optionally
+    refining and distinguishing nodes and edges by specified attributes,
+    and extracting automorphisms, orbits, and canonical permutations.
+
+    :param node_attrs: List of node attribute keys to include in the initial
+                       partition refinement.  Nodes sharing the same tuple of
+                       values under these keys will start in the same cell.
+    :type node_attrs: list[str] | None
+    :param edge_attrs: List of edge attribute keys to include when distinguishing
+                       edges in the canonical label.  If an edge has none of these
+                       keys, its contribution will be empty.
+    :type edge_attrs: list[str] | None
+    """
+
     __slots__ = ("node_attrs", "edge_attrs")
 
-    def __init__(self, node_attrs=None, edge_attrs=None):
+    def __init__(
+        self,
+        node_attrs: Optional[list[str]] = None,
+        edge_attrs: Optional[list[str]] = None,
+    ) -> None:
+        """
+        Initialize the NautyCanonicalizer.
+
+        :param node_attrs: Node attribute names to use for initial partitioning.
+        :type node_attrs: list[str] | None
+        :param edge_attrs: Edge attribute names to include in the canonical label.
+        :type edge_attrs: list[str] | None
+        """
         self.node_attrs = list(node_attrs) if node_attrs else []
         self.edge_attrs = list(edge_attrs) if edge_attrs else []
 
@@ -24,12 +52,12 @@ class NautyCanonicalizer:
 
     def canonical_form(
         self,
-        G,
-        return_aut=False,
-        remap_aut=False,
-        return_orbits=False,
-        return_perm=False,
-        max_depth=None,
+        G: nx.Graph,
+        return_aut: bool = False,
+        remap_aut: bool = False,
+        return_orbits: bool = False,
+        return_perm: bool = False,
+        max_depth: Optional[int] = None,
     ):
         """
         Compute canonical form of graph G with optional automorphisms, orbits, and early stopping.
