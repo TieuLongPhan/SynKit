@@ -20,7 +20,7 @@ except PackageNotFoundError:
         release = synkit.__version__
     except (ImportError, AttributeError):
         # Fallback default
-        release = "0.0.9"
+        release = "0.0.10"
 # Use only major.minor for short version
 version = ".".join(release.split(".")[:2])
 
