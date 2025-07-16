@@ -5,6 +5,8 @@ from typing import Optional, List
 from rdkit import Chem
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
+__all__ = ["get_rc", "its_decompose"]
+
 
 def get_rc(
     ITS: nx.Graph,
@@ -14,14 +16,34 @@ def get_rc(
     disconnected: bool = False,
 ) -> nx.Graph:
     """
-    Extract the reaction center (RC) from ITS graph.
+    Extract the reaction-center (RC) subgraph from an ITS graph.
 
-    Enhancements:
-    - Adds nodes and edges where bond order changes (core logic).
-    - If disconnected=True:
-        - Adds nodes with charge change based on typesGH.
-        - Reconnects any ITS edge between two RC nodes.
-    - NEW: Always includes H-H bonds in RC. Adds default typesGH if missing.
+    This function identifies:
+      1. All bonds whose standard order (difference between ITS orders) is non-zero.
+      2. All H–H bonds, ensuring they are included even if no order change is detected.
+      3. (Optional) Additional nodes with charge changes and reconnection of edges
+         if `disconnected=True`.
+
+    :param ITS: The integrated transition-state graph with composite node/edge attributes.
+    :type ITS: nx.Graph
+    :param element_key: List of node‐attribute keys to copy into the RC graph.
+    :type element_key: List[str]
+    :param bond_key: Edge attribute key representing the tuple of bond orders.
+    :type bond_key: str
+    :param standard_key: Edge attribute key for the computed standard_order.
+    :type standard_key: str
+    :param disconnected: If True, also include nodes with charge changes and
+                         reconnect any ITS edges between RC nodes.
+    :type disconnected: bool
+    :returns: A new graph containing only the reaction-center nodes and edges.
+    :rtype: nx.Graph
+
+    :example:
+    >>> ITS = nx.Graph()
+    >>> # ... populate ITS with 'order', 'standard_order', 'typesGH', etc. ...
+    >>> RC = get_rc(ITS, disconnected=True)
+    >>> isinstance(RC, nx.Graph)
+    True
     """
     rc = nx.Graph()
     _add_bond_order_changes(ITS, rc, element_key, bond_key, standard_key)
@@ -286,18 +308,29 @@ def _add_bond_order_changes(
 
 def its_decompose(its_graph: nx.Graph, nodes_share="typesGH", edges_share="order"):
     """
-    Decompose an ITS graph into two separate graphs G and H based on shared
-    node and edge attributes.
+    Decompose an ITS graph into two separate reactant (G) and product (H) graphs.
 
-    Parameters:
-    - its_graph (nx.Graph): The integrated transition state (ITS) graph.
-    - nodes_share (str): Node attribute key that stores tuples with node attributes
-    or G and H.
-    - edges_share (str): Edge attribute key that stores tuples with edge attributes
-    for G and H.
+    Nodes and edges in `its_graph` carry composite attributes:
+      - Each node has `its_graph.nodes[nodes_share] = (node_attrs_G, node_attrs_H)`.
+      - Each edge has `its_graph.edges[edges_share] = (order_G, order_H)`.
 
-    Returns:
-    - Tuple[nx.Graph, nx.Graph]: A tuple containing the two graphs G and H.
+    This function splits those tuples to reconstruct the original G and H graphs.
+
+    :param its_graph: The ITS graph with composite node/edge attributes.
+    :type its_graph: nx.Graph
+    :param nodes_share: Node attribute key storing (G_attrs, H_attrs) tuples.
+    :type nodes_share: str
+    :param edges_share: Edge attribute key storing (order_G, order_H) tuples.
+    :type edges_share: str
+    :returns: A tuple of two graphs (G, H) reconstructed from the ITS.
+    :rtype: Tuple[nx.Graph, nx.Graph]
+
+    :example:
+    >>> its = nx.Graph()
+    >>> # ... set its.nodes[n]['typesGH'] and its.edges[e]['order'] ...
+    >>> G, H = its_decompose(its)
+    >>> isinstance(G, nx.Graph) and isinstance(H, nx.Graph)
+    True
     """
     G = nx.Graph()
     H = nx.Graph()

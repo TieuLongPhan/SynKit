@@ -48,6 +48,7 @@ The `ITS` submodule provides tools for constructing, decomposing, and validating
 
 - **its_construction**: Functions for constructing an ITS graph.
 - **its_decompose**: Functions for decomposing an ITS graph and extracting reaction center.
+- **its_expand**: Functions for expanding partial ITS graphs into full ITS graphs. 
 
 .. automodule:: synkit.Graph.ITS.its_construction
    :members:
@@ -55,6 +56,11 @@ The `ITS` submodule provides tools for constructing, decomposing, and validating
    :show-inheritance:
 
 .. automodule:: synkit.Graph.ITS.its_decompose
+   :members: get_rc, its_decompose
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.ITS.its_expand
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,9 +1,107 @@
+import logging
 import itertools
-import networkx as nx
 from operator import eq
-from typing import Callable, Optional, List, Any
+from typing import Callable, Optional, Union, List, Any, Dict
+import networkx as nx
+from networkx.algorithms import isomorphism
 from networkx.algorithms.isomorphism import GraphMatcher
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
+
+
+# Alias for any NetworkX graph type
+graph_types = Union[nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph]
+
+
+def find_graph_isomorphism(
+    G1: graph_types,
+    G2: graph_types,
+    node_match: Optional[Callable[[Dict[str, Any], Dict[str, Any]], bool]] = None,
+    edge_match: Optional[Callable[[Dict[str, Any], Dict[str, Any]], bool]] = None,
+    use_defaults: bool = True,
+    fast_invariant_check: bool = True,
+    logger: Optional[logging.Logger] = None,
+) -> Optional[Dict[Any, Any]]:
+    """
+    Check whether two graphs are isomorphic and return the node-mapping.
+
+    :param G1: The first NetworkX graph to compare.
+    :type G1: nx.Graph | nx.DiGraph | nx.MultiGraph | nx.MultiDiGraph
+    :param G2: The second NetworkX graph to compare.
+    :type G2: nx.Graph | nx.DiGraph | nx.MultiGraph | nx.MultiDiGraph
+    :param node_match: Optional function taking two node attribute dicts and
+                       returning True if they match.
+    :type node_match: callable or None
+    :param edge_match: Optional function taking two edge attribute dicts and
+                       returning True if they match.
+    :type edge_match: callable or None
+    :param use_defaults: Whether to use default matchers when None.
+    :type use_defaults: bool
+    :param fast_invariant_check: Perform quick node/edge count and degree
+                                  sequence checks prior to matcher.
+    :type fast_invariant_check: bool
+    :param logger: Logger for debug messages. Defaults to root logger.
+    :type logger: logging.Logger or None
+
+    :returns: A dict mapping nodes in G1 to nodes in G2 if isomorphic; otherwise None.
+    :rtype: dict[Any, Any] or None
+    """
+    log = logger or logging.getLogger(__name__)
+
+    # 1) Ensure same graph type
+    if type(G1) is not type(G2):
+        log.debug("Graph types differ: %r vs %r", type(G1), type(G2))
+        return None
+
+    # 2) Quick invariants
+    if fast_invariant_check:
+        if G1.number_of_nodes() != G2.number_of_nodes():
+            log.debug(
+                "Node counts differ: %d vs %d",
+                G1.number_of_nodes(),
+                G2.number_of_nodes(),
+            )
+            return None
+        if G1.number_of_edges() != G2.number_of_edges():
+            log.debug(
+                "Edge counts differ: %d vs %d",
+                G1.number_of_edges(),
+                G2.number_of_edges(),
+            )
+            return None
+        degs1 = sorted(d for _, d in G1.degree())
+        degs2 = sorted(d for _, d in G2.degree())
+        if degs1 != degs2:
+            log.debug("Degree sequences differ")
+            return None
+
+    # 3) Default matchers
+    if use_defaults:
+        if node_match is None:
+            node_match = isomorphism.categorical_node_match(
+                ["element", "atom_map", "hcount"], ["*", 0, 0]
+            )
+        if edge_match is None:
+            edge_match = isomorphism.categorical_edge_match("order", 1)
+
+    # 4) Select the correct matcher
+    if isinstance(G1, (nx.MultiGraph, nx.MultiDiGraph)):
+        if isinstance(G1, nx.MultiGraph):
+            Matcher = nx.algorithms.isomorphism.MultiGraphMatcher
+        else:
+            Matcher = nx.algorithms.isomorphism.MultiDiGraphMatcher
+    else:
+        if isinstance(G1, nx.Graph):
+            Matcher = nx.algorithms.isomorphism.GraphMatcher
+        else:
+            Matcher = nx.algorithms.isomorphism.DiGraphMatcher
+
+    matcher = Matcher(G1, G2, node_match=node_match, edge_match=edge_match)
+    if matcher.is_isomorphic():
+        log.debug("Graphs are isomorphic; mapping found")
+        return matcher.mapping
+    else:
+        log.debug("Graphs are not isomorphic")
+        return None
 
 
 def graph_isomorphism(
