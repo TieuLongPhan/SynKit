@@ -1,5 +1,5 @@
 import networkx as nx
-from typing import Tuple, Dict, Any, Optional, List
+from typing import Tuple, Dict, Any, Optional, List, Hashable
 from copy import deepcopy
 
 
@@ -9,26 +9,39 @@ class ITSConstruction:
         G: nx.Graph,
         H: nx.Graph,
         ignore_aromaticity: bool = False,
-        attributes_defaults: Dict[str, Any] = None,
+        attributes_defaults: Optional[Dict[str, Any]] = None,
         balance_its: bool = True,
     ) -> nx.Graph:
         """
-        Creates a Combined Graph Representation (CGR) from two input graphs G and H.
+        Create a Combined Graph Representation (CGR) by merging nodes and edges of G and H.
 
-        This function merges the nodes of G and H, preserving their attributes. Edges are
-        added based on their presence in G and/or H, with special labeling for edges
-        unique to one graph.
+        The resulting ITS graph:
+          - Uses a deep copy of the smaller (or larger, if balance_its is False) input graph.
+          - Initializes a node attribute ``typesGH`` as a tuple of G‑side and H‑side
+            attribute tuples, applying defaults if needed.
+          - Adds edges from both graphs with a two‑tuple ``order`` label.
+          - Computes ``standard_order`` as the difference of the two orders.
 
-        Parameters:
-        - G (nx.Graph): The first input graph.
-        - H (nx.Graph): The second input graph.
-        - ignore_aromaticity (bool): Whether to ignore aromaticity in the graphs.
-        Defaults to False.
-        - attributes_defaults (Dict[str, Any]): A dictionary of default attributes
-        to use for nodes that are not present in either G or H.
-
-        Returns:
-        - nx.Graph: The Combined Graph Representation as a new graph instance.
+        :param G: The first input graph (e.g., reactant).
+        :type G: nx.Graph
+        :param H: The second input graph (e.g., product).
+        :type H: nx.Graph
+        :param ignore_aromaticity: If True, bonds with order differences
+                                   of magnitude < 1 are treated as zero.
+        :type ignore_aromaticity: bool
+        :param attributes_defaults: Mapping of node attribute names to default
+                                    values when missing in G or H.
+        :type attributes_defaults: dict[str, Any] or None
+        :param balance_its: If True, choose the graph with fewer nodes as base;
+                            otherwise choose the one with more nodes.
+        :type balance_its: bool
+        :returns: A new ITS graph annotated with merged node and edge attributes.
+        :rtype: nx.Graph
+        :raises KeyError: If a required attribute is missing during merging.
+        :example:
+        >>> ITS = ITSConstruction.ITSGraph(G, H)
+        >>> isinstance(ITS, nx.Graph)
+        True
         """
         # Create a null graph from a copy of G to preserve attributes
         if (balance_its and len(G.nodes()) <= len(H.nodes())) or (
@@ -65,20 +78,22 @@ class ITSConstruction:
         return ITS
 
     @staticmethod
-    def get_node_attribute(graph: nx.Graph, node: int, attribute: str, default):
+    def get_node_attribute(
+        graph: nx.Graph, node: Hashable, attribute: str, default: Any
+    ) -> Any:
         """
-        Retrieves a specific attribute for a node in a graph, returning a default value if
-        the attribute is missing.
+        Retrieve a node attribute or return a default if missing.
 
-        Parameters:
-        - graph (nx.Graph): The graph from which to retrieve the node attribute.
-        - node (int): The node identifier.
-        - attribute (str): The attribute to retrieve.
-        - default: The default value to return if the attribute is missing.
-
-        Returns:
-        - The value of the node attribute, or the default value if the attribute is
-        missing.
+        :param graph: The graph containing the node.
+        :type graph: nx.Graph
+        :param node: The node identifier.
+        :type node: hashable
+        :param attribute: The name of the attribute to retrieve.
+        :type attribute: str
+        :param default: The value to return if the attribute is not present.
+        :type default: Any
+        :returns: The attribute value or the default.
+        :rtype: Any
         """
         try:
             return graph.nodes[node][attribute]
@@ -90,19 +105,16 @@ class ITSConstruction:
         graph: nx.Graph, node: int, attributes_defaults: Dict[str, Any] = None
     ) -> Tuple:
         """
-        Retrieves node attributes from a graph, assigning default values if they are
-        missing. Allows for an optional dictionary of attribute-default value pairs to
-        specify custom attributes and defaults.
+        Retrieve multiple node attributes, applying defaults where missing.
 
-        Parameters:
-        - graph (nx.Graph): The graph from which to retrieve node attributes.
-        - node (int): The node identifier.
-        - attributes_defaults (Dict[str, Any], optional): A dictionary specifying
-        attributes and their default values.
-
-        Returns:
-        - Tuple: A tuple containing the node attributes in the order specified by
-        attributes_defaults.
+        :param graph: The graph containing the node.
+        :type graph: nx.Graph
+        :param node: The node identifier.
+        :type node: hashable
+        :param attributes_defaults: Mapping of attribute names to default values.
+        :type attributes_defaults: dict[str, Any] or None
+        :returns: Tuple of attribute values in the same order as the keys.
+        :rtype: tuple[Any, ...]
         """
         if attributes_defaults is None:
             attributes_defaults = {
@@ -123,18 +135,22 @@ class ITSConstruction:
         ITS: nx.Graph, G: nx.Graph, H: nx.Graph, ignore_aromaticity: bool = False
     ) -> nx.Graph:
         """
-        Adds edges to the Combined Graph Representation (ITS) based on the edges of G and
-        H, and returns a new graph without modifying the original ITS.
+        Add and label edges in the ITS graph based on presence in G and H.
 
-        Parameters:
-        - ITS (nx.Graph): The initial combined graph representation.
-        - G (nx.Graph): The first input graph.
-        - H (nx.Graph): The second input graph.
-        - ignore_aromaticity (bool): Whether to ignore aromaticity in the graphs. Defaults
-        to False.
+        For each edge (u,v) in G or H:
+          - If present in both, label ``order=(order_G, order_H)``.
+          - If only in one, label the other side’s order as zero.
 
-        Returns:
-        - nx.Graph: The updated graph with added edges.
+        :param ITS: The ITS graph with no edges.
+        :type ITS: nx.Graph
+        :param G: The first original graph.
+        :type G: nx.Graph
+        :param H: The second original graph.
+        :type H: nx.Graph
+        :param ignore_aromaticity: If True, order differences <1 are zeroed later.
+        :type ignore_aromaticity: bool
+        :returns: ITS graph with edges annotated by ``order`` and ``standard_order``.
+        :rtype: nx.Graph
         """
         new_ITS = ITS.copy()
 
@@ -175,21 +191,14 @@ class ITSConstruction:
         graph: nx.Graph, ignore_aromaticity: bool = False
     ) -> nx.Graph:
         """
-        Adds a 'standard_order' attribute to each edge in the provided NetworkX graph.
-        This attribute is calculated based on the existing 'order' attribute, which should
-        be a tuple associated with each edge. The 'standard_order' is computed by
-        subtracting the second element of the 'order' tuple from the first element.
-        If any element of the 'order' tuple is not an integer (e.g., '*'), it is treated
-        as 0 for the purpose of this computation.
+        Compute and attach 'standard_order' to each edge as difference of orders.
 
-        Parameters:
-        - graph (NetworkX.Graph): A NetworkX graph where each edge has an 'order'
-        attribute formatted as a tuple.
-
-        Returns:
-        - NetworkX.Graph: The same graph passed as input, now with a 'standard_order'
-        attribute added to each edge, reflecting the computed standard order derived from
-        the 'order' attribute.
+        :param graph: Graph whose edges have ``order=(o_G, o_H)``.
+        :type graph: nx.Graph
+        :param ignore_aromaticity: If True, absolute differences <1 become zero.
+        :type ignore_aromaticity: bool
+        :returns: Graph with added ``standard_order`` attribute on each edge.
+        :rtype: nx.Graph
         """
 
         new_graph = graph.copy()

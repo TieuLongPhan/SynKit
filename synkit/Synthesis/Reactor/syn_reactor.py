@@ -21,6 +21,7 @@ from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
+from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
 from synkit.Graph import remove_wildcard_nodes, add_wildcard_subgraph_for_unmapped
@@ -49,42 +50,44 @@ log = setup_logging(task_type="synreactor")
 @dataclass
 class SynReactor:
     """
-    A **hardened** and **typed** re-write of the original SynReactor,
-    preserving 100% API compatibility but with:
+    A hardened and typed re-write of the original SynReactor, preserving API compatibility
+    while offering safer, faster, and cleaner behavior.
 
-    - **Safer**  – avoids mutating inputs, validates arguments, logs diagnostics
-    - **Faster** – lazy builds and optional thread‐pool for explicit‐H work
-    - **Cleaner** – exhaustive doc-strings, full typing, single‐purpose helpers
+    :param substrate: The input reaction substrate, as a SMILES string, a raw NetworkX graph,
+                      or a SynGraph.
+    :type substrate: Union[str, nx.Graph, SynGraph]
+    :param template: Reaction template, provided as SMILES/SMARTS, a raw NetworkX graph,
+                     or a SynRule.
+    :type template: Union[str, nx.Graph, SynRule]
+    :param invert: Whether to invert the reaction (predict precursors). Defaults to False.
+    :type invert: bool
+    :param canonicaliser: Optional canonicaliser for intermediate graphs. If None, a default
+                          GraphCanonicaliser is used.
+    :type canonicaliser: Optional[GraphCanonicaliser]
+    :param explicit_h: If True, render all hydrogens explicitly in the reaction‑center SMARTS.
+                       Defaults to True.
+    :type explicit_h: bool
+    :param implicit_temp: If True, treat the input template as implicit-H (forces explicit_h=False).
+                          Defaults to False.
+    :type implicit_temp: bool
+    :param strategy: Matching strategy, one of Strategy.ALL, 'comp', or 'bt'.
+                     Defaults to Strategy.ALL.
+    :type strategy: Strategy or str
+    :param partial: If True, use a partial matching fallback. Defaults to False.
+    :type partial: bool
 
-    Parameters
-    ----------
-    substrate : Union[str, nx.Graph, SynGraph]
-        The input reaction substrate, as SMILES, a raw Graph, or a SynGraph.
-    template : Union[str, nx.Graph, SynRule]
-        Reaction template (SMILES/SMARTS, raw Graph, or SynRule).
-    invert : bool, optional
-        False for forward prediction; True for backward (target→precursors).
-    canonicaliser : Optional[GraphCanonicaliser], optional
-        If provided, used to canonicalise intermediary graphs.
-    explicit_h : bool, default=True
-        If True, render all H’s explicitly in the reaction‐center SMARTS.
-    implicit_temp : bool, default=False
-        If True, treat the input template as an implicit‐H pattern (forces explicit_h=False).
-    strategy : Strategy or str, default=Strategy.ALL
-        Graph‐matching strategy: ALL, COMPONENT (comp), or BACKTRACK (bt).
-
-    Attributes (cached)
-    -------------------
-    graph : SynGraph
-        The substrate, wrapped as a SynGraph.
-    rule : SynRule
-        The reaction template, wrapped as a SynRule.
-    mappings : List[MappingDict]
-        All subgraph‐mapping dicts found (according to `strategy`).
-    its_list : List[nx.Graph]
-        ITS graphs built for each mapping.
-    smarts_list : List[str]
-        SMARTS strings generated from each ITS graph (inverted if `invert`).
+    :ivar _graph: Cached SynGraph for the substrate.
+    :vartype _graph: Optional[SynGraph]
+    :ivar _rule: Cached SynRule for the template.
+    :vartype _rule: Optional[SynRule]
+    :ivar _mappings: Cached list of subgraph‐mapping dicts.
+    :vartype _mappings: Optional[List[MappingDict]]
+    :ivar _its: Cached list of ITS graphs.
+    :vartype _its: Optional[List[nx.Graph]]
+    :ivar _smarts: Cached list of SMARTS strings.
+    :vartype _smarts: Optional[List[str]]
+    :ivar _flag_pattern_has_explicit_H: Internal flag indicating explicit‑H constraints.
+    :vartype _flag_pattern_has_explicit_H: bool
     """
 
     substrate: Union[str, nx.Graph, SynGraph]
@@ -94,6 +97,7 @@ class SynReactor:
     explicit_h: bool = True
     implicit_temp: bool = False
     strategy: Strategy | str = Strategy.ALL
+    partial: bool = False
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -103,8 +107,12 @@ class SynReactor:
     _smarts: List[str] | None = field(init=False, default=None, repr=False)
     _flag_pattern_has_explicit_H: bool = field(init=False, default=False, repr=False)
 
-    def __post_init__(self):
-        # Enforce consistency: explicit_h only valid when implicit_temp is True
+    def __post_init__(self) -> None:
+        """
+        Validate and enforce consistency of `explicit_h` and `implicit_temp`.
+
+        :raises ValueError: If `explicit_h` is True while `implicit_temp` is False.
+        """
         if self.implicit_temp and self.explicit_h:
             raise ValueError(
                 "`explicit_h` cannot be True when `implicit_temp` is False."
@@ -205,13 +213,23 @@ class SynReactor:
                 pattern_graph = h_to_implicit(pattern_graph)
             if self.implicit_temp:
                 pattern_graph = remove_wildcard_nodes(pattern_graph)
-            self._mappings = SubgraphSearchEngine.find_subgraph_mappings(
-                host=self.graph.raw,
-                pattern=pattern_graph,
-                node_attrs=["element", "charge"],
-                edge_attrs=["order"],
-                strategy=Strategy.from_string(self.strategy),
-            )
+            if self.partial:
+                matcher = PartialMatcher(
+                    host=self.graph.raw,
+                    pattern=pattern_graph,
+                    node_attrs=["element", "charge"],
+                    edge_attrs=["order"],
+                    strategy=Strategy.from_string(self.strategy),
+                )
+                self._mappings = matcher.get_mappings()
+            else:
+                self._mappings = SubgraphSearchEngine.find_subgraph_mappings(
+                    host=self.graph.raw,
+                    pattern=pattern_graph,
+                    node_attrs=["element", "charge"],
+                    edge_attrs=["order"],
+                    strategy=Strategy.from_string(self.strategy),
+                )
             log.info("%d mapping(s) discovered", len(self._mappings))
         return self._mappings
 
