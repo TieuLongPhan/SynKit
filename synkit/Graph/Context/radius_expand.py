@@ -8,9 +8,8 @@ from synkit.Graph.ITS.its_decompose import get_rc
 
 
 class RadiusExpand:
-    """
-    A utility class for extracting and expanding reaction contexts
-    from chemical reaction graphs.
+    """A utility class for extracting and expanding reaction contexts from
+    chemical reaction graphs.
 
     This class provides methods to:
     - Identify reaction center nodes based on unequal edge orders.
@@ -23,17 +22,17 @@ class RadiusExpand:
     """
 
     def __init__(self) -> None:
-        """
-        Initializes an instance of the RadiusExpand class.
+        """Initializes an instance of the RadiusExpand class.
 
-        This class does not maintain any instance-specific state and uses only static and class methods.
+        This class does not maintain any instance-specific state and
+        uses only static and class methods.
         """
         pass
 
     @staticmethod
     def find_unequal_order_edges(G: nx.Graph) -> List[int]:
-        """
-        Identifies reaction center nodes in a graph based on the presence of unequal order edges.
+        """Identifies reaction center nodes in a graph based on the presence of
+        unequal order edges.
 
         Parameters:
         - G (nx.Graph): Graph to analyze for reaction centers.
@@ -56,8 +55,8 @@ class RadiusExpand:
     def find_nearest_neighbors(
         G: nx.Graph, center_nodes: List[int], n_knn: int = 1
     ) -> Set[int]:
-        """
-        Finds the n-level nearest neighbors around the specified center nodes in a graph.
+        """Finds the n-level nearest neighbors around the specified center
+        nodes in a graph.
 
         Parameters:
         - G (nx.Graph): The graph in which to search for neighboring nodes.
@@ -78,8 +77,8 @@ class RadiusExpand:
 
     @staticmethod
     def extract_subgraph(G: nx.Graph, node_indices: List[int]) -> nx.Graph:
-        """
-        Extracts a subgraph from the original graph containing the specified node indices.
+        """Extracts a subgraph from the original graph containing the specified
+        node indices.
 
         Parameters:
         - G (nx.Graph): The original graph.
@@ -93,10 +92,9 @@ class RadiusExpand:
 
     @staticmethod
     def extract_k(its: nx.Graph, n_knn: int = 0) -> Tuple[nx.Graph, Any]:
-        """
-        Constructs the context subgraph (K graph) from an ITS graph
-        based on reaction centers, and computes the longest extension path
-        from these centers constrained by 'standard_order' edges.
+        """Constructs the context subgraph (K graph) from an ITS graph based on
+        reaction centers, and computes the longest extension path from these
+        centers constrained by 'standard_order' edges.
 
         Parameters:
         - its (nx.Graph): The ITS graph representing the reaction network.
@@ -127,9 +125,8 @@ class RadiusExpand:
         context_key: str = "K",
         n_knn: int = 0,
     ) -> Dict[str, Any]:
-        """
-        Extracts the reaction context for a single reaction dictionary by computing
-        both the context subgraph and the longest extension path.
+        """Extracts the reaction context for a single reaction dictionary by
+        computing both the context subgraph and the longest extension path.
 
         Parameters:
         - data (Dict[str, Any]): Reaction data containing at least an ITS graph.
@@ -143,7 +140,6 @@ class RadiusExpand:
         Returns:
         - Dict[str, Any]: The updated reaction data dictionary including
         the extracted context subgraph under the key specified by context_key.
-
         """
         context_data: Dict[str, Any] = copy.copy(data)
         its = context_data[its_key]
@@ -161,8 +157,8 @@ class RadiusExpand:
         verbose: int = 0,
         n_knn: int = 0,
     ) -> List[Dict[str, Any]]:
-        """
-        Performs parallel extraction of reaction contexts for multiple reaction dictionaries.
+        """Performs parallel extraction of reaction contexts for multiple
+        reaction dictionaries.
 
         Parameters:
         - data (List[Dict[str, Any]]): A list of reaction data dictionaries, each containing an ITS graph.
@@ -186,8 +182,8 @@ class RadiusExpand:
 
     @staticmethod
     def remove_normal_edges(graph: nx.Graph, property_key: str) -> nx.Graph:
-        """
-        Removes edges from a graph where the specified edge attribute has a value of 0.
+        """Removes edges from a graph where the specified edge attribute has a
+        value of 0.
 
         Parameters:
         - graph (nx.Graph): The input graph to modify.
@@ -208,9 +204,9 @@ class RadiusExpand:
 
     @staticmethod
     def longest_radius_extension(G: nx.Graph, rc_nodes: List[int]) -> List[int]:
-        """
-        Computes the longest unique extension path in the graph starting from the given reaction center nodes,
-        constrained by traversing only those edges where the 'standard_order' attribute equals 0.
+        """Computes the longest unique extension path in the graph starting
+        from the given reaction center nodes, constrained by traversing only
+        those edges where the 'standard_order' attribute equals 0.
 
         This method uses a depth-first search (DFS) strategy to explore all possible
         unique paths and returns the longest one.

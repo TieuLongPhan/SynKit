@@ -1,11 +1,11 @@
 import unittest
-from synkit.Chem.Reaction.cleanning import Cleanning
+from synkit.Chem.Reaction.cleaning import Cleaning
 
 
 class TestCleaning(unittest.TestCase):
 
     def setUp(self):
-        self.cleaner = Cleanning()
+        self.cleaner = Cleaning()
 
     def test_remove_duplicates(self):
         input_smiles = ["CC>>CC", "CC>>CC"]

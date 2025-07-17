@@ -9,9 +9,8 @@ logger = setup_logging()
 def implicit_rule(
     rsmi: Union[str, List[str]], disconnected: bool = True, balance_its: bool = False
 ) -> Union[Any, List[Any]]:
-    """
-    Construct reaction-center objects from reaction SMILES by applying implicit‐H rules
-    and ITS graph construction.
+    """Construct reaction-center objects from reaction SMILES by applying
+    implicit‐H rules and ITS graph construction.
 
     Parameters
     ----------

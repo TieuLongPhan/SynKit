@@ -6,9 +6,10 @@ EDGE_REGEX = re.compile(r'edge \[ source (\d+) target (\d+) label "(.+?)" \]')
 
 
 def find_block(lines, keyword):
-    """
-    Finds the start and end indices of a block (e.g., "left [", "context [", etc.)
-    in the given lines of GML. Returns (start_idx, end_idx) or (None, None) if not found.
+    """Finds the start and end indices of a block (e.g., "left [", "context [",
+    etc.) in the given lines of GML.
+
+    Returns (start_idx, end_idx) or (None, None) if not found.
     """
     start_idx = None
     depth = 0
@@ -29,8 +30,8 @@ def find_block(lines, keyword):
 
 
 def get_nodes_from_edges(block_lines):
-    """
-    Extract node IDs from edges in the given block lines.
+    """Extract node IDs from edges in the given block lines.
+
     Returns a set of node IDs found in the edges.
     """
     node_set = set()
@@ -43,8 +44,8 @@ def get_nodes_from_edges(block_lines):
 
 
 def parse_context(context_lines, node_regex=None, edge_regex=None):
-    """
-    Parse the context lines to identify nodes and edges.
+    """Parse the context lines to identify nodes and edges.
+
     Returns two structures:
     - context_nodes: {node_id: label}
     - context_edges: list of (source, target, label)
@@ -67,9 +68,10 @@ def parse_context(context_lines, node_regex=None, edge_regex=None):
 
 
 def filter_context(context_lines, relevant_nodes):
-    """
-    Given the context lines and a set of relevant nodes, remove hydrogen nodes
-    not in relevant_nodes and all edges connected to them. Returns filtered lines.
+    """Given the context lines and a set of relevant nodes, remove hydrogen
+    nodes not in relevant_nodes and all edges connected to them.
+
+    Returns filtered lines.
     """
     context_nodes, context_edges = parse_context(context_lines)
 
@@ -105,11 +107,11 @@ def filter_context(context_lines, relevant_nodes):
 
 
 def strip_context(gml_text: str, remove_all: bool = True) -> str:
-    """
-    Filters or clears the 'context' section of GML-like content based on the remove_all flag.
-    If remove_all is True, all edges in the 'context' section are removed.
-    If False, it removes hydrogen nodes that do not appear in both 'left' and 'right' sections,
-    along with their edges, while preserving the original structure and formatting of the GML.
+    """Filters or clears the 'context' section of GML-like content based on the
+    remove_all flag. If remove_all is True, all edges in the 'context' section
+    are removed. If False, it removes hydrogen nodes that do not appear in both
+    'left' and 'right' sections, along with their edges, while preserving the
+    original structure and formatting of the GML.
 
     Parameters:
     - gml_text (str): GML-like content describing a chemical reaction rule.
@@ -173,8 +175,8 @@ def strip_context(gml_text: str, remove_all: bool = True) -> str:
 
 
 def _increment_gml_ids(gml_content: str) -> str:
-    """
-    Increment the numerical IDs within a GML content string if node id 0 exists.
+    """Increment the numerical IDs within a GML content string if node id 0
+    exists.
 
     Parameters:
     - gml_content (str): The GML content as a string.

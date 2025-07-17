@@ -15,11 +15,10 @@ def find_wc_graph_isomorphism(
     edge_match: Optional[Callable[[Dict[str, Any], Dict[str, Any]], bool]] = None,
     logger: Optional[logging.Logger] = None,
 ) -> Optional[Dict[Any, Any]]:
-    """
-    Wildcard‑aware sub‑graph isomorphism.  Returns a mapping from every node in
-    the **smaller** graph to a node in the **larger** graph, allowing any node
-    whose ``element == "*"`` to match *any* concrete node (or group of nodes)
-    on the host side.
+    """Wildcard‑aware sub‑graph isomorphism.  Returns a mapping from every node
+    in the **smaller** graph to a node in the **larger** graph, allowing any
+    node whose ``element == "*"`` to match *any* concrete node (or group of
+    nodes) on the host side.
 
     :param G1: First input graph.
     :type  G1: nx.Graph | nx.DiGraph | nx.MultiGraph | nx.MultiDiGraph
@@ -87,8 +86,7 @@ def fuse_wc_graphs(
     wildcard: str = "*",
     logger: Optional[logging.Logger] = None,
 ) -> GraphType:
-    """
-    Fuse a wildcard‑pattern graph *G1* into the concrete host *G2*.
+    """Fuse a wildcard‑pattern graph *G1* into the concrete host *G2*.
 
     The result lives **entirely in G2’s node‑ID space** and contains:
 

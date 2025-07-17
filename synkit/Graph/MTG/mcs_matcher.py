@@ -183,7 +183,8 @@ class MCSMatcher:
     # Properties and dunders
     # ------------------------------------------------------------------
     def get_mappings(self) -> List[Dict[int, int]]:
-        """Return the cached mapping list (empty if `find_*` not yet called)."""
+        """Return the cached mapping list (empty if `find_*` not yet
+        called)."""
         return self._mappings.copy()
 
     @property

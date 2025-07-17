@@ -1,25 +1,25 @@
 from synkit.IO import rsmi_to_its, smiles_to_graph
 from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
-from synkit.Chem.Reaction.rsmi_utils import remove_explicit_H_from_rsmi
+from synkit.Chem.utils import remove_explicit_H_from_rsmi
 
 
 class PartialEngine:
-    """
-    Partial Reaction Learning Engine that applies a single‐direction
+    """Partial Reaction Learning Engine that applies a single‐direction
     (forward or backward) template transformation, injects radical wildcards,
     and returns a list of intermediate ITS strings.
 
-    :param smi: A reaction SMARTS (rsmi) string in the form "Reactants>>Products" or
-                a simple SMILES string when used for one‐sided synthesis.
+    :param smi: A reaction SMARTS (rsmi) string in the form
+        "Reactants>>Products" or a simple SMILES string when used for
+        one‐sided synthesis.
     :type smi: str
-    :param template: A reaction template SMARTS string, which may include explicit H.
+    :param template: A reaction template SMARTS string, which may
+        include explicit H.
     :type template: str
     """
 
     def __init__(self, smi: str, template: str) -> None:
-        """
-        Initialize the PartialEngine.
+        """Initialize the PartialEngine.
 
         - Removes explicit hydrogens from the given template SMARTS.
         - Parses the cleaned template into an internal template structure (ITS).
@@ -41,8 +41,7 @@ class PartialEngine:
         self.host = smiles_to_graph(smi)
 
     def fit(self, invert: bool = False) -> list[str]:
-        """
-        Apply the template in one direction to generate radical‐wildcarded
+        """Apply the template in one direction to generate radical‐wildcarded
         reaction SMARTS (ITS).
 
         - Instantiates a SynReactor on the host graph and ITS.

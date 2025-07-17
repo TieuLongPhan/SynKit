@@ -5,24 +5,23 @@ from synkit.Rule.Compose.rule_mapping import RuleMapping
 
 
 class SeqComp:
-    """
-    A class for generating pairwise mappings between sequential chemical reaction rules.
+    """A class for generating pairwise mappings between sequential chemical
+    reaction rules.
 
-    This class takes a list of reaction SMARTS strings, converts them to their corresponding
-    GML representations, composes candidate reaction rules for each consecutive pair, and computes
-    a mapping between the rules using a rule mapping algorithm.
+    This class takes a list of reaction SMARTS strings, converts them to
+    their corresponding GML representations, composes candidate reaction
+    rules for each consecutive pair, and computes a mapping between the
+    rules using a rule mapping algorithm.
     """
 
     def __init__(self) -> None:
-        """
-        Initialize an instance of the SeqComp class.
-        """
+        """Initialize an instance of the SeqComp class."""
         pass
 
     @staticmethod
     def sequence_map(smarts: List[str]) -> Dict[str, Optional[dict]]:
-        """
-        Generate pairwise mapping dictionaries between consecutive reaction SMARTS strings.
+        """Generate pairwise mapping dictionaries between consecutive reaction
+        SMARTS strings.
 
         This function processes a list of reaction SMARTS strings by:
           1. Converting each SMARTS string to its GML representation.

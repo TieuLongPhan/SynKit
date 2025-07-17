@@ -50,7 +50,8 @@ def node_constraint(
     nodes1: Iterable[Node],
     nodes2: Iterable[Node],
 ) -> Dict[NodeId, List[NodeId]]:
-    """Compute candidate node mappings based on element and groupoid charge rule.
+    """Compute candidate node mappings based on element and groupoid charge
+    rule.
 
     For each node v1 in nodes1 and v2 in nodes2, v2 is a candidate if:
       1. v1.attrs['element'] == v2.attrs['element'], and
@@ -169,9 +170,9 @@ def _edge_constraint_vf2(
     edges2: Iterable[Edge],
     node_mapping: Optional[Mapping[NodeId, List[NodeId]]] = None,
 ) -> MappingList:
-    """
-    VF2‐style routine, fully in Python (no NetworkX), seeded like VF3 but
+    """VF2‐style routine, fully in Python (no NetworkX), seeded like VF3 but
     relaxed so it returns the same maximal‐common‐subgraph mappings.
+
     The returned dicts will always have their keys sorted ascending.
     """
     # --- build adjacency lists with valid 'order' tuples ---

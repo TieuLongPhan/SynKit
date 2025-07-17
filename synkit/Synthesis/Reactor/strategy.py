@@ -3,13 +3,12 @@ from typing import Union
 
 
 class Strategy(str, Enum):
-    """
-    Strategy for sub-graph matching/application:
+    """Strategy for sub-graph matching/application:
 
-      - ALL:       classic VF2 on the whole graph
-      - COMPONENT: component-aware only (no cross-CC backtracking)
-      - BACKTRACK: component-aware with backtracking across CCs
-      - PARTIAL:   partial matching (mcs)
+    - ALL:       classic VF2 on the whole graph
+    - COMPONENT: component-aware only (no cross-CC backtracking)
+    - BACKTRACK: component-aware with backtracking across CCs
+    - PARTIAL:   partial matching (mcs)
     """
 
     ALL = "all"
@@ -19,8 +18,7 @@ class Strategy(str, Enum):
 
     @classmethod
     def from_string(cls, value: Union[str, "Strategy"]) -> "Strategy":
-        """
-        Convert a string or Strategy to a Strategy enum.
+        """Convert a string or Strategy to a Strategy enum.
 
         Parameters
         ----------

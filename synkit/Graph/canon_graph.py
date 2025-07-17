@@ -100,7 +100,8 @@ def _default_edge_key(u: NodeId, v: NodeId, data: EdgeData) -> Tuple[Any, ...]:
 
 
 def _digest(text: str) -> Digest:
-    """First 32 hex chars of SHA‑256 – short *but* collision‑safe for up to 2¹²⁸ graphs."""
+    """First 32 hex chars of SHA‑256 – short *but* collision‑safe for up to
+    2¹²⁸ graphs."""
     return hashlib.sha256(text.encode()).hexdigest()[:32]
 
 
@@ -110,8 +111,7 @@ def _digest(text: str) -> Digest:
 
 
 class GraphCanonicaliser:
-    """
-    Factory that turns arbitrary ``networkx.Graph`` objects into their
+    """Factory that turns arbitrary ``networkx.Graph`` objects into their
     *canonical* twin plus a **stable 32‑hex digest**.
 
     Parameters
@@ -169,8 +169,7 @@ class GraphCanonicaliser:
     # High‑level helpers                                                 #
     # ------------------------------------------------------------------ #
     def canonicalise_graph(self, graph: nx.Graph) -> "CanonicalGraph":
-        """
-        Return a :class:`CanonicalGraph` wrapper around *graph*.
+        """Return a :class:`CanonicalGraph` wrapper around *graph*.
 
         The wrapper exposes:
 
@@ -183,8 +182,7 @@ class GraphCanonicaliser:
         self,
         graphs: Iterable[nx.Graph],
     ) -> Tuple["CanonicalGraph", ...]:
-        """
-        Bulk helper that returns *all* wrappers **sorted by hash**.
+        """Bulk helper that returns *all* wrappers **sorted by hash**.
 
         Useful when you want fast set comparison but need the canonical
         graphs as well:
@@ -203,8 +201,7 @@ class GraphCanonicaliser:
     # Digest / core methods                                              #
     # ------------------------------------------------------------------ #
     def canonical_signature(self, graph: nx.Graph) -> Digest:
-        """
-        Return the *hash of the canonical form* of *graph*.
+        """Return the *hash of the canonical form* of *graph*.
 
         Equal digests ⇒ graphs are guaranteed isomorphic **under the
         chosen back‑end and keys**.
@@ -254,8 +251,7 @@ class GraphCanonicaliser:
         return G2
 
     def _canon_wl(self, g: nx.Graph) -> nx.Graph:
-        """
-        Weisfeiler–Lehman colour-refinement back-end (pure Python).
+        """Weisfeiler–Lehman colour-refinement back-end (pure Python).
 
         Seeds each node’s initial colour by the tuple of attributes
         in `self._wl_node_attrs` (e.g. ["element","charge","hcount"]),
@@ -352,8 +348,7 @@ class GraphCanonicaliser:
 # Value wrapper (unchanged surface – richer docs)
 # =============================================================================
 class CanonicalGraph:
-    """
-    *Value object* tying together:
+    """*Value object* tying together:
 
     * the **original** NetworkX graph (mutable, user‑supplied);
     * its **canonical twin** (immutable copy, nodes relabelled 1…N);
@@ -428,9 +423,9 @@ class CanonicalGraph:
 
 
 class CanonicalRule:
-    """
-    Value object that wraps a graph transformation rule in GML string form,
-    providing a canonicalised GML output and a stable 32-character SHA-256 hash.
+    """Value object that wraps a graph transformation rule in GML string form,
+    providing a canonicalised GML output and a stable 32-character SHA-256
+    hash.
 
     Internally, the GML rule is parsed into a NetworkX graph via `gml_to_its`,
     canonicalised using a `GraphCanonicaliser`, and re-serialized back to GML
@@ -458,8 +453,7 @@ class CanonicalRule:
         rule: str,
         canon: GraphCanonicaliser = GraphCanonicaliser(),
     ) -> None:
-        """
-        Instantiate a CanonicalRule.
+        """Instantiate a CanonicalRule.
 
         Parameters
         ----------
@@ -523,9 +517,7 @@ class CanonicalRule:
         return self._canonical_hash
 
     def help(self) -> None:
-        """
-        Print original and canonical rule texts and underlying graphs.
-        """
+        """Print original and canonical rule texts and underlying graphs."""
         print("Original GML rule:")
         print(self._original_rule)
         print("\nCanonical GML rule:")

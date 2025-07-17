@@ -11,8 +11,9 @@ class RuleMapping:
     def enumerate_all_unique_mappings(
         child: nx.Graph, parent: nx.Graph
     ) -> List[Dict[Any, Any]]:
-        """
-        Generate all unique mappings (as dictionaries) from the child graph to the parent graph.
+        """Generate all unique mappings (as dictionaries) from the child graph
+        to the parent graph.
+
         A mapping is valid if:
         - Every node from the child graph is assigned exactly one parent node.
         - The parent's node has the same 'element' attribute as the child node.
@@ -66,9 +67,9 @@ class RuleMapping:
     def standardize_order(
         order_tuple: Tuple[float, ...],
     ) -> Optional[Tuple[float, ...]]:
-        """
-        Standardizes an order tuple by adding 1 to every element repeatedly until no element is negative.
-        If the resulting tuple becomes all zeros, returns None, which indicates that the edge should be dropped.
+        """Standardizes an order tuple by adding 1 to every element repeatedly
+        until no element is negative. If the resulting tuple becomes all zeros,
+        returns None, which indicates that the edge should be dropped.
 
         For example:
           (-1.0, 0.0) --> add 1 gives (0.0, 1.0)
@@ -90,8 +91,8 @@ class RuleMapping:
 
     @staticmethod
     def keep_largest_component(graph: nx.Graph) -> nx.Graph:
-        """
-        Given an undirected graph, returns the subgraph corresponding to the largest connected component.
+        """Given an undirected graph, returns the subgraph corresponding to the
+        largest connected component.
 
         Parameters:
         - graph (nx.Graph): The input graph from which the largest component is extracted.
@@ -211,9 +212,9 @@ class RuleMapping:
         node_label_default: List[str] = ["*"],
         edge_attribute: str = "standard_order",
     ) -> Tuple[bool, Optional[Dict[Any, Any]]]:
-        """
-        Check whether the child and parent graphs are isomorphic using specified node and edge match criteria.
-        If they are isomorphic, return the mapping from child to parent.
+        """Check whether the child and parent graphs are isomorphic using
+        specified node and edge match criteria. If they are isomorphic, return
+        the mapping from child to parent.
 
         Parameters:
         - child (nx.Graph): The child graph to align.
@@ -244,8 +245,8 @@ class RuleMapping:
         mapping_child1_to_parent: Dict[Any, Any],
         mapping_child2_to_parent: Dict[Any, Any],
     ) -> Dict[Any, Optional[Any]]:
-        """
-        Build a mapping from Child1 to Child2 using each child's mapping to a common Parent.
+        """Build a mapping from Child1 to Child2 using each child's mapping to
+        a common Parent.
 
         If a Parent node in Child1's mapping is not in Child2's inverted mapping,
         that Child1 node will map to None.
@@ -277,8 +278,8 @@ class RuleMapping:
         return mapping_child1_to_child2
 
     def fit(self, rule_1: str, rule_2: str, comp_rule: str) -> Optional[Dict[Any, Any]]:
-        """
-        Demonstrate an alignment-based composition workflow using the class methods.
+        """Demonstrate an alignment-based composition workflow using the class
+        methods.
 
         1. Convert each GML-based rule into an internal graph (via gml_to_its).
         2. Enumerate all unique mappings from rule_2 to comp_rule.

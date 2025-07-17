@@ -26,8 +26,7 @@ Digest = str
 
 
 def _digest(text: str) -> Digest:
-    """
-    Compute a 32-character hexadecimal SHA-256 digest of the input string.
+    """Compute a 32-character hexadecimal SHA-256 digest of the input string.
 
     Parameters
     ----------
@@ -43,8 +42,7 @@ def _digest(text: str) -> Digest:
 
 
 def ring_canonical_graph(g: nx.Graph) -> Tuple[nx.Graph, Digest]:
-    """
-    Generate a relabelled graph based on SSSR membership hierarchy and
+    """Generate a relabelled graph based on SSSR membership hierarchy and
     compute its canonical signature.
 
     Nodes are ordered by:
@@ -91,8 +89,8 @@ def ring_canonical_graph(g: nx.Graph) -> Tuple[nx.Graph, Digest]:
 
 
 def eigen_canonical_signature(g: nx.Graph) -> Digest:
-    """
-    Compute a graph signature from sorted eigenvalues of its weighted adjacency matrix.
+    """Compute a graph signature from sorted eigenvalues of its weighted
+    adjacency matrix.
 
     Edge weights are taken from the 'order' attribute (default=1).
     The adjacency matrix is symmetric for undirected graphs.
@@ -126,8 +124,7 @@ def eigen_canonical_signature(g: nx.Graph) -> Digest:
 
 
 def pgraph_signature(g: nx.Graph, p: int = 4) -> Digest:
-    """
-    Generate a signature by hashing all simple paths up to length p.
+    """Generate a signature by hashing all simple paths up to length p.
 
     Each path is represented as a hyphen-separated sequence of node 'element'
     attributes (or '?' if missing), and the sorted list of these sequences
@@ -160,8 +157,7 @@ def pgraph_signature(g: nx.Graph, p: int = 4) -> Digest:
 def canon_morgan(
     g: nx.Graph, morgan_radius: int = 2, node_attributes: List[str] = None
 ) -> Tuple[nx.Graph, Digest]:
-    """
-    Prime-based neighbourhood refinement analogous to Morgan fingerprinting.
+    """Prime-based neighbourhood refinement analogous to Morgan fingerprinting.
 
     Each node is initially assigned a unique prime number; optionally,
     specified node attributes are incorporated into the seed label.
@@ -236,8 +232,9 @@ def canon_morgan(
 # Utility to normalize and hash a node label with its neighbors and edge orders
 # Utility to normalize and hash a node label with its neighbors and edge orders
 def _hash_labels(node_label: int, neigh_info: List[Tuple[int, Any]]) -> int:
-    """
-    Combine a node's label with sorted neighbor labels and edge orders into a new hash.
+    """Combine a node's label with sorted neighbor labels and edge orders into
+    a new hash.
+
     neigh_info is a list of tuples (neighbor_label, edge_order).
     """
     data = [str(node_label)]

@@ -9,14 +9,13 @@ configure_warnings_and_logs(True, True)
 
 
 class FPCalculator:
-    """
-    Calculate fingerprint vectors for chemical reactions represented by SMILES strings.
+    """Calculate fingerprint vectors for chemical reactions represented by
+    SMILES strings.
 
     :cvar fps: Shared fingerprint engine instance.
     :vartype fps: TransformationFP
     :cvar VALID_FP_TYPES: Supported fingerprint type identifiers.
     :vartype VALID_FP_TYPES: List[str]
-
     :param n_jobs: Number of parallel jobs to use for batch processing.
     :type n_jobs: int
     :param verbose: Verbosity level for parallel execution.
@@ -43,10 +42,10 @@ class FPCalculator:
     ]
 
     def __init__(self, n_jobs: int = 1, verbose: int = 0) -> None:
-        """
-        Initialize the FPCalculator.
+        """Initialize the FPCalculator.
 
-        :param n_jobs: Number of parallel jobs to use for fingerprint computation.
+        :param n_jobs: Number of parallel jobs to use for fingerprint
+            computation.
         :type n_jobs: int
         :param verbose: Verbosity level for the parallel processing.
         :type verbose: int
@@ -55,8 +54,7 @@ class FPCalculator:
         self.verbose = verbose
 
     def _validate_fp_type(self, fp_type: str) -> None:
-        """
-        Ensure the requested fingerprint type is supported.
+        """Ensure the requested fingerprint type is supported.
 
         :param fp_type: Fingerprint type identifier to validate.
         :type fp_type: str
@@ -76,8 +74,8 @@ class FPCalculator:
         fp_type: str = "ecfp4",
         absolute: bool = True,
     ) -> Dict[str, Any]:
-        """
-        Compute a fingerprint for a single reaction SMILES entry and add it to the dict.
+        """Compute a fingerprint for a single reaction SMILES entry and add it
+        to the dict.
 
         :param data_dict: Dictionary containing reaction data.
         :type data_dict: dict
@@ -110,8 +108,8 @@ class FPCalculator:
         fp_type: str = "ecfp4",
         absolute: bool = True,
     ) -> List[Dict[str, Any]]:
-        """
-        Compute fingerprints for a batch of reaction dictionaries in parallel.
+        """Compute fingerprints for a batch of reaction dictionaries in
+        parallel.
 
         :param data_dicts: List of dictionaries, each containing a reaction SMILES.
         :type data_dicts: list of dict
@@ -138,8 +136,7 @@ class FPCalculator:
         return results
 
     def __str__(self) -> str:
-        """
-        Short string summarizing the calculator configuration.
+        """Short string summarizing the calculator configuration.
 
         :returns: A summary of n_jobs and verbosity.
         :rtype: str
@@ -147,8 +144,7 @@ class FPCalculator:
         return f"<FPCalculator n_jobs={self.n_jobs} verbose={self.verbose}>"
 
     def help(self) -> None:
-        """
-        Print details about supported fingerprint types and usage.
+        """Print details about supported fingerprint types and usage.
 
         :returns: None
         :rtype: NoneType

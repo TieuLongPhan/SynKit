@@ -7,8 +7,8 @@ from rdkit import rdBase, RDLogger
 def setup_logging(
     log_level: str = "INFO", log_filename: str = None, task_type: str = None
 ) -> logging.Logger:
-    """
-    Configures logging to either the console or a file, based on provided parameters.
+    """Configures logging to either the console or a file, based on provided
+    parameters.
 
     :param log_level: Logging level to set. Defaults to 'INFO'.
                       Options: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'.
@@ -47,19 +47,17 @@ def setup_logging(
 def configure_warnings_and_logs(
     ignore_warnings: bool = False, disable_rdkit_logs: bool = False
 ) -> None:
-    """
-    Configures Python warnings and RDKit log behavior based on input flags.
+    """Configures Python warnings and RDKit log behavior based on input flags.
 
-    :param ignore_warnings: Whether to suppress all Python warnings. Default is False.
+    :param ignore_warnings: Whether to suppress all Python warnings.
+        Default is False.
     :type ignore_warnings: bool
-    :param disable_rdkit_logs: Whether to disable RDKit error and warning logs. Default is False.
+    :param disable_rdkit_logs: Whether to disable RDKit error and
+        warning logs. Default is False.
     :type disable_rdkit_logs: bool
-
-    :returns: None
-
-    :usage:
-        Use this function to control verbosity (e.g. in production or testing), but use with
-        caution during development to avoid missing critical issues.
+    :returns: None :usage: Use this function to control verbosity (e.g.
+        in production or testing), but use with caution during
+        development to avoid missing critical issues.
     """
     if ignore_warnings:
         warnings.filterwarnings("ignore")

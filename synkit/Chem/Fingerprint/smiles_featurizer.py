@@ -28,8 +28,7 @@ from rdkit.Chem.Pharm2D import Gobbi_Pharm2D, Generate
 
 
 class SmilesFeaturizer:
-    """
-    Convert SMILES strings into chemical fingerprint vectors.
+    """Convert SMILES strings into chemical fingerprint vectors.
 
     :cvar None: This class only provides static/​class methods and holds no state.
 
@@ -43,21 +42,19 @@ class SmilesFeaturizer:
       - 2D Pharmacophore
 
     Use `featurize_smiles` for one‑line access.
-
     """
 
     def __init__(self) -> None:
-        """
-        Initialize SmilesFeaturizer.
+        """Initialize SmilesFeaturizer.
 
-        This class has no instance state; all methods are static or class‑level.
+        This class has no instance state; all methods are static or
+        class‑level.
         """
         pass
 
     @staticmethod
     def smiles_to_mol(smiles: str) -> Chem.Mol:
-        """
-        Convert a SMILES string to an RDKit Mol object.
+        """Convert a SMILES string to an RDKit Mol object.
 
         :param smiles: The SMILES string to convert.
         :type smiles: str
@@ -72,8 +69,7 @@ class SmilesFeaturizer:
 
     @staticmethod
     def get_maccs_keys(mol: Chem.Mol) -> Any:
-        """
-        Generate the MACCS keys fingerprint for a molecule.
+        """Generate the MACCS keys fingerprint for a molecule.
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
@@ -84,8 +80,7 @@ class SmilesFeaturizer:
 
     @staticmethod
     def get_avalon_fp(mol: Chem.Mol, nBits: int = 1024) -> Any:
-        """
-        Generate the Avalon fingerprint for a molecule.
+        """Generate the Avalon fingerprint for a molecule.
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
@@ -100,8 +95,7 @@ class SmilesFeaturizer:
     def get_ecfp(
         mol: Chem.Mol, radius: int, nBits: int = 2048, useFeatures: bool = False
     ) -> Any:
-        """
-        Generate a Morgan fingerprint (ECFP or FCFP) for a molecule.
+        """Generate a Morgan fingerprint (ECFP or FCFP) for a molecule.
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
@@ -109,7 +103,8 @@ class SmilesFeaturizer:
         :type radius: int
         :param nBits: Length of the fingerprint vector.
         :type nBits: int
-        :param useFeatures: If True, generate a Feature‑Class fingerprint (FCFP).
+        :param useFeatures: If True, generate a Feature‑Class
+            fingerprint (FCFP).
         :type useFeatures: bool
         :returns: Morgan fingerprint bit vector.
         :rtype: ExplicitBitVect
@@ -122,8 +117,7 @@ class SmilesFeaturizer:
     def get_rdk_fp(
         mol: Chem.Mol, maxPath: int, fpSize: int = 2048, nBitsPerHash: int = 2
     ) -> Any:
-        """
-        Generate an RDKit topological fingerprint for a molecule.
+        """Generate an RDKit topological fingerprint for a molecule.
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
@@ -142,8 +136,7 @@ class SmilesFeaturizer:
 
     @staticmethod
     def mol_to_ap(mol: Chem.Mol) -> Any:
-        """
-        Generate an Atom Pair fingerprint for a molecule.
+        """Generate an Atom Pair fingerprint for a molecule.
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
@@ -154,8 +147,7 @@ class SmilesFeaturizer:
 
     @staticmethod
     def mol_to_torsion(mol: Chem.Mol) -> Any:
-        """
-        Generate a Topological Torsion fingerprint for a molecule.
+        """Generate a Topological Torsion fingerprint for a molecule.
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
@@ -166,8 +158,7 @@ class SmilesFeaturizer:
 
     @staticmethod
     def mol_to_pharm2d(mol: Chem.Mol) -> Any:
-        """
-        Generate a 2D Pharmacophore fingerprint for a molecule.
+        """Generate a 2D Pharmacophore fingerprint for a molecule.
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
@@ -184,9 +175,8 @@ class SmilesFeaturizer:
         convert_to_array: bool = True,
         **kwargs: Any,
     ) -> Any:
-        """
-        Featurize a SMILES string into a chosen fingerprint, optionally converting to
-        a NumPy array.
+        """Featurize a SMILES string into a chosen fingerprint, optionally
+        converting to a NumPy array.
 
         :param smiles: The SMILES string to featurize.
         :type smiles: str
@@ -248,8 +238,7 @@ class SmilesFeaturizer:
         return fp
 
     def __str__(self) -> str:
-        """
-        Short description of the featurizer.
+        """Short description of the featurizer.
 
         :returns: Class name.
         :rtype: str
@@ -257,8 +246,7 @@ class SmilesFeaturizer:
         return "<SmilesFeaturizer>"
 
     def help(self) -> None:
-        """
-        Print supported fingerprint types and usage summary.
+        """Print supported fingerprint types and usage summary.
 
         :returns: None
         :rtype: NoneType

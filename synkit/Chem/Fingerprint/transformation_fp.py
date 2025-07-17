@@ -20,25 +20,23 @@ from synkit.Chem.Fingerprint.smiles_featurizer import SmilesFeaturizer
 
 
 class TransformationFP:
-    """
-    Calculate reaction fingerprints by featurizing individual molecules and
+    """Calculate reaction fingerprints by featurizing individual molecules and
     combining them via vector subtraction.
 
     :cvar None: Stateless utility class.
     """
 
     def __init__(self) -> None:
-        """
-        Initialize TransformationFP.
+        """Initialize TransformationFP.
 
-        This class has no instance state; all methods are static or class‐level.
+        This class has no instance state; all methods are static or
+        class‐level.
         """
         pass
 
     @staticmethod
     def convert_arr2vec(arr: np.ndarray) -> cDataStructs.ExplicitBitVect:
-        """
-        Convert a NumPy array of bits into an RDKit ExplicitBitVect.
+        """Convert a NumPy array of bits into an RDKit ExplicitBitVect.
 
         :param arr: Array of 0/1 values representing a fingerprint.
         :type arr: np.ndarray
@@ -57,8 +55,8 @@ class TransformationFP:
         return_array: bool = True,
         **kwargs: Any,
     ) -> Union[np.ndarray, cDataStructs.ExplicitBitVect]:
-        """
-        Generate a reaction fingerprint by subtracting reactant from product fingerprints.
+        """Generate a reaction fingerprint by subtracting reactant from product
+        fingerprints.
 
         :param reaction_smiles: Reaction SMILES, reactant and product separated by `symbols`.
         :type reaction_smiles: str
@@ -102,8 +100,7 @@ class TransformationFP:
         return TransformationFP.convert_arr2vec(diff)  # type: ignore
 
     def help(self) -> None:
-        """
-        Print usage summary for the TransformationFP class.
+        """Print usage summary for the TransformationFP class.
 
         :returns: None
         :rtype: NoneType
@@ -128,8 +125,7 @@ class TransformationFP:
         )
 
     def __str__(self) -> str:
-        """
-        Short description of the transformer.
+        """Short description of the transformer.
 
         :returns: Class name.
         :rtype: str

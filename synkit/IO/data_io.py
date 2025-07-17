@@ -11,14 +11,13 @@ logger = setup_logging()
 
 
 def save_database(database: List[Dict], pathname: str = "./Data/database.json") -> None:
-    """
-    Save a database (a list of dictionaries) to a JSON file.
+    """Save a database (a list of dictionaries) to a JSON file.
 
     :param database: The database to be saved.
     :type database: list[dict]
-    :param pathname: The path where the database will be saved. Defaults to './Data/database.json'.
+    :param pathname: The path where the database will be saved. Defaults
+        to './Data/database.json'.
     :type pathname: str
-
     :raises TypeError: If the database is not a list of dictionaries.
     :raises ValueError: If there is an error writing the file.
     """
@@ -32,15 +31,13 @@ def save_database(database: List[Dict], pathname: str = "./Data/database.json") 
 
 
 def load_database(pathname: str = "./Data/database.json") -> List[Dict]:
-    """
-    Load a database (a list of dictionaries) from a JSON file.
+    """Load a database (a list of dictionaries) from a JSON file.
 
-    :param pathname: The path from where the database will be loaded. Defaults to './Data/database.json'.
+    :param pathname: The path from where the database will be loaded.
+        Defaults to './Data/database.json'.
     :type pathname: str
-
     :returns: The loaded database.
     :rtype: list[dict]
-
     :raises ValueError: If there is an error reading the file.
     """
     try:
@@ -52,8 +49,7 @@ def load_database(pathname: str = "./Data/database.json") -> List[Dict]:
 
 
 def save_to_pickle(data: List[Dict[str, Any]], filename: str) -> None:
-    """
-    Save a list of dictionaries to a pickle file.
+    """Save a list of dictionaries to a pickle file.
 
     :param data: A list of dictionaries to be saved.
     :type data: list[dict]
@@ -65,12 +61,10 @@ def save_to_pickle(data: List[Dict[str, Any]], filename: str) -> None:
 
 
 def load_from_pickle(filename: str) -> List[Any]:
-    """
-    Load data from a pickle file.
+    """Load data from a pickle file.
 
     :param filename: The name of the pickle file to load data from.
     :type filename: str
-
     :returns: The data loaded from the pickle file.
     :rtype: list
     """
@@ -79,13 +73,12 @@ def load_from_pickle(filename: str) -> List[Any]:
 
 
 def load_gml_as_text(gml_file_path: str) -> Optional[str]:
-    """
-    Load the contents of a GML file as a text string.
+    """Load the contents of a GML file as a text string.
 
     :param gml_file_path: The file path to the GML file.
     :type gml_file_path: str
-
-    :returns: The text content of the GML file, or None if the file does not exist or an error occurs.
+    :returns: The text content of the GML file, or None if the file does
+        not exist or an error occurs.
     :rtype: str or None
     """
     try:
@@ -100,14 +93,12 @@ def load_gml_as_text(gml_file_path: str) -> Optional[str]:
 
 
 def save_text_as_gml(gml_text: str, file_path: str) -> bool:
-    """
-    Save a GML text string to a file.
+    """Save a GML text string to a file.
 
     :param gml_text: The GML content as a text string.
     :type gml_text: str
     :param file_path: The file path where the GML text will be saved.
     :type file_path: str
-
     :returns: True if saving was successful, False otherwise.
     :rtype: bool
     """
@@ -122,28 +113,26 @@ def save_text_as_gml(gml_text: str, file_path: str) -> bool:
 
 
 def save_compressed(array: ndarray, filename: str) -> None:
-    """
-    Saves a NumPy array in a compressed format using .npz extension.
+    """Saves a NumPy array in a compressed format using .npz extension.
 
     :param array: The NumPy array to be saved.
     :type array: numpy.ndarray
-    :param filename: The file path or name to save the array to, with a '.npz' extension.
+    :param filename: The file path or name to save the array to, with a
+        '.npz' extension.
     :type filename: str
     """
     np.savez_compressed(filename, array=array)
 
 
 def load_compressed(filename: str) -> ndarray:
-    """
-    Loads a NumPy array from a compressed .npz file.
+    """Loads a NumPy array from a compressed .npz file.
 
     :param filename: The path of the .npz file to load.
     :type filename: str
-
     :returns: The loaded NumPy array.
     :rtype: numpy.ndarray
-
-    :raises KeyError: If the .npz file does not contain an array with the key 'array'.
+    :raises KeyError: If the .npz file does not contain an array with
+        the key 'array'.
     """
     with np.load(filename) as data:
         if "array" in data:
@@ -155,8 +144,7 @@ def load_compressed(filename: str) -> ndarray:
 
 
 def save_model(model: Any, filename: str) -> None:
-    """
-    Save a machine learning model to a file using joblib.
+    """Save a machine learning model to a file using joblib.
 
     :param model: The machine learning model to save.
     :type model: object
@@ -168,12 +156,11 @@ def save_model(model: Any, filename: str) -> None:
 
 
 def load_model(filename: str) -> Any:
-    """
-    Load a machine learning model from a file using joblib.
+    """Load a machine learning model from a file using joblib.
 
-    :param filename: The path to the file from which the model will be loaded.
+    :param filename: The path to the file from which the model will be
+        loaded.
     :type filename: str
-
     :returns: The loaded machine learning model.
     :rtype: object
     """
@@ -183,12 +170,12 @@ def load_model(filename: str) -> Any:
 
 
 def save_dict_to_json(data: dict, file_path: str) -> None:
-    """
-    Save a dictionary to a JSON file.
+    """Save a dictionary to a JSON file.
 
     :param data: The dictionary to be saved.
     :type data: dict
-    :param file_path: The path to the file where the dictionary should be saved.
+    :param file_path: The path to the file where the dictionary should
+        be saved.
     :type file_path: str
     """
     with open(file_path, "w") as json_file:
@@ -197,13 +184,13 @@ def save_dict_to_json(data: dict, file_path: str) -> None:
 
 
 def load_dict_from_json(file_path: str) -> Optional[dict]:
-    """
-    Load a dictionary from a JSON file.
+    """Load a dictionary from a JSON file.
 
-    :param file_path: The path to the JSON file from which to load the dictionary.
+    :param file_path: The path to the JSON file from which to load the
+        dictionary.
     :type file_path: str
-
-    :returns: The dictionary loaded from the JSON file, or None if an error occurs.
+    :returns: The dictionary loaded from the JSON file, or None if an
+        error occurs.
     :rtype: dict or None
     """
     try:
@@ -217,13 +204,13 @@ def load_dict_from_json(file_path: str) -> Optional[dict]:
 
 
 def load_from_pickle_generator(file_path: str) -> Generator[Any, None, None]:
-    """
-    A generator that yields items from a pickle file where each pickle load returns a list of dictionaries.
+    """A generator that yields items from a pickle file where each pickle load
+    returns a list of dictionaries.
 
     :param file_path: The path to the pickle file to load.
     :type file_path: str
-
-    :yields: A single item from the list of dictionaries stored in the pickle file.
+    :yields: A single item from the list of dictionaries stored in the
+        pickle file.
     :rtype: Any
     """
     with open(file_path, "rb") as file:
@@ -237,16 +224,16 @@ def load_from_pickle_generator(file_path: str) -> Generator[Any, None, None]:
 
 
 def collect_data(num_batches: int, temp_dir: str, file_template: str) -> List[Any]:
-    """
-    Collects and aggregates data from multiple pickle files into a single list.
+    """Collects and aggregates data from multiple pickle files into a single
+    list.
 
     :param num_batches: The number of batch files to process.
     :type num_batches: int
     :param temp_dir: The directory where the batch files are stored.
     :type temp_dir: str
-    :param file_template: The template string for batch file names, expecting an integer formatter.
+    :param file_template: The template string for batch file names,
+        expecting an integer formatter.
     :type file_template: str
-
     :returns: A list of aggregated data items from all batch files.
     :rtype: list
     """
@@ -259,8 +246,7 @@ def collect_data(num_batches: int, temp_dir: str, file_template: str) -> List[An
 
 
 def save_list_to_file(data_list: list, file_path: str) -> None:
-    """
-    Save a list to a file in JSON format.
+    """Save a list to a file in JSON format.
 
     :param data_list: The list to save.
     :type data_list: list
@@ -272,12 +258,10 @@ def save_list_to_file(data_list: list, file_path: str) -> None:
 
 
 def load_list_from_file(file_path: str) -> list:
-    """
-    Load a list from a JSON-formatted file.
+    """Load a list from a JSON-formatted file.
 
     :param file_path: The path to the file to read the list from.
     :type file_path: str
-
     :returns: The list loaded from the file.
     :rtype: list
     """
@@ -286,17 +270,14 @@ def load_list_from_file(file_path: str) -> list:
 
 
 def save_dg(dg, path: str) -> str:
-    """
-    Save a DG instance to disk using MØD's dump method.
+    """Save a DG instance to disk using MØD's dump method.
 
     :param dg: The derivation graph to save.
     :type dg: DG
     :param path: The file path where the graph will be dumped.
     :type path: str
-
     :returns: The path of the dumped file.
     :rtype: str
-
     :raises Exception: If saving fails.
     """
     try:
@@ -309,19 +290,17 @@ def save_dg(dg, path: str) -> str:
 
 
 def load_dg(path: str, graph_db: list, rule_db: list):
-    """
-    Load a DG instance from a dumped file.
+    """Load a DG instance from a dumped file.
 
     :param path: The file path of the dumped graph.
     :type path: str
-    :param graph_db: List of Graph objects representing the graph database.
+    :param graph_db: List of Graph objects representing the graph
+        database.
     :type graph_db: list
     :param rule_db: List of Rule objects required for loading the DG.
     :type rule_db: list
-
     :returns: The loaded derivation graph instance.
     :rtype: DG
-
     :raises Exception: If loading fails.
     """
     from mod import DG

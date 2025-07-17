@@ -1,5 +1,6 @@
-"""
-This module comprises several functions adapted from the work of Klaus Weinbauer.
+"""This module comprises several functions adapted from the work of Klaus
+Weinbauer.
+
 The original code can be found at his GitHub repository: https://github.com/klausweinbauer/FGUtils.
 Adaptations were made to enhance functionality and integrate with other system components.
 """
@@ -11,8 +12,8 @@ import tqdm
 
 
 class PdfWriter:
-    """
-    A utility class to create PDF reports with plots from a list of figures or dynamically generated plots.
+    """A utility class to create PDF reports with plots from a list of figures
+    or dynamically generated plots.
 
     Parameters:
     - file (str): The file name of the output PDF.
@@ -51,8 +52,7 @@ class PdfWriter:
         self.show_progress = show_progress
 
     def plot(self, data: Union[List[plt.Figure], List], **kwargs):
-        """
-        Generate plots from data or save pre-generated figures to the PDF.
+        """Generate plots from data or save pre-generated figures to the PDF.
 
         Parameters:
         - data (Union[List[matplotlib.figure.Figure], List]): Input data or list of figures.
@@ -120,8 +120,7 @@ class PdfWriter:
                 break
 
     def save_figure(self, figure: plt.Figure):
-        """
-        Save a pre-generated matplotlib figure directly to the PDF.
+        """Save a pre-generated matplotlib figure directly to the PDF.
 
         Parameters:
         - figure (matplotlib.figure.Figure): The figure to save.
@@ -134,8 +133,7 @@ class PdfWriter:
         self.pdf_pages.savefig(figure, bbox_inches="tight", pad_inches=1)
 
     def close(self):
-        """
-        Close the PDF file, ensuring all pages are written.
+        """Close the PDF file, ensuring all pages are written.
 
         Returns:
         - None

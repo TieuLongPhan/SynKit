@@ -11,22 +11,17 @@ from synkit.Graph.ITS.its_decompose import get_rc
 
 
 class NormalizeAAM:
-    """
-    Provides functionalities to normalize atom mappings in SMILES representations,
-    extract and process reaction centers from ITS graphs, and convert between
-    graph representations and molecular models.
-    """
+    """Provides functionalities to normalize atom mappings in SMILES
+    representations, extract and process reaction centers from ITS graphs, and
+    convert between graph representations and molecular models."""
 
     def __init__(self) -> None:
-        """
-        Initializes the NormalizeAAM class.
-        """
+        """Initializes the NormalizeAAM class."""
         pass
 
     @staticmethod
     def fix_rsmi_kekulize(rsmi: str) -> str:
-        """
-        Filters the reactants and products of a reaction SMILES string.
+        """Filters the reactants and products of a reaction SMILES string.
 
         Parameters:
         - rsmi (str): A string representing the reaction SMILES in the form of "reactants >> products".
@@ -46,8 +41,8 @@ class NormalizeAAM:
 
     @staticmethod
     def fix_kekulize(smiles: str) -> str:
-        """
-        Filters and returns valid SMILES strings from a string of SMILES, joined by '.'.
+        """Filters and returns valid SMILES strings from a string of SMILES,
+        joined by '.'.
 
         This function processes a string of SMILES separated by periods (e.g., "CCO.CC=O"),
         filters out invalid SMILES, and returns a string of valid SMILES joined by periods.
@@ -73,8 +68,8 @@ class NormalizeAAM:
 
     @staticmethod
     def extract_subgraph(graph: nx.Graph, indices: List[int]) -> nx.Graph:
-        """
-        Extracts a subgraph from a given graph based on a list of node indices.
+        """Extracts a subgraph from a given graph based on a list of node
+        indices.
 
         Parameters:
         graph (nx.Graph): The original graph from which to extract the subgraph.
@@ -88,8 +83,8 @@ class NormalizeAAM:
     def reset_indices_and_atom_map(
         self, subgraph: nx.Graph, aam_key: str = "atom_map"
     ) -> nx.Graph:
-        """
-        Resets the node indices and the atom_map of the subgraph to be continuous from 1 onwards.
+        """Resets the node indices and the atom_map of the subgraph to be
+        continuous from 1 onwards.
 
         Parameters:
         subgraph (nx.Graph): The subgraph with possibly non-continuous indices.
@@ -111,9 +106,9 @@ class NormalizeAAM:
         return new_graph
 
     def fit(self, rsmi: str, fix_aam_indice: bool = True) -> str:
-        """
-        Processes a reaction SMILES (RSMI) to adjust atom mappings, extract reaction centers,
-        decompose into separate reactant and product graphs, and generate the corresponding SMILES.
+        """Processes a reaction SMILES (RSMI) to adjust atom mappings, extract
+        reaction centers, decompose into separate reactant and product graphs,
+        and generate the corresponding SMILES.
 
         Parameters:
         - rsmi (str): The reaction SMILES string to be processed.

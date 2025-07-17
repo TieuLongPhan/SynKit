@@ -11,21 +11,23 @@ std = Standardize()
 
 
 class ITSExpand:
-    """
-    Partially expand a reaction SMILES (RSMI) by reconstructing intermediate transition states
-    (ITS) and applying transformation rules based on the reaction center graph.
+    """Partially expand a reaction SMILES (RSMI) by reconstructing intermediate
+    transition states (ITS) and applying transformation rules based on the
+    reaction center graph.
 
-    This class identifies the reaction center from an RSMI, builds and reconstructs the ITS graph,
-    decomposes it back into reactants and products, and standardizes atom mappings to produce
-    a fully mapped AAM RSMI.
+    This class identifies the reaction center from an RSMI, builds and
+    reconstructs the ITS graph, decomposes it back into reactants and
+    products, and standardizes atom mappings to produce a fully mapped
+    AAM RSMI.
 
     :cvar std: Standardize instance for reaction SMILES standardization.
     :type std: Standardize
     """
 
     def __init__(self) -> None:
-        """
-        Initialize ITSExpand. No instance-specific attributes are required.
+        """Initialize ITSExpand.
+
+        No instance-specific attributes are required.
         """
         pass
 
@@ -35,8 +37,8 @@ class ITSExpand:
         relabel: bool = False,
         use_G: bool = True,
     ) -> str:
-        """
-        Expand a partial reaction SMILES to a full AAM RSMI using ITS reconstruction.
+        """Expand a partial reaction SMILES to a full AAM RSMI using ITS
+        reconstruction.
 
         :param rsmi: Reaction SMILES string in the format 'reactant>>product'.
         :type rsmi: str

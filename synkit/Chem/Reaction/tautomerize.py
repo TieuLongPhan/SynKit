@@ -5,24 +5,22 @@ from joblib import Parallel, delayed
 
 
 class Tautomerize:
-    """
-    A class to standardize molecules by converting specific functional groups to their
-    more common forms using RDKit for molecule manipulation.
-    """
+    """Standardize molecules by converting enol and hemiketal tautomers into
+    their more stable carbonyl forms, and apply these corrections to individual
+    SMILES or collections of reaction data."""
 
     @staticmethod
     def standardize_enol(smiles: str, atom_indices: Optional[List[int]] = None) -> str:
-        """
-        Converts an enol form to a carbonyl form based on specified atom indices.
+        """Convert an enol tautomer into its corresponding carbonyl form.
 
-        Parameters:
-        - smiles (str): The SMILES string.
-        - atom_indices (List[int], optional): List containing indices of two carbons and
-        one oxygen involved in the enol formation. Defaults to [0, 1, 2].
-
-        Returns:
-        - str: The SMILES string of the molecule after conversion.
-                Returns an error message if indices are invalid.
+        :param smiles: SMILES string of the enol-containing molecule.
+        :type smiles: str
+        :param atom_indices: List of three atom indices [C1, C2, O]
+            defining the enol. If None, defaults to [0, 1, 2].
+        :type atom_indices: List[int] or None
+        :returns: SMILES of the molecule after enol→carbonyl conversion,
+            or an error message if the input is invalid or indices fail.
+        :rtype: str
         """
         if atom_indices is None:
             atom_indices = [0, 1, 2]
@@ -33,39 +31,40 @@ class Tautomerize:
         emol = Chem.EditableMol(mol)
 
         try:
-            c1_idx, c2_idx = (
+            c_idxs = [
                 i for i in atom_indices if mol.GetAtomWithIdx(i).GetSymbol() == "C"
-            )
+            ]
+            c1_idx, c2_idx = c_idxs[:2]
             o_idx = next(
                 i for i in atom_indices if mol.GetAtomWithIdx(i).GetSymbol() == "O"
             )
         except Exception as e:
-            return f"Error processing indices: {str(e)}"
+            return f"Error processing indices: {e}"
 
         try:
             emol.RemoveBond(c1_idx, c2_idx)
             emol.RemoveBond(c2_idx, o_idx)
-            emol.AddBond(c1_idx, c2_idx, order=Chem.rdchem.BondType.SINGLE)
-            emol.AddBond(c2_idx, o_idx, order=Chem.rdchem.BondType.DOUBLE)
+            emol.AddBond(c1_idx, c2_idx, Chem.rdchem.BondType.SINGLE)
+            emol.AddBond(c2_idx, o_idx, Chem.rdchem.BondType.DOUBLE)
             new_mol = emol.GetMol()
             Chem.SanitizeMol(new_mol)
             return Chem.MolToSmiles(new_mol)
         except Exception as e:
-            return f"Error in modifying molecule: {str(e)}"
+            return f"Error in modifying molecule: {e}"
 
     @staticmethod
     def standardize_hemiketal(smiles: str, atom_indices: List[int]) -> str:
-        """
-        Converts a hemiketal form to a carbonyl form based on specified atom indices.
+        """Convert a hemiketal tautomer into its corresponding carbonyl form.
 
-        Parameters:
-        - smiles (str): SMILES representation of the original molecule.
-        - atom_indices (List[int]): Indices of the carbon and two oxygen atoms
-        involved in the transformation.
-
-        Returns:
-        - str: SMILES string of the modified molecule if successful,
-                otherwise returns an error message.
+        :param smiles: SMILES string of the hemiketal-containing
+            molecule.
+        :type smiles: str
+        :param atom_indices: List of atom indices [C, O1, O2] defining
+            the hemiketal.
+        :type atom_indices: List[int]
+        :returns: SMILES of the molecule after hemiketal→carbonyl
+            conversion, or an error message if the input is invalid.
+        :rtype: str
         """
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
@@ -76,67 +75,65 @@ class Tautomerize:
             c_idx = next(
                 i for i in atom_indices if mol.GetAtomWithIdx(i).GetSymbol() == "C"
             )
-            o1_idx, o2_idx = (
+            o_idxs = [
                 i for i in atom_indices if mol.GetAtomWithIdx(i).GetSymbol() == "O"
-            )
+            ]
+            o1_idx = o_idxs[0]
+        except Exception as e:
+            return f"Error processing indices: {e}"
+
+        try:
             emol.RemoveBond(c_idx, o1_idx)
-            emol.RemoveBond(c_idx, o2_idx)
-            emol.AddBond(c_idx, o1_idx, order=Chem.rdchem.BondType.DOUBLE)
+            if len(o_idxs) > 1:
+                emol.RemoveBond(c_idx, o_idxs[1])
+            emol.AddBond(c_idx, o1_idx, Chem.rdchem.BondType.DOUBLE)
             new_mol = emol.GetMol()
             Chem.SanitizeMol(new_mol)
             return Chem.MolToSmiles(new_mol)
         except Exception as e:
-            return f"Error in modifying molecule: {str(e)}"
+            return f"Error in modifying molecule: {e}"
 
     @staticmethod
     def fix_smiles(smiles: str) -> str:
-        """
-        Performs the standardization process by identifying and converting all relevant
-        functional groups to their target forms based on predefined rules and updates the
-        SMILES string accordingly.
+        """Iteratively apply enol and hemiketal standardizations until no
+        further changes, then return the canonical SMILES.
 
-        Parameters:
-        - smiles (str): SMILES string of the original molecule.
-
-        Returns:
-        - str: Canonical SMILES string of the standardized molecule.
+        :param smiles: SMILES string to standardize.
+        :type smiles: str
+        :returns: Canonical SMILES of the standardized molecule.
+        :rtype: str
         """
         query = FGQuery()
         fg = query.get(smiles)
         for item in fg:
-            if "hemiketal" in item:
-                atom_indices = item[1]
-                smiles = Tautomerize.standardize_hemiketal(smiles, atom_indices)
+            label, indices = item
+            if label == "hemiketal":
+                smiles = Tautomerize.standardize_hemiketal(smiles, indices)
                 fg = query.get(smiles)
-            elif "enol" in item:
-                atom_indices = item[1]
-                smiles = Tautomerize.standardize_enol(smiles, atom_indices)
+            elif label == "enol":
+                smiles = Tautomerize.standardize_enol(smiles, indices)
                 fg = query.get(smiles)
         return Chem.CanonSmiles(smiles)
 
     @staticmethod
     def fix_dict(data: Dict[str, str], reaction_column: str) -> Dict[str, str]:
-        """
-        Updates a dictionary containing reaction data by
-        standardizing the SMILES strings of reactants and products.
+        """Standardize the reactant and product SMILES in a reaction
+        dictionary.
 
-        Parameters:
-        - data (Dict[str, str]): Dictionary containing the reaction data.
-        - reaction_column (str): The key in the dictionary where the reaction SMILES
-        string is stored.
-
-        Returns:
-        - Dict[str, str]: The updated dictionary with standardized SMILES strings.
+        :param data: Dictionary containing a reaction SMILES under `reaction_column`.
+        :type data: Dict[str, str]
+        :param reaction_column: Key in `data` where the reaction SMILES is stored.
+        :type reaction_column: str
+        :returns: The same dictionary with standardized reaction SMILES.
+        :rtype: Dict[str, str]
         """
         try:
-            reactants, products = data[reaction_column].split(">>")
-            reactants = Tautomerize.fix_smiles(reactants)
-            products = Tautomerize.fix_smiles(products)
-            data[reaction_column] = f"{reactants}>>{products}"
+            react, prod = data[reaction_column].split(">>")
+            data[reaction_column] = (
+                f"{Tautomerize.fix_smiles(react)}>>{Tautomerize.fix_smiles(prod)}"
+            )
         except ValueError:
-            smiles = data[reaction_column]
-            smiles = Tautomerize.fix_smiles(smiles)
-            data[reaction_column] = smiles
+            data[reaction_column] = Tautomerize.fix_smiles(data[reaction_column])
         return data
 
     @staticmethod
@@ -146,21 +143,18 @@ class Tautomerize:
         n_jobs: int = 4,
         verbose: int = 0,
     ) -> List[Dict[str, str]]:
-        """
-        Standardizes multiple dictionaries containing
-        reaction data in parallel.
+        """Standardize multiple reaction dictionaries in parallel.
 
-        Parameters:
-        - data (List[Dict[str, str]]): List of dictionaries, each containing reaction
-        data.
-        - reaction_column (str): The key where the reaction SMILES strings are
-        stored in each dictionary.
-        - n_jobs (int, optional): Number of jobs to run in parallel. Defaults to 4.
-        - verbose (int, optional): The verbosity level. Defaults to 0.
-
-        Returns:
-        - List[Dict[str, str]]: A list of updated dictionaries
-                            with standardized SMILES strings.
+        :param data: List of dictionaries containing reaction SMILES under `reaction_column`.
+        :type data: List[Dict[str, str]]
+        :param reaction_column: Key in each dictionary for the reaction SMILES.
+        :type reaction_column: str
+        :param n_jobs: Number of parallel jobs to run. Defaults to 4.
+        :type n_jobs: int
+        :param verbose: Verbosity level for the joblib Parallel call. Defaults to 0.
+        :type verbose: int
+        :returns: List of dictionaries with standardized SMILES.
+        :rtype: List[Dict[str, str]]
         """
         results = Parallel(n_jobs=n_jobs, verbose=verbose)(
             delayed(Tautomerize.fix_dict)(d, reaction_column) for d in data

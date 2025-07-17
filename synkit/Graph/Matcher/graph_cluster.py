@@ -21,10 +21,10 @@ class GraphCluster:
         edge_attribute: str = "order",
         backend: str = "nx",
     ):
-        """
-        Initializes the GraphCluster with customization options for node and edge
-        matching functions. This class is designed to facilitate clustering of graph nodes
-        and edges based on specified attributes and their matching criteria.
+        """Initializes the GraphCluster with customization options for node and
+        edge matching functions. This class is designed to facilitate
+        clustering of graph nodes and edges based on specified attributes and
+        their matching criteria.
 
         Parameters:
         - node_label_names (List[str]): A list of node attribute names to be considered
@@ -84,9 +84,9 @@ class GraphCluster:
         nodeMatch: Optional[Callable] = None,
         edgeMatch: Optional[Callable] = None,
     ) -> Tuple[List[Set[int]], Dict[int, int]]:
-        """
-        Clusters rules based on their similarities, which could include structural or
-        attribute-based similarities depending on the given attributes.
+        """Clusters rules based on their similarities, which could include
+        structural or attribute-based similarities depending on the given
+        attributes.
 
         Parameters:
         - rules (List[str]): List of rules, potentially serialized strings of rule
@@ -159,10 +159,9 @@ class GraphCluster:
         attribute_key: str = "WLHash",
         strip: bool = False,
     ) -> List[Dict]:
-        """
-        Automatically clusters the rules and assigns them cluster indices based on the
-        similarity, potentially using provided templates for clustering, or generating
-        new templates.
+        """Automatically clusters the rules and assigns them cluster indices
+        based on the similarity, potentially using provided templates for
+        clustering, or generating new templates.
 
         Parameters:
         - data (List[Dict]): A list containing dictionaries, each representing a

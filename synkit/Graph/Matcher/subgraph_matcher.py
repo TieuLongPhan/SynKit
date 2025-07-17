@@ -109,16 +109,16 @@ __all__: Sequence[str] = [
 # Core engine class
 # ---------------------------------------------------------------------------
 class SubgraphMatch:
-    """
-    Boolean-only checks for graph isomorphism and subgraph (induced or monomorphic) matching.
+    """Boolean-only checks for graph isomorphism and subgraph (induced or
+    monomorphic) matching.
 
-    Provides static methods for NetworkX-based checks and optional GML "rule" backend.
+    Provides static methods for NetworkX-based checks and optional GML
+    "rule" backend.
     """
 
     @staticmethod
     def _get_edge_labels(graph: Any) -> list:
-        """
-        Extracts the bond types (edge labels) from a given graph.
+        """Extracts the bond types (edge labels) from a given graph.
 
         Parameters:
         - graph: The graph object containing the edges.
@@ -130,8 +130,7 @@ class SubgraphMatch:
 
     @staticmethod
     def _get_node_labels(graph: Any) -> list:
-        """
-        Extracts the atom IDs (node labels) from a given graph.
+        """Extracts the atom IDs (node labels) from a given graph.
 
         Parameters:
         - graph: The graph object containing the vertices.
@@ -145,9 +144,8 @@ class SubgraphMatch:
     def rule_subgraph_morphism(
         rule_1: str, rule_2: str, use_filter: bool = False
     ) -> bool:
-        """
-        Evaluates if two GML-formatted rule representations are isomorphic or one is a
-        subgraph of the other (monomorphic).
+        """Evaluates if two GML-formatted rule representations are isomorphic
+        or one is a subgraph of the other (monomorphic).
 
         Parameters:
         - rule_1 (str): GML string of the first rule.
@@ -191,10 +189,8 @@ class SubgraphMatch:
         node_comparator: Optional[Callable[[Any, Any], bool]] = None,
         edge_comparator: Optional[Callable[[Any, Any], bool]] = None,
     ) -> bool:
-        """
-        Enhanced checks if the child graph is a subgraph isomorphic to the parent graph based on
-        customizable node and edge attributes.
-        """
+        """Enhanced checks if the child graph is a subgraph isomorphic to the
+        parent graph based on customizable node and edge attributes."""
         if use_filter:
             if (
                 child_graph.number_of_nodes() > parent_graph.number_of_nodes()
@@ -263,9 +259,8 @@ class SubgraphMatch:
         check_type: str = "induced",
         backend: str = "nx",
     ) -> bool:
-        """
-        Unified API for subgraph/isomorphism either via NX or GML backend.
-        """
+        """Unified API for subgraph/isomorphism either via NX or GML
+        backend."""
         if backend == "nx":
             return SubgraphMatch.subgraph_isomorphism(
                 pattern,
@@ -303,8 +298,8 @@ class SubgraphSearchEngine:
         max_results: Optional[int] = None,
         strict_cc_count: bool = True,
     ) -> List[MappingDict]:
-        """
-        Dispatch to a subgraph-matching strategy and return all pattern→host mappings.
+        """Dispatch to a subgraph-matching strategy and return all pattern→host
+        mappings.
 
         Depending on `strategy`, this will call:
           - ALL       → `_all_monomorphisms`
@@ -406,8 +401,7 @@ class SubgraphSearchEngine:
         max_results: Optional[int] = None,
         strict_cc_count: bool = False,
     ) -> List[MappingDict]:
-        """
-        Component‑aware VF2 without any attribute/degree/WL‑1 pre‑filters.
+        """Component‑aware VF2 without any attribute/degree/WL‑1 pre‑filters.
 
         The only constraints are:
           • each pattern‑CC must fit in a *distinct* host‑CC

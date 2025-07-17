@@ -14,7 +14,7 @@ from synkit.IO.chem_converter import (
     graph_to_smi,
 )
 from synkit.IO import setup_logging
-from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
+from synkit.Chem.utils import reverse_reaction
 
 from synkit.Rule import SynRule
 from synkit.Graph.syn_graph import SynGraph
@@ -49,33 +49,33 @@ log = setup_logging(task_type="synreactor")
 
 @dataclass
 class SynReactor:
-    """
-    A hardened and typed re-write of the original SynReactor, preserving API compatibility
-    while offering safer, faster, and cleaner behavior.
+    """A hardened and typed re-write of the original SynReactor, preserving API
+    compatibility while offering safer, faster, and cleaner behavior.
 
-    :param substrate: The input reaction substrate, as a SMILES string, a raw NetworkX graph,
-                      or a SynGraph.
+    :param substrate: The input reaction substrate, as a SMILES string,
+        a raw NetworkX graph, or a SynGraph.
     :type substrate: Union[str, nx.Graph, SynGraph]
-    :param template: Reaction template, provided as SMILES/SMARTS, a raw NetworkX graph,
-                     or a SynRule.
+    :param template: Reaction template, provided as SMILES/SMARTS, a raw
+        NetworkX graph, or a SynRule.
     :type template: Union[str, nx.Graph, SynRule]
-    :param invert: Whether to invert the reaction (predict precursors). Defaults to False.
+    :param invert: Whether to invert the reaction (predict precursors).
+        Defaults to False.
     :type invert: bool
-    :param canonicaliser: Optional canonicaliser for intermediate graphs. If None, a default
-                          GraphCanonicaliser is used.
+    :param canonicaliser: Optional canonicaliser for intermediate
+        graphs. If None, a default GraphCanonicaliser is used.
     :type canonicaliser: Optional[GraphCanonicaliser]
-    :param explicit_h: If True, render all hydrogens explicitly in the reaction‑center SMARTS.
-                       Defaults to True.
+    :param explicit_h: If True, render all hydrogens explicitly in the
+        reaction‑center SMARTS. Defaults to True.
     :type explicit_h: bool
-    :param implicit_temp: If True, treat the input template as implicit-H (forces explicit_h=False).
-                          Defaults to False.
+    :param implicit_temp: If True, treat the input template as
+        implicit-H (forces explicit_h=False). Defaults to False.
     :type implicit_temp: bool
-    :param strategy: Matching strategy, one of Strategy.ALL, 'comp', or 'bt'.
-                     Defaults to Strategy.ALL.
+    :param strategy: Matching strategy, one of Strategy.ALL, 'comp', or
+        'bt'. Defaults to Strategy.ALL.
     :type strategy: Strategy or str
-    :param partial: If True, use a partial matching fallback. Defaults to False.
+    :param partial: If True, use a partial matching fallback. Defaults
+        to False.
     :type partial: bool
-
     :ivar _graph: Cached SynGraph for the substrate.
     :vartype _graph: Optional[SynGraph]
     :ivar _rule: Cached SynRule for the template.
@@ -86,7 +86,8 @@ class SynReactor:
     :vartype _its: Optional[List[nx.Graph]]
     :ivar _smarts: Cached list of SMARTS strings.
     :vartype _smarts: Optional[List[str]]
-    :ivar _flag_pattern_has_explicit_H: Internal flag indicating explicit‑H constraints.
+    :ivar _flag_pattern_has_explicit_H: Internal flag indicating
+        explicit‑H constraints.
     :vartype _flag_pattern_has_explicit_H: bool
     """
 
@@ -108,8 +109,8 @@ class SynReactor:
     _flag_pattern_has_explicit_H: bool = field(init=False, default=False, repr=False)
 
     def __post_init__(self) -> None:
-        """
-        Validate and enforce consistency of `explicit_h` and `implicit_temp`.
+        """Validate and enforce consistency of `explicit_h` and
+        `implicit_temp`.
 
         :raises ValueError: If `explicit_h` is True while `implicit_temp` is False.
         """
@@ -169,8 +170,7 @@ class SynReactor:
     # ------------------------------------------------------------------
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
-        """
-        Lazily wrap the substrate into a SynGraph.
+        """Lazily wrap the substrate into a SynGraph.
 
         :returns: The reaction substrate as a `SynGraph`.
         :rtype: SynGraph
@@ -181,8 +181,7 @@ class SynReactor:
 
     @property
     def rule(self) -> SynRule:  # noqa: D401
-        """
-        Lazily wrap the template into a SynRule.
+        """Lazily wrap the template into a SynRule.
 
         :returns: The reaction template as a `SynRule`.
         :rtype: SynRule
@@ -196,8 +195,7 @@ class SynReactor:
     # ------------------------------------------------------------------
     @property
     def mappings(self) -> List[MappingDict]:
-        """
-        Find subgraph mappings between substrate and template.
+        """Find subgraph mappings between substrate and template.
 
         :returns: A list of node-mapping dictionaries.
         :rtype: list of dict
@@ -235,8 +233,7 @@ class SynReactor:
 
     @property
     def its_list(self) -> List[nx.Graph]:
-        """
-        Build ITS graphs for each subgraph mapping.
+        """Build ITS graphs for each subgraph mapping.
 
         :returns: A list of ITS (Internal Transition State) graphs.
         :rtype: list of networkx.Graph
@@ -264,8 +261,7 @@ class SynReactor:
 
     @property
     def smarts_list(self) -> List[str]:
-        """
-        Serialise each ITS graph to a reaction-SMARTS string.
+        """Serialise each ITS graph to a reaction-SMARTS string.
 
         :returns: A list of SMARTS strings (inverted if `invert=True`).
         :rtype: list of str

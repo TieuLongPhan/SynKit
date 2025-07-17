@@ -4,8 +4,7 @@ from typing import List, Dict, Union, Tuple
 
 
 class WLHash:
-    """
-    A class that implements the Weisfeiler-Lehman graph hashing algorithm,
+    """A class that implements the Weisfeiler-Lehman graph hashing algorithm,
     supporting multiple node/edge attributes for hashing.
 
     Attributes:
@@ -22,8 +21,7 @@ class WLHash:
         iterations: int = 5,
         digest_size: int = 16,
     ):
-        """
-        Initializes the WLHash class with configuration for hashing.
+        """Initializes the WLHash class with configuration for hashing.
 
         Parameters:
         - node: A node attribute name or list of node attribute names.
@@ -39,8 +37,8 @@ class WLHash:
     def _prepare_graph(
         self, graph: nx.Graph
     ) -> Tuple[nx.Graph, Union[str, None], Union[str, None]]:
-        """
-        Prepare a deep copy of the graph with combined/missing node and edge attributes.
+        """Prepare a deep copy of the graph with combined/missing node and edge
+        attributes.
 
         Returns (H, node_attr_name, edge_attr_name).
         """
@@ -86,9 +84,7 @@ class WLHash:
         return H, node_attr_name, edge_attr_name
 
     def weisfeiler_lehman_graph_hash(self, graph: nx.Graph) -> str:
-        """
-        Computes the WL graph hash for the entire graph.
-        """
+        """Computes the WL graph hash for the entire graph."""
         G, node_attr, edge_attr = self._prepare_graph(graph)
         return nx.weisfeiler_lehman_graph_hash(
             G,
@@ -101,9 +97,7 @@ class WLHash:
     def weisfeiler_lehman_subgraph_hashes(
         self, graph: nx.Graph
     ) -> Dict[Union[int, str], List[str]]:
-        """
-        Computes the WL subgraph hashes for each node in the graph.
-        """
+        """Computes the WL subgraph hashes for each node in the graph."""
         G, node_attr, edge_attr = self._prepare_graph(graph)
         return nx.weisfeiler_lehman_subgraph_hashes(
             G,
@@ -119,8 +113,8 @@ class WLHash:
         graph_key: str = "ITS",
         subgraph: bool = False,
     ) -> List[Dict[str, Union[str, None]]]:
-        """
-        Applies WL hashing (or subgraph hashing) to a list of data entries.
+        """Applies WL hashing (or subgraph hashing) to a list of data entries.
+
         Each entry must contain a graph under 'graph_key'.
         """
         for entry in data:

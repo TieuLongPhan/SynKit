@@ -7,9 +7,8 @@ class GraphFP:
     def __init__(
         self, graph: nx.Graph, nBits: int = 1024, hash_alg: str = "sha256"
     ) -> None:
-        """
-        Initialize the GraphFP class to create binary fingerprints based on various graph
-        characteristics.
+        """Initialize the GraphFP class to create binary fingerprints based on
+        various graph characteristics.
 
         Parameters:
         - graph (nx.Graph): Graph on which to perform analysis.
@@ -22,8 +21,8 @@ class GraphFP:
         self.hash_function = getattr(hashlib, self.hash_alg)
 
     def fingerprint(self, method: str) -> str:
-        """
-        Generate a binary string fingerprint of the graph using the specified method.
+        """Generate a binary string fingerprint of the graph using the
+        specified method.
 
         Parameters:
         - method (str): The method to use for fingerprinting
@@ -78,9 +77,8 @@ class GraphFP:
         return triangle_str[: self.nBits]
 
     def iterative_deepening(self, remaining_bits: int) -> str:
-        """
-        Extend the hash length using iterative hashing until the desired bit length is
-        achieved.
+        """Extend the hash length using iterative hashing until the desired bit
+        length is achieved.
 
         Parameters:
         - remaining_bits (int): Number of bits needed to complete the fingerprint

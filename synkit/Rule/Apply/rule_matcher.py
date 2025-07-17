@@ -29,8 +29,7 @@ __all__ = ["RuleMatcher"]
 
 
 class RuleMatcher:
-    """
-    Match a reaction SMILES against a transformation‑rule graph and extract
+    """Match a reaction SMILES against a transformation‑rule graph and extract
     the SMARTS pattern that reproduces the reaction.
 
     On initialization, the matcher standardizes the RSMI, builds reactant/product
@@ -56,15 +55,15 @@ class RuleMatcher:
     """
 
     def __init__(self, rsmi: str, rule: nx.Graph) -> None:
-        """
-        Initialize the matcher by standardizing the RSMI, building graphs,
+        """Initialize the matcher by standardizing the RSMI, building graphs,
         checking balance, and computing the match.
 
         :param rsmi: Reaction SMILES in 'reactant>>product' format.
         :type rsmi: str
         :param rule: Transformation‑rule graph.
         :type rule: nx.Graph
-        :raises ValueError: If no SMARTS reproduces the RSMI under the given rule.
+        :raises ValueError: If no SMARTS reproduces the RSMI under the
+            given rule.
         """
         self.std = Standardize()
         self.rsmi = self.std.fit(rsmi)
@@ -85,8 +84,7 @@ class RuleMatcher:
         self.result = match
 
     def get_result(self) -> Tuple[str, nx.Graph]:
-        """
-        Return the SMARTS and rule graph found during initialization.
+        """Return the SMARTS and rule graph found during initialization.
 
         :returns: A tuple (smarts, rule_graph).
         :rtype: tuple[str, nx.Graph]
@@ -94,10 +92,10 @@ class RuleMatcher:
         return self.result
 
     def _match_valid(self) -> Optional[Tuple[str, nx.Graph]]:
-        """
-        Attempt a direct (balanced) match of the rule.
+        """Attempt a direct (balanced) match of the rule.
 
-        :returns: (smarts, rule) if direct match succeeds; otherwise None.
+        :returns: (smarts, rule) if direct match succeeds; otherwise
+            None.
         :rtype: Optional[tuple[str, nx.Graph]]
         """
         reactor = SynReactor(substrate=self.r_graph, template=self.rule)
@@ -107,13 +105,13 @@ class RuleMatcher:
         return None
 
     def _match_reverse(self) -> Optional[Tuple[str, nx.Graph]]:
-        """
-        Attempt a reverse‑balance (partial) match for unbalanced reactions.
+        """Attempt a reverse‑balance (partial) match for unbalanced reactions.
 
-        First tries matching on product fragments, then on reactant fragments
-        with the template inverted.
+        First tries matching on product fragments, then on reactant
+        fragments with the template inverted.
 
-        :returns: (smarts, rule) if a partial match is found; otherwise None.
+        :returns: (smarts, rule) if a partial match is found; otherwise
+            None.
         :rtype: Optional[tuple[str, nx.Graph]]
         """
         # Product‑side fragments
@@ -138,8 +136,7 @@ class RuleMatcher:
 
     @staticmethod
     def all_in(a: List[str], b: List[str]) -> bool:
-        """
-        Check if every element of list `a` appears in list `b`.
+        """Check if every element of list `a` appears in list `b`.
 
         :param a: List of elements to test for membership.
         :type a: list[str]
@@ -151,8 +148,7 @@ class RuleMatcher:
         return set(a).issubset(b)
 
     def help(self) -> None:
-        """
-        Print internal state and candidate SMARTS patterns for debugging.
+        """Print internal state and candidate SMARTS patterns for debugging.
 
         :returns: None
         :rtype: NoneType
@@ -165,8 +161,7 @@ class RuleMatcher:
             print("  ", smarts)
 
     def __str__(self) -> str:
-        """
-        Short string showing the RSMI and balance status.
+        """Short string showing the RSMI and balance status.
 
         :returns: Human‑readable summary.
         :rtype: str
@@ -175,8 +170,7 @@ class RuleMatcher:
         return f"<RuleMatcher {self.rsmi!r} ({status})>"
 
     def __repr__(self) -> str:
-        """
-        Detailed representation including rule size and balance.
+        """Detailed representation including rule size and balance.
 
         :returns: repr string.
         :rtype: str

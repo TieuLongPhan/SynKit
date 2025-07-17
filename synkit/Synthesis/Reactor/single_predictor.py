@@ -1,28 +1,23 @@
 from typing import List, Any, Dict
-
-# from synkit.Synthesis.Reactor.core_engine import CoreEngine
 from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 
 
 class SinglePredictor:
-    """
-    A class designed for one-step chemical reaction predictions using transformation rules.
+    """A class designed for one-step chemical reaction predictions using
+    transformation rules.
 
-    This class utilizes transformation rules to predict the outcomes of chemical reactions based
-    on provided SMILES strings.
+    This class utilizes transformation rules to predict the outcomes of
+    chemical reactions based on provided SMILES strings.
     """
 
     def __init__(self) -> None:
-        """
-        Initializes the StepPredictor instance.
-        """
+        """Initializes the StepPredictor instance."""
         pass
 
     def _single_rule(
         self, smiles_list: List[str], rule: str, invert: bool = False
     ) -> List[Any]:
-        """
-        Applies a single transformation rule to a list of SMILES strings.
+        """Applies a single transformation rule to a list of SMILES strings.
 
         This function applies the transformation rule to generate potential reaction outcomes from
         given SMILES strings. The results are returned and the memory is cleaned up immediately
@@ -47,8 +42,7 @@ class SinglePredictor:
     def _multiple_rules(
         self, smiles_list: List[str], rules: List[str], invert: bool = False
     ) -> List[Any]:
-        """
-        Applies multiple transformation rules to a list of SMILES strings.
+        """Applies multiple transformation rules to a list of SMILES strings.
 
         Parameters:
         - smiles_list (List[str]): The list of SMILES strings to process.
@@ -72,8 +66,8 @@ class SinglePredictor:
         rule_key: str = "gml",
         invert: bool = False,
     ) -> List[Dict[str, Any]]:
-        """
-        Performs prediction for each entry in the data using the specified rules.
+        """Performs prediction for each entry in the data using the specified
+        rules.
 
         Parameters:
         - data (List[Dict[str, Any]]): The dataset containing chemical reactions.

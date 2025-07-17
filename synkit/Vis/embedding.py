@@ -11,8 +11,8 @@ class Embedding:
         verbose: int = 0,
         custom_tsne_params: Optional[Dict] = None,
     ) -> None:
-        """
-        Initialize the Embedding class with options for caching directory, verbosity, and custom t-SNE parameters.
+        """Initialize the Embedding class with options for caching directory,
+        verbosity, and custom t-SNE parameters.
 
         Parameters:
             cache_dir (str): Directory where cached results are stored.
@@ -32,8 +32,7 @@ class Embedding:
         self.tsne_params = self.default_tsne_params.copy()
 
     def set_tsne_params(self, **params) -> None:
-        """
-        Sets parameters for t-SNE computations.
+        """Sets parameters for t-SNE computations.
 
         Parameters:
             **params: Arbitrary number of parameters for t-SNE.
@@ -41,14 +40,12 @@ class Embedding:
         self.tsne_params.update(params)
 
     def reset_tsne_params(self) -> None:
-        """
-        Resets t-SNE parameters to default values.
-        """
+        """Resets t-SNE parameters to default values."""
         self.tsne_params = self.default_tsne_params.copy()
 
     def _compute_tsne(self, X: np.ndarray) -> np.ndarray:
-        """
-        Direct computation of the t-SNE embedding with the current parameters.
+        """Direct computation of the t-SNE embedding with the current
+        parameters.
 
         Parameters:
             X (np.ndarray): High-dimensional data points.
@@ -60,8 +57,7 @@ class Embedding:
         return tsne.fit_transform(X)
 
     def compute_tsne(self, X: np.ndarray, cache: bool = True) -> np.ndarray:
-        """
-        Computes or retrieves the t-SNE embedding from cache.
+        """Computes or retrieves the t-SNE embedding from cache.
 
         Parameters:
             X (np.ndarray): High-dimensional data points.
@@ -77,8 +73,7 @@ class Embedding:
 
     @property
     def cache(self) -> Any:
-        """
-        Decorator for caching the compute_tsne function.
+        """Decorator for caching the compute_tsne function.
 
         Returns:
             Callable: Cached function.
@@ -86,7 +81,5 @@ class Embedding:
         return self.memory.cache(self._compute_tsne)
 
     def clear_cache(self) -> None:
-        """
-        Clears the cache directory.
-        """
+        """Clears the cache directory."""
         self.memory.clear()

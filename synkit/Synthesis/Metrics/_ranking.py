@@ -5,9 +5,9 @@ from typing import List, Dict
 def _coverage(
     reactions_data: List[Dict[str, str]], key_ground_truth: str, key_prediction: str
 ) -> float:
-    """
-    Calculates the coverage percentage, which measures how many of the predicted reactions
-    exactly match the ground truth reactions given in a list of dictionaries.
+    """Calculates the coverage percentage, which measures how many of the
+    predicted reactions exactly match the ground truth reactions given in a
+    list of dictionaries.
 
     Parameters:
     - reactions_data (List[Dict[str, str]]): List of dictionaries containing
@@ -29,11 +29,10 @@ def _coverage(
 def _novelty_rate(
     reactions_data: List[Dict[str, any]], key_ground_truth: str, key_prediction: str
 ) -> float:
-    """
-    Calculates the False Positive Rate (FPR) for each observation and then averages
-    these values across all observations. The FPR represents the proportion of
-    predictions that do not match
-    the ground truth for each individual entry in the dataset.
+    """Calculates the False Positive Rate (FPR) for each observation and then
+    averages these values across all observations. The FPR represents the
+    proportion of predictions that do not match the ground truth for each
+    individual entry in the dataset.
 
     Parameters:
     - reactions_data (List[Dict[str, any]]): List of dictionaries containing
@@ -68,10 +67,10 @@ def _novelty_rate(
 def _recognition_rate(
     reactions_data: List[Dict[str, any]], key_ground_truth: str, key_prediction: str
 ) -> float:
-    """
-    Calculates the recognition rate for each observation and averages these rates
-    across all observations. The recognition rate measures the proportion of
-    the prediction list that matches the single ground truth reaction for each entry.
+    """Calculates the recognition rate for each observation and averages these
+    rates across all observations. The recognition rate measures the proportion
+    of the prediction list that matches the single ground truth reaction for
+    each entry.
 
     Parameters:
     - reactions_data (List[Dict[str, any]]): List of dictionaries containing
@@ -110,9 +109,9 @@ def _top_k_accuracy(
     key_prediction: str,
     k: int,
 ) -> float:
-    """
-    Calculates the Top-K accuracy by using the coverage function on the top K predictions.
-    This measures the probability that the true reaction is within the top K predictions.
+    """Calculates the Top-K accuracy by using the coverage function on the top
+    K predictions. This measures the probability that the true reaction is
+    within the top K predictions.
 
     Parameters:
     - reactions_data (List[Dict[str, any]]): List of dictionaries containing
@@ -137,12 +136,12 @@ def _calculate_f_beta_score(
     coverage_rate: float,  # This serves as the recall
     beta: float = 1.0,  # Beta factor, default is 1.0 for F1 score
 ) -> float:
-    """
-    Computes the F-beta Score, which is a weighted harmonic mean of recognition rate
-    and coverage rate. The recognition rate (precision) and coverage rate (recall)
-    must be expressed as percentages. A beta value of 1.0 means equal importance to
-    precision and recall (F1 Score), greater than 1.0 gives more importance to recall
-    (e.g., F2 Score), and less than 1.0 prioritizes precision (e.g., F0.5 Score).
+    """Computes the F-beta Score, which is a weighted harmonic mean of
+    recognition rate and coverage rate. The recognition rate (precision) and
+    coverage rate (recall) must be expressed as percentages. A beta value of
+    1.0 means equal importance to precision and recall (F1 Score), greater than
+    1.0 gives more importance to recall (e.g., F2 Score), and less than 1.0
+    prioritizes precision (e.g., F0.5 Score).
 
     Parameters:
     - recognition_rate (float): The recognition rate of the predictions,

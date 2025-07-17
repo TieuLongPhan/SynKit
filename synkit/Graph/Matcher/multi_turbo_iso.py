@@ -9,21 +9,22 @@ from synkit.Graph.Matcher.turbo_iso import TurboISO
 
 
 class MultiTurboISO:
-    """
-    Accelerated sub-graph search across a batch of host graphs.
+    """Accelerated sub-graph search across a batch of host graphs.
 
     Builds a single global signature bucket over all hosts and reuses a
-    lightweight TurboISO matcher per host. For each query graph, hosts are
-    first pruned by a signature + degree filter, and then TurboISO’s
+    lightweight TurboISO matcher per host. For each query graph, hosts
+    are first pruned by a signature + degree filter, and then TurboISO’s
     backtracking is run only on the surviving hosts.
 
     :param hosts: List of host graphs to index.
     :type hosts: List[nx.Graph]
     :param node_label: Node attribute(s) used for signature matching.
     :type node_label: str or list[str]
-    :param edge_label: Edge attribute(s) to match; pass None to ignore edges.
+    :param edge_label: Edge attribute(s) to match; pass None to ignore
+        edges.
     :type edge_label: str or list[str] or None
-    :param distance_threshold: Skip distance filtering if candidate pool is smaller.
+    :param distance_threshold: Skip distance filtering if candidate pool
+        is smaller.
     :type distance_threshold: int
     :returns: An instance of MultiTurboISO with global index built.
     :rtype: MultiTurboISO
@@ -99,7 +100,10 @@ class MultiTurboISO:
 
     @property
     def edge_label(self) -> List[str]:
-        """Edge‑attribute selector(s).  Empty list means ‘ignore’."""
+        """Edge‑attribute selector(s).
+
+        Empty list means ‘ignore’.
+        """
         return list(self._edge_attr)
 
     # -------------------------------------------------------------- helpers
@@ -172,7 +176,7 @@ class MultiTurboISO:
     ) -> List[Dict[int, Union[bool, List[Dict[Any, Any]]]]]:
         """Match a list of pattern graphs.
 
-        Returns a list of per‑pattern dictionaries in the same order as the
-        input list.
+        Returns a list of per‑pattern dictionaries in the same order as
+        the input list.
         """
         return [self.search_one(p, prune=prune) for p in patterns]

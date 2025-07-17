@@ -1,22 +1,3 @@
-"""fingerprint_clusterer.py
-===========================
-Cluster chemical fingerprint vectors using the Butina algorithm from RDKit,
-with integrated t-SNE visualization of clusters.
-
-Key features
-------------
-* **Butina clustering** – fast hierarchical clustering with a similarity cutoff.
-* **t-SNE visualization** – 2D embedding of fingerprints, highlighting top‑k clusters.
-* **NumPy support** – accepts 2D arrays of 0/1 fingerprint data.
-* **Configurable** – user‑defined cutoff, perplexity, and top‑k highlight.
-
-Quick start
------------
->>> from synkit.Chem.Fingerprint.fingerprint_clusterer import ButinaCluster
->>> clusters = ButinaCluster.cluster(arr, cutoff=0.3)
->>> ButinaCluster.visualize(arr, clusters, k=5)
-"""
-
 from __future__ import annotations
 from typing import List, Optional
 
@@ -28,20 +9,32 @@ import matplotlib.pyplot as plt
 
 
 class ButinaCluster:
-    """
-    Cluster fingerprint vectors using RDKit’s Butina algorithm, and visualize with t-SNE.
+    """Cluster chemical fingerprint vectors using the Butina algorithm from
+    RDKit, with integrated t-SNE visualization of clusters.
 
-    :cvar None: Stateless utility class with only static methods.
+    Key features
+    ------------
+    * **Butina clustering** – fast hierarchical clustering with a similarity cutoff.
+    * **t-SNE visualization** – 2D embedding of fingerprints, highlighting top‑k clusters.
+    * **NumPy support** – accepts 2D arrays of 0/1 fingerprint data.
+    * **Configurable** – user‑defined cutoff, perplexity, and top‑k highlight.
+
+    Quick start
+    -----------
+    >>> from synkit.Chem.Fingerprint.fingerprint_clusterer import ButinaCluster
+    >>> clusters = ButinaCluster.cluster(arr, cutoff=0.3)
+    >>> ButinaCluster.visualize(arr, clusters, k=5)
     """
 
     @staticmethod
     def cluster(arr: np.ndarray, cutoff: float = 0.2) -> List[List[int]]:
-        """
-        Perform Butina clustering on fingerprint bit-vectors.
+        """Perform Butina clustering on fingerprint bit-vectors.
 
-        :param arr: 2D array of shape (n_samples, n_bits) with 0/1 dtype.
+        :param arr: 2D array of shape (n_samples, n_bits) with 0/1
+            dtype.
         :type arr: np.ndarray
-        :param cutoff: Distance cutoff (1 – similarity) to form clusters. Defaults to 0.2.
+        :param cutoff: Distance cutoff (1 – similarity) to form
+            clusters. Defaults to 0.2.
         :type cutoff: float
         :returns: List of clusters, each a list of sample indices.
         :rtype: list of list of int
@@ -73,8 +66,7 @@ class ButinaCluster:
         perplexity: float = 30.0,
         random_state: int = 42,
     ) -> None:
-        """
-        Visualize clusters in 2D via t-SNE embedding.
+        """Visualize clusters in 2D via t-SNE embedding.
 
         :param arr: 2D array of shape (n_samples, n_features) with fingerprint data.
         :type arr: np.ndarray
@@ -130,8 +122,7 @@ class ButinaCluster:
         plt.show()
 
     def __str__(self) -> str:
-        """
-        Short description of the clusterer.
+        """Short description of the clusterer.
 
         :returns: Class name.
         :rtype: str
@@ -139,8 +130,7 @@ class ButinaCluster:
         return "<ButinaCluster>"
 
     def help(self) -> None:
-        """
-        Print usage summary for clustering and visualization.
+        """Print usage summary for clustering and visualization.
 
         :returns: None
         :rtype: NoneType

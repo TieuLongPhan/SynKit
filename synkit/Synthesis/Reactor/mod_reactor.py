@@ -49,8 +49,7 @@ else:
 # MODReactor
 # ──────────────────────────────────────────────────────────────────────────────
 class MODReactor:
-    """
-    Lazy, ergonomic wrapper around the MØD toolkit’s derivation pipeline.
+    """Lazy, ergonomic wrapper around the MØD toolkit’s derivation pipeline.
 
     Workflow
     --------
@@ -108,8 +107,8 @@ class MODReactor:
     # Public high‑level API
     # ------------------------------------------------------------------
     def run(self) -> "MODReactor":
-        """
-        Execute the chosen strategy **once** and return *self* so you can chain:
+        """Execute the chosen strategy **once** and return *self* so you can
+        chain:
 
         ```python
         r = MODReactor(...).run()
@@ -122,8 +121,7 @@ class MODReactor:
 
     # helpers for outside world ------------------------------------------------
     def get_reaction_smiles(self) -> List[str]:
-        """
-        Retrieve the reaction SMILES strings (lazy).
+        """Retrieve the reaction SMILES strings (lazy).
 
         Returns
         -------
@@ -133,8 +131,7 @@ class MODReactor:
         return self.reaction_smiles
 
     def get_dg(self) -> DG:
-        """
-        Access the underlying derivation graph.
+        """Access the underlying derivation graph.
 
         Returns
         -------
@@ -163,9 +160,7 @@ class MODReactor:
     __repr__ = __str__
 
     def help(self) -> None:
-        """
-        Print a one-page summary of reactor configuration and results.
-        """
+        """Print a one-page summary of reactor configuration and results."""
         print("MODReactor".ljust(60, "─"))
         print(f"Rule file     : {self.rule_file}")
         print(f"Substrate     : {'.'.join(self.initial_smiles)}")
@@ -182,8 +177,7 @@ class MODReactor:
     # ------------------------------------------------------------------
     @property
     def dg(self) -> Optional[DG]:
-        """
-        DG or None – cached derivation graph.
+        """DG or None – cached derivation graph.
 
         See also
         --------
@@ -193,23 +187,18 @@ class MODReactor:
 
     @property
     def product_sets(self) -> List[List[str]]:
-        """
-        Raw product sets (lists of SMILES) before joining into full reactions.
-        """
+        """Raw product sets (lists of SMILES) before joining into full
+        reactions."""
         return self.temp_results
 
     @property
     def product_smiles(self) -> List[str]:
-        """
-        Flattened list of all product SMILES (may contain duplicates).
-        """
+        """Flattened list of all product SMILES (may contain duplicates)."""
         return [s for batch in self.temp_results for s in batch]
 
     @property
     def prediction_count(self) -> int:
-        """
-        Number of distinct prediction batches generated.
-        """
+        """Number of distinct prediction batches generated."""
         return len(self._temp_results or [])
 
     # ------------------------------------------------------------------
@@ -217,8 +206,7 @@ class MODReactor:
     # ------------------------------------------------------------------
     @property
     def temp_results(self) -> List[List[str]]:
-        """
-        Lazy-loaded raw product lists.
+        """Lazy-loaded raw product lists.
 
         Returns
         -------
@@ -230,8 +218,7 @@ class MODReactor:
 
     @property
     def reaction_smiles(self) -> List[str]:
-        """
-        Lazy-loaded reaction SMILES strings of form “A>>B”.
+        """Lazy-loaded reaction SMILES strings of form “A>>B”.
 
         Returns
         -------
@@ -248,8 +235,7 @@ class MODReactor:
     # Internals – setup
     # ------------------------------------------------------------------
     def _prepare_initial_molecules(self) -> List[Any]:
-        """
-        Convert SMILES → MØD molecule objects, dedupe, and sort.
+        """Convert SMILES → MØD molecule objects, dedupe, and sort.
 
         Returns
         -------
@@ -262,8 +248,7 @@ class MODReactor:
         return mols
 
     def _parse_reaction_rule(self) -> Any:
-        """
-        Load or parse the reaction rule from raw GML or file.
+        """Load or parse the reaction rule from raw GML or file.
 
         Returns
         -------
@@ -304,8 +289,7 @@ class MODReactor:
     # Internals – strategy dispatch
     # ------------------------------------------------------------------
     def _predict(self) -> List[List[str]]:
-        """
-        Dispatch to the appropriate application strategy.
+        """Dispatch to the appropriate application strategy.
 
         Returns
         -------
@@ -350,8 +334,7 @@ class MODReactor:
         return products
 
     def _apply_all(self) -> List[List[str]]:
-        """
-        Classic “ALL” strategy: VF2 with reagents included.
+        """Classic “ALL” strategy: VF2 with reagents included.
 
         Returns
         -------
@@ -413,9 +396,8 @@ class MODReactor:
         arrow: str = ">>",
         separator: str = ".",
     ) -> List[str]:
-        """
-        Build reaction SMILES of the form “A>>B”, where A and B swap
-        roles if invert=True.
+        """Build reaction SMILES of the form “A>>B”, where A and B swap roles
+        if invert=True.
 
         Parameters
         ----------

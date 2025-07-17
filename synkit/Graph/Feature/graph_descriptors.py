@@ -14,8 +14,7 @@ class GraphDescriptor:
 
     @staticmethod
     def is_graph_empty(graph: Union[nx.Graph, dict, list, Any]) -> bool:
-        """
-        Determine if a graph representation is empty.
+        """Determine if a graph representation is empty.
 
         Parameters:
         - graph (Union[nx.Graph, dict, list, Any]): A graph representation which can be
@@ -40,8 +39,7 @@ class GraphDescriptor:
 
     @staticmethod
     def is_acyclic_graph(G: nx.Graph) -> bool:
-        """
-        Determines if the given graph is acyclic.
+        """Determines if the given graph is acyclic.
 
         Parameters:
         - G (nx.Graph): The graph to be checked.
@@ -54,8 +52,7 @@ class GraphDescriptor:
 
     @staticmethod
     def is_single_cyclic_graph(G: nx.Graph) -> bool:
-        """
-        Determines if the given graph has exactly one cycle.
+        """Determines if the given graph has exactly one cycle.
 
         Parameters:
         - G (nx.Graph): The graph to be checked.
@@ -74,8 +71,7 @@ class GraphDescriptor:
 
     @staticmethod
     def is_complex_cyclic_graph(G: nx.Graph) -> bool:
-        """
-        Determines if the graph is complex cyclic with multiple cycles.
+        """Determines if the graph is complex cyclic with multiple cycles.
 
         Parameters:
         - G (nx.Graph): The graph to be checked.
@@ -93,8 +89,7 @@ class GraphDescriptor:
 
     @staticmethod
     def check_graph_type(G: nx.Graph) -> str:
-        """
-        Classifies the graph as acyclic, single cyclic, or complex cyclic.
+        """Classifies the graph as acyclic, single cyclic, or complex cyclic.
 
         Parameters:
         - G (nx.Graph): The graph to be checked.
@@ -116,10 +111,9 @@ class GraphDescriptor:
 
     @staticmethod
     def get_cycle_member_rings(G: nx.Graph, type="minimal") -> List[int]:
-        """
-        Identifies all cycles in the given graph using cycle bases to ensure no overlap
-        and returns a list of the sizes of these cycles (member rings),
-        sorted in ascending order.
+        """Identifies all cycles in the given graph using cycle bases to ensure
+        no overlap and returns a list of the sizes of these cycles (member
+        rings), sorted in ascending order.
 
         Parameters:
         - G (nx.Graph): The NetworkX graph to be analyzed.
@@ -142,8 +136,7 @@ class GraphDescriptor:
 
     @staticmethod
     def get_element_count(graph: nx.Graph) -> Dict[str, int]:
-        """
-        Counts occurrences of each element in the graph nodes.
+        """Counts occurrences of each element in the graph nodes.
 
         Parameters:
         - graph (nx.Graph): A NetworkX graph with 'element' attribute in nodes.
@@ -161,8 +154,8 @@ class GraphDescriptor:
         its: str = "ITS",
         condensed: bool = True,
     ) -> Dict:
-        """
-        Enhance an entry dictionary with topology type and reaction type descriptors.
+        """Enhance an entry dictionary with topology type and reaction type
+        descriptors.
 
         Parameters:
         - entry (Dict): A dictionary with reaction data.
@@ -208,8 +201,8 @@ class GraphDescriptor:
 
     @staticmethod
     def _extract_graph(entry: Dict, key: str) -> Union[nx.Graph, None]:
-        """
-        Extracts a graph from an entry dictionary based on the specified key.
+        """Extracts a graph from an entry dictionary based on the specified
+        key.
 
         Parameters:
         - entry (Dict): The dictionary containing graph data.
@@ -234,8 +227,7 @@ class GraphDescriptor:
     def _adjust_cycle_and_step(
         entry: Dict, cycle_key: str, topo_type: str, its_prefix: str = ""
     ) -> None:
-        """
-        Adjusts cycle and step descriptors based on the graph topology type.
+        """Adjusts cycle and step descriptors based on the graph topology type.
 
         Parameters:
         - entry (Dict): The entry dictionary to update.
@@ -258,8 +250,7 @@ class GraphDescriptor:
 
     @staticmethod
     def _validate_graph_input(G: nx.Graph) -> None:
-        """
-        Validates that the input is a NetworkX graph.
+        """Validates that the input is a NetworkX graph.
 
         Parameters:
         - G (nx.Graph): The graph to validate.
@@ -279,8 +270,8 @@ class GraphDescriptor:
         n_jobs: int = 4,
         verbose: int = 0,
     ) -> List[Dict]:
-        """
-        Processes a list of entries in parallel to enhance each entry with descriptors.
+        """Processes a list of entries in parallel to enhance each entry with
+        descriptors.
 
         Parameters:
         - entries (List[Dict]): List of dictionaries containing reaction data to enhance.
@@ -304,8 +295,7 @@ class GraphDescriptor:
 
 
 def check_graph_connectivity(graph: nx.Graph) -> str:
-    """
-    Check the connectivity of a NetworkX graph.
+    """Check the connectivity of a NetworkX graph.
 
     This function assesses whether all nodes in the graph are connected by some path,
     applicable to undirected graphs.

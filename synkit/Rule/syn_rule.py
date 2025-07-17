@@ -160,10 +160,10 @@ class SynRule:
         left: nx.Graph,
         right: nx.Graph,
     ) -> None:
-        """
-        Remove explicit hydrogens from rc, left, right—but only when *both*
-        left & right agree the H should be implicit.  Otherwise an H remains
-        explicit in all three graphs.
+        """Remove explicit hydrogens from rc, left, right—but only when *both*
+        left & right agree the H should be implicit.
+
+        Otherwise an H remains explicit in all three graphs.
         """
 
         def _removable_on(graph: nx.Graph, h: str) -> bool:

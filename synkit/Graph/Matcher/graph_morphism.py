@@ -21,28 +21,27 @@ def find_graph_isomorphism(
     fast_invariant_check: bool = True,
     logger: Optional[logging.Logger] = None,
 ) -> Optional[Dict[Any, Any]]:
-    """
-    Check whether two graphs are isomorphic and return the node-mapping.
+    """Check whether two graphs are isomorphic and return the node-mapping.
 
     :param G1: The first NetworkX graph to compare.
     :type G1: nx.Graph | nx.DiGraph | nx.MultiGraph | nx.MultiDiGraph
     :param G2: The second NetworkX graph to compare.
     :type G2: nx.Graph | nx.DiGraph | nx.MultiGraph | nx.MultiDiGraph
-    :param node_match: Optional function taking two node attribute dicts and
-                       returning True if they match.
+    :param node_match: Optional function taking two node attribute dicts
+        and returning True if they match.
     :type node_match: callable or None
-    :param edge_match: Optional function taking two edge attribute dicts and
-                       returning True if they match.
+    :param edge_match: Optional function taking two edge attribute dicts
+        and returning True if they match.
     :type edge_match: callable or None
     :param use_defaults: Whether to use default matchers when None.
     :type use_defaults: bool
-    :param fast_invariant_check: Perform quick node/edge count and degree
-                                  sequence checks prior to matcher.
+    :param fast_invariant_check: Perform quick node/edge count and
+        degree sequence checks prior to matcher.
     :type fast_invariant_check: bool
     :param logger: Logger for debug messages. Defaults to root logger.
     :type logger: logging.Logger or None
-
-    :returns: A dict mapping nodes in G1 to nodes in G2 if isomorphic; otherwise None.
+    :returns: A dict mapping nodes in G1 to nodes in G2 if isomorphic;
+        otherwise None.
     :rtype: dict[Any, Any] or None
     """
     log = logger or logging.getLogger(__name__)
@@ -111,9 +110,9 @@ def graph_isomorphism(
     edge_match: Optional[Callable] = None,
     use_defaults: bool = False,
 ) -> bool:
-    """
-    Determines if two graphs are isomorphic, considering provided node and edge matching
-    functions. Uses default matching settings if none are provided.
+    """Determines if two graphs are isomorphic, considering provided node and
+    edge matching functions. Uses default matching settings if none are
+    provided.
 
     Parameters:
     - graph_1 (nx.Graph): The first graph to compare.
@@ -157,9 +156,8 @@ def subgraph_isomorphism(
     node_comparator: Optional[Callable[[Any, Any], bool]] = None,
     edge_comparator: Optional[Callable[[Any, Any], bool]] = None,
 ) -> bool:
-    """
-    Enhanced checks if the child graph is a subgraph isomorphic to the parent graph based on
-    customizable node and edge attributes.
+    """Enhanced checks if the child graph is a subgraph isomorphic to the
+    parent graph based on customizable node and edge attributes.
 
     Parameters:
     - child_graph (nx.Graph): The child graph.
@@ -257,9 +255,8 @@ def maximum_connected_common_subgraph(
     node_label_default: List[Any] = ["*", 0],
     edge_attribute: str = "standard_order",
 ) -> nx.Graph:
-    """
-    Computes the largest connected common subgraph (MCS) between two graphs using
-    subgraph isomorphism based on customizable node and edge attributes.
+    """Computes the largest connected common subgraph (MCS) between two graphs
+    using subgraph isomorphism based on customizable node and edge attributes.
 
     The function iterates over subsets of nodes from the smaller graph—starting from the largest
     possible subgraph size down to 1—and returns the first (largest) candidate that is connected
@@ -319,8 +316,8 @@ def heuristics_MCCS(
     node_label_default: List[Any] = ["*", 0],
     edge_attribute: str = "standard_order",
 ) -> nx.Graph:
-    """
-    Computes the Maximum Connected Common Subgraph (MCCS) over a list of graphs using a heuristic approach.
+    """Computes the Maximum Connected Common Subgraph (MCCS) over a list of
+    graphs using a heuristic approach.
 
     This function computes the MCCS between the first two graphs using the
     `maximum_connected_common_subgraph` function based on customizable node and edge attributes.

@@ -6,8 +6,8 @@ from typing import List, Dict, Any
 
 class PruneTemplate:
     def __init__(self, templates: List[List[Dict[str, Any]]], graph_key: str) -> None:
-        """
-        Initialize the PruneTemplate object with the provided templates and graph key.
+        """Initialize the PruneTemplate object with the provided templates and
+        graph key.
 
         Parameters:
         - templates (List[List[Dict[str, Any]]]): A list of lists containing dictionaries
@@ -22,8 +22,7 @@ class PruneTemplate:
     def remove_edges_by_attribute(
         input_graph: nx.Graph, attribute: str = "standard_order", value: Any = 0
     ) -> nx.Graph:
-        """
-        Remove edges from the input graph where a given attribute equals a
+        """Remove edges from the input graph where a given attribute equals a
         specified value.
 
         Parameters:
@@ -49,9 +48,8 @@ class PruneTemplate:
         return graph
 
     def fit(self) -> List[List[Dict[str, Any]]]:
-        """
-        Prune the templates by removing subgraphs where the longest path is shorter
-        than the radius.
+        """Prune the templates by removing subgraphs where the longest path is
+        shorter than the radius.
 
         Returns:
             List[List[Dict[str, Any]]]: The pruned list of templates.
