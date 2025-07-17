@@ -1,3 +1,24 @@
+"""smiles_featurizer.py
+=======================
+Utility for converting SMILES strings into various cheminformatics fingerprints,
+with optional NumPy‐array conversion.
+
+Key features
+------------
+* **Multi‐fingerprint support** – MACCS, Avalon, ECFP/FCFP, RDKit, AtomPair, Torsion, Pharm2D
+* **SMILES validation** – raises on invalid input
+* **Array conversion** – output as NumPy arrays for ML pipelines
+* **Extensible** – add new methods or override via subclassing
+
+Quick start
+-----------
+>>> from synkit.Chem.Fingerprint.smiles_featurizer import SmilesFeaturizer
+>>> arr = SmilesFeaturizer.featurize_smiles("CCO", "ecfp4", convert_to_array=True)
+"""
+
+from __future__ import annotations
+from typing import Any
+
 import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem, MACCSkeys
@@ -7,71 +28,91 @@ from rdkit.Chem.Pharm2D import Gobbi_Pharm2D, Generate
 
 
 class SmilesFeaturizer:
-    def __init__(self):
+    """
+    Convert SMILES strings into chemical fingerprint vectors.
+
+    :cvar None: This class only provides static/​class methods and holds no state.
+
+    Supported fingerprint methods:
+      - MACCS keys
+      - Avalon
+      - ECFP/FCFP (Morgan)
+      - RDKit topological
+      - AtomPair
+      - Torsion
+      - 2D Pharmacophore
+
+    Use `featurize_smiles` for one‑line access.
+
+    """
+
+    def __init__(self) -> None:
         """
-        Initializes the SmilesFeaturizer class without any specific parameters for fingerprint generation.
+        Initialize SmilesFeaturizer.
+
+        This class has no instance state; all methods are static or class‑level.
         """
         pass
 
     @staticmethod
     def smiles_to_mol(smiles: str) -> Chem.Mol:
         """
-        Converts a SMILES string to an RDKit Mol object.
+        Convert a SMILES string to an RDKit Mol object.
 
-        Parameters:
-        - smiles (str): The SMILES string to be converted.
-
-        Returns:
-        - Chem.Mol: The corresponding RDKit Mol object.
+        :param smiles: The SMILES string to convert.
+        :type smiles: str
+        :returns: RDKit Mol object corresponding to the SMILES.
+        :rtype: Chem.Mol
+        :raises ValueError: If the SMILES string is invalid.
         """
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
-            raise ValueError("Invalid SMILES string provided.")
+            raise ValueError(f"Invalid SMILES string: {smiles!r}")
         return mol
 
     @staticmethod
-    def get_maccs_keys(mol: Chem.Mol):
+    def get_maccs_keys(mol: Chem.Mol) -> Any:
         """
-        Generates MACCS keys fingerprint from an RDKit Mol object.
+        Generate the MACCS keys fingerprint for a molecule.
 
-        Parameters:
-        - mol (Chem.Mol): The Mol object to be featurized.
-
-        Returns:
-        - RDKit ExplicitBitVect: The MACCS keys fingerprint of the Mol object.
+        :param mol: RDKit Mol object.
+        :type mol: Chem.Mol
+        :returns: MACCS keys fingerprint bit vector.
+        :rtype: ExplicitBitVect
         """
         return MACCSkeys.GenMACCSKeys(mol)
 
     @staticmethod
-    def get_avalon_fp(mol: Chem.Mol, nBits: int = 1024):
+    def get_avalon_fp(mol: Chem.Mol, nBits: int = 1024) -> Any:
         """
-        Generates Avalon fingerprint from an RDKit Mol object.
+        Generate the Avalon fingerprint for a molecule.
 
-        Parameters:
-        - mol (Chem.Mol): The Mol object to be featurized.
-        - nBits (int): The number of bits in the generated fingerprint.
-
-        Returns:
-        - RDKit ExplicitBitVect: The Avalon fingerprint of the Mol object.
+        :param mol: RDKit Mol object.
+        :type mol: Chem.Mol
+        :param nBits: Length of the fingerprint vector.
+        :type nBits: int
+        :returns: Avalon fingerprint bit vector.
+        :rtype: ExplicitBitVect
         """
         return fpAvalon.GetAvalonFP(mol, nBits)
 
     @staticmethod
     def get_ecfp(
         mol: Chem.Mol, radius: int, nBits: int = 2048, useFeatures: bool = False
-    ):
+    ) -> Any:
         """
-        Generates Extended-Connectivity Fingerprints (ECFP) or
-        Feature-Class Fingerprints (FCFP) from an RDKit Mol object.
+        Generate a Morgan fingerprint (ECFP or FCFP) for a molecule.
 
-        Parameters:
-        - mol (Chem.Mol): The Mol object to be featurized.
-        - radius (int): The radius of the fingerprint.
-        - nBits (int): The number of bits in the generated fingerprint.
-        - useFeatures (bool): Whether to use atom features instead of atom identities.
-
-        Returns:
-        - RDKit ExplicitBitVect: The ECFP or FCFP fingerprint of the Mol object.
+        :param mol: RDKit Mol object.
+        :type mol: Chem.Mol
+        :param radius: Radius for the Morgan algorithm.
+        :type radius: int
+        :param nBits: Length of the fingerprint vector.
+        :type nBits: int
+        :param useFeatures: If True, generate a Feature‑Class fingerprint (FCFP).
+        :type useFeatures: bool
+        :returns: Morgan fingerprint bit vector.
+        :rtype: ExplicitBitVect
         """
         return AllChem.GetMorganFingerprintAsBitVect(
             mol, radius, nBits=nBits, useFeatures=useFeatures
@@ -80,106 +121,150 @@ class SmilesFeaturizer:
     @staticmethod
     def get_rdk_fp(
         mol: Chem.Mol, maxPath: int, fpSize: int = 2048, nBitsPerHash: int = 2
-    ):
+    ) -> Any:
         """
-        Generates RDKit fingerprint from an RDKit Mol object.
+        Generate an RDKit topological fingerprint for a molecule.
 
-        Parameters:
-        - mol (Chem.Mol): The Mol object to be featurized.
-        - maxPath (int): The maximum path length (in bonds) to be included.
-        - fpSize (int): The size of the fingerprint.
-        - nBitsPerHash (int): The number of bits per hash.
-
-        Returns:
-        - RDKit ExplicitBitVect: The RDKit fingerprint of the Mol object.
+        :param mol: RDKit Mol object.
+        :type mol: Chem.Mol
+        :param maxPath: Maximum path length (bonds) to include.
+        :type maxPath: int
+        :param fpSize: Length of the fingerprint vector.
+        :type fpSize: int
+        :param nBitsPerHash: Bits per hash for path hashing.
+        :type nBitsPerHash: int
+        :returns: RDKit topological fingerprint bit vector.
+        :rtype: ExplicitBitVect
         """
         return Chem.RDKFingerprint(
             mol, maxPath=maxPath, fpSize=fpSize, nBitsPerHash=nBitsPerHash
         )
 
     @staticmethod
-    def mol_to_ap(mol: Chem.Mol) -> np.ndarray:
+    def mol_to_ap(mol: Chem.Mol) -> Any:
         """
-        Generates an Atom Pair fingerprint as a NumPy array from an RDKit Mol object.
+        Generate an Atom Pair fingerprint for a molecule.
 
-        Parameters:
-        - mol (Chem.Mol): The Mol object to be featurized.
-
-        Returns:
-        - RDKit ExplicitBitVect: The RDKit fingerprint of the Mol object.
+        :param mol: RDKit Mol object.
+        :type mol: Chem.Mol
+        :returns: Atom Pair fingerprint as an integer vector.
+        :rtype: ExplicitBitVect
         """
         return Pairs.GetAtomPairFingerprint(mol)
 
     @staticmethod
-    def mol_to_torsion(mol: Chem.Mol) -> np.ndarray:
+    def mol_to_torsion(mol: Chem.Mol) -> Any:
         """
-        Generates a Topological Torsion fingerprint as a NumPy array from an RDKit Mol object.
+        Generate a Topological Torsion fingerprint for a molecule.
 
-        Parameters:
-        - mol (Chem.Mol): The Mol object to be featurized.
-
-        Returns:
-        - RDKit ExplicitBitVect: The RDKit fingerprint of the Mol object.
+        :param mol: RDKit Mol object.
+        :type mol: Chem.Mol
+        :returns: Torsion fingerprint as an integer vector.
+        :rtype: ExplicitBitVect
         """
         return Torsions.GetTopologicalTorsionFingerprintAsIntVect(mol)
 
     @staticmethod
-    def mol_to_pharm2d(mol: Chem.Mol) -> np.ndarray:
+    def mol_to_pharm2d(mol: Chem.Mol) -> Any:
         """
-        Generates a 2D Pharmacophore fingerprint as a NumPy array from an RDKit Mol object.
+        Generate a 2D Pharmacophore fingerprint for a molecule.
 
-        Parameters:
-        - mol (Chem.Mol): The Mol object to be featurized.
-
-        Returns:
-        - RDKit ExplicitBitVect: The RDKit fingerprint of the Mol object.
+        :param mol: RDKit Mol object.
+        :type mol: Chem.Mol
+        :returns: 2D pharmacophore fingerprint bit vector.
+        :rtype: ExplicitBitVect
         """
         return Generate.Gen2DFingerprint(mol, Gobbi_Pharm2D.factory)
 
     @classmethod
     def featurize_smiles(
-        cls, smiles: str, fingerprint_type: str, convert_to_array: bool = True, **kwargs
-    ) -> np.ndarray:
+        cls,
+        smiles: str,
+        fingerprint_type: str,
+        convert_to_array: bool = True,
+        **kwargs: Any,
+    ) -> Any:
         """
-        Featurizes a SMILES string into the specified type of fingerprint, optionally converting it to a NumPy array.
+        Featurize a SMILES string into a chosen fingerprint, optionally converting to
+        a NumPy array.
 
-        Parameters:
-        - smiles (str): The SMILES string to be featurized.
-        - fingerprint_type (str): The type of fingerprint to generate.
-        - convert_to_array (bool): Whether to convert the fingerprint to a NumPy array. Defaults to True.
-        - **kwargs: Additional keyword arguments for the fingerprint function.
-
-        Returns:
-        - np.ndarray or RDKit ExplicitBitVect: The requested type of fingerprint for the SMILES string,
-          either as a NumPy array or as an RDKit bit vector, depending on `convert_to_array`.
+        :param smiles: The SMILES string to featurize.
+        :type smiles: str
+        :param fingerprint_type: One of 'maccs', 'avalon', 'ecfp#', 'fcfp#',
+                                 'rdk#', 'ap', 'torsion', 'pharm2d'.
+        :type fingerprint_type: str
+        :param convert_to_array: If True, convert the result to a NumPy array.
+        :type convert_to_array: bool
+        :param kwargs: Additional parameters passed to the chosen method:
+                       - `nBits` for Avalon/ECFP/FCFP
+                       - `radius` for ECFP/FCFP
+                       - `maxPath`, `fpSize`, `nBitsPerHash` for RDKit FP
+        :type kwargs: dict
+        :returns: Fingerprint as a NumPy array (if `convert_to_array`) or RDKit bit vector.
+        :rtype: np.ndarray or ExplicitBitVect
+        :raises ValueError: If `fingerprint_type` is unsupported.
         """
         mol = cls.smiles_to_mol(smiles)
-        if fingerprint_type == "maccs":
+
+        ft = fingerprint_type.lower()
+        if ft == "maccs":
             fp = cls.get_maccs_keys(mol)
-        elif fingerprint_type == "avalon":
-            fp = cls.get_avalon_fp(mol, **kwargs)
-        elif fingerprint_type.startswith("ecfp") or fingerprint_type.startswith("fcfp"):
-            radius = int(fingerprint_type[4])
-            useFeatures = fingerprint_type.startswith("fcfp")
-            nBits = kwargs.get("nBits", 2048)
-            fp = cls.get_ecfp(mol, radius, nBits=nBits, useFeatures=useFeatures)
-        elif fingerprint_type.startswith("rdk"):
-            maxPath = int(fingerprint_type[3])
-            fp = cls.get_rdk_fp(mol, maxPath, **kwargs)
-        elif fingerprint_type == "ap":
+        elif ft == "avalon":
+            fp = cls.get_avalon_fp(mol, nBits=kwargs.get("nBits", 1024))
+        elif ft.startswith("ecfp") or ft.startswith("fcfp"):
+            radius = int(ft[4])
+            use_features = ft.startswith("fcfp")
+            fp = cls.get_ecfp(
+                mol,
+                radius,
+                nBits=kwargs.get("nBits", 2048),
+                useFeatures=use_features,
+            )
+        elif ft.startswith("rdk"):
+            max_path = int(ft[3])
+            fp = cls.get_rdk_fp(
+                mol,
+                maxPath=max_path,
+                fpSize=kwargs.get("fpSize", 2048),
+                nBitsPerHash=kwargs.get("nBitsPerHash", 2),
+            )
+        elif ft == "ap":
             fp = cls.mol_to_ap(mol)
-        elif fingerprint_type == "torsion":
+        elif ft == "torsion":
             fp = cls.mol_to_torsion(mol)
-        elif fingerprint_type == "pharm2d":
+        elif ft == "pharm2d":
             fp = cls.mol_to_pharm2d(mol)
         else:
-            raise ValueError(f"Unsupported fingerprint type: {fingerprint_type}")
+            raise ValueError(f"Unsupported fingerprint type: {fingerprint_type!r}")
+
         if convert_to_array:
-            if fingerprint_type == "pharm2d":
-                return np.frombuffer(fp.ToBitString().encode(), "u1") - ord("0")
-            else:
-                ar = np.zeros((1,), dtype=np.int8)
-                DataStructs.ConvertToNumpyArray(fp, ar)
-                return ar
-        else:
-            return fp
+            if ft == "pharm2d":
+                bitstr = fp.ToBitString()
+                return np.array([int(b) for b in bitstr], dtype=np.int8)
+            arr = np.zeros((fp.GetNumBits(),), dtype=np.int8)
+            DataStructs.ConvertToNumpyArray(fp, arr)
+            return arr
+
+        return fp
+
+    def __str__(self) -> str:
+        """
+        Short description of the featurizer.
+
+        :returns: Class name.
+        :rtype: str
+        """
+        return "<SmilesFeaturizer>"
+
+    def help(self) -> None:
+        """
+        Print supported fingerprint types and usage summary.
+
+        :returns: None
+        :rtype: NoneType
+        """
+        print("SmilesFeaturizer supports the following fingerprint types:")
+        print("  - maccs, avalon, ecfp#, fcfp#, rdk#, ap, torsion, pharm2d")
+        print(
+            "Usage: SmilesFeaturizer.featurize_smiles(smiles, fingerprint_type, **kwargs)"
+        )

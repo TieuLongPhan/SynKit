@@ -1,158 +1,159 @@
+from __future__ import annotations
+from typing import Any, Dict, List
 from joblib import Parallel, delayed
-from typing import Dict, List
+
 from synkit.IO.debug import configure_warnings_and_logs
 from synkit.Chem.Fingerprint.transformation_fp import TransformationFP
 
-# Configure warnings and logging
 configure_warnings_and_logs(True, True)
 
 
 class FPCalculator:
     """
-    Class to calculate fingerprint vectors for chemical compounds represented by
-    SMILES strings. This class provides methods to process SMILES strings
-    into various types of fingerprint vectors,
-    either individually or in batches, and supports parallel processing.
+    Calculate fingerprint vectors for chemical reactions represented by SMILES strings.
 
-    Attributes:
-    - smiles_key (str): Key in the dictionary corresponding to the SMILES string.
-    - fp_type (str): Type of fingerprint to calculate; supports various cheminformatics fingerprint types.
-    - n_jobs (int): Number of parallel jobs to run for performance enhancement.
-    - verbose (int): Verbosity level of parallel computation.
+    :cvar fps: Shared fingerprint engine instance.
+    :vartype fps: TransformationFP
+    :cvar VALID_FP_TYPES: Supported fingerprint type identifiers.
+    :vartype VALID_FP_TYPES: List[str]
+
+    :param n_jobs: Number of parallel jobs to use for batch processing.
+    :type n_jobs: int
+    :param verbose: Verbosity level for parallel execution.
+    :type verbose: int
     """
 
-    # Class-level instance to be used in static methods.
-    fps = TransformationFP()
+    fps: TransformationFP = TransformationFP()
+    VALID_FP_TYPES: List[str] = [
+        "drfp",
+        "avalon",
+        "maccs",
+        "torsion",
+        "pharm2D",
+        "ecfp2",
+        "ecfp4",
+        "ecfp6",
+        "fcfp2",
+        "fcfp4",
+        "fcfp6",
+        "rdk5",
+        "rdk6",
+        "rdk7",
+        "ap",
+    ]
 
-    def __init__(
-        self,
-        smiles_key: str,
-        fp_type: str,
-        n_jobs: int = 1,
-        verbose: int = 0,
-    ):
+    def __init__(self, n_jobs: int = 1, verbose: int = 0) -> None:
         """
-        Initialize the FPCalculator with specific settings for SMILES string processing and fingerprint generation.
+        Initialize the FPCalculator.
 
-        Parameters:
-        - smiles_key (str): The key in a dictionary corresponding to the SMILES string.
-        - fp_type (str): The type of fingerprint to generate.
-        - n_jobs (int): Number of parallel jobs.
-        Default is 1.
-        - verbose (int): Verbosity level for parallel processing.
-        Default is 0.
+        :param n_jobs: Number of parallel jobs to use for fingerprint computation.
+        :type n_jobs: int
+        :param verbose: Verbosity level for the parallel processing.
+        :type verbose: int
         """
-        self.smiles_key = smiles_key
-        self.fp_type = fp_type
         self.n_jobs = n_jobs
         self.verbose = verbose
-        self._validate_fp_type(fp_type)
 
     def _validate_fp_type(self, fp_type: str) -> None:
         """
-        Validate if the provided fingerprint type is supported.
+        Ensure the requested fingerprint type is supported.
 
-        Parameters:
-        - fp_type (str): The type of fingerprint to be validated.
-
-        Raises:
-            ValueError: If the fingerprint type is not supported.
+        :param fp_type: Fingerprint type identifier to validate.
+        :type fp_type: str
+        :raises ValueError: If `fp_type` is not in VALID_FP_TYPES.
         """
-        valid_fps = [
-            "drfp",
-            "avalon",
-            "maccs",
-            "torsion",
-            "pharm2D",
-            "ecfp2",
-            "ecfp4",
-            "ecfp6",
-            "fcfp2",
-            "fcfp4",
-            "fcfp6",
-            "rdk5",
-            "rdk6",
-            "rdk7",
-        ]
-        if fp_type not in valid_fps:
+        if fp_type not in self.VALID_FP_TYPES:
+            valid = ", ".join(self.VALID_FP_TYPES)
             raise ValueError(
-                f"Unsupported fingerprint type '{fp_type}'. Currently supported: {', '.join(valid_fps)}."
+                f"Unsupported fingerprint type '{fp_type}'. Supported types: {valid}."
             )
 
     @staticmethod
     def dict_process(
-        data_dict: Dict,
+        data_dict: Dict[str, Any],
         rsmi_key: str,
         symbol: str = ">>",
-        fp_type: str = "ap",
+        fp_type: str = "ecfp4",
         absolute: bool = True,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """
-        Convert a reaction SMILES string to a fingerprint vector based on the
-        specified fingerprint type.
+        Compute a fingerprint for a single reaction SMILES entry and add it to the dict.
 
-        Parameters:
-        - data_dict (Dict): A dictionary containing reaction SMILES.
-        - rsmi_key (str): The key in the dictionary for the reaction SMILES.
-        - symbol (str): The symbol used to separate reactants and products.
-        Default is '>>'.
-        - fp_type (str): The type of fingerprint to generate.
-        Default is 'ap'.
-        - absolute (bool): Whether to use absolute values.
-        Default is True.
-
-        Returns:
-        - Dict: The updated dictionary with the fingerprint added
-        under the key `fp_type`.
-
-        Raises:
-        - ValueError: If an unsupported fingerprint type is specified or
-        the reaction SMILES key does not exist.
+        :param data_dict: Dictionary containing reaction data.
+        :type data_dict: dict
+        :param rsmi_key: Key in `data_dict` for the reaction SMILES string.
+        :type rsmi_key: str
+        :param symbol: Delimiter between reactant and product in the SMILES.
+        :type symbol: str
+        :param fp_type: Fingerprint type to compute.
+        :type fp_type: str
+        :param absolute: Whether to take absolute values of the fingerprint difference.
+        :type absolute: bool
+        :returns: The input dictionary with a new key `fp_{fp_type}` holding the fingerprint vector.
+        :rtype: dict
+        :raises ValueError: If `rsmi_key` is missing in `data_dict`.
         """
         if rsmi_key not in data_dict:
-            raise ValueError(f"Key '{rsmi_key}' does not exist in the dictionary.")
-        data_dict[fp_type] = FPCalculator.fps.fit(
+            raise ValueError(f"Key '{rsmi_key}' not found in data dictionary.")
+        # compute and insert fingerprint
+        vec = FPCalculator.fps.fit(
             data_dict[rsmi_key], symbols=symbol, fp_type=fp_type, abs=absolute
         )
+        data_dict[f"{fp_type}"] = vec
         return data_dict
 
     def parallel_process(
         self,
-        data_dicts: List[Dict],
+        data_dicts: List[Dict[str, Any]],
         rsmi_key: str,
         symbol: str = ">>",
-        fp_type: str = "ap",
+        fp_type: str = "ecfp4",
         absolute: bool = True,
-    ) -> List[Dict]:
+    ) -> List[Dict[str, Any]]:
         """
-        Convert a list of SMILES strings to fingerprint vectors in parallel
-        based on the specified fingerprint type. This method processes
-        multiple dictionaries containing SMILES strings simultaneously
-        using multiple workers.
+        Compute fingerprints for a batch of reaction dictionaries in parallel.
 
-        Parameters:
-        - data_dicts (List[Dict]): A list of dictionaries, each containing reaction data.
-        - rsmi_key (str): The key to access the reaction SMILES in each dictionary.
-        - symbol (str): The symbol used to separate reactants and products.
-        Default is '>>'.
-        - fp_type (str): The type of fingerprint to generate.
-        Default is 'ap'.
-        - absolute (bool): Whether to use absolute values.
-        Default is True.
-
-        Returns:
-        - List[Dict]: A list of dictionaries with updated fingerprint data,
-        where each dictionary includes a fingerprint vector.
-
-        Raises:
-        - ValueError: If an unsupported fingerprint type is specified or the
-        reaction SMILES key does not exist in any dictionary.
+        :param data_dicts: List of dictionaries, each containing a reaction SMILES.
+        :type data_dicts: list of dict
+        :param rsmi_key: Key in each dict for the reaction SMILES string.
+        :type rsmi_key: str
+        :param symbol: Delimiter between reactant and product in the SMILES.
+        :type symbol: str
+        :param fp_type: Fingerprint type to compute.
+        :type fp_type: str
+        :param absolute: Whether to take absolute values of the fingerprint difference.
+        :type absolute: bool
+        :returns: A list of dictionaries augmented with `fp_{fp_type}` entries.
+        :rtype: list of dict
+        :raises ValueError: If `fp_type` is unsupported or any dict is missing `rsmi_key`.
         """
+        # Validate fingerprint type once
+        self._validate_fp_type(fp_type)
 
+        # Process in parallel
         results = Parallel(n_jobs=self.n_jobs, verbose=self.verbose)(
-            delayed(FPCalculator.safe_dict_process)(
-                data_dict, rsmi_key, symbol, fp_type, absolute
-            )
-            for data_dict in data_dicts
+            delayed(self.dict_process)(dd, rsmi_key, symbol, fp_type, absolute)
+            for dd in data_dicts
         )
         return results
+
+    def __str__(self) -> str:
+        """
+        Short string summarizing the calculator configuration.
+
+        :returns: A summary of n_jobs and verbosity.
+        :rtype: str
+        """
+        return f"<FPCalculator n_jobs={self.n_jobs} verbose={self.verbose}>"
+
+    def help(self) -> None:
+        """
+        Print details about supported fingerprint types and usage.
+
+        :returns: None
+        :rtype: NoneType
+        """
+        print("FPCalculator supports the following fingerprint types:")
+        for t in self.VALID_FP_TYPES:
+            print("  -", t)
+        print(f"Configured for {self.n_jobs} parallel jobs, verbose={self.verbose}")

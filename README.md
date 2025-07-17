@@ -10,7 +10,14 @@ Our tools are tailored to assist researchers and chemists in navigating complex 
 
 For more details on each utility within the repository, please refer to the documentation provided in the respective folders.
 
-## Step-by-Step Installation Guide
+## Table of Contents
+- [Installation](#installation)
+- [Contribute to `SynKit`](#contribute)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
+## Installation
 
 1. **Python Installation:**
   Ensure that Python 3.11 or later is installed on your system. You can download it from [python.org](https://www.python.org/downloads/).
@@ -41,7 +48,7 @@ For more details on each utility within the repository, please refer to the docu
   pip install synkit[all]
   ```
 
-## For contributors
+## Contribute
 
 We're welcoming new contributors to build this project better. Please not hesitate to inquire me via [email][tieu@bioinf.uni-leipzig.de].
 
@@ -52,7 +59,7 @@ git checkout main
 git pull
 ```
 
-## Working on New Features
+### Working on New Features
 
 1. **Create a New Branch**:  
    For every new feature or bug fix, create a new branch from the `main` branch. Name your branch meaningfully, related to the feature or fix you are working on.
@@ -78,7 +85,7 @@ git pull
 
    Fix any issues or errors highlighted by these checks.
 
-## Integrating Changes
+### Integrating Changes
 
 1. **Rebase onto Staging**:  
    Once your feature is complete and tests pass, rebase your changes onto the `staging` branch to prepare for integration.
@@ -98,16 +105,16 @@ git pull
    ```
 
 3. **Create a Pull Request**:
-   Open a pull request from your feature branch to the `stagging` branch. Ensure the pull request description clearly describes the changes and any additional context necessary for review.
+   Open a pull request from your feature branch to the `staging` branch. Ensure the pull request description clearly describes the changes and any additional context necessary for review.
 
 ## Contributing
 - [Tieu-Long Phan](https://tieulongphan.github.io/)
 - [Klaus Weinbauer](https://github.com/klausweinbauer)
 - [Phuoc-Chung Nguyen Van](https://github.com/phuocchung123)
 
-## Deployment timeline
+## Publication
 
-We plan to update new version quarterly.
+[**SynKit**: An Advanced Cheminformatics Python Library for Efficient Manipulation and Analysis of Chemical Reaction Data]()
 
 
 ## License
