@@ -2,10 +2,12 @@
 name: Verify SynKit PyPI install
 
 on:
-  # Manual trigger
   workflow_dispatch:
-    branches:
-      - refractor
+    inputs:
+      branches:
+        type: string
+        required: true
+        default: refractor
 
   # Scheduled test every Monday at 03:00 UTC
   schedule:
