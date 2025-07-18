@@ -1,0 +1,57 @@
+# .github/workflows/verify-synkit-install.yml
+name: Verify SynKit install
+
+on:
+  # A: continue to run right after a successful PyPI publish
+  workflow_run:
+    workflows: ["PyPI publish"]
+    types: [completed]
+  # B: ALSO run every Monday at 03:00 UTC
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  verify:
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Setup Python & upgrade pip
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      # 2. Install SynKit (always latest)
+      - name: Install synkit[all]
+        run: pip install synkit[all]
+
+      # 3. (Optional) Print out what version was installed
+      - name: Show installed version
+        run: python -c "import importlib.metadata as m; print(m.version('synkit'))"
+
+      # 4. Write smoke-test script
+      - name: Write smoke-test
+        run: |
+          cat << 'EOF' > test_synkit.py
+          from synkit.IO import rsmi_to_rsmarts
+
+          template = (
+              '[C:2]=[O:3].[C:4]([H:7])[H:8]'
+              '>>'
+              '[C:2]=[C:4].[O:3]([H:7])[H:8]'
+          )
+
+          smart = rsmi_to_rsmarts(template)
+          print("Reaction SMARTS:", smart)
+          EOF
+
+      # 5. Run the smoke-test
+      - name: Run smoke-test
+        run: python test_synkit.py
+
+      # 6. Confirm success
+      - name: Success message
+        run: echo "✅ Smoke-test completed successfully for synkit[all]"

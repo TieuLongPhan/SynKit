@@ -1,5 +1,6 @@
 import os
 import sys
+import importlib.metadata as m
 from importlib.metadata import version as _get_version, PackageNotFoundError
 
 # -- Path setup --------------------------------------------------------------
@@ -15,9 +16,7 @@ try:
     release = _get_version("synkit")
 except PackageNotFoundError:
     try:
-        import synkit
-
-        release = synkit.__version__
+        release = m.version("synkit")
     except (ImportError, AttributeError):
         # Fallback default
         release = "0.0.10"

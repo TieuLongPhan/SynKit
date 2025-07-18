@@ -1,5 +1,9 @@
 .. _getting-started-synkit:
 
+.. image:: https://img.shields.io/pypi/v/synkit.svg
+   :alt: PyPI version
+   :align: right
+
 Getting Started
 ===============
 
