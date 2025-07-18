@@ -35,6 +35,10 @@ docs = [
   "sphinx-rtd-theme",
   "sphinxcontrib-bibtex",
 ]
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [project.urls]
 homepage = "https://github.com/TieuLongPhan/SynKit"
 source = "https://github.com/TieuLongPhan/SynKit"
