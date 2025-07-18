@@ -1,516 +1,377 @@
-import re
+import logging
+import itertools
+from operator import eq
+from typing import Callable, Optional, Union, List, Any, Dict
 import networkx as nx
-from typing import Optional, List
-
-from rdkit import Chem
-from rdkit.Chem.MolStandardize import rdMolStandardize
-
-__all__ = ["get_rc", "its_decompose"]
+from networkx.algorithms import isomorphism
+from networkx.algorithms.isomorphism import GraphMatcher
+from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
 
-def get_rc(
-    ITS: nx.Graph,
-    element_key: List[str] = ["element", "charge", "typesGH", "atom_map"],
-    bond_key: str = "order",
-    standard_key: str = "standard_order",
-    disconnected: bool = False,
-) -> nx.Graph:
-    """Extract the reaction-center (RC) subgraph from an ITS graph.
+# Alias for any NetworkX graph type
+graph_types = Union[nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph]
 
-    This function identifies:
-      1. All bonds whose standard order (difference between ITS orders) is non-zero.
-      2. All H–H bonds, ensuring they are included even if no order change is detected.
-      3. (Optional) Additional nodes with charge changes and reconnection of edges
-         if `disconnected=True`.
 
-    :param ITS: The integrated transition-state graph with composite node/edge attributes.
-    :type ITS: nx.Graph
-    :param element_key: List of node‐attribute keys to copy into the RC graph.
-    :type element_key: List[str]
-    :param bond_key: Edge attribute key representing the tuple of bond orders.
-    :type bond_key: str
-    :param standard_key: Edge attribute key for the computed standard_order.
-    :type standard_key: str
-    :param disconnected: If True, also include nodes with charge changes and
-                         reconnect any ITS edges between RC nodes.
-    :type disconnected: bool
-    :returns: A new graph containing only the reaction-center nodes and edges.
-    :rtype: nx.Graph
+def find_graph_isomorphism(
+    G1: graph_types,
+    G2: graph_types,
+    node_match: Optional[Callable[[Dict[str, Any], Dict[str, Any]], bool]] = None,
+    edge_match: Optional[Callable[[Dict[str, Any], Dict[str, Any]], bool]] = None,
+    use_defaults: bool = True,
+    fast_invariant_check: bool = True,
+    logger: Optional[logging.Logger] = None,
+) -> Optional[Dict[Any, Any]]:
+    """Check whether two graphs are isomorphic and return the node-mapping.
 
-    :example:
-    >>> ITS = nx.Graph()
-    >>> # ... populate ITS with 'order', 'standard_order', 'typesGH', etc. ...
-    >>> RC = get_rc(ITS, disconnected=True)
-    >>> isinstance(RC, nx.Graph)
-    True
+    :param G1: The first NetworkX graph to compare.
+    :type G1: nx.Graph | nx.DiGraph | nx.MultiGraph | nx.MultiDiGraph
+    :param G2: The second NetworkX graph to compare.
+    :type G2: nx.Graph | nx.DiGraph | nx.MultiGraph | nx.MultiDiGraph
+    :param node_match: Optional function taking two node attribute dicts
+        and returning True if they match.
+    :type node_match: callable or None
+    :param edge_match: Optional function taking two edge attribute dicts
+        and returning True if they match.
+    :type edge_match: callable or None
+    :param use_defaults: Whether to use default matchers when None.
+    :type use_defaults: bool
+    :param fast_invariant_check: Perform quick node/edge count and
+        degree sequence checks prior to matcher.
+    :type fast_invariant_check: bool
+    :param logger: Logger for debug messages. Defaults to root logger.
+    :type logger: logging.Logger or None
+    :returns: A dict mapping nodes in G1 to nodes in G2 if isomorphic;
+        otherwise None.
+    :rtype: dict[Any, Any] or None
     """
-    rc = nx.Graph()
-    _add_bond_order_changes(ITS, rc, element_key, bond_key, standard_key)
+    log = logger or logging.getLogger(__name__)
 
-    # 1.5) H-H bonds (force inclusion, with fallback typesGH)
-    for u, v, data in ITS.edges(data=True):
-        elem_u = ITS.nodes[u].get("element")
-        elem_v = ITS.nodes[v].get("element")
-        if elem_u == "H" and elem_v == "H":
-            for n in (u, v):
-                node_data = dict(ITS.nodes[n])
-                if "typesGH" not in node_data:
-                    node_data["typesGH"] = (
-                        ("H", False, 0, 0, []),
-                        ("*", False, 0, 0, []),
-                    )
-                # Ensure typesGH is available even if not in original element_key
-                final_attrs = {k: node_data[k] for k in element_key if k in node_data}
-                final_attrs["typesGH"] = node_data["typesGH"]
-                rc.add_node(n, **final_attrs)
+    # 1) Ensure same graph type
+    if type(G1) is not type(G2):
+        log.debug("Graph types differ: %r vs %r", type(G1), type(G2))
+        return None
 
-            rc.add_edge(
-                u,
-                v,
-                **{
-                    bond_key: data.get(bond_key),
-                    standard_key: data.get(standard_key),
-                },
+    # 2) Quick invariants
+    if fast_invariant_check:
+        if G1.number_of_nodes() != G2.number_of_nodes():
+            log.debug(
+                "Node counts differ: %d vs %d",
+                G1.number_of_nodes(),
+                G2.number_of_nodes(),
             )
-    if disconnected:
-        _add_charge_change_nodes(ITS, rc, element_key)
-        _reconnect_rc_edges(ITS, rc, bond_key, standard_key)
+            return None
+        if G1.number_of_edges() != G2.number_of_edges():
+            log.debug(
+                "Edge counts differ: %d vs %d",
+                G1.number_of_edges(),
+                G2.number_of_edges(),
+            )
+            return None
+        degs1 = sorted(d for _, d in G1.degree())
+        degs2 = sorted(d for _, d in G2.degree())
+        if degs1 != degs2:
+            log.debug("Degree sequences differ")
+            return None
 
-    return rc
+    # 3) Default matchers
+    if use_defaults:
+        if node_match is None:
+            node_match = isomorphism.categorical_node_match(
+                ["element", "atom_map", "hcount"], ["*", 0, 0]
+            )
+        if edge_match is None:
+            edge_match = isomorphism.categorical_edge_match("order", 1)
+
+    # 4) Select the correct matcher
+    if isinstance(G1, (nx.MultiGraph, nx.MultiDiGraph)):
+        if isinstance(G1, nx.MultiGraph):
+            Matcher = nx.algorithms.isomorphism.MultiGraphMatcher
+        else:
+            Matcher = nx.algorithms.isomorphism.MultiDiGraphMatcher
+    else:
+        if isinstance(G1, nx.Graph):
+            Matcher = nx.algorithms.isomorphism.GraphMatcher
+        else:
+            Matcher = nx.algorithms.isomorphism.DiGraphMatcher
+
+    matcher = Matcher(G1, G2, node_match=node_match, edge_match=edge_match)
+    if matcher.is_isomorphic():
+        log.debug("Graphs are isomorphic; mapping found")
+        return matcher.mapping
+    else:
+        log.debug("Graphs are not isomorphic")
+        return None
 
 
-def _carry_node_attrs(src: nx.Graph, dst: nx.Graph, n: int, keys: List[str]) -> None:
-    """Copy node *n* from *src* to *dst* with only *keys* attributes."""
-    if dst.has_node(n):
-        return
-    attrs = {k: src.nodes[n][k] for k in keys if k in src.nodes[n]}
-    dst.add_node(n, **attrs)
+def graph_isomorphism(
+    graph_1: nx.Graph,
+    graph_2: nx.Graph,
+    node_match: Optional[Callable] = None,
+    edge_match: Optional[Callable] = None,
+    use_defaults: bool = False,
+) -> bool:
+    """Determines if two graphs are isomorphic, considering provided node and
+    edge matching functions. Uses default matching settings if none are
+    provided.
+
+    Parameters:
+    - graph_1 (nx.Graph): The first graph to compare.
+    - graph_2 (nx.Graph): The second graph to compare.
+    - node_match (Optional[Callable]): The function used to match nodes.
+    Uses default if None.
+    - edge_match (Optional[Callable]): The function used to match edges.
+    Uses default if None.
+
+    Returns:
+    - bool: True if the graphs are isomorphic, False otherwise.
+    """
+    # Define default node and edge attributes and match settings
+    if use_defaults:
+        node_label_names = ["element", "charge"]
+        node_label_default = ["*", 0]
+        edge_attribute = "order"
+
+        # Default node and edge match functions if not provided
+        if node_match is None:
+            node_match = generic_node_match(
+                node_label_names, node_label_default, [eq] * len(node_label_names)
+            )
+        if edge_match is None:
+            edge_match = generic_edge_match(edge_attribute, 1, eq)
+
+    # Perform the isomorphism check using NetworkX
+    return nx.is_isomorphic(
+        graph_1, graph_2, node_match=node_match, edge_match=edge_match
+    )
 
 
-def _add_charge_change_nodes(
-    ITS: nx.Graph,
-    rc: nx.Graph,
-    keys: List[str],
-) -> None:
-    """Step 3a – add nodes whose *typesGH* shows a charge change."""
-    for n, data in ITS.nodes(data=True):
-        gh = data.get("typesGH")
-        if (
-            isinstance(gh, (list, tuple))
-            and len(gh) >= 2
-            and gh[0][3] != gh[1][3]
-            and not rc.has_node(n)
+def subgraph_isomorphism(
+    child_graph: nx.Graph,
+    parent_graph: nx.Graph,
+    node_label_names: List[str] = ["element", "charge"],
+    node_label_default: List[Any] = ["*", 0],
+    edge_attribute: str = "order",
+    use_filter: bool = False,
+    check_type: str = "induced",  # "induced" or "monomorphism"
+    node_comparator: Optional[Callable[[Any, Any], bool]] = None,
+    edge_comparator: Optional[Callable[[Any, Any], bool]] = None,
+) -> bool:
+    """Enhanced checks if the child graph is a subgraph isomorphic to the
+    parent graph based on customizable node and edge attributes.
+
+    Parameters:
+    - child_graph (nx.Graph): The child graph.
+    - parent_graph (nx.Graph): The parent graph.
+    - node_label_names (List[str]): Labels to compare.
+    - node_label_default (List[Any]): Defaults for missing node labels.
+    - edge_attribute (str): The edge attribute to compare.
+    - use_filter (bool): Whether to use pre-filters based on node and edge count.
+    - check_type (str): "induced" (default) or "monomorphism" for the type of subgraph matching.
+    - node_comparator (Callable[[Any, Any], bool]): Custom comparator for node attributes.
+    - edge_comparator (Callable[[Any, Any], bool]): Custom comparator for edge attributes.
+
+    Returns:
+    - bool: True if subgraph isomorphism is found, False otherwise.
+    """
+    if use_filter:
+        # Initial quick filters based on node and edge counts
+        if len(child_graph) > len(parent_graph) or len(child_graph.edges) > len(
+            parent_graph.edges
         ):
-            _carry_node_attrs(ITS, rc, n, keys)
+            return False
+
+        # Step 2: Node label filter - Only consider 'element' and 'charge' attributes
+        for _, child_data in child_graph.nodes(data=True):
+            found_match = False
+            for _, parent_data in parent_graph.nodes(data=True):
+                match = True
+                # Compare only the 'element' and 'charge' attributes
+                for label, default in zip(node_label_names, node_label_default):
+                    child_value = child_data.get(label, default)
+                    parent_value = parent_data.get(label, default)
+                    if child_value != parent_value:
+                        match = False
+                        break
+                if match:
+                    found_match = True
+                    break
+            if not found_match:
+                return False
+
+        # Step 3: Edge label filter - Ensure that the edge attribute 'order' matches if provided
+        if edge_attribute:
+            for child_edge in child_graph.edges(data=True):
+                child_node1, child_node2, child_data = child_edge
+                if child_node1 in parent_graph and child_node2 in parent_graph:
+                    # Ensure the edge exists in the parent graph
+                    if not parent_graph.has_edge(child_node1, child_node2):
+                        return False
+                    # Check if the 'order' attribute matches
+                    parent_edge_data = parent_graph[child_node1][child_node2]
+                    child_order = child_data.get(edge_attribute)
+                    parent_order = parent_edge_data.get(edge_attribute)
+
+                    # Handle comparison of tuple values for 'order' attribute
+                    if isinstance(child_order, tuple) and isinstance(
+                        parent_order, tuple
+                    ):
+                        if child_order != parent_order:
+                            return False
+                    elif child_order != parent_order:
+                        return False
+                else:
+                    return False
+
+    # Setting up attribute comparison functions
+    node_comparator = node_comparator if node_comparator else eq
+    edge_comparator = edge_comparator if edge_comparator else eq
+
+    # Creating match conditions for nodes and edges based on custom or default comparators
+    node_match = generic_node_match(
+        node_label_names, node_label_default, [node_comparator] * len(node_label_names)
+    )
+    edge_match = (
+        generic_edge_match(edge_attribute, None, edge_comparator)
+        if edge_attribute
+        else None
+    )
+
+    # Graph matching setup
+    matcher = GraphMatcher(
+        parent_graph, child_graph, node_match=node_match, edge_match=edge_match
+    )
+
+    # Executing the matching based on specified type
+    if check_type == "induced":
+        return matcher.subgraph_is_isomorphic()
+    else:
+        return matcher.subgraph_is_monomorphic()
 
 
-def _reconnect_rc_edges(
-    ITS: nx.Graph,
-    rc: nx.Graph,
-    bond_key: str,
-    standard_key: str,
-) -> None:
-    """Step 3b – re-add any original ITS edge between nodes already in RC."""
-    for u, v, data in ITS.edges(data=True):
-        if rc.has_node(u) and rc.has_node(v) and not rc.has_edge(u, v):
-            rc.add_edge(
-                u,
-                v,
-                **{bond_key: data.get(bond_key), standard_key: data.get(standard_key)},
+def maximum_connected_common_subgraph(
+    graph_1: nx.Graph,
+    graph_2: nx.Graph,
+    node_label_names: List[str] = ["element", "charge"],
+    node_label_default: List[Any] = ["*", 0],
+    edge_attribute: str = "standard_order",
+) -> nx.Graph:
+    """Computes the largest connected common subgraph (MCS) between two graphs
+    using subgraph isomorphism based on customizable node and edge attributes.
+
+    The function iterates over subsets of nodes from the smaller graph—starting from the largest
+    possible subgraph size down to 1—and returns the first (largest) candidate that is connected
+    and is isomorphic to a subgraph of the larger graph.
+
+    Parameters:
+    - graph_1 (nx.Graph): The first graph for comparison.
+    - graph_2 (nx.Graph): The second graph for comparison.
+    - node_label_names (List[str]): List of node attribute names used for matching.
+    - node_label_default (List[Any]): Default values for missing node attributes.
+    - edge_attribute (str): The edge attribute to compare.
+
+    Returns:
+    - nx.Graph: A graph representing the largest connected common subgraph found; if none exists,
+      returns an empty graph.
+    """
+    node_match = generic_node_match(
+        node_label_names, node_label_default, [eq] * len(node_label_names)
+    )
+    edge_match = generic_edge_match(edge_attribute, 1, eq)
+
+    # Determine which graph is smaller for efficiency.
+    if graph_1.number_of_nodes() <= graph_2.number_of_nodes():
+        smaller_graph, larger_graph = graph_1, graph_2
+    else:
+        smaller_graph, larger_graph = graph_2, graph_1
+
+    num_nodes_smaller = smaller_graph.number_of_nodes()
+    # Iterate over possible subgraph sizes from the largest to 1.
+    for subgraph_size in range(num_nodes_smaller, 0, -1):
+        for nodes_subset in itertools.combinations(
+            smaller_graph.nodes(), subgraph_size
+        ):
+            candidate_subgraph = smaller_graph.subgraph(nodes_subset)
+            # If the subgraph has more than one node, check it is connected.
+            if candidate_subgraph.number_of_nodes() > 1 and not nx.is_connected(
+                candidate_subgraph
+            ):
+                continue
+
+            # Check for subgraph isomorphism in the larger graph.
+            matcher = GraphMatcher(
+                larger_graph,
+                candidate_subgraph,
+                node_match=node_match,
+                edge_match=edge_match,
             )
+            if matcher.subgraph_is_isomorphic():
+                return candidate_subgraph.copy()
+
+    return nx.Graph()
 
 
-def _add_bond_order_changes(
-    ITS: nx.Graph,
-    rc: nx.Graph,
-    keys: List[str],
-    bond_key: str,
-    standard_key: str,
-) -> None:
-    """Step 1 – bond-order-change edges and their nodes."""
-    for u, v, data in ITS.edges(data=True):
-        old, new = data.get(bond_key, (None, None))
-        if old == new:
-            continue
-        for n in (u, v):
-            _carry_node_attrs(ITS, rc, n, keys)
-        rc.add_edge(
-            u, v, **{bond_key: data[bond_key], standard_key: data.get(standard_key)}
+def heuristics_MCCS(
+    graphs: List[nx.Graph],
+    node_label_names: List[str] = ["element", "charge"],
+    node_label_default: List[Any] = ["*", 0],
+    edge_attribute: str = "standard_order",
+) -> nx.Graph:
+    """Computes the Maximum Connected Common Subgraph (MCCS) over a list of
+    graphs using a heuristic approach.
+
+    This function computes the MCCS between the first two graphs using the
+    `maximum_connected_common_subgraph` function based on customizable node and edge attributes.
+    For more than two graphs, it iteratively updates the common subgraph by calculating the MCCS
+    between the current common subgraph and each subsequent graph. An early exit occurs if the
+    intermediate common subgraph becomes empty.
+
+    Parameters:
+    - graphs (List[nx.Graph]): A list of networkx graphs for which the common subgraph is to be computed.
+    - node_label_names (List[str]): List of node attribute names used for matching.
+    - node_label_default (List[Any]): Default values for missing node attributes.
+    - edge_attribute (str): The edge attribute to compare.
+
+    Returns:
+    - nx.Graph: The maximum connected common subgraph common to all provided graphs. If no common
+      subgraph exists, an empty graph is returned.
+
+    Raises:
+    - ValueError: If the input list of graphs is empty.
+    """
+    if not graphs:
+        raise ValueError("Input list of graphs is empty.")
+
+    if len(graphs) == 1:
+        return graphs[0].copy()
+
+    # Handle the two-graph case explicitly.
+    if len(graphs) == 2:
+        return maximum_connected_common_subgraph(
+            graphs[0],
+            graphs[1],
+            node_label_names=node_label_names,
+            node_label_default=node_label_default,
+            edge_attribute=edge_attribute,
         )
 
-
-# def get_rc(
-#     ITS: nx.Graph,
-#     element_key: List[str] = ["element", "charge", "typesGH", "atom_map"],
-#     bond_key: str = "order",
-#     standard_key: str = "standard_order",
-#     disconnected: bool = False,
-# ) -> nx.Graph:
-#     """
-#     Extract the reaction center (RC) from ITS graph.
-
-#     Enhancements:
-#     - Adds nodes and edges where bond order changes (core logic).
-#     - If disconnected=True:
-#         - Adds nodes with charge change based on typesGH.
-#         - Reconnects any ITS edge between two RC nodes.
-#     - NEW: Always includes H-H bonds in RC. Adds default typesGH if missing.
-#     """
-#     rc = nx.Graph()
-
-#     # 1) edges with bond-order change
-#     for u, v, data in ITS.edges(data=True):
-#         old, new = data.get(bond_key, [None, None])
-#         if old != new:
-#             for n in (u, v):
-#                 if not rc.has_node(n):
-#                     rc.add_node(
-#                         n,
-#                         **{
-#                             k: ITS.nodes[n][k] for k in element_key if k in ITS.nodes[n]
-#                         },
-#                     )
-#             rc.add_edge(
-#                 u,
-#                 v,
-#                 **{bond_key: data.get(bond_key), standard_key: data.get(standard_key)},
-#             )
-
-#     # 1.5) H-H bonds (force inclusion, with fallback typesGH)
-#     for u, v, data in ITS.edges(data=True):
-#         elem_u = ITS.nodes[u].get("element")
-#         elem_v = ITS.nodes[v].get("element")
-#         if elem_u == "H" and elem_v == "H":
-#             for n in (u, v):
-#                 node_data = dict(ITS.nodes[n])
-#                 if "typesGH" not in node_data:
-#                     node_data["typesGH"] = (
-#                         ("H", False, 0, 0, []),
-#                         ("*", False, 0, 0, []),
-#                     )
-#                 # Ensure typesGH is available even if not in original element_key
-#                 final_attrs = {k: node_data[k] for k in element_key if k in node_data}
-#                 final_attrs["typesGH"] = node_data["typesGH"]
-#                 rc.add_node(n, **final_attrs)
-
-#             rc.add_edge(
-#                 u,
-#                 v,
-#                 **{
-#                     bond_key: data.get(bond_key),
-#                     standard_key: data.get(standard_key),
-#                 },
-#             )
-
-#     if disconnected:
-#         # 2) nodes with typesGH-based charge change
-#         for n, data in ITS.nodes(data=True):
-#             gh = data.get("typesGH")
-#             if (
-#                 isinstance(gh, (list, tuple))
-#                 and len(gh) >= 2
-#                 and len(gh[0]) > 3
-#                 and len(gh[1]) > 3
-#                 and gh[0][3] != gh[1][3]
-#             ):
-#                 if not rc.has_node(n):
-#                     rc.add_node(n, **{k: data[k] for k in element_key if k in data})
-
-#         # 3) reconnect RC nodes
-#         for u, v, data in ITS.edges(data=True):
-#             if rc.has_node(u) and rc.has_node(v) and not rc.has_edge(u, v):
-#                 rc.add_edge(
-#                     u,
-#                     v,
-#                     **{
-#                         bond_key: data.get(bond_key),
-#                         standard_key: data.get(standard_key),
-#                     },
-#                 )
-
-#     return rc
-
-
-# def get_rc(
-#     ITS: nx.Graph,
-#     element_key: List[str] = ["element", "charge", "typesGH", "atom_map"],
-#     bond_key: str = "order",
-#     standard_key: str = "standard_order",
-#     disconnected: bool = False,
-# ) -> nx.Graph:
-#     """
-#     Extract the reaction center (RC) from ITS by:
-
-#     1. Always adding any edge whose bond order changes
-#        (bond_key[0] != bond_key[1]), plus its two end-nodes.
-#     2. [if disconnected=True] Adding any node whose 'typesGH' record shows a charge change
-#        (typesGH[0][3] != typesGH[1][3]), even if isolated.
-#     3. [if disconnected=True] Re-adding any ITS edge between two nodes already in RC
-#        (to preserve connectivity), carrying over bond_key & standard_key.
-
-#     Parameters:
-#     - ITS (nx.Graph): input ITS graph.
-#     - element_key (List[str]): node attrs to carry over.
-#     - bond_key (str): edge attr key for bond order.
-#     - standard_key (str): edge attr key for standard order.
-#     - disconnected (bool): if True, include “charge-change” nodes (step 2) and
-#       reconnect any edges among RC nodes (step 3). If False, only performs step 1.
-#     """
-#     rc = nx.Graph()
-
-#     # 1) edges with bond-order change
-#     for u, v, data in ITS.edges(data=True):
-#         old, new = data.get(bond_key, [None, None])
-#         if old != new:
-#             for n in (u, v):
-#                 if not rc.has_node(n):
-#                     rc.add_node(
-#                         n,
-#                         **{
-#                             k: ITS.nodes[n][k] for k in element_key if k in ITS.nodes[n]
-#                         },
-#                     )
-#             rc.add_edge(
-#                 u,
-#                 v,
-#                 **{bond_key: data.get(bond_key), standard_key: data.get(standard_key)},
-#             )
-
-#     if disconnected:
-#         # 2) nodes with a typesGH-based charge change
-#         for n, data in ITS.nodes(data=True):
-#             gh = data.get("typesGH")
-#             if (
-#                 isinstance(gh, (list, tuple))
-#                 and len(gh) >= 2
-#                 and len(gh[0]) > 3
-#                 and len(gh[1]) > 3
-#                 and gh[0][3] != gh[1][3]
-#             ):
-#                 if not rc.has_node(n):
-#                     rc.add_node(n, **{k: data[k] for k in element_key if k in data})
-
-#         # 3) re-add any ITS edge between RC nodes to preserve connectivity
-#         for u, v, data in ITS.edges(data=True):
-#             if rc.has_node(u) and rc.has_node(v) and not rc.has_edge(u, v):
-#                 rc.add_edge(
-#                     u,
-#                     v,
-#                     **{
-#                         bond_key: data.get(bond_key),
-#                         standard_key: data.get(standard_key),
-#                     },
-#                 )
-
-#     return rc
-
-
-def its_decompose(its_graph: nx.Graph, nodes_share="typesGH", edges_share="order"):
-    """Decompose an ITS graph into two separate reactant (G) and product (H)
-    graphs.
-
-    Nodes and edges in `its_graph` carry composite attributes:
-      - Each node has `its_graph.nodes[nodes_share] = (node_attrs_G, node_attrs_H)`.
-      - Each edge has `its_graph.edges[edges_share] = (order_G, order_H)`.
-
-    This function splits those tuples to reconstruct the original G and H graphs.
-
-    :param its_graph: The ITS graph with composite node/edge attributes.
-    :type its_graph: nx.Graph
-    :param nodes_share: Node attribute key storing (G_attrs, H_attrs) tuples.
-    :type nodes_share: str
-    :param edges_share: Edge attribute key storing (order_G, order_H) tuples.
-    :type edges_share: str
-    :returns: A tuple of two graphs (G, H) reconstructed from the ITS.
-    :rtype: Tuple[nx.Graph, nx.Graph]
-
-    :example:
-    >>> its = nx.Graph()
-    >>> # ... set its.nodes[n]['typesGH'] and its.edges[e]['order'] ...
-    >>> G, H = its_decompose(its)
-    >>> isinstance(G, nx.Graph) and isinstance(H, nx.Graph)
-    True
-    """
-    G = nx.Graph()
-    H = nx.Graph()
-
-    # Decompose nodes
-    for node, data in its_graph.nodes(data=True):
-        if nodes_share in data:
-            node_attr_g, node_attr_h = data[nodes_share]
-            # Unpack node attributes for G
-            G.add_node(
-                node,
-                element=node_attr_g[0],
-                aromatic=node_attr_g[1],
-                hcount=node_attr_g[2],
-                charge=node_attr_g[3],
-                neighbors=node_attr_g[4],
-                atom_map=node,
-            )
-            if len(node_attr_h) > 0:
-                # Unpack node attributes for H
-                H.add_node(
-                    node,
-                    element=node_attr_h[0],
-                    aromatic=node_attr_h[1],
-                    hcount=node_attr_h[2],
-                    charge=node_attr_h[3],
-                    neighbors=node_attr_h[4],
-                    atom_map=node,
-                )
-
-    # Decompose edges
-    for u, v, data in its_graph.edges(data=True):
-        if edges_share in data:
-            order_g, order_h = data[edges_share]
-            if order_g > 0:  # Assuming 0 means no edge in G
-                G.add_edge(u, v, order=order_g)
-            if order_h > 0:  # Assuming 0 means no edge in H
-                H.add_edge(u, v, order=order_h)
-
-    return G, H
-
-
-def compare_graphs(
-    graph1: nx.Graph,
-    graph2: nx.Graph,
-    node_attrs: list = ["element", "aromatic", "hcount", "charge", "neighbors"],
-    edge_attrs: list = ["order"],
-) -> bool:
-    """Compare two graphs based on specified node and edge attributes.
-
-    Parameters:
-    - graph1 (nx.Graph): The first graph to compare.
-    - graph2 (nx.Graph): The second graph to compare.
-    - node_attrs (list): A list of node attribute names to include in the comparison.
-    - edge_attrs (list): A list of edge attribute names to include in the comparison.
-
-    Returns:
-    - bool: True if both graphs are identical with respect to the specified attributes,
-    otherwise False.
-    """
-    # Compare node sets
-    if set(graph1.nodes()) != set(graph2.nodes()):
-        return False
-
-    # Compare nodes based on attributes
-    for node in graph1.nodes():
-        if node not in graph2:
-            return False
-        node_data1 = {attr: graph1.nodes[node].get(attr, None) for attr in node_attrs}
-        node_data2 = {attr: graph2.nodes[node].get(attr, None) for attr in node_attrs}
-        if node_data1 != node_data2:
-            return False
-
-    # Compare edge sets with sorted tuples
-    if set(tuple(sorted(edge)) for edge in graph1.edges()) != set(
-        tuple(sorted(edge)) for edge in graph2.edges()
-    ):
-        return False
-
-    # Compare edges based on attributes
-    for edge in graph1.edges():
-        # Sort the edge for consistent comparison
-        sorted_edge = tuple(sorted(edge))
-        if sorted_edge not in graph2.edges():
-            return False
-        edge_data1 = {attr: graph1.edges[edge].get(attr, None) for attr in edge_attrs}
-        edge_data2 = {
-            attr: graph2.edges[sorted_edge].get(attr, None) for attr in edge_attrs
-        }
-        if edge_data1 != edge_data2:
-            return False
-
-    return True
-
-
-def enumerate_tautomers(reaction_smiles: str) -> Optional[List[str]]:
-    """Enumerates possible tautomers for reactants while canonicalizing the
-    products in a reaction SMILES string. This function first splits the
-    reaction SMILES string into reactants and products. It then generates all
-    possible tautomers for the reactants and canonicalizes the product
-    molecule. The function returns a list of reaction SMILES strings for each
-    tautomer of the reactants combined with the canonical product.
-
-    Parameters:
-    - reaction_smiles (str): A SMILES string of the reaction formatted as
-    'reactants>>products'.
-
-    Returns:
-    - List[str] | None: A list of SMILES strings for the reaction, with each string
-    representing a different
-    - tautomer of the reactants combined with the canonicalized products. Returns None if
-    an error occurs or if invalid SMILES strings are provided.
-
-    Raises:
-    - ValueError: If the provided SMILES strings cannot be converted to molecule objects,
-    indicating invalid input.
-    """
-    try:
-        # Split the input reaction SMILES string into reactants and products
-        reactants_smiles, products_smiles = reaction_smiles.split(">>")
-
-        # Convert SMILES strings to molecule objects
-        reactants_mol = Chem.MolFromSmiles(reactants_smiles)
-        products_mol = Chem.MolFromSmiles(products_smiles)
-
-        if reactants_mol is None or products_mol is None:
-            raise ValueError(
-                "Invalid SMILES string provided for reactants or products."
-            )
-
-        # Initialize tautomer enumerator
-
-        enumerator = rdMolStandardize.TautomerEnumerator()
-
-        # Enumerate tautomers for the reactants and canonicalize the products
-        try:
-            reactants_can = enumerator.Enumerate(reactants_mol)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            reactants_can = [reactants_mol]
-        products_can = products_mol
-
-        # Convert molecule objects back to SMILES strings
-        reactants_can_smiles = [Chem.MolToSmiles(i) for i in reactants_can]
-        products_can_smiles = Chem.MolToSmiles(products_can)
-
-        # Combine each reactant tautomer with the canonical product in SMILES format
-        rsmi_list = [i + ">>" + products_can_smiles for i in reactants_can_smiles]
-        if len(rsmi_list) == 0:
-            return [reaction_smiles]
-        else:
-            # rsmi_list.remove(reaction_smiles)
-            rsmi_list.insert(0, reaction_smiles)
-            return rsmi_list
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return [reaction_smiles]
-
-
-def mapping_success_rate(list_mapping_data):
-    """Calculate the success rate of entries containing atom mappings in a list
-    of data strings.
-
-    Parameters:
-    - list_mapping_in_data (list of str): List containing strings to be searched for atom
-    mappings.
-
-    Returns:
-    - float: The success rate of finding atom mappings in the list as a percentage.
-
-    Raises:
-    - ValueError: If the input list is empty.
-    """
-    atom_map_pattern = re.compile(r":\d+")
-    if not list_mapping_data:
-        raise ValueError("The input list is empty, cannot calculate success rate.")
-
-    success = sum(
-        1 for entry in list_mapping_data if re.search(atom_map_pattern, entry)
+    # Iteratively compute the MCCS for more than two graphs.
+    current_mcs = maximum_connected_common_subgraph(
+        graphs[0],
+        graphs[1],
+        node_label_names=node_label_names,
+        node_label_default=node_label_default,
+        edge_attribute=edge_attribute,
     )
-    rate = 100 * (success / len(list_mapping_data))
 
-    return round(rate, 2)
+    for graph in graphs[2:]:
+        if current_mcs.number_of_nodes() == 0:
+            break  # Early exit if no common subgraph remains.
+        current_mcs = maximum_connected_common_subgraph(
+            current_mcs,
+            graph,
+            node_label_names=node_label_names,
+            node_label_default=node_label_default,
+            edge_attribute=edge_attribute,
+        )
+
+    return current_mcs
