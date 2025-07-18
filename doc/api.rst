@@ -21,6 +21,22 @@ The `Chem` module provides tools for handling input and output operations relate
    :undoc-members:
    :show-inheritance:  
 
+.. automodule:: synkit.Chem.Reaction.balance_check
+   :members:
+   :undoc-members:
+   :show-inheritance:  
+
+.. automodule:: synkit.Chem.Fingerprint.fp_calculator
+   :members:
+   :undoc-members:
+   :show-inheritance:  
+
+.. automodule:: synkit.Chem.Cluster.butina
+   :members:
+   :undoc-members:
+   :show-inheritance:  
+
+
 Synthesis Module
 ================
 

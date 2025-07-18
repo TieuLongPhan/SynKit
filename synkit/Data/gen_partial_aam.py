@@ -8,8 +8,8 @@ from synkit.IO.chem_converter import smiles_to_graph
 
 
 def _get_partial_aam(smart: str) -> str:
-    """
-    Generate a partial atom‐atom mapping (AAM) SMILES string from a reactant SMARTS.
+    """Generate a partial atom‐atom mapping (AAM) SMILES string from a reactant
+    SMARTS.
 
     This function:
       1. Parses the forward (“reactant”) and backward (“product”) halves of `smart`.
@@ -63,8 +63,8 @@ def _get_partial_aam(smart: str) -> str:
 
 
 def _remove_small_smiles(smiles: str) -> str:
-    """
-    Return the canonical SMILES of the largest fragment from an input SMILES.
+    """Return the canonical SMILES of the largest fragment from an input
+    SMILES.
 
     This function:
       1. Parses `smiles` to an RDKit Mol without sanitization.
@@ -105,9 +105,8 @@ def _remove_small_smiles(smiles: str) -> str:
 
 
 def _create_unbalanced_aam(rsmi: str, side: str = "right") -> str:
-    """
-    Produce an unbalanced AAM reaction SMILES by keeping only the largest fragment
-    on the specified side(s) of the reaction.
+    """Produce an unbalanced AAM reaction SMILES by keeping only the largest
+    fragment on the specified side(s) of the reaction.
 
     :param rsmi: A reaction SMILES "reactant>>product".
     :type rsmi: str

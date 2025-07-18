@@ -3,17 +3,17 @@ from copy import deepcopy
 
 
 class ITSBuilder:
-    """
-    Build and annotate an Imaginary Transition State (ITS) graph from a base graph
-    and a reaction-center (RC) graph.
+    """Build and annotate an Imaginary Transition State (ITS) graph from a base
+    graph and a reaction-center (RC) graph.
 
-    :cvar None: This class only provides static methods and does not maintain state.
+    :cvar None: This class only provides static methods and does not
+        maintain state.
     """
 
     @staticmethod
     def update_atom_map(graph: nx.Graph) -> None:
-        """
-        Reset and renumber the 'atom_map' attribute of every node to match its node index.
+        """Reset and renumber the 'atom_map' attribute of every node to match
+        its node index.
 
         :param graph: The graph whose nodes will be renumbered.
         :type graph: nx.Graph
@@ -31,9 +31,9 @@ class ITSBuilder:
 
     @staticmethod
     def ITSGraph(G: nx.Graph, RC: nx.Graph) -> nx.Graph:
-        """
-        Create an ITS graph by merging attributes from a reaction-center graph (RC)
-        into a copy of the base graph G and initializing transition-state metadata.
+        """Create an ITS graph by merging attributes from a reaction-center
+        graph (RC) into a copy of the base graph G and initializing transition-
+        state metadata.
 
         The returned ITS graph will have:
           1. A deep copy of G’s nodes and edges.

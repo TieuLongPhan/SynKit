@@ -1,39 +1,53 @@
+"""transformation_fp.py
+=======================
+Compute reaction‐level fingerprints by combining molecular fingerprints
+of reactants and products, with optional absolute mode and bit‐vector conversion.
+
+Quick start
+-----------
+>>> from synkit.Chem.Fingerprint.transformation_fp import TransformationFP
+>>> arr = TransformationFP().fit('CCO>>CC=O', symbols='>>', fp_type='ecfp4', abs=True)
+>>> bv = TransformationFP().fit('CCO>>CC=O', symbols='>>', fp_type='ecfp4', abs=True, return_array=False)
+"""
+
+from __future__ import annotations
+from typing import Any, Union
+
 import numpy as np
-from typing import Union, Any
 from rdkit.DataStructs import cDataStructs
+
 from synkit.Chem.Fingerprint.smiles_featurizer import SmilesFeaturizer
 
 
 class TransformationFP:
-    """
-    A class for handling the transformation of chemical reactions into reaction fingerprints
-    based on SMILES strings.
+    """Calculate reaction fingerprints by featurizing individual molecules and
+    combining them via vector subtraction.
+
+    :cvar None: Stateless utility class.
     """
 
     def __init__(self) -> None:
-        """
-        Initializes the TransformationFP object. Currently, this constructor does not
-        perform any operations.
+        """Initialize TransformationFP.
+
+        This class has no instance state; all methods are static or
+        class‐level.
         """
         pass
 
     @staticmethod
     def convert_arr2vec(arr: np.ndarray) -> cDataStructs.ExplicitBitVect:
+        """Convert a NumPy array of bits into an RDKit ExplicitBitVect.
+
+        :param arr: Array of 0/1 values representing a fingerprint.
+        :type arr: np.ndarray
+        :returns: RDKit bit vector constructed from the bit string.
+        :rtype: cDataStructs.ExplicitBitVect
         """
-        Converts a numpy array to a RDKit ExplicitBitVect.
+        bitstr = "".join(str(int(x)) for x in arr.flatten())
+        return cDataStructs.CreateFromBitString(bitstr)
 
-        Parameters:
-        - arr (np.ndarray): The input array.
-
-        Returns:
-        - cDataStructs.ExplicitBitVect: The converted bit vector.
-        """
-        arr_tostring = "".join(arr.astype(str))
-        EBitVect = cDataStructs.CreateFromBitString(arr_tostring)
-        return EBitVect
-
-    @staticmethod
     def fit(
+        self,
         reaction_smiles: str,
         symbols: str,
         fp_type: str,
@@ -41,39 +55,81 @@ class TransformationFP:
         return_array: bool = True,
         **kwargs: Any,
     ) -> Union[np.ndarray, cDataStructs.ExplicitBitVect]:
+        """Generate a reaction fingerprint by subtracting reactant from product
+        fingerprints.
+
+        :param reaction_smiles: Reaction SMILES, reactant and product separated by `symbols`.
+        :type reaction_smiles: str
+        :param symbols: Delimiter between reactants and products in the SMILES string.
+        :type symbols: str
+        :param fp_type: Fingerprint type to use for individual molecules (e.g., 'ecfp4').
+        :type fp_type: str
+        :param abs: If True, take absolute value of the difference vector.
+        :type abs: bool
+        :param return_array: If True, return a NumPy array; otherwise convert to an RDKit bit vector.
+        :type return_array: bool
+        :param kwargs: Additional keyword arguments passed to `SmilesFeaturizer.featurize_smiles`.
+        :type kwargs: Any
+        :returns: Reaction fingerprint as a NumPy array or RDKit bit vector.
+        :rtype: Union[np.ndarray, cDataStructs.ExplicitBitVect]
+        :raises ValueError: If `reaction_smiles` is not correctly formatted.
         """
-        Generates a reaction fingerprint for a given reaction represented by a SMILES string.
+        if symbols not in reaction_smiles:
+            raise ValueError(f"Reaction SMILES must contain separator '{symbols}'")
+        react_part, prod_part = reaction_smiles.split(symbols)
 
-        Parameters:
-        - reaction_smiles (str): The SMILES string of the reaction, separated by `symbols`.
-        - symbols (str): The symbol used to separate reactants and products in the SMILES string.
-        - fp_type (str): The type of fingerprint to generate (e.g., 'maccs', 'ecfp').
-        - abs (bool): Whether to take the absolute value of the reaction fingerprint difference.
-        - return_array (bool): Whether to return the reaction fingerprint as a numpy array or as a bit vector.
+        def sum_fps(parts: list[str]) -> np.ndarray:
+            total = None
+            for smi in parts:
+                vec = SmilesFeaturizer.featurize_smiles(smi, fp_type, **kwargs)
+                if total is None:
+                    total = vec.copy() if isinstance(vec, np.ndarray) else vec
+                else:
+                    total = total + vec  # type: ignore
+            return total  # type: ignore
 
-        Returns:
-        - Union[np.ndarray, cDataStructs.ExplicitBitVect]: The reaction fingerprint either as an array
-          or a bit vector, depending on the value of `return_array`.
-        """
-        react, prod = reaction_smiles.split(symbols)
-        react_fps = None
-        for s in react.split("."):
-            if react_fps is None:
-                react_fps = SmilesFeaturizer.featurize_smiles(s, fp_type, **kwargs)
-            else:
-                react_fps += SmilesFeaturizer.featurize_smiles(s, fp_type, **kwargs)
+        react_vec = sum_fps(react_part.split("."))
+        prod_vec = sum_fps(prod_part.split("."))
 
-        prod_fps = None
-        for s in prod.split("."):
-            if prod_fps is None:
-                prod_fps = SmilesFeaturizer.featurize_smiles(s, fp_type, **kwargs)
-            else:
-                prod_fps += SmilesFeaturizer.featurize_smiles(s, fp_type, **kwargs)
-
-        reaction_fp = np.subtract(prod_fps, react_fps)
+        diff = prod_vec - react_vec  # type: ignore
         if abs:
-            reaction_fp = np.abs(reaction_fp)
+            diff = np.abs(diff)
+
         if return_array:
-            return reaction_fp
-        else:
-            return TransformationFP.convert_arr2vec(reaction_fp)
+            return diff  # type: ignore
+        return TransformationFP.convert_arr2vec(diff)  # type: ignore
+
+    def help(self) -> None:
+        """Print usage summary for the TransformationFP class.
+
+        :returns: None
+        :rtype: NoneType
+        """
+        print("TransformationFP: compute reaction fingerprints via vector subtraction.")
+        print(
+            "  fit(reaction_smiles, symbols, fp_type, abs, return_array=True, **kwargs)"
+        )
+        print("    reaction_smiles: 'R1.R2>>P1.P2' SMILES string")
+        print("    symbols: separator between reactants and products (e.g. '>>')")
+        print(
+            "    fp_type: one of 'maccs', 'avalon', 'ecfp#', 'fcfp#', 'rdk#', 'ap', 'torsion', 'pharm2d'"
+        )
+        print("    abs: take absolute difference (True/False)")
+        print("    return_array: return NumPy array (True) or RDKit bit vector (False)")
+        print("  convert_arr2vec(arr: np.ndarray) -> ExplicitBitVect")
+        print("Example:")
+        print("  tfp = TransformationFP()")
+        print("  arr = tfp.fit('CCO>>CC=O', '>>', 'ecfp4', abs=True)")
+        print(
+            "  bv = tfp.fit('CCO>>CC=O', '>>', 'ecfp4', abs=True, return_array=False)"
+        )
+
+    def __str__(self) -> str:
+        """Short description of the transformer.
+
+        :returns: Class name.
+        :rtype: str
+        """
+        return "<TransformationFP>"
+
+    __repr__ = __str__

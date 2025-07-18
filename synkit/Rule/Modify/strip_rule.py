@@ -2,9 +2,10 @@ from synkit.Rule.Modify.rule_utils import find_block, NODE_REGEX, EDGE_REGEX
 
 
 def filter_context(context_lines, left_edges):
-    """
-    Given the context lines and a set of edges from the left graph, remove edges
-    from the context that are also present in the left graph (ignoring labels).
+    """Given the context lines and a set of edges from the left graph, remove
+    edges from the context that are also present in the left graph (ignoring
+    labels).
+
     Returns filtered lines.
     """
     # Create a set of edges from the left graph (ignoring labels)
@@ -32,10 +33,12 @@ def filter_context(context_lines, left_edges):
 
 
 def strip_context(gml_text: str, remove_all: bool = False) -> str:
-    """
-    Filters or clears the 'context' section of GML-like content based on the remove_all flag.
-    If remove_all is True, all edges in the 'context' section are removed.
-    If False, it removes edges in the 'context' that are also present in the 'left' section.
+    """Filters or clears the 'context' section of GML-like content based on the
+    remove_all flag.
+
+    If remove_all is True, all edges in the 'context' section are
+    removed. If False, it removes edges in the 'context' that are also
+    present in the 'left' section.
     """
     lines = gml_text.split("\n")
 

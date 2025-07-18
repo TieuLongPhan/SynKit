@@ -35,12 +35,13 @@ class MolToGraph:
         ],
         edge_attrs: Optional[List[str]] = ["order"],
     ) -> None:
-        """
-        Initialize the MolToGraph helper.
+        """Initialize the MolToGraph helper.
 
-        :param node_attrs: Names of node attributes to keep when transforming.
+        :param node_attrs: Names of node attributes to keep when
+            transforming.
         :type node_attrs: List[str]
-        :param edge_attrs: Names of edge attributes to keep when transforming.
+        :param edge_attrs: Names of edge attributes to keep when
+            transforming.
         :type edge_attrs: List[str]
         """
         self.node_attrs: List[str] = node_attrs or []
@@ -52,18 +53,21 @@ class MolToGraph:
         drop_non_aam: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
-        """
-        Build a graph directly from a molecule, including only selected attributes.
+        """Build a graph directly from a molecule, including only selected
+        attributes.
 
         :param mol: The RDKit molecule to convert.
         :type mol: Chem.Mol
-        :param drop_non_aam: If True, skips atoms without atom mapping numbers
-        (requires use_index_as_atom_map=True). Defaults to False.
+        :param drop_non_aam: If True, skips atoms without atom mapping
+            numbers (requires use_index_as_atom_map=True). Defaults to
+            False.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map: If True, uses atom mapping numbers as node IDs when present;
-        otherwise uses atom index+1. Defaults to False.
+        :param use_index_as_atom_map: If True, uses atom mapping numbers
+            as node IDs when present; otherwise uses atom index+1.
+            Defaults to False.
         :type use_index_as_atom_map: bool
-        :returns: A NetworkX graph containing only the specified node and edge attributes.
+        :returns: A NetworkX graph containing only the specified node
+            and edge attributes.
         :rtype: nx.Graph
         """
         if drop_non_aam and not use_index_as_atom_map:
@@ -107,8 +111,7 @@ class MolToGraph:
 
     @staticmethod
     def _gather_atom_properties(atom: Chem.Atom) -> Dict[str, Any]:
-        """
-        Collect the full set of atom attributes for graph nodes.
+        """Collect the full set of atom attributes for graph nodes.
 
         :param atom: The RDKit Atom object.
         :type atom: Chem.Atom
@@ -137,8 +140,7 @@ class MolToGraph:
 
     @staticmethod
     def _gather_bond_properties(bond: Chem.Bond) -> Dict[str, Any]:
-        """
-        Collect the full set of bond attributes for graph edges.
+        """Collect the full set of bond attributes for graph edges.
 
         :param bond: The RDKit Bond object.
         :type bond: Chem.Bond
@@ -155,8 +157,7 @@ class MolToGraph:
 
     @staticmethod
     def get_stereochemistry(atom: Chem.Atom) -> str:
-        """
-        Determine the stereochemistry (R/S) of a chiral atom.
+        """Determine the stereochemistry (R/S) of a chiral atom.
 
         :param atom: The RDKit Atom object.
         :type atom: Chem.Atom
@@ -172,12 +173,12 @@ class MolToGraph:
 
     @staticmethod
     def get_bond_stereochemistry(bond: Chem.Bond) -> str:
-        """
-        Determine the stereochemistry (E/Z) of a double bond.
+        """Determine the stereochemistry (E/Z) of a double bond.
 
         :param bond: The RDKit Bond object.
         :type bond: Chem.Bond
-        :returns: 'E', 'Z', or 'N' for non-stereospecific or non-double bond.
+        :returns: 'E', 'Z', or 'N' for non-stereospecific or non-double
+            bond.
         :rtype: str
         """
         if bond.GetBondType() != Chem.BondType.DOUBLE:
@@ -191,8 +192,7 @@ class MolToGraph:
 
     @staticmethod
     def has_atom_mapping(mol: Chem.Mol) -> bool:
-        """
-        Check if any atom in the molecule has an atom mapping number.
+        """Check if any atom in the molecule has an atom mapping number.
 
         :param mol: The RDKit molecule.
         :type mol: Chem.Mol
@@ -203,8 +203,7 @@ class MolToGraph:
 
     @staticmethod
     def random_atom_mapping(mol: Chem.Mol) -> Chem.Mol:
-        """
-        Assign random atom mapping numbers to all atoms in the molecule.
+        """Assign random atom mapping numbers to all atoms in the molecule.
 
         :param mol: The RDKit molecule.
         :type mol: Chem.Mol
@@ -225,17 +224,18 @@ class MolToGraph:
         light_weight: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
-        """
-        Convert a molecule to a full-featured NetworkX graph.
+        """Convert a molecule to a full-featured NetworkX graph.
 
         :param mol: The RDKit molecule to convert.
         :type mol: Chem.Mol
         :param drop_non_aam: If True, drop atoms without mapping numbers
-        (requires use_index_as_atom_map=True). Defaults to False.
+            (requires use_index_as_atom_map=True). Defaults to False.
         :type drop_non_aam: bool
-        :param light_weight: If True, create a lightweight graph with minimal attributes. Defaults to False.
+        :param light_weight: If True, create a lightweight graph with
+            minimal attributes. Defaults to False.
         :type light_weight: bool
-        :param use_index_as_atom_map: If True, prefer atom maps as node IDs. Defaults to False.
+        :param use_index_as_atom_map: If True, prefer atom maps as node
+            IDs. Defaults to False.
         :type use_index_as_atom_map: bool
         :returns: A NetworkX graph of the molecule with all attributes.
         :rtype: nx.Graph
@@ -257,14 +257,15 @@ class MolToGraph:
         drop_non_aam: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
-        """
-        Create a lightweight graph with basic atom and bond info.
+        """Create a lightweight graph with basic atom and bond info.
 
         :param mol: The RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam: If True, skip atoms without mapping numbers. Defaults to False.
+        :param drop_non_aam: If True, skip atoms without mapping
+            numbers. Defaults to False.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map: If True, use atom maps as node IDs when present. Defaults to False.
+        :param use_index_as_atom_map: If True, use atom maps as node IDs
+            when present. Defaults to False.
         :type use_index_as_atom_map: bool
         :returns: A NetworkX graph with minimal node/edge attributes.
         :rtype: nx.Graph
@@ -306,14 +307,15 @@ class MolToGraph:
         drop_non_aam: bool = True,
         use_index_as_atom_map: bool = True,
     ) -> nx.Graph:
-        """
-        Create a detailed graph with full atom and bond attributes.
+        """Create a detailed graph with full atom and bond attributes.
 
         :param mol: The RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam: If True, skip atoms without mapping numbers. Defaults to True.
+        :param drop_non_aam: If True, skip atoms without mapping
+            numbers. Defaults to True.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map: If True, use atom maps as node IDs when present. Defaults to True.
+        :param use_index_as_atom_map: If True, use atom maps as node IDs
+            when present. Defaults to True.
         :type use_index_as_atom_map: bool
         :returns: A NetworkX graph with full node/edge attributes.
         :rtype: nx.Graph
@@ -341,8 +343,7 @@ class MolToGraph:
 
     @staticmethod
     def add_partial_charges(mol: Chem.Mol) -> None:
-        """
-        Compute and assign Gasteiger charges to all atoms in the molecule.
+        """Compute and assign Gasteiger charges to all atoms in the molecule.
 
         :param mol: The RDKit molecule.
         :type mol: Chem.Mol

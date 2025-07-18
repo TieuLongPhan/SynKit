@@ -58,8 +58,7 @@ class GroupComp:
         edges2: Iterable[Edge],
     ) -> MappingList:
         """Return *single‑node* mappings ``[{v₁: v₂}, …]`` that obey the
-        groupoid order rule w.r.t **all** incident edges on each side.
-        """
+        groupoid order rule w.r.t **all** incident edges on each side."""
         # Index incident edges once – O(|E|)
         inc1: Dict[NodeId, List[Edge]] = defaultdict(list)
         inc2: Dict[NodeId, List[Edge]] = defaultdict(list)

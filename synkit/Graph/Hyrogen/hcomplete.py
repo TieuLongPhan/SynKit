@@ -20,9 +20,8 @@ logger = setup_logging()
 
 
 class HComplete:
-    """
-    A class for infering hydrogen to complete reaction center or ITS graph.
-    """
+    """A class for infering hydrogen to complete reaction center or ITS
+    graph."""
 
     @staticmethod
     def process_single_graph_data(
@@ -34,9 +33,8 @@ class HComplete:
         get_priority_graph: bool = False,
         max_hydrogen: int = 7,
     ) -> Dict[str, Optional[nx.Graph]]:
-        """
-        Processes a single graph data dictionary by modifying hydrogen counts
-        and other features based on configuration settings.
+        """Processes a single graph data dictionary by modifying hydrogen
+        counts and other features based on configuration settings.
 
         Parameters:
         - graph_data (Dict[str, nx.Graph]): Dictionary containing the graph data.
@@ -95,8 +93,7 @@ class HComplete:
         get_priority_graph: bool = False,
         max_hydrogen: int = 7,
     ) -> List[Dict[str, Optional[nx.Graph]]]:
-        """
-        Processes a list of graph data dictionaries in parallel to optimize
+        """Processes a list of graph data dictionaries in parallel to optimize
         the hydrogen completion and other graph modifications.
 
         Parameters:
@@ -140,9 +137,9 @@ class HComplete:
         balance_its: bool,
         get_priority_graph: bool = False,
     ) -> Dict[str, Optional[nx.Graph]]:
-        """
-        Handles significant hydrogen count changes between reactant and product graphs,
-        adjusting hydrogen nodes accordingly and assessing graph equivalence.
+        """Handles significant hydrogen count changes between reactant and
+        product graphs, adjusting hydrogen nodes accordingly and assessing
+        graph equivalence.
 
         Parameters:
         - graph_data (Dict[str, nx.Graph]): Dictionary containing the graph data.
@@ -218,9 +215,9 @@ class HComplete:
         balance_its: bool,
         get_priority_graph: bool = False,
     ) -> List[Tuple[nx.Graph, nx.Graph]]:
-        """
-        Generates multiple permutations of reactant and product graphs by adjusting hydrogen counts,
-        exploring all possible configurations of hydrogen node additions or removals.
+        """Generates multiple permutations of reactant and product graphs by
+        adjusting hydrogen counts, exploring all possible configurations of
+        hydrogen node additions or removals.
 
         Parameters:
         - react_graph (nx.Graph): The reactant graph.
@@ -310,9 +307,8 @@ class HComplete:
         node_id_pairs: Iterable[Tuple[int, int]],
         atom_map_update: bool = True,
     ) -> nx.Graph:
-        """
-        Creates and returns a new graph with added hydrogen nodes based on the input graph
-        and node ID pairs.
+        """Creates and returns a new graph with added hydrogen nodes based on
+        the input graph and node ID pairs.
 
         Parameters:
         - graph (nx.Graph): The base graph to which the nodes will be added.

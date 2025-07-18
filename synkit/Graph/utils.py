@@ -3,8 +3,7 @@ from typing import Any, Dict, List, Tuple
 
 
 def print_graph_attributes(G: nx.Graph) -> None:
-    """
-    Print all node and edge attributes from a NetworkX graph.
+    """Print all node and edge attributes from a NetworkX graph.
 
     Parameters:
         G (nx.Graph): A NetworkX graph (Graph, DiGraph, MultiGraph, etc.).
@@ -23,8 +22,7 @@ def print_graph_attributes(G: nx.Graph) -> None:
 
 
 def remove_wildcard_nodes(G: nx.Graph, inplace: bool = True) -> nx.Graph:
-    """
-    Remove all wildcard nodes from the graph.
+    """Remove all wildcard nodes from the graph.
 
     A wildcard node is identified by having its 'element' attribute equal to '*'.
 
@@ -59,8 +57,7 @@ def add_wildcard_subgraph_for_unmapped(
     edge_keys: List[str] = ["order"],
     inplace: bool = False,
 ) -> Tuple[nx.Graph, Dict[Any, Any]]:
-    """
-    Extend G with wildcard nodes/edges for every L-node not already mapped,
+    """Extend G with wildcard nodes/edges for every L-node not already mapped,
     preserving original L->G mapping and returning the full mapping.
 
     Parameters
@@ -123,10 +120,9 @@ def add_wildcard_subgraph_for_unmapped(
 
 
 def clean_graph_keep_largest_component(graph: nx.Graph) -> nx.Graph:
-    """
-    Return a shallow copy of the input graph with all edges removed
-    where the 'standard_order' attribute is exactly 0, then retain only
-    the largest connected component.
+    """Return a shallow copy of the input graph with all edges removed where
+    the 'standard_order' attribute is exactly 0, then retain only the largest
+    connected component.
 
     Parameters
     ----------

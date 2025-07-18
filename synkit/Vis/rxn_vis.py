@@ -17,8 +17,7 @@ class RXNVis:
         atom_label_font_size: int = 12,
         show_atom_map: bool = False,
     ):
-        """
-        Initialize the reaction/molecule visualizer.
+        """Initialize the reaction/molecule visualizer.
 
         Parameters
         ----------
@@ -49,8 +48,7 @@ class RXNVis:
     def render(
         self, smiles: str, return_bytes: bool = False
     ) -> Union[Image.Image, bytes]:
-        """
-        Render a molecule or reaction SMILES to a cropped PNG.
+        """Render a molecule or reaction SMILES to a cropped PNG.
 
         Parameters
         ----------
@@ -116,8 +114,7 @@ class RXNVis:
         return png if return_bytes else img
 
     def save_png(self, smiles: str, path: str) -> None:
-        """
-        Render and save as a PNG file.
+        """Render and save as a PNG file.
 
         Parameters
         ----------
@@ -130,8 +127,7 @@ class RXNVis:
         img.save(path, format="PNG")
 
     def save_pdf(self, smiles: str, path: str, resolution: float = 300.0) -> None:
-        """
-        Render and save as a single‐page PDF.
+        """Render and save as a single‐page PDF.
 
         Parameters
         ----------

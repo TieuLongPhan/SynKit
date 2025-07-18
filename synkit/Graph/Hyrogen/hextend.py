@@ -19,8 +19,8 @@ class HExtend(HComplete):
     def get_unique_graphs_for_clusters(
         graphs: List[nx.Graph], cluster_indices: List[set]
     ) -> List[nx.Graph]:
-        """
-        Retrieve a unique graph for each cluster from a list of graphs based on cluster indices.
+        """Retrieve a unique graph for each cluster from a list of graphs based
+        on cluster indices.
 
         This method selects one graph per cluster based on the first index found
         in each cluster set. Note: Clusters are expected to be represented
@@ -60,8 +60,7 @@ class HExtend(HComplete):
         ignore_aromaticity: bool,
         balance_its: bool,
     ) -> Tuple[List[nx.Graph], List[nx.Graph], List[str]]:
-        """
-        Process equivalent maps by adding hydrogen nodes and constructing
+        """Process equivalent maps by adding hydrogen nodes and constructing
         ITS graphs based on the balance and aromaticity settings.
 
         Parameters:
@@ -107,9 +106,8 @@ class HExtend(HComplete):
         ignore_aromaticity: bool,
         balance_its: bool,
     ) -> Dict:
-        """
-        Processes a dictionary of graphs using specific graph processing functions
-        and updates the dictionary with new graph data.
+        """Processes a dictionary of graphs using specific graph processing
+        functions and updates the dictionary with new graph data.
 
         Parameters:
         - data_dict (Dict): Dictionary containing the graphs and their keys.
@@ -143,9 +141,8 @@ class HExtend(HComplete):
         n_jobs: int = 1,
         verbose: int = 0,
     ) -> List:
-        """
-        Fit the model to the data in parallel, processing each entry to generate
-        new graph data based on the ITS and reaction graph keys.
+        """Fit the model to the data in parallel, processing each entry to
+        generate new graph data based on the ITS and reaction graph keys.
 
         Parameters:
         - data (iterable): Data to be processed.

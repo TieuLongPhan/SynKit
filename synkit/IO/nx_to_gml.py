@@ -4,29 +4,28 @@ from synkit.Graph.Hyrogen._misc import h_to_explicit
 
 
 class NXToGML:
-    """
-    Converts NetworkX graph representations of chemical reactions to GML (Graph Modelling Language) strings.
-    Useful for exporting reaction rules in a standard graph format.
+    """Converts NetworkX graph representations of chemical reactions to GML
+    (Graph Modelling Language) strings. Useful for exporting reaction rules in
+    a standard graph format.
 
-    This class provides static methods for converting individual graphs, sets of reaction graphs, and
-    managing charge/attribute changes in the export process.
+    This class provides static methods for converting individual graphs,
+    sets of reaction graphs, and managing charge/attribute changes in
+    the export process.
     """
 
     def __init__(self) -> None:
-        """
-        Initializes an NXToGML object.
-        """
+        """Initializes an NXToGML object."""
         pass
 
     @staticmethod
     def _charge_to_string(charge: int) -> str:
-        """
-        Converts an integer charge into a string representation.
+        """Converts an integer charge into a string representation.
 
-        :param charge: The charge value, which can be positive, negative, or zero.
+        :param charge: The charge value, which can be positive,
+            negative, or zero.
         :type charge: int
-
-        :returns: The string representation of the charge (e.g. '+', '2+', '-', '3-', '').
+        :returns: The string representation of the charge (e.g. '+',
+            '2+', '-', '3-', '').
         :rtype: str
         """
         if charge > 0:
@@ -40,8 +39,8 @@ class NXToGML:
     def _find_changed_nodes(
         graph1: nx.Graph, graph2: nx.Graph, attributes: List[str] = ["charge"]
     ) -> List[int]:
-        """
-        Identifies nodes with changes in specified attributes between two NetworkX graphs.
+        """Identifies nodes with changes in specified attributes between two
+        NetworkX graphs.
 
         :param graph1: The first NetworkX graph.
         :type graph1: nx.Graph
@@ -49,8 +48,8 @@ class NXToGML:
         :type graph2: nx.Graph
         :param attributes: List of attribute names to check for changes.
         :type attributes: list[str]
-
-        :returns: Node identifiers that have changes in the specified attributes.
+        :returns: Node identifiers that have changes in the specified
+            attributes.
         :rtype: list[int]
         """
         changed_nodes = []
@@ -71,19 +70,21 @@ class NXToGML:
         changed_node_ids: List[int],
         explicit_hydrogen: bool = False,
     ) -> str:
-        """
-        Converts a NetworkX graph to a GML string for a specific reaction section.
+        """Converts a NetworkX graph to a GML string for a specific reaction
+        section.
 
         :param graph: The NetworkX graph to be converted.
         :type graph: nx.Graph
-        :param section: The section name in the GML output ('left', 'right', or 'context').
+        :param section: The section name in the GML output ('left',
+            'right', or 'context').
         :type section: str
         :param changed_node_ids: List of nodes with changed attributes.
         :type changed_node_ids: list[int]
-        :param explicit_hydrogen: Whether to explicitly include hydrogen atoms in the output.
+        :param explicit_hydrogen: Whether to explicitly include hydrogen
+            atoms in the output.
         :type explicit_hydrogen: bool
-
-        :returns: The GML string representation of the graph for the specified section.
+        :returns: The GML string representation of the graph for the
+            specified section.
         :rtype: str
         """
         order_to_label = {1: "-", 1.5: ":", 2: "=", 3: "#"}
@@ -134,8 +135,8 @@ class NXToGML:
         changed_node_ids: List[int],
         explicit_hydrogen: bool,
     ) -> str:
-        """
-        Generates a GML string for a chemical rule, including left, context, and right graphs.
+        """Generates a GML string for a chemical rule, including left, context,
+        and right graphs.
 
         :param L: The left graph.
         :type L: nx.Graph
@@ -147,9 +148,9 @@ class NXToGML:
         :type rule_name: str
         :param changed_node_ids: List of nodes with changed attributes.
         :type changed_node_ids: list[int]
-        :param explicit_hydrogen: Whether to explicitly include hydrogen atoms in the output.
+        :param explicit_hydrogen: Whether to explicitly include hydrogen
+            atoms in the output.
         :type explicit_hydrogen: bool
-
         :returns: The GML string representation of the rule.
         :rtype: str
         """
@@ -171,21 +172,22 @@ class NXToGML:
         attributes: List[str] = ["charge"],
         explicit_hydrogen: bool = False,
     ) -> str:
-        """
-        Processes a triple of reaction graphs to generate a GML string rule, with options for node
-        reindexing and explicit hydrogen expansion.
+        """Processes a triple of reaction graphs to generate a GML string rule,
+        with options for node reindexing and explicit hydrogen expansion.
 
         :param graph_rules: Tuple containing (L, R, K) reaction graphs.
         :type graph_rules: tuple[nx.Graph, nx.Graph, nx.Graph]
         :param rule_name: The rule name to use in the output.
         :type rule_name: str
-        :param reindex: Whether to reindex node IDs based on the L graph sequence.
+        :param reindex: Whether to reindex node IDs based on the L graph
+            sequence.
         :type reindex: bool
-        :param attributes: List of attribute names to check for node changes.
+        :param attributes: List of attribute names to check for node
+            changes.
         :type attributes: list[str]
-        :param explicit_hydrogen: Whether to explicitly include hydrogen atoms in the output.
+        :param explicit_hydrogen: Whether to explicitly include hydrogen
+            atoms in the output.
         :type explicit_hydrogen: bool
-
         :returns: The GML string representing the chemical rule.
         :rtype: str
         """

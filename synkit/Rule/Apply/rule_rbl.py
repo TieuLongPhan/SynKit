@@ -1,7 +1,7 @@
 import importlib.util
 from typing import List
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Chem.Reaction.rsmi_utils import (
+from synkit.Chem.utils import (
     find_longest_fragment,
     merge_reaction,
     remove_common_reagents,
@@ -26,8 +26,8 @@ class RuleRBL:
         pass
 
     def rbl(self, rsmi: str, gml_rule: str, remove_aam: bool = True) -> List[str]:
-        """
-        Applies transformation rules to a reaction SMILES string based on GML rules.
+        """Applies transformation rules to a reaction SMILES string based on
+        GML rules.
 
         Parameters:
         - rsmi (str): Reaction SMILES string to process.

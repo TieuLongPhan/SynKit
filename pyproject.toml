@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "0.0.10"
+version = "0.0.11"
 authors = [
     {name="Tieu Long Phan", email="tieu@bioinf.uni-leipzig.de"}
 ]
@@ -35,6 +35,7 @@ docs = [
   "sphinx-rtd-theme",
   "sphinxcontrib-bibtex",
 ]
+
 [project.urls]
 homepage = "https://github.com/TieuLongPhan/SynKit"
 source = "https://github.com/TieuLongPhan/SynKit"

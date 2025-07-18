@@ -25,8 +25,7 @@ class RuleCompose:
 
     @staticmethod
     def filter_smallest_vertex(combo: List[object]) -> List[object]:
-        """
-        Filters and returns the elements from a list that have the smallest
+        """Filters and returns the elements from a list that have the smallest
         number of vertices in their context.
 
         Parameters:
@@ -52,9 +51,8 @@ class RuleCompose:
 
     @staticmethod
     def rule_cluster(graphs: List) -> List:
-        """
-        Clusters graphs based on their isomorphic relationship and returns
-        a list of graphs, each from a different cluster.
+        """Clusters graphs based on their isomorphic relationship and returns a
+        list of graphs, each from a different cluster.
 
         Parameters:
         - graphs: A list of graph objects.
@@ -89,8 +87,8 @@ class RuleCompose:
 
     @staticmethod
     def _compose(rule_1, rule_2):
-        """
-        Compose two rules and filter the results based on chemical valence constraints.
+        """Compose two rules and filter the results based on chemical valence
+        constraints.
 
         Parameters:
         - rule_1: First rule object to compose.
@@ -115,8 +113,7 @@ class RuleCompose:
 
     @staticmethod
     def _process_compose(rule_1_id, rule_2_id, rule_path, rule_path_compose):
-        """
-        Process and compose two rules based on their GML files.
+        """Process and compose two rules based on their GML files.
 
         Parameters:
         - rule_1_id (str): Identifier for the first rule.
@@ -144,8 +141,8 @@ class RuleCompose:
 
     @staticmethod
     def _auto_compose(rule_path, rule_path_compose):
-        """
-        Automatically find all GML files in the given directory and compose them pairwise.
+        """Automatically find all GML files in the given directory and compose
+        them pairwise.
 
         Parameters:
         - rule_path (str): Directory path where the GML files are stored.
@@ -182,11 +179,10 @@ class RuleCompose:
     def save_gml_from_text(
         gml_content: str, gml_file_path: str, rule_id: str, parent_ids: List[str]
     ) -> bool:
-        """
-        Save a text string to a GML file by modifying the 'ruleID' line to include parent
-        rule names. This function parses the given GML content, identifies any lines
-        starting with 'ruleID', and replaces these lines with a new ruleID that
-        incorporates identifiers from parent rules.
+        """Save a text string to a GML file by modifying the 'ruleID' line to
+        include parent rule names. This function parses the given GML content,
+        identifies any lines starting with 'ruleID', and replaces these lines
+        with a new ruleID that incorporates identifiers from parent rules.
 
         Parameters:
         - gml_content (str): The content to be saved to the GML file. This should be the

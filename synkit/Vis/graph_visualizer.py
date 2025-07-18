@@ -239,7 +239,8 @@ class GraphVisualizer:
         )
 
     def visualize_its(self, its: nx.Graph, **kwargs) -> plt.Figure:
-        """Return a Matplotlib Figure plotting the ITS graph without duplicate display."""
+        """Return a Matplotlib Figure plotting the ITS graph without duplicate
+        display."""
         # Temporarily disable interactive mode to prevent auto-display
         was_interactive = plt.isinteractive()
         plt.ioff()
@@ -277,10 +278,8 @@ class GraphVisualizer:
         )
 
     def __repr__(self) -> str:
-        """
-        Return a detailed representation of the GraphVisualizer, showing configured
-        node and edge attribute keys.
-        """
+        """Return a detailed representation of the GraphVisualizer, showing
+        configured node and edge attribute keys."""
         na = list(self._node_attributes.keys())
         ea = list(self._edge_attributes.keys())
         return f"GraphVisualizer(node_attributes={na!r}, " f"edge_attributes={ea!r})"
@@ -294,8 +293,7 @@ class GraphVisualizer:
         figsize: tuple[float, float] = (12, 6),
         **kwargs,
     ) -> tuple[plt.Figure, list[list[plt.Axes]]]:
-        """
-        Plot multiple ITS graphs in a grid layout.
+        """Plot multiple ITS graphs in a grid layout.
 
         Parameters
         ----------

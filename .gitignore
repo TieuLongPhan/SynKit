@@ -21,3 +21,4 @@ Data/Benchmark/*
 run.sh
 docs/*
 run_rdcanon.py
+Data/Fragment/*

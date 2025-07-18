@@ -4,7 +4,7 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict, List, Sequence, Union
 
-from synkit.Chem.Reaction.cleanning import Cleanning
+from synkit.Chem.Reaction.cleaning import Cleaning
 from synkit.Chem.utils import (
     count_carbons,
     get_max_fragment,
@@ -18,8 +18,7 @@ logger = logging.getLogger("CRN")
 
 
 class CRN:
-    """
-    Expand an initial pool of molecules through several rounds of rule
+    """Expand an initial pool of molecules through several rounds of rule
     application using **MODReactor** under the hood.
 
     Public attributes
@@ -91,8 +90,7 @@ class CRN:
 
     @property
     def product_sets(self) -> Dict[str, List[str]]:
-        """
-        Dict view of the per‑round reaction SMILES.
+        """Dict view of the per‑round reaction SMILES.
 
         Handles both shapes:
 
@@ -136,7 +134,8 @@ class CRN:
 
     # ============================================================ internals
     def _expand_once(self, smiles: List[str]) -> List[str]:
-        """Apply every rule once to the molecule pool and return reaction RSMI."""
+        """Apply every rule once to the molecule pool and return reaction
+        RSMI."""
         rxn_results: List[str] = []
         smiles_for_mod = process_smiles_list(smiles)
 
@@ -150,7 +149,7 @@ class CRN:
             )
             reactor.run()
             rsmi = reactor.get_reaction_smiles()
-            rsmi = Cleanning().clean_smiles(rsmi)
+            rsmi = Cleaning().clean_smiles(rsmi)
             rsmi = [_remove_reagent(r) for r in rsmi]
             rxn_results.extend(rsmi)
 
@@ -164,7 +163,8 @@ class CRN:
         starting: str,
         target: str,
     ) -> List[str]:
-        """Merge products from *reactions* into *current* with optional pruning."""
+        """Merge products from *reactions* into *current* with optional
+        pruning."""
         new: List[str] = []
 
         for rsmi in reactions:

@@ -22,13 +22,13 @@ class TestTransformationFP(unittest.TestCase):
         abs_val = True
 
         # Test with return_array=True
-        reaction_fp_array = TransformationFP.fit(
+        reaction_fp_array = TransformationFP().fit(
             reaction_smiles, symbols, fp_type, abs_val
         )
         self.assertIsInstance(reaction_fp_array, np.ndarray)
 
         # Test with return_array=False
-        reaction_fp_bitvect = TransformationFP.fit(
+        reaction_fp_bitvect = TransformationFP().fit(
             reaction_smiles, symbols, fp_type, abs_val, return_array=False
         )
         self.assertIsInstance(reaction_fp_bitvect, cDataStructs.ExplicitBitVect)
@@ -40,7 +40,7 @@ class TestTransformationFP(unittest.TestCase):
         fp_type = "maccs"
         abs_val = True
         with self.assertRaises(Exception):
-            _ = TransformationFP.fit(reaction_smiles, symbols, fp_type, abs_val)
+            _ = TransformationFP().fit(reaction_smiles, symbols, fp_type, abs_val)
 
     def test_fit_reaction_split(self):
         """Test handling of SMILES split by symbols and impact on results"""
@@ -48,7 +48,7 @@ class TestTransformationFP(unittest.TestCase):
         symbols = ">>"
         fp_type = "maccs"
         abs_val = False  # without taking absolute values
-        reaction_fp = TransformationFP.fit(reaction_smiles, symbols, fp_type, abs_val)
+        reaction_fp = TransformationFP().fit(reaction_smiles, symbols, fp_type, abs_val)
         self.assertIsInstance(reaction_fp, np.ndarray)
 
 

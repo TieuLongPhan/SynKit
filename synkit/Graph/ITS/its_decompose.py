@@ -15,8 +15,7 @@ def get_rc(
     standard_key: str = "standard_order",
     disconnected: bool = False,
 ) -> nx.Graph:
-    """
-    Extract the reaction-center (RC) subgraph from an ITS graph.
+    """Extract the reaction-center (RC) subgraph from an ITS graph.
 
     This function identifies:
       1. All bonds whose standard order (difference between ITS orders) is non-zero.
@@ -307,8 +306,8 @@ def _add_bond_order_changes(
 
 
 def its_decompose(its_graph: nx.Graph, nodes_share="typesGH", edges_share="order"):
-    """
-    Decompose an ITS graph into two separate reactant (G) and product (H) graphs.
+    """Decompose an ITS graph into two separate reactant (G) and product (H)
+    graphs.
 
     Nodes and edges in `its_graph` carry composite attributes:
       - Each node has `its_graph.nodes[nodes_share] = (node_attrs_G, node_attrs_H)`.
@@ -379,8 +378,7 @@ def compare_graphs(
     node_attrs: list = ["element", "aromatic", "hcount", "charge", "neighbors"],
     edge_attrs: list = ["order"],
 ) -> bool:
-    """
-    Compare two graphs based on specified node and edge attributes.
+    """Compare two graphs based on specified node and edge attributes.
 
     Parameters:
     - graph1 (nx.Graph): The first graph to compare.
@@ -428,12 +426,12 @@ def compare_graphs(
 
 
 def enumerate_tautomers(reaction_smiles: str) -> Optional[List[str]]:
-    """
-    Enumerates possible tautomers for reactants while canonicalizing the products in a
-    reaction SMILES string. This function first splits the reaction SMILES string into
-    reactants and products. It then generates all possible tautomers for the reactants and
-    canonicalizes the product molecule. The function returns a list of reaction SMILES
-    strings for each tautomer of the reactants combined with the canonical product.
+    """Enumerates possible tautomers for reactants while canonicalizing the
+    products in a reaction SMILES string. This function first splits the
+    reaction SMILES string into reactants and products. It then generates all
+    possible tautomers for the reactants and canonicalizes the product
+    molecule. The function returns a list of reaction SMILES strings for each
+    tautomer of the reactants combined with the canonical product.
 
     Parameters:
     - reaction_smiles (str): A SMILES string of the reaction formatted as
@@ -493,9 +491,8 @@ def enumerate_tautomers(reaction_smiles: str) -> Optional[List[str]]:
 
 
 def mapping_success_rate(list_mapping_data):
-    """
-    Calculate the success rate of entries containing atom mappings in a list of data
-    strings.
+    """Calculate the success rate of entries containing atom mappings in a list
+    of data strings.
 
     Parameters:
     - list_mapping_in_data (list of str): List containing strings to be searched for atom

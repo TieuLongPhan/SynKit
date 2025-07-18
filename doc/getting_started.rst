@@ -1,5 +1,9 @@
 .. _getting-started-synkit:
 
+.. image:: https://img.shields.io/pypi/v/synkit.svg
+   :alt: PyPI version
+   :align: right
+
 Getting Started
 ===============
 
@@ -69,10 +73,40 @@ After installation, verify that **synkit** is available and check its version:
    python -c "import importlib.metadata as m; print(m.version('synkit'))"
    # Should print the installed synkit version
 
+Docker Installation
+-------------------
+
+Install **SynKit** using Docker.
+
+Pull the image:
+
+.. code-block:: bash
+
+   docker pull tieulongphan/synkit:latest
+
+Run a quick version check:
+
+.. code-block:: bash
+
+   docker run --rm tieulongphan/synkit:latest \
+     python -c "import importlib.metadata as m; print(m.version('synkit'))"
+
+
+Use as a base image in your own Dockerfile:
+
+.. code-block:: dockerfile
+
+   FROM tieulongphan/synkit:latest
+   WORKDIR /app
+   COPY . .
+   CMD ["python", "your_script.py"]
+
+
 Further Resources
 -----------------
 - Official documentation: `SynKit Docs <https://tieulongphan.github.io/SynKit>`_
 - Tutorials and examples: :doc:`Tutorials and Examples <getting_started>`
+- 
 
 Support
 -------

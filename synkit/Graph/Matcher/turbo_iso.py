@@ -81,7 +81,9 @@ class TurboISO:
     # ------------------------------------------------ distance consistency
     def _within_dist(self, src: Any, dsts: Set[Any], limit: int) -> bool:
         """Check whether *any* dst in *dsts* lies within *limit* hops of src.
-        Stops BFS early once found. Returns True/False."""
+
+        Stops BFS early once found. Returns True/False.
+        """
         if not dsts:
             return False
         if limit == float("inf"):

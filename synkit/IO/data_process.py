@@ -7,10 +7,9 @@ def merge_dicts(
     key: str,
     intersection: bool = True,
 ) -> List[Dict[str, Any]]:
-    """
-    Merges two lists of dictionaries based on a specified key, with an option to
-    either merge only dictionaries with matching key values (intersection) or
-    all dictionaries (union).
+    """Merges two lists of dictionaries based on a specified key, with an
+    option to either merge only dictionaries with matching key values
+    (intersection) or all dictionaries (union).
 
     Parameters:
     - list1 (List[Dict[str, Any]]): The first list of dictionaries.

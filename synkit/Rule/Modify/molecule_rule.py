@@ -6,20 +6,17 @@ from synkit.Rule.Modify.strip_rule import strip_context
 
 
 class MoleculeRule:
-    """
-    A class for generating molecule rules, atom-mapped SMILES, and GML representations from SMILES strings.
-    """
+    """A class for generating molecule rules, atom-mapped SMILES, and GML
+    representations from SMILES strings."""
 
     def __init__(self) -> None:
-        """
-        Initializes the MoleculeRule object.
-        """
+        """Initializes the MoleculeRule object."""
         pass
 
     @staticmethod
     def remove_edges_from_left_right(input_str: str) -> str:
-        """
-        Remove all contents from the 'left' and 'right' sections of a chemical rule description.
+        """Remove all contents from the 'left' and 'right' sections of a
+        chemical rule description.
 
         Parameters:
         - input_str (str): The string representation of the rule.
@@ -45,8 +42,8 @@ class MoleculeRule:
 
     @staticmethod
     def generate_atom_map(smiles: str) -> Optional[str]:
-        """
-        Generate atom-mapped SMILES by assigning unique map numbers to each atom in the molecule.
+        """Generate atom-mapped SMILES by assigning unique map numbers to each
+        atom in the molecule.
 
         Parameters:
         - smiles (str): The SMILES string representing the molecule.
@@ -67,8 +64,7 @@ class MoleculeRule:
 
     @staticmethod
     def generate_molecule_smart(smiles: str) -> Optional[str]:
-        """
-        Generate a SMARTS-like string from atom-mapped SMILES.
+        """Generate a SMARTS-like string from atom-mapped SMILES.
 
         Parameters:
         - smiles (str): The SMILES string representing the molecule.
@@ -90,8 +86,7 @@ class MoleculeRule:
         explicit_hydrogen: bool = True,
         sanitize: bool = True,
     ) -> Optional[str]:
-        """
-        Generate a GML representation of the molecule rule from SMILES.
+        """Generate a GML representation of the molecule rule from SMILES.
 
         Parameters:
         - smiles (str): The SMILES string representing the molecule.

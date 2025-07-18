@@ -104,9 +104,8 @@ class DGToGML:
         return s, Rule.fromGMLString(s, add=False)
 
     def fit(self, dg, origSmiles):
-        """
-        Matches the original SMILES to a list of generated reaction SMILES and
-        returns the parsed reaction.
+        """Matches the original SMILES to a list of generated reaction SMILES
+        and returns the parsed reaction.
 
         Parameters:
         - dg (DataGenerator): The data generator instance containing the reactions.

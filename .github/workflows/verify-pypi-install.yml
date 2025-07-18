@@ -1,0 +1,59 @@
+# .github/workflows/verify-synkit-pypi-install.yml
+name: Verify SynKit PyPI install
+
+on:
+  workflow_dispatch:
+    inputs:
+      branches:
+        type: string
+        required: true
+        default: refractor
+
+  # Scheduled test every Monday at 03:00 UTC
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Create & activate virtualenv, upgrade pip, install SynKit
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install synkit[all]
+
+      - name: Show installed SynKit version
+        run: |
+          source venv/bin/activate
+          python -c "import importlib.metadata as m; print('SynKit version:', m.version('synkit'))"
+
+      - name: Write smoke-test script
+        run: |
+          cat << 'EOF' > test_synkit.py
+          from synkit.IO import rsmi_to_rsmarts
+
+          template = (
+              '[C:2]=[O:3].[C:4]([H:7])[H:8]'
+              '>>'
+              '[C:2]=[C:4].[O:3]([H:7])[H:8]'
+          )
+
+          smart = rsmi_to_rsmarts(template)
+          print("Reaction SMARTS:", smart)
+          EOF
+
+      - name: Run smoke-test
+        run: |
+          source venv/bin/activate
+          python test_synkit.py
+
+      - name: Success message
+        run: echo "✅ synkit[all] installed and smoke-test passed"

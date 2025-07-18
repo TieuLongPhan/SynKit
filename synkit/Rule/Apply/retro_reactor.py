@@ -23,8 +23,7 @@ else:
 
 class RetroReactor:
     def __init__(self) -> None:
-        """
-        Initialize the RuleFrag class with caches and null initial values.
+        """Initialize the RuleFrag class with caches and null initial values.
 
         Attributes:
         - backward_cache: A dictionary cache (keyed by (smiles, rule)) to avoid redundant computations.
@@ -32,9 +31,9 @@ class RetroReactor:
         self.backward_cache: Dict[Tuple[str, str], List[str]] = {}
 
     def _apply_backward(self, smiles: str, rule: str) -> List[str]:
-        """
-        Apply a transformation rule in backward mode to a SMILES string, returning possible precursors.
-        Uses caching to avoid redundant computations.
+        """Apply a transformation rule in backward mode to a SMILES string,
+        returning possible precursors. Uses caching to avoid redundant
+        computations.
 
         Parameters:
         - smiles (str): SMILES string to transform.
@@ -71,10 +70,9 @@ class RetroReactor:
         return self.backward_cache[cache_key]
 
     def _heuristic(self, current_smiles: str, precursor_smiles: str) -> int:
-        """
-        Heuristic function for A* search. Here, we define the "distance" as the
-        absolute difference in the carbon count between the current SMILES and
-        the known precursor SMILES.
+        """Heuristic function for A* search. Here, we define the "distance" as
+        the absolute difference in the carbon count between the current SMILES
+        and the known precursor SMILES.
 
         Parameters:
         - current_smiles (str): The SMILES of the node being expanded.
@@ -93,8 +91,8 @@ class RetroReactor:
         max_solutions: int = 1,
         fast_process: bool = True,
     ) -> List[Dict[str, List]]:
-        """
-        Perform a backward synthesis search from a product to a known precursor using A* search.
+        """Perform a backward synthesis search from a product to a known
+        precursor using A* search.
 
         Constrains any intermediate X to satisfy:
             n_C(known_precursor_smiles) <= n_C(X) <= n_C(product_smiles).

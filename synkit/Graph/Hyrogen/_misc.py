@@ -8,8 +8,7 @@ from synkit.Graph.Feature.graph_descriptors import GraphDescriptor
 
 
 def has_XH(G: nx.Graph) -> bool:
-    """
-    Check whether the graph contains any heavy atom–hydrogen bond.
+    """Check whether the graph contains any heavy atom–hydrogen bond.
 
     A heavy atom is any atom whose 'element' attribute is not 'H'.
     This function searches for any edge that connects a heavy atom to a hydrogen atom.
@@ -34,8 +33,7 @@ def has_XH(G: nx.Graph) -> bool:
 
 
 def has_HH(G: nx.Graph) -> bool:
-    """
-    Check whether the graph contains any heavy atom–hydrogen bond.
+    """Check whether the graph contains any heavy atom–hydrogen bond.
 
     A heavy atom is any atom whose 'element' attribute is not 'H'.
     This function searches for any edge that connects a heavy atom to a hydrogen atom.
@@ -60,8 +58,7 @@ def has_HH(G: nx.Graph) -> bool:
 
 
 def h_to_implicit(G: nx.Graph) -> nx.Graph:
-    """
-    Convert explicit hydrogen atoms to implicit counts on heavy atoms.
+    """Convert explicit hydrogen atoms to implicit counts on heavy atoms.
 
     For each hydrogen atom ('element' == 'H'), its neighbor (assumed to be a heavy atom)
     will have its 'hcount' attribute incremented. The hydrogen nodes are then removed.
@@ -107,8 +104,8 @@ def normalize_edge_orders(G: nx.Graph) -> None:
 
 
 def h_to_explicit(G: nx.Graph, nodes: List[int] = None, its: bool = False) -> nx.Graph:
-    """
-    Convert implicit hydrogen counts on heavy atoms into explicit hydrogen nodes.
+    """Convert implicit hydrogen counts on heavy atoms into explicit hydrogen
+    nodes.
 
     For each node ID in `nodes`, this function reads the node's 'hcount', adds that many
     new hydrogen nodes, connects them to the node with a single bond (order=1.0), and
@@ -170,11 +167,11 @@ def h_to_explicit(G: nx.Graph, nodes: List[int] = None, its: bool = False) -> nx
 def implicit_hydrogen(
     graph: nx.Graph, preserve_atom_maps: Set[int], reindex: bool = False
 ) -> nx.Graph:
-    """
-    Adds implicit hydrogens to a molecular graph and removes non-preserved hydrogens.
-    This function operates on a deep copy of the input graph to avoid in-place modifications.
-    It counts hydrogen neighbors for each non-hydrogen node and adjusts based on
-    hydrogens that need to be preserved. Non-preserved hydrogen nodes are removed from the graph.
+    """Adds implicit hydrogens to a molecular graph and removes non-preserved
+    hydrogens. This function operates on a deep copy of the input graph to
+    avoid in-place modifications. It counts hydrogen neighbors for each non-
+    hydrogen node and adjusts based on hydrogens that need to be preserved.
+    Non-preserved hydrogen nodes are removed from the graph.
 
     Parameters:
     - graph (nx.Graph): A NetworkX graph representing the molecule, where each node has an 'element'
@@ -330,8 +327,7 @@ def implicit_hydrogen(
 def check_equivariant_graph(
     its_graphs: List[nx.Graph],
 ) -> Tuple[List[Tuple[int, int]], int]:
-    """
-    Checks for isomorphism among a list of ITS graphs.
+    """Checks for isomorphism among a list of ITS graphs.
 
     Parameters:
     - its_graphs (List[nx.Graph]): A list of ITS graphs.
@@ -358,8 +354,8 @@ def check_equivariant_graph(
 
 
 def check_explicit_hydrogen(graph: nx.Graph) -> tuple:
-    """
-    Counts the explicit hydrogen nodes in the given graph and collects their IDs.
+    """Counts the explicit hydrogen nodes in the given graph and collects their
+    IDs.
 
     Parameters:
     - graph (nx.Graph): The graph to inspect.
@@ -376,9 +372,9 @@ def check_explicit_hydrogen(graph: nx.Graph) -> tuple:
 
 
 def check_hcount_change(react_graph: nx.Graph, prod_graph: nx.Graph) -> int:
-    """
-    Computes the maximum change in hydrogen count ('hcount') between corresponding nodes
-    in the reactant and product graphs. It considers both hydrogen formation and breakage.
+    """Computes the maximum change in hydrogen count ('hcount') between
+    corresponding nodes in the reactant and product graphs. It considers both
+    hydrogen formation and breakage.
 
     Parameters:
     - react_graph (nx.Graph): The graph representing reactants.
@@ -409,9 +405,8 @@ def check_hcount_change(react_graph: nx.Graph, prod_graph: nx.Graph) -> int:
 
 
 def get_cycle_member_rings(G: nx.Graph, type="minimal") -> List[int]:
-    """
-    Identifies all cycles in the given graph using cycle bases to ensure no overlap
-    and returns a list of the sizes of these cycles (member rings),
+    """Identifies all cycles in the given graph using cycle bases to ensure no
+    overlap and returns a list of the sizes of these cycles (member rings),
     sorted in ascending order.
 
     Parameters:
@@ -435,10 +430,9 @@ def get_cycle_member_rings(G: nx.Graph, type="minimal") -> List[int]:
 
 
 def get_priority(reaction_centers: List[Any]) -> List[int]:
-    """
-    Evaluate reaction centers for specific graph characteristics, selecting indices based
-    on the shortest reaction paths and maximum ring sizes, and adjusting for certain
-    graph types by modifying the ring information.
+    """Evaluate reaction centers for specific graph characteristics, selecting
+    indices based on the shortest reaction paths and maximum ring sizes, and
+    adjusting for certain graph types by modifying the ring information.
 
     Parameters:
     - reaction_centers: List[Any], a list of reaction centers where each center should be
