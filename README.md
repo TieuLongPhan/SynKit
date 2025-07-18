@@ -48,6 +48,19 @@ For more details on each utility within the repository, please refer to the docu
   pip install synkit[all]
   ```
 
+4. **Install via Docker**  
+   Pull the image: 
+
+   ```bash
+   docker pull tieulongphan/synkit:latest
+   # or a specific version:
+   docker pull tieulongphan/synkit:0.1.0
+   ```
+   Run a container (sanity check):
+   ```
+   docker run --rm tieulongphan/synkit:latest
+   ```
+
 ## Contribute
 
 We're welcoming new contributors to build this project better. Please not hesitate to inquire me via [email][tieu@bioinf.uni-leipzig.de].

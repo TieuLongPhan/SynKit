@@ -8,7 +8,7 @@ on:
       - 'v*.*.*'
     # …and on any push to the refractor branch for testing
     branches:
-      - 'refractor'
+      - 'staging'
 
 jobs:
   build-and-push:
