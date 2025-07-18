@@ -42,5 +42,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            tieulongphan/synkit-package:${{ github.ref_name }}
-            tieulongphan/synkit-package:latest
+            tieulongphan/synkit:${{ github.ref_name }}
+            tieulongphan/synkit:latest
