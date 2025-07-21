@@ -74,7 +74,7 @@ class GraphToMol:
         node_to_idx: Dict[int, int] = {}
 
         for node, data in graph.nodes(data=True):
-            element = data.get(self.node_attributes["element"], "C")
+            element = data.get(self.node_attributes["element"], "*")
             charge = data.get(self.node_attributes["charge"], 0)
             atom_map = (
                 data.get(self.node_attributes["atom_map"], 0)
@@ -93,7 +93,7 @@ class GraphToMol:
                 atom.SetAtomMapNum(atom_map)
             if hcount is not None:
                 atom.SetNoImplicit(True)
-                atom.SetNumExplicitHs(hcount)
+                atom.SetNumExplicitHs(int(hcount))
 
             idx = mol.AddAtom(atom)
             node_to_idx[node] = idx
