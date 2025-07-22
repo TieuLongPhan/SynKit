@@ -36,7 +36,10 @@ jobs:
       - name: Create & activate build environment
         shell: bash -l {0}
         run: |
-          conda create -n build python=3.11 conda-build -y
+          conda create -n build \
+            python=3.11 \
+            'conda-build>=3.21' \
+            -c conda-forge -y
           conda activate build
           conda info --envs
 
