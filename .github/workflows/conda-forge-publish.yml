@@ -2,26 +2,22 @@ name: Publish to conda-forge
 
 on:
   release:
-    types:
-      - published
+    types: [published]
   push:
-    branches:
-      - refractor   
+    branches: [refractor]    
 
 permissions:
   contents: read
 
 jobs:
   build:
-    name: Build Conda Package
     runs-on: ubuntu-latest
     outputs:
       pkg_paths: ${{ steps.build.outputs.paths }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        with: { fetch-depth: 0 }
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
@@ -30,7 +26,7 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
 
-      - name: Create & activate build environment
+      - name: Create & activate build env
         shell: bash -l {0}
         run: |
           conda create -n build python=3.11 'conda-build>=3.21' -c conda-forge -y
@@ -42,29 +38,35 @@ jobs:
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
-            rm -rf conda-bld
-            mkdir conda-bld
-            
-            conda activate build
-            conda-build recipe --output-folder ./conda-bld
+          conda activate build
+          rm -rf conda-bld && mkdir conda-bld
 
-            # DEBUG: list all built packages
-            echo "DEBUG: Built files:"
-            find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print
+          conda-build recipe --output-folder ./conda-bld
 
-            # Export paths (both .conda and .tar.bz2) for upload
-            files=$(find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print | tr '\n' ' ')
-            echo "paths=$files" >> $GITHUB_OUTPUT
+          echo "DEBUG: Built files:"
+          find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print
+
+          files=$(find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print | tr '\n' ' ')
+          echo "paths=$files" >> $GITHUB_OUTPUT
+
+      - name: Upload built packages as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: conda-packages
+          path: conda-bld/
 
   publish_release:
-    name: Upload Release → main
     needs: build
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
+      - name: Download built packages
+        uses: actions/download-artifact@v3
+        with:
+          name: conda-packages
+
       - name: Install Anaconda Client
-        run: |
-          python3 -m pip install --upgrade anaconda-client
+        run: python3 -m pip install --upgrade anaconda-client
 
       - name: Upload to conda-forge / main
         env:
@@ -79,14 +81,17 @@ jobs:
           done
 
   publish_beta:
-    name: Upload Refractor → beta
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/refractor'
     runs-on: ubuntu-latest
     steps:
+      - name: Download built packages
+        uses: actions/download-artifact@v3
+        with:
+          name: conda-packages
+
       - name: Install Anaconda Client
-        run: |
-          python3 -m pip install --upgrade anaconda-client
+        run: python3 -m pip install --upgrade anaconda-client
 
       - name: Upload to conda-forge / beta
         env:
@@ -99,4 +104,3 @@ jobs:
               --no-progress \
               "$pkg"
           done
-
