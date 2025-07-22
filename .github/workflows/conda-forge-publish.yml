@@ -1,15 +1,12 @@
 name: Publish to conda-forge
 
 on:
-  # 1) When a GitHub Release is published
   release:
     types:
       - published
-
-  # 2) When you push to the `refactor` branch
   push:
     branches:
-      - refractor
+      - refractor    # your intentionally misspelled branch
 
 permissions:
   contents: read
@@ -36,22 +33,25 @@ jobs:
       - name: Create & activate build environment
         shell: bash -l {0}
         run: |
-          conda create -n build \
-            python=3.11 \
-            'conda-build>=3.21' \
-            -c conda-forge -y
+          conda create -n build python=3.11 'conda-build>=3.21' -c conda-forge -y
           conda activate build
-          conda info --envs
 
       - id: build
         name: Build conda package
         shell: bash -l {0}
         env:
-            GITHUB_RUN_NUMBER: ${{ github.run_number }}   # ← hand it to conda-build
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
-            conda activate build
-            conda build recipe --output-folder ./conda-bld
-            echo "paths=$(ls conda-bld/**/**.tar.bz2 | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          conda activate build               # ← explicitly activate the build env
+          conda build recipe --output-folder ./conda-bld
+
+          # debug: list built files
+          echo "DEBUG: Built files:"
+          ls -l ./conda-bld/*/*.tar.bz2 || true
+
+          # export paths for upload
+          files=$(ls ./conda-bld/*/*.tar.bz2 | tr '\n' ' ')
+          echo "paths=$files" >> $GITHUB_OUTPUT
 
   publish_release:
     name: Upload Release → main
