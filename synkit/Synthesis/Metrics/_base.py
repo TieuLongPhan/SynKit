@@ -15,8 +15,7 @@ def _compute_metrics(
     k: int = 5,
     beta: float = 1,
 ) -> Dict[str, float]:
-    """
-    Computes the metrics for a list of reactions data.
+    """Computes the metrics for a list of reactions data.
 
     Parameters:
     - reactions_data (List[Dict[str, any]]): List of dictionaries containing RSMI strings.

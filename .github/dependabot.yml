@@ -1,0 +1,10 @@
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"                # location of requirements.txt or pyproject.toml
+    target-branch: "staging"      # open PRs against staging instead of main
+    schedule:
+      interval: "weekly"          # check for updates once a week
+    open-pull-requests-limit: 5   # max concurrent Dependabot PRs
+    rebase-strategy: "auto"       # auto-rebase PRs when they fall out of date

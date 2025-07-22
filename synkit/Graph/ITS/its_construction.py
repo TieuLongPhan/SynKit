@@ -12,8 +12,8 @@ class ITSConstruction:
         attributes_defaults: Optional[Dict[str, Any]] = None,
         balance_its: bool = True,
     ) -> nx.Graph:
-        """
-        Create a Combined Graph Representation (CGR) by merging nodes and edges of G and H.
+        """Create a Combined Graph Representation (CGR) by merging nodes and
+        edges of G and H.
 
         The resulting ITS graph:
           - Uses a deep copy of the smaller (or larger, if balance_its is False) input graph.
@@ -81,8 +81,7 @@ class ITSConstruction:
     def get_node_attribute(
         graph: nx.Graph, node: Hashable, attribute: str, default: Any
     ) -> Any:
-        """
-        Retrieve a node attribute or return a default if missing.
+        """Retrieve a node attribute or return a default if missing.
 
         :param graph: The graph containing the node.
         :type graph: nx.Graph
@@ -90,7 +89,8 @@ class ITSConstruction:
         :type node: hashable
         :param attribute: The name of the attribute to retrieve.
         :type attribute: str
-        :param default: The value to return if the attribute is not present.
+        :param default: The value to return if the attribute is not
+            present.
         :type default: Any
         :returns: The attribute value or the default.
         :rtype: Any
@@ -104,8 +104,7 @@ class ITSConstruction:
     def get_node_attributes_with_defaults(
         graph: nx.Graph, node: int, attributes_defaults: Dict[str, Any] = None
     ) -> Tuple:
-        """
-        Retrieve multiple node attributes, applying defaults where missing.
+        """Retrieve multiple node attributes, applying defaults where missing.
 
         :param graph: The graph containing the node.
         :type graph: nx.Graph
@@ -134,8 +133,7 @@ class ITSConstruction:
     def add_edges_to_ITS(
         ITS: nx.Graph, G: nx.Graph, H: nx.Graph, ignore_aromaticity: bool = False
     ) -> nx.Graph:
-        """
-        Add and label edges in the ITS graph based on presence in G and H.
+        """Add and label edges in the ITS graph based on presence in G and H.
 
         For each edge (u,v) in G or H:
           - If present in both, label ``order=(order_G, order_H)``.
@@ -190,8 +188,8 @@ class ITSConstruction:
     def add_standard_order_attribute(
         graph: nx.Graph, ignore_aromaticity: bool = False
     ) -> nx.Graph:
-        """
-        Compute and attach 'standard_order' to each edge as difference of orders.
+        """Compute and attach 'standard_order' to each edge as difference of
+        orders.
 
         :param graph: Graph whose edges have ``order=(o_G, o_H)``.
         :type graph: nx.Graph
@@ -286,12 +284,13 @@ class ITSConstruction:
         return its
 
     def typesGH(self) -> Dict[str, Dict[str, Tuple[Any, Any]]]:
-        """
-        Returns the types and default values for selected node and edge attributes, useful for
-        interpreting the 'typesGH' annotation on ITS graphs.
+        """Returns the types and default values for selected node and edge
+        attributes, useful for interpreting the 'typesGH' annotation on ITS
+        graphs.
 
-        :returns: Dictionary with node and edge attribute types and defaults, e.g.
-                  {"node": {attr: (type, 0)}, "edge": {attr: (type, 0)}}
+        :returns: Dictionary with node and edge attribute types and
+            defaults, e.g. {"node": {attr: (type, 0)}, "edge": {attr:
+            (type, 0)}}
         :rtype: dict[str, dict[str, tuple[type, Any]]]
         """
         node_prop_types: Dict[str, Any] = {

@@ -6,8 +6,8 @@ from joblib import Parallel, delayed
 
 
 def smiles_to_iupac(smiles_string: str, timeout: int = 1):
-    """
-    Converts a SMILES string to its corresponding IUPAC name(s) using the PubChem PUG REST API.
+    """Converts a SMILES string to its corresponding IUPAC name(s) using the
+    PubChem PUG REST API.
 
     Parameters:
     - smiles_string (str): The SMILES string of the compound (e.g., "C=O" for formaldehyde).
@@ -64,8 +64,7 @@ def smiles_to_iupac(smiles_string: str, timeout: int = 1):
 
 
 def batch_process_smiles(smiles_batch: List[str], timeout=1):
-    """
-    Processes a batch of SMILES strings to get IUPAC names.
+    """Processes a batch of SMILES strings to get IUPAC names.
 
     Parameters:
     - smiles_batch (list): A list of SMILES strings to process.
@@ -80,8 +79,8 @@ def batch_process_smiles(smiles_batch: List[str], timeout=1):
 def get_iupac_for_smiles_list(
     smiles_list: List[str], batch_size=10, n_jobs=4, timeout=1
 ):
-    """
-    Convert a list of SMILES strings to their corresponding IUPAC names using the PubChem API with batch processing.
+    """Convert a list of SMILES strings to their corresponding IUPAC names
+    using the PubChem API with batch processing.
 
     Parameters:
     smiles_list (list): A list of SMILES strings to be converted to IUPAC names.

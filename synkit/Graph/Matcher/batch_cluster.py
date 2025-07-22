@@ -19,9 +19,8 @@ class BatchCluster:
         edge_attribute: str = "order",
         backend: str = "nx",
     ):
-        """
-        Initializes an AutoCat instance which uses isomorphism checks for categorizing
-        new graphs or rules.
+        """Initializes an AutoCat instance which uses isomorphism checks for
+        categorizing new graphs or rules.
 
         Parameters:
         - node_label_names (List[str]): Names of the node attributes to use in
@@ -75,8 +74,8 @@ class BatchCluster:
         nodeMatch: Optional[Callable] = None,
         edgeMatch: Optional[Callable] = None,
     ) -> Dict:
-        """
-        Checks and classifies a graph or rule based on existing templates using either graph or rule isomorphism.
+        """Checks and classifies a graph or rule based on existing templates
+        using either graph or rule isomorphism.
 
         Parameters:
         - data (Dict): A dictionary representing a graph or rule with its attributes and
@@ -138,8 +137,7 @@ class BatchCluster:
 
     @staticmethod
     def batch_dicts(input_list, batch_size):
-        """
-        Splits a list of dictionaries into batches of a specified size.
+        """Splits a list of dictionaries into batches of a specified size.
 
         Args:
         input_list (list of dict): The list of dictionaries to be batched.
@@ -175,8 +173,8 @@ class BatchCluster:
         rule_key: str = "gml",
         attribute_key: str = "WLHash",
     ) -> Tuple[List[Dict], List[Dict]]:
-        """
-        Processes a list of graph data entries, classifying each based on existing templates.
+        """Processes a list of graph data entries, classifying each based on
+        existing templates.
 
         Parameters:
         - data (List[Dict]): A list of dictionaries, each representing a graph or rule
@@ -199,10 +197,10 @@ class BatchCluster:
         attribute_key: str = "WLHash",
         batch_size: Optional[int] = None,
     ) -> Tuple[List[Dict], List[Dict]]:
-        """
-        Processes and classifies data in batches. Uses GraphCluster for initial processing
-        and a stratified sampling technique to update templates if there is only one batch
-        and no initial templates are provided.
+        """Processes and classifies data in batches. Uses GraphCluster for
+        initial processing and a stratified sampling technique to update
+        templates if there is only one batch and no initial templates are
+        provided.
 
         Parameters:
         - data (List[Dict]): Data to process.

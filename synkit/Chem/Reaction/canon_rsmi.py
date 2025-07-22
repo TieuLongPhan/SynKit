@@ -9,9 +9,9 @@ from synkit.IO import graph_to_smi, rsmi_to_graph
 
 
 class CanonRSMI:
-    """
-    A **pure-Python / pure-NetworkX** utility for canonicalizing reaction SMILES
-    by expanding atom-maps and deterministically reindexing reaction graphs.
+    """A **pure-Python / pure-NetworkX** utility for canonicalizing reaction
+    SMILES by expanding atom-maps and deterministically reindexing reaction
+    graphs.
 
     Workflow
     --------
@@ -61,16 +61,15 @@ class CanonRSMI:
 
     @staticmethod
     def _mol_from_smiles(smi: str) -> Chem.Mol:
-        """
-        RDKit MolFromSmiles with explicit sanitize step.
-        """
+        """RDKit MolFromSmiles with explicit sanitize step."""
         mol = _rdkit_MolFromSmiles(smi, sanitize=False)
         Chem.SanitizeMol(mol)
         return mol
 
     def expand_aam(self, rsmi: str) -> str:
-        """
-        Assign new atom-map IDs to unmapped reactant atoms in 'reactants>>products' SMILES.
+        """Assign new atom-map IDs to unmapped reactant atoms in
+        'reactants>>products' SMILES.
+
         New IDs start at max(existing maps)+1.
         """
         try:
@@ -110,9 +109,7 @@ class CanonRSMI:
     def get_aam_pairwise_indices(
         G: nx.Graph, H: nx.Graph, aam_key: str = "atom_map"
     ) -> List[Tuple[int, int]]:
-        """
-        Return sorted list of (G_node, H_node) for shared atom-map IDs.
-        """
+        """Return sorted list of (G_node, H_node) for shared atom-map IDs."""
         gmap = {
             data[aam_key]: n
             for n, data in G.nodes(data=True)
@@ -223,7 +220,8 @@ class CanonRSMI:
 
     @property
     def canonical_hash(self) -> Optional[str]:
-        """Reaction-level hash combining reactant and product canonical hashes."""
+        """Reaction-level hash combining reactant and product canonical
+        hashes."""
         if not self._canon_reactant_graph or not self._canon_product_graph:
             return None
         h_reac = self._canon.canonical_signature(self._canon_reactant_graph)
@@ -236,9 +234,7 @@ class CanonRSMI:
         return self._mapping_pairs
 
     def help(self) -> None:  # pragma: no cover
-        """
-        Pretty-print the class doc and public methods with signatures.
-        """
+        """Pretty-print the class doc and public methods with signatures."""
         print(inspect.getdoc(self.__class__))
         for meth in (
             "expand_aam",

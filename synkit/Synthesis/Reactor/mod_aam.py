@@ -29,7 +29,7 @@ from synkit.IO.debug import setup_logging
 from synkit.Graph.ITS.its_expand import ITSExpand
 from synkit.Graph.ITS.normalize_aam import NormalizeAAM
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
+from synkit.Chem.utils import reverse_reaction
 from synkit.Synthesis.reactor_utils import _get_unique_aam, _get_reagent, _add_reagent
 
 from synkit.Synthesis.Reactor.strategy import Strategy
@@ -39,8 +39,7 @@ logger = setup_logging(task_type="MODAAM")
 
 
 class MODAAM:
-    """
-    Runs MØD (via MODReactor) then a full AAM/ITS post-processing pipeline.
+    """Runs MØD (via MODReactor) then a full AAM/ITS post-processing pipeline.
 
     Parameters
     ----------
@@ -106,9 +105,7 @@ class MODAAM:
         self._aam_smiles = self._process_aam(self._dg)
 
     def run(self) -> List[str]:
-        """
-        Re-run the entire pipeline (MØD + AAM) and return fresh results.
-        """
+        """Re-run the entire pipeline (MØD + AAM) and return fresh results."""
         self._run_pipeline()
         return self._aam_smiles
 
@@ -231,8 +228,7 @@ class MODAAM:
 
 
 def expand_aam(rsmi: str, rule: str) -> List[str]:
-    """
-    Expand Atom–Atom Mapping (AAM) for a given reaction SMARTS/SMILES (rsmi)
+    """Expand Atom–Atom Mapping (AAM) for a given reaction SMARTS/SMILES (rsmi)
     using a pre‐sanitized GML rule string.
 
     Parameters

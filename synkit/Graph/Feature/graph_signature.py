@@ -3,15 +3,17 @@ import networkx as nx
 
 
 class GraphSignature:
-    """
-    Provides methods to generate canonical signatures for graph edges (with flexible 'order' and 'state' attributes,
-    and node degrees/neighbor information), various spectral invariants, adjacency matrix, and complete graphs.
-    Aims for high uniqueness without relying solely on isomorphism checks.
+    """Provides methods to generate canonical signatures for graph edges (with
+    flexible 'order' and 'state' attributes, and node degrees/neighbor
+    information), various spectral invariants, adjacency matrix, and complete
+    graphs.
+
+    Aims for high uniqueness without relying solely on isomorphism
+    checks.
     """
 
     def __init__(self, graph: nx.Graph):
-        """
-        Initializes the GraphSignature class with a specified graph.
+        """Initializes the GraphSignature class with a specified graph.
 
         Parameters:
         - graph (nx.Graph): A NetworkX graph instance.
@@ -20,10 +22,9 @@ class GraphSignature:
         self._validate_graph()
 
     def _validate_graph(self):
-        """
-        Validates that all nodes have the required attributes ('element' and 'charge'),
-        and all edges have the required 'order' attribute as int, float, or tuple of two floats,
-        and optionally the 'state' attribute.
+        """Validates that all nodes have the required attributes ('element' and
+        'charge'), and all edges have the required 'order' attribute as int,
+        float, or tuple of two floats, and optionally the 'state' attribute.
 
         Raises:
         - ValueError: If any node is missing the 'element' or 'charge' attribute,
@@ -61,9 +62,10 @@ class GraphSignature:
     def create_edge_signature(
         self, include_neighbors: bool = False, max_hop: int = 2
     ) -> str:
-        """
-        Generates a canonical edge signature by formatting each edge with sorted node elements (including charge),
-        node degrees, bond order, bond state, and optionally including neighbor information and topological context.
+        """Generates a canonical edge signature by formatting each edge with
+        sorted node elements (including charge), node degrees, bond order, bond
+        state, and optionally including neighbor information and topological
+        context.
 
         Parameters:
         - include_neighbors (bool): Whether to include neighbors' details in the edge signature.
@@ -139,8 +141,7 @@ class GraphSignature:
         return "/".join(sorted(edge_signature_parts))
 
     def _get_khop_neighbors(self, node, max_hop):
-        """
-        Retrieves the k-hop neighborhood information for a given node.
+        """Retrieves the k-hop neighborhood information for a given node.
 
         Parameters:
         - node (int): The node for which to get neighborhood information.
@@ -171,8 +172,8 @@ class GraphSignature:
         )
 
     def create_wl_hash(self, iterations: int = 3) -> str:
-        """
-        Generates a Weisfeiler-Lehman (WL) hash for the graph to capture its structural features.
+        """Generates a Weisfeiler-Lehman (WL) hash for the graph to capture its
+        structural features.
 
         Parameters:
         - iterations (int): Number of WL iterations to perform.
@@ -210,8 +211,8 @@ class GraphSignature:
         include_neighbors: bool = True,
         max_hop: int = 1,
     ) -> str:
-        """
-        Combines edge, various spectral invariants, and WL hash into a single comprehensive graph signature.
+        """Combines edge, various spectral invariants, and WL hash into a
+        single comprehensive graph signature.
 
         Parameters:
         - include_wl_hash (bool): Whether to include the Weisfeiler-Lehman hash.

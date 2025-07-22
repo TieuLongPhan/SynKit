@@ -11,9 +11,8 @@ class PathFPs:
         nBits: int = 1024,
         hash_alg: str = "sha256",
     ) -> None:
-        """
-        Initialize the PathFPs class to create a binary fingerprint based on paths in a
-        graph.
+        """Initialize the PathFPs class to create a binary fingerprint based on
+        paths in a graph.
 
         Parameters:
         - graph (nx.Graph): Graph on which to perform analysis.
@@ -29,9 +28,8 @@ class PathFPs:
         self.hash_function = getattr(hashlib, self.hash_alg)
 
     def generate_fingerprint(self) -> str:
-        """
-        Generate a binary string fingerprint of the graph by hashing paths up to a certain
-        length and combining them.
+        """Generate a binary string fingerprint of the graph by hashing paths
+        up to a certain length and combining them.
 
         Returns:
         - str: A binary string of length `nBits` that represents the fingerprint of the
@@ -63,9 +61,8 @@ class PathFPs:
         return fingerprint
 
     def iterative_deepening(self, hash_object: Any, remaining_bits: int) -> str:
-        """
-        Extend the hash length using iterative hashing until the desired bit length is
-        achieved.
+        """Extend the hash length using iterative hashing until the desired bit
+        length is achieved.
 
         Parameters:
         - hash_object (hashlib._Hash): The hash object used for iterative deepening.

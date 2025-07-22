@@ -11,10 +11,11 @@ logger = setup_logging()
 
 
 class HierContext(RadiusExpand):
-    """
-    Hierarchical clustering class for reaction context graphs. Extends RadiusExpand to build
-    multi-level graph representations and clusters them based on structural features such as
-    Weisfeiler-Lehman hashing.
+    """Hierarchical clustering class for reaction context graphs.
+
+    Extends RadiusExpand to build multi-level graph representations and
+    clusters them based on structural features such as Weisfeiler-Lehman
+    hashing.
     """
 
     def __init__(
@@ -24,8 +25,8 @@ class HierContext(RadiusExpand):
         edge_attribute: str = "order",
         max_radius: int = 3,
     ) -> None:
-        """
-        Initializes the HierContext class for hierarchical clustering of reaction context graphs.
+        """Initializes the HierContext class for hierarchical clustering of
+        reaction context graphs.
 
         Parameters:
         - node_label_names (List[str]): A list of node attribute names used for matching.
@@ -46,8 +47,8 @@ class HierContext(RadiusExpand):
     def _group_class(
         data: List[Dict[str, Any]], key: str
     ) -> Dict[Any, List[Dict[str, Any]]]:
-        """
-        Groups a list of dictionaries into subgroups based on the specified key.
+        """Groups a list of dictionaries into subgroups based on the specified
+        key.
 
         Parameters:
         - data (List[Dict[str, Any]]): A list of dictionaries to be grouped.
@@ -66,8 +67,8 @@ class HierContext(RadiusExpand):
     def _update_child_idx(
         data: List[List[Dict[str, Any]]], cls_id: str = "class"
     ) -> List[List[Dict[str, Any]]]:
-        """
-        Updates hierarchical templates by assigning child IDs based on parent–cluster relationships.
+        """Updates hierarchical templates by assigning child IDs based on
+        parent–cluster relationships.
 
         Parameters:
         - data (List[List[Dict[str, Any]]]): A list of layers, where each layer is a list of dictionaries
@@ -106,9 +107,9 @@ class HierContext(RadiusExpand):
         context_key: str,
         cls_func: Callable,
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-        """
-        Processes a list of graph data entries by extracting context subgraphs and computing
-        their hashes, then classifies the data using the provided clustering function.
+        """Processes a list of graph data entries by extracting context
+        subgraphs and computing their hashes, then classifies the data using
+        the provided clustering function.
 
         Parameters:
         - data (List[Dict[str, Any]]): A list of dictionaries, each representing a graph or data entry.
@@ -147,9 +148,9 @@ class HierContext(RadiusExpand):
         cls_func: Callable,
         radius: int = 1,
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-        """
-        Processes a specific hierarchical level by grouping data based on parent cluster IDs,
-        extracting context for child levels, and clustering the data.
+        """Processes a specific hierarchical level by grouping data based on
+        parent cluster IDs, extracting context for child levels, and clustering
+        the data.
 
         Parameters:
         - data (List[Dict[str, Any]]): A list of dictionaries representing graph data entries.
@@ -194,10 +195,11 @@ class HierContext(RadiusExpand):
         its_key: str = "ITS",
         context_key: str = "K",
     ) -> Tuple[List[Dict[str, Any]], List[List[Dict[str, Any]]]]:
-        """
-        Processes a list of graph data entries, classifying each based on hierarchical clustering.
-        The method extracts context subgraphs, computes graph hashes, and clusters the data at multiple
-        hierarchical levels. Finally, child node indices are updated based on parent–cluster relationships.
+        """Processes a list of graph data entries, classifying each based on
+        hierarchical clustering. The method extracts context subgraphs,
+        computes graph hashes, and clusters the data at multiple hierarchical
+        levels. Finally, child node indices are updated based on parent–cluster
+        relationships.
 
         Parameters:
         - original_data (List[Dict[str, Any]]): A list of dictionaries, each representing a graph data entry

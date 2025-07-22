@@ -8,28 +8,30 @@ from synkit.Graph.Hyrogen._misc import h_to_explicit
 
 
 class RuleFilter:
-    """
-    Filter a host graph by a list of transformation rules (patterns),
-    keeping only those rules whose (decomposed) pattern appears as a
-    subgraph in the host.
+    """Filter a host graph by a list of transformation rules (patterns),
+    keeping only those rules whose (decomposed) pattern appears as a subgraph
+    in the host.
 
-    :param host_graph: The host graph to search within (will be converted to explicit H).
+    :param host_graph: The host graph to search within (will be
+        converted to explicit H).
     :type host_graph: nx.Graph
     :param rules_list: A list of rule objects to filter against.
     :type rules_list: list
-    :param invert: If True, use the "modifier" component of each decomposition; otherwise use the normal part.
+    :param invert: If True, use the "modifier" component of each
+        decomposition; otherwise use the normal part.
     :type invert: bool
-    :param engine: Matching engine to use: "turbo", "sing", "nx", or "mod".
+    :param engine: Matching engine to use: "turbo", "sing", "nx", or
+        "mod".
     :type engine: str
     :param node_label: Node attribute(s) for TurboISO to match on.
     :type node_label: str or list
     :param edge_label: Edge attribute(s) for TurboISO to match on.
     :type edge_label: str or list
-    :param distance_threshold: Threshold to skip distance filtering in TurboISO.
+    :param distance_threshold: Threshold to skip distance filtering in
+        TurboISO.
     :type distance_threshold: int
     :param sing_max_path: Maximum path length for SING engine.
     :type sing_max_path: int
-
     :returns: An instance with only the rules that matched.
     :rtype: RuleFilter
     """
@@ -45,14 +47,14 @@ class RuleFilter:
         distance_threshold: int = 5000,
         sing_max_path: int = 3,
     ) -> None:
-        """
-        Initialize the RuleFilter and perform the filtering pass.
+        """Initialize the RuleFilter and perform the filtering pass.
 
         :param host_graph: The host graph to search within.
         :type host_graph: nx.Graph
         :param rules_list: A list of rule objects to filter against.
         :type rules_list: list
-        :param invert: If True, use the "modifier" component of each decomposition.
+        :param invert: If True, use the "modifier" component of each
+            decomposition.
         :type invert: bool
         :param engine: Matching engine to use.
         :type engine: str
@@ -60,7 +62,8 @@ class RuleFilter:
         :type node_label: str or list
         :param edge_label: Edge attribute(s) for TurboISO to match on.
         :type edge_label: str or list
-        :param distance_threshold: Threshold to skip distance filtering in TurboISO.
+        :param distance_threshold: Threshold to skip distance filtering
+            in TurboISO.
         :type distance_threshold: int
         :param sing_max_path: Maximum path length for SING engine.
         :type sing_max_path: int
@@ -97,8 +100,7 @@ class RuleFilter:
         self._new_rules = [r for r, m in zip(self._rules, self._matches) if m]
 
     def _match(self, pattern: nx.Graph) -> bool:
-        """
-        Test whether the given pattern occurs as a subgraph in the host.
+        """Test whether the given pattern occurs as a subgraph in the host.
 
         :param pattern: The query graph pattern to match.
         :type pattern: nx.Graph
@@ -120,8 +122,7 @@ class RuleFilter:
 
     @property
     def host(self) -> nx.Graph:
-        """
-        The explicit host graph.
+        """The explicit host graph.
 
         :returns: The host graph used for matching.
         :rtype: nx.Graph
@@ -130,8 +131,7 @@ class RuleFilter:
 
     @property
     def rules(self) -> List[Any]:
-        """
-        Original list of rules provided.
+        """Original list of rules provided.
 
         :returns: The list of rules.
         :rtype: list
@@ -140,8 +140,7 @@ class RuleFilter:
 
     @property
     def patterns(self) -> List[nx.Graph]:
-        """
-        Decomposed subgraph queries used internally.
+        """Decomposed subgraph queries used internally.
 
         :returns: List of ITS-decomposed query graphs.
         :rtype: list of nx.Graph
@@ -150,8 +149,7 @@ class RuleFilter:
 
     @property
     def matches(self) -> List[bool]:
-        """
-        Boolean list indicating which patterns were found.
+        """Boolean list indicating which patterns were found.
 
         :returns: List of booleans aligned with `patterns`.
         :rtype: list of bool
@@ -160,8 +158,7 @@ class RuleFilter:
 
     @property
     def new_rules(self) -> List[Any]:
-        """
-        Subset of rules for which `matches[i]` is True.
+        """Subset of rules for which `matches[i]` is True.
 
         :returns: Filtered list of matching rules.
         :rtype: list
@@ -170,8 +167,7 @@ class RuleFilter:
 
     @property
     def engine(self) -> str:
-        """
-        Matching engine in use.
+        """Matching engine in use.
 
         :returns: The name of the engine.
         :rtype: str
@@ -179,8 +175,7 @@ class RuleFilter:
         return self._engine
 
     def __repr__(self) -> str:
-        """
-        Concise representation of the filter.
+        """Concise representation of the filter.
 
         :returns: Representation string.
         :rtype: str
@@ -192,8 +187,7 @@ class RuleFilter:
         )
 
     def __help__(self) -> str:
-        """
-        Return the class docstring for interactive help.
+        """Return the class docstring for interactive help.
 
         :returns: The class documentation.
         :rtype: str

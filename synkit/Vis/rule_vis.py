@@ -17,8 +17,9 @@ class RuleVis:
         self.vis_graph = GraphVisualizer()
 
     def vis(self, input: Union[str, Tuple[nx.Graph, nx.Graph, nx.Graph]], **kwargs):
-        """
-        Wrapper to select between nx_vis and mod_vis based on backend and input type.
+        """Wrapper to select between nx_vis and mod_vis based on backend and
+        input type.
+
         Converts input as needed.
         """
         if self.backend == "nx":
@@ -60,11 +61,9 @@ class RuleVis:
         add_gridbox: bool = False,
         rule: bool = False,
     ) -> plt.Figure:
-        """
-        Visualize reactants, ITS, and products side-by-side or vertically,
-        with interactive plotting turned off to prevent double-display,
-        and correct handling of matplotlib axes arrays.
-        """
+        """Visualize reactants, ITS, and products side-by-side or vertically,
+        with interactive plotting turned off to prevent double-display, and
+        correct handling of matplotlib axes arrays."""
         # Disable interactive mode & clear any leftover figures
         was_interactive = plt.isinteractive()
         plt.ioff()
@@ -153,9 +152,7 @@ class RuleVis:
                 plt.ion()
 
     def mod_vis(self, gml: str, path: str = "./") -> None:
-        """
-        Simple MOD visualization via mod_post CLI.
-        """
+        """Simple MOD visualization via mod_post CLI."""
         from mod import ruleGMLString
 
         rule = ruleGMLString(gml, add=False)
@@ -165,10 +162,7 @@ class RuleVis:
         self.post()
 
     def post(self) -> None:
-        """
-        Generate an external report via the `mod_post` CLI.
-
-        """
+        """Generate an external report via the `mod_post` CLI."""
         try:
             subprocess.run(["mod_post"], check=True)
         except subprocess.CalledProcessError as e:

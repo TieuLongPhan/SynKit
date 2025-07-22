@@ -22,9 +22,7 @@ else:
 
 
 class MODCRN:
-    """
-    MODCRN
-    ======
+    """MODCRN ======
 
     High-level class for constructing, inspecting, and reporting a chemical reaction
     network using the MØD derivation graph (DG) API.
@@ -136,28 +134,21 @@ class MODCRN:
         builder.execute(strat)
 
     def print_summary(self) -> None:
-        """
-        Print and save a concise summary of the derivation graph.
-        """
+        """Print and save a concise summary of the derivation graph."""
         out_dir = "out"
         os.makedirs(out_dir, exist_ok=True)
 
         self._dg.print()
 
     def export_report(self) -> None:
-        """
-        Generate an external report via the `mod_post` CLI.
-
-        """
+        """Generate an external report via the `mod_post` CLI."""
         try:
             subprocess.run(["mod_post"], check=True)
         except subprocess.CalledProcessError as e:
             logger.error(f"mod_post failed with exit code {e.returncode}")
 
     def help(self) -> None:
-        """
-        Print usage examples and API summary for MODCRN.
-        """
+        """Print usage examples and API summary for MODCRN."""
         print(
             "MODCRN Usage:\n"
             "    crn = MODCRN(rule_db_path, initial_smiles, repeats)\n"

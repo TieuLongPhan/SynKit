@@ -12,26 +12,22 @@ logger = setup_logging("INFO")
 
 
 class ITSRelabel:
-    """
-    Extend reaction SMILES through atom-map alignment between reactant and product SynGraphs.
+    """Extend reaction SMILES through atom-map alignment between reactant and
+    product SynGraphs.
 
     :cvar logger: Logger instance for debug and info messages.
     :type logger: logging.Logger
-
     :ivar graph_to_mol: Converter from SynGraph to RDKit Mol.
     :type graph_to_mol: GraphToMol
     """
 
     def __init__(self) -> None:
-        """
-        Initialize ITSRelabel with default GraphToMol converter.
-        """
+        """Initialize ITSRelabel with default GraphToMol converter."""
         self.graph_to_mol = GraphToMol()
 
     @staticmethod
     def _get_nodes_with_atom_map(graph: SynGraph) -> List[Any]:
-        """
-        Extract node IDs with a non-zero atom_map attribute from a SynGraph.
+        """Extract node IDs with a non-zero atom_map attribute from a SynGraph.
 
         :param graph: Input SynGraph with 'atom_map' on nodes.
         :type graph: SynGraph
@@ -46,8 +42,7 @@ class ITSRelabel:
 
     @staticmethod
     def _remove_internal_edges(graph: SynGraph, nodes: List[Any]) -> SynGraph:
-        """
-        Remove edges connecting nodes in the given list from a SynGraph.
+        """Remove edges connecting nodes in the given list from a SynGraph.
 
         :param graph: Input SynGraph to prune.
         :type graph: SynGraph
@@ -68,8 +63,7 @@ class ITSRelabel:
     def _dict_to_tuple_list(
         mapping: Dict[Any, Any], sort_by_key: bool = False, sort_by_value: bool = False
     ) -> List[Tuple[Any, Any]]:
-        """
-        Convert a mapping dict into a sorted list of tuples.
+        """Convert a mapping dict into a sorted list of tuples.
 
         :param mapping: Dictionary to convert.
         :type mapping: Dict[Any, Any]
@@ -94,19 +88,20 @@ class ITSRelabel:
         mapping: Iterable[Tuple[Any, Any]],
         aam_key: str = "atom_map",
     ) -> Tuple[SynGraph, SynGraph]:
-        """
-        Update node attributes in two SynGraphs based on a sequential mapping.
+        """Update node attributes in two SynGraphs based on a sequential
+        mapping.
 
-        This method resets the specified atom-map attribute for all nodes in both
-        graphs to 0, then assigns a new atom-map value (i+1) for each mapped pair:
-            G.nodes[g_node][aam_key] = i + 1
-            H.nodes[h_node][aam_key] = i + 1
+        This method resets the specified atom-map attribute for all
+        nodes in both graphs to 0, then assigns a new atom-map value
+        (i+1) for each mapped pair:     G.nodes[g_node][aam_key] = i + 1
+        H.nodes[h_node][aam_key] = i + 1
 
         :param G: First SynGraph to update (reactant).
         :type G: SynGraph
         :param H: Second SynGraph to update (product).
         :type H: SynGraph
-        :param mapping: Iterable of (g_node, h_node) tuples defining node correspondence.
+        :param mapping: Iterable of (g_node, h_node) tuples defining
+            node correspondence.
         :type mapping: Iterable[Tuple[Any, Any]]
         :param aam_key: Name of the atom-map attribute on each node.
         :type aam_key: str
@@ -138,8 +133,8 @@ class ITSRelabel:
         return G_copy, H_copy
 
     def fit(self, rsmi: str) -> str:
-        """
-        Generate an extended reaction SMILES by aligning atom maps of reactant and product.
+        """Generate an extended reaction SMILES by aligning atom maps of
+        reactant and product.
 
         :param rsmi: Reaction SMILES string formatted as 'reactant>>product'.
         :type rsmi: str

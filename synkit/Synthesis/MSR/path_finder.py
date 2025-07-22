@@ -9,9 +9,9 @@ class PathFinder:
         self,
         reaction_rounds: List[Dict[str, List[str]]],
     ):
-        """
-        Initialize with a list of dictionaries, each representing a reaction round,
-        plus an optional random state for reproducible Monte Carlo search.
+        """Initialize with a list of dictionaries, each representing a reaction
+        round, plus an optional random state for reproducible Monte Carlo
+        search.
 
         Parameters:
         - reaction_rounds (List[Dict[str, List[str]]]): A list where each dictionary
@@ -56,9 +56,9 @@ class PathFinder:
         max_solutions: Optional[int] = None,
         cheapest: bool = True,
     ) -> List[List[str]]:
-        """
-        Search for reaction pathways from the input molecule to the target molecule
-        using a specified method, optionally limiting the number of solutions.
+        """Search for reaction pathways from the input molecule to the target
+        molecule using a specified method, optionally limiting the number of
+        solutions.
 
         Additionally, `cheapest` can be set to True or False:
           - If cheapest=True, BFS uses a visited set and A* prunes costlier routes (typical approach).
@@ -92,12 +92,13 @@ class PathFinder:
         max_solutions: Optional[int],
         cheapest: bool,
     ) -> List[List[str]]:
-        """
-        Perform a BFS search. If cheapest=True, use a visited set to avoid re-processing
-        the same (molecule, round_index). If cheapest=False, skip that pruning and collect
-        *all* possible solutions (potentially large if cycles exist).
+        """Perform a BFS search. If cheapest=True, use a visited set to avoid
+        re-processing the same (molecule, round_index). If cheapest=False, skip
+        that pruning and collect *all* possible solutions (potentially large if
+        cycles exist).
 
-        Returns a list of successful reaction pathways, up to max_solutions if specified.
+        Returns a list of successful reaction pathways, up to
+        max_solutions if specified.
         """
 
         queue = deque([(input_smiles, [], 0)])
@@ -134,9 +135,10 @@ class PathFinder:
         return pathways
 
     def _heuristic(self, smiles: str, target_smiles: str) -> int:
-        """
-        Heuristic function for A* search.
-        Returns difference in SMILES lengths as a stand-in for "distance."
+        """Heuristic function for A* search.
+
+        Returns difference in SMILES lengths as a stand-in for
+        "distance."
         """
         return abs(len(smiles) - len(target_smiles))
 
@@ -147,12 +149,12 @@ class PathFinder:
         max_solutions: Optional[int],
         cheapest: bool,
     ) -> List[List[str]]:
-        """
-        A* search. If cheapest=True, we track the best cost visited for each state
-        and prune costlier paths. If cheapest=False, we do not prune, so we collect
-        all solutions (but it may be large).
+        """A* search. If cheapest=True, we track the best cost visited for each
+        state and prune costlier paths. If cheapest=False, we do not prune, so
+        we collect all solutions (but it may be large).
 
-        Returns a list of successful reaction pathways, up to max_solutions if specified.
+        Returns a list of successful reaction pathways, up to
+        max_solutions if specified.
         """
         start_cost = self._heuristic(input_smiles, target_smiles)
         # Heap stores (cost, current_smiles, current_path, round_index)

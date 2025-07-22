@@ -9,17 +9,15 @@ configure_warnings_and_logs(True, True)
 
 class MultiSteps:
     def __init__(self) -> None:
-        """
-        Initialize the MultiStep class with a Standardize instance.
-        """
+        """Initialize the MultiStep class with a Standardize instance."""
         self.std = Standardize()
 
     @staticmethod
     def _process(
         gml_list: List[str], order: List[int], rsmi: str, exclude_aam: bool = True
     ) -> Tuple[List[List[str]], Dict[str, List[str]]]:
-        """
-        Process a series of chemical reactions according to given rules and order.
+        """Process a series of chemical reactions according to given rules and
+        order.
 
         Parameters:
         - gml_list (List[str]): List of GML format strings representing reaction rules.
@@ -73,8 +71,8 @@ class MultiSteps:
     def _get_aam(
         rsmi_list: List[str], rule_list: List[str], order: List[int]
     ) -> List[str]:
-        """
-        Apply atom-atom mapping to a series of reaction SMILES strings according to specified rules.
+        """Apply atom-atom mapping to a series of reaction SMILES strings
+        according to specified rules.
 
         Parameters:
         - rsmi_list (List[str]): List of reaction SMILES strings.
@@ -111,8 +109,8 @@ class MultiSteps:
         order: List[int],
         cat: Union[str, List[str]],
     ) -> List[str]:
-        """
-        Orchestrate a multi-step chemical reaction process using a set of rules and a starting reactant.
+        """Orchestrate a multi-step chemical reaction process using a set of
+        rules and a starting reactant.
 
         Parameters:
         - original_rsmi (str): Initial reactant SMILES string.

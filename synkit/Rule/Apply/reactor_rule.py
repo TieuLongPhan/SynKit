@@ -3,7 +3,7 @@ from typing import List
 from synkit.IO.chem_converter import gml_to_smart
 
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Chem.Reaction.rsmi_utils import reverse_reaction
+from synkit.Chem.utils import reverse_reaction
 
 from synkit.Graph.ITS.normalize_aam import NormalizeAAM
 from synkit.Graph.ITS.its_expand import ITSExpand
@@ -27,16 +27,15 @@ else:
 
 
 class ReactorRule:
-    """
-    Handles the transformation of SMILES strings to reaction SMILES (RSMI) by applying
-    chemical reaction rules defined in GML strings. It can optionally reverse the reaction,
-    exclude atom mappings, and include unchanged reagents in the output.
+    """Handles the transformation of SMILES strings to reaction SMILES (RSMI)
+    by applying chemical reaction rules defined in GML strings.
+
+    It can optionally reverse the reaction, exclude atom mappings, and
+    include unchanged reagents in the output.
     """
 
     def __init__(self) -> None:
-        """
-        Initializes the ReactorRule object.
-        """
+        """Initializes the ReactorRule object."""
         pass
 
     def _process(
@@ -47,9 +46,9 @@ class ReactorRule:
         exclude_aam: bool = False,
         include_reagents: bool = False,
     ) -> List[str]:
-        """
-        Processes a reaction SMILES (RSMI) to adjust atom mappings, extract reaction centers,
-        decompose into separate reactant and product graphs, and generate the corresponding SMILES.
+        """Processes a reaction SMILES (RSMI) to adjust atom mappings, extract
+        reaction centers, decompose into separate reactant and product graphs,
+        and generate the corresponding SMILES.
 
         Parameters:
         - smiles (str): The SMILES string of the molecule to be transformed.

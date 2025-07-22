@@ -6,8 +6,8 @@ from synkit.IO.chem_converter import rsmi_to_its, gml_to_smart
 
 
 def _get_unique_aam(list_aam: list) -> list:
-    """
-    Retrieves the unique atom-atom mappings (AAM) by clustering a list of ITS graphs.
+    """Retrieves the unique atom-atom mappings (AAM) by clustering a list of
+    ITS graphs.
 
     This function first converts each item in the provided list of AAM strings to an ITS graph
     using the `rsmi_to_its` function. Then, it performs iterative clustering of the ITS graphs
@@ -39,8 +39,7 @@ def _get_unique_aam(list_aam: list) -> list:
 
 
 def _deduplicateGraphs(initial) -> list:
-    """
-    Deduplicates a list of molecular graphs by checking for isomorphisms.
+    """Deduplicates a list of molecular graphs by checking for isomorphisms.
 
     This method checks each graph in the `initial` list against the others for isomorphism,
     and removes duplicates by keeping only one representative for each unique graph.
@@ -67,9 +66,9 @@ def _deduplicateGraphs(initial) -> list:
 
 
 def _get_connected_subgraphs(gml: str, invert: bool = False):
-    """
-    Given a GML string, this function returns the number of connected subgraphs based
-    on the 'smart' representation split or a list of subgraphs, depending on the invert flag.
+    """Given a GML string, this function returns the number of connected
+    subgraphs based on the 'smart' representation split or a list of subgraphs,
+    depending on the invert flag.
 
     Parameters:
     - gml: str, the GML string to be converted into a 'smart' format.
@@ -103,8 +102,8 @@ def _get_connected_subgraphs(gml: str, invert: bool = False):
 
 
 def _get_reagent(original_smiles: list, output_rsmi: str, invert: bool = False):
-    """
-    Identifies reagents present in the original SMILES list that are absent in the processed output SMILES string.
+    """Identifies reagents present in the original SMILES list that are absent
+    in the processed output SMILES string.
 
     Parameters:
     - original_smiles: list of SMILES strings representing the original reagents.
@@ -132,10 +131,9 @@ def _get_reagent(original_smiles: list, output_rsmi: str, invert: bool = False):
 
 
 def _get_reagent_rsmi(rsmi: str) -> List[str]:
-    """
-    Identifies reagents that appear in both the reactant and product sides of
-    a reaction SMILES string, suggesting these elements are unchanged
-    by the chemical reaction.
+    """Identifies reagents that appear in both the reactant and product sides
+    of a reaction SMILES string, suggesting these elements are unchanged by the
+    chemical reaction.
 
     Parameters:
     - rsmi (str): A reaction SMILES string formatted as "reactants>>products".
@@ -165,8 +163,8 @@ def _get_reagent_rsmi(rsmi: str) -> List[str]:
 
 
 def _remove_reagent(rsmi: str) -> str:
-    """
-    Removes common molecules from the reactants and products in a SMILES reaction string.
+    """Removes common molecules from the reactants and products in a SMILES
+    reaction string.
 
     This function identifies the molecules that appear on both sides of the reaction
     (reactants and products) and removes one occurrence of each common molecule from
@@ -224,8 +222,8 @@ def _remove_reagent(rsmi: str) -> str:
 
 
 def _add_reagent(rsmi: str, reagents: list):
-    """
-    Modifies the SMILES representation of a reaction by adding additional reagents.
+    """Modifies the SMILES representation of a reaction by adding additional
+    reagents.
 
     Parameters:
     - rsmi: str, the SMILES reaction string, expected to contain '>>' separating reactants and products.
@@ -255,8 +253,7 @@ def _add_reagent(rsmi: str, reagents: list):
 
 
 def _calculate_max_depth(reaction_tree, current_node=None, depth=0):
-    """
-    Calculate the maximum depth of a reaction tree.
+    """Calculate the maximum depth of a reaction tree.
 
     Parameters:
     - reaction_tree (dict): A dictionary where keys are reaction SMILES (RSMI)
@@ -293,8 +290,8 @@ def _find_all_paths(
     current_depth=0,
     path=None,
 ):
-    """
-    Recursively find all paths from the root to the maximum depth in the reaction tree.
+    """Recursively find all paths from the root to the maximum depth in the
+    reaction tree.
 
     Parameters:
     - reaction_tree (dict): A dictionary of reaction SMILES with products.

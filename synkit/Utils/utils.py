@@ -12,8 +12,7 @@ def stratified_random_sample(
     seed: Optional[int] = 42,
     bypass: bool = False,
 ) -> List[Dict[str, any]]:
-    """
-    Stratifies and samples data from a list of dictionaries based on a
+    """Stratifies and samples data from a list of dictionaries based on a
     specified property key.
 
     Parameters:
@@ -66,8 +65,7 @@ def stratified_random_sample(
 
 
 def calculate_processing_time(start_time_str: str, end_time_str: str) -> float:
-    """
-    Calculates the processing time in seconds between two timestamps.
+    """Calculates the processing time in seconds between two timestamps.
 
     Parameters:
     - start_time_str (str): A string representing the start time in the format
@@ -94,9 +92,9 @@ def calculate_processing_time(start_time_str: str, end_time_str: str) -> float:
 def remove_explicit_hydrogen(
     Graph: nx.Graph, excluded_indices: Iterable[int]
 ) -> nx.Graph:
-    """
-    Processes a molecular graph by calculating hydrogen count ('h_count') for each node and
-    removing hydrogen nodes that are not specified in the excluded indices.
+    """Processes a molecular graph by calculating hydrogen count ('h_count')
+    for each node and removing hydrogen nodes that are not specified in the
+    excluded indices.
 
     Parameters
     ----------
@@ -141,11 +139,10 @@ def remove_explicit_hydrogen(
 
 
 def fix_implicit_hydrogen(Graph: nx.Graph, indices: Iterable[int]) -> nx.Graph:
-    """
-    Adjusts the 'h_count' attribute of specific nodes in a molecular graph,
-    decreasing it based on the presence of neighboring hydrogen atoms that are also
-    included in the specified indices. This function works on a copy
-    of the provided graph and returns the modified copy.
+    """Adjusts the 'h_count' attribute of specific nodes in a molecular graph,
+    decreasing it based on the presence of neighboring hydrogen atoms that are
+    also included in the specified indices. This function works on a copy of
+    the provided graph and returns the modified copy.
 
     Parameters
     ----------

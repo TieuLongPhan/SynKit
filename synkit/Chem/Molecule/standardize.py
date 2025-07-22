@@ -5,148 +5,125 @@ from rdkit.Chem.SaltRemover import SaltRemover
 from typing import Optional
 
 
-def sanitize_and_canonicalize_smiles(smiles: str) -> str | None:
-    """
-    Sanitize and canonicalize a SMILES string using RDKit.
+def sanitize_and_canonicalize_smiles(smiles: str) -> Optional[str]:
+    """Sanitize and canonicalize a SMILES string.
 
-    Parameters
-    ----------
-    smiles : str
-        Input SMILES string.
-
-    Returns
-    -------
-    str or None
-        Canonical SMILES if valid and sanitizable, else None.
+    :param smiles: Input SMILES string.
+    :type smiles: str
+    :returns: Canonical SMILES if valid, otherwise None.
+    :rtype: Optional[str]
     """
     try:
         mol = Chem.MolFromSmiles(smiles, sanitize=True)
         if mol is None:
             return None
-        Chem.SanitizeMol(mol)  # additional safety
+        Chem.SanitizeMol(mol)
         return Chem.MolToSmiles(mol, canonical=True)
     except Exception:
         return None
 
 
 def normalize_molecule(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Normalize a molecule using RDKit's Normalizer.
+    """Normalize a molecule using RDKit's Normalizer.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object to be normalized.
-
-    Returns:
-    - Chem.Mol: Normalized RDKit Mol object.
+    :param mol: RDKit Mol object to normalize.
+    :type mol: Chem.Mol
+    :returns: Normalized RDKit Mol object.
+    :rtype: Chem.Mol
     """
     normalizer = rdMolStandardize.Normalizer()
     return normalizer.normalize(mol)
 
 
 def canonicalize_tautomer(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Canonicalize the tautomer of a molecule using RDKit's TautomerCanonicalizer.
+    """Canonicalize the tautomeric form of a molecule.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Mol object with canonicalized tautomer.
+    :param mol: RDKit Mol object to canonicalize.
+    :type mol: Chem.Mol
+    :returns: Mol object with a canonical tautomer.
+    :rtype: Chem.Mol
     """
-    tautomer_canonicalizer = rdMolStandardize.TautomerEnumerator()
-    return tautomer_canonicalizer.Canonicalize(mol)
+    tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
+    return tautomer_enumerator.Canonicalize(mol)
 
 
 def salts_remover(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Remove salt fragments from a molecule using RDKit's SaltRemover.
+    """Remove salt fragments from a molecule.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Mol object with salts removed.
+    :param mol: RDKit Mol object to process.
+    :type mol: Chem.Mol
+    :returns: Mol object with salts removed.
+    :rtype: Chem.Mol
     """
     remover = SaltRemover()
     return remover.StripMol(mol)
 
 
 def uncharge_molecule(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Neutralize a molecule by removing counter-ions using RDKit's Uncharger.
+    """Neutralize a molecule by removing charges.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Neutralized Mol object.
+    :param mol: RDKit Mol object to neutralize.
+    :type mol: Chem.Mol
+    :returns: Neutralized Mol object.
+    :rtype: Chem.Mol
     """
     uncharger = rdMolStandardize.Uncharger()
     return uncharger.uncharge(mol)
 
 
-def fragments_remover(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Remove small fragments from a molecule, keeping only the largest one.
+def fragments_remover(mol: Chem.Mol) -> Optional[Chem.Mol]:
+    """Keep only the largest fragment of a molecule.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Mol object with small fragments removed.
+    :param mol: RDKit Mol object to fragment.
+    :type mol: Chem.Mol
+    :returns: Mol object of the largest fragment, or None if input is
+        empty.
+    :rtype: Optional[Chem.Mol]
     """
     frags = Chem.GetMolFrags(mol, asMols=True, sanitizeFrags=True)
     return max(frags, default=None, key=lambda m: m.GetNumAtoms())
 
 
 def remove_explicit_hydrogens(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Remove explicit hydrogens from a molecule to leave only the heavy atoms.
+    """Remove all explicit hydrogens from a molecule.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Mol object with explicit hydrogens removed.
+    :param mol: RDKit Mol object to process.
+    :type mol: Chem.Mol
+    :returns: Mol object without explicit hydrogens.
+    :rtype: Chem.Mol
     """
     return Chem.RemoveHs(mol)
 
 
 def remove_radicals_and_add_hydrogens(
-    mol: Chem.Mol, removeH=True
+    mol: Chem.Mol, removeH: bool = True
 ) -> Optional[Chem.Mol]:
-    """
-    Remove radicals from a molecule by setting radical electrons to zero and adding hydrogens where needed.
+    """Replace radical electrons by hydrogens and optionally remove explicit H.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Mol object with radicals removed and necessary hydrogens added.
+    :param mol: RDKit Mol object with possible radicals.
+    :type mol: Chem.Mol
+    :param removeH: If True, remove explicit hydrogens after addition.
+    :type removeH: bool
+    :returns: Mol object with radicals neutralized and hydrogens
+        adjusted.
+    :rtype: Optional[Chem.Mol]
     """
-    # mol = Chem.RemoveHs(mol)  # Remove explicit hydrogens first
     for atom in mol.GetAtoms():
-        if atom.GetNumRadicalElectrons() > 0:
-            atom.SetNumExplicitHs(
-                atom.GetNumExplicitHs() + atom.GetNumRadicalElectrons()
-            )
-        atom.SetNumRadicalElectrons(0)
-    mol = rdmolops.AddHs(mol)  # Add hydrogens back
-    if removeH:
-        return remove_explicit_hydrogens(mol)
-    else:
-        return mol
+        rad = atom.GetNumRadicalElectrons()
+        if rad > 0:
+            atom.SetNumExplicitHs(atom.GetNumExplicitHs() + rad)
+            atom.SetNumRadicalElectrons(0)
+    mol = rdmolops.AddHs(mol)
+    return remove_explicit_hydrogens(mol) if removeH else mol
 
 
 def remove_isotopes(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Remove isotopic information from a molecule.
+    """Remove all isotope labels from a molecule.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Mol object with isotopes removed.
+    :param mol: RDKit Mol object to process.
+    :type mol: Chem.Mol
+    :returns: Mol object with isotopes cleared.
+    :rtype: Chem.Mol
     """
     for atom in mol.GetAtoms():
         atom.SetIsotope(0)
@@ -154,41 +131,37 @@ def remove_isotopes(mol: Chem.Mol) -> Chem.Mol:
 
 
 def clear_stereochemistry(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Clear all stereochemical information from a molecule.
+    """Remove stereochemical annotations from a molecule.
 
-    Parameters:
-    - mol (Chem.Mol): RDKit Mol object.
-
-    Returns:
-    - Chem.Mol: Mol object with stereochemistry cleared.
+    :param mol: RDKit Mol object to process.
+    :type mol: Chem.Mol
+    :returns: Mol object with stereochemistry removed.
+    :rtype: Chem.Mol
     """
     Chem.RemoveStereochemistry(mol)
     return mol
 
 
-def fix_radical_rsmi(rsmi: str, removeH=True) -> str:
-    """
-    Takes a reaction SMILES string with potential radicals and returns a new reaction SMILES string
-    where all radicals have been replaced by adding hydrogen atoms.
+def fix_radical_rsmi(rsmi: str, removeH: bool = True) -> str:
+    """Fix radicals in a reaction SMILES by converting them to hydrogens.
 
-    Parameters:
-    - rsmi (str): A reaction SMILES string containing reactants and products.
-
-    Returns:
-    - str: A reaction SMILES string with radicals replaced by hydrogen atoms.
+    :param rsmi: Reaction SMILES string, format 'reactant>>product'.
+    :type rsmi: str
+    :param removeH: If True, remove explicit hydrogens after addition.
+    :type removeH: bool
+    :returns: Corrected reaction SMILES with radicals replaced.
+    :rtype: str
     """
-    r, p = rsmi.split(">>")
-    r_mol = Chem.MolFromSmiles(r, sanitize=False)
-    p_mol = Chem.MolFromSmiles(p, sanitize=False)
+    react_smiles, prod_smiles = rsmi.split(">>")
+    r_mol = Chem.MolFromSmiles(react_smiles, sanitize=False)
+    p_mol = Chem.MolFromSmiles(prod_smiles, sanitize=False)
     Chem.SanitizeMol(r_mol)
     Chem.SanitizeMol(p_mol)
-    if r_mol is not None and p_mol is not None:
-        r_mol = remove_radicals_and_add_hydrogens(r_mol, removeH)
-        p_mol = remove_radicals_and_add_hydrogens(p_mol, removeH)
 
-        r_smiles = Chem.MolToSmiles(r_mol) if r_mol else r
-        p_smiles = Chem.MolToSmiles(p_mol) if p_mol else p
-        return f"{r_smiles}>>{p_smiles}"
-    else:
-        return f"{r}>>{p}"  #
+    if r_mol and p_mol:
+        r_fixed = remove_radicals_and_add_hydrogens(r_mol, removeH)
+        p_fixed = remove_radicals_and_add_hydrogens(p_mol, removeH)
+        r_out = Chem.MolToSmiles(r_fixed) if r_fixed else react_smiles
+        p_out = Chem.MolToSmiles(p_fixed) if p_fixed else prod_smiles
+        return f"{r_out}>>{p_out}"
+    return rsmi

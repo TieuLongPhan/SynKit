@@ -1,14 +1,14 @@
 from collections import defaultdict
 import heapq
 from typing import List, Dict, Any
-from synkit.Chem.Reaction.cleanning import Cleanning
+
 from synkit.Chem.utils import (
     count_carbons,
     process_smiles_list,
     get_max_fragment,
 )
 from synkit.Synthesis.reactor_utils import _remove_reagent
-from synkit.Synthesis.core_engine import CoreEngine
+from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 
 
 class DCRN:
@@ -31,14 +31,13 @@ class DCRN:
 
     @staticmethod
     def _get_valid_node(molecules, lower, upper):
-        """
-        Filters molecules by their carbon count within the given range.
-        """
+        """Filters molecules by their carbon count within the given range."""
         return [mol for mol in molecules if lower <= count_carbons(mol) <= upper]
 
     def _expand(self, smiles_list: List[str]) -> List[str]:
-        """
-        Expands molecules based on transformation rules. Uses caching to avoid redundant computation.
+        """Expands molecules based on transformation rules.
+
+        Uses caching to avoid redundant computation.
         """
         smiles_tuple = tuple(smiles_list)
         if smiles_tuple in self.expansion_cache:
@@ -47,8 +46,8 @@ class DCRN:
         results = []
         processed_smiles = process_smiles_list(smiles_list)
         for rule_dict in self.rule_list:
-            expansions = CoreEngine()._inference(rule_dict["gml"], processed_smiles)
-            expansions = Cleanning().clean_smiles(expansions)
+            expansions = MODReactor()._inference(rule_dict["gml"], processed_smiles)
+            expansions = MODReactor().clean_smiles(expansions)
             expansions = [_remove_reagent(e) for e in expansions]
             for r in expansions:
                 product = r.split(">>")[1]
@@ -63,15 +62,13 @@ class DCRN:
         return valid_nodes
 
     def _heuristic(self, a: str, b: str) -> int:
-        """
-        Returns the heuristic estimate (absolute difference in carbon count) between two compounds.
-        """
+        """Returns the heuristic estimate (absolute difference in carbon count)
+        between two compounds."""
         return abs(count_carbons(a) - count_carbons(b))
 
     def _dynamic_expand_node(self, node: str, smiles_list: list) -> None:
-        """
-        Dynamically expands the given node to generate new possible compounds.
-        """
+        """Dynamically expands the given node to generate new possible
+        compounds."""
         if node not in self.visited:
             self.visited.add(node)
             expanded_nodes = self._expand(
@@ -86,8 +83,9 @@ class DCRN:
         max_solutions: int = 5,
         fast_process: bool = True,
     ) -> Dict[str, Any]:
-        """
-        Builds the search graph and searches for paths from the starting compound to the target compound.
+        """Builds the search graph and searches for paths from the starting
+        compound to the target compound.
+
         Ensures depth levels follow a sequential order starting from 0.
         """
         # Initialize the heap with the starting compound at depth 0

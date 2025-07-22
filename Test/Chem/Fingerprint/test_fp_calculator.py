@@ -1,58 +1,68 @@
+import io
 import unittest
+from contextlib import redirect_stdout
+
 from synkit.Chem.Fingerprint.fp_calculator import FPCalculator
 
 
 class TestFPCalculator(unittest.TestCase):
     def setUp(self):
-        # Sample data setup
-        self.data = [
-            {
-                "smiles": [
-                    (
-                        "C1CCCCC1.CCO.CS(=O)(=O)N1CCN(Cc2ccccc2)CC1.[OH-].[OH-].[Pd+2]"
-                        + ">>CS(=O)(=O)N1CCNCC1"
-                    ),
-                    (
-                        "CCOC(C)=O.Cc1cc([N+](=O)[O-])ccc1NC(=O)c1ccccc1.Cl[Sn]Cl.O.O.O=C([O-])O.[Na+]"
-                        + ">>Cc1cc(N)ccc1NC(=O)c1ccccc1"
-                    ),
-                    (
-                        "COc1ccc(-c2coc3ccc(-c4nnc(S)o4)cc23)cc1.COc1ccc(CCl)cc1F"
-                        + ">>COc1ccc(-c2coc3ccc(-c4nnc(SCc5ccc(OC)c(F)c5)o4)cc23)cc1"
-                    ),
-                ],
-                "ID": [1, 2, 3],
-            }
+        # Sample single reaction dict
+        self.single = {"rsmi": "CCO>>CC=O"}
+        # List of dicts for parallel
+        self.batch = [
+            {"rsmi": "CCO>>CC=O"},
+            {"rsmi": "CC(Cl)C>>CCCl"},
         ]
-        self.smiles_key = "smiles"
-        self.fp_type = "drfp"
-        self.n_jobs = 2
-        self.verbose = 0
+        self.rsmi_key = "rsmi"
+        self.fp_type = "ecfp4"
+        self.calc = FPCalculator(n_jobs=2, verbose=0)
 
-        # Instantiate the FPCalculator
-        self.fp_calculator = FPCalculator(
-            smiles_key=self.smiles_key,
-            fp_type=self.fp_type,
-            n_jobs=self.n_jobs,
-            verbose=self.verbose,
+    def test_constructor_assigns_attributes(self):
+        self.assertEqual(self.calc.n_jobs, 2)
+        self.assertEqual(self.calc.verbose, 0)
+
+    def test_validate_fp_type_accepts_supported(self):
+        # Should not raise
+        for ft in FPCalculator.VALID_FP_TYPES:
+            self.calc._validate_fp_type(ft)
+
+    def test_validate_fp_type_rejects_unsupported(self):
+        with self.assertRaises(ValueError):
+            self.calc._validate_fp_type("invalid_fp")
+
+    def test_dict_process_missing_key_raises(self):
+        with self.assertRaises(ValueError):
+            FPCalculator.dict_process({}, self.rsmi_key, fp_type=self.fp_type)
+
+    def test_dict_process_adds_fingerprint(self):
+        data = {"rsmi": "CCO>>CC=O"}
+        out = FPCalculator.dict_process(data, "rsmi", fp_type="ecfp4")
+        self.assertIn("ecfp4", out)
+        # Check it's a list/vector (not None)
+        self.assertIsNotNone(out["ecfp4"])
+
+    def test_parallel_process_returns_list_of_dicts(self):
+        results = self.calc.parallel_process(self.batch, "rsmi", fp_type="ecfp4")
+        self.assertIsInstance(results, list)
+        self.assertEqual(len(results), 2)
+        for d in results:
+            self.assertIn("ecfp4", d)
+
+    def test_str_and_help_output(self):
+        s = str(self.calc)
+        self.assertIn("FPCalculator", s)
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.calc.help()
+        help_out = buf.getvalue()
+
+        # The help text starts with this exact line
+        self.assertIn(
+            "FPCalculator supports the following fingerprint types:", help_out
         )
-
-    def test_init_invalid_fp_type(self):
-        with self.assertRaises(ValueError):
-            FPCalculator(smiles_key=self.smiles_key, fp_type="invalid_type")
-
-    def test_fit_missing_column(self):
-        with self.assertRaises(ValueError):
-            fp_calculator = FPCalculator(
-                smiles_key=self.smiles_key,
-                fp_type=self.fp_type,
-            )
-            fp_calculator.dict_process({"not_smiles": ["C"]}, "smiles")
-
-    def test_constructor_and_attribute_assignment(self):
-        self.assertEqual(self.fp_calculator.smiles_key, "smiles")
-        self.assertEqual(self.fp_calculator.fp_type, "drfp")
-        self.assertEqual(self.fp_calculator.n_jobs, 2)
+        # And lists our parallel jobs config
+        self.assertIn(f"Configured for {self.calc.n_jobs} parallel jobs", help_out)
 
 
 if __name__ == "__main__":

@@ -7,18 +7,17 @@ logger = setup_logging()
 
 
 class NautyCanonicalizer:
-    """
-    Perform Nauty‑style canonicalization of a NetworkX graph, optionally
-    refining and distinguishing nodes and edges by specified attributes,
-    and extracting automorphisms, orbits, and canonical permutations.
+    """Perform Nauty-style canonicalization of a NetworkX graph, optionally
+    refining and distinguishing nodes and edges by specified attributes, and
+    extracting automorphisms, orbits, and canonical permutations.
 
-    :param node_attrs: List of node attribute keys to include in the initial
-                       partition refinement.  Nodes sharing the same tuple of
-                       values under these keys will start in the same cell.
+    :param node_attrs: List of node attribute keys to include in the
+        initial partition refinement. Nodes sharing the same tuple of
+        values under these keys will start in the same cell.
     :type node_attrs: list[str] | None
-    :param edge_attrs: List of edge attribute keys to include when distinguishing
-                       edges in the canonical label.  If an edge has none of these
-                       keys, its contribution will be empty.
+    :param edge_attrs: List of edge attribute keys to include when
+        distinguishing edges in the canonical label. If an edge has
+        none of these keys, its contribution will be empty.
     :type edge_attrs: list[str] | None
     """
 
@@ -29,12 +28,13 @@ class NautyCanonicalizer:
         node_attrs: Optional[list[str]] = None,
         edge_attrs: Optional[list[str]] = None,
     ) -> None:
-        """
-        Initialize the NautyCanonicalizer.
+        """Initialize the NautyCanonicalizer.
 
-        :param node_attrs: Node attribute names to use for initial partitioning.
+        :param node_attrs: Node attribute names to use for initial
+            partitioning.
         :type node_attrs: list[str] | None
-        :param edge_attrs: Edge attribute names to include in the canonical label.
+        :param edge_attrs: Edge attribute names to include in the
+            canonical label.
         :type edge_attrs: list[str] | None
         """
         self.node_attrs = list(node_attrs) if node_attrs else []
@@ -59,8 +59,8 @@ class NautyCanonicalizer:
         return_perm: bool = False,
         max_depth: Optional[int] = None,
     ):
-        """
-        Compute canonical form of graph G with optional automorphisms, orbits, and early stopping.
+        """Compute canonical form of graph G with optional automorphisms,
+        orbits, and early stopping.
 
         :param G: NetworkX graph to canonicalize.
         :param return_aut: bool, whether to return list of automorphism permutations.

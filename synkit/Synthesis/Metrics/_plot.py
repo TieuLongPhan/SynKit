@@ -17,9 +17,9 @@ def plot_recognition_coverage_curve(
     show_f2=True,
     show_legend=True,
 ):
-    """
-    Plots a Recognition-Coverage curve using provided data, including optional
-    F2 scores annotated. Styled with Seaborn for enhanced visual appearance.
+    """Plots a Recognition-Coverage curve using provided data, including
+    optional F2 scores annotated. Styled with Seaborn for enhanced visual
+    appearance.
 
     Parameters:
     - data (dict): Nested dictionary containing the data for each radii,
@@ -66,9 +66,8 @@ def plot_recognition_coverage_curve(
 
 
 def plot_f2_scores_line(data, figsize=(8, 6), show_f2=True, show_legend=True):
-    """
-    Plots F2 scores across different radii using a line plot, showing
-    the trend of F2 score changes, and annotated with optional F2 scores.
+    """Plots F2 scores across different radii using a line plot, showing the
+    trend of F2 score changes, and annotated with optional F2 scores.
 
     Parameters:
     - data (dict): Dictionary containing nested dictionaries with 'F2_score'

@@ -117,7 +117,8 @@ class MTG:
     def _insert_edges_from(
         self, edge_iter, node_map: Dict[NodeID, NodeID], existing: List[Edge] = None
     ) -> List[Edge]:
-        """Insert edges into *existing* applying the groupoid rule when possible."""
+        """Insert edges into *existing* applying the groupoid rule when
+        possible."""
         existing = [] if existing is None else existing.copy()
 
         # Remap and append new edges

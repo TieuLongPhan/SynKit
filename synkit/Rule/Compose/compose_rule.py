@@ -4,8 +4,8 @@ from typing import List, Set, Any, Dict, Optional
 from synkit.IO.chem_converter import gml_to_smart, smart_to_gml
 from synkit.Rule.Modify.rule_utils import _increment_gml_ids
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Chem.Reaction.cleanning import Cleanning
-from synkit.Chem.Reaction.rsmi_utils import find_longest_fragment
+from synkit.Chem.Reaction.cleaning import Cleaning
+from synkit.Chem.utils import find_longest_fragment
 
 
 logger = setup_logging()
@@ -23,8 +23,7 @@ class ComposeRule:
 
     @staticmethod
     def filter_smallest_vertex(combo: List[object]) -> List[object]:
-        """
-        Filters and returns the elements from a list that have the smallest
+        """Filters and returns the elements from a list that have the smallest
         number of vertices in their context.
 
         Parameters:
@@ -50,9 +49,8 @@ class ComposeRule:
 
     @staticmethod
     def rule_cluster(graphs: List[Any]) -> List[Any]:
-        """
-        Cluster graphs based on their isomorphic relationships and
-        return a representative from each cluster.
+        """Cluster graphs based on their isomorphic relationships and return a
+        representative from each cluster.
 
         Parameters:
         - graphs (List[Any]): A list of graph objects.
@@ -84,8 +82,8 @@ class ComposeRule:
     def _compose_mapping(
         rule_1: str, rule_2: str, mapping: Dict[int, int], return_string: bool = True
     ) -> Any:
-        """
-        Compose two rule graphs from their GML representations using a mapping between external IDs.
+        """Compose two rule graphs from their GML representations using a
+        mapping between external IDs.
 
         Parameters:
         - rule_1 (str): The GML representation for the first rule.
@@ -118,8 +116,8 @@ class ComposeRule:
 
     @staticmethod
     def _compose(rule_1: str, rule_2: str, return_string: bool = True) -> List[Any]:
-        """
-        Compose two rules and return a list of modifications that pass chemical valence checks.
+        """Compose two rules and return a list of modifications that pass
+        chemical valence checks.
 
         Parameters:
         - rule_1 (str): The first rule (in GML format) to compose.
@@ -145,8 +143,8 @@ class ComposeRule:
 
     @staticmethod
     def _get_valid_rule(rules: List[str], format: str = "gml") -> List[str]:
-        """
-        Validate and convert a list of rule GML strings to either SMARTS or GML format.
+        """Validate and convert a list of rule GML strings to either SMARTS or
+        GML format.
 
         Parameters:
         - rules (List[str]): A list of rule GML strings.
@@ -171,8 +169,8 @@ class ComposeRule:
 
     @staticmethod
     def _get_comp_reaction(smart_1: str, smart_2: str) -> str:
-        """
-        Compute a representative reaction SMILES for the composed rule from two SMARTS strings.
+        """Compute a representative reaction SMILES for the composed rule from
+        two SMARTS strings.
 
         Parameters:
         - smart_1 (str): The first reaction in SMARTS notation.
@@ -190,8 +188,8 @@ class ComposeRule:
         return new_rsmi
 
     def get_rule_comp(self, smart_1: str, smart_2: str) -> Optional[str]:
-        """
-        Compose two reaction SMARTS strings into a rule (GML format) that reproduces a reference reaction.
+        """Compose two reaction SMARTS strings into a rule (GML format) that
+        reproduces a reference reaction.
 
         Parameters:
         - smart_1 (str): The first reaction in SMARTS notation.
@@ -215,7 +213,7 @@ class ComposeRule:
         for candidate in candidate_rules:
             reactor = MODReactor(initial_smiles, candidate).run()
             inferred_rsmi = reactor.get_reaction_smiles()
-            inferred_rsmi = Cleanning.clean_smiles(inferred_rsmi)
+            inferred_rsmi = Cleaning.clean_smiles(inferred_rsmi)
             inferred_prod = [i.split(">>")[1].split(".") for i in inferred_rsmi]
             if any(largest_prod in smi for smi in inferred_prod):
                 cds.append(candidate)

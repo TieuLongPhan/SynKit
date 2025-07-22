@@ -34,9 +34,8 @@ __all__ = ["SynGraph"]
 
 
 class SynGraph:
-    """
-    Wrapper around networkx.Graph providing both its original and (optionally)
-    canonicalized form, plus a SHA-256 signature.
+    """Wrapper around networkx.Graph providing both its original and
+    (optionally) canonicalized form, plus a SHA-256 signature.
 
     Parameters:
     - graph (nx.Graph): The NetworkX graph to wrap.
@@ -62,8 +61,7 @@ class SynGraph:
         canonicaliser: Optional[GraphCanonicaliser] = None,
         canon: bool = True,
     ) -> None:
-        """
-        Initialize a SynGraph wrapper.
+        """Initialize a SynGraph wrapper.
 
         Parameters:
         - graph (nx.Graph): Input graph.
@@ -82,23 +80,18 @@ class SynGraph:
             self._canonical = None
 
     def __getattr__(self, name: str) -> Any:
-        """
-        Delegate any unknown attribute lookup to the underlying ._raw graph.
-        """
+        """Delegate any unknown attribute lookup to the underlying ._raw
+        graph."""
         return getattr(self._raw, name)
 
     def __eq__(self, other: object) -> bool:
-        """
-        Two SynGraph instances are equal iff their signatures match.
-        """
+        """Two SynGraph instances are equal iff their signatures match."""
         if not isinstance(other, SynGraph):
             return False
         return self.signature == other.signature
 
     def __hash__(self) -> int:
-        """
-        Hash on the signature, allowing use in sets and as dict keys.
-        """
+        """Hash on the signature, allowing use in sets and as dict keys."""
         return hash(self.signature)
 
     @property
@@ -119,8 +112,7 @@ class SynGraph:
     def get_nodes(
         self, data: bool = True
     ) -> Iterable[Union[Any, Tuple[Any, Dict[str, Any]]]]:
-        """
-        Yield nodes from the original graph.
+        """Yield nodes from the original graph.
 
         Parameters
         ----------
@@ -132,8 +124,7 @@ class SynGraph:
     def get_edges(
         self, data: bool = True
     ) -> Iterable[Union[Tuple[Any, Any], Tuple[Any, Any, Dict[str, Any]]]]:
-        """
-        Yield edges from the original graph.
+        """Yield edges from the original graph.
 
         Parameters
         ----------
@@ -151,9 +142,7 @@ class SynGraph:
         return f"<SynGraph |V|={v} |E|={e} sig={self.signature[:8]}>"
 
     def help(self) -> None:
-        """
-        Print a summary of the SynGraph API.
-        """
+        """Print a summary of the SynGraph API."""
         print(
             "SynGraph Help\n"
             "----------\n"

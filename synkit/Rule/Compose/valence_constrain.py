@@ -17,9 +17,8 @@ logger = setup_logging()
 
 class ValenceConstrain:
     def __init__(self):
-        """
-        Initialize the ValenceConstrain class by setting up bond type orders and loading
-        the maximum valence data.
+        """Initialize the ValenceConstrain class by setting up bond type orders
+        and loading the maximum valence data.
 
         Parameters:
         - None
@@ -39,8 +38,7 @@ class ValenceConstrain:
         self.maxValence = load_database(maxValence_path)[0]
 
     def valence(self, vertex) -> int:
-        """
-        Calculate the valence of a vertex based on its incident edges.
+        """Calculate the valence of a vertex based on its incident edges.
 
         Parameters:
         - vertex (Vertex): The vertex for which to calculate the valence.
@@ -51,8 +49,7 @@ class ValenceConstrain:
         return sum(self.btToOrder[edge.bondType] for edge in vertex.incidentEdges)
 
     def check_rule(self, rule, verbose: bool = False, log_error: bool = False) -> bool:
-        """
-        Check if the rule is chemically valid according to valence rules.
+        """Check if the rule is chemically valid according to valence rules.
 
         Parameters:
         - rule (Rule): The rule to check for chemical validity.
@@ -92,8 +89,7 @@ class ValenceConstrain:
             return False
 
     def split(self, rules: List) -> Tuple[List, List]:
-        """
-        Split rules into 'good' and 'bad' based on their chemical validity.
+        """Split rules into 'good' and 'bad' based on their chemical validity.
 
         Parameters:
         - rules (List[Rule]): A list of rules to be checked and split.

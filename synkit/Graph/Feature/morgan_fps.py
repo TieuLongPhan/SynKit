@@ -11,9 +11,9 @@ class MorganFPs:
         nBits: int = 1024,
         hash_alg: str = "sha256",
     ):
-        """
-        Initialize the MorganFPs class to generate fingerprints based on the Morgan
-        algorithm, approximating Extended Connectivity Fingerprints (ECFPs).
+        """Initialize the MorganFPs class to generate fingerprints based on the
+        Morgan algorithm, approximating Extended Connectivity Fingerprints
+        (ECFPs).
 
         Parameters:
         - graph (nx.Graph): The graph to analyze.
@@ -29,10 +29,9 @@ class MorganFPs:
         self.hash_function = getattr(hashlib, self.hash_alg)
 
     def generate_fingerprint(self) -> str:
-        """
-        Generate a binary string fingerprint of the graph based on the local environments
-        of nodes. Ensures the output is exactly `nBits` in length using iterative
-        deepening if necessary.
+        """Generate a binary string fingerprint of the graph based on the local
+        environments of nodes. Ensures the output is exactly `nBits` in length
+        using iterative deepening if necessary.
 
         Returns:
         - str: A binary string of length `nBits` representing the fingerprint of the
@@ -68,9 +67,8 @@ class MorganFPs:
         return fingerprint
 
     def iterative_deepening(self, hash_object: Any, remaining_bits: int) -> str:
-        """
-        Extend the hash length using iterative hashing until the desired bit length is
-        achieved.
+        """Extend the hash length using iterative hashing until the desired bit
+        length is achieved.
 
         Parameters:
         - hash_object (hashlib._Hash): The hash object used for iterative deepening.

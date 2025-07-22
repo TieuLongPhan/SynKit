@@ -9,30 +9,43 @@ from networkx.algorithms.isomorphism import generic_node_match, generic_edge_mat
 from synkit.IO.chem_converter import rsmi_to_graph
 from synkit.Graph.ITS.its_decompose import get_rc
 from synkit.Graph.ITS.its_construction import ITSConstruction
-from .aam_utils import enumerate_tautomers, mapping_success_rate
+from synkit.Chem.utils import enumerate_tautomers, mapping_success_rate
 
 
 class AAMValidator:
-    """
-    A utility class for validating atom‐atom mappings (AAM) in reaction SMILES.
+    """A utility class for validating atom‐atom mappings (AAM) in reaction
+    SMILES.
 
     Provides methods to compare mapped SMILES against ground truth by
     using reaction‐center (RC) or ITS‐graph isomorphism checks, including
     tautomer enumeration support and batch validation over tabular data.
+
+    Quick start
+    -----------
+    >>> from synkit.Chem.Reaction import AAMValidator
+    >>> validator = AAMValidator()
+    >>> rsmi_1 = (
+       '[CH3:1][C:2](=[O:3])[OH:4].[CH3:5][OH:6]'
+       '>>'
+       '[CH3:1][C:2](=[O:3])[O:6][CH3:5].[OH2:4]')
+    >>> rsmi_2 = (
+       '[CH3:5][C:1](=[O:2])[OH:3].[CH3:6][OH:4]'
+       '>>'
+       '[CH3:5][C:1](=[O:2])[O:4][CH3:6].[OH2:3]')
+    >>> is_eq = validator.smiles_check(rsmi_1, rsmi_2, check_method='ITS')
+    >>> print(is_eq)
+    >>> True
     """
 
     def __init__(self) -> None:
-        """
-        Initialize the AAMValidator.
-        """
+        """Initialize the AAMValidator."""
         pass
 
     @staticmethod
     def check_equivariant_graph(
         its_graphs: List[nx.Graph],
     ) -> Tuple[List[Tuple[int, int]], int]:
-        """
-        Identify all pairs of isomorphic ITS graphs.
+        """Identify all pairs of isomorphic ITS graphs.
 
         :param its_graphs: A list of ITS graphs to compare.
         :type its_graphs: list of networkx.Graph
@@ -66,20 +79,21 @@ class AAMValidator:
         check_method: str = "RC",
         ignore_aromaticity: bool = False,
     ) -> bool:
-        """
-        Validate a single mapped SMILES string against ground truth.
+        """Validate a single mapped SMILES string against ground truth.
 
         :param mapped_smile: The mapped SMILES to validate.
         :type mapped_smile: str
         :param ground_truth: The reference SMILES string.
         :type ground_truth: str
-        :param check_method: Which method to use:
-                             `"RC"` for reaction‐center graph or
-                             `"ITS"` for full ITS‐graph isomorphism.
+        :param check_method: Which method to use: `"RC"` for
+            reaction‐center graph or `"ITS"` for full ITS‐graph
+            isomorphism.
         :type check_method: str
-        :param ignore_aromaticity: If True, ignore aromaticity differences in ITS construction.
+        :param ignore_aromaticity: If True, ignore aromaticity
+            differences in ITS construction.
         :type ignore_aromaticity: bool
-        :returns: True if exactly one isomorphic match is found; False otherwise.
+        :returns: True if exactly one isomorphic match is found; False
+            otherwise.
         :rtype: bool
         """
         its_graphs, rc_graphs = [], []
@@ -105,8 +119,7 @@ class AAMValidator:
         check_method: str = "RC",
         ignore_aromaticity: bool = False,
     ) -> Optional[bool]:
-        """
-        Validate against all tautomers of a ground truth SMILES.
+        """Validate against all tautomers of a ground truth SMILES.
 
         :param mapped_smile: The mapped SMILES to test.
         :type mapped_smile: str
@@ -142,8 +155,7 @@ class AAMValidator:
         ignore_aromaticity: bool = False,
         ignore_tautomers: bool = True,
     ) -> bool:
-        """
-        Validate a single record (dict) entry for equivalence.
+        """Validate a single record (dict) entry for equivalence.
 
         :param mapping: A record containing both mapped and ground‐truth SMILES.
         :type mapping: dict of str→str
@@ -186,8 +198,7 @@ class AAMValidator:
         verbose: int = 0,
         ignore_tautomers: bool = True,
     ) -> List[Dict[str, Union[str, float, List[bool]]]]:
-        """
-        Batch-validate mapped SMILES in tabular or list-of-dicts form.
+        """Batch-validate mapped SMILES in tabular or list-of-dicts form.
 
         :param data: A pandas DataFrame or list of dicts, each row containing at least
                      `ground_truth_col` and each entry in `mapped_cols`.

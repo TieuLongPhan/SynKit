@@ -7,8 +7,8 @@ class HashFPs:
     def __init__(
         self, graph: nx.Graph, numBits: int = 256, hash_alg: str = "sha256"
     ) -> None:
-        """
-        Initialize the HashFPs class with a graph and configuration settings.
+        """Initialize the HashFPs class with a graph and configuration
+        settings.
 
         Parameters:
         - graph (nx.Graph): The graph to be fingerprinted.
@@ -37,8 +37,8 @@ class HashFPs:
         end_node: Optional[int] = None,
         max_path_length: Optional[int] = None,
     ) -> str:
-        """
-        Generate a binary hash fingerprint of the graph based on its paths and cycles.
+        """Generate a binary hash fingerprint of the graph based on its paths
+        and cycles.
 
         Parameters:
         - start_node (Optional[int]): The starting node index for path detection.
@@ -55,7 +55,8 @@ class HashFPs:
         return full_hash_binary
 
     def initialize_hash(self) -> Any:
-        """Initialize and return the hash object based on the specified algorithm."""
+        """Initialize and return the hash object based on the specified
+        algorithm."""
         return getattr(hashlib, self.hash_alg)()
 
     def extract_features(
@@ -64,8 +65,7 @@ class HashFPs:
         end_node: Optional[int],
         max_path_length: Optional[int],
     ) -> str:
-        """
-        Extract features from the graph based on paths and cycles.
+        """Extract features from the graph based on paths and cycles.
 
         Parameters:
         - start_node (Optional[int]): The starting node for path detection.
@@ -90,9 +90,8 @@ class HashFPs:
         return "".join(map(str, features))
 
     def finalize_hash(self, hash_object: Any, features: str) -> str:
-        """
-        Finalize the hash using the features extracted and return the hash as a binary
-        string.
+        """Finalize the hash using the features extracted and return the hash
+        as a binary string.
 
         Parameters:
         - hash_object (Any): The hash object.
@@ -110,9 +109,8 @@ class HashFPs:
         return full_hash_binary[: self.numBits]
 
     def iterative_deepening(self, hash_object: Any, remaining_bits: int) -> str:
-        """
-        Extend hash length using iterative hashing until the desired bit length is
-        achieved.
+        """Extend hash length using iterative hashing until the desired bit
+        length is achieved.
 
         Parameters:
         - hash_object (hashlib._Hash): The hash object for iterative deepening.

@@ -5,21 +5,21 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 
 
 class GMLToNX:
-    """
-    Parses GML-like text and transforms it into three NetworkX graphs
-    representing the left, right, and context graphs of a chemical reaction step.
+    """Parses GML-like text and transforms it into three NetworkX graphs
+    representing the left, right, and context graphs of a chemical reaction
+    step.
 
     :param gml_text: The GML-like text to parse.
     :type gml_text: str
-
-    :ivar graphs: A dictionary containing 'left', 'right', and 'context' NetworkX graphs.
+    :ivar graphs: A dictionary containing 'left', 'right', and 'context'
+        NetworkX graphs.
     :vartype graphs: dict[str, nx.Graph]
     """
 
     def __init__(self, gml_text: str):
-        """
-        Initializes a GMLToNX object that can parse GML-like text into separate
-        NetworkX graphs representing different stages or components of a chemical reaction.
+        """Initializes a GMLToNX object that can parse GML-like text into
+        separate NetworkX graphs representing different stages or components of
+        a chemical reaction.
 
         :param gml_text: The GML-like text to be parsed.
         :type gml_text: str
@@ -28,13 +28,13 @@ class GMLToNX:
         self.graphs = {"left": nx.Graph(), "context": nx.Graph(), "right": nx.Graph()}
 
     def _parse_element(self, line: str, current_section: str):
-        """
-        Parses a line of GML-like text to extract node or edge data and adds it to the
-        current section's graph.
+        """Parses a line of GML-like text to extract node or edge data and adds
+        it to the current section's graph.
 
         :param line: A single line of GML-like text.
         :type line: str
-        :param current_section: Which section ('left', 'right', 'context') to add the node/edge to.
+        :param current_section: Which section ('left', 'right',
+            'context') to add the node/edge to.
         :type current_section: str
         """
         label_to_order = {"-": 1, ":": 1.5, "=": 2, "#": 3}
@@ -60,12 +60,11 @@ class GMLToNX:
             self.graphs[current_section].add_edge(source, target, order=order)
 
     def _extract_element_and_charge(self, label: str) -> Tuple[str, int]:
-        """
-        Extracts the chemical element and its charge from a node label.
+        """Extracts the chemical element and its charge from a node label.
 
-        :param label: The label string from a GML node (e.g., 'N+', 'O2-', etc.).
+        :param label: The label string from a GML node (e.g., 'N+',
+            'O2-', etc.).
         :type label: str
-
         :returns: A tuple of (element symbol, formal charge).
         :rtype: tuple[str, int]
         """
@@ -82,10 +81,10 @@ class GMLToNX:
         return element, charge
 
     def _synchronize_nodes_and_edges(self):
-        """
-        Ensures that all nodes and edges in 'context' appear in both 'left' and 'right'.
-        We do not remove edges from left or right if they are not in context.
-        We only add missing context nodes and edges to left and right.
+        """Ensures that all nodes and edges in 'context' appear in both 'left'
+        and 'right'. We do not remove edges from left or right if they are not
+        in context. We only add missing context nodes and edges to left and
+        right.
 
         :returns: None
         """

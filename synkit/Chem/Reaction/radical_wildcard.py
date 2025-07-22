@@ -5,9 +5,9 @@ from typing import Tuple, List, Optional, Dict
 
 
 class RadicalWildcardAdder:
-    """
-    A utility for adding wildcard dummy atoms ([*]) to radical centers in reaction SMILES,
-    with unique incremental atom-map indices and correct propagation into products.
+    """A utility for adding wildcard dummy atoms ([*]) to radical centers in
+    reaction SMILES, with unique incremental atom-map indices and correct
+    propagation into products.
 
     Each reactive radical atom in the reactant block is identified by its unpaired electron count,
     assigned one or more wildcard map indices, and recorded. The same wildcard(s) are then appended
@@ -27,37 +27,36 @@ class RadicalWildcardAdder:
     """
 
     def __init__(self, start_map: Optional[int] = None) -> None:
-        """
-        Initialize the adder with an optional starting map index.
+        """Initialize the adder with an optional starting map index.
 
-        :param start_map: Starting atom-map index for wildcards or None to auto-pick.
+        :param start_map: Starting atom-map index for wildcards or None
+            to auto-pick.
         :type start_map: Optional[int]
         """
         self.start_map = start_map
 
     def __repr__(self) -> str:
-        """
-        Official representation.
-        """
+        """Official representation."""
         return f"<RadicalWildcardAdder(start_map={self.start_map})>"
 
     def __str__(self) -> str:
-        """
-        User-friendly description.
-        """
+        """User-friendly description."""
         m = self.start_map if self.start_map is not None else "auto"
         return f"RadicalWildcardAdder(start_map={m})"
 
     def transform(self, rxn_smiles: str) -> str:
-        """
-        Append wildcard dummy atoms to each radical center in the reactant block
-        and propagate the same wildcards to the matching atoms in the product block.
+        """Append wildcard dummy atoms to each radical center in the reactant
+        block and propagate the same wildcards to the matching atoms in the
+        product block.
 
-        :param rxn_smiles: Reaction SMILES string, two-component or three-component.
+        :param rxn_smiles: Reaction SMILES string, two-component or
+            three-component.
         :type rxn_smiles: str
-        :returns: Modified reaction SMILES with consistent wildcard attachments.
+        :returns: Modified reaction SMILES with consistent wildcard
+            attachments.
         :rtype: str
-        :raises ValueError: If the SMILES is not valid or fragments fail to parse.
+        :raises ValueError: If the SMILES is not valid or fragments fail
+            to parse.
         """
         # Split into reactants > agents? > products
         react_blk, agents_blk, prod_blk = self._split_reaction(rxn_smiles)
@@ -148,14 +147,16 @@ class RadicalWildcardAdder:
 
     @staticmethod
     def _split_reaction(rxn: str) -> Tuple[str, Optional[str], str]:
-        """
-        Split a reaction SMILES into reactants, agents (optional), and products.
+        """Split a reaction SMILES into reactants, agents (optional), and
+        products.
 
         :param rxn: The reaction SMILES string.
         :type rxn: str
-        :returns: Tuple of (reactants_block, agents_block or None, products_block).
+        :returns: Tuple of (reactants_block, agents_block or None,
+            products_block).
         :rtype: Tuple[str, Optional[str], str]
-        :raises ValueError: If the SMILES does not contain 2 or 3 '>' symbols.
+        :raises ValueError: If the SMILES does not contain 2 or 3 '>'
+            symbols.
         """
         parts = rxn.split(">")
         if len(parts) == 2:

@@ -5,8 +5,7 @@ from typing import Tuple, List, Set
 
 class LongestPath:
     def __init__(self, G: nx.Graph):
-        """
-        Initializes the LongestPath object with a graph.
+        """Initializes the LongestPath object with a graph.
 
         Parameters:
         - G (nx.Graph): The networkx graph.
@@ -15,9 +14,8 @@ class LongestPath:
         self.vertices = len(G.nodes)
 
     def BFS(self, u: int) -> Tuple[int, int]:
-        """
-        Performs a Breadth-First Search (BFS) from a given node `u` to
-        find the farthest node and its distance.
+        """Performs a Breadth-First Search (BFS) from a given node `u` to find
+        the farthest node and its distance.
 
         Parameters:
         - u (int): The starting node for the BFS.
@@ -55,9 +53,8 @@ class LongestPath:
         return nodeIdx, maxDis
 
     def LongestPathInDisconnectedGraph(self) -> int:
-        """
-        Finds the longest path in a potentially disconnected graph.
-        The graph can consist of multiple components.
+        """Finds the longest path in a potentially disconnected graph. The
+        graph can consist of multiple components.
 
         This method performs a BFS on every unvisited component to find the
         farthest node and computes the longest path across all components.

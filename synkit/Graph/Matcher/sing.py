@@ -5,9 +5,10 @@ from typing import List, Union, Dict, Set, Any
 class SING:
     """Subgraph search In Non-homogeneous Graphs (SING)
 
-    A lightweight Python implementation adopting a *filter-and-refine* strategy
-    with path-based features.  This version supports **heterogeneous graphs**
-    through flexible **node and edge attribute selections**.
+    A lightweight Python implementation adopting a *filter-and-refine*
+    strategy with path-based features.  This version supports
+    **heterogeneous graphs** through flexible **node and edge attribute
+    selections**.
     """
 
     # ---------------------------------------------------------------------
@@ -62,14 +63,16 @@ class SING:
     # ------------------------------------------------------------------
 
     def _node_signature(self, v: Any, G: nx.Graph) -> str:
-        """Return a string signature for *v* in *G* based on ``self.node_att``."""
+        """Return a string signature for *v* in *G* based on
+        ``self.node_att``."""
         vals = [str(G.nodes[v].get(a, "#")) for a in self.node_att]
         return "|".join(vals)
 
     def _edge_signature(self, u: Any, v: Any, G: nx.Graph) -> str:
         """Return a string signature for edge *(u,v)* in *G* based on
-        ``self.edge_att``.  If no edge attributes were requested, returns an
-        empty string.
+        ``self.edge_att``.
+
+        If no edge attributes were requested, returns an empty string.
         """
         if not self.edge_att:
             return ""
@@ -85,7 +88,9 @@ class SING:
     ) -> Set[str]:
         """Enumerate *all* simple paths starting at *node* up to
         ``self.max_path_length`` edges (inclusive), represented as label
-        sequences.  Works for both data and query graphs.
+        sequences.
+
+        Works for both data and query graphs.
         """
         features: Set[str] = set()
         max_len = self.max_path_length
@@ -126,8 +131,7 @@ class SING:
 
     def _candidate_vertices(self, query_graph: nx.Graph) -> Dict[Any, Set[Any]]:
         """Return *per-query-vertex* candidate sets using posting-list
-        intersections.
-        """
+        intersections."""
         cand: Dict[Any, Set[Any]] = {}
         for qv in query_graph.nodes:
             q_feats = self._extract_path_features(qv, query_graph, is_query=True)
