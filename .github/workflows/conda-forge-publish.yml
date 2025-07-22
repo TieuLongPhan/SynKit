@@ -4,7 +4,7 @@ on:
   release:
     types: [published]
   push:
-    branches: [refractor]
+    branches: [refactor]
 
 permissions:
   contents: read
@@ -84,7 +84,7 @@ jobs:
 
   publish_beta:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/refractor'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor'
     runs-on: ubuntu-latest
     steps:
       - name: Download built packages

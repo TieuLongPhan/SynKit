@@ -1,13 +1,13 @@
 package:
   name: synkit
-  version: 0.0.11b1    # bump to 0.0.11b1, 0.0.11b2, etc. for betas
+  version: 0.0.12
 
 source:
   path: ..
 
 build:
   noarch: python
-  number: 5
+  number: 0
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
 requirements:
