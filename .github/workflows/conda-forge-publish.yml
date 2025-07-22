@@ -42,18 +42,16 @@ jobs:
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
-          conda activate build
+            conda activate build
+            conda-build recipe --output-folder ./conda-bld
 
-          # build into ./conda-bld
-          conda-build recipe --output-folder ./conda-bld
+            # DEBUG: list all built packages
+            echo "DEBUG: Built files:"
+            find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print
 
-          # debug: list built files
-          echo "DEBUG: Built files:"
-          ls -l conda-bld/*/*.tar.bz2 || true
-
-          # export paths for upload
-          files=$(ls conda-bld/*/*.tar.bz2 | tr '\n' ' ')
-          echo "paths=$files" >> $GITHUB_OUTPUT
+            # Export paths (both .conda and .tar.bz2) for upload
+            files=$(find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print | tr '\n' ' ')
+            echo "paths=$files" >> $GITHUB_OUTPUT
 
   publish_release:
     name: Upload Release → main
