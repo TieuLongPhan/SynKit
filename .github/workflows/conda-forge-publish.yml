@@ -6,7 +6,7 @@ on:
       - published
   push:
     branches:
-      - refractor    # your intentionally misspelled branch
+      - refractor   
 
 permissions:
   contents: read
@@ -42,15 +42,17 @@ jobs:
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
-          conda activate build               # ← explicitly activate the build env
-          conda build recipe --output-folder ./conda-bld
+          conda activate build
+
+          # build into ./conda-bld
+          conda-build recipe --output-folder ./conda-bld
 
           # debug: list built files
           echo "DEBUG: Built files:"
-          ls -l ./conda-bld/*/*.tar.bz2 || true
+          ls -l conda-bld/*/*.tar.bz2 || true
 
           # export paths for upload
-          files=$(ls ./conda-bld/*/*.tar.bz2 | tr '\n' ' ')
+          files=$(ls conda-bld/*/*.tar.bz2 | tr '\n' ' ')
           echo "paths=$files" >> $GITHUB_OUTPUT
 
   publish_release:
