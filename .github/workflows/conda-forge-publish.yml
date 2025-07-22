@@ -76,7 +76,7 @@ jobs:
         run: |
           for pkg in ${{ needs.build.outputs.pkg_paths }}; do
             anaconda -t "$ANACONDA_TOKEN" upload \
-              --user conda-forge \
+              --user tieulongphan \
               --label main \
               --no-progress \
               "$pkg"
@@ -102,7 +102,7 @@ jobs:
         run: |
           for pkg in ${{ needs.build.outputs.pkg_paths }}; do
             anaconda -t "$ANACONDA_TOKEN" upload \
-              --user conda-forge \
+              --user tieulongphan \
               --label beta \
               --no-progress \
               "$pkg"
