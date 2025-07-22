@@ -8,10 +8,10 @@ package:
   version: {{ version }}
 
 source:
-  path: ..    # build directly from your working tree
+  path: ..    # build directly from this checkout
 
 build:
-  # MUST set a build number so conda-build doesn’t see 'None'
+  # ensure build_number() is never None
   number: {{ run }}
   noarch: python
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
@@ -21,9 +21,9 @@ requirements:
     - python >=3.11
     - pip
   run:
-{%- for dep in project['project']['dependencies'] %}
+{% for dep in project['project']['dependencies'] %}
     - {{ dep }}
-{%- endfor %}
+{% endfor %}
 
 about:
   home:       https://github.com/TieuLongPhan/SynKit
