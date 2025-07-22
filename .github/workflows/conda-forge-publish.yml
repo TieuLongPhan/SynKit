@@ -1,17 +1,14 @@
 name: Publish to conda-forge
 
 on:
-  # 1) When a GitHub Release is published
   release:
     types: [published]
-
-  # 2) When you push to the `refactor` branch
   push:
     branches:
-      - refractor
+      - refactor
 
 permissions:
-  contents: read   # only needs to checkout code
+  contents: read
 
 jobs:
   build:
@@ -30,11 +27,12 @@ jobs:
         with:
           auto-update-conda: true
           python-version: "3.11"
+          install-packages: conda-build  # <<< installs conda-build
 
       - id: build
         name: Build conda package
         run: |
-          conda-build . --output-folder ./conda-bld
+          conda-build recipe --output-folder ./conda-bld
           echo "paths=$(ls conda-bld/**/**.tar.bz2 | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
   publish_release:
