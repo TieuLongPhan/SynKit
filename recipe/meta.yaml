@@ -11,8 +11,9 @@ source:
   path: ..    # build directly from your working tree
 
 build:
-  noarch: python
+  # MUST set a build number so conda-build doesn’t see 'None'
   number: {{ run }}
+  noarch: python
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
 requirements:
