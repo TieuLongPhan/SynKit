@@ -8,7 +8,7 @@ on:
   # 2) When you push to the `refactor` branch
   push:
     branches:
-      - refactor
+      - refractor
 
 permissions:
   contents: read   # only needs to checkout code
