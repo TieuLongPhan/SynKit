@@ -1,0 +1,75 @@
+name: Publish to conda-forge
+
+on:
+  # 1) When a GitHub Release is published
+  release:
+    types: [published]
+
+  # 2) When you push to the `refactor` branch
+  push:
+    branches:
+      - refactor
+
+permissions:
+  contents: read   # only needs to checkout code
+
+jobs:
+  build:
+    name: Build Conda Package
+    runs-on: ubuntu-latest
+    outputs:
+      pkg_paths: ${{ steps.build.outputs.paths }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: "3.11"
+          activate-environment: base
+
+      - id: build
+        name: Build conda package
+        run: |
+          conda-build . --output-folder ./conda-bld
+          echo "paths=$(ls conda-bld/**/**.tar.bz2 | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+  publish_release:
+    name: Upload Release → main
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload to conda-forge (main)
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: |
+          for pkg in ${{ needs.build.outputs.pkg_paths }}; do
+            anaconda -t "$ANACONDA_TOKEN" upload \
+              --user conda-forge \
+              --label main \
+              --no-progress \
+              "$pkg"
+          done
+
+  publish_beta:
+    name: Upload Refactor → beta
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload to conda-forge (beta)
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: |
+          for pkg in ${{ needs.build.outputs.pkg_paths }}; do
+            anaconda -t "$ANACONDA_TOKEN" upload \
+              --user conda-forge \
+              --label beta \
+              --no-progress \
+              "$pkg"
+          done

@@ -1,0 +1,35 @@
+{% set project      = load_pyproject_data(path="../pyproject.toml") %}
+{% set base_version = project['project']['version'] %}
+{% set run          = github.run_number|string %}
+{% set version      = base_version ~ 'b' ~ run %}
+
+package:
+  name: {{ project['project']['name']|lower }}
+  version: {{ version }}
+
+source:
+  path: ..    # build directly from your working tree
+
+build:
+  noarch: python
+  number: {{ run }}
+  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
+
+requirements:
+  host:
+    - python >=3.11
+    - pip
+  run:
+{%- for dep in project['project']['dependencies'] %}
+    - {{ dep }}
+{%- endfor %}
+
+about:
+  home:       https://github.com/TieuLongPhan/SynKit
+  license:    MIT
+  license_file: LICENSE
+  summary:    Utility for reaction modeling using graph grammar
+
+extra:
+  recipe-maintainers:
+    - TieuLongPhan
