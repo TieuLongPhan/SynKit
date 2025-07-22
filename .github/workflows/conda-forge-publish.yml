@@ -1,0 +1,109 @@
+name: Publish to conda-forge
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [refactor]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      pkg_paths: ${{ steps.build.outputs.paths }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          channels: conda-forge
+          auto-update-conda: true
+          auto-activate-base: true
+
+      - name: Create & activate build env
+        shell: bash -l {0}
+        run: |
+          conda create -n build python=3.11 'conda-build>=3.21' -c conda-forge -y
+          conda activate build
+
+      - id: build
+        name: Build conda package
+        shell: bash -l {0}
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          conda activate build
+          rm -rf conda-bld && mkdir conda-bld
+
+          conda-build recipe --output-folder ./conda-bld
+
+          echo "DEBUG: Built files:"
+          find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print
+
+          files=$(find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print | tr '\n' ' ')
+          echo "paths=$files" >> $GITHUB_OUTPUT
+
+      - name: Upload built packages as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-packages
+          path: conda-bld/
+
+  publish_release:
+    needs: build
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built packages
+        uses: actions/download-artifact@v4
+        with:
+          name: conda-packages
+          path: conda-bld
+
+      - name: Install Anaconda Client
+        run: python3 -m pip install --upgrade anaconda-client
+
+      - name: Upload to conda-forge / main
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: |
+          for pkg in ${{ needs.build.outputs.pkg_paths }}; do
+            anaconda -t "$ANACONDA_TOKEN" upload \
+              --user tieulongphan \
+              --label main \
+              --no-progress \
+              "$pkg"
+          done
+
+  publish_beta:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built packages
+        uses: actions/download-artifact@v4
+        with:
+          name: conda-packages
+          path: conda-bld
+
+      - name: Install Anaconda Client
+        run: python3 -m pip install --upgrade anaconda-client
+
+      - name: Upload to conda-forge / beta
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: |
+          for pkg in ${{ needs.build.outputs.pkg_paths }}; do
+            anaconda -t "$ANACONDA_TOKEN" upload \
+              --user tieulongphan \
+              --label beta \
+              --no-progress \
+              "$pkg"
+          done

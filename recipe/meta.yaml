@@ -1,0 +1,37 @@
+package:
+  name: synkit
+  version: 0.0.12
+
+source:
+  path: ..
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
+
+requirements:
+  host:
+    - python >=3.11,<3.12     # force a 3.11 build env
+    - pip
+    - hatchling               # your PEP 517 build backend
+  run:
+    - python >=3.11,<3.12
+    - scikit-learn >=1.4.0
+    - pandas >=1.5.3
+    - rdkit >=2025.3.1
+    - networkx >=3.3
+    - seaborn >=0.13.2
+    - requests >=2.32.3
+    - regex >=2024.11.6
+    - numpy >=2.2.0
+
+about:
+  home:       https://github.com/TieuLongPhan/SynKit
+  license:    MIT
+  license_file: LICENSE
+  summary:    Utility for reaction modeling using graph grammar
+
+extra:
+  recipe-maintainers:
+    - TieuLongPhan

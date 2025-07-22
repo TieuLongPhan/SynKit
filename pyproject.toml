@@ -4,7 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "0.0.11"
+version = "0.0.12"
+license = { text = "MIT" }
+license-files = ["LICENSE"]
 authors = [
     {name="Tieu Long Phan", email="tieu@bioinf.uni-leipzig.de"}
 ]

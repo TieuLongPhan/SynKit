@@ -7,7 +7,7 @@ logger = setup_logging()
 
 
 class NautyCanonicalizer:
-    """Perform Nauty‑style canonicalization of a NetworkX graph, optionally
+    """Perform Nauty-style canonicalization of a NetworkX graph, optionally
     refining and distinguishing nodes and edges by specified attributes, and
     extracting automorphisms, orbits, and canonical permutations.
 
