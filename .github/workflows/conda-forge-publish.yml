@@ -72,9 +72,9 @@ jobs:
           done
 
   publish_beta:
-    name: Upload Refactor → beta
+    name: Upload Refractor → beta
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/refactor'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/refractor'
     runs-on: ubuntu-latest
     steps:
       - name: Upload to conda-forge / beta
