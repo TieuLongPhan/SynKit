@@ -43,10 +43,12 @@ jobs:
       - id: build
         name: Build conda package
         shell: bash -l {0}
+        env:
+            GITHUB_RUN_NUMBER: ${{ github.run_number }}   # ← hand it to conda-build
         run: |
-          conda activate build
-          conda build recipe --output-folder ./conda-bld
-          echo "paths=$(ls conda-bld/**/**.tar.bz2 | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            conda activate build
+            conda build recipe --output-folder ./conda-bld
+            echo "paths=$(ls conda-bld/**/**.tar.bz2 | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
   publish_release:
     name: Upload Release → main

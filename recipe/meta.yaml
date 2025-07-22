@@ -1,18 +1,21 @@
 {% set project      = load_pyproject_data(path="../pyproject.toml") %}
 {% set base_version = project['project']['version'] %}
-{% set run          = github.run_number|string %}
-{% set version      = base_version ~ 'b' ~ run %}
+
+{#– get run-number from the environment, default “0” –#}
+{% set run = environ.get('GITHUB_RUN_NUMBER', '0') %}
+
+{#– compose prerelease version –#}
+{% set version = base_version ~ 'b' ~ run %}
 
 package:
   name: {{ project['project']['name']|lower }}
   version: {{ version }}
 
 source:
-  path: ..    # build directly from this checkout
+  path: ..
 
 build:
-  # ensure build_number() is never None
-  number: {{ run }}
+  number: {{ run | int }}      # ← guaranteed integer
   noarch: python
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
