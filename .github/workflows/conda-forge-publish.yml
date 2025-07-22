@@ -59,6 +59,10 @@ jobs:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
+      - name: Install Anaconda Client
+        run: |
+          python3 -m pip install --upgrade anaconda-client
+
       - name: Upload to conda-forge / main
         env:
           ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
@@ -77,6 +81,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/refractor'
     runs-on: ubuntu-latest
     steps:
+      - name: Install Anaconda Client
+        run: |
+          python3 -m pip install --upgrade anaconda-client
+
       - name: Upload to conda-forge / beta
         env:
           ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
@@ -88,3 +96,4 @@ jobs:
               --no-progress \
               "$pkg"
           done
+
