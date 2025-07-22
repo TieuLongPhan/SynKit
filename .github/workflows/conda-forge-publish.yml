@@ -30,7 +30,6 @@ jobs:
         with:
           auto-update-conda: true
           python-version: "3.11"
-          activate-environment: base
 
       - id: build
         name: Build conda package
