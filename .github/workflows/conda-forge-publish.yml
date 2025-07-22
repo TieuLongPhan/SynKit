@@ -4,7 +4,7 @@ on:
   release:
     types: [published]
   push:
-    branches: [refractor]    
+    branches: [refractor]
 
 permissions:
   contents: read
@@ -17,7 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v2
@@ -50,7 +51,7 @@ jobs:
           echo "paths=$files" >> $GITHUB_OUTPUT
 
       - name: Upload built packages as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: conda-packages
           path: conda-bld/
@@ -61,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download built packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: conda-packages
 
@@ -86,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download built packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: conda-packages
 
