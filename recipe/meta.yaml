@@ -1,22 +1,13 @@
-{% set project      = load_pyproject_data(path="../pyproject.toml") %}
-{% set base_version = project['project']['version'] %}
-
-{#– get run-number from the environment, default “0” –#}
-{% set run = environ.get('GITHUB_RUN_NUMBER', '0') %}
-
-{#– compose prerelease version –#}
-{% set version = base_version ~ 'b' ~ run %}
-
 package:
-  name: {{ project['project']['name']|lower }}
-  version: {{ version }}
+  name: synkit
+  version: 0.0.11b1
 
 source:
   path: ..
 
 build:
-  number: {{ run | int }}      # ← guaranteed integer
   noarch: python
+  number: 0
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
 requirements:
@@ -24,9 +15,13 @@ requirements:
     - python >=3.11
     - pip
   run:
-{% for dep in project['project']['dependencies'] %}
-    - {{ dep }}
-{% endfor %}
+    - scikit-learn >=1.4.0
+    - pandas >=1.5.3
+    - rdkit >=2025.3.1
+    - networkx >=3.3
+    - seaborn >=0.13.2
+    - requests >=2.32.3
+    - regex >=2024.11.6
 
 about:
   home:       https://github.com/TieuLongPhan/SynKit
