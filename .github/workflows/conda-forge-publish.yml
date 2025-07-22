@@ -5,7 +5,7 @@ on:
     types: [published]
   push:
     branches:
-      - refactor
+      - refractor
 
 permissions:
   contents: read
