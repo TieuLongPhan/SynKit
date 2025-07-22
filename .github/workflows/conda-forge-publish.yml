@@ -42,6 +42,9 @@ jobs:
         env:
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
+            rm -rf conda-bld
+            mkdir conda-bld
+            
             conda activate build
             conda-build recipe --output-folder ./conda-bld
 
