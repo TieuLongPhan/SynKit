@@ -350,4 +350,5 @@ class HComplete:
                 # conjugated=False,
                 # in_ring=False,
             )
+            new_graph.nodes[node_id]["hcount"] -= 1
         return new_graph
