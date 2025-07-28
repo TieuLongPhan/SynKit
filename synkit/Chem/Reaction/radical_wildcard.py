@@ -4,6 +4,63 @@ import re
 from typing import Tuple, List, Optional, Dict
 
 
+def clean_wc(
+    rsmi: str, invert: bool = False, max_frag: bool = False, wild_card: bool = True
+) -> str:
+    """
+    Clean wildcard-containing fragments from one side of a reaction SMILES,
+    optionally selecting the largest remaining fragment.
+
+    :param rsmi: Reaction SMILES string in the form 'R>>P'.
+    :type rsmi: str
+    :param invert: If True, process the reactant side; otherwise the product side.
+    :type invert: bool
+    :param max_frag: If True, force fragment selection (implies wild_card=True).
+    :type max_frag: bool
+    :param wild_card: If True, remove fragments containing '*' before selection.
+    :type wild_card: bool
+    :returns: The processed reaction SMILES.
+    :rtype: str
+    :raises ValueError: If input does not split into reactant and product.
+
+    Example
+    -------
+    >>> clean_wc('A.B>>C.*', invert=False, wild_card=True)
+    'A.B>>C'
+    >>> clean_wc('A.B>>C.D', invert=False, max_frag=True)
+    'A.B>>C'
+    """
+    # Ensure max_frag implies wild_card
+    if max_frag:
+        wild_card = True
+
+    # Split into reactant and product
+    parts = rsmi.split(">>")
+    if len(parts) != 2:
+        raise ValueError("Reaction SMILES must contain exactly one '>>'.")
+    react, prod = parts
+
+    # Select side to process
+    side = react if invert else prod
+
+    processed = side
+    if wild_card:
+        frags = side.split(".")
+        # Filter out fragments containing wildcards
+        filtered = [frag for frag in frags if "*" not in frag]
+        if len(filtered) > 1:
+            # select the longest fragment
+            processed = max(filtered, key=len)
+        elif len(filtered) == 1:
+            processed = filtered[0]
+        # if no filtered fragments or single fragment, keep original side
+
+    # Reconstruct and return
+    if invert:
+        return f"{processed}>>{prod}"
+    return f"{react}>>{processed}"
+
+
 class RadicalWildcardAdder:
     """A utility for adding wildcard dummy atoms ([*]) to radical centers in
     reaction SMILES, with unique incremental atom-map indices and correct
