@@ -1,5 +1,5 @@
 import re
-from typing import List, Dict, Set
+from typing import List, Set
 from rdkit import Chem
 from rdkit.Chem import rdChemReactions
 
@@ -39,7 +39,7 @@ class SMARTSGeneralizer:
     def generalize(self, smarts_list: List[str]) -> str:
         """
         Generalize a list of SMARTS/reaction SMARTS into one combinatorial SMARTS,
-        with element-list placeholders per atom-map index.
+        with element-list placeholders per atom-map index and position.
 
         :param smarts_list: List of atom-mapped SMARTS strings (same topology/order).
         :type smarts_list: list[str]
@@ -50,49 +50,51 @@ class SMARTSGeneralizer:
         if not smarts_list:
             raise ValueError("Input list is empty.")
 
-        pos_list: List[List[re.Match]] = [
-            list(self._atom_pat.finditer(s)) for s in smarts_list
-        ]
-        n_atoms = len(pos_list[0])
-        for pl in pos_list:
-            if len(pl) != n_atoms:
-                raise ValueError(
-                    "All input SMARTS must have same atom-mapped topology and order."
-                )
+        if len(smarts_list) == 1:
+            combined = smarts_list[0]
+        else:
+            pos_list: List[List[re.Match]] = [
+                list(self._atom_pat.finditer(s)) for s in smarts_list
+            ]
+            n_atoms = len(pos_list[0])
+            for pl in pos_list:
+                if len(pl) != n_atoms:
+                    raise ValueError(
+                        "All input SMARTS must have same atom-mapped topology and order."
+                    )
 
-        pos2map: List[str] = []
-        map2elems: Dict[str, Set[str]] = {}
-        for i in range(n_atoms):
-            mapnum = pos_list[0][i].group(2)
-            pos2map.append(mapnum)
-            elems = set(match[i].group(1) for match in pos_list)
-            if mapnum in map2elems:
-                map2elems[mapnum].update(elems)
-            else:
-                map2elems[mapnum] = set(elems)
+            pos2map: List[str] = []
+            pos2elems: List[Set[str]] = []
+            for i in range(n_atoms):
+                mapnum = pos_list[0][i].group(2)
+                elems = set(match[i].group(1) for match in pos_list)
+                pos2map.append(mapnum)
+                pos2elems.append(elems)
 
-        # Template assembly: alternate static and atom-map segments
-        first = smarts_list[0]
-        atoms = list(self._atom_pat.finditer(first))
-        segments = []
-        last = 0
-        for m in atoms:
-            # fmt: off
-            segments.append(first[last: m.start()])
-            # fmt: on
-            segments.append(m.group(2))  # mapnum as marker
-            last = m.end()
-        segments.append(first[last:])
+            # Template assembly: alternate static and atom-map segments
+            first = smarts_list[0]
+            atoms = list(self._atom_pat.finditer(first))
+            segments = []
+            last = 0
+            for m in atoms:
+                # fmt: off
+                segments.append(first[last: m.start()])
+                # fmt: on
+                segments.append(m.group(2))  # mapnum as marker
+                last = m.end()
+            segments.append(first[last:])
 
-        # Reconstruct combinatorial SMARTS
-        out = []
-        for seg in segments:
-            if seg in map2elems:
-                els = sorted(map2elems[seg])
-                out.append(f"[{','.join(els)}:{seg}]")
-            else:
-                out.append(seg)
-        combined = "".join(out)
+            # Reconstruct combinatorial SMARTS
+            out = []
+            idx = 0
+            for seg in segments:
+                if idx < len(pos2map) and seg == pos2map[idx]:
+                    els = sorted(pos2elems[idx])
+                    out.append(f"[{','.join(els)}:{seg}]")
+                    idx += 1
+                else:
+                    out.append(seg)
+            combined = "".join(out)
 
         # RDKit validation
         if self.sanity_check:
@@ -130,16 +132,3 @@ class SMARTSGeneralizer:
         :rtype: str
         """
         return f"SMARTSGeneralizer(sanity_check={self.sanity_check})"
-
-
-# # --- Example usage ---
-# if __name__ == "__main__":
-#     input_smarts = [
-#         '[C:1]-[N:2]>>[N:1]-[C:2]',
-#         '[N:1]-[N:2]>>[N:1]-[N:2]',
-#         '[O:1]-[N:2]>>[N:1]-[N:2]'
-#     ]
-#     gen = SMARTSGeneralizer()
-#     print(gen)
-#     print(gen.generalize(input_smarts))
-#     gen.describe()
