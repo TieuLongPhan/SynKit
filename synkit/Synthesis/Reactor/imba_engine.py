@@ -95,43 +95,36 @@ class ImbaEngine:
         else:
             raise ValueError(f"Unsupported substrate type: {type(self.substrate)}")
 
-        # Instantiate SynReactor with fixed parameters
-        if self.invert:
-            reactor = SynReactor(
-                react_smiles,
-                template=self.template,
-                invert=True,
-                strategy=self.strategy,
-                partial=True,
-                implicit_temp=True,
-                explicit_h=False,
-            )
-        else:
-            reactor = SynReactor(
-                react_smiles,
-                template=self.template,
-                invert=False,
-                strategy=self.strategy,
-                partial=self.partial,
-                implicit_temp=True,
-                explicit_h=False,
-            )
+        reactor = SynReactor(
+            react_smiles,
+            template=self.template,
+            invert=self.invert,
+            strategy=self.strategy,
+            partial=self.partial,
+            implicit_temp=True,
+            explicit_h=False,
+        )
         raw_smarts: List[str] = reactor.smarts_list
-
-        # Clean fragments if requested
-        if self.clean_fragments:
-            cleaned = [
-                clean_wc(s, invert=False, max_frag=self.max_frag, wild_card=True)
-                for s in raw_smarts
-            ]
-        else:
-            cleaned = raw_smarts
 
         # Add radical wildcards if requested
         if self.add_wildcard:
-            self._results = [RadWC.transform(s) for s in cleaned]
+            wc = []
+            for s in raw_smarts:
+                try:
+                    wc.append(RadWC.transform(s))
+                except Exception as e:
+                    print(e)
         else:
-            self._results = cleaned
+            wc = raw_smarts
+            # Clean fragments if requested
+        if self.clean_fragments:
+            self._results = [
+                clean_wc(s, invert=False, max_frag=self.max_frag, wild_card=True)
+                for s in wc
+            ]
+        else:
+            self._results = wc
+
         return self
 
     @property
