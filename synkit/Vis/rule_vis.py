@@ -40,7 +40,7 @@ class RuleVis:
                 if input.strip().startswith("graph [") or "rule [" in input:
                     return self.mod_vis(input, **kwargs)
                 else:
-                    r, p = rsmi_to_graph(input, light_weight=True)
+                    r, p = rsmi_to_graph(input)
                     its = ITSConstruction().ITSGraph(r, p)
                     gml_str = smart_to_gml(input, core=False, sanitize=False)
                     return self.mod_vis(gml_str, **kwargs)
@@ -72,7 +72,7 @@ class RuleVis:
         try:
             # 1) Parse input
             if isinstance(input, str):
-                r, p = rsmi_to_graph(input, light_weight=True, sanitize=sanitize)
+                r, p = rsmi_to_graph(input, sanitize=sanitize)
                 its = ITSConstruction().ITSGraph(r, p)
             elif isinstance(input, tuple) and len(input) == 3:
                 r, p, its = input

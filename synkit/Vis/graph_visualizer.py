@@ -122,6 +122,9 @@ class GraphVisualizer:
         font_size: int = 12,
         og: bool = False,
         rule: bool = False,
+        title_font_size: str = 20,
+        title_font_weight: str = "bold",
+        title_font_style: str = "italic",
     ) -> None:
         # --- original implementation preserved verbatim ------------------
         ax.clear()
@@ -130,7 +133,12 @@ class GraphVisualizer:
         ax.axis("equal")
         ax.axis("off")
         if title:
-            ax.set_title(title)
+            ax.set_title(
+                title,
+                fontsize=title_font_size,
+                fontweight=title_font_weight,
+                fontstyle=title_font_style,
+            )
         if use_edge_color:
             edge_colors = [
                 (
