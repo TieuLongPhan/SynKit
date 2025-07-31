@@ -20,19 +20,17 @@ class TestMTG(unittest.TestCase):
         self.test_graph_2 = [get_rc(rsmi_to_its(var)) for var in test_2]
 
     def test_MTG_1(self):
-        grp = GroupComp(self.test_graph_1[0], self.test_graph_1[1])
-        candidates = grp.get_mapping()
-        print(candidates)
-        mtg = MTG(self.test_graph_1[0], self.test_graph_1[1], candidates[0])
-        self.assertEqual(len(mtg.get_nodes()), 6)
-        self.assertEqual(len(mtg.get_edges()), 7)
+        mtg = MTG(self.test_graph_1[0:2], mcs_mol=True)
+        self.assertEqual(mtg._graph.number_of_nodes(), 6)
+        self.assertEqual(mtg._graph.number_of_edges(), 7)
 
     def test_MTG_2(self):
         grp = GroupComp(self.test_graph_2[0], self.test_graph_2[1])
         candidates = grp.get_mapping()
-        mtg = MTG(self.test_graph_2[0], self.test_graph_2[1], candidates[0])
-        self.assertEqual(len(mtg.get_nodes()), 5)
-        self.assertEqual(len(mtg.get_edges()), 4)
+        # print(candidates)
+        mtg = MTG(self.test_graph_2[0:], candidates)
+        self.assertEqual(mtg._graph.number_of_nodes(), 5)
+        self.assertEqual(mtg._graph.number_of_edges(), 4)
 
 
 if __name__ == "__main__":

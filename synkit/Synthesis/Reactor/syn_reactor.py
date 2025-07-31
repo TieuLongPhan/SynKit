@@ -80,14 +80,14 @@ class SynReactor:
     :vartype _graph: Optional[SynGraph]
     :ivar _rule: Cached SynRule for the template.
     :vartype _rule: Optional[SynRule]
-    :ivar _mappings: Cached list of subgraph‐mapping dicts.
+    :ivar _mappings: Cached list of subgraph-mapping dicts.
     :vartype _mappings: Optional[List[MappingDict]]
     :ivar _its: Cached list of ITS graphs.
     :vartype _its: Optional[List[nx.Graph]]
     :ivar _smarts: Cached list of SMARTS strings.
     :vartype _smarts: Optional[List[str]]
     :ivar _flag_pattern_has_explicit_H: Internal flag indicating
-        explicit‑H constraints.
+        explicit-H constraints.
     :vartype _flag_pattern_has_explicit_H: bool
     """
 

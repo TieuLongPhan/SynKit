@@ -200,42 +200,77 @@ This example builds two reaction-center ITS graphs, computes their MCS mapping, 
    :caption: Building and visualizing an MTG with composite ITS
    :linenos:
 
-   from synkit.IO.chem_converter import rsmi_to_its
-   from synkit.Graph.MTG.mcs_matcher import MCSMatcher
    from synkit.Graph.MTG.mtg import MTG
-   from synkit.Graph import clean_graph_keep_largest_component
-   from synkit.Vis import GraphVisualizer
+   from synkit.Graph.ITS.its_decompose import get_rc
+   from synkit.examples import list_examples, load_example
    import matplotlib.pyplot as plt
-
-   # 1) Define two related reaction SMILES and build their reaction-center ITS graphs
-   rsmi_list = [
-      '[CH:4]([H:7])([H:8])[CH:5]=[O:6]>>[CH:4]([H:8])=[CH:5][O:6]([H:7])',  # tautomerization
-      '[CH3:1][C:2]=[O:3].[CH:4]([H:8])=[CH:5][O:6]([H:7])>>'
-      '[CH3:1][C:2]([O:3][H:7])[CH:4]([H:8])[CH:5]=[O:6]'                     # nucleophilic addition
-   ]
-   rc_graphs = [rsmi_to_its(r, core=True) for r in rsmi_list]
-
-   # 2) Find MCS mapping between the two ITS graphs
-   mcs = MCSMatcher(node_label_names=['element', 'charge'], edge_attribute='order')
-   mcs.find_rc_mapping(rc_graphs[0], rc_graphs[1], mcs=True)
-   mapping = mcs.get_mappings()[0]
-
-   # 3) Build the Mechanistic Transition Graph (MTG)
-   mtg = MTG(rc_graphs[0], rc_graphs[1], mapping)
-   mtg_graph = mtg.get_graph()
-
-   # 4) Also build the composite ITS by directly gluing the two RC graphs
-   its_composite = clean_graph_keep_largest_component(mtg_graph)
+   from synkit.Vis.graph_visualizer import GraphVisualizer
 
 
-   # 5) Visualize all four graphs: two RCs, the composite ITS, and the MTG
-   fig, axes = plt.subplots(2, 2, figsize=(14, 6))
+   data = load_example("aldol")  
+
+   mech_neutral = data[0]['mechanisms'][1]['steps']
+   smart_neutral = [i['smart_string'] for i in mech_neutral]
+
+   mech_acid = data[0]['mechanisms'][2]['steps']
+   smart_acid = [i['smart_string'] for i in mech_acid]
+
+   # neutral
+   mtg = MTG(smart_neutral, mcs_mol=True)
+   mtg_its_neutral = mtg.get_compose_its()
+   mtg_rc_neutral = get_rc(mtg_its_neutral, keep_mtg=True)
+   rc_neutral = get_rc(mtg_its_neutral, keep_mtg=False)
+
+   # acid
+   mtg = MTG(smart_acid, mcs_mol=True)
+   mtg_its_acid = mtg.get_compose_its()
+   mtg_rc_acid = get_rc(mtg_its_acid, keep_mtg=True)
+   rc_acid = get_rc(mtg_its_acid, keep_mtg=False)
+
+   # Visualize
+   fig, ax = plt.subplots(2, 2, figsize=(16, 8))
    vis = GraphVisualizer()
 
-   vis.plot_its(rc_graphs[0], axes[0, 0], use_edge_color=True, title='A. Tautomerization RC')
-   vis.plot_its(rc_graphs[1], axes[0, 1], use_edge_color=True, title='B. Nucleophilic Addition RC')
-   vis.plot_its(its_composite, axes[1, 0], use_edge_color=True, title='C. Composite ITS')
-   vis.plot_its(mtg_graph, axes[1, 1], use_edge_color=True, title='D. Mechanistic TG', og=True)
+   vis.plot_its(
+      mtg_rc_neutral,
+      ax=ax[0, 0],
+      use_edge_color=True,
+      og=True,
+      title='A. MTG for aldol addition (neutral)',
+      title_font_size=20,
+      title_font_weight='medium',
+      title_font_style='normal'
+   )
+   vis.plot_its(
+      rc_neutral,
+      ax=ax[0, 1],
+      use_edge_color=True,
+      og=True,
+      title='B. Reaction center (neutral)',
+      title_font_size=20,
+      title_font_weight='medium',
+      title_font_style='normal'
+   )
+   vis.plot_its(
+      mtg_rc_acid,
+      ax=ax[1, 0],
+      use_edge_color=True,
+      og=True,
+      title='C. MTG for aldol addition (acid)',
+      title_font_size=20,
+      title_font_weight='medium',
+      title_font_style='normal'
+   )
+   vis.plot_its(
+      rc_acid,
+      ax=ax[1, 1],
+      use_edge_color=True,
+      og=True,
+      title='D. Reaction center (acid)',
+      title_font_size=20,
+      title_font_weight='medium',
+      title_font_style='normal'
+   )
 
    plt.tight_layout()
    plt.show()
@@ -243,16 +278,13 @@ This example builds two reaction-center ITS graphs, computes their MCS mapping, 
 
 .. container:: figure
 
-   .. image:: ./figures/mtg.png
+   .. image:: ./figures/mtg_mechanism.png
       :alt: Composite ITS and MTG visualization
       :align: center
       :width: 1000px
 
    *Figure:*  
-   (A) Reaction‐center graph for the tautomerization step  
-   (B) Reaction‐center graph for the nucleophilic addition step  
-   (C) Composite ITS graph "gluing" both transformations  
-   (D) Mechanistic Transition Graph (MTG) showing step-wise mechanism  
+   Composition of the mechanistic sequences for aldol addition under neutral and acidic conditions, showing the composite MTG (left column) and the reaction center (right column).
 
 Context graph
 -------------

@@ -22,3 +22,5 @@ run.sh
 docs/*
 run_rdcanon.py
 Data/Fragment/*
+test_partial.py
+Data/Benchmark/synthesis/*

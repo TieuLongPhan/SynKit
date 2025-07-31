@@ -17,10 +17,10 @@ Quick start
 >>> smarts, rule = matcher.get_result()
 """
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import networkx as nx
-from synkit.IO import rsmi_to_graph
+from synkit.IO import rsmi_to_graph, rsmi_to_its
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.balance_check import BalanceReactionCheck
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
@@ -54,13 +54,15 @@ class RuleMatcher:
     :vartype result: Tuple[str, nx.Graph]
     """
 
-    def __init__(self, rsmi: str, rule: nx.Graph) -> None:
+    def __init__(
+        self, rsmi: str, rule: Union[str, nx.Graph], explicit_h: bool = True
+    ) -> None:
         """Initialize the matcher by standardizing the RSMI, building graphs,
         checking balance, and computing the match.
 
         :param rsmi: Reaction SMILES in 'reactant>>product' format.
         :type rsmi: str
-        :param rule: Transformation‑rule graph.
+        :param rule: Transformation-rule graph.
         :type rule: nx.Graph
         :raises ValueError: If no SMARTS reproduces the RSMI under the
             given rule.
@@ -68,7 +70,10 @@ class RuleMatcher:
         self.std = Standardize()
         self.rsmi = self.std.fit(rsmi)
         self.r_graph, self.p_graph = rsmi_to_graph(self.rsmi, drop_non_aam=False)
+        if isinstance(rule, str):
+            rule = rsmi_to_its(rule, core=True)
         self.rule = rule
+        self.explicit_h = explicit_h
         self.balanced = BalanceReactionCheck(n_jobs=1).rsmi_balance_check(self.rsmi)
 
         # Compute and store the match result
@@ -124,7 +129,12 @@ class RuleMatcher:
                 return smarts, self.rule
 
         # Reactant‑side with inverted template
-        reactor = SynReactor(substrate=self.p_graph, template=self.rule, invert=True)
+        reactor = SynReactor(
+            substrate=self.p_graph,
+            template=self.rule,
+            invert=True,
+            explicit_h=self.explicit_h,
+        )
         for smarts in reactor.smarts_list:
             std_r = self.std.fit(smarts)
             if self.all_in(
