@@ -1,11 +1,181 @@
 import re
 import networkx as nx
-from typing import Optional, List
+from typing import Optional, List, Any
 
 from rdkit import Chem
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
 __all__ = ["get_rc", "its_decompose"]
+
+
+# def get_rc(
+#     ITS: nx.Graph,
+#     element_key: List[str] = ["element", "charge", "typesGH", "atom_map"],
+#     bond_key: str = "order",
+#     standard_key: str = "standard_order",
+#     disconnected: bool = False,
+# ) -> nx.Graph:
+#     """Extract the reaction-center (RC) subgraph from an ITS graph.
+
+#     This function identifies:
+#       1. All bonds whose standard order (difference between ITS orders) is non-zero.
+#       2. All H–H bonds, ensuring they are included even if no order change is detected.
+#       3. (Optional) Additional nodes with charge changes and reconnection of edges
+#          if `disconnected=True`.
+
+#     :param ITS: The integrated transition-state graph with composite node/edge attributes.
+#     :type ITS: nx.Graph
+#     :param element_key: List of node‐attribute keys to copy into the RC graph.
+#     :type element_key: List[str]
+#     :param bond_key: Edge attribute key representing the tuple of bond orders.
+#     :type bond_key: str
+#     :param standard_key: Edge attribute key for the computed standard_order.
+#     :type standard_key: str
+#     :param disconnected: If True, also include nodes with charge changes and
+#                          reconnect any ITS edges between RC nodes.
+#     :type disconnected: bool
+#     :returns: A new graph containing only the reaction-center nodes and edges.
+#     :rtype: nx.Graph
+
+#     :example:
+#     >>> ITS = nx.Graph()
+#     >>> # ... populate ITS with 'order', 'standard_order', 'typesGH', etc. ...
+#     >>> RC = get_rc(ITS, disconnected=True)
+#     >>> isinstance(RC, nx.Graph)
+#     True
+#     """
+#     rc = nx.Graph()
+#     _add_bond_order_changes(ITS, rc, element_key, bond_key, standard_key)
+
+#     # 1.5) H-H bonds (force inclusion, with fallback typesGH)
+#     for u, v, data in ITS.edges(data=True):
+#         elem_u = ITS.nodes[u].get("element")
+#         elem_v = ITS.nodes[v].get("element")
+#         if elem_u == "H" and elem_v == "H":
+#             for n in (u, v):
+#                 node_data = dict(ITS.nodes[n])
+#                 if "typesGH" not in node_data:
+#                     node_data["typesGH"] = (
+#                         ("H", False, 0, 0, []),
+#                         ("*", False, 0, 0, []),
+#                     )
+#                 # Ensure typesGH is available even if not in original element_key
+#                 final_attrs = {k: node_data[k] for k in element_key if k in node_data}
+#                 final_attrs["typesGH"] = node_data["typesGH"]
+#                 rc.add_node(n, **final_attrs)
+
+#             rc.add_edge(
+#                 u,
+#                 v,
+#                 **{
+#                     bond_key: data.get(bond_key),
+#                     standard_key: data.get(standard_key),
+#                 },
+#             )
+#     if disconnected:
+#         _add_charge_change_nodes(ITS, rc, element_key)
+#         _reconnect_rc_edges(ITS, rc, bond_key, standard_key)
+
+#     return rc
+
+
+# def get_rc(
+#     ITS: nx.Graph,
+#     element_key: list[str] = ["element", "charge", "typesGH", "atom_map"],
+#     bond_key: str = "order",
+#     standard_key: str = "standard_order",
+#     disconnected: bool = False,
+#     keep_mtg: bool = False,
+# ) -> nx.Graph:
+#     """
+#     Extract the reaction-center (RC) subgraph from an ITS graph.
+
+#     This function identifies:
+#       1. All bonds whose standard order is non-zero.
+#       2. (Optional) All bonds labeled with 'is_mtg=True' if keep_mtg is True.
+#       3. All H-H bonds, ensuring they are included even if no order change is detected.
+#       4. (Optional) Additional nodes with charge changes and reconnection of edges
+#          if `disconnected=True`.
+
+#     :param ITS: The integrated transition-state graph with composite node/edge attributes.
+#     :type ITS: nx.Graph
+#     :param element_key: List of node-attribute keys to copy into the RC graph.
+#     :type element_key: List[str]
+#     :param bond_key: Edge attribute key representing the tuple of bond orders.
+#     :type bond_key: str
+#     :param standard_key: Edge attribute key for the computed standard_order.
+#     :type standard_key: str
+#     :param disconnected: If True, also include nodes with charge changes and
+#                          reconnect any ITS edges between RC nodes.
+#     :type disconnected: bool
+#     :param keep_mtg: If True, also include edges where 'is_mtg' attribute is True.
+#     :type keep_mtg: bool
+#     :returns: A new graph containing only the reaction-center nodes and edges.
+#     :rtype: nx.Graph
+#     """
+#     rc = nx.Graph()
+#     # 1) Bonds with standard order change or mechanistic transition
+#     for u, v, data in ITS.edges(data=True):
+#         std = data.get(standard_key)
+#         is_mtg_attr = data.get("is_mtg", False)
+#         include = False
+#         if isinstance(std, (int, float)) and std != 0:
+#             include = True
+#         if keep_mtg and is_mtg_attr:
+#             include = True
+#         if not include:
+#             continue
+#         # add nodes
+#         for n in (u, v):
+#             if not rc.has_node(n):
+#                 node_data = dict(ITS.nodes[n])
+#                 final_attrs = {k: node_data[k] for k in element_key if k in node_data}
+#                 rc.add_node(n, **final_attrs)
+#         # add edge
+#         edge_attrs = {
+#             bond_key: data.get(bond_key),
+#             standard_key: std,
+#             "is_mtg": is_mtg_attr,
+#         }
+#         rc.add_edge(u, v, **edge_attrs)
+
+#     # 2) H-H bonds (force inclusion, with fallback typesGH)
+#     for u, v, data in ITS.edges(data=True):
+#         elem_u = ITS.nodes[u].get("element")
+#         elem_v = ITS.nodes[v].get("element")
+#         if elem_u == "H" and elem_v == "H":
+#             for n in (u, v):
+#                 if not rc.has_node(n):
+#                     node_data = dict(ITS.nodes[n])
+#                     if "typesGH" not in node_data:
+#                         node_data["typesGH"] = (
+#                             ("H", False, 0, 0, []),
+#                             ("*", False, 0, 0, []),
+#                         )
+#                     final_attrs = {
+#                         k: node_data[k] for k in element_key if k in node_data
+#                     }
+#                     final_attrs["typesGH"] = node_data["typesGH"]
+#                     rc.add_node(n, **final_attrs)
+#             if not rc.has_edge(u, v):
+#                 rc.add_edge(
+#                     u,
+#                     v,
+#                     **{
+#                         bond_key: data.get(bond_key),
+#                         standard_key: data.get(standard_key),
+#                         "is_mtg": data.get("is_mtg", False),
+#                     },
+#                 )
+
+#     if disconnected:
+#         _add_charge_change_nodes(ITS, rc, element_key)
+#         _reconnect_rc_edges(ITS, rc, bond_key, standard_key)
+
+#     return rc
+
+# import networkx as nx
+# from typing import List, Any
 
 
 def get_rc(
@@ -14,69 +184,124 @@ def get_rc(
     bond_key: str = "order",
     standard_key: str = "standard_order",
     disconnected: bool = False,
+    keep_mtg: bool = False,
 ) -> nx.Graph:
-    """Extract the reaction-center (RC) subgraph from an ITS graph.
-
-    This function identifies:
-      1. All bonds whose standard order (difference between ITS orders) is non-zero.
-      2. All H–H bonds, ensuring they are included even if no order change is detected.
-      3. (Optional) Additional nodes with charge changes and reconnection of edges
-         if `disconnected=True`.
-
-    :param ITS: The integrated transition-state graph with composite node/edge attributes.
-    :type ITS: nx.Graph
-    :param element_key: List of node‐attribute keys to copy into the RC graph.
-    :type element_key: List[str]
-    :param bond_key: Edge attribute key representing the tuple of bond orders.
-    :type bond_key: str
-    :param standard_key: Edge attribute key for the computed standard_order.
-    :type standard_key: str
-    :param disconnected: If True, also include nodes with charge changes and
-                         reconnect any ITS edges between RC nodes.
-    :type disconnected: bool
-    :returns: A new graph containing only the reaction-center nodes and edges.
-    :rtype: nx.Graph
-
-    :example:
-    >>> ITS = nx.Graph()
-    >>> # ... populate ITS with 'order', 'standard_order', 'typesGH', etc. ...
-    >>> RC = get_rc(ITS, disconnected=True)
-    >>> isinstance(RC, nx.Graph)
-    True
+    """
+    Extract the reaction-center (RC) subgraph from an ITS graph.
     """
     rc = nx.Graph()
-    _add_bond_order_changes(ITS, rc, element_key, bond_key, standard_key)
-
-    # 1.5) H-H bonds (force inclusion, with fallback typesGH)
-    for u, v, data in ITS.edges(data=True):
-        elem_u = ITS.nodes[u].get("element")
-        elem_v = ITS.nodes[v].get("element")
-        if elem_u == "H" and elem_v == "H":
-            for n in (u, v):
-                node_data = dict(ITS.nodes[n])
-                if "typesGH" not in node_data:
-                    node_data["typesGH"] = (
-                        ("H", False, 0, 0, []),
-                        ("*", False, 0, 0, []),
-                    )
-                # Ensure typesGH is available even if not in original element_key
-                final_attrs = {k: node_data[k] for k in element_key if k in node_data}
-                final_attrs["typesGH"] = node_data["typesGH"]
-                rc.add_node(n, **final_attrs)
-
-            rc.add_edge(
-                u,
-                v,
-                **{
-                    bond_key: data.get(bond_key),
-                    standard_key: data.get(standard_key),
-                },
-            )
+    _add_changed_bonds(ITS, rc, element_key, bond_key, standard_key, keep_mtg)
+    _add_hh_bonds(ITS, rc, element_key, bond_key, standard_key)
     if disconnected:
         _add_charge_change_nodes(ITS, rc, element_key)
         _reconnect_rc_edges(ITS, rc, bond_key, standard_key)
-
     return rc
+
+
+def _add_changed_bonds(
+    ITS: nx.Graph,
+    rc: nx.Graph,
+    element_key: List[str],
+    bond_key: str,
+    standard_key: str,
+    keep_mtg: bool,
+) -> None:
+    """
+    Add bonds with non-zero standard order or mechanistic transitions.
+    """
+    for u, v, data in ITS.edges(data=True):
+        std = data.get(standard_key)
+        is_mtg_attr = data.get("is_mtg", False)
+        if not _should_include_edge(std, is_mtg_attr, keep_mtg):
+            continue
+        _ensure_node(rc, ITS, u, element_key)
+        _ensure_node(rc, ITS, v, element_key)
+        rc.add_edge(
+            u,
+            v,
+            **{bond_key: data.get(bond_key), standard_key: std, "is_mtg": is_mtg_attr},
+        )
+
+
+def _add_hh_bonds(
+    ITS: nx.Graph,
+    rc: nx.Graph,
+    element_key: List[str],
+    bond_key: str,
+    standard_key: str,
+) -> None:
+    """
+    Force inclusion of H-H bonds, with fallback for typesGH.
+    """
+    for u, v, data in ITS.edges(data=True):
+        if _is_hh_pair(ITS, u, v):
+            for n in (u, v):
+                _ensure_node_hh(rc, ITS, n, element_key)
+            if not rc.has_edge(u, v):
+                rc.add_edge(
+                    u,
+                    v,
+                    **{
+                        bond_key: data.get(bond_key),
+                        standard_key: data.get(standard_key),
+                        "is_mtg": data.get("is_mtg", False),
+                    },
+                )
+
+
+def _should_include_edge(
+    std: Any,
+    is_mtg_attr: bool,
+    keep_mtg: bool,
+) -> bool:
+    """
+    Determine if an edge should be included based on standard order and mechanistic flag.
+    """
+    if isinstance(std, (int, float)) and std != 0:
+        return True
+    if keep_mtg and is_mtg_attr:
+        return True
+    return False
+
+
+def _is_hh_pair(ITS: nx.Graph, u: Any, v: Any) -> bool:
+    """
+    Check if both nodes of an edge are hydrogen.
+    """
+    return ITS.nodes[u].get("element") == "H" and ITS.nodes[v].get("element") == "H"
+
+
+def _ensure_node(
+    rc: nx.Graph,
+    ITS: nx.Graph,
+    node: Any,
+    element_key: List[str],
+) -> None:
+    """
+    Add a node to RC with selected attributes if not already present.
+    """
+    if not rc.has_node(node):
+        node_data = ITS.nodes[node]
+        final_attrs = {k: node_data[k] for k in element_key if k in node_data}
+        rc.add_node(node, **final_attrs)
+
+
+def _ensure_node_hh(
+    rc: nx.Graph,
+    ITS: nx.Graph,
+    node: Any,
+    element_key: List[str],
+) -> None:
+    """
+    Add H node to RC, ensuring typesGH fallback if missing.
+    """
+    if not rc.has_node(node):
+        node_data = dict(ITS.nodes[node])
+        if "typesGH" not in node_data:
+            node_data["typesGH"] = (("H", False, 0, 0, []), ("*", False, 0, 0, []))
+        final_attrs = {k: node_data[k] for k in element_key if k in node_data}
+        final_attrs["typesGH"] = node_data["typesGH"]
+        rc.add_node(node, **final_attrs)
 
 
 def _carry_node_attrs(src: nx.Graph, dst: nx.Graph, n: int, keys: List[str]) -> None:
@@ -137,172 +362,6 @@ def _add_bond_order_changes(
         rc.add_edge(
             u, v, **{bond_key: data[bond_key], standard_key: data.get(standard_key)}
         )
-
-
-# def get_rc(
-#     ITS: nx.Graph,
-#     element_key: List[str] = ["element", "charge", "typesGH", "atom_map"],
-#     bond_key: str = "order",
-#     standard_key: str = "standard_order",
-#     disconnected: bool = False,
-# ) -> nx.Graph:
-#     """
-#     Extract the reaction center (RC) from ITS graph.
-
-#     Enhancements:
-#     - Adds nodes and edges where bond order changes (core logic).
-#     - If disconnected=True:
-#         - Adds nodes with charge change based on typesGH.
-#         - Reconnects any ITS edge between two RC nodes.
-#     - NEW: Always includes H-H bonds in RC. Adds default typesGH if missing.
-#     """
-#     rc = nx.Graph()
-
-#     # 1) edges with bond-order change
-#     for u, v, data in ITS.edges(data=True):
-#         old, new = data.get(bond_key, [None, None])
-#         if old != new:
-#             for n in (u, v):
-#                 if not rc.has_node(n):
-#                     rc.add_node(
-#                         n,
-#                         **{
-#                             k: ITS.nodes[n][k] for k in element_key if k in ITS.nodes[n]
-#                         },
-#                     )
-#             rc.add_edge(
-#                 u,
-#                 v,
-#                 **{bond_key: data.get(bond_key), standard_key: data.get(standard_key)},
-#             )
-
-#     # 1.5) H-H bonds (force inclusion, with fallback typesGH)
-#     for u, v, data in ITS.edges(data=True):
-#         elem_u = ITS.nodes[u].get("element")
-#         elem_v = ITS.nodes[v].get("element")
-#         if elem_u == "H" and elem_v == "H":
-#             for n in (u, v):
-#                 node_data = dict(ITS.nodes[n])
-#                 if "typesGH" not in node_data:
-#                     node_data["typesGH"] = (
-#                         ("H", False, 0, 0, []),
-#                         ("*", False, 0, 0, []),
-#                     )
-#                 # Ensure typesGH is available even if not in original element_key
-#                 final_attrs = {k: node_data[k] for k in element_key if k in node_data}
-#                 final_attrs["typesGH"] = node_data["typesGH"]
-#                 rc.add_node(n, **final_attrs)
-
-#             rc.add_edge(
-#                 u,
-#                 v,
-#                 **{
-#                     bond_key: data.get(bond_key),
-#                     standard_key: data.get(standard_key),
-#                 },
-#             )
-
-#     if disconnected:
-#         # 2) nodes with typesGH-based charge change
-#         for n, data in ITS.nodes(data=True):
-#             gh = data.get("typesGH")
-#             if (
-#                 isinstance(gh, (list, tuple))
-#                 and len(gh) >= 2
-#                 and len(gh[0]) > 3
-#                 and len(gh[1]) > 3
-#                 and gh[0][3] != gh[1][3]
-#             ):
-#                 if not rc.has_node(n):
-#                     rc.add_node(n, **{k: data[k] for k in element_key if k in data})
-
-#         # 3) reconnect RC nodes
-#         for u, v, data in ITS.edges(data=True):
-#             if rc.has_node(u) and rc.has_node(v) and not rc.has_edge(u, v):
-#                 rc.add_edge(
-#                     u,
-#                     v,
-#                     **{
-#                         bond_key: data.get(bond_key),
-#                         standard_key: data.get(standard_key),
-#                     },
-#                 )
-
-#     return rc
-
-
-# def get_rc(
-#     ITS: nx.Graph,
-#     element_key: List[str] = ["element", "charge", "typesGH", "atom_map"],
-#     bond_key: str = "order",
-#     standard_key: str = "standard_order",
-#     disconnected: bool = False,
-# ) -> nx.Graph:
-#     """
-#     Extract the reaction center (RC) from ITS by:
-
-#     1. Always adding any edge whose bond order changes
-#        (bond_key[0] != bond_key[1]), plus its two end-nodes.
-#     2. [if disconnected=True] Adding any node whose 'typesGH' record shows a charge change
-#        (typesGH[0][3] != typesGH[1][3]), even if isolated.
-#     3. [if disconnected=True] Re-adding any ITS edge between two nodes already in RC
-#        (to preserve connectivity), carrying over bond_key & standard_key.
-
-#     Parameters:
-#     - ITS (nx.Graph): input ITS graph.
-#     - element_key (List[str]): node attrs to carry over.
-#     - bond_key (str): edge attr key for bond order.
-#     - standard_key (str): edge attr key for standard order.
-#     - disconnected (bool): if True, include “charge-change” nodes (step 2) and
-#       reconnect any edges among RC nodes (step 3). If False, only performs step 1.
-#     """
-#     rc = nx.Graph()
-
-#     # 1) edges with bond-order change
-#     for u, v, data in ITS.edges(data=True):
-#         old, new = data.get(bond_key, [None, None])
-#         if old != new:
-#             for n in (u, v):
-#                 if not rc.has_node(n):
-#                     rc.add_node(
-#                         n,
-#                         **{
-#                             k: ITS.nodes[n][k] for k in element_key if k in ITS.nodes[n]
-#                         },
-#                     )
-#             rc.add_edge(
-#                 u,
-#                 v,
-#                 **{bond_key: data.get(bond_key), standard_key: data.get(standard_key)},
-#             )
-
-#     if disconnected:
-#         # 2) nodes with a typesGH-based charge change
-#         for n, data in ITS.nodes(data=True):
-#             gh = data.get("typesGH")
-#             if (
-#                 isinstance(gh, (list, tuple))
-#                 and len(gh) >= 2
-#                 and len(gh[0]) > 3
-#                 and len(gh[1]) > 3
-#                 and gh[0][3] != gh[1][3]
-#             ):
-#                 if not rc.has_node(n):
-#                     rc.add_node(n, **{k: data[k] for k in element_key if k in data})
-
-#         # 3) re-add any ITS edge between RC nodes to preserve connectivity
-#         for u, v, data in ITS.edges(data=True):
-#             if rc.has_node(u) and rc.has_node(v) and not rc.has_edge(u, v):
-#                 rc.add_edge(
-#                     u,
-#                     v,
-#                     **{
-#                         bond_key: data.get(bond_key),
-#                         standard_key: data.get(standard_key),
-#                     },
-#                 )
-
-#     return rc
 
 
 def its_decompose(its_graph: nx.Graph, nodes_share="typesGH", edges_share="order"):
