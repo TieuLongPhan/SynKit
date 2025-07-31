@@ -18,7 +18,9 @@ benchmark_reactor.py:W292,C901,\
 syn_reactor.py:C901,\
 sing.py:C901,\
 turbo_iso.py:C901,\
-rule_vis.py:C901" \
+rule_vis.py:C901,
+gml_to_graph.py:C901,
+wildcard.py:C901" \
   --exclude=venv,\
 core_engine.py,\
 rule_apply.py,\

@@ -2,7 +2,7 @@
 =================================================
 
 A convenience wrapper around ``networkx.algorithms.isomorphism.GraphMatcher``
-that finds *all* common‑subgraph (or maximum‑common‑subgraph) node mappings
+that finds *all* common-subgraph (or maximum-common-subgraph) node mappings
 between two molecular graphs.
 
 Highlights
@@ -17,8 +17,9 @@ Public API
 ``MCSMatcher(node_label_names, node_label_defaults, edge_attribute='order', allow_shift=True)``
     Construct a matcher instance.
 
-``matcher.find_common_subgraph(G1, G2, mcs=False)``
-    Run the search (stores but does *not* return mappings).
+``matcher.find_common_subgraph(G1, G2, mcs=False, mcs_mol=False)``
+    Run the search (stores but does *not* return mappings). If ``mcs_mol=True``,
+    find mappings by matching entire connected components (largest molecules).
 
 ``matcher.get_mappings()``
     Retrieve the stored mapping list.
@@ -64,9 +65,6 @@ class MCSMatcher:
         Placeholder for future asymmetric rules (ignored for scalars).
     """
 
-    # ---------------------------------------------------------------------
-    # Construction
-    # ---------------------------------------------------------------------
     def __init__(
         self,
         node_label_names: Optional[List[str]] | None = None,
@@ -93,9 +91,6 @@ class MCSMatcher:
         self._mappings: List[Dict[int, int]] = []
         self._last_size: int = 0
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
     def _edge_match(
         self, host_attrs: Dict[str, Any], pat_attrs: Dict[str, Any]
     ) -> bool:
@@ -109,26 +104,73 @@ class MCSMatcher:
 
     @staticmethod
     def _invert_mapping(gm_mapping: Dict[int, int]) -> Dict[int, int]:
-        """Convert *host → pattern* dict to *pattern → host*."""
+        """Convert *host→pattern* dict to *pattern→host*."""
         return {pat: host for host, pat in gm_mapping.items()}
 
-    # ------------------------------------------------------------------
-    # Public runners
-    # ------------------------------------------------------------------
+    def _find_mcs_mol(self, G1: nx.Graph, G2: nx.Graph) -> Dict[int, int]:
+        """
+        Match connected components of G1 to G2 of the same size, combining
+        each component's isomorphic mapping into one dict.
+        """
+        # sort components by size descending
+        comps1 = sorted(nx.connected_components(G1), key=len, reverse=True)
+        comps2 = sorted(nx.connected_components(G2), key=len, reverse=True)
+
+        used2: Set[frozenset[int]] = set()
+        combined: Dict[int, int] = {}
+
+        for comp1 in comps1:
+            size = len(comp1)
+            sub1 = G1.subgraph(comp1)
+
+            for comp2 in comps2:
+                if len(comp2) != size:
+                    continue
+                key2 = frozenset(comp2)
+                if key2 in used2:
+                    continue
+
+                sub2 = G2.subgraph(comp2)
+                gm = GraphMatcher(
+                    sub1,
+                    sub2,
+                    node_match=self.node_match,
+                    edge_match=self._edge_match,
+                )
+                if gm.is_isomorphic():
+                    combined.update(gm.mapping)
+                    used2.add(key2)
+                    break
+
+        return combined
+
     def find_common_subgraph(
-        self, G1: nx.Graph, G2: nx.Graph, *, mcs: bool = False
+        self,
+        G1: nx.Graph,
+        G2: nx.Graph,
+        *,
+        mcs: bool = False,
+        mcs_mol: bool = False,
     ) -> None:
         """Search for subgraph isomorphisms and cache the mappings.
 
         Parameters
         ----------
-        G1 : nx.Graph  – *pattern* graph (searched as a subgraph)
-        G2 : nx.Graph  – *host* graph
+        G1 : nx.Graph  - *pattern* graph (searched as a subgraph)
+        G2 : nx.Graph  - *host* graph
         mcs : bool, optional
             If *True*, keep only mappings of maximum size.
+        mcs_mol : bool, optional
+            If *True*, match entire connected components (largest molecules).
         """
         self._mappings.clear()
         self._last_size = 0
+
+        if mcs_mol:
+            combined = self._find_mcs_mol(G1, G2)
+            self._mappings = [combined]
+            self._last_size = len(combined)
+            return
 
         max_k = min(len(G1), len(G2))
         sizes = range(max_k, 0, -1)
@@ -167,21 +209,22 @@ class MCSMatcher:
         # final ordering – largest first then lexicographic
         self._mappings.sort(key=lambda d: (-len(d), tuple(sorted(d.items()))))
 
-    # ------------------------------------------------------------------
-    # Convenience wrapper for ITS reaction‑centres
-    # ------------------------------------------------------------------
-    def find_rc_mapping(self, rc1, rc2, *, mcs: bool = False) -> None:  # type: ignore[override]
+    def find_rc_mapping(
+        self,
+        rc1,
+        rc2,
+        *,
+        mcs: bool = False,
+        mcs_mol: bool = False,
+    ) -> None:  # type: ignore[override]
         if its_decompose is None:
             raise ImportError(
                 "synkit is not available; cannot decompose reaction centres."
             )
         _, r1 = its_decompose(rc1)
         l2, _ = its_decompose(rc2)
-        self.find_common_subgraph(r1, l2, mcs=mcs)
+        self.find_common_subgraph(r1, l2, mcs=mcs, mcs_mol=mcs_mol)
 
-    # ------------------------------------------------------------------
-    # Properties and dunders
-    # ------------------------------------------------------------------
     def get_mappings(self) -> List[Dict[int, int]]:
         """Return the cached mapping list (empty if `find_*` not yet
         called)."""
@@ -192,7 +235,6 @@ class MCSMatcher:
         """Number of nodes in the most recent mapping set (0 if none)."""
         return self._last_size
 
-    # Pretty representations
     def __repr__(self) -> str:  # noqa: D401
         return (
             f"MCSMatcher(mappings={len(self._mappings)}, last_size={self._last_size})"
