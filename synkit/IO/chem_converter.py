@@ -433,6 +433,7 @@ def its_to_rsmi(
     its: nx.Graph,
     sanitize: bool = True,
     explicit_hydrogen: bool = False,
+    clean_wildcards: bool = False,
 ) -> str:
     """Convert an ITS graph into a reaction SMILES (rSMI) string.
 
@@ -450,7 +451,12 @@ def its_to_rsmi(
         fails.
     """
     r, p = its_decompose(its)
-    return graph_to_rsmi(r, p, its, sanitize, explicit_hydrogen)
+    rsmi = graph_to_rsmi(r, p, its, sanitize, explicit_hydrogen)
+    if clean_wildcards:
+        from synkit.Chem.Reaction.radical_wildcard import clean_wc
+
+        rsmi = clean_wc(rsmi)
+    return rsmi
 
 
 def rsmi_to_rsmarts(rsmi: str) -> str:
