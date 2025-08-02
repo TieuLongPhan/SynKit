@@ -4,6 +4,7 @@ from .utils import (
     add_wildcard_subgraph_for_unmapped,
     print_graph_attributes,
     clean_graph_keep_largest_component,
+    has_wildcard_node,
 )
 
 # __all__ = [

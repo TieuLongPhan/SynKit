@@ -149,11 +149,19 @@ class ITSConstruction:
         # Populate node-level per-attribute tuples and typesGH
         for n in ITS.nodes():
             g_tuple = tuple(
-                (G.nodes[n].get(attr, node_defaults.get(attr)) if n in G else node_defaults.get(attr))
+                (
+                    G.nodes[n].get(attr, node_defaults.get(attr))
+                    if n in G
+                    else node_defaults.get(attr)
+                )
                 for attr in node_attrs
             )
             h_tuple = tuple(
-                (H.nodes[n].get(attr, node_defaults.get(attr)) if n in H else node_defaults.get(attr))
+                (
+                    H.nodes[n].get(attr, node_defaults.get(attr))
+                    if n in H
+                    else node_defaults.get(attr)
+                )
                 for attr in node_attrs
             )
             ITS.nodes[n]["typesGH"] = (g_tuple, h_tuple)
