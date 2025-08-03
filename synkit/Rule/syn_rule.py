@@ -27,7 +27,7 @@ import networkx as nx
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
-
+from synkit.Graph.Hyrogen._misc import standardize_hydrogen
 from synkit.IO.chem_converter import rsmi_to_its, gml_to_its
 
 __all__ = ["SynRule"]
@@ -124,6 +124,8 @@ class SynRule:
 
         # Fragment decomposition
         rc_graph = rc.copy()
+        if self._implicit_h:
+            standardize_hydrogen(rc_graph, in_place=True)
         left_graph, right_graph = its_decompose(rc_graph)
 
         # Optional H-stripping
