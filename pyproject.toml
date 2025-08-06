@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "0.0.14"
+version = "0.0.15"
 license = { text = "MIT" }
 license-files = ["LICENSE"]
 authors = [

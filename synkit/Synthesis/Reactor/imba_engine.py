@@ -45,6 +45,8 @@ class ImbaEngine:
         canonicaliser: Optional[GraphCanonicaliser] = None,
         strategy: Union[Strategy, str] = Strategy.ALL,
         partial: bool = False,
+        embed_threshold: float = None,
+        embed_pre_filter: bool = False,
     ) -> None:
         # Assign parameters
         self.substrate = substrate
@@ -56,6 +58,9 @@ class ImbaEngine:
         self.canonicaliser = canonicaliser
         self.strategy = strategy
         self.partial = partial
+        self.embed_threshold = embed_threshold
+        self.embed_pre_filter = embed_pre_filter
+        # Internal state
         self._results: List[str] = []
         # Auto-run fit on init
         self.fit()
@@ -103,6 +108,9 @@ class ImbaEngine:
             partial=self.partial,
             implicit_temp=True,
             explicit_h=False,
+            canonicaliser=self.canonicaliser,
+            embed_threshold=self.embed_threshold,
+            embed_pre_filter=self.embed_pre_filter,
         )
         raw_smarts: List[str] = reactor.smarts_list
 

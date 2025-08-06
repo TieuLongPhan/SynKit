@@ -22,7 +22,7 @@ The class :py:class:`~synkit.Graph.canon_graph.GraphCanonicaliser` canonicalises
 
    from synkit.IO import rsmi_to_its
    from synkit.Graph.canon_graph import GraphCanonicaliser
-   from synkit.Graph.matcher.graph_matcher import GraphMatcherEngine
+   from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
 
    canon = GraphCanonicaliser(backend='wl', wl_iterations=3)
    rsmi = (
