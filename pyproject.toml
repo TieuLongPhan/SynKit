@@ -4,30 +4,30 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "0.0.15"
+version = "0.0.16"
 license = { text = "MIT" }
 license-files = ["LICENSE"]
 authors = [
-    {name="Tieu Long Phan", email="tieu@bioinf.uni-leipzig.de"}
+  { name = "Tieu Long Phan", email = "tieu@bioinf.uni-leipzig.de" }
 ]
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
-long-description = {file = "CHANGELOG.md"}
+long-description = { file = "CHANGELOG.md" }
 long-description-content-type = "text/markdown"
 requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
 ]
 dependencies = [
-    "scikit-learn>=1.4.0",
-    "pandas>=1.5.3",
-    "rdkit>=2025.3.1",
-    "networkx>=3.3",
-    "seaborn>=0.13.2",
-    "requests>=2.32.3",
-    "regex>=2024.11.6",
+  "scikit-learn>=1.4.0",
+  "pandas>=1.5.3",
+  "rdkit>=2025.3.1",
+  "networkx>=3.3",
+  "seaborn>=0.13.2",
+  "requests>=2.32.3",
+  "regex>=2024.11.6",
 ]
 
 [project.optional-dependencies]
@@ -40,6 +40,27 @@ docs = [
 
 [project.urls]
 homepage = "https://github.com/TieuLongPhan/SynKit"
-source = "https://github.com/TieuLongPhan/SynKit"
-issues = "https://github.com/TieuLongPhan/SynKit/issues"
+source   = "https://github.com/TieuLongPhan/SynKit"
+issues   = "https://github.com/TieuLongPhan/SynKit/issues"
 documentation = "https://tieulongphan.github.io/SynKit/"
+
+[tool.hatch.build]
+# include non-Python data files in all build targets
+include = [
+  { path = "synkit/Data/*.json" },
+  { path = "synkit/Data/*.json.gz" }
+]
+
+[tool.hatch.build.targets.wheel]
+# wheel also gets the same data files
+include = [
+  "synkit/Data/*.json",
+  "synkit/Data/*.json.gz"
+]
+
+[tool.hatch.build.targets.sdist]
+# source sdist likewise
+include = [
+  "synkit/Data/*.json",
+  "synkit/Data/*.json.gz"
+]
