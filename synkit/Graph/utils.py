@@ -50,6 +50,31 @@ def remove_wildcard_nodes(G: nx.Graph, inplace: bool = True) -> nx.Graph:
     return G
 
 
+def has_wildcard_node(
+    G: nx.Graph,
+    element_attr: str = "element",
+    wildcard: Any = "*",
+) -> bool:
+    """
+    Fast check: return True if any node has its `element_attr` equal to the wildcard,
+    using the public API with minimal overhead.
+
+    :param G: Graph to inspect.
+    :type G: nx.Graph
+    :param element_attr: Node attribute key to check.
+    :type element_attr: str
+    :param wildcard: Value considered wildcard (e.g., "*").
+    :type wildcard: Any
+    :returns: True if at least one node's element_attr == wildcard.
+    :rtype: bool
+    """
+    # iterate over just the attribute value, not the full dict
+    for _, elem in G.nodes(data=element_attr):
+        if elem == wildcard:
+            return True
+    return False
+
+
 def add_wildcard_subgraph_for_unmapped(
     G: nx.Graph,
     L: nx.Graph,

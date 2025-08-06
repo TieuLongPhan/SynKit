@@ -404,7 +404,7 @@ def its_decompose(its_graph: nx.Graph, nodes_share="typesGH", edges_share="order
                 aromatic=node_attr_g[1],
                 hcount=node_attr_g[2],
                 charge=node_attr_g[3],
-                neighbors=node_attr_g[4],
+                # neighbors=node_attr_g[4],
                 atom_map=node,
             )
             if len(node_attr_h) > 0:
@@ -415,7 +415,7 @@ def its_decompose(its_graph: nx.Graph, nodes_share="typesGH", edges_share="order
                     aromatic=node_attr_h[1],
                     hcount=node_attr_h[2],
                     charge=node_attr_h[3],
-                    neighbors=node_attr_h[4],
+                    # neighbors=node_attr_h[4],
                     atom_map=node,
                 )
 

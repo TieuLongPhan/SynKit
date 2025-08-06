@@ -24,7 +24,11 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
-from synkit.Graph import remove_wildcard_nodes, add_wildcard_subgraph_for_unmapped
+from synkit.Graph import (
+    remove_wildcard_nodes,
+    add_wildcard_subgraph_for_unmapped,
+    has_wildcard_node,
+)
 from synkit.Synthesis.Reactor.strategy import Strategy
 
 
@@ -99,6 +103,8 @@ class SynReactor:
     implicit_temp: bool = False
     strategy: Strategy | str = Strategy.ALL
     partial: bool = False
+    embed_threshold: Optional[int] = None
+    embed_pre_filter: bool = False
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -209,7 +215,7 @@ class SynReactor:
                 self._flag_pattern_has_explicit_H = True
                 # self.strategy = Strategy.ALL # force to find all in implicit case
                 pattern_graph = h_to_implicit(pattern_graph)
-            if self.implicit_temp:
+            if has_wildcard_node(pattern_graph):
                 pattern_graph = remove_wildcard_nodes(pattern_graph)
             if self.partial:
                 matcher = PartialMatcher(
@@ -227,6 +233,8 @@ class SynReactor:
                     node_attrs=["element", "charge"],
                     edge_attrs=["order"],
                     strategy=Strategy.from_string(self.strategy),
+                    threshold=self.embed_threshold,
+                    pre_filter=self.embed_pre_filter,
                 )
             log.info("%d mapping(s) discovered", len(self._mappings))
         return self._mappings
@@ -251,6 +259,8 @@ class SynReactor:
                     self._flag_pattern_has_explicit_H,
                     self.rule.left.raw,
                     Strategy.from_string(self.strategy),
+                    embed_threshold=self.embed_threshold,
+                    embed_pre_filter=False,
                 )
                 self._its.extend(its_batch)
 
@@ -412,6 +422,8 @@ class SynReactor:
         mapping: MappingDict,
         pattern_explicit: nx.Graph | None = None,
         strategy: Strategy = Strategy.ALL,
+        embed_threshold: float = None,
+        embed_pre_filter: bool = False,
     ):
         expand_nodes = [v for _, v in mapping.items()]
         host_explicit = h_to_explicit(host, expand_nodes)
@@ -421,6 +433,8 @@ class SynReactor:
             node_attrs=["element", "charge"],
             edge_attrs=["order"],
             strategy=strategy,
+            threshold=embed_threshold,
+            pre_filter=embed_pre_filter,
         )
         return mappings, host_explicit
 
@@ -432,6 +446,8 @@ class SynReactor:
         pattern_has_explicit_H: bool = False,
         pattern_explicit: nx.Graph | None = None,
         strategy: Strategy = Strategy.ALL,
+        embed_threshold: float = None,
+        embed_pre_filter: bool = False,
     ) -> List[nx.Graph]:
         list_its: List[nx.Graph] = []
         host_g = deepcopy(host)
@@ -451,7 +467,12 @@ class SynReactor:
 
         if pattern_has_explicit_H:
             mappings, host_g = SynReactor._get_explicit_map(
-                host_g, mapping, pattern_explicit, strategy
+                host_g,
+                mapping,
+                pattern_explicit,
+                strategy,
+                embed_threshold,
+                embed_pre_filter,
             )
         else:
             mappings = [mapping]

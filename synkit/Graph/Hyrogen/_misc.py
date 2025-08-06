@@ -1,7 +1,7 @@
 from copy import copy
 import networkx as nx
 from operator import eq
-from typing import List, Set, Any, Tuple
+from typing import List, Set, Any, Tuple, Iterable, Optional
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
 from synkit.Graph.Feature.graph_descriptors import GraphDescriptor
@@ -233,95 +233,56 @@ def implicit_hydrogen(
     return new_graph
 
 
-# def explicit_hydrogen(graph: nx.Graph) -> nx.Graph:
-#     """
-#     Adds explicit hydrogens to the molecular graph based on hydrogen counts ('hcount') for non-hydrogen
-#     atoms and increases the 'atom_map' attribute for each hydrogen added. This function assumes that
-#     'hcount' is present for each atom (representing how many hydrogens should be added) and that the
-#     'atom_map' for existing atoms is valid.
+def _normalize_sequence_at_index(
+    seqs: Iterable[Any], index: int = 2, target_min: int = 0
+) -> Optional[Tuple[Any, ...]]:
+    """
+    If possible, shift the integer at `index` in each sequence so that the minimum becomes
+    `target_min`. Returns a new tuple of sequences if any change is needed, else None.
+    """
+    # collect valid ints at the index
+    valid_vals = [
+        t[index]
+        for t in seqs
+        if isinstance(t, (list, tuple)) and len(t) > index and isinstance(t[index], int)
+    ]
+    if not valid_vals:
+        return None
 
-#     Parameters:
-#     - graph (nx.Graph): A NetworkX graph representing the molecule, where each node has an 'element'
-#       attribute for the element type (e.g., 'C', 'H'), 'hcount' for the number of hydrogens to add,
-#       and 'atom_map' for atom mapping.
+    offset = min(valid_vals) - target_min
+    if offset == 0:
+        return None  # already normalized
 
-#     Returns:
-#     - nx.Graph: A new NetworkX graph with explicit hydrogen atoms added and 'atom_map' updated.
-#     """
-#     warnings.warn(
-#         "This function can only work with single graph and cannot guarantee the mapping between G and H"
-#     )
-#     # Create a deep copy of the graph to avoid in-place modifications
-#     new_graph = copy(graph)
+    def normalize(t):
+        if (
+            isinstance(t, (list, tuple))
+            and len(t) > index
+            and isinstance(t[index], int)
+        ):
+            t_list = list(t)
+            t_list[index] = t_list[index] - offset
+            return tuple(t_list)
+        return t  # leave untouched
 
-#     # Find the maximum atom_map currently in the graph
-#     max_atom_map = max(
-#         [
-#             data["atom_map"]
-#             for node, data in new_graph.nodes(data=True)
-#             if "atom_map" in data
-#         ],
-#         default=0,
-#     )
-
-#     # Prepare a list of nodes that will need explicit hydrogens
-#     hydrogen_id = max_atom_map + 1  # Start adding hydrogens from max atom_map + 1
-#     hydrogen_additions = []  # To keep track of hydrogens to add
-
-#     # First, collect all nodes that need hydrogens
-#     for node, data in new_graph.nodes(data=True):
-#         if data["element"] != "H":  # Skip hydrogens
-#             hcount = data.get("hcount", 0)  # Number of hydrogens to add
-#             for _ in range(hcount):
-#                 hydrogen_additions.append((node, hydrogen_id))
-#                 hydrogen_id += 1  # Increment for next hydrogen
-
-#     # Now, add the hydrogens and update the graph
-#     for parent, hydrogen_atom_map in hydrogen_additions:
-#         hydrogen_node = f"H_{hydrogen_atom_map}"
-#         new_graph.add_node(hydrogen_node, element="H", atom_map=hydrogen_atom_map)
-#         new_graph.add_edge(
-#             parent, hydrogen_node
-#         )  # Connect the hydrogen to its parent atom
-
-#     return new_graph
+    return tuple(normalize(t) for t in seqs)
 
 
-# def expand_hydrogens(graph: nx.Graph) -> nx.Graph:
-#     """
-#     For each node in the graph that has an 'hcount' attribute greater than zero,
-#     adds the specified number of hydrogen nodes and connects them with edges that
-#     have specific attributes.
+def standardize_hydrogen(G: nx.Graph, in_place: bool = False) -> nx.Graph:
+    """
+    For each node, shift the third element (index 2) of each tuple in 'typesGH' so that the
+    minimum among those values becomes zero. Nonconforming entries are preserved.
+    """
+    target = G if in_place else G.copy()
 
-#     Parameters
-#     - graph (nx.Graph): A graph representing a molecule with nodes that can
-#     include 'element', 'hcount', 'charge', and 'atom_map' attributes.
+    for node, data in target.nodes(data=True):
+        typesGH = data.get("typesGH")
+        if not typesGH:
+            continue
+        normalized = _normalize_sequence_at_index(typesGH, index=2, target_min=0)
+        if normalized is not None:
+            target.nodes[node]["typesGH"] = normalized
 
-#     Returns:
-#     - nx.Graph: A new graph with hydrogen atoms expanded.
-#     """
-#     new_graph = graph.copy()  # Create a copy to modify and return
-#     atom_map = (
-#         max(data["atom_map"] for _, data in graph.nodes(data=True))
-#         if graph.nodes
-#         else 0
-#     )
-
-#     # Iterate through each node to process potential hydrogens
-#     for node, data in graph.nodes(data=True):
-#         hcount = data.get("hcount", 0)
-#         if hcount > 0:
-#             for _ in range(hcount):
-#                 atom_map += 1
-#                 hydrogen_node = {
-#                     "element": "H",
-#                     "charge": 0,
-#                     "atom_map": atom_map,
-#                 }
-#                 new_graph.add_node(atom_map, **hydrogen_node)
-#                 new_graph.add_edge(node, atom_map, order=(1.0, 1.0), standard_order=0.0)
-
-#     return new_graph
+    return target
 
 
 def check_equivariant_graph(

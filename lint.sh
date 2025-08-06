@@ -20,7 +20,8 @@ sing.py:C901,\
 turbo_iso.py:C901,\
 rule_vis.py:C901,
 gml_to_graph.py:C901,
-wildcard.py:C901" \
+wildcard.py:C901,
+its_destruction.py:C901" \
   --exclude=venv,\
 core_engine.py,\
 rule_apply.py,\
@@ -28,5 +29,6 @@ reactor_engine.py,\
 groupoid.py,\
 syn_rule.py,\
 __init__.py,\
+dev/*,\
 Data \
   --statistics

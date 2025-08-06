@@ -5,6 +5,45 @@ import re
 from typing import List, Optional, Tuple, Union
 
 
+def clean_radical_rsmi(rsmi: str) -> str:
+    """
+    Load each side of a reaction SMILES (rSMI) into RDKit, split into disconnected fragments,
+    remove any fragment that contains an atom with nonzero radical electrons,
+    then reassemble back into a cleaned reaction SMILES.
+
+    :param rsmi: Reaction SMILES string, e.g.
+                 'A>>B.C'
+    :type rsmi: str
+    :returns: Cleaned reaction SMILES with radical-containing fragments removed.
+    :rtype: str
+
+    Example:
+    >>> clean_radical_rsmi(
+    ...   'COC(=O)C(CCCCNC(=O)OCc1ccccc1)NC(=O)Nc1cc(OC)cc(C(C)(C)C)c1O'
+    ...   '>>COC(=O)C(CCCCNC(=O)OCc1ccccc1)NC(N)=O.COc1c[c]c(O)c(C(C)(C)C)c1'
+    ... )
+    'COC(=O)C(CCCCNC(=O)OCc1ccccc1)NC(=O)Nc1cc(OC)cc(C(C)(C)C)c1O'
+    '>>COC(=O)C(CCCCNC(=O)OCc1ccccc1)NC(N)=O'
+    """
+    if ">>" not in rsmi:
+        return rsmi
+
+    def _clean_side(side: str) -> str:
+        mol = Chem.MolFromSmiles(side)
+        if mol is None:
+            return ""
+        frags = Chem.GetMolFrags(mol, asMols=True)
+        kept = []
+        for frag in frags:
+            if any(atom.GetNumRadicalElectrons() > 0 for atom in frag.GetAtoms()):
+                continue
+            kept.append(Chem.MolToSmiles(frag, isomericSmiles=True))
+        return ".".join(kept)
+
+    reac, prod = rsmi.split(">>", 1)
+    return f"{_clean_side(reac)}>>{_clean_side(prod)}"
+
+
 def enumerate_tautomers(reaction_smiles: str) -> Optional[List[str]]:
     """Enumerate possible tautomers of reactants while canonicalizing products.
 

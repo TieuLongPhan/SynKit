@@ -1,6 +1,5 @@
 import networkx as nx
 from typing import Tuple, List
-from synkit.Graph.Hyrogen._misc import h_to_explicit
 
 
 class NXToGML:
@@ -193,6 +192,8 @@ class NXToGML:
         """
         L, R, K = graph_rules
         if explicit_hydrogen:
+            from synkit.Graph.Hyrogen._misc import h_to_explicit
+
             K = h_to_explicit(K, nodes=None)
         if reindex:
             index_mapping = {
