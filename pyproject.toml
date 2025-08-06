@@ -4,17 +4,17 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "0.0.16"
-license = { text = "MIT" }
-license-files = ["LICENSE"]
-authors = [
-  { name = "Tieu Long Phan", email = "tieu@bioinf.uni-leipzig.de" }
-]
+version = "0.0.17"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 long-description = { file = "CHANGELOG.md" }
 long-description-content-type = "text/markdown"
 requires-python = ">=3.11"
+license = { text = "MIT" }
+license-files = ["LICENSE"]
+authors = [
+  { name = "Tieu Long Phan", email = "tieu@bioinf.uni-leipzig.de" }
+]
 classifiers = [
   "Programming Language :: Python :: 3",
   "License :: OSI Approved :: MIT License",
@@ -39,28 +39,18 @@ docs = [
 ]
 
 [project.urls]
-homepage = "https://github.com/TieuLongPhan/SynKit"
-source   = "https://github.com/TieuLongPhan/SynKit"
-issues   = "https://github.com/TieuLongPhan/SynKit/issues"
+homepage      = "https://github.com/TieuLongPhan/SynKit"
+source        = "https://github.com/TieuLongPhan/SynKit"
+issues        = "https://github.com/TieuLongPhan/SynKit/issues"
 documentation = "https://tieulongphan.github.io/SynKit/"
 
 [tool.hatch.build]
-# include non-Python data files in all build targets
-include = [
-  { path = "synkit/Data/*.json" },
-  { path = "synkit/Data/*.json.gz" }
-]
+# ship your code as normal
+packages = ["synkit"]
 
-[tool.hatch.build.targets.wheel]
-# wheel also gets the same data files
-include = [
-  "synkit/Data/*.json",
-  "synkit/Data/*.json.gz"
-]
+# Force-include the entire Data directory (recursively)
+[tool.hatch.build.targets.wheel.force-include]
+"synkit/Data" = "synkit/Data"
 
-[tool.hatch.build.targets.sdist]
-# source sdist likewise
-include = [
-  "synkit/Data/*.json",
-  "synkit/Data/*.json.gz"
-]
+[tool.hatch.build.targets.sdist.force-include]
+"synkit/Data" = "synkit/Data"
