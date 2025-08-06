@@ -10,7 +10,6 @@ from synkit.IO.nx_to_gml import NXToGML
 from synkit.IO.gml_to_nx import GMLToNX
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
-from synkit.Graph.Hyrogen._misc import implicit_hydrogen, h_to_explicit
 
 
 logger = setup_logging()
@@ -164,6 +163,8 @@ def graph_to_smi(
         if preserve_atom_maps is None or len(preserve_atom_maps) == 0:
             mol = GraphToMol().graph_to_mol(graph, sanitize=sanitize, use_h_count=True)
         else:
+            from synkit.Graph.Hyrogen._misc import implicit_hydrogen
+
             graph_imp = implicit_hydrogen(graph, set(preserve_atom_maps))
             mol = GraphToMol().graph_to_mol(
                 graph_imp, sanitize=sanitize, use_h_count=True
@@ -423,6 +424,8 @@ def rsmi_to_its(
     )
     its = ITSConstruction().ITSGraph(r, p)
     if explicit_hydrogen:
+        from synkit.Graph.Hyrogen._misc import h_to_explicit
+
         its = h_to_explicit(its, None, True)
     if core:
         its = get_rc(its)
