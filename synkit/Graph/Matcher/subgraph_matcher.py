@@ -833,3 +833,330 @@ class SubgraphSearchEngine:
         """Return the full module docstring."""
 
         return __doc__
+
+
+# ---------------------------------------------------------------------
+# Sub-graph search engine
+# ---------------------------------------------------------------------
+# class SubgraphSearchEngine:
+#     """Efficient sub-graph matching helpers (static, stateless).
+
+#     Call :py:meth:`find_subgraph_mappings` as the single public entry-point.
+#     """
+
+#     # ------------------------------------------------------------------
+#     # Public dispatcher -------------------------------------------------
+#     # ------------------------------------------------------------------
+#     @staticmethod
+#     def find_subgraph_mappings(
+#         host: nx.Graph,
+#         pattern: nx.Graph,
+#         *,
+#         node_attrs: List[str],
+#         edge_attrs: List[str],
+#         strategy: Strategy = Strategy.COMPONENT,
+#         max_results: Optional[int] = None,
+#         strict_cc_count: bool = True,
+#         unique: bool = True,
+#     ) -> List[MappingDict]:
+#         """Return *all* pattern→host embeddings.
+
+#         Parameters
+#         ----------
+#         host : nx.Graph
+#             The larger “substrate” graph.
+#         pattern : nx.Graph
+#             The smaller “template” graph.
+#         node_attrs : list[str]
+#             Attributes that must match exactly on nodes.
+#         edge_attrs : list[str]
+#             Attributes that must match exactly on edges.
+#         strategy : Strategy, default=COMPONENT
+#             Matching strategy (ALL | COMPONENT | BACKTRACK).
+#         max_results : int | None, default=None
+#             Stop after collecting this many embeddings (before duplicate
+#             suppression unless *unique* is False).
+#         strict_cc_count : bool, default=True
+#             Reject immediately if host has more CCs than pattern.
+#         unique : bool, default=False
+#             If True, collapse embeddings that differ only by an
+#             automorphism of *pattern*.
+
+#         Returns
+#         -------
+#         list[dict[int, int]]
+#             A list of node-ID maps *pattern → host*.
+#         """
+
+#         # ── defensive copy (do not mutate caller’s graphs) ────────────
+#         host = host.copy()
+#         pattern = pattern.copy()
+
+#         # ── run selected strategy ─────────────────────────────────────
+#         if strategy is Strategy.ALL:
+#             results = SubgraphSearchEngine._find_all_subgraph_mappings(
+#                 host,
+#                 pattern,
+#                 node_attrs=node_attrs,
+#                 edge_attrs=edge_attrs,
+#                 max_results=max_results if not unique else None,
+#             )
+#         elif strategy is Strategy.COMPONENT:
+#             results = (
+#                 SubgraphSearchEngine._find_component_aware_subgraph_mappings(
+#                     host,
+#                     pattern,
+#                     node_attrs=node_attrs,
+#                     edge_attrs=edge_attrs,
+#                     max_results=max_results if not unique else None,
+#                     strict_cc_count=strict_cc_count,
+#                 )
+#             )
+#         elif strategy is Strategy.BACKTRACK:
+#             results = SubgraphSearchEngine._find_bt_subgraph_mappings(
+#                 host,
+#                 pattern,
+#                 node_attrs=node_attrs,
+#                 edge_attrs=edge_attrs,
+#                 max_results=max_results if not unique else None,
+#                 strict_cc_count=strict_cc_count,
+#             )
+#         else:  # defensive
+#             raise ValueError(f"Unsupported strategy: {strategy}")
+
+#         # ── post-filter duplicates coming from automorphisms ──────────
+#         if unique and results:
+#             def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
+#                 return all(nh.get(k) == np.get(k) for k in node_attrs) and (
+#                     nh.get("hcount", 0) >= np.get("hcount", 0)
+#                 )
+
+#             def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
+#                 return all(eh.get(k) == ep.get(k) for k in edge_attrs)
+
+#             results = SubgraphSearchEngine._filter_automorphic_duplicates(
+#                 pattern,
+#                 results,
+#                 node_match=node_match,
+#                 edge_match=edge_match,
+#             )
+
+#         # ── honour *max_results* after uniqueness filter ──────────────
+#         if max_results is not None and len(results) > max_results:
+#             results = results[:max_results]
+
+#         return results
+
+#     # ------------------------------------------------------------------
+#     # Strategy: ALL – classical VF2 on full host -----------------------
+#     # ------------------------------------------------------------------
+#     @staticmethod
+#     def _find_all_subgraph_mappings(
+#         host: nx.Graph,
+#         pattern: nx.Graph,
+#         *,
+#         node_attrs: List[str],
+#         edge_attrs: List[str],
+#         max_results: Optional[int] = None,
+#     ) -> List[MappingDict]:
+#         """Pure VF2 search without CC awareness (baseline)."""
+
+#         def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
+#             return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
+#                 "hcount", 0
+#             ) >= np.get("hcount", 0)
+
+#         def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
+#             return all(eh.get(k) == ep.get(k) for k in edge_attrs)
+
+#         gm = GraphMatcher(host, pattern, node_match=node_match, edge_match=edge_match)
+#         results: List[MappingDict] = []
+#         for iso in gm.subgraph_monomorphisms_iter():
+#             results.append({p: h for h, p in iso.items()})
+#             if max_results is not None and len(results) >= max_results:
+#                 break
+#         return results
+
+#     # ------------------------------------------------------------------
+#     # Strategy: COMPONENT – improved component-aware matcher -----------
+#     # ------------------------------------------------------------------
+#     @staticmethod
+#     def _find_component_aware_subgraph_mappings(
+#         host: nx.Graph,
+#         pattern: nx.Graph,
+#         *,
+#         node_attrs: List[str],
+#         edge_attrs: List[str],
+#         max_results: Optional[int] = None,
+#         strict_cc_count: bool = False,
+#     ) -> List[MappingDict]:
+#         """Component-aware VF2 without attribute/degree/WL-1 pre-filters."""
+
+#         # 1) split into connected components
+#         host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
+#         pat_ccs = [pattern.subgraph(c).copy() for c in nx.connected_components(pattern)]
+#         hcc, pcc = len(host_ccs), len(pat_ccs)
+
+#         # empty pattern ⇒ single empty mapping
+#         if pcc == 0:
+#             return [{}]
+
+#         # fallback to full VF2 if host has fewer CCs
+#         if hcc < pcc:
+#             return SubgraphSearchEngine._find_all_subgraph_mappings(
+#                 host,
+#                 pattern,
+#                 node_attrs=node_attrs,
+#                 edge_attrs=edge_attrs,
+#                 max_results=max_results,
+#             )
+
+#         # strict count: reject when host has more CCs than pattern
+#         if hcc > pcc and strict_cc_count:
+#             return []
+
+#         # 2) define VF2 predicates
+#         def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
+#             if any(nh.get(a) != np.get(a) for a in node_attrs):
+#                 return False
+#             return nh.get("hcount", 0) >= np.get("hcount", 0)
+
+#         def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
+#             return all(eh.get(a) == ep.get(a) for a in edge_attrs)
+
+#         # 3) collect embeddings for each pattern-CC
+#         per_cc: List[List[Tuple[int, MappingDict]]] = []
+#         for pc in pat_ccs:
+#             sz = pc.number_of_nodes()
+#             cand_cc_idx = [
+#                 i for i, hc in enumerate(host_ccs) if hc.number_of_nodes() >= sz
+#             ]
+#             if not cand_cc_idx:
+#                 return []  # impossible – no room for this component
+
+#             cc_maps: List[Tuple[int, MappingDict]] = []
+#             for hi in cand_cc_idx:
+#                 gm = GraphMatcher(
+#                     host_ccs[hi], pc, node_match=node_match, edge_match=edge_match
+#                 )
+#                 for iso in gm.subgraph_monomorphisms_iter():
+#                     cc_maps.append((hi, {p: h for h, p in iso.items()}))
+#                     if max_results and len(cc_maps) >= max_results:
+#                         break
+#                 if max_results and len(cc_maps) >= max_results:
+#                     break
+
+#             if not cc_maps:  # this pattern-CC embeds nowhere
+#                 return []
+#             per_cc.append(cc_maps)
+
+#         # 4) order pattern-CCs by fewest embeddings → best pruning
+#         order = sorted(range(pcc), key=lambda i: len(per_cc[i]))
+#         ordered = [per_cc[i] for i in order]
+
+#         # 5) backtrack to build full-pattern mappings
+#         results: List[MappingDict] = []
+#         used_host: Set[int] = set()
+
+#         def backtrack(level: int, accum: MappingDict):
+#             if max_results and len(results) >= max_results:
+#                 return
+#             if level == pcc:
+#                 results.append(accum.copy())
+#                 return
+#             for hi, mapping in ordered[level]:
+#                 if hi in used_host or any(p in accum for p in mapping):
+#                     continue
+#                 used_host.add(hi)
+#                 accum.update(mapping)
+#                 backtrack(level + 1, accum)
+#                 for p in mapping:
+#                     accum.pop(p)
+#                 used_host.remove(hi)
+#                 if max_results and len(results) >= max_results:
+#                     return
+
+#         backtrack(0, {})
+#         return results
+
+#     # ------------------------------------------------------------------
+#     # Strategy: BACKTRACK – component first, fallback to VF2 -----------
+#     # ------------------------------------------------------------------
+#     @staticmethod
+#     def _find_bt_subgraph_mappings(
+#         host: nx.Graph,
+#         pattern: nx.Graph,
+#         *,
+#         node_attrs: List[str],
+#         edge_attrs: List[str],
+#         max_results: Optional[int] = None,
+#         strict_cc_count: bool = False,
+#     ) -> List[MappingDict]:
+#         """Component-aware search *with* classic fallback if any CC fails."""
+
+#         primary = SubgraphSearchEngine._find_component_aware_subgraph_mappings(
+#             host,
+#             pattern,
+#             node_attrs=node_attrs,
+#             edge_attrs=edge_attrs,
+#             max_results=max_results,
+#             strict_cc_count=strict_cc_count,
+#         )
+#         if primary:
+#             return primary
+#         return SubgraphSearchEngine._find_all_subgraph_mappings(
+#             host,
+#             pattern,
+#             node_attrs=node_attrs,
+#             edge_attrs=edge_attrs,
+#             max_results=max_results,
+#         )
+
+#     # ------------------------------------------------------------------
+#     # Duplicate suppression via automorphisms --------------------------
+#     # ------------------------------------------------------------------
+#     @staticmethod
+#     def _filter_automorphic_duplicates(
+#         pattern: nx.Graph,
+#         mappings: List[MappingDict],
+#         *,
+#         node_match,
+#         edge_match,
+#     ) -> List[MappingDict]:
+#         """Throw away mappings that differ only by a pattern automorphism."""
+
+#         # 1) compute automorphism group of *pattern*
+#         gm_self = GraphMatcher(
+#             pattern, pattern, node_match=node_match, edge_match=edge_match
+#         )
+#         autos = list(gm_self.subgraph_isomorphisms_iter())
+#         if len(autos) <= 1:
+#             return mappings  # no non-trivial symmetry
+
+#         sorted_nodes = tuple(sorted(pattern.nodes()))
+#         seen: Set[Tuple[int, ...]] = set()
+#         unique: List[MappingDict] = []
+
+#         # 2) canonical fingerprint for each mapping
+#         for m in mappings:
+#             canon = min(
+#                 tuple(m[phi[n]] for n in sorted_nodes) for phi in autos
+#             )
+#             if canon not in seen:
+#                 seen.add(canon)
+#                 unique.append(m)
+
+#         return unique
+
+#     # ------------------------------------------------------------------
+#     # Niceties ----------------------------------------------------------
+#     # ------------------------------------------------------------------
+#     def __repr__(self) -> str:  # noqa: D401 – simple repr
+#         return "<SubgraphSearchEngine – static helpers; use `find_subgraph_mappings`>"
+
+#     __str__ = __repr__
+
+#     @property
+#     def help(self) -> str:  # noqa: D401 – property for convenience
+#         """Return the full module docstring."""
+#         return __doc__
