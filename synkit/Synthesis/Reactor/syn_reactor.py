@@ -21,6 +21,7 @@ from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
+from synkit.Graph.Matcher.automorphism import Automorphism
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
@@ -69,7 +70,7 @@ class SynReactor:
         graphs. If None, a default GraphCanonicaliser is used.
     :type canonicaliser: Optional[GraphCanonicaliser]
     :param explicit_h: If True, render all hydrogens explicitly in the
-        reaction‑center SMARTS. Defaults to True.
+        reaction-center SMARTS. Defaults to True.
     :type explicit_h: bool
     :param implicit_temp: If True, treat the input template as
         implicit-H (forces explicit_h=False). Defaults to False.
@@ -105,6 +106,7 @@ class SynReactor:
     partial: bool = False
     embed_threshold: Optional[int] = None
     embed_pre_filter: bool = False
+    automorphism: bool = False
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -201,22 +203,20 @@ class SynReactor:
     # ------------------------------------------------------------------
     @property
     def mappings(self) -> List[MappingDict]:
-        """Find subgraph mappings between substrate and template.
-
-        :returns: A list of node-mapping dictionaries.
-        :rtype: list of dict
-        """
+        """Return unique sub‑graph mappings, optionally pruned via automorphisms."""
         if self._mappings is None:
             log.debug("Finding sub‑graph mappings (strategy=%s)", self.strategy)
             pattern_graph = self.rule.left.raw
 
-            # Detect explicit‑H constraints on the pattern and pre‑process
+            # Handle explicit‑H constraints
             if has_XH(pattern_graph):
                 self._flag_pattern_has_explicit_H = True
-                # self.strategy = Strategy.ALL # force to find all in implicit case
                 pattern_graph = h_to_implicit(pattern_graph)
+            # Handle wildcard‑node patterns
             if has_wildcard_node(pattern_graph):
                 pattern_graph = remove_wildcard_nodes(pattern_graph)
+
+            # --- Choose matcher ------------------------------------------------
             if self.partial:
                 matcher = PartialMatcher(
                     host=self.graph.raw,
@@ -225,9 +225,9 @@ class SynReactor:
                     edge_attrs=["order"],
                     strategy=Strategy.from_string(self.strategy),
                 )
-                self._mappings = matcher.get_mappings()
+                raw_maps = matcher.get_mappings()
             else:
-                self._mappings = SubgraphSearchEngine.find_subgraph_mappings(
+                raw_maps = SubgraphSearchEngine.find_subgraph_mappings(
                     host=self.graph.raw,
                     pattern=pattern_graph,
                     node_attrs=["element", "charge"],
@@ -236,6 +236,19 @@ class SynReactor:
                     threshold=self.embed_threshold,
                     pre_filter=self.embed_pre_filter,
                 )
+
+            # --- Automorphism pruning ----------------------------------------
+            if self.automorphism and raw_maps:
+                auto = Automorphism(self.graph.raw)
+                self._mappings = auto.deduplicate(raw_maps)
+                log.debug(
+                    "Automorphism pruning: %d → %d unique mapping(s)",
+                    len(raw_maps),
+                    len(self._mappings),
+                )
+            else:
+                self._mappings = raw_maps
+
             log.info("%d mapping(s) discovered", len(self._mappings))
         return self._mappings
 
