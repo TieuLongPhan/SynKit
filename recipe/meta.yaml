@@ -1,6 +1,6 @@
 package:
   name: synkit
-  version: 0.0.15
+  version: "0.0.16"
 
 source:
   path: ..
@@ -8,13 +8,15 @@ source:
 build:
   noarch: python
   number: 0
-  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
+  script:
+    # pip will invoke Hatchling to build and install the wheel, including data files
+    - "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv"
 
 requirements:
   host:
-    - python >=3.11,<3.12     # force a 3.11 build env
+    - python >=3.11,<3.12     # ensure same Python minor version
     - pip
-    - hatchling               # your PEP 517 build backend
+    - hatchling               # PEP517 build backend
   run:
     - python >=3.11,<3.12
     - scikit-learn >=1.4.0
@@ -27,10 +29,10 @@ requirements:
     - numpy >=2.2.0
 
 about:
-  home:       https://github.com/TieuLongPhan/SynKit
-  license:    MIT
+  home:        https://github.com/TieuLongPhan/SynKit
+  license:     MIT
   license_file: LICENSE
-  summary:    Utility for reaction modeling using graph grammar
+  summary:     Utility for reaction modeling using graph grammar
 
 extra:
   recipe-maintainers:
