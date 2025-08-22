@@ -29,6 +29,7 @@ reactor_engine.py,\
 groupoid.py,\
 syn_rule.py,\
 __init__.py,\
+topology.py,\
 dev/*,\
 Data \
   --statistics
