@@ -65,7 +65,7 @@ For more details on each utility within the repository, please refer to the docu
    ```bash
    docker pull tieulongphan/synkit:latest
    # or a specific version:
-   docker pull tieulongphan/synkit:0.1.0
+   docker pull tieulongphan/synkit:1.0.0
    ```
    Run a container (sanity check):
    ```
