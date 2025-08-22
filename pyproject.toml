@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.0.0"
+version = "1.0.1"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 long-description = { file = "CHANGELOG.md" }
@@ -45,12 +45,10 @@ issues        = "https://github.com/TieuLongPhan/SynKit/issues"
 documentation = "https://tieulongphan.github.io/SynKit/"
 
 [tool.hatch.build]
-# ship your code as normal
 packages = ["synkit"]
 
-# Force-include the entire Data directory (recursively)
-[tool.hatch.build.targets.wheel.force-include]
-"synkit/Data" = "synkit/Data"
+[tool.hatch.build.targets.wheel]
+include = ["synkit/Data/**"]
 
-[tool.hatch.build.targets.sdist.force-include]
-"synkit/Data" = "synkit/Data"
+[tool.hatch.build.targets.sdist]
+include = ["synkit/Data/**"]
