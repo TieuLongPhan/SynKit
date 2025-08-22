@@ -13,7 +13,7 @@
 
 **Toolkit for Synthesis Planning**
 
-SynKit is a collection of tools designed to support the planning and execution of chemical synthesis. 
+SynKit is a collection of tools designed to support the planning and execution of chemical synthesis. Check out the [documentation](https://tieulongphan.github.io/SynKit/) for a comprehensive description of its features.
 
 ![SynKit](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit.png)
 
