@@ -1,27 +1,14 @@
-# synkit/CRN/explorer.py
 from __future__ import annotations
 
-from collections import Counter, deque
-from typing import Any, Callable, Deque, Dict, Iterable, List, Optional, Set, Tuple
+from collections import Counter
+from typing import Any, Callable, List, Optional, Set
 
-from .utils import counter_key, multiset_contains
-from .exceptions import SearchError  # unified error base
-
-# Defaults (tunable)
-DEFAULT_MIN_OVERLAP = 1
-DEFAULT_MAX_DEPTH = 30
+from .utils import multiset_contains
+from .exceptions import SearchError
 
 
 class Pathway:
-    """
-    Lightweight pathway container: reaction id sequence + visited states.
-
-    :param reaction_ids: Ordered list of reaction ids along the path.
-    :type reaction_ids: List[int] | None
-    :param states: Ordered list of states (Counter) including the start state and
-                   all post-step states (i.e., length = len(reaction_ids) + 1).
-    :type states: List[Counter] | None
-    """
+    """Lightweight pathway container: ordered reaction ids + states."""
 
     def __init__(
         self,
@@ -33,44 +20,29 @@ class Pathway:
 
     @property
     def steps(self) -> int:
-        """
-        Number of reaction steps in the pathway.
-
-        :returns: Number of steps.
-        :rtype: int
-        """
         return len(self.reaction_ids)
 
-    def summary(self) -> str:
-        """
-        Produce a short human-readable summary.
-
-        :returns: Summary string.
-        :rtype: str
-        """
+    def __repr__(self) -> str:
         return f"Pathway(steps={self.steps})"
-
-    def __repr__(self) -> str:  # pragma: no cover - trivial
-        return self.summary()
 
 
 class ReactionPathwayExplorer:
     """
-    Enumerate forward/backward pathways on a ReactionNetwork.
+    Deterministic DFS enumerator of forward/backward pathways.
 
-    The provided `network` must expose:
-      - `network.reactions: Dict[int, Reaction]`
-      - every Reaction has:
-        * `reactants_can: Counter`
-        * `products_can: Counter`
-        * `apply_forward(state: Counter, matched: Counter) -> Counter`
-        * `apply_backward(state: Counter, matched: Counter) -> Counter`
-        * `can_fire_forward(state: Counter, min_overlap: int) -> Tuple[bool, Counter]`
-        * `can_fire_backward(state: Counter, min_overlap: int) -> Tuple[bool, Counter]`
-        * `original_raw` / `canonical_raw` (for display)
-
-    :param network: ReactionNetwork-like object.
-    :type network: Any
+    - This implementation uses recursive backtracking to enumerate all ordered
+      feasible sequences (each reaction used at most once per path when
+      allow_reuse=False). It avoids over-aggressive pruning by not relying on
+      a compressed "seen" multiset key; instead it enumerates with a `used` set
+      and checks stoichiometry at each choice.
+    - Expected Reaction API (present in your repo):
+        - rx.reactants_can : Counter
+        - rx.products_can  : Counter
+        - rx.apply_forward(state, matched) -> Counter
+        - rx.apply_backward(state, matched) -> Counter
+        - rx.can_fire_forward(state, min_overlap) -> (bool, matched)
+        - rx.can_fire_backward(state, min_overlap) -> (bool, matched)
+        - rx.original_raw / rx.canonical_raw
     """
 
     def __init__(self, network: Any) -> None:
@@ -86,93 +58,99 @@ class ReactionPathwayExplorer:
         start: Counter,
         goal: Counter,
         *,
-        min_overlap: int = DEFAULT_MIN_OVERLAP,
+        min_overlap: int = 1,
         allow_reuse: bool = False,
-        strategy: str = "dfs",
-        max_depth: int = DEFAULT_MAX_DEPTH,
+        max_depth: int = 30,
         max_pathways: int = 256,
-        stop_on_goal: bool = True,
         disallow_reactions: Optional[Set[int]] = None,
         reaction_predicate: Optional[Callable[[int, Any], bool]] = None,
         enforce_stoichiometry: bool = True,
         infer_missing: bool = False,
     ) -> "ReactionPathwayExplorer":
         """
-        Enumerate forward pathways from ``start`` to ``goal`` and store them in
-        :pyattr:`pathways`.
+        Enumerate forward pathways from `start` to `goal`.
 
-        :param start: Starting state (multiset of species).
-        :type start: Counter
-        :param goal: Goal condition as a multiset; a state meets the goal when it
-                     contains at least these counts.
-        :type goal: Counter
-        :param min_overlap: Minimal overlap for flexible mode (only used when
-                            ``enforce_stoichiometry`` is False).
-        :type min_overlap: int
-        :param allow_reuse: If False, a reaction id may appear at most once per path.
-        :type allow_reuse: bool
-        :param strategy: 'dfs' (depth-first) or 'bfs' (breadth-first).
-        :type strategy: str
-        :param max_depth: Maximum path length (number of reactions).
-        :type max_depth: int
-        :param max_pathways: Maximum number of pathways to collect.
-        :type max_pathways: int
-        :param stop_on_goal: If True, stop expanding a branch after the first goal hit.
-        :type stop_on_goal: bool
-        :param disallow_reactions: Reaction ids to exclude from expansion.
-        :type disallow_reactions: set[int] | None
-        :param reaction_predicate: Optional filter `(rid, reaction) -> bool` to include/exclude.
-        :type reaction_predicate: Callable[[int, Any], bool] | None
-        :param enforce_stoichiometry: If True (default), require the full reactant multiset
-                                      to be present before firing a reaction.
-        :type enforce_stoichiometry: bool
-        :param infer_missing: If True and in enforced mode, allow *guarded inference*:
-                              seed only the missing co-reactants **when** the reaction
-                              consumes at least one species already present in the state.
-        :type infer_missing: bool
-        :returns: ``self`` with results stored on :pyattr:`pathways`.
-        :rtype: ReactionPathwayExplorer
-        :raises SearchError: On invalid strategy value.
+        Results are stored in `self.pathways` (list of Pathway).
         """
-        self._validate_strategy(strategy)
+        if max_depth < 0:
+            raise SearchError("max_depth must be >= 0")
 
         forbidden = disallow_reactions or set()
-        push, pop = self._make_fringe_ops(strategy)
-        visited: Dict[int, Set[Tuple[Tuple[str, int], ...]]] = {}
-        results: List[Pathway] = []
+        self.pathways = []
 
-        # fringe entries: (state, rids, hist, used)
-        fringe: Deque = deque()
-        push(fringe, (start.copy(), [], [start.copy()], set()))
+        # Precompute ordered reaction ids to iterate deterministically
+        candidate_rids = [rid for rid in sorted(self.net.reactions.keys())]
 
-        while fringe and len(results) < max_pathways:
-            state, rids, hist, used = pop(fringe)
-            if len(rids) > max_depth:
-                continue
-            if self._seen(visited, len(rids), state):
-                continue
+        def _recurse(
+            state: Counter, path: List[int], states_hist: List[Counter], used: Set[int]
+        ) -> None:
+            # stop conditions
+            if len(self.pathways) >= max_pathways:
+                return
+            if len(path) > max_depth:
+                return
+            # goal test
+            if all(state.get(k, 0) >= v for k, v in goal.items()):
+                self.pathways.append(Pathway(list(path), list(states_hist)))
+                return
 
-            if self._meets_goal(state, goal):
-                results.append(Pathway(list(rids), list(hist)))
-                if stop_on_goal:
+            # Try all candidate reactions in deterministic order
+            for rid in candidate_rids:
+                if rid in forbidden:
+                    continue
+                if (not allow_reuse) and (rid in used):
+                    continue
+                rx = self.net.reactions[rid]
+                if reaction_predicate and not reaction_predicate(rid, rx):
                     continue
 
-            for rid, ns in self._forward_successors(
-                state=state,
-                used=used,
-                allow_reuse=allow_reuse,
-                forbidden=forbidden,
-                predicate=reaction_predicate,
-                enforce=enforce_stoichiometry,
-                infer_missing=infer_missing,
-                min_overlap=min_overlap,
-            ):
-                nrids = rids + [rid]
-                nhist = hist + [ns.copy()]
-                nused = used if allow_reuse else (used | {rid})
-                push(fringe, (ns, nrids, nhist, nused))
+                # handle Source activation specially (optional) — but stoichiometry check below will catch it
+                if enforce_stoichiometry:
+                    need = rx.reactants_can
+                    if multiset_contains(state, need):
+                        # apply forward
+                        matched = need.copy()
+                        newstate = rx.apply_forward(state, matched)
+                    elif infer_missing and any(
+                        state.get(k, 0) > 0 for k in need.keys()
+                    ):
+                        tmp = state.copy()
+                        for k, v in need.items():
+                            if tmp.get(k, 0) < v:
+                                tmp[k] = tmp.get(k, 0) + (v - tmp.get(k, 0))
+                        matched = need.copy()
+                        newstate = rx.apply_forward(tmp, matched)
+                    else:
+                        continue  # cannot fire this reaction now
+                else:
+                    ok, matched = rx.can_fire_forward(state, min_overlap)
+                    if not ok:
+                        continue
+                    # ensure matched is a Counter-like if necessary
+                    newstate = rx.apply_forward(state, matched)
 
-        self.pathways = results
+                # proceed with this reaction
+                path.append(rid)
+                states_hist.append(newstate.copy())
+                used_added = False
+                if not allow_reuse:
+                    used.add(rid)
+                    used_added = True
+
+                _recurse(newstate, path, states_hist, used)
+
+                # backtrack
+                if used_added:
+                    used.remove(rid)
+                states_hist.pop()
+                path.pop()
+
+                if len(self.pathways) >= max_pathways:
+                    return
+
+        # initial call
+        _recurse(start.copy(), [], [start.copy()], set())
+
         return self
 
     def find_reverse(
@@ -180,232 +158,92 @@ class ReactionPathwayExplorer:
         start: Counter,
         goal: Counter,
         *,
-        min_overlap: int = DEFAULT_MIN_OVERLAP,
+        min_overlap: int = 1,
         allow_reuse: bool = False,
-        strategy: str = "dfs",
-        max_depth: int = DEFAULT_MAX_DEPTH,
+        max_depth: int = 30,
         max_pathways: int = 256,
-        stop_on_start: bool = True,
         disallow_reactions: Optional[Set[int]] = None,
         reaction_predicate: Optional[Callable[[int, Any], bool]] = None,
         enforce_stoichiometry: bool = True,
         infer_missing: bool = False,
     ) -> "ReactionPathwayExplorer":
         """
-        Enumerate backward pathways from ``goal`` towards ``start`` and store them
-        on :pyattr:`pathways`. Returned reaction ids/states are oriented in the
-        forward direction.
-
-        :param start: Target start state for the backward search.
-        :type start: Counter
-        :param goal: Initial state from which to expand backward.
-        :type goal: Counter
-        :param min_overlap: Minimal overlap for flexible backward mode (only used
-                            when ``enforce_stoichiometry`` is False).
-        :type min_overlap: int
-        :param allow_reuse: If False, a reaction id may appear at most once per path.
-        :type allow_reuse: bool
-        :param strategy: 'dfs' (depth-first) or 'bfs' (breadth-first).
-        :type strategy: str
-        :param max_depth: Maximum path length (number of reactions).
-        :type max_depth: int
-        :param max_pathways: Maximum number of pathways to collect.
-        :type max_pathways: int
-        :param stop_on_start: If True, stop expanding a branch after the first start hit.
-        :type stop_on_start: bool
-        :param disallow_reactions: Reaction ids to exclude from expansion.
-        :type disallow_reactions: set[int] | None
-        :param reaction_predicate: Optional filter `(rid, reaction) -> bool` to include/exclude.
-        :type reaction_predicate: Callable[[int, Any], bool] | None
-        :param enforce_stoichiometry: If True (default), require full product multiset
-                                      to be present before a backward step.
-        :type enforce_stoichiometry: bool
-        :param infer_missing: If True and in enforced mode, allow guarded inference of
-                              missing products only if the reaction shares at least one
-                              product already present in the state.
-        :type infer_missing: bool
-        :returns: ``self`` with results stored on :pyattr:`pathways`.
-        :rtype: ReactionPathwayExplorer
-        :raises SearchError: On invalid strategy value.
+        Backward enumeration: expand from `goal` backwards. Collected pathways
+        are returned oriented forward (reaction ids in forward order).
         """
-        self._validate_strategy(strategy)
+        if max_depth < 0:
+            raise SearchError("max_depth must be >= 0")
 
         forbidden = disallow_reactions or set()
-        push, pop = self._make_fringe_ops(strategy)
-        visited: Dict[int, Set[Tuple[Tuple[str, int], ...]]] = {}
-        results: List[Pathway] = []
+        self.pathways = []
 
-        # fringe entries: (state_back, rids_back, hist_back, used)
-        fringe: Deque = deque()
-        push(fringe, (goal.copy(), [], [goal.copy()], set()))
+        candidate_rids = [rid for rid in sorted(self.net.reactions.keys())]
 
-        while fringe and len(results) < max_pathways:
-            state_b, rids_b, hist_b, used = pop(fringe)
-            if len(rids_b) > max_depth:
-                continue
-            if self._seen(visited, len(rids_b), state_b):
-                continue
+        def _recurse_back(
+            state: Counter,
+            path_back: List[int],
+            states_hist_back: List[Counter],
+            used: Set[int],
+        ) -> None:
+            if len(self.pathways) >= max_pathways:
+                return
+            if len(path_back) > max_depth:
+                return
+            # goal test: have we reached the desired start?
+            if all(state.get(k, 0) >= v for k, v in start.items()):
+                # orient forward before recording
+                f_rids = list(reversed(path_back))
+                f_states = list(reversed(states_hist_back))
+                self.pathways.append(Pathway(f_rids, f_states))
+                return
 
-            if self._meets_goal(state_b, start):
-                # convert collected backward to forward orientation
-                f_rids = list(reversed(rids_b))
-                f_hist = list(reversed(hist_b))
-                results.append(Pathway(f_rids, f_hist))
-                if stop_on_start:
+            for rid in candidate_rids:
+                if rid in forbidden:
+                    continue
+                if (not allow_reuse) and (rid in used):
+                    continue
+                rx = self.net.reactions[rid]
+                if reaction_predicate and not reaction_predicate(rid, rx):
                     continue
 
-            for rid, ns in self._backward_successors(
-                state=state_b,
-                used=used,
-                allow_reuse=allow_reuse,
-                forbidden=forbidden,
-                predicate=reaction_predicate,
-                enforce=enforce_stoichiometry,
-                infer_missing=infer_missing,
-                min_overlap=min_overlap,
-            ):
-                nrids_b = rids_b + [rid]
-                nhist_b = hist_b + [ns.copy()]
-                nused = used if allow_reuse else (used | {rid})
-                push(fringe, (ns, nrids_b, nhist_b, nused))
+                if enforce_stoichiometry:
+                    need = rx.products_can
+                    if multiset_contains(state, need):
+                        matched = need.copy()
+                        newstate = rx.apply_backward(state, matched)
+                    elif infer_missing and any(
+                        state.get(k, 0) > 0 for k in need.keys()
+                    ):
+                        tmp = state.copy()
+                        for k, v in need.items():
+                            if tmp.get(k, 0) < v:
+                                tmp[k] = tmp.get(k, 0) + (v - tmp.get(k, 0))
+                        matched = need.copy()
+                        newstate = rx.apply_backward(tmp, matched)
+                    else:
+                        continue
+                else:
+                    ok, matched = rx.can_fire_backward(state, min_overlap)
+                    if not ok:
+                        continue
+                    newstate = rx.apply_backward(state, matched)
 
-        self.pathways = results
+                path_back.append(rid)
+                states_hist_back.append(newstate.copy())
+                used_added = False
+                if not allow_reuse:
+                    used.add(rid)
+                    used_added = True
+
+                _recurse_back(newstate, path_back, states_hist_back, used)
+
+                if used_added:
+                    used.remove(rid)
+                states_hist_back.pop()
+                path_back.pop()
+
+                if len(self.pathways) >= max_pathways:
+                    return
+
+        _recurse_back(goal.copy(), [], [goal.copy()], set())
         return self
-
-    # ---------------------------
-    # Small helpers (keep methods simple -> flake8 C901 friendly)
-    # ---------------------------
-
-    @staticmethod
-    def _validate_strategy(strategy: str) -> None:
-        if strategy not in {"dfs", "bfs"}:
-            raise SearchError("strategy must be 'dfs' or 'bfs'")
-
-    @staticmethod
-    def _make_fringe_ops(strategy: str):
-        def push(dq: Deque, item) -> None:
-            dq.append(item)
-
-        def pop_dfs(dq: Deque):
-            return dq.pop()
-
-        def pop_bfs(dq: Deque):
-            return dq.popleft()
-
-        return (push, pop_dfs if strategy == "dfs" else pop_bfs)
-
-    @staticmethod
-    def _meets_goal(state: Counter, goal: Counter) -> bool:
-        return all(state.get(k, 0) >= v for k, v in goal.items())
-
-    @staticmethod
-    def _seen(
-        visited: Dict[int, Set[Tuple[Tuple[str, int], ...]]], depth: int, state: Counter
-    ) -> bool:
-        key = counter_key(state)
-        bucket = visited.setdefault(depth, set())
-        if key in bucket:
-            return True
-        bucket.add(key)
-        return False
-
-    @staticmethod
-    def _shares_present(state: Counter, need: Counter) -> bool:
-        return any(state.get(k, 0) > 0 for k in need.keys())
-
-    @staticmethod
-    def _seed_missing_copy(state: Counter, need: Counter) -> Counter:
-        ns = state.copy()
-        for k, v in need.items():
-            deficit = v - ns.get(k, 0)
-            if deficit > 0:
-                ns[k] = ns.get(k, 0) + deficit
-        return ns
-
-    def _iter_reactions(
-        self,
-        *,
-        used: Set[int],
-        allow_reuse: bool,
-        forbidden: Set[int],
-        predicate: Optional[Callable[[int, Any], bool]],
-    ) -> Iterable[Tuple[int, Any]]:
-        for rid, rx in self.net.reactions.items():
-            if rid in forbidden:
-                continue
-            if (not allow_reuse) and (rid in used):
-                continue
-            if predicate and not predicate(rid, rx):
-                continue
-            yield rid, rx
-
-    # ---- successor generators ----
-
-    def _forward_successors(
-        self,
-        *,
-        state: Counter,
-        used: Set[int],
-        allow_reuse: bool,
-        forbidden: Set[int],
-        predicate: Optional[Callable[[int, Any], bool]],
-        enforce: bool,
-        infer_missing: bool,
-        min_overlap: int,
-    ) -> Iterable[Tuple[int, Counter]]:
-        """
-        Yield (rid, next_state) for forward expansion under the configured policy.
-        """
-        for rid, rx in self._iter_reactions(
-            used=used, allow_reuse=allow_reuse, forbidden=forbidden, predicate=predicate
-        ):
-            if enforce:
-                need = rx.reactants_can
-                if multiset_contains(state, need):
-                    matched = need.copy()
-                    yield rid, rx.apply_forward(state, matched)
-                    continue
-                if infer_missing and self._shares_present(state, need):
-                    tmp = self._seed_missing_copy(state, need)
-                    matched = need.copy()
-                    yield rid, rx.apply_forward(tmp, matched)
-                    continue
-                # else: cannot fire
-            else:
-                ok, matched = rx.can_fire_forward(state, min_overlap)
-                if ok:
-                    yield rid, rx.apply_forward(state, matched)
-
-    def _backward_successors(
-        self,
-        *,
-        state: Counter,
-        used: Set[int],
-        allow_reuse: bool,
-        forbidden: Set[int],
-        predicate: Optional[Callable[[int, Any], bool]],
-        enforce: bool,
-        infer_missing: bool,
-        min_overlap: int,
-    ) -> Iterable[Tuple[int, Counter]]:
-        """
-        Yield (rid, next_state) for backward expansion under the configured policy.
-        """
-        for rid, rx in self._iter_reactions(
-            used=used, allow_reuse=allow_reuse, forbidden=forbidden, predicate=predicate
-        ):
-            if enforce:
-                need = rx.products_can
-                if multiset_contains(state, need):
-                    matched = need.copy()
-                    yield rid, rx.apply_backward(state, matched)
-                    continue
-                if infer_missing and self._shares_present(state, need):
-                    tmp = self._seed_missing_copy(state, need)
-                    matched = need.copy()
-                    yield rid, rx.apply_backward(tmp, matched)
-                    continue
-            else:
-                ok, matched = rx.can_fire_backward(state, min_overlap)
-                if ok:
-                    yield rid, rx.apply_backward(state, matched)

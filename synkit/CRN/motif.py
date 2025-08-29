@@ -20,7 +20,6 @@ motif_1_config = {
 
 motif_2 = [
     "Source.A>>A",
-    "Source.B>>B",
     "A.B>>C",
     "C>>D",
     "D.E>>F",
@@ -36,20 +35,23 @@ motif_2_config = {
 }
 
 motif_3 = [
-    "Source.P>>P",
-    "P>>Q.R",
-    "Q>>S",
-    "R>>T",
-    "S.T>>U",
+    "Source.P>>P",  # input of precursor P
+    "P>>Q",  # P produces Q
+    "P>>R",  # P also produces R (separate event)
+    "Q>>S",  # Q -> S
+    "R>>T",  # R -> T
+    "S.T>>U",  # S + T -> U (requires both S and T present)
     "U>>V",
     "V>>W",
     "W>>Waste",
     "Waste>>Removed",
 ]
 motif_3_config = {
-    "sources": {"Source.P": "limited"},
-    "sinks": {"Removed": "immediate_sink"},
+    "regime": "stochastic",
+    "sources": {"Source.P": {"type": "limited", "initial": 50}},
+    "sinks": {"Removed": {"type": "immediate_sink"}},
 }
+
 
 motif_4 = [
     "Source.S>>S",
@@ -63,9 +65,10 @@ motif_4 = [
     "OutputPool_Z>>Removed",
 ]
 motif_4_config = {
-    "sources": {"Source.S": "rate_limited"},
-    "sinks": {"Removed": "immediate_sink"},
+    "sources": {"Source.S": {"type": "unlimited"}},
+    "sinks": {"Removed": {"type": "immediate_sink"}},
 }
+
 
 motif_5 = [
     "Source.A>>A",
