@@ -48,35 +48,20 @@ class ReactionNetwork:
         remove_aam: bool = True,
     ) -> "ReactionNetwork":
         """
-        Build a network from reaction strings.
+        Construct a ReactionNetwork from a list of reaction SMILES.
 
-        :param raw_list: List of reaction SMILES/raw strings.
-        :param standardizer: Optional standardizer (object expected to expose `.fit()` or `.transform()`).
-        :param remove_aam: If True, drop atom mapping during standardization.
-        :returns: ReactionNetwork instance.
-        :raises CRNError: On parse/build/standardization failure.
+        Always calls Reaction.standardize(...) so each Reaction.canonical_raw is set.
+        If no standardizer is provided, Reaction.standardize() will set
+        canonical_raw == original_raw (safe fallback).
         """
-        rxns: List[Reaction] = []
+        reactions: List[Reaction] = []
         for i, raw in enumerate(raw_list):
-            try:
-                r = Reaction(id=i, original_raw=raw)
-                if standardizer is not None:
-                    # minimal interface check
-                    if not (
-                        hasattr(standardizer, "fit")
-                        or hasattr(standardizer, "transform")
-                    ):
-                        raise CRNError(
-                            "Provided standardizer lacks required interface (fit/transform)"
-                        )
-                    r.standardize(standardizer, remove_aam=remove_aam)
-                r.build()
-                rxns.append(r)
-            except Exception as exc:
-                raise CRNError(
-                    f"Failed to construct Reaction at index {i}: {raw!r}"
-                ) from exc
-        return cls(rxns)
+            r = Reaction(id=i, original_raw=raw)
+            # Always call standardize — Reaction.standardize must handle standardizer=None
+            r.standardize(standardizer, remove_aam=remove_aam)
+            r.build()
+            reactions.append(r)
+        return cls(reactions)
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "ReactionNetwork":

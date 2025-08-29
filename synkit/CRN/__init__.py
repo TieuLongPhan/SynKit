@@ -31,6 +31,14 @@ from .network import ReactionNetwork
 from .pathway import Pathway
 from .explorer import ReactionPathwayExplorer
 from .viz import CRNVisualizer
+from .helpers import (
+    dedupe_pathways_by_canonical,
+    pretty_print_pathway,
+    replay_pathway_and_collect_inferred,
+)
+from .enumerator import (
+    MotifEnumerator,
+)
 
 __all__ = [
     # constants
@@ -55,6 +63,11 @@ __all__ = [
     "Pathway",
     "ReactionPathwayExplorer",
     "CRNVisualizer",
+    # utilities
+    "MotifEnumerator",
+    "dedupe_pathways_by_canonical",
+    "pretty_print_pathway",
+    "replay_pathway_and_collect_inferred",
 ]
 
 __version__ = "0.2.0-dev"
