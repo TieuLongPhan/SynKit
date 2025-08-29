@@ -1,42 +1,60 @@
 """
-Public API for :mod:`CRN`.
+Public API for :mod:`crn`.
 
-.. warning::
+This package is under active development; APIs may change without notice.
 
-   This package is currently **under development** and the public API is **not stable**.
-   Interfaces, class names, function signatures and behaviors may change without notice.
-   Use with caution for production systems.
-
-Re-exported classes
--------------------
-- :class:`~CRN.reaction.Reaction`
-- :class:`~CRN.network.ReactionNetwork`
-- :class:`~CRN.pathway.Pathway`
-- :class:`~CRN.explorer.ReactionPathwayExplorer`
+Re-exported
+-----------
+- :class:`crn.constants.NodeKind`, :class:`crn.constants.EdgeRole`
+- :class:`crn.exceptions.CRNError`
+- :class:`crn.properties.SpeciesProperty`, :class:`crn.properties.ReactionProperty`
+- :class:`crn.reaction.Reaction`
+- :class:`crn.network.ReactionNetwork`
+- :class:`crn.pathway.Pathway`
+- :class:`crn.explorer.ReactionPathwayExplorer`
+- :class:`crn.viz.CRNVisualizer`
 """
 
 from __future__ import annotations
-import warnings
-from typing import List
 
+from .constants import NodeKind, EdgeRole, RenderEngine, RenderFormat
+from .exceptions import (
+    CRNError,
+    InvalidReactionError,
+    StandardizationError,
+    VisualizationError,
+    SearchError,
+)
+from .properties import SpeciesProperty, ReactionProperty, NodeProperty, EdgeProperty
 from .reaction import Reaction
 from .network import ReactionNetwork
 from .pathway import Pathway
 from .explorer import ReactionPathwayExplorer
+from .viz import CRNVisualizer
 
-__all__: List[str] = [
+__all__ = [
+    # constants
+    "NodeKind",
+    "EdgeRole",
+    "RenderEngine",
+    "RenderFormat",
+    # exceptions
+    "CRNError",
+    "InvalidReactionError",
+    "StandardizationError",
+    "VisualizationError",
+    "SearchError",
+    # property layer
+    "SpeciesProperty",
+    "ReactionProperty",
+    "NodeProperty",
+    "EdgeProperty",
+    # core classes
     "Reaction",
     "ReactionNetwork",
     "Pathway",
     "ReactionPathwayExplorer",
+    "CRNVisualizer",
 ]
 
-__version__ = "0.0.0-dev"
-
-# Emit a warning on import (only warnings, no logging)
-warnings.warn(
-    "CRN is under development and the API is not stable. "
-    "It may change without notice.",
-    UserWarning,
-    stacklevel=2,
-)
+__version__ = "0.2.0-dev"
