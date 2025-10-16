@@ -32,5 +32,6 @@ syn_rule.py,\
 __init__.py,\
 topology.py,\
 dev/*,\
+synkit/CRN/*,\
 Data \
   --statistics

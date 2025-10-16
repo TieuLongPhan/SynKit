@@ -2,7 +2,7 @@
 *cachedir
 *.csv
 */catboost_info/*
-*.ipynb
+
 *.json
 *.pkl.gz
 *.pdf
@@ -11,9 +11,11 @@
 dev/*
 *.rdf
 test_syn_reactor.py
+*.ipynb
 Data/Benchmark/*
-# *.png
 *.json.gz
+# *.png
+
 run.sh
 docs/*
 run_rdcanon.py

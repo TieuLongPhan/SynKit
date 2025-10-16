@@ -1,4 +1,6 @@
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Pattern
+import re
+
 import networkx as nx
 from rdkit import Chem
 from rdkit.Chem import rdChemReactions
@@ -10,6 +12,10 @@ from synkit.IO.nx_to_gml import NXToGML
 from synkit.IO.gml_to_nx import GMLToNX
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
+
+
+_BRACKET_DIGIT_PATTERN: Pattern = re.compile(r"\[([^\]]*?)\](\d+)")
+_BRACKET_MAP_PATTERN: Pattern = re.compile(r"\[([^\]]+):(\d+)\]")
 
 
 logger = setup_logging()
@@ -492,3 +498,125 @@ def rsmarts_to_rsmi(rsmarts: str) -> str:
         return rdChemReactions.ReactionToSmiles(rxn)
     except Exception as e:
         raise ValueError(f"Failed to convert RSMARTS to RSMI: {e}")
+
+
+"""
+Utilities to convert between DFS-style annotated reaction/molecule SMILES
+(e.g. "[H]1", "[]3") and normal SMILES with atom maps (e.g. "[H:1]", "[*:3]").
+
+Exported functions
+- dfs_to_smiles(dfs: str, keep_map: bool = True) -> str
+- smiles_to_dfs(smiles: str) -> str
+- normalize_dfs_for_compare(dfs: str) -> str
+"""
+
+
+def dfs_to_smiles(dfs: str, keep_map: bool = True) -> str:
+    """
+    Convert a DFS-style reaction/molecule SMILES to a normal SMILES form.
+
+    Rules:
+    - Replace `[]` with `[*]` (wildcard normalization).
+    - Convert bracketed tokens followed immediately by digits `[X]12` into atom-mapped
+      tokens `[X:12]` if `keep_map` is True.
+    - If `keep_map` is False, external digits are removed: `[X]12` -> `[X]`.
+    - Tokens that already contain a colon inside the brackets (e.g. `[H:1]`)
+      are left unchanged.
+
+    :param dfs: DFS-style SMILES string (may include a reaction arrow `>>`).
+    :type dfs: str
+    :param keep_map: If True, convert trailing digits into atom-map labels inside
+                     brackets (default True). If False, remove the digits.
+    :type keep_map: bool
+    :returns: Converted SMILES string (normal bracket syntax, possible atom maps).
+    :rtype: str
+
+    :example:
+    >>> dfs_to_smiles("[H]1[]3.C[O]2>>C[O]2.[H]1[]3")
+    '[H:1][*:3].C[O:2]>>C[O:2].[H:1][*:3]'
+    >>> dfs_to_smiles("[H]1[N]2([H]4)[]3>>[]3[N]2.[H]1[N]6([H]4)[H]5", keep_map=False)
+    '[H][N]([H])*>>*[N].[H][N]([H])[H]'
+    """
+    if not isinstance(dfs, str):
+        raise ValueError("dfs must be a string")
+
+    # 1) Normalize empty brackets `[]` -> `[*]`
+    s = dfs.replace("[]", "[*]")
+
+    # 2) Replace bracket+digits with bracket:digits (or strip digits)
+    def _repl(m: re.Match) -> str:
+        inner = m.group(1)  # content inside the brackets
+        digits = m.group(2)
+        # If the bracket content already contains ':' (already atom-mapped), leave it
+        if ":" in inner:
+            return m.group(0)
+        # Safety: treat empty inner as wildcard
+        if inner == "":
+            inner = "*"
+        if keep_map:
+            return f"[{inner}:{digits}]"
+        else:
+            return f"[{inner}]"
+
+    return _BRACKET_DIGIT_PATTERN.sub(_repl, s)
+
+
+def smiles_to_dfs(smiles: str) -> str:
+    """
+    Convert normal SMILES (possibly with atom maps) back to DFS-style notation.
+
+    Rules:
+    - "[X:123]" -> "[X]123"
+    - "[*:3]"  -> "[]3"  (DFS-style empty brackets used for wildcard)
+    - "[X]" or "[X+]" without atom map are left unchanged (no trailing digits added).
+    - After converting atom-mapped tokens, plain "[*]" is converted to "[]".
+
+    :param smiles: SMILES string (may include `:` atom maps and reaction arrow `>>`).
+    :type smiles: str
+    :returns: DFS-style string where atom maps are moved outside brackets as digits.
+    :rtype: str
+
+    :example:
+    >>> smiles_to_dfs("[H:1][*:3].C[O:2]>>C[O:2].[H:1][*:3]")
+    '[H]1[]3.C[O]2>>C[O]2.[H]1[]3'
+    >>> smiles_to_dfs("[H:12][N:2]([H:4])[*:3]")
+    '[H]12[N]2([H]4][]3'
+    """
+    if not isinstance(smiles, str):
+        raise ValueError("smiles must be a string")
+
+    def _repl_map(m: re.Match) -> str:
+        inner = m.group(1)
+        num = m.group(2)
+        # wildcard '*' -> DFS-style empty bracket
+        if inner == "*":
+            return f"[]{num}"
+        else:
+            return f"[{inner}]{num}"
+
+    s = _BRACKET_MAP_PATTERN.sub(_repl_map, smiles)
+    # Convert any remaining literal "[*]" back to "[]"
+    s = s.replace("[*]", "[]")
+    return s
+
+
+def normalize_dfs_for_compare(dfs: str) -> str:
+    """
+    Minimal normalization to compare DFS strings:
+    - Remove whitespace
+    - Convert "[*]" to "[]" so wildcard representations match.
+
+    :param dfs: DFS-style string to normalize.
+    :type dfs: str
+    :returns: Normalized string for comparison.
+    :rtype: str
+
+    :example:
+    >>> normalize_dfs_for_compare("[H]1 [*]3 >> [H]1[*]3")
+    '[H]1[]3>>[H]1[]3'
+    """
+    if not isinstance(dfs, str):
+        raise ValueError("dfs must be a string")
+    s = dfs.replace("[*]", "[]")
+    s = re.sub(r"\s+", "", s)
+    return s
