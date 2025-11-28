@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections import Counter, deque
 from typing import Any, Dict, List, Optional, Set
 
-from synkit.CRN import ReactionNetwork
-from synkit.CRN.explorer import Pathway  # reuse the Pathway container if present
+from synkit.dev_crn import ReactionNetwork
+from synkit.dev_crn.explorer import Pathway  # reuse the Pathway container if present
 from .exceptions import NoPathwaysError
 from .helpers import (
     dedupe_pathways_by_canonical,

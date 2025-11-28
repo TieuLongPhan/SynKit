@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Set
 import itertools as it
 import re
 
-from synkit.CRN.reaction import Reaction  # type: ignore
-from synkit.CRN.network import ReactionNetwork  # type: ignore
-from synkit.CRN.exceptions import CRNError  # type: ignore
+from synkit.dev_crn.reaction import Reaction  # type: ignore
+from synkit.dev_crn.network import ReactionNetwork  # type: ignore
+from synkit.dev_crn.exceptions import CRNError  # type: ignore
 
 _TOKEN = re.compile(r"([A-Z][a-z]?)(\d*)$")
 
