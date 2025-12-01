@@ -1,9 +1,29 @@
-"""DeficiencyAnalyzer: object-oriented deficiency computations and checks.
+"""
+DeficiencyAnalyzer: object-oriented deficiency computations and checks.
 
 This module provides :class:`DeficiencyAnalyzer` — a compact, chainable,
 well-documented OOP wrapper to compute deficiency-related quantities and
 perform standard Feinberg-style checks (Deficiency Zero, Deficiency One,
-regularity). Replace adapter helpers as required by your codebase.
+regularity).
+
+All computations are performed on a **bipartite species/reaction graph**
+with the following conventions:
+
+- Nodes:
+    * species: ``kind="species"`` or ``bipartite=0``, with a ``label``.
+    * reactions: ``kind="reaction"`` or ``bipartite=1``.
+
+- Edges:
+    * ``role``: ``"reactant"`` or ``"product"``.
+    * ``stoich``: stoichiometric coefficient (defaults to 1.0).
+
+If a :class:`CRNHyperGraph` is provided, it is converted via
+:func:`hypergraph_to_bipartite`.
+
+References
+----------
+- Horn & Jackson (1972), J. R. Stat. Phys.  : complex-balanced systems.
+- Feinberg (1979, 1987, 1988), various CRNT papers: deficiency theory.
 """
 
 from __future__ import annotations
@@ -15,24 +35,32 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 import networkx as nx
 import numpy as np
 
-from synkit.CRN.Hypergraph.adapters import hypergraph_to_crnnetwork
 from synkit.CRN.Props.stoich import stoichiometric_matrix, stoichiometric_rank
-from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
+from .utils import _as_bipartite, _species_order, _split_species_reactions
 
 LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
 class DeficiencySummary:
-    """Container for computed deficiency summary quantities.
+    """
+    Container for computed deficiency summary quantities.
 
-    :param n_species: number of species.
-    :param n_reactions: number of reactions.
-    :param n_complexes: number of distinct complexes.
-    :param n_linkage_classes: number of linkage classes.
-    :param stoich_rank: stoichiometric rank (rank(N)).
-    :param deficiency: network deficiency delta = n_c - ell - rank(N).
-    :param weakly_reversible: whether the complex graph is weakly reversible.
+    :param n_species: Number of species.
+    :type n_species: int
+    :param n_reactions: Number of reactions.
+    :type n_reactions: int
+    :param n_complexes: Number of distinct complexes.
+    :type n_complexes: int
+    :param n_linkage_classes: Number of linkage classes.
+    :type n_linkage_classes: int
+    :param stoich_rank: Stoichiometric rank :math:`\\mathrm{rank}(S)`.
+    :type stoich_rank: int
+    :param deficiency: Network deficiency
+        :math:`\\delta = n_c - \\ell - \\mathrm{rank}(S)`.
+    :type deficiency: int
+    :param weakly_reversible: Whether the complex graph is weakly reversible.
+    :type weakly_reversible: bool
     """
 
     n_species: int
@@ -44,6 +72,11 @@ class DeficiencySummary:
     weakly_reversible: bool
 
 
+# ---------------------------------------------------------------------------
+# Main analyzer
+# ---------------------------------------------------------------------------
+
+
 class DeficiencyAnalyzer:
     """
     Compute deficiency quantities and run standard structural checks.
@@ -51,14 +84,38 @@ class DeficiencyAnalyzer:
     The class is intentionally *fluent*: mutating operations return ``self``
     so calls can be chained. Use the property accessors to retrieve results.
 
-    Minimal assumptions about `crn`:
-    - ``crn.species``: sequence/list of species
-    - ``crn.reactions``: iterable of reaction objects with
-      ``reactants`` and ``products`` mapping species indices -> stoich coeffs
+    All calculations follow the classic CRNT framework of
+    Horn & Jackson (1972) and Feinberg (1979, 1987, 1988).
 
-    :param crn: CRN-like object (CRNNetwork or adapter-wrapped hypergraph).
-    :param stoich_fn: optional callable(crn)->np.ndarray returning stoichiometric matrix N.
-    :param rank_fn: optional callable(crn)->int returning stoichiometric rank.
+    Minimal assumptions about ``crn``:
+
+    - either a :class:`CRNHyperGraph`, or
+    - a NetworkX bipartite graph with the conventions described in the
+      module docstring.
+
+    :param crn: CRN-like object (:class:`CRNHyperGraph` or bipartite graph).
+    :type crn: Any
+    :param stoich_fn: Optional callable ``stoich_fn(crn) -> numpy.ndarray`` returning
+        the stoichiometric matrix :math:`S` (default: :func:`stoichiometric_matrix`).
+    :type stoich_fn: Optional[Callable[[Any], numpy.ndarray]]
+    :param rank_fn: Optional callable ``rank_fn(crn) -> int`` returning stoichiometric
+        rank (default: :func:`stoichiometric_rank`).
+    :type rank_fn: Optional[Callable[[Any], int]]
+
+    Examples
+    --------
+    .. code-block:: python
+
+       from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
+       from synkit.CRN.Props.deficiency import DeficiencyAnalyzer
+
+       hg = CRNHyperGraph()
+       hg.parse_rxns(["A + B >> C", "2 C >> A"])
+
+       analyzer = DeficiencyAnalyzer(hg)
+       analyzer.compute_crn_deficiency()
+       print(analyzer.summary.deficiency)
+       print(analyzer.as_dict())
     """
 
     def __init__(
@@ -77,51 +134,50 @@ class DeficiencyAnalyzer:
         self._complex_graph: Optional[nx.DiGraph] = None
         self._linkage_deficiencies: Optional[List[int]] = None
         self._structural_one_result: Optional[Dict[str, Any]] = None
+        self._nondegeneracy: Optional[Dict[str, Any]] = None
 
     # -------------------------
-    # adapters / low-level utils
+    # low-level complex handling
     # -------------------------
-    def _as_network(self, crn: Any) -> Any:
-        """
-        Convert to core network interface if required.
-
-        :param crn: input network-like object
-        :returns: adapter-converted core network (expected attributes: species, reactions)
-        :reference: Adapter helper (project-specific).
-        :example:
-
-        .. code-block:: python
-
-            analyzer = DeficiencyAnalyzer(my_crn)
-            net = analyzer._as_network(my_crn)
-        """
-        if isinstance(crn, CRNHyperGraph):
-            return hypergraph_to_crnnetwork(crn)
-        return super()._as_network(crn)
 
     def _complex_vectors(
-        self, net: Any
+        self,
+        G: nx.Graph,
     ) -> Tuple[List[Tuple[int, ...]], Dict[Tuple[int, ...], int], nx.DiGraph]:
         """
-        Build complex vectors and the directed complex graph.
+        Build complex vectors and the directed complex graph from a bipartite graph.
 
-        Each complex is a tuple of length ``n_species`` with stoichiometric counts.
-        The returned graph has an edge u->v for each reaction with reactant complex u
-        and product complex v.
+        For each reaction node:
 
-        :param net: core network
-        :returns: (complex_list, index_map, complex_graph)
-        :reference: Feinberg — complex graph construction (foundational CRNT definitions).
-        :example:
+        - the **reactant complex** is the vector of stoichiometric counts over
+          edges with ``role="reactant"``,
+        - the **product complex** is the analogous vector over edges with
+          ``role="product"``.
 
+        Each complex is a tuple of length ``n_species`` with nonnegative integers.
+        The returned graph has an edge :math:`y \\to y'` for each reaction with
+        reactant complex :math:`y` and product complex :math:`y'`.
+
+        This is the standard "complex graph" construction from Feinberg (1979).
+
+        :param G: Bipartite species/reaction graph.
+        :type G: networkx.Graph
+        :returns: Tuple ``(complex_list, index_map, complex_graph)``.
+        :rtype: Tuple[List[Tuple[int, ...]], Dict[Tuple[int, ...], int], nx.DiGraph]
+
+        Examples
+        --------
         .. code-block:: python
 
-            complexes, idx_map, G = analyzer._complex_vectors(net)
+           complexes, idx_map, CG = analyzer._complex_vectors(G)
         """
-        n_s = len(getattr(net, "species", []))
+        _species_nodes, _species_labels, species_index = _species_order(G)
+        _, reaction_nodes = _split_species_reactions(G)
+        n_s = len(species_index)
+
         idx_map: Dict[Tuple[int, ...], int] = {}
         complexes: List[Tuple[int, ...]] = []
-        G = nx.DiGraph()
+        CG = nx.DiGraph()
 
         def add_complex(vec: Tuple[int, ...]) -> int:
             if vec in idx_map:
@@ -129,60 +185,84 @@ class DeficiencyAnalyzer:
             k = len(complexes)
             complexes.append(vec)
             idx_map[vec] = k
-            G.add_node(k)
+            CG.add_node(k)
             return k
 
-        for rxn in getattr(net, "reactions", []):
+        for r in reaction_nodes:
             lhs = [0] * n_s
             rhs = [0] * n_s
-            for i, v in getattr(rxn, "reactants", {}).items():
-                lhs[int(i)] = int(v)
-            for i, v in getattr(rxn, "products", {}).items():
-                rhs[int(i)] = int(v)
-            u = add_complex(tuple(lhs))
-            v = add_complex(tuple(rhs))
-            G.add_edge(u, v)
 
-        return complexes, idx_map, G
+            for u, v, data in G.edges(r, data=True):
+                s_node = v if u == r else u
+                if s_node not in species_index:
+                    continue
+                idx = species_index[s_node]
+                role = data.get("role")
+                coeff = int(data.get("stoich", 1))
+
+                if role == "reactant":
+                    lhs[idx] += coeff
+                elif role == "product":
+                    rhs[idx] += coeff
+
+            y = tuple(lhs)
+            y_prime = tuple(rhs)
+            u_idx = add_complex(y)
+            v_idx = add_complex(y_prime)
+            CG.add_edge(u_idx, v_idx)
+
+        return complexes, idx_map, CG
 
     # -------------------------
     # core computations
     # -------------------------
+
     def compute_summary(self) -> "DeficiencyAnalyzer":
         """
         Compute basic structural quantities and deficiency.
 
-        Populates ``self._summary``, ``self._complexes``, ``self._complex_graph``,
-        and ``self._idx_map``.
+        Populates:
 
-        :returns: self
-        :reference: Deficiency definition & decomposition (Feinberg; see Horn & Jackson for complex-balanced consequences).
-        :example:
+        - ``self._summary``
+        - ``self._complexes``
+        - ``self._complex_graph``
+        - ``self._idx_map``
 
+        This corresponds to the global deficiency definition in
+        Feinberg (1979, 1987).
+
+        :returns: Self, to allow fluent chaining.
+        :rtype: DeficiencyAnalyzer
+
+        Examples
+        --------
         .. code-block:: python
 
-            analyzer = DeficiencyAnalyzer(H)
-            analyzer.compute_summary()
-            print(analyzer.summary.deficiency)
+           analyzer = DeficiencyAnalyzer(hg)
+           analyzer.compute_summary()
+           print(analyzer.summary.deficiency)
         """
-        net = self._as_network(self._crn)
+        G = _as_bipartite(self._crn)
 
         # stoichiometric matrix & counts
         if self._stoich_fn is not None:
-            N = self._stoich_fn(net)
+            N = self._stoich_fn(G)
+            if not isinstance(N, np.ndarray):
+                N = np.asarray(N, dtype=float)
             n_s, n_r = N.shape
         else:
-            n_s = len(getattr(net, "species", []))
-            n_r = len(getattr(net, "reactions", []))
+            species_nodes, reaction_nodes = _split_species_reactions(G)
+            n_s = len(species_nodes)
+            n_r = len(reaction_nodes)
 
         # stoichiometric rank
-        rank = int(self._rank_fn(net)) if self._rank_fn is not None else 0
+        rank = int(self._rank_fn(G)) if self._rank_fn is not None else 0
 
-        complexes, idx_map, G = self._complex_vectors(net)
-        n_link = nx.number_connected_components(G.to_undirected())
+        complexes, idx_map, CG = self._complex_vectors(G)
+        n_link = nx.number_connected_components(CG.to_undirected())
         n_complexes = len(complexes)
         delta = int(n_complexes - n_link - rank)
-        weakly_rev = self._is_weakly_reversible(G)
+        weakly_rev = self._is_weakly_reversible(CG)
 
         self._summary = DeficiencySummary(
             n_species=int(n_s),
@@ -195,25 +275,28 @@ class DeficiencyAnalyzer:
         )
         self._complexes = complexes
         self._idx_map = idx_map
-        self._complex_graph = G
+        self._complex_graph = CG
         return self
 
     def _linkage_class_stoich_rank(self, linkage_class: Iterable[int]) -> int:
         """
-        Compute stoichiometric rank s_l for one linkage class.
+        Compute stoichiometric rank :math:`s_\\ell` for one linkage class.
 
-        :param linkage_class: iterable of complex indices in that linkage class.
-        :returns: stoichiometric rank (integer).
-        :reference: Deficiency decomposition (Feinberg).
-        :example:
+        The rank is computed from the span of complex-difference vectors
+        :math:`y' - y` over edges :math:`y \\to y'` within the linkage class.
 
-        .. code-block:: python
+        This is the per-linkage-class rank used in the deficiency decomposition
+        of Feinberg (1979, 1987).
 
-            s_l = analyzer._linkage_class_stoich_rank(linkage_nodes)
+        :param linkage_class: Iterable of complex indices in that linkage class.
+        :type linkage_class: Iterable[int]
+        :returns: Stoichiometric rank for the linkage class.
+        :rtype: int
+        :raises RuntimeError: If :meth:`compute_summary` has not been called.
         """
         if self._complexes is None or self._complex_graph is None:
             raise RuntimeError(
-                "compute_summary() must be called before linkage computations"
+                "compute_summary() must be called before linkage computations."
             )
 
         nodes = list(linkage_class)
@@ -235,22 +318,26 @@ class DeficiencyAnalyzer:
 
     def compute_linkage_deficiencies(self) -> "DeficiencyAnalyzer":
         """
-        Compute per-linkage-class deficiencies delta_l = n_l - 1 - s_l.
+        Compute per-linkage-class deficiencies :math:`\\delta_\\ell = n_\\ell - 1 - s_\\ell`.
 
-        Stores results in ``self._linkage_deficiencies``.
+        This is the deficiency decomposition from Feinberg (1979, 1987).
 
-        :returns: self
-        :reference: Deficiency decomposition and per-linkage-class deficiency (Feinberg).
-        :example:
+        Results are stored in ``self._linkage_deficiencies``.
 
+        :returns: Self, to allow fluent chaining.
+        :rtype: DeficiencyAnalyzer
+        :raises RuntimeError: If :meth:`compute_summary` has not been called.
+
+        Examples
+        --------
         .. code-block:: python
 
-            analyzer.compute_linkage_deficiencies()
-            print(analyzer.linkage_deficiencies)
+           analyzer.compute_summary().compute_linkage_deficiencies()
+           print(analyzer.linkage_deficiencies)
         """
         if self._summary is None or self._complex_graph is None:
             raise RuntimeError(
-                "compute_summary() must be called before compute_linkage_deficiencies()"
+                "compute_summary() must be called before compute_linkage_deficiencies()."
             )
 
         und = self._complex_graph.to_undirected()
@@ -266,53 +353,66 @@ class DeficiencyAnalyzer:
     # -------------------------
     # checks / algorithms
     # -------------------------
+
     def check_deficiency_zero(self) -> bool:
         """
-        Check structural hypotheses of the Deficiency Zero Theorem.
+        Check structural hypotheses of the **Deficiency Zero Theorem**.
 
-        Hypotheses checked:
-          - global deficiency == 0
-          - network is weakly reversible
+        Hypotheses checked (Feinberg, 1979; Horn & Jackson, 1972):
 
-        :returns: True if structural hypotheses for the Deficiency Zero Theorem hold.
-        :reference: Deficiency Zero Theorem (Feinberg, 1972/1977); see Horn & Jackson (1972) for complex-balanced consequences.
-        :example:
+        - global deficiency :math:`\\delta = 0`,
+        - network is weakly reversible.
 
+        :returns: ``True`` if the structural hypotheses for the Deficiency Zero
+            Theorem hold.
+        :rtype: bool
+        :raises RuntimeError: If :meth:`compute_summary` has not been called.
+
+        Examples
+        --------
         .. code-block:: python
 
-            if analyzer.compute_summary().check_deficiency_zero():
-                print("Deficiency Zero conditions satisfied (structural).")
+           if analyzer.compute_summary().check_deficiency_zero():
+               print("Deficiency Zero conditions satisfied (structural).")
         """
         if self._summary is None:
             raise RuntimeError(
-                "compute_summary() must be called before check_deficiency_zero()"
+                "compute_summary() must be called before check_deficiency_zero()."
             )
         return self._summary.deficiency == 0 and self._summary.weakly_reversible
 
     def check_deficiency_one(self) -> bool:
         """
-        Check structural hypotheses of the Deficiency One Theorem.
+        Check structural hypotheses of the **Deficiency One Theorem**.
 
-        Structural checks:
-          - global deficiency == 1
-          - per-linkage-class deficiencies sum to 1
-          - each per-linkage-class deficiency <= 1
+        Structural checks (Feinberg, 1987):
 
-        :returns: True if structural counts satisfy Deficiency One structural hypotheses.
-        :reference: Deficiency One Theorem (Feinberg, 1987).
-        :example:
+        - global deficiency :math:`\\delta = 1`,
+        - per-linkage-class deficiencies sum to 1,
+        - each per-linkage-class deficiency :math:`\\le 1`.
 
+        :returns: ``True`` if structural counts satisfy Deficiency One hypotheses.
+        :rtype: bool
+        :raises RuntimeError: If :meth:`compute_summary` and
+            :meth:`compute_linkage_deficiencies` have not been called.
+
+        Examples
+        --------
         .. code-block:: python
 
-            ok = analyzer.compute_summary().compute_linkage_deficiencies().check_deficiency_one()
+           ok = (
+               analyzer.compute_summary()
+                       .compute_linkage_deficiencies()
+                       .check_deficiency_one()
+           )
         """
         if self._summary is None:
             raise RuntimeError(
-                "compute_summary() must be called before check_deficiency_one()"
+                "compute_summary() must be called before check_deficiency_one()."
             )
         if self._linkage_deficiencies is None:
             raise RuntimeError(
-                "compute_linkage_deficiencies() must be called before check_deficiency_one()"
+                "compute_linkage_deficiencies() must be called before check_deficiency_one()."
             )
 
         if self._summary.deficiency != 1:
@@ -328,19 +428,24 @@ class DeficiencyAnalyzer:
             return False
         return sum(int(d) for d in self._linkage_deficiencies) == 1
 
-    def _is_weakly_reversible(self, G: nx.DiGraph) -> bool:
+    @staticmethod
+    def _is_weakly_reversible(G: nx.DiGraph) -> bool:
         """
-        Canonical weak reversibility check: each undirected linkage class must
-        be strongly connected as a directed subgraph.
+        Test weak reversibility of the complex graph.
 
-        :param G: complex graph (directed).
-        :returns: True if weakly reversible.
-        :reference: Definition of weak reversibility (Feinberg).
-        :example:
+        A network is weakly reversible if each undirected linkage class is
+        strongly connected as a directed subgraph (Feinberg, 1979).
 
+        :param G: Complex graph (directed).
+        :type G: networkx.DiGraph
+        :returns: ``True`` if weakly reversible.
+        :rtype: bool
+
+        Examples
+        --------
         .. code-block:: python
 
-            weak = analyzer._is_weakly_reversible(G)
+           weak = DeficiencyAnalyzer._is_weakly_reversible(CG)
         """
         und = G.to_undirected()
         for comp in nx.connected_components(und):
@@ -351,23 +456,26 @@ class DeficiencyAnalyzer:
 
     def check_regularity(self) -> bool:
         """
-        Coarse regularity test used by the Deficiency One Algorithm.
+        Coarse regularity test used by the **Deficiency One Algorithm**.
 
         This checks that each linkage class has exactly one terminal strongly
         connected component (terminal SCC). It is a graph-level sufficient
-        condition for the regularity required in Feinberg's algorithm.
+        condition for the regularity required in the algorithm of
+        Feinberg (1988).
 
-        :returns: True if coarse regularity condition holds.
-        :reference: Regularity condition in the Deficiency One Algorithm (Feinberg, 1988).
-        :example:
+        :returns: ``True`` if the coarse regularity condition holds.
+        :rtype: bool
+        :raises RuntimeError: If :meth:`compute_summary` has not been called.
 
+        Examples
+        --------
         .. code-block:: python
 
-            reg = analyzer.compute_summary().check_regularity()
+           reg = analyzer.compute_summary().check_regularity()
         """
         if self._complex_graph is None:
             raise RuntimeError(
-                "compute_summary() must be called before check_regularity()"
+                "compute_summary() must be called before check_regularity()."
             )
 
         und = self._complex_graph.to_undirected()
@@ -392,184 +500,184 @@ class DeficiencyAnalyzer:
 
     def run_deficiency_one_algorithm(self) -> "DeficiencyAnalyzer":
         """
-        Structural front-end for the Deficiency One Algorithm.
+        Run the structural **Deficiency One Algorithm** (Feinberg, 1987, 1988).
 
-        NOTE: This is a conservative, structural-only front-end. It does not
-        implement Feinberg's sign-restricted linear solves or explicit
-        construction of multiple equilibria. The method records whether the
-        structural prerequisites (counts + coarse regularity) pass.
+        This method combines:
 
-        :returns: self
-        :reference: Deficiency One Algorithm (Feinberg, 1988) — structural front-end only.
-        :example:
+        - Global deficiency and per-linkage-class deficiencies
+          (via :meth:`compute_summary` and
+          :meth:`compute_linkage_deficiencies`),
+        - The coarse regularity test (:meth:`check_regularity`),
 
+        to evaluate the hypotheses of the Deficiency One Theorem
+        (Feinberg, 1987). If all hypotheses are satisfied, the theorem
+        guarantees that, for **mass-action kinetics** with any choice
+        of positive rate constants, each positive stoichiometric
+        compatibility class contains **at most one** equilibrium.
+
+        The outcome is stored in ``self._structural_one_result`` as a
+        dictionary with keys:
+
+        - ``hypotheses_satisfied`` (bool): whether all structural
+          hypotheses hold.
+        - ``deficiency`` (int): global deficiency :math:`\\delta`.
+        - ``linkage_deficiencies`` (List[int]): per-linkage-class
+          deficiencies :math:`\\delta_\\ell`.
+        - ``regular`` (bool): whether the regularity check passed.
+        - ``conclusion`` (str): human-readable statement summarising
+          whether the theorem applies and what it guarantees.
+
+        This is a structural implementation of the Deficiency One
+        Theorem; it does **not** attempt to construct explicit rate
+        constants or multiple equilibria.
+
+        :returns: Self, to allow fluent chaining.
+        :rtype: DeficiencyAnalyzer
+
+        Examples
+        --------
         .. code-block:: python
 
-            analyzer.compute_summary().compute_linkage_deficiencies().run_deficiency_one_algorithm()
-            print(analyzer.as_dict()["deficiency_one_structural"])
+           analyzer = DeficiencyAnalyzer(hg)
+           analyzer.compute_summary() \
+                   .compute_linkage_deficiencies() \
+                   .run_deficiency_one_algorithm()
+
+           result = analyzer.deficiency_one_structural
+           if result["hypotheses_satisfied"]:
+               print(result["conclusion"])
+           else:
+               print("Deficiency One theorem does not apply structurally.")
         """
         if self._summary is None:
             self.compute_summary()
         if self._linkage_deficiencies is None:
             self.compute_linkage_deficiencies()
 
-        structural_pass = bool(self.check_deficiency_one() and self.check_regularity())
+        # Feinberg (1987): Deficiency One hypotheses
+        cond_def_one = int(self._summary.deficiency) == 1
+        lc_defs = [int(d) for d in self._linkage_deficiencies or []]
+        cond_lc_sum = sum(lc_defs) == 1
+        cond_lc_each_le1 = bool(lc_defs) and all(d <= 1 for d in lc_defs)
+        cond_regular = self.check_regularity()
+
+        hypotheses_ok = bool(
+            cond_def_one and cond_lc_sum and cond_lc_each_le1 and cond_regular
+        )
+
+        if hypotheses_ok:
+            conclusion = (
+                "Deficiency One hypotheses (Feinberg, 1987, 1988) are satisfied: "
+                "for mass-action kinetics with any positive rate constants, each "
+                "positive stoichiometric compatibility class contains at most one "
+                "equilibrium (if any equilibrium exists)."
+            )
+        else:
+            conclusion = (
+                "Deficiency One hypotheses are not satisfied; the theorem does not "
+                "provide information about uniqueness or multiplicity of equilibria "
+                "for this network."
+            )
+
         self._structural_one_result = {
-            "structural_pass": structural_pass,
-            "multiple_equilibria_certified": False,
-            "note": "Conservative structural front-end only; full algorithm not implemented.",
+            "hypotheses_satisfied": hypotheses_ok,
+            "deficiency": int(self._summary.deficiency),
+            "linkage_deficiencies": lc_defs,
+            "regular": bool(cond_regular),
+            "conclusion": conclusion,
         }
         return self
 
+    # -------------------------
+    # nondegeneracy (left-nullspace) test
+    # -------------------------
+
     def nondegeneracy_test(self, tol: float = 1e-9) -> "DeficiencyAnalyzer":
         """
-        Nondegeneracy test based on the left-nullspace (kernel of S^T).
+        Nondegeneracy test based on the left-nullspace :math:`\\ker(S^T)`.
 
-        This test computes a numerical basis for `ker(S^T)` where `S` is the
-        stoichiometric matrix (shape: n_species x n_reactions). The kernel of
-        `S^T` (equivalently the left-nullspace of `S`) corresponds to
-        linear conservation relations among species. The method:
+        The test computes a numerical basis of :math:`\\ker(S^T)` using SVD
+        and performs a simple heuristic analysis of which species dominate
+        each conservation law and whether they appear in complexes of maximal
+        size. This is *not* a formal CRNT theorem, but a structural diagnostic
+        inspired by the conservation-law analyses in Feinberg (1979).
 
-        1. Requires a `stoich_fn` (callable) supplied to the analyzer that
-           returns the stoichiometric matrix `N` (shape: n_species x n_reactions).
-        2. Computes a numerical basis for ker(S^T) by SVD on `A = N.T` and
-           collecting right-singular vectors corresponding to singular values
-           below ``tol``.
-        3. Reports `nullity = dim(ker(S^T))` and returns the basis vectors
-           (each of length `n_species`).
-        4. Performs a heuristic "largest relevant coefficient presence" check:
-           for each basis vector `y` it identifies the species index `i` with
-           largest absolute coefficient |y_i| and checks whether that species
-           participates in any complex whose total stoichiometric count equals
-           the maximum complex size in the network. The presence of such a
-           species in a conservation relation is a useful (heuristic)
-           indicator that large-scale complexes are represented in the
-           conservation laws (i.e., the conservation law is not only about
-           tiny trivial species). This check is conservative and intended as a
-           quick structural diagnostic.
+        Results are stored in ``self._nondegeneracy``.
 
-        :param tol: numerical tolerance for sing. value cutoff when computing nullspace.
-        :returns: self
-        :raises RuntimeError: if `stoich_fn` was not provided or `compute_summary()`
-            has not been called (needed to access complexes).
-        :reference: Left-nullspace / conservation laws; numerical nullspace via SVD. (See Feinberg, Horn & Jackson for CRNT context.)
-        :example:
+        :param tol: Numerical tolerance for singular-value cutoff.
+        :type tol: float
+        :returns: Self, to allow fluent chaining.
+        :rtype: DeficiencyAnalyzer
+        :raises RuntimeError: If ``stoich_fn`` is missing or
+            :meth:`compute_summary` has not been called.
 
+        Examples
+        --------
         .. code-block:: python
 
-            # assuming analyzer was created with stoich_fn and compute_summary() called
-            analyzer.compute_summary()
-            analyzer.nondegeneracy_test(tol=1e-10)
-            print(analyzer.nondegeneracy_result["nullity"])
-            print(analyzer.nondegeneracy_result["largest_relevant_present"])
+           analyzer.compute_summary().nondegeneracy_test(tol=1e-10)
+           print(analyzer.nondegeneracy_result["nullity"])
         """
-        # prerequisites
         if self._stoich_fn is None:
-            raise RuntimeError(
-                "nondegeneracy_test requires a stoich_fn to compute the stoichiometric matrix."
-            )
-        # ensure complexes / graph present
+            raise RuntimeError("nondegeneracy_test requires a stoich_fn to compute S.")
         if self._complexes is None or self._complex_graph is None:
             raise RuntimeError("Call compute_summary() before nondegeneracy_test().")
 
-        # compute stoichiometric matrix N (n_species x n_reactions)
-        net = self._as_network(self._crn)
-        N = self._stoich_fn(net)
+        G = _as_bipartite(self._crn)
+        N = self._stoich_fn(G)
         if not isinstance(N, np.ndarray):
             N = np.asarray(N, dtype=float)
-        n_species, n_reactions = N.shape
+        n_species, _ = N.shape
 
-        # We want ker(S^T) where S = N -> compute nullspace of A = N.T
-        A = N.T  # shape (n_reactions, n_species)
-
-        # SVD-based nullspace computation: A = U @ S @ Vh ; nullspace basis are
-        # columns of V corresponding to tiny singular values of A.
+        # ker(S^T): nullspace of A = S^T
+        A = N.T
         try:
-            # compute full SVD
-            U, svals, Vh = np.linalg.svd(A, full_matrices=True)
+            _U, svals, Vh = np.linalg.svd(A, full_matrices=True)
         except np.linalg.LinAlgError as exc:
             raise RuntimeError("SVD failed in nondegeneracy_test") from exc
 
-        # singular values are in svals (length = min(A.shape))
-        # tolerance -> those <= tol are considered zero
-        # numerical rank
         rank_A = int((svals > tol).sum())
-        nullity = int(A.shape[1] - rank_A)  # A.shape[1] == n_species
+        nullity = int(A.shape[1] - rank_A)
 
         basis: List[np.ndarray] = []
         if nullity > 0:
-            # Vh shape is (n_species, n_species) when full_matrices=True; rows of Vh are V^H
-            # columns of V corresponding to zero singular values are V[:, idx_zero]
-            V = Vh.T  # shape (n_species, n_species)
+            V = Vh.T  # shape (n_species, n_species) when full_matrices=True
             zero_idx = [i for i, sv in enumerate(svals) if sv <= tol]
-            # If svals shorter than n_species (rare when n_reactions < n_species), pad zeros indices appropriately
             if len(svals) < n_species:
-                # singular values array length = min(n_reactions, n_species)
-                # indices beyond min(...) are implicitly zero -> include them
                 zero_idx.extend(range(len(svals), n_species))
-            # Construct basis vectors (length n_species) and normalize for stability
             for idx in zero_idx:
                 vec = V[:, idx].astype(float)
-                # normalize sign & scale: make largest abs entry positive and scale to unit norm
                 max_abs = float(np.max(np.abs(vec))) if vec.size else 0.0
                 if max_abs > 0.0:
                     vec = vec / max_abs
                 basis.append(vec)
-        else:
-            basis = []
 
-        # compute complex sizes: total stoichiometry per complex
         complex_sizes: List[int] = [int(sum(c)) for c in self._complexes]
         max_complex_size = int(max(complex_sizes)) if complex_sizes else 0
 
         per_basis_info: List[Dict[str, object]] = []
         largest_relevant_present = False
 
-        # mapping: reactions -> (u_idx, v_idx)
-        # infer from complex_graph edges ordering; we need an ordering of reactions
-        # that matches columns of N. We attempt to recover reaction mapping from net.reactions
-        # Fallback: if mapping unavailable, we only use species-level checks.
-        reaction_to_complex_pair: List[Tuple[Optional[int], Optional[int]]] = []
-        try:
-            # attempt to extract reactant/product complex indices corresponding to each reaction
-            # Assumes net.reactions is ordered in the same way as stoichiometric_matrix builds columns.
-            # If stoich_fn uses a different ordering this is advisory only.
-            for rxn in getattr(net, "reactions", []):
-                # build reactant and product vectors and find their complex index in self._idx_map
-                lhs = tuple(
-                    int(getattr(rxn, "reactants", {}).get(i, 0))
-                    for i in range(n_species)
-                )
-                rhs = tuple(
-                    int(getattr(rxn, "products", {}).get(i, 0))
-                    for i in range(n_species)
-                )
-                u_idx = self._idx_map.get(lhs) if self._idx_map is not None else None
-                v_idx = self._idx_map.get(rhs) if self._idx_map is not None else None
-                reaction_to_complex_pair.append((u_idx, v_idx))
-        except Exception:
-            # keep empty or truncated mapping if something goes wrong
-            reaction_to_complex_pair = []
-
         for vec in basis:
             if vec.size == 0:
                 per_basis_info.append(
-                    {"max_index": None, "max_value": 0.0, "matches_max_complex": False}
+                    {
+                        "max_index": None,
+                        "max_value": 0.0,
+                        "matches_max_complex": False,
+                    }
                 )
                 continue
             abs_vec = np.abs(vec)
             max_idx = int(np.argmax(abs_vec))
             max_val = float(abs_vec[max_idx])
 
-            # check species participation in max-size complex(s)
             species_in_max_complex = False
-            # quick scan: does any complex with max_complex_size include this species (nonzero count)
             for c_idx, comp in enumerate(self._complexes):
                 if complex_sizes[c_idx] == max_complex_size and comp[max_idx] > 0:
                     species_in_max_complex = True
                     break
 
-            # record per-basis
             per_basis_info.append(
                 {
                     "max_index": max_idx,
@@ -580,10 +688,9 @@ class DeficiencyAnalyzer:
             if species_in_max_complex:
                 largest_relevant_present = True
 
-        # store results in self
         self._nondegeneracy = {
             "nullity": int(nullity),
-            "basis": [vec.tolist() for vec in basis],  # serialisable
+            "basis": [vec.tolist() for vec in basis],
             "per_basis": per_basis_info,
             "largest_relevant_present": bool(largest_relevant_present),
             "max_complex_size": int(max_complex_size),
@@ -594,46 +701,109 @@ class DeficiencyAnalyzer:
     @property
     def nondegeneracy_result(self) -> Optional[Dict[str, object]]:
         """
-        Return the result of the last nondegeneracy_test() or None.
+        Return the result of the last :meth:`nondegeneracy_test` or ``None``.
 
-        :returns: dictionary with keys: nullity, basis (list), per_basis (list), largest_relevant_present, max_complex_size, tolerance
-        :example:
+        :returns: Dictionary with keys:
+            ``nullity``, ``basis``, ``per_basis``,
+            ``largest_relevant_present``, ``max_complex_size``, ``tolerance``.
+        :rtype: Optional[Dict[str, object]]
+        """
+        return self._nondegeneracy
 
+    # -------------------------
+    # high-level convenience
+    # -------------------------
+
+    def compute_crn_deficiency(
+        self, *, run_nondegeneracy: bool = False
+    ) -> "DeficiencyAnalyzer":
+        """
+        High-level convenience method to compute all main CRN deficiency properties.
+
+        This is a thin wrapper around:
+
+        - :meth:`compute_summary`,
+        - :meth:`compute_linkage_deficiencies`,
+        - :meth:`run_deficiency_one_algorithm`,
+        - optionally :meth:`nondegeneracy_test`.
+
+        The structural checks follow the deficiency framework of
+        Feinberg (1979, 1987, 1988).
+
+        :param run_nondegeneracy: If ``True``, also run
+            :meth:`nondegeneracy_test` with default tolerance.
+        :type run_nondegeneracy: bool
+        :returns: Self, to allow fluent chaining.
+        :rtype: DeficiencyAnalyzer
+
+        Examples
+        --------
         .. code-block:: python
 
-            analyzer.compute_summary().nondegeneracy_test()
-            print(analyzer.nondegeneracy_result["nullity"])
+           analyzer = DeficiencyAnalyzer(hg)
+           analyzer.compute_crn_deficiency(run_nondegeneracy=True)
+           print(analyzer.summary.deficiency)
+           print(analyzer.deficiency_one_structural)
+           print(analyzer.nondegeneracy_result)
         """
-        return getattr(self, "_nondegeneracy", None)
+        self.compute_summary()
+        self.compute_linkage_deficiencies()
+        self.run_deficiency_one_algorithm()
+        if run_nondegeneracy:
+            self.nondegeneracy_test()
+        return self
 
     # -------------------------
     # accessors & helpers
     # -------------------------
+
     @property
     def summary(self) -> Optional[DeficiencySummary]:
-        """Return computed deficiency summary or None."""
+        """
+        Return computed deficiency summary or ``None``.
+
+        :returns: Summary dataclass with counts, rank and deficiency.
+        :rtype: Optional[DeficiencySummary]
+        """
         return self._summary
 
     @property
     def linkage_deficiencies(self) -> Optional[List[int]]:
-        """Return per-linkage-class deficiencies or None."""
+        """
+        Return per-linkage-class deficiencies or ``None``.
+
+        :returns: List of per-linkage-class deficiencies.
+        :rtype: Optional[List[int]]
+        """
         return self._linkage_deficiencies
 
     @property
     def deficiency_one_structural(self) -> Optional[Dict[str, Any]]:
-        """Return the structural result from the Deficiency One front-end (or None)."""
+        """
+        Return the structural result from the Deficiency One front-end (or ``None``).
+
+        :returns: Dictionary with structural pass flag and a short note,
+            or ``None`` if :meth:`run_deficiency_one_algorithm` has not been called.
+        :rtype: Optional[Dict[str, Any]]
+        """
         return self._structural_one_result
 
     def as_dict(self) -> Dict[str, Any]:
         """
         Return a serialisable dict with computed fields.
 
-        :returns: dictionary of computed outputs.
-        :example:
+        :returns: Dictionary of computed outputs including summary, linkage
+            deficiencies, structural Deficiency One result and nondegeneracy
+            diagnostics (if available).
+        :rtype: Dict[str, Any]
 
+        Examples
+        --------
         .. code-block:: python
 
-            print(analyzer.as_dict())
+           analyzer.compute_crn_deficiency(run_nondegeneracy=True)
+           info = analyzer.as_dict()
+           print(info["deficiency"])
         """
         out: Dict[str, Any] = {}
         if self._summary is not None:
@@ -652,18 +822,24 @@ class DeficiencyAnalyzer:
             out["linkage_deficiencies"] = list(self._linkage_deficiencies)
         if self._structural_one_result is not None:
             out["deficiency_one_structural"] = dict(self._structural_one_result)
+        if self._nondegeneracy is not None:
+            out["nondegeneracy"] = dict(self._nondegeneracy)
         return out
 
     def explain(self) -> str:
         """
         Return a short human-readable explanation of analysis state.
 
-        :returns: one-line explanation string.
-        :example:
+        :returns: One-line explanation string summarising deficiency, number
+            of linkage classes and weak reversibility.
+        :rtype: str
 
+        Examples
+        --------
         .. code-block:: python
 
-            print(analyzer.explain())
+           analyzer.compute_summary()
+           print(analyzer.explain())
         """
         if self._summary is None:
             return "No computations performed yet. Call compute_summary()."
@@ -674,4 +850,13 @@ class DeficiencyAnalyzer:
         )
 
     def __repr__(self) -> str:
-        return f"<DeficiencyAnalyzer deficiency={getattr(self._summary, 'deficiency', 'NA')}>"
+        """
+        Return a concise representation showing the current deficiency if known.
+
+        :returns: Representation string.
+        :rtype: str
+        """
+        return (
+            f"<DeficiencyAnalyzer deficiency="
+            f"{getattr(self._summary, 'deficiency', 'NA')}>"
+        )
