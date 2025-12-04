@@ -64,6 +64,7 @@ class CRNHyperGraph:
         self._rule_counters: Dict[str, int] = defaultdict(int)
         self.species_to_in_edges: Dict[str, Set[str]] = defaultdict(set)
         self.species_to_out_edges: Dict[str, Set[str]] = defaultdict(set)
+        self.species_to_mol: Dict[str, Any] = {}
 
     # -----------------------
     # id generation
@@ -285,6 +286,7 @@ class CRNHyperGraph:
                 self.species.discard(s)
                 self.species_to_in_edges.pop(s, None)
                 self.species_to_out_edges.pop(s, None)
+                self.species_to_mol.pop(s, None)
         for s in list(e.products.keys()):
             self.species_to_in_edges[s].discard(edge_id)
             if not self.species_to_in_edges.get(
@@ -293,8 +295,9 @@ class CRNHyperGraph:
                 self.species.discard(s)
                 self.species_to_in_edges.pop(s, None)
                 self.species_to_out_edges.pop(s, None)
+                self.species_to_mol.pop(s, None)
 
-    def remove_species(self, species: str, prune_orphans: bool = True) -> None:
+    def remove_species(self, species: str, *, prune_orphans: bool = True) -> None:
         """
         Remove species from all reactions (adjust stoichiometry). Remove empty reactions.
 
@@ -328,6 +331,7 @@ class CRNHyperGraph:
                 self.species.discard(species)
                 self.species_to_in_edges.pop(species, None)
                 self.species_to_out_edges.pop(species, None)
+                self.species_to_mol.pop(species, None)
 
     # -----------------------
     # query / utilities
@@ -497,9 +501,102 @@ class CRNHyperGraph:
         """Alias of incidence_matrix for clarity."""
         return self.incidence_matrix(sparse=sparse)
 
+    # -----------------------
+    # species–molecule mapping
+    # -----------------------
+    def set_mol_map(
+        self,
+        mapping: Mapping[str, Any],
+        *,
+        strict: bool = True,
+        clear_existing: bool = False,
+    ) -> None:
+        """
+        Set or update the mapping from species labels to molecule identifiers.
+
+        :param mapping: mapping from species label to molecule
+        :type mapping: Mapping[str, Any]
+        :param strict: if True, raise if mapping contains species not in the hypergraph
+        :type strict: bool
+        :param clear_existing: if True, clear existing entries before applying mapping
+        :type clear_existing: bool
+        :raises KeyError: if strict is True and mapping contains unknown species
+        """
+        unknown = set(mapping) - self.species
+        if strict and unknown:
+            raise KeyError(
+                "set_mol_map: mapping contains species not in hypergraph: "
+                f"{sorted(unknown)}"
+            )
+
+        if clear_existing:
+            self.species_to_mol.clear()
+
+        for s, mol in mapping.items():
+            if s in self.species:
+                self.species_to_mol[s] = mol
+
+    def assign_mol(self, species: str, mol: Any) -> None:
+        """
+        Assign or update the molecule identifier for a single species.
+
+        :param species: species label
+        :type species: str
+        :param mol_id: molecule identifier (e.g. int, str, or other hashable type)
+        :type mol_id: Any
+        :raises KeyError: if species is not present in the hypergraph
+        """
+        if species not in self.species:
+            raise KeyError(f"Unknown species {species!r}")
+        self.species_to_mol[species] = mol
+
+    def get_mol(self, species: str) -> Any:
+        """
+        Get the molecule identifier for a species.
+
+        :param species: species label
+        :type species: str
+        :returns: molecule identifier associated with the species
+        :rtype: Any
+        :raises KeyError: if species is not present or has no molecule assigned
+        """
+        if species not in self.species:
+            raise KeyError(f"Unknown species {species!r}")
+        if species not in self.species_to_mol:
+            raise KeyError(f"No molecule assigned for species {species!r}")
+        return self.species_to_mol[species]
+
     def __repr__(self) -> str:
         lines = ["CRNHyperGraph:"]
-        for e in self.edge_list():
+
+        def _edge_key(e) -> tuple:
+            """
+            Sort edges by edge_id like 'r_1', 'r_2', 'r_10'.
+            Fallback to repr(e) if we cannot find a suitable id.
+            """
+            eid = getattr(e, "edge_id", None) or getattr(e, "id", None)
+            if isinstance(eid, str):
+                # split into non-digit prefix + numeric suffix
+                prefix = "".join(ch for ch in eid if not ch.isdigit())
+                digits = "".join(ch for ch in eid if ch.isdigit())
+                try:
+                    n = int(digits) if digits else 0
+                except ValueError:
+                    n = 0
+                return (prefix, n)
+            # fallback: group all such edges together, sorted by repr
+            return ("", repr(e))
+
+        for e in sorted(self.edge_list(), key=_edge_key):
             lines.append("  " + repr(e))
+
         lines.append("Species: " + ", ".join(sorted(self.species)))
+
+        # Optional: show species→molecule mapping when available
+        if getattr(self, "species_to_mol", None):
+            pairs = [
+                f"{s} → {self.species_to_mol[s]}" for s in sorted(self.species_to_mol)
+            ]
+            lines.append("Species → mol: " + ", ".join(pairs))
+
         return "\n".join(lines)

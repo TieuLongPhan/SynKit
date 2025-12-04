@@ -1,27 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 from math import gcd
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-import networkx as nx
 
-# optional SciPy usage for more robust linear algebra / LP
 try:
     from scipy.linalg import null_space as scipy_null_space  # type: ignore
     from scipy.optimize import linprog  # type: ignore
 
     _SCIPY_AVAILABLE = True
-except Exception:  # pragma: no cover
+except Exception:
     scipy_null_space = None  # type: ignore
     linprog = None  # type: ignore
     _SCIPY_AVAILABLE = False
 
-from ..Hypergraph.hypergraph import CRNHyperGraph
-from ..Hypergraph.conversion import hypergraph_to_bipartite
-from .utils import _as_bipartite, _split_species_reactions, _species_and_reaction_order
+from .utils import _as_bipartite, _species_and_reaction_order
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +196,15 @@ def _svd_null_space(A: np.ndarray, rtol: float = 1e-12) -> np.ndarray:
     return ns
 
 
+def _null_space(A: np.ndarray, rtol: float = 1e-12) -> np.ndarray:
+    """
+    Unified nullspace dispatcher: use SciPy if available, else SVD fallback.
+    """
+    if _SCIPY_AVAILABLE and scipy_null_space is not None:
+        return scipy_null_space(A, rcond=rtol)
+    return _svd_null_space(A, rtol=rtol)
+
+
 def left_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
     """
     Compute a basis for the **left nullspace** of :math:`S`, i.e. all vectors
@@ -220,11 +225,7 @@ def left_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
         L = left_nullspace(G)  # columns m with m^T S = 0
     """
     S = stoichiometric_matrix(crn)
-    A = S.T  # left nullspace of S is right nullspace of S^T
-    if _SCIPY_AVAILABLE and scipy_null_space is not None:
-        basis = scipy_null_space(A, rcond=rtol)
-        return basis
-    return _svd_null_space(A, rtol=rtol)
+    return _null_space(S.T, rtol=rtol)
 
 
 def right_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
@@ -246,57 +247,33 @@ def right_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
         V = right_nullspace(G)  # columns v with S v = 0
     """
     S = stoichiometric_matrix(crn)
-    if _SCIPY_AVAILABLE and scipy_null_space is not None:
-        return scipy_null_space(S, rcond=rtol)
-    return _svd_null_space(S, rtol=rtol)
+    return _null_space(S, rtol=rtol)
 
 
-def compute_P_semiflows(crn: Any, *, rtol: float = 1e-12) -> Optional[np.ndarray]:
+def left_right_kernels(
+    crn: Any, *, rtol: float = 1e-12
+) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Compute a basis for **P-semiflows** (place invariants / conservation laws),
-    i.e. the left kernel :math:`\\ker(S^T)`.
+    Compute **both** left and right kernels of the stoichiometric matrix
+    :math:`S`:
+
+    - left_basis: basis of :math:`\\ker(S^T)` (conservation laws).
+    - right_basis: basis of :math:`\\ker(S)` (flux modes / T-semiflows).
 
     :param crn: Hypergraph or bipartite NetworkX graph.
     :type crn: Any
-    :param rtol: Relative tolerance for nullspace computation.
+    :param rtol: Relative tolerance for nullspace computations.
     :type rtol: float
-    :returns: Matrix of shape ``(n_species, k)`` whose columns are basis
-              vectors of :math:`\\ker(S^T)`, or ``None`` if computation fails.
-    :rtype: Optional[numpy.ndarray]
+    :returns: ``(left_basis, right_basis)``.
+    :rtype: Tuple[numpy.ndarray, numpy.ndarray]
 
     .. code-block:: python
 
-        P = compute_P_semiflows(G)
+        L, R = left_right_kernels(G)
     """
-    try:
-        basis = left_nullspace(crn, rtol=rtol)
-        return basis
-    except Exception:
-        return None
-
-
-def compute_T_semiflows(crn: Any, *, rtol: float = 1e-12) -> Optional[np.ndarray]:
-    """
-    Compute a basis for **T-semiflows** (transition invariants / steady-state
-    flux vectors), i.e. the right kernel :math:`\\ker(S)`.
-
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param rtol: Relative tolerance for nullspace computation.
-    :type rtol: float
-    :returns: Matrix of shape ``(n_reactions, k)`` whose columns are basis
-              vectors of :math:`\\ker(S)`, or ``None`` if computation fails.
-    :rtype: Optional[numpy.ndarray]
-
-    .. code-block:: python
-
-        T = compute_T_semiflows(G)
-    """
-    try:
-        basis = right_nullspace(crn, rtol=rtol)
-        return basis
-    except Exception:
-        return None
+    left_basis = left_nullspace(crn, rtol=rtol)
+    right_basis = right_nullspace(crn, rtol=rtol)
+    return left_basis, right_basis
 
 
 # ---------------------------------------------------------------------------
@@ -332,6 +309,13 @@ def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[i
     if np.all(np.abs(vec) <= tol):
         return [0] * int(vec.size)
 
+    # Normalise to avoid exploding denominators / LCM
+    v = np.array(vec, dtype=float)
+    max_abs = float(np.max(np.abs(v)))
+    if max_abs <= tol:
+        return [0] * int(v.size)
+    v = v / max_abs
+
     fracs: List[Fraction] = []
     for x in vec:
         if abs(x) <= tol:
@@ -342,23 +326,32 @@ def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[i
     den_lcm = 1
     for f in fracs:
         den_lcm = _lcm(den_lcm, f.denominator)
+        # cap LCM to avoid gigantic integers
+        if den_lcm > 10**6:
+            break
 
-    ints = [int(f.numerator * (den_lcm // f.denominator)) for f in fracs]
+    if den_lcm <= 10**6:
+        ints = [int(f.numerator * (den_lcm // f.denominator)) for f in fracs]
+    else:
+        # fallback to simple rounding with fixed scale if LCM explodes
+        scale = 10**3
+        ints = [int(round(x * scale)) for x in v]
+
     g = 0
-    for v in ints:
-        g = gcd(g, abs(v))
+    for val in ints:
+        g = gcd(g, abs(val))
     if g == 0:
-        nonzeros = [abs(x) for x in vec if abs(x) > tol]
+        nonzeros = [abs(x) for x in v if abs(x) > tol]
         if not nonzeros:
-            return [0] * int(vec.size)
+            return [0] * int(v.size)
         scale = 1.0 / min(nonzeros)
-        ints = [int(round(x * scale)) for x in vec]
+        ints = [int(round(x * scale)) for x in v]
         g = 0
-        for v in ints:
-            g = gcd(g, abs(v))
+        for val in ints:
+            g = gcd(g, abs(val))
         if g == 0:
             g = 1
-    ints = [v // g for v in ints]
+    ints = [val // g for val in ints]
     return ints
 
 
@@ -382,7 +375,7 @@ def integer_conservation_laws(
         from synkit.CRN.Props.stoich import integer_conservation_laws
         laws = integer_conservation_laws(G)
     """
-    B = compute_P_semiflows(crn, rtol=rtol)
+    B = left_nullspace(crn, rtol=rtol)
     if B is None or B.size == 0:
         return []
     out: List[List[int]] = []
@@ -398,35 +391,92 @@ def integer_conservation_laws(
 # ---------------------------------------------------------------------------
 
 
+def _positive_conservation_law_from_basis(
+    B: np.ndarray,
+    *,
+    eps: float = 1e-8,
+    use_lp: bool = True,
+) -> Tuple[Optional[np.ndarray], bool]:
+    """
+    Given a left-kernel basis B (n_species x k), try to find a strictly
+    positive conservation law m with m_i > eps and ||m||_1 = 1.
+
+    The search proceeds in two stages:
+
+    1. Basis scan: look for a column that is strictly positive/negative.
+    2. Optional LP: if k > 1 and ``use_lp`` is True and SciPy is
+       available, solve a small LP in coefficient space m = B a with
+       constraints B a >= eps * 1.
+
+    :param B: Left-kernel basis (n_species x k).
+    :param eps: Positivity margin.
+    :param use_lp: Whether to attempt an LP-based search.
+    :returns:
+        (m, lp_attempted) where:
+
+        * m is the positive conservation law (normalised) or None,
+        * lp_attempted is True iff an LP was actually attempted.
+    """
+    if B.size == 0:
+        return None, False
+
+    B = np.atleast_2d(B)
+    m_dim, k_dim = B.shape
+
+    # 1D kernel: sign pattern decides everything.
+    if k_dim == 1:
+        col = B[:, 0]
+        if np.all(col > eps) or np.all(col < -eps):
+            m = col if np.all(col > 0) else -col
+            return m / np.sum(m), False
+        # In 1D, this is a definitive "no positive conservation law"
+        return None, False
+
+    # k > 1: quick scan of individual basis vectors
+    for j in range(k_dim):
+        col = B[:, j]
+        if np.all(col > eps) or np.all(col < -eps):
+            m = col if np.all(col > 0) else -col
+            return m / np.sum(m), False
+
+    # No single basis vector qualifies
+    if not use_lp or (not _SCIPY_AVAILABLE or linprog is None):
+        return None, False
+
+    # LP in coefficient space: m = B a, require m >= eps * 1
+    A_ub = -B  # -B a <= -eps ⇒ B a >= eps
+    b_ub = -eps * np.ones(m_dim, dtype=float)
+    c = np.ones(k_dim, dtype=float)
+    bounds = [(None, None) for _ in range(k_dim)]
+
+    try:
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
+    except Exception:
+        return None, True
+
+    if not res.success or res.x is None:
+        return None, True
+
+    a = res.x.astype(float)
+    m = B @ a
+    if not np.all(m > eps):
+        return None, True
+
+    return m / np.sum(m), True
+
+
 def is_conservative(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
     """
     Check whether the network is conservative in the sense of Feinberg:
     there exists m with strictly positive components such that m^T S = 0.
 
-    Logic
-    -----
-    1. If there are no reactions, treat the network as conservative.
-    2. Compute the left kernel ker(S^T). If it is trivial, the network
-       cannot be conservative.
-    3. If dim ker(S^T) == 1, the unique (up to scale) conservation law
-       must itself be strictly positive (or strictly negative) to admit
-       a positive representative.
-    4. For higher-dimensional kernels, optionally solve a small LP in
-       the basis-coefficient space to test whether a strictly positive
-       combination exists. If SciPy is unavailable, return None.
-
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param eps: Positivity margin (m_i >= eps for strict positivity).
-    :type eps: float
-    :returns:
-        - True  if a strictly positive conservation law exists,
-        - False if none exists,
-        - None  if the test is inconclusive (no SciPy, nontrivial kernel).
-    :rtype: Optional[bool]
+    Returns:
+      * True  – strictly positive conservation law exists,
+      * False – no such law exists,
+      * None  – inconclusive (nontrivial kernel, SciPy not available, k > 1).
     """
     S = stoichiometric_matrix(crn)
-    n_species, n_reactions = S.shape
+    _, n_reactions = S.shape
 
     # Degenerate case: no reactions => all species trivially conserved.
     if n_reactions == 0:
@@ -438,48 +488,82 @@ def is_conservative(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
         # ker(S^T) is trivial -> cannot be conservative
         return False
 
-    # One-dimensional kernel: sign pattern decides everything.
-    # Any conservation law is a scalar multiple of this vector.
+    B = np.atleast_2d(B)
+    m, lp_attempted = _positive_conservation_law_from_basis(B, eps=eps, use_lp=True)
+
+    # 1D kernel: _positive_conservation_law_from_basis is definitive
     if B.shape[1] == 1:
-        col = B[:, 0]
-        if np.all(col > eps) or np.all(col < -eps):
-            return True
+        return m is not None
+
+    # k > 1
+    if m is not None:
+        return True
+
+    # No positive law found
+    if lp_attempted:
+        # LP was attempted and failed → no strictly positive combination.
         return False
 
-    # Quick heuristic: if any basis vector is strictly positive/negative,
-    # we are conservative (already have a suitable m).
-    for j in range(B.shape[1]):
-        col = B[:, j]
-        if np.all(col > eps) or np.all(col < -eps):
-            return True
+    # LP was not attempted (no SciPy) → inconclusive.
+    return None
 
-    # If SciPy is not available, we know a conservation law exists but
-    # cannot certify strict positivity.
-    if not _SCIPY_AVAILABLE or linprog is None:
-        return None
 
-    # LP in coefficient space: m = B a, require m >= eps * 1.
-    # This guarantees m lies in ker(S^T) by construction.
-    m_dim, k_dim = B.shape
-    A_ub = -B  # -B a <= -eps => B a >= eps
-    b_ub = -eps * np.ones(m_dim, dtype=float)
-    c = np.ones(k_dim, dtype=float)
-    bounds = [(None, None) for _ in range(k_dim)]
+def compute_conservativity(
+    crn: Any,
+    *,
+    rtol: float = 1e-12,
+    eps: float = 1e-8,
+) -> Tuple[Optional[bool], Optional[np.ndarray]]:
+    """
+    High-level helper: combine is_conservative + left_nullspace
+    to also return an example positive conservation law m if possible.
+    """
+    S = stoichiometric_matrix(crn)
+    S = np.asarray(S, dtype=float)
+    n_species, n_reactions = S.shape
 
-    try:
-        res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, method="highs")
-    except Exception:
-        return None
+    # Degenerate case: no reactions
+    if n_reactions == 0:
+        if n_species == 0:
+            return True, None
+        m = np.ones(n_species, dtype=float)
+        m /= np.sum(m)
+        return True, m
 
-    return bool(res.success)
+    B = left_nullspace(crn, rtol=rtol)
+    if B is None or B.size == 0:
+        # ker(S^T) is trivial
+        return False, None
+
+    B = np.atleast_2d(B)
+    # reuse the internal helper that we already use in is_conservative
+    m, lp_attempted = _positive_conservation_law_from_basis(B, eps=eps, use_lp=True)
+
+    k_dim = B.shape[1]
+    if k_dim == 1:
+        # 1D kernel → definitive
+        if m is not None:
+            return True, m
+        return False, None
+
+    if m is not None:
+        return True, m
+
+    if lp_attempted:
+        # LP tried & failed: no strictly positive combination
+        return False, None
+
+    # no LP attempted → ask the boolean-only checker as authority
+    flag = is_conservative(crn, eps=eps)
+    return flag, None
 
 
 # ---------------------------------------------------------------------------
-# Consistency check: positive right kernel (Eq. 3.1)
+# Consistency check: positive right kernel
 # ---------------------------------------------------------------------------
 
 
-def consistency_check(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
+def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
     """
     **Consistency check** in the sense of arXiv:2511.14431, Eq. (3.1):
 
@@ -503,10 +587,10 @@ def consistency_check(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
 
     .. code-block:: python
 
-        from synkit.CRN.Props.stoich import consistency_check
-        print(consistency_check(G))
+        from synkit.CRN.Props.stoich import is_consistent
+        print(is_consistent(G))
     """
-    _, _, S = build_S(crn)
+    S = stoichiometric_matrix(crn)
     n_species, n_reactions = S.shape
 
     if n_reactions == 0:
@@ -522,8 +606,15 @@ def consistency_check(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
         except Exception:
             res = None
 
-        if res is not None:
-            return bool(res.success)
+        if res is not None and res.success:
+            v = res.x
+            residual = S @ v
+            max_v = float(np.max(np.abs(v))) or 1.0
+            rel_err = np.linalg.norm(residual, ord=np.inf) / max_v
+            if rel_err <= 1e-8:
+                return True
+            else:
+                return False
 
     # fallback heuristic: examine basis of ker(S)
     B = right_nullspace(crn)
@@ -537,30 +628,15 @@ def consistency_check(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
     return None  # inconclusive without LP
 
 
-def left_right_kernels(
-    crn: Any, *, rtol: float = 1e-12
-) -> Tuple[np.ndarray, np.ndarray]:
+def has_irreversible_futile_cycles(crn: Any, *, rtol: float = 1e-12) -> bool:
     """
-    Compute **both** left and right kernels of the stoichiometric matrix
-    :math:`S`:
-
-    - left_basis: basis of :math:`\\ker(S^T)` (conservation laws).
-    - right_basis: basis of :math:`\\ker(S)` (flux modes / T-semiflows).
-
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param rtol: Relative tolerance for nullspace computations.
-    :type rtol: float
-    :returns: ``(left_basis, right_basis)``.
-    :rtype: Tuple[numpy.ndarray, numpy.ndarray]
-
-    .. code-block:: python
-
-        L, R = left_right_kernels(G)
+    Return True iff ker(S) is non-trivial (∃ v ≠ 0 with S v = 0).
     """
-    left_basis = left_nullspace(crn, rtol=rtol)
-    right_basis = right_nullspace(crn, rtol=rtol)
-    return left_basis, right_basis
+    V = right_nullspace(crn, rtol=rtol)
+    V = np.atleast_2d(V)
+    if V.size == 0:
+        return False
+    return V.shape[1] > 0
 
 
 # ---------------------------------------------------------------------------
@@ -571,31 +647,197 @@ def left_right_kernels(
 @dataclass
 class StoichSummary:
     """
-    Lightweight container for stoichiometric summary.
+    Lightweight container for stoichiometric summary and basic structural
+    properties of a CRN.
 
-    :param n_species: Number of species.
+    Core attributes
+    ---------------
+    :param n_species:
+        Number of species (rows of the stoichiometric matrix :math:`S`).
     :type n_species: int
-    :param n_reactions: Number of reactions.
+    :param n_reactions:
+        Number of reactions (columns of :math:`S`).
     :type n_reactions: int
-    :param rank: Rank of the stoichiometric matrix S.
+    :param rank:
+        Numerical rank of :math:`S`.
     :type rank: int
-    :param deficiency: Global deficiency (optional; not computed here).
-    :type deficiency: Optional[int]
+
+    Optional / derived attributes
+    -----------------------------
+    :param dim_left_kernel:
+        Dimension of the left kernel :math:`\\ker(S^T)` (number of independent
+        conservation laws / P-semiflows). Computed as
+        ``max(n_species - rank, 0)``.
+    :type dim_left_kernel: int
+    :param dim_right_kernel:
+        Dimension of the right kernel :math:`\\ker(S)` (number of independent
+        flux modes / T-semiflows). Computed as
+        ``max(n_reactions - rank, 0)``.
+    :type dim_right_kernel: int
+    :param is_conservative:
+        Result of :func:`is_conservative` if available; ``None`` if the test
+        was inconclusive or not requested.
+    :type is_conservative: Optional[bool]
+    :param is_consistent:
+        Result of :func:`is_consistent` if available; ``None`` if the test
+        was inconclusive or not requested.
+    :type is_consistent: Optional[bool]
     """
 
+    # core
     n_species: int
     n_reactions: int
     rank: int
-    deficiency: Optional[int] = None
+
+    # derived / structural info (auto-computed)
+    dim_left_kernel: int = field(init=False)
+    dim_right_kernel: int = field(init=False)
+
+    # optional structural tests
+    is_conservative: Optional[bool] = None
+    is_consistent: Optional[bool] = None
+
+    def __post_init__(self) -> None:
+        # Basic consistency checks
+        if self.n_species < 0 or self.n_reactions < 0:
+            raise ValueError("n_species and n_reactions must be non-negative.")
+        if self.rank < 0:
+            raise ValueError("rank must be non-negative.")
+        if self.rank > min(self.n_species, self.n_reactions):
+            raise ValueError(
+                f"rank={self.rank} cannot exceed min(n_species, n_reactions) = "
+                f"{min(self.n_species, self.n_reactions)}"
+            )
+
+        self.dim_left_kernel = max(self.n_species - self.rank, 0)
+        self.dim_right_kernel = max(self.n_reactions - self.rank, 0)
+
+    # ------------------------------------------------------------------
+    # Convenience properties
+    # ------------------------------------------------------------------
+
+    @property
+    def is_full_rank(self) -> bool:
+        """
+        Whether :math:`S` has full rank, i.e.
+
+        .. math::
+
+            \\mathrm{rank}(S) = \\min(n_{\\text{species}}, n_{\\text{reactions}}).
+        """
+        return self.rank == min(self.n_species, self.n_reactions)
+
+    @property
+    def is_underdetermined(self) -> bool:
+        """
+        Whether the network is underdetermined from a flux perspective,
+        i.e. ``rank < n_reactions`` so that dim ker(S) > 0.
+        """
+        return self.rank < self.n_reactions
+
+    # ------------------------------------------------------------------
+    # Serialization helpers
+    # ------------------------------------------------------------------
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Return a plain-:class:`dict` representation of the summary.
+        """
+        return {
+            "n_species": self.n_species,
+            "n_reactions": self.n_reactions,
+            "rank": self.rank,
+            "dim_left_kernel": self.dim_left_kernel,
+            "dim_right_kernel": self.dim_right_kernel,
+            "is_conservative": self.is_conservative,
+            "is_consistent": self.is_consistent,
+        }
+
+    # ------------------------------------------------------------------
+    # Construction from a CRN
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def from_crn(
+        cls,
+        crn: Any,
+        *,
+        conservativity_check: bool = True,
+        consistency_check: bool = True,
+    ) -> "StoichSummary":
+        """
+        Build a :class:`StoichSummary` directly from a CRN object or
+        bipartite graph.
+
+        :param crn:
+            Hypergraph or bipartite NetworkX graph.
+        :type crn: Any
+        :param conservativity_check:
+            If ``True``, run :func:`is_conservative` and store the result in
+            :attr:`is_conservative`. If the conservativity check is
+            inconclusive, the field will be set to ``None``.
+        :type conservativity_check: bool
+        :param consistency_check:
+            If ``True``, run :func:`is_consistent` and store the result in
+            :attr:`is_consistent`. If the consistency check is inconclusive,
+            the field will be set to ``None``.
+        :type consistency_check: bool
+        :returns:
+            A populated :class:`StoichSummary` instance.
+        :rtype: StoichSummary
+        """
+        S = stoichiometric_matrix(crn)
+        n_species, n_reactions = S.shape
+        rank = int(np.linalg.matrix_rank(S))
+
+        is_cons = is_conservative(crn) if conservativity_check else None
+        is_consist = is_consistent(crn) if consistency_check else None
+
+        return cls(
+            n_species=n_species,
+            n_reactions=n_reactions,
+            rank=rank,
+            is_conservative=is_cons,
+            is_consistent=is_consist,
+        )
+
+    # ------------------------------------------------------------------
+    # Pretty-print
+    # ------------------------------------------------------------------
+
+    def __str__(self) -> str:
+        """
+        Human-readable multi-line summary.
+        """
+        lines = [
+            "StoichSummary(",
+            f"  n_species       = {self.n_species}",
+            f"  n_reactions     = {self.n_reactions}",
+            f"  rank            = {self.rank}",
+            f"  dim_left_kernel = {self.dim_left_kernel}",
+            f"  dim_right_kernel= {self.dim_right_kernel}",
+            f"  is_conservative = {self.is_conservative}",
+            f"  is_consistent   = {self.is_consistent}",
+            ")",
+        ]
+        return "\n".join(lines)
 
 
 def summary(crn: Any) -> StoichSummary:
     """
     Quick stoichiometric summary of the network.
 
+    This is a thin wrapper around :meth:`StoichSummary.from_crn` that
+    computes:
+
+      - number of species and reactions,
+      - rank of :math:`S`,
+      - dimensions of left and right kernels,
+      - (optionally) conservativity and consistency flags.
+
     :param crn: Hypergraph or bipartite NetworkX graph.
     :type crn: Any
-    :returns: StoichSummary with counts and rank.
+    :returns: StoichSummary with counts, rank, and basic structural info.
     :rtype: StoichSummary
 
     .. code-block:: python
@@ -603,12 +845,10 @@ def summary(crn: Any) -> StoichSummary:
         from synkit.CRN.Props.stoich import summary
         print(summary(G))
     """
-    S = stoichiometric_matrix(crn)
-    n_species, n_reactions = S.shape
-    rank = int(np.linalg.matrix_rank(S))
-    return StoichSummary(
-        n_species=n_species,
-        n_reactions=n_reactions,
-        rank=rank,
-        deficiency=None,
+    # Default: compute conservativity / consistency as well, since these
+    # are cheap for small/medium networks and very informative.
+    return StoichSummary.from_crn(
+        crn,
+        conservativity_check=True,
+        consistency_check=True,
     )
