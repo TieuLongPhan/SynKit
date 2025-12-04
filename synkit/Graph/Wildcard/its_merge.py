@@ -21,7 +21,7 @@ class ITSMerge:
     * starts as a copy of the **host** graph,
     * merges ITS typing (``typesGH``) on mapped node pairs,
     * adds leftover (non-mapped, non-wildcard) pattern nodes and edges, and
-    * finally removes all wildcard nodes.
+    * optionally removes all wildcard nodes in the final fused graph.
 
     Orientation
     -----------
@@ -39,8 +39,10 @@ class ITSMerge:
         - If ``element == wildcard_element``, they are **ignored**.
         - Otherwise they are added as new nodes with new IDs and edges are
           created according to the pattern topology.
-    * After fusion, **all wildcard nodes** (``element == wildcard_element``)
-      are removed from the fused graph; their incident edges disappear.
+    * If :paramref:`remove_wildcards` is ``True`` (default), **all wildcard
+      nodes** (``element == wildcard_element``) are removed from the fused
+      graph; their incident edges disappear. If ``False``, wildcard nodes are
+      kept.
 
     Examples
     --------
@@ -62,7 +64,7 @@ class ITSMerge:
 
         mapping = {1: 10}  # pattern node → host node
 
-        merger = ITSMerge(G1, G2, mapping).merge()
+        merger = ITSMerge(G1, G2, mapping, remove_wildcards=True).merge()
         F = merger.fused_graph
         print("Fused nodes:", F.nodes(data=True))
 
@@ -82,6 +84,9 @@ class ITSMerge:
     :param wildcard_element: Value of :paramref:`element_key` that denotes
         wildcard nodes.
     :type wildcard_element: str
+    :param remove_wildcards: If ``True``, remove wildcard nodes in the final
+        fused graph. If ``False``, wildcard nodes are kept.
+    :type remove_wildcards: bool
     :param logger: Optional logger for debug output.
     :type logger: logging.Logger | None
     """
@@ -95,6 +100,7 @@ class ITSMerge:
         types_key: str = "typesGH",
         element_key: str = "element",
         wildcard_element: str = "*",
+        remove_wildcards: bool = True,
         logger: Optional[logging.Logger] = None,
     ) -> None:
         self._G1 = G1
@@ -103,6 +109,7 @@ class ITSMerge:
         self._types_key = types_key
         self._element_key = element_key
         self._wildcard_element = wildcard_element
+        self._remove_wildcards_flag = remove_wildcards
         self._logger = logger or logging.getLogger(__name__)
 
         self._host: GraphType
@@ -127,7 +134,7 @@ class ITSMerge:
         2. Merges ``typesGH`` attributes on mapped node pairs.
         3. Adds leftover non-wildcard pattern nodes.
         4. Adds pattern edges between mapped/added nodes.
-        5. Removes wildcard nodes from the fused graph.
+        5. Optionally removes wildcard nodes from the fused graph.
 
         :returns: Self, with :pyattr:`fused_graph` updated.
         :rtype: ITSMerge
@@ -136,7 +143,8 @@ class ITSMerge:
         self._merge_anchor_nodes(fused)
         leftover_map = self._add_leftover_pattern_nodes(fused)
         self._add_pattern_edges(fused, leftover_map)
-        self._remove_wildcards(fused)
+        if self._remove_wildcards_flag:
+            self._remove_wildcards(fused)
         self._fused = fused
         return self
 
@@ -149,7 +157,8 @@ class ITSMerge:
         Fused ITS graph.
 
         The graph is in the **host's node ID space**, plus any extra IDs
-        for leftover pattern nodes, with all wildcard nodes removed.
+        for leftover pattern nodes. Wildcard nodes may have been removed,
+        depending on :paramref:`remove_wildcards`.
 
         :returns: Fused ITS graph.
         :rtype: GraphType
@@ -157,7 +166,7 @@ class ITSMerge:
         """
         if self._fused is None:
             raise RuntimeError(
-                "ITSMerge.merge() must be called before accessing " "fused_graph."
+                "ITSMerge.merge() must be called before accessing fused_graph."
             )
         return self._fused
 
@@ -209,6 +218,7 @@ class ITSMerge:
         return (
             f"<ITSMerge host_nodes={self._host.number_of_nodes()} "
             f"pattern_nodes={self._pattern.number_of_nodes()} "
+            f"remove_wildcards={self._remove_wildcards_flag} "
             f"{fused_info}>"
         )
 
@@ -222,10 +232,11 @@ class ITSMerge:
         Orientation rules
         -----------------
         1. If mapping keys belong to G1 and values to G2, then
-           pattern = G1, host = G2.
-        2. If mapping keys belong to G2 and values to G1, then
-           pattern = G2, host = G1.
-        3. Otherwise, try the inverse mapping (host → pattern).
+           pattern = G1, host = G2 and pat_to_host = mapping.
+        2. If mapping keys belong to G2 and values to G1, then the provided
+           mapping appears to be host→pattern. Invert it so that
+           pattern = G1, host = G2 and pat_to_host = inverted mapping.
+        3. Otherwise, try the inverse mapping similarly.
         4. If none of these combinations works, raise :class:`ValueError`.
         """
         mapping = self._mapping_input
@@ -236,32 +247,55 @@ class ITSMerge:
         keys = set(mapping.keys())
         vals = set(mapping.values())
 
+        # Case A: mapping is already pattern(G1) -> host(G2)
         if all_in(self._G1, keys) and all_in(self._G2, vals):
             self._pattern, self._host = self._G1, self._G2
             self._pat_is_G1 = True
             self._pat_to_host = dict(mapping)
             return
 
+        # Case B: mapping keys in G2 and values in G1 -> mapping likely host->pattern
+        # invert it to get pattern(G1)->host(G2)
         if all_in(self._G2, keys) and all_in(self._G1, vals):
-            self._pattern, self._host = self._G2, self._G1
-            self._pat_is_G1 = False
-            self._pat_to_host = dict(mapping)
-            return
+            inv = {v: k for k, v in mapping.items()}
+            if all_in(self._G1, set(inv.keys())) and all_in(
+                self._G2, set(inv.values())
+            ):
+                self._pattern, self._host = self._G1, self._G2
+                self._pat_is_G1 = True
+                self._pat_to_host = inv
+                return
 
+        # Case C: try inverse mapping explicitly (in case mapping was provided in
+        # unexpected orientation)
         inv = {v: k for k, v in mapping.items()}
         inv_keys = set(inv.keys())
         inv_vals = set(inv.values())
 
         if all_in(self._G1, inv_keys) and all_in(self._G2, inv_vals):
+            # inv is pattern(G1) -> host(G2)
             self._pattern, self._host = self._G1, self._G2
             self._pat_is_G1 = True
-            self._pat_to_host = inv
+            self._pat_to_host = dict(inv)
             return
 
         if all_in(self._G2, inv_keys) and all_in(self._G1, inv_vals):
+            # inv is pattern(G2) -> host(G1) -> invert it to pattern(G1)->host(G2)
+            inv2 = {v: k for k, v in inv.items()}
+            if all_in(self._G1, set(inv2.keys())) and all_in(
+                self._G2, set(inv2.values())
+            ):
+                self._pattern, self._host = self._G1, self._G2
+                self._pat_is_G1 = True
+                self._pat_to_host = dict(inv2)
+                return
+
+        # Fallback: if we reach here, we cannot reliably orient the mapping
+        if all_in(self._G2, keys) and all_in(self._G1, vals):
+            # keep original mapping as pattern=G2, host=G1 (fallback)
             self._pattern, self._host = self._G2, self._G1
             self._pat_is_G1 = False
-            self._pat_to_host = inv
+            self._pat_to_host = dict(mapping)
             return
 
         raise ValueError(
@@ -466,6 +500,7 @@ def fuse_its_graphs(
     types_key: str = "typesGH",
     element_key: str = "element",
     wildcard_element: str = "*",
+    remove_wildcards: bool = True,
     logger: Optional[logging.Logger] = None,
 ) -> GraphType:
     """
@@ -484,6 +519,9 @@ def fuse_its_graphs(
     :param wildcard_element: Value of :paramref:`element_key` that denotes
         wildcard nodes.
     :type wildcard_element: str
+    :param remove_wildcards: If ``True``, remove wildcard nodes from the
+        fused graph. If ``False``, keep them.
+    :type remove_wildcards: bool
     :param logger: Optional logger for debug output.
     :type logger: logging.Logger | None
     :returns: Fused ITS graph.
@@ -496,6 +534,7 @@ def fuse_its_graphs(
         types_key=types_key,
         element_key=element_key,
         wildcard_element=wildcard_element,
+        remove_wildcards=remove_wildcards,
         logger=logger,
     ).merge()
     return merger.fused_graph

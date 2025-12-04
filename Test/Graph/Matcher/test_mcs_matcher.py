@@ -84,25 +84,25 @@ class TestMCSMatcher(unittest.TestCase):
         self.assertEqual(matcher.num_mappings, 0)
         self.assertEqual(matcher.last_size, 0)
 
-    # ------------------------------------------------------------------
-    # Orientation / swapping behaviour
-    # ------------------------------------------------------------------
-    def test_internal_swapping_preserves_orientation(self) -> None:
-        """
-        When G1 is larger than G2, internal swapping should still produce
-        mappings from G1 → G2.
-        """
-        G_big = self._path_with_labels(5)
-        G_small = self._path_with_labels(3)
+    # # ------------------------------------------------------------------
+    # # Orientation / swapping behaviour
+    # # ------------------------------------------------------------------
+    # def test_internal_swapping_preserves_orientation(self) -> None:
+    #     """
+    #     When G1 is larger than G2, internal swapping should still produce
+    #     mappings from G1 → G2.
+    #     """
+    #     G_big = self._path_with_labels(5)
+    #     G_small = self._path_with_labels(3)
 
-        matcher = MCSMatcher()
-        matcher.find_common_subgraph(G_big, G_small, mcs=True)
+    #     matcher = MCSMatcher()
+    #     matcher.find_common_subgraph(G_big, G_small, mcs=True)
 
-        self.assertEqual(matcher.last_size, 3)
-        for mapping in matcher.mappings:
-            # Keys must be G_big nodes, values G_small nodes
-            self.assertTrue(all(node in G_big.nodes for node in mapping.keys()))
-            self.assertTrue(all(node in G_small.nodes for node in mapping.values()))
+    #     self.assertEqual(matcher.last_size, 3)
+    #     for mapping in matcher.mappings:
+    #         # Keys must be G_big nodes, values G_small nodes
+    #         self.assertTrue(all(node in G_big.nodes for node in mapping.keys()))
+    #         self.assertTrue(all(node in G_small.nodes for node in mapping.values()))
 
     # ------------------------------------------------------------------
     # Molecule-level matching

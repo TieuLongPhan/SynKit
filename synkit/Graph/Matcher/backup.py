@@ -19,45 +19,65 @@ class PartialMatcher:
 
     This matcher treats each connected component of the pattern as an
     independent "micro-pattern" and searches for consistent embeddings
-    of subsets of these components into one or more host graphs. It can
-    behave like a classic "partial matcher" (searching all component
-    counts) or like a strict full-pattern matcher, depending on the
-    ``partial`` flag.
+    of subsets of these components into one or more host graphs.
 
-    Internally, all embeddings for each pair (host, pattern component)
-    are pre-computed once and then re-used for all combinations. This
-    significantly reduces redundant calls to
+    Semantics of ``partial``
+    ------------------------
+    * ``partial=False`` (full mode):
+
+      - Auto-mode (``k=None``) only tries **full-pattern** matching,
+        i.e. embeddings that use **all** connected components.
+
+    * ``partial=True`` (strict partial mode):
+
+      - Auto-mode (``k=None``) tries **only partial subsets**:
+        ``k = n_components - 1, n_components - 2, ..., 1``.
+      - Full-pattern matches (using all components) are excluded in
+        this default mode.
+
+      Explicit ``k`` still does what you ask for; i.e. you can request
+      ``k = n_components`` even if ``partial=True``. The ``partial``
+      flag only affects the behaviour when ``k`` is ``None``.
+
+    Efficiency
+    ----------
+    For efficiency, all embeddings for each pair (host, pattern
+    component) are pre-computed once and then re-used for all component
+    combinations. This avoids repeated calls to
     :class:`SubgraphSearchEngine` when exploring many subsets.
 
-    Parameters
-    ----------
-    host : nx.Graph | Sequence[nx.Graph]
-        Single host graph or sequence of host graphs.
-    pattern : nx.Graph
-        Pattern graph whose connected components act as building blocks.
-    node_attrs : List[str]
-        Node attribute keys enforced equal during matching.
-    edge_attrs : List[str]
-        Edge attribute keys enforced equal during matching.
-    strategy : Strategy, optional
-        Matching strategy forwarded to :class:`SubgraphSearchEngine`.
-    max_results : int | None, optional
-        Global cap on number of embeddings to store. If ``None``, no
-        explicit cap is applied.
-    partial : bool, optional
-        If ``True``, auto-mode (``k=None``) searches all component counts
-        from full pattern down to 1. If ``False``, auto-mode only tries
-        ``k = n_components`` (i.e. full-pattern matching only).
+    :param host: Single host graph or sequence of host graphs.
+    :type host: nx.Graph | Sequence[nx.Graph]
+    :param pattern: Pattern graph whose connected components act as
+        building blocks.
+    :type pattern: nx.Graph
+    :param node_attrs: Node attribute keys enforced equal during
+        matching.
+    :type node_attrs: list[str]
+    :param edge_attrs: Edge attribute keys enforced equal during
+        matching.
+    :type edge_attrs: list[str]
+    :param strategy: Matching strategy forwarded to
+        :class:`SubgraphSearchEngine`.
+    :type strategy: Strategy
+    :param max_results: Global cap on number of embeddings to store.
+        If ``None``, no explicit cap is applied.
+    :type max_results: int | None
+    :param partial: If ``False``, auto-mode (``k=None``) behaves as
+        full-pattern matcher. If ``True``, auto-mode only returns
+        strict partial matches (no full-pattern embeddings).
+    :type partial: bool
 
     Examples
     --------
-    Simple usage with a pattern consisting of two disconnected edges
+    Basic usage with a pattern consisting of two disconnected edges
     and a single host graph:
 
     .. code-block:: python
 
         import networkx as nx
         from synkit.Graph.Matcher.partial_matcher import PartialMatcher
+        from synkit.Synthesis.Reactor.strategy import Strategy
 
         # Host: path on 5 nodes
         host = nx.path_graph(5)
@@ -66,6 +86,7 @@ class PartialMatcher:
         pattern = nx.Graph()
         pattern.add_edges_from([(0, 1), (2, 3)])
 
+        # Strict partial mode: only partial embeddings (no full-pattern)
         matcher = PartialMatcher(
             host=host,
             pattern=pattern,
@@ -75,12 +96,10 @@ class PartialMatcher:
             max_results=None,
             partial=True,
         )
-
-        # All discovered embeddings (precomputed on construction)
         mappings = matcher.get_mappings()
-        print("Number of mappings:", matcher.num_mappings)
+        print("Partial mappings:", mappings)
 
-    A one-liner using the functional wrapper:
+    One-liner via the functional wrapper:
 
     .. code-block:: python
 
@@ -89,13 +108,16 @@ class PartialMatcher:
             pattern=pattern,
             node_attrs=[],
             edge_attrs=[],
-            k=None,  # auto-mode over all component counts
+            k=None,  # auto-mode
             strategy=Strategy.COMPONENT,
             max_results=100,
             partial=True,
         )
     """
 
+    # ------------------------------------------------------------------
+    # Construction
+    # ------------------------------------------------------------------
     def __init__(
         self,
         host: Union[nx.Graph, Sequence[nx.Graph]],
@@ -124,9 +146,11 @@ class PartialMatcher:
         self.partial: bool = partial
 
         self._pattern_ccs: List[nx.Graph] = self._split_pattern_components()
+        # _host_embeddings[host_index][component_index] -> list[MappingDict]
         self._host_embeddings: List[List[List[MappingDict]]] = []
         self._precompute_embeddings()
 
+        # Auto-run matching on construction with k=None semantics
         self._mappings: List[MappingDict] = self._match_components(k=None)
 
     # ------------------------------------------------------------------
@@ -185,58 +209,78 @@ class PartialMatcher:
               exactly ``k`` pattern components.
             * If ``None``, behaviour depends on :attr:`partial`:
 
-              - ``partial=False`` → only ``k = n_components`` is used.
-              - ``partial=True`` → searches all feasible ``k`` from
-                ``n_components`` down to 1.
+              - ``partial=False`` → only full pattern (``k = n_components``).
+              - ``partial=True`` → only strict partials:
+                ``k = n_components - 1, ..., 1``.
 
         :type k: int | None
         :returns: Flat list of pattern→host node mappings.
         :rtype: list[MappingDict]
         """
+        n_cc = len(self._pattern_ccs)
+
         if k is not None:
-            return self._match_fixed_k(k)
+            return self._match_fixed_k(k, n_cc)
 
         if not self.partial:
-            return self._match_fixed_k(len(self._pattern_ccs))
+            # Full mode: only full-pattern embeddings
+            return self._match_fixed_k(n_cc, n_cc)
 
-        return self._match_all_k()
+        # Strict partial mode: no full pattern; start from n_cc - 1
+        if n_cc <= 1:
+            # Cannot have strict partial when there is only one component
+            return []
 
-    def _match_all_k(self) -> List[MappingDict]:
+        start_k = n_cc - 1
+        return self._match_k_range(start_k=start_k, stop_k=1, n_cc=n_cc)
+
+    def _match_k_range(
+        self,
+        *,
+        start_k: int,
+        stop_k: int,
+        n_cc: int,
+    ) -> List[MappingDict]:
         """
-        Aggregate embeddings over all feasible component counts.
+        Aggregate embeddings over k in [stop_k, start_k] (descending).
 
-        This tries ``k = n_cc, n_cc-1, ..., 1`` and stops once
-        :attr:`max_results` is reached (if set).
-
+        :param start_k: Maximum number of components to use.
+        :type start_k: int
+        :param stop_k: Minimum number of components to use.
+        :type stop_k: int
+        :param n_cc: Total number of connected components.
+        :type n_cc: int
         :returns: Flat list of pattern→host node mappings.
         :rtype: list[MappingDict]
         """
-        all_mappings: List[MappingDict] = []
-        n_cc = len(self._pattern_ccs) - 1
+        start_k = min(start_k, n_cc)
+        stop_k = max(stop_k, 1)
+        if start_k < stop_k:
+            return []
 
-        for k_try in range(n_cc, 0, -1):
-            mappings = self._match_fixed_k(k_try)
+        all_mappings: List[MappingDict] = []
+        for k_try in range(start_k, stop_k - 1, -1):
+            mappings = self._match_fixed_k(k_try, n_cc)
             if not mappings:
                 continue
-
             for emb in mappings:
                 all_mappings.append(emb)
                 if self.max_results and len(all_mappings) >= self.max_results:
                     return all_mappings
-
         return all_mappings
 
-    def _match_fixed_k(self, k: int) -> List[MappingDict]:
+    def _match_fixed_k(self, k: int, n_cc: int) -> List[MappingDict]:
         """
         Match using exactly ``k`` connected components of the pattern.
 
         :param k: Number of connected components to select.
         :type k: int
+        :param n_cc: Total number of connected components.
+        :type n_cc: int
         :returns: Flat list of pattern→host node mappings.
         :rtype: list[MappingDict]
-        :raises ValueError: If ``k`` is outside ``[1, n_components]``.
+        :raises ValueError: If ``k`` is outside ``[1, n_cc]``.
         """
-        n_cc = len(self._pattern_ccs)
         if k <= 0 or k > n_cc:
             raise ValueError(f"k must be between 1 and {n_cc}")
 
@@ -244,7 +288,7 @@ class PartialMatcher:
         cc_indices = range(n_cc)
 
         for combo in combinations(cc_indices, k):
-            for host_index, host in enumerate(self.hosts):
+            for host_index, _host in enumerate(self.hosts):
                 self._backtrack_components(
                     combo=combo,
                     host_index=host_index,
@@ -292,7 +336,6 @@ class PartialMatcher:
 
         cc_idx = combo[level]
         embeddings = self._host_embeddings[host_index][cc_idx]
-
         if not embeddings:
             return
 
@@ -398,8 +441,10 @@ class PartialMatcher:
         """
         Stateless convenience wrapper – one-liner for users in a hurry.
 
-        This mirrors the OO API but avoids explicitly instantiating the
-        matcher in user code.
+        The :param:`partial` flag here behaves exactly like on the class:
+
+        * ``partial=False`` and ``k=None`` → full-pattern only.
+        * ``partial=True`` and ``k=None`` → strict partials only.
 
         :param host: A single host graph or a sequence of host graphs.
         :type host: nx.Graph | Sequence[nx.Graph]
@@ -422,8 +467,9 @@ class PartialMatcher:
         :param max_results: Optional global cap on the number of
             embeddings to return.
         :type max_results: int | None
-        :param partial: If ``True``, all component counts are tried in
-            auto-mode. If ``False``, only the full pattern is used.
+        :param partial: If ``True``, all k in a strict-partial range are
+            tried in auto-mode; if ``False``, only the full pattern is
+            used in auto-mode.
         :type partial: bool
         :returns: Flat list of pattern→host node mappings.
         :rtype: list[MappingDict]
