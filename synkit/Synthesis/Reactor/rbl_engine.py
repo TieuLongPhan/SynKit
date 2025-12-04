@@ -52,7 +52,12 @@ class RBLEngine:
         :rtype: List
         """
         reactor = SynReactor(
-            self.host_fw, self.rc, partial=True, implicit_temp=True, explicit_h=False
+            self.host_fw,
+            self.rc,
+            partial=True,
+            implicit_temp=True,
+            explicit_h=False,
+            automorphism=True,
         )
         fw = reactor.smarts_list
         fw = [RadicalWildcardAdder().transform(rxn) for rxn in fw]
@@ -73,6 +78,7 @@ class RBLEngine:
             implicit_temp=True,
             explicit_h=False,
             invert=True,
+            automorphism=True,
         )
         bw = reactor.smarts_list
         bw = [RadicalWildcardAdder().transform(rxn) for rxn in bw]
