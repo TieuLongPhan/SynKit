@@ -49,14 +49,20 @@ Public API
     String describing internal orientation: ``"G1_to_G2"``, ``"G2_to_G1"``,
     or ``"unknown"`` if no search has been run yet.
 
-``matcher.find_rc_mapping(rc1, rc2, side='op', mcs=False, mcs_mol=False)``
-    Convenience wrapper for ITS reaction-centre objects (via
-    :func:`synkit.Graph.ITS.its_decompose`). ``side`` chooses which ITS
-    sides to compare:
+``matcher.find_rc_mapping(rc1, rc2,
+                         side='op',
+                         mcs=True,
+                         mcs_mol=False,
+                         component=True)``
+    Convenience wrapper for ITS reaction-centre or ITS-like graph
+    objects (via :func:`synkit.Graph.ITS.its_decompose` when applicable).
+    ``side`` chooses which ITS sides to compare:
 
-    * ``'r'``: compare right sides (``r1`` vs ``r2``)
-    * ``'l'``: compare left  sides (``l1`` vs ``l2``)
-    * ``'op'``: compare opposite  (``r1`` vs ``l2``)
+    * ``'r'``:   compare right sides (``r1`` vs ``r2``)
+    * ``'l'``:   compare left  sides (``l1`` vs ``l2``)
+    * ``'op'``:  compare opposite  (``r1`` vs ``l2``)
+    * ``'its'``: treat ``rc1`` and ``rc2`` directly as graphs (no
+      decomposition).
 """
 
 from __future__ import annotations
@@ -196,7 +202,9 @@ class MCSMatcher:
     # Internal edge / mapping helpers
     # ------------------------------------------------------------------
     def _edge_match(
-        self, host_attrs: Dict[str, Any], pat_attrs: Dict[str, Any]
+        self,
+        host_attrs: Dict[str, Any],
+        pat_attrs: Dict[str, Any],
     ) -> bool:
         """
         Compare edge attributes listed in :pyattr:`_edge_attrs`.
@@ -259,6 +267,64 @@ class MCSMatcher:
         wc = self.wildcard_element
         keep_nodes = [n for n, data in G.nodes(data=True) if data.get(key) != wc]
         return G.subgraph(keep_nodes).copy()
+
+    def _componentwise_mcs(
+        self,
+        G1: nx.Graph,
+        G2: nx.Graph,
+        *,
+        mcs: bool,
+    ) -> MappingDict:
+        """
+        Perform size-sorted, component-wise MCS between ``G1`` and ``G2``.
+
+        The graphs are decomposed into connected components, which are
+        sorted by size (descending). Components are then matched in
+        order (largest with largest, etc.) using the internal subgraph-
+        search machinery.
+
+        The combined mapping is always reported as **G1 → G2** in terms
+        of the original node ids; components that fail to yield any
+        mapping are simply skipped.
+
+        :param G1: First input graph.
+        :type G1: nx.Graph
+        :param G2: Second input graph.
+        :type G2: nx.Graph
+        :param mcs: If ``True``, restrict each component pair to
+            maximum-common-subgraph mappings.
+        :type mcs: bool
+        :returns: Combined mapping from nodes of ``G1`` to nodes of
+            ``G2``.
+        :rtype: dict[int, int]
+        """
+        comps1 = [G1.subgraph(c).copy() for c in nx.connected_components(G1)]
+        comps2 = [G2.subgraph(c).copy() for c in nx.connected_components(G2)]
+
+        comps1.sort(key=lambda g: g.number_of_nodes(), reverse=True)
+        comps2.sort(key=lambda g: g.number_of_nodes(), reverse=True)
+
+        limit = min(len(comps1), len(comps2))
+        combined: MappingDict = {}
+
+        for idx in range(limit):
+            sub1 = comps1[idx]
+            sub2 = comps2[idx]
+
+            pattern, host, pattern_is_G1 = self._prepare_orientation(sub1, sub2)
+            local_maps = self._search_subgraphs(pattern, host, mcs=mcs)
+            if not local_maps:
+                continue
+
+            best = local_maps[0]
+            if pattern_is_G1:
+                # pattern is subgraph of G1 → host is subgraph of G2
+                combined.update(best)
+            else:
+                # pattern is subgraph of G2, host is subgraph of G1 → invert
+                combined.update(self._invert_mapping(best))
+
+        return combined
 
     # ------------------------------------------------------------------
     # Connected-component (molecule) level matching
@@ -472,59 +538,104 @@ class MCSMatcher:
         rc2: Any,
         *,
         side: str = "op",
-        mcs: bool = False,
+        mcs: bool = True,
         mcs_mol: bool = False,
+        component: bool = True,
     ) -> "MCSMatcher":
         """
-        Convenience wrapper for ITS reaction-centre objects.
+        Convenience wrapper for ITS reaction-centre or ITS-like graph
+        objects.
 
-        This uses :func:`synkit.Graph.ITS.its_decompose` to obtain the
-        underlying graphs and then delegates to
-        :py:meth:`find_common_subgraph`.
+        Depending on :paramref:`side`, this either uses
+        :func:`synkit.Graph.ITS.its_decompose` to obtain left/right
+        graphs or treats the inputs directly as graphs.
 
         Side selection
         --------------
-        * ``'r'``  → compare right sides:  ``r1`` vs ``r2``.
-        * ``'l'``  → compare left sides:   ``l1`` vs ``l2``.
-        * ``'op'`` → compare opposite:     ``r1`` vs ``l2``.
+        * ``'r'``   → compare right sides:  ``r1`` vs ``r2``.
+        * ``'l'``   → compare left sides:   ``l1`` vs ``l2``.
+        * ``'op'``  → compare opposite:     ``r1`` vs ``l2``.
+        * ``'its'`` → treat ``rc1`` and ``rc2`` directly as graphs
+          (no decomposition), useful when the inputs are already ITS
+          (or ITS-like) :class:`networkx.Graph` objects.
 
-        :param rc1: First reaction-centre object.
+        Component-wise mode
+        -------------------
+        If :paramref:`component` is ``True``, the selected graphs are
+        decomposed into connected components, sorted by size
+        (descending), and matched pairwise (largest with largest, etc.)
+        using a common-/maximum-common-subgraph search for each pair.
+        The resulting mappings are combined into a single **G1 → G2**
+        mapping in terms of the original node ids. In this mode,
+        :paramref:`mcs_mol` is ignored.
+
+        :param rc1: First reaction-centre or ITS-like graph object.
         :type rc1: Any
-        :param rc2: Second reaction-centre object.
+        :param rc2: Second reaction-centre or ITS-like graph object.
         :type rc2: Any
-        :param side: Which ITS sides to compare (``'r'``, ``'l'``, ``'op'``).
+        :param side: Which ITS sides to compare (``'r'``, ``'l'``,
+            ``'op'``, or ``'its'``).
         :type side: str
         :param mcs: If ``True``, restrict to maximum-common-subgraph
-            mappings.
+            mappings (for the whole graph or per-component in
+            component-wise mode).
         :type mcs: bool
-        :param mcs_mol: If ``True``, use connected-component matching.
+        :param mcs_mol: If ``True``, use connected-component matching
+            via :py:meth:`_find_mcs_mol`. Ignored if
+            :paramref:`component` is ``True``.
         :type mcs_mol: bool
+        :param component: If ``True``, perform size-sorted,
+            component-wise MCS between the selected sides and combine
+            the per-component mappings into a single mapping.
+        :type component: bool
         :returns: The matcher instance (with internal cache updated).
         :rtype: MCSMatcher
         :raises ImportError: If :mod:`synkit` ITS utilities are not
-            available.
-        :raises ValueError: If ``side`` is not one of ``'r'``, ``'l'``, ``'op'``.
+            available for ``side`` in ``{'r', 'l', 'op'}``.
+        :raises ValueError: If ``side`` is not one of
+            ``'r'``, ``'l'``, ``'op'``, ``'its'``.
         """
-        if its_decompose is None:
-            raise ImportError(
-                "synkit is not available; cannot decompose reaction centres."
-            )
-
-        l1, r1 = its_decompose(rc1)
-        l2, r2 = its_decompose(rc2)
+        # reset cache
+        self._mappings = []
+        self._last_size = 0
+        self._last_pattern_is_G1 = None
 
         side_norm = side.lower()
-        if side_norm == "r":
-            G1, G2 = r1, r2
-        elif side_norm == "l":
-            G1, G2 = l1, l2
-        elif side_norm == "op":
-            G1, G2 = r1, l2
+
+        if side_norm == "its":
+            # Treat rc1 and rc2 directly as graphs
+            G1, G2 = rc1, rc2
         else:
-            raise ValueError(
-                "MCSMatcher.find_rc_mapping: side must be one of 'r', 'l', 'op', "
-                f"got {side!r}."
-            )
+            if its_decompose is None:
+                raise ImportError(
+                    "synkit is not available; cannot decompose reaction centres "
+                    "for side values 'r', 'l' or 'op'."
+                )
+
+            l1, r1 = its_decompose(rc1)
+            l2, r2 = its_decompose(rc2)
+
+            if side_norm == "r":
+                G1, G2 = r1, r2
+            elif side_norm == "l":
+                G1, G2 = l1, l2
+            elif side_norm == "op":
+                G1, G2 = r1, l2
+            else:
+                raise ValueError(
+                    "MCSMatcher.find_rc_mapping: side must be one of "
+                    "'r', 'l', 'op', 'its', got "
+                    f"{side!r}."
+                )
+
+        if component:
+            G1_use = self._prune_graph(G1)
+            G2_use = self._prune_graph(G2)
+            combined = self._componentwise_mcs(G1_use, G2_use, mcs=mcs)
+            self._mappings = [combined]  # G1 -> G2
+            self._last_size = len(combined)
+            self._last_pattern_is_G1 = True
+            return self
 
         return self.find_common_subgraph(G1, G2, mcs=mcs, mcs_mol=mcs_mol)
 
@@ -547,6 +658,7 @@ class MCSMatcher:
         :type direction: str
         :returns: List of node-mapping dictionaries.
         :rtype: list[dict[int, int]]
+        :raises ValueError: If ``direction`` is not supported.
         """
         if direction == "pattern_to_host" or self._last_pattern_is_G1 is None:
             return [dict(m) for m in self._mappings]

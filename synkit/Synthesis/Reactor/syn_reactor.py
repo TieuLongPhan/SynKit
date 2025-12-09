@@ -22,6 +22,7 @@ from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.Matcher.automorphism import Automorphism
+from synkit.Graph.Matcher.auto_est import AutoEst
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
@@ -224,6 +225,10 @@ class SynReactor:
                     node_attrs=["element", "charge"],
                     edge_attrs=["order"],
                     strategy=Strategy.from_string(self.strategy),
+                    threshold=self.embed_threshold,
+                    pre_filter=self.embed_pre_filter,
+                    max_results=self.embed_threshold,
+                    prune_auto=True,
                 )
                 raw_maps = matcher.get_mappings()
             else:
@@ -247,7 +252,14 @@ class SynReactor:
                     len(self._mappings),
                 )
             else:
-                self._mappings = raw_maps
+                auto = AutoEst(
+                    self.graph.raw,
+                    node_attrs=["element", "charge", "aromatic", "hcount"],
+                    edge_attrs=["order"],
+                )
+                auto.fit()
+                self._mappings = auto.deduplicate(raw_maps)
+                # self._mappings = raw_maps
 
             log.info("%d mapping(s) discovered", len(self._mappings))
         return self._mappings

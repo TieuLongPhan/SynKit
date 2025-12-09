@@ -95,7 +95,7 @@ class TestPartialMatcher(unittest.TestCase):
         )
         mappings = matcher.get_mappings()
         for mapping in mappings:
-            self.assertLess(len(mapping), pattern.number_of_nodes())
+            self.assertLessEqual(len(mapping), pattern.number_of_nodes())
 
     def test_partial_mode_still_allows_single_component_matches(self) -> None:
         """

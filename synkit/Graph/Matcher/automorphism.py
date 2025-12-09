@@ -79,6 +79,8 @@ class Automorphism:
         auto = Automorphism(G)
         orbits = auto.orbits
         # orbits == [frozenset({0, 1, 2, 3})]
+        n_sym = auto.n_automorphisms
+        # n_sym == 8 for a 4-cycle
 
         # Imagine three subgraph mappings that only differ by rotation
         mappings = [
@@ -120,7 +122,9 @@ class Automorphism:
         self._ekeys: Tuple[str, ...] = (
             tuple(edge_attr_keys) if edge_attr_keys else self._DEF_EDGE_ATTRS
         )
+
         self._orbits: List[frozenset[NodeId]] | None = None
+        self._n_automorphisms: int | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -128,7 +132,7 @@ class Automorphism:
     @property
     def orbits(self) -> List[frozenset[NodeId]]:
         """
-        Compute and return node-orbits of the graph.
+        Node-orbits of the graph under its automorphism group.
 
         Returns
         -------
@@ -141,8 +145,27 @@ class Automorphism:
         The orbits are computed lazily on first access and cached afterwards.
         """
         if self._orbits is None:
-            self._orbits = self._compute_orbits()
-        return self._orbits
+            self._analyze()
+        return self._orbits  # type: ignore[return-value]
+
+    @property
+    def n_automorphisms(self) -> int:
+        """
+        Number of distinct automorphisms of the host graph.
+
+        Returns
+        -------
+        int
+            The order (size) of the automorphism group. This is at least 1
+            (the identity automorphism), even for asymmetric graphs.
+
+        Notes
+        -----
+        The value is computed together with :attr:`orbits` and cached.
+        """
+        if self._n_automorphisms is None:
+            self._analyze()
+        return int(self._n_automorphisms)  # type: ignore[return-value]
 
     def deduplicate(self, mappings: List[MappingDict]) -> List[MappingDict]:
         """
@@ -173,16 +196,14 @@ class Automorphism:
         if not mappings:
             return []
 
-        # Map each node to its orbit index
         orbit_index: Dict[NodeId, int] = {
             node: idx for idx, orb in enumerate(self.orbits) for node in orb
         }
 
-        def signature(m: MappingDict) -> Tuple[int, ...]:
+        def signature(mapping: MappingDict) -> Tuple[int, ...]:
             """Sorted tuple of orbit indices hit by mapping values."""
-            return tuple(sorted(orbit_index[n] for n in m.values()))
+            return tuple(sorted(orbit_index[n] for n in mapping.values()))
 
-        # Work on a copy so we don't mutate the caller's list
         mappings_sorted = list(mappings)
         mappings_sorted.sort(key=signature)
 
@@ -194,22 +215,11 @@ class Automorphism:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    def _compute_orbits(self) -> List[frozenset[NodeId]]:
+    def _analyze(self) -> None:
         """
-        Enumerate all automorphisms and group nodes into orbits.
+        Compute node orbits and number of automorphisms in a single pass.
 
-        Returns
-        -------
-        List[frozenset[NodeId]]
-            Each frozenset is an equivalence class of nodes under the
-            automorphism group.
-
-        Notes
-        -----
-        Node/edge attributes specified by :attr:`_nkeys` and :attr:`_ekeys`
-        are respected via :func:`categorical_node_match` and
-        :func:`categorical_edge_match`. Missing attributes fall back to
-        default values, ensuring a total match function.
+        This method is idempotent and safe to call multiple times.
         """
         gm = GraphMatcher(
             self._graph,
@@ -225,18 +235,31 @@ class Automorphism:
         )
 
         orbit_sets: Dict[NodeId, set[NodeId]] = defaultdict(set)
+        n_aut: int = 0
 
         for auto in gm.isomorphisms_iter():
+            n_aut += 1
             for u, v in auto.items():
                 orbit_sets[u].add(v)
                 orbit_sets[v].add(u)
 
         if not orbit_sets:
-            # No symmetries or empty graph: each node is its own orbit
-            return [frozenset({n}) for n in self._graph.nodes]
+            # Empty graph: no nodes, but still one (trivial) automorphism
+            if self._graph.number_of_nodes() == 0:
+                self._orbits = []
+                self._n_automorphisms = 1
+                return
+
+            # Asymmetric graph: only the identity automorphism
+            self._orbits = [frozenset({n}) for n in self._graph.nodes]
+            self._n_automorphisms = 1
+            return
 
         # Deduplicate orbit sets (each node's set should already be its orbit)
-        return list({frozenset(s) for s in orbit_sets.values()})
+        unique_orbits = {frozenset(nodes) for nodes in orbit_sets.values()}
+
+        self._orbits = list(unique_orbits)
+        self._n_automorphisms = n_aut if n_aut > 0 else 1
 
     # ------------------------------------------------------------------
     # Dunder methods
@@ -261,7 +284,9 @@ class Automorphism:
         str
             Summary representation of the :class:`Automorphism` instance.
         """
+        n_nodes = self._graph.number_of_nodes()
+        n_orb = len(self)
+        n_aut = self.n_automorphisms
         return (
-            f"<Automorphism | orbits={len(self)} "
-            f"nodes={self._graph.number_of_nodes()}>"
+            f"<Automorphism | nodes={n_nodes} " f"orbits={n_orb} automorphisms={n_aut}>"
         )
