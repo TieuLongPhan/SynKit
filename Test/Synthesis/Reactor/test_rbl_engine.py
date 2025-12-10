@@ -57,7 +57,8 @@ class TestRBLEngineExamples(unittest.TestCase):
                 "[OH2:7]"
             )
         ]
-        self.assertTrue(AAMValidator.smiles_check(result[0], expected[0]))
+
+        self.assertTrue(AAMValidator.smiles_check(result[1], expected[0]))
         # self.assertEqual(result, expected)
 
     def test_example2(self) -> None:

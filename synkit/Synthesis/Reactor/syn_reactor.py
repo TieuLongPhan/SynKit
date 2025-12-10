@@ -219,6 +219,9 @@ class SynReactor:
 
             # --- Choose matcher ------------------------------------------------
             if self.partial:
+                max_results = (
+                    self.embed_threshold / 100 if self.embed_threshold else None
+                )
                 matcher = PartialMatcher(
                     host=self.graph.raw,
                     pattern=pattern_graph,
@@ -227,7 +230,7 @@ class SynReactor:
                     strategy=Strategy.from_string(self.strategy),
                     threshold=self.embed_threshold,
                     pre_filter=self.embed_pre_filter,
-                    max_results=self.embed_threshold,
+                    max_results=max_results,
                     prune_auto=True,
                 )
                 raw_maps = matcher.get_mappings()

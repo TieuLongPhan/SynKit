@@ -12,6 +12,7 @@ from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 from synkit.Graph.Wildcard.its_merge import fuse_its_graphs
 from synkit.Graph.Matcher.mcs_matcher import MCSMatcher
+from synkit.Graph.Matcher.wl_sel import WLSel
 
 # from synkit.Graph.Matcher.approx_mcs import ApproxMCSMatcher
 from synkit.Chem.Reaction.standardize import Standardize
@@ -1139,10 +1140,6 @@ class RBLEngine:
         # fall back to full fusion (unless fast-path-only mode is active).
         return False
 
-    # ------------------------------------------------------------------
-    # Fusion + post-processing (streaming)
-    # ------------------------------------------------------------------
-
     def _fuse_and_postprocess(
         self,
         fw_its: Sequence[ITSLike],
@@ -1154,19 +1151,22 @@ class RBLEngine:
         """
         Core fusion + post-processing loop.
 
-        This is where performance matters. For each pair of forward and
-        backward ITS, we:
+        This is where performance matters. Instead of trying all
+        ``(fw, bw)`` pairs naively, we first apply a WL-based selector
+        (:class:`WLSel`) to rank candidate forward–backward ITS pairs by
+        structural similarity. We then process pairs in this order:
 
-        1. Run the configured matcher (:class:`MCSMatcher` or
-           :class:`ApproxMCSMatcher`) to obtain mappings.
+        1. Use the configured matcher (:class:`MCSMatcher` or
+        :class:`ApproxMCSMatcher`) to obtain mappings.
         2. Take at most :attr:`max_mappings_per_pair` mappings.
         3. Fuse the ITS graphs using :attr:`fuse_fn`.
         4. Immediately post-process the fused graph via
-           :meth:`_postprocess_single`.
+        :meth:`_postprocess_single`.
 
         If ``early_stop`` is ``True``, the method returns as soon as a
         successful fused RSMI is obtained. Otherwise, it explores all
-        pairs/mappings and collects all fused ITS and fused RSMIs.
+        WL-selected pairs/mappings and collects all fused ITS and fused
+        RSMIs.
 
         On return, :pyattr:`_fused_its`, :pyattr:`_fused_rsmis` and the
         result bookkeeping attributes are updated.
@@ -1184,87 +1184,92 @@ class RBLEngine:
         fused_rsmis: List[str] = []
         rw_adder = self.wildcard_adder_cls()
 
+        # --- WL-based candidate selection instead of naive nested loops ---
+        selector = WLSel(fw_its, bw_its)
+        selector.build_signatures().score_pairs(top_k=None)
+        pairs = selector.pair_indices
+
         n_pairs = 0
         n_mappings_total = 0
 
-        for i_fw, fw in enumerate(fw_its):
-            for i_bw, bw in enumerate(bw_its):
-                n_pairs += 1
-                matcher = self._build_matcher()
-                matcher.find_rc_mapping(
-                    fw,
-                    bw,
-                    mcs=True,
-                    mcs_mol=False,
-                    component=True,
-                    side=self.mcs_side,
-                )
+        for i_fw, i_bw in pairs:
+            fw = fw_its[i_fw]
+            bw = bw_its[i_bw]
+            n_pairs += 1
 
-                mappings = matcher.get_mappings(direction="G1_to_G2") or []
-                if not mappings:
+            matcher = self._build_matcher()
+            matcher.find_rc_mapping(
+                fw,
+                bw,
+                mcs=True,
+                mcs_mol=False,
+                component=True,
+                side=self.mcs_side,
+            )
+
+            mappings = matcher.get_mappings(direction="G1_to_G2") or []
+            if not mappings:
+                continue
+
+            if self.max_mappings_per_pair > 0:
+                mappings = mappings[: self.max_mappings_per_pair]
+
+            for i_map, mapping in enumerate(mappings):
+                n_mappings_total += 1
+                try:
+                    fused_graph = self.fuse_fn(
+                        fw,
+                        bw,
+                        mapping,
+                        remove_wildcards=True,
+                    )
+                except TypeError:
+                    fused_graph = self.fuse_fn(  # type: ignore[arg-type]
+                        fw,
+                        bw,
+                        mapping,
+                    )
+                except Exception as exc:  # pragma: no cover - defensive
+                    self.logger.debug("Fusion failed for mapping %s: %s", mapping, exc)
                     continue
 
-                if self.max_mappings_per_pair > 0:
-                    mappings = mappings[: self.max_mappings_per_pair]
+                fused_graphs.append(fused_graph)
 
-                for i_map, mapping in enumerate(mappings):
-                    n_mappings_total += 1
-                    try:
-                        fused_graph = self.fuse_fn(
-                            fw,
-                            bw,
-                            mapping,
-                            remove_wildcards=True,
-                        )
-                    except TypeError:
-                        fused_graph = self.fuse_fn(  # type: ignore[arg-type]
-                            fw,
-                            bw,
-                            mapping,
-                        )
-                    except Exception as exc:  # pragma: no cover - defensive
-                        self.logger.debug(
-                            "Fusion failed for mapping %s: %s", mapping, exc
-                        )
-                        continue
+                rsmi_final = self._postprocess_single(
+                    fused_graph,
+                    replace_wc=replace_wc,
+                    rw_adder=rw_adder,
+                )
+                if rsmi_final is None:
+                    continue
 
-                    fused_graphs.append(fused_graph)
-
-                    rsmi_final = self._postprocess_single(
-                        fused_graph,
-                        replace_wc=replace_wc,
-                        rw_adder=rw_adder,
+                fused_rsmis.append(rsmi_final)
+                if early_stop:
+                    self.logger.debug(
+                        "Early-stop: first successful fused RSMI "
+                        "at pair=(%d,%d), mapping_index=%d",
+                        i_fw,
+                        i_bw,
+                        i_map,
                     )
-                    if rsmi_final is None:
-                        continue
-
-                    fused_rsmis.append(rsmi_final)
-                    if early_stop:
-                        self.logger.debug(
-                            "Early-stop: first successful fused RSMI "
-                            "at pair=(%d,%d), mapping_index=%d",
-                            i_fw,
-                            i_bw,
-                            i_map,
-                        )
-                        self._fused_its = fused_graphs
-                        self._fused_rsmis = fused_rsmis
-                        self._record_stop(
-                            mode="early_stop",
-                            reason="early_stop_first_valid",
-                            metadata={
-                                "n_fw": len(fw_its),
-                                "n_bw": len(bw_its),
-                                "n_pairs": n_pairs,
-                                "n_mappings_total": n_mappings_total,
-                                "n_fused": len(fused_graphs),
-                                "n_fused_rsmis": len(fused_rsmis),
-                                "early_stop": early_stop,
-                                "pair_index": (i_fw, i_bw),
-                                "mapping_index": i_map,
-                            },
-                        )
-                        return
+                    self._fused_its = fused_graphs
+                    self._fused_rsmis = fused_rsmis
+                    self._record_stop(
+                        mode="early_stop",
+                        reason="early_stop_first_valid",
+                        metadata={
+                            "n_fw": len(fw_its),
+                            "n_bw": len(bw_its),
+                            "n_pairs": n_pairs,
+                            "n_mappings_total": n_mappings_total,
+                            "n_fused": len(fused_graphs),
+                            "n_fused_rsmis": len(fused_rsmis),
+                            "early_stop": early_stop,
+                            "pair_index": (i_fw, i_bw),
+                            "mapping_index": i_map,
+                        },
+                    )
+                    return
 
         # No early-stop taken: finalise results
         self._fused_its = fused_graphs
