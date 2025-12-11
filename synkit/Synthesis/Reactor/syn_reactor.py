@@ -141,6 +141,7 @@ class SynReactor:
         canonicaliser: Optional[GraphCanonicaliser] = None,
         explicit_h: bool = True,
         implicit_temp: bool = False,
+        automorphism: bool = False,
         strategy: Strategy | str = Strategy.ALL,
     ) -> "SynReactor":
         """
@@ -172,6 +173,7 @@ class SynReactor:
             explicit_h=explicit_h,
             implicit_temp=implicit_temp,
             strategy=strategy,
+            automorphism=automorphism,
         )
 
     # ------------------------------------------------------------------
