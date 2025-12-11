@@ -1,23 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
-    Iterable,
-    Iterator,
     List,
-    Mapping,
     Optional,
-    Set,
     Tuple,
-    Union,
 )
 
 import os
-import re
-from collections import defaultdict, deque
-
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
@@ -336,8 +327,8 @@ class CRNVisualizer:
     def _bip_nx(
         self,
         *,
-        species_prefix: str,
-        reaction_prefix: str,
+        species_prefix: Optional[str] = "S:",
+        reaction_prefix: Optional[str] = "R:",
         figsize: Tuple[float, float],
         species_color: str,
         reaction_color: str,
@@ -456,8 +447,8 @@ class CRNVisualizer:
     def _crn_nx(
         self,
         *,
-        species_prefix: str,
-        reaction_prefix: str,
+        species_prefix: Optional[str] = "S:",
+        reaction_prefix: Optional[str] = "R:",
         figsize: Tuple[float, float],
         species_color: str,
         reaction_color: str,
@@ -697,8 +688,8 @@ class CRNVisualizer:
     def _bip_gv(
         self,
         *,
-        species_prefix: str,
-        reaction_prefix: str,
+        species_prefix: Optional[str] = "S:",
+        reaction_prefix: Optional[str] = "R:",
         species_fill: str,
         reaction_fill: str,
         species_fontcolor: str,
@@ -779,8 +770,8 @@ class CRNVisualizer:
     def _crn_gv(
         self,
         *,
-        species_prefix: str,
-        reaction_prefix: str,
+        species_prefix: Optional[str] = "S:",
+        reaction_prefix: Optional[str] = "R:",
         species_fill: str,
         reaction_fill: str,
         species_fontcolor: str,
@@ -967,18 +958,18 @@ def plot_bip(hg: Any, **kwargs):
     """
     Bipartite plot. Pass backend='nx' or backend='gv'.
     """
-    return CRNPlot(hg).bip(**kwargs)
+    return CRNVisualizer(hg).bip(**kwargs)
 
 
 def plot_crn(hg: Any, **kwargs):
     """
     General CRN plot. Pass backend='nx' or backend='gv'.
     """
-    return CRNPlot(hg).crn(**kwargs)
+    return CRNVisualizer(hg).crn(**kwargs)
 
 
 def plot_stoich(hg: Any, **kwargs):
     """
     Stoichiometric matrix heatmap (Matplotlib).
     """
-    return CRNPlot(hg).stoich(**kwargs)
+    return CRNVisualizer(hg).stoich(**kwargs)

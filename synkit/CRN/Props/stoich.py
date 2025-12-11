@@ -17,7 +17,8 @@ except Exception:
     linprog = None  # type: ignore
     _SCIPY_AVAILABLE = False
 
-from .utils import _as_bipartite, _species_and_reaction_order
+from .utils import _species_and_reaction_order
+from ..Hypergraph.conversion import _as_bipartite
 
 
 # ---------------------------------------------------------------------------

@@ -4,14 +4,13 @@ import networkx as nx
 from synkit.CRN.Hypergraph.conversion import rxns_to_hypergraph, hypergraph_to_bipartite
 
 from synkit.CRN.Props.utils import (
-    _as_bipartite,
     _split_species_reactions,
     _species_order,
     _species_and_reaction_order,
 )
 
 
-class TestBipartiteHelpers(unittest.TestCase):
+class TestUtils(unittest.TestCase):
 
     def _example_H(self):
         rxns = [
@@ -23,28 +22,6 @@ class TestBipartiteHelpers(unittest.TestCase):
 
     def _example_G(self):
         return hypergraph_to_bipartite(self._example_H())
-
-    # ----------------------------------------------------------------------
-    # _as_bipartite
-    # ----------------------------------------------------------------------
-    def test_as_bipartite_from_hypergraph(self):
-        H = self._example_H()
-        G = _as_bipartite(H)
-
-        self.assertIsInstance(G, nx.DiGraph)
-        self.assertGreater(G.number_of_nodes(), 0)
-
-    def test_as_bipartite_from_networkx_graph(self):
-        G0 = nx.DiGraph()
-        G0.add_node("S:A", kind="species", bipartite=0)
-        G0.add_node("R:1", kind="reaction", bipartite=1)
-
-        G = _as_bipartite(G0)
-        self.assertIs(G, G0)
-
-    def test_as_bipartite_invalid_input_raises(self):
-        with self.assertRaises(TypeError):
-            _as_bipartite("not a graph")
 
     # ----------------------------------------------------------------------
     # _split_species_reactions

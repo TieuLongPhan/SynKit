@@ -1,9 +1,5 @@
 import unittest
-from typing import List
-
 import numpy as np
-import networkx as nx
-
 
 from synkit.CRN.Props.stoich import stoichiometric_matrix
 from synkit.CRN.Petri import find_p_semiflows, find_t_semiflows

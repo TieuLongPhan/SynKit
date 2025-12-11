@@ -1,4 +1,3 @@
-# synkit/CRN/Props/injectivity.py
 """
 Injectivity checks and an InjectivityAnalyzer for CRN structural diagnostics.
 
@@ -40,9 +39,19 @@ import numpy as np
 
 from .stoich import stoichiometric_matrix
 from .deficiency import DeficiencyAnalyzer
-from .utils import _as_bipartite, _split_species_reactions, _species_and_reaction_order
+from .utils import _split_species_reactions, _species_and_reaction_order
+from ..Hypergraph.conversion import _as_bipartite
 
 LOGGER = logging.getLogger(__name__)
+
+import warnings
+
+warnings.warn(
+    "synkit.CRN.Props.injectivity is under active development and may be unstable. "
+    "APIs, heuristics, and behaviour may change without notice.",
+    UserWarning,
+    stacklevel=2,
+)
 
 
 # ---------------------------------------------------------------------------

@@ -5,50 +5,9 @@ from typing import Any, Dict, List, Tuple
 
 import networkx as nx
 
-from synkit.CRN.Hypergraph.conversion import hypergraph_to_bipartite
-from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
+from ..Hypergraph.conversion import _as_bipartite
 
 LOGGER = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Helpers for bipartite CRN graphs
-# ---------------------------------------------------------------------------
-
-
-def _as_bipartite(crn: Any) -> nx.Graph:
-    """
-    Normalize input to a bipartite species/reaction graph.
-
-    Accepted inputs
-    ---------------
-    - :class:`CRNHyperGraph` → converted via :func:`hypergraph_to_bipartite`.
-    - Any NetworkX graph instance, assumed to already carry the required
-      node/edge attributes (``kind`` / ``bipartite``, ``role``, ``stoich``).
-
-    :param crn: Hypergraph or NetworkX graph.
-    :type crn: Any
-    :returns: Bipartite NetworkX graph.
-    :rtype: networkx.Graph
-    :raises TypeError: If the input type is unsupported.
-    """
-    if isinstance(crn, CRNHyperGraph):
-        return hypergraph_to_bipartite(crn)
-
-    if isinstance(
-        crn,
-        (
-            nx.Graph,
-            nx.DiGraph,
-            nx.MultiGraph,
-            nx.MultiDiGraph,
-        ),
-    ):
-        return crn
-
-    raise TypeError(
-        "Expected CRNHyperGraph or NetworkX graph with bipartite species/"
-        "reaction nodes."
-    )
 
 
 def _split_species_reactions(G: nx.Graph) -> Tuple[List[Any], List[Any]]:

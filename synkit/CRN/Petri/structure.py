@@ -6,7 +6,8 @@ from typing import Any, List, Set
 
 import networkx as nx
 
-from ..Props.utils import _as_bipartite, _split_species_reactions, _species_order
+from ..Props.utils import _split_species_reactions, _species_order
+from ..Hypergraph.conversion import _as_bipartite
 
 
 def _is_siphon_indices(

@@ -640,6 +640,139 @@ def hypergraph_to_rxn_strings(
 
 
 # ======================================================================
+# Helpers for bipartite CRN graphs
+# ======================================================================
+
+
+def _as_bipartite(
+    crn: Any,
+    *,
+    species_prefix: str = "S:",
+    reaction_prefix: str = "R:",
+    integer_ids: bool = True,
+    include_stoich: bool = True,
+) -> nx.DiGraph:
+    """
+    Normalize input to a bipartite species/reaction graph.
+
+    Accepted inputs
+    ---------------
+    - Objects exposing ``to_bipartite(...)``:
+      Called as ``crn.to_bipartite(species_prefix=..., reaction_prefix=...,
+      integer_ids=..., include_stoich=...)``.
+    - :class:`CRNHyperGraph` → converted via :func:`hypergraph_to_bipartite`.
+    - Any NetworkX graph instance, assumed to already carry the required
+      node/edge attributes (``kind`` / ``bipartite``, ``role``, ``stoich``).
+
+    :param crn: Hypergraph-like object or NetworkX graph.
+    :type crn: Any
+    :param species_prefix: Prefix for species node identifiers when conversion
+        from a hypergraph is required.
+    :type species_prefix: str
+    :param reaction_prefix: Prefix for reaction node identifiers when
+        conversion from a hypergraph is required.
+    :type reaction_prefix: str
+    :param integer_ids: Whether the converter may use integer node IDs
+        internally.
+    :type integer_ids: bool
+    :param include_stoich: Whether to attach stoichiometric coefficients as
+        edge attributes (if available).
+    :type include_stoich: bool
+    :returns: Bipartite species/reaction graph.
+    :rtype: networkx.DiGraph
+    :raises TypeError: If the input type is unsupported or a required
+        converter is unavailable.
+    """
+    if isinstance(crn, CRNHyperGraph):
+        return hypergraph_to_bipartite(
+            crn,
+            species_prefix=species_prefix,
+            reaction_prefix=reaction_prefix,
+            integer_ids=integer_ids,
+            include_stoich=include_stoich,
+        )
+
+    if isinstance(
+        crn,
+        (
+            nx.Graph,
+            nx.DiGraph,
+            nx.MultiGraph,
+            nx.MultiDiGraph,
+        ),
+    ):
+        return crn if isinstance(crn, nx.DiGraph) else nx.DiGraph(crn)
+
+    raise TypeError(
+        "Expected CRNHyperGraph or NetworkX graph with bipartite species/"
+        "reaction nodes."
+    )
+
+
+# ======================================================================
+# Helpers for species graphs
+# ======================================================================
+
+
+def _as_species_graph(crn: Any) -> nx.DiGraph:
+    """
+    Normalize input to a species→species directed graph.
+
+    Accepted inputs
+    ---------------
+    - Objects exposing ``to_species_graph()``:
+      Called directly and converted to :class:`networkx.DiGraph` if needed.
+    - :class:`CRNHyperGraph`:
+      Collapsed by traversing reactants/products of each hyperedge.
+    - Bipartite NetworkX graphs:
+      Species nodes have ``kind='species'`` and reaction nodes
+      ``kind='reaction'``; edges species→reaction are reactants and
+      reaction→species are products.
+    - Plain species-level NetworkX graphs:
+      Returned as-is, converted to :class:`networkx.DiGraph` if necessary.
+
+    The resulting graph may carry edge attributes:
+
+    - ``via``        – set of reaction IDs that induce the edge.
+    - ``rules``      – set of rule identifiers.
+    - ``min_stoich`` – minimum stoichiometric coefficient across the pair.
+
+    :param crn: Hypergraph-like object, or species graph.
+    :type crn: Any
+    :returns: Collapsed species→species directed graph.
+    :rtype: networkx.DiGraph
+    :raises TypeError: If the input type is unsupported.
+    """
+
+    if isinstance(crn, CRNHyperGraph):
+        return hypergraph_to_species_graph(crn)
+
+    if isinstance(
+        crn,
+        (
+            nx.Graph,
+            nx.DiGraph,
+            nx.MultiGraph,
+            nx.MultiDiGraph,
+        ),
+    ):
+        kinds = {d.get("kind") for _, d in crn.nodes(data=True)}
+
+        # Explicitly reject bipartite CRN graphs here
+        if "reaction" in kinds and "species" in kinds:
+            raise TypeError(
+                "Bipartite CRN graph detected. "
+                "Provide hypergraph-like object, or collapse "
+                "the bipartite graph explicitly before calling this helper."
+            )
+
+        # Otherwise assume this is already species-level
+        return crn if isinstance(crn, nx.DiGraph) else nx.DiGraph(crn)
+
+    raise TypeError("Expected a CRNHyperGraph, or a NetworkX graph (species-level).")
+
+
+# ======================================================================
 # Pretty-print helpers (not paired)
 # ======================================================================
 

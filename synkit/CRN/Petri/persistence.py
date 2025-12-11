@@ -5,9 +5,10 @@ from typing import Any, List, Set
 
 import numpy as np
 
-from ..Props.utils import _as_bipartite, _species_order
+from ..Props.utils import _species_order
 from .semiflows import find_p_semiflows
 from .structure import find_siphons
+from ..Hypergraph.conversion import _as_bipartite
 
 
 def siphon_persistence_condition(

@@ -5,7 +5,6 @@ import contextlib
 import networkx as nx
 
 from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
-from synkit.CRN.Hypergraph.hyperedge import HyperEdge
 from synkit.CRN.Hypergraph.conversion import (
     hypergraph_to_bipartite,
     bipartite_to_hypergraph,
@@ -16,10 +15,12 @@ from synkit.CRN.Hypergraph.conversion import (
     print_species_summary,
     print_edge_list,
     print_graph_attrs,
+    _as_bipartite,
+    _as_species_graph,
 )
 
 
-class TestConversionHypergraph(unittest.TestCase):
+class TestConversion(unittest.TestCase):
     def _example_hypergraph(self) -> CRNHyperGraph:
         """Helper to build the example hypergraph."""
         rxns = [
@@ -328,6 +329,47 @@ class TestConversionHypergraph(unittest.TestCase):
         self.assertTrue(all(">>" in ln for ln in lines))
         self.assertFalse(any("rule=" in ln for ln in lines))
         self.assertFalse(any("id=" in ln for ln in lines))
+
+    # ------------------------------------------------------------------
+    # Helpers for bipartite CRN graphs
+    # ------------------------------------------------------------------
+
+    def test_as_bipartite_from_hypergraph(self):
+        H = self._example_hypergraph()
+        G = _as_bipartite(H)
+        self.assertIsInstance(G, nx.DiGraph)
+        self.assertGreater(G.number_of_nodes(), 0)
+
+    def test_as_bipartite_from_networkx_graph(self):
+        G0 = nx.DiGraph()
+        G0.add_node("S:A", kind="species", bipartite=0)
+        G0.add_node("R:1", kind="reaction", bipartite=1)
+
+        G = _as_bipartite(G0)
+        self.assertIs(G, G0)
+
+    def test_as_bipartite_invalid_input_raises(self):
+        with self.assertRaises(TypeError):
+            _as_bipartite("not a graph")
+
+    def test_as_species_graph_from_hypergraph(self):
+        H = self._example_hypergraph()
+        G = _as_species_graph(H)
+        self.assertIsInstance(G, nx.DiGraph)
+        self.assertGreater(G.number_of_nodes(), 0)
+
+    def test_as_species_graph_from_networkx_graph(self):
+        G0 = nx.DiGraph()
+        G0.add_node("A", kind="species", bipartite=0)
+        G0.add_node("B", kind="species", bipartite=0)
+        G0.add_edge("A", "B", stoich_r=2, stoich_p=1)
+
+        G = _as_species_graph(G0)
+        self.assertIs(G, G0)
+
+    def test_as_species_graph_invalid_input_raises(self):
+        with self.assertRaises(TypeError):
+            _as_species_graph("not a graph")
 
     # ------------------------------------------------------------------
     # Pretty-print helpers

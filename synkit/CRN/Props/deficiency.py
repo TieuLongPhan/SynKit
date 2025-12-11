@@ -35,10 +35,20 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 import networkx as nx
 import numpy as np
 
-from synkit.CRN.Props.stoich import stoichiometric_matrix, stoichiometric_rank
-from .utils import _as_bipartite, _species_order, _split_species_reactions
+from .stoich import stoichiometric_matrix, stoichiometric_rank
+from .utils import _species_order, _split_species_reactions
+from ..Hypergraph.conversion import _as_bipartite
 
 LOGGER = logging.getLogger(__name__)
+
+import warnings
+
+warnings.warn(
+    "synkit.CRN.Props.deficiency is under active development and may be unstable. "
+    "APIs and behaviour may change without notice.",
+    UserWarning,
+    stacklevel=2,
+)
 
 
 @dataclass
