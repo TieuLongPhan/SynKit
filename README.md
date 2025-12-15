@@ -74,7 +74,7 @@ For more details on each utility within the repository, please refer to the docu
 
 ## Contribute
 
-We're welcoming new contributors to build this project better. Please not hesitate to inquire me via [email][tieu@bioinf.uni-leipzig.de].
+We're welcoming new contributors to build this project better. Please not hesitate to inquire me via [email](tieu@bioinf.uni-leipzig.de).
 
 Before you start, ensure your local development environment is set up correctly. Pull the latest version of the `main` branch to start with the most recent stable code.
 
@@ -135,10 +135,11 @@ git pull
 - [Tieu-Long Phan](https://tieulongphan.github.io/)
 - [Klaus Weinbauer](https://github.com/klausweinbauer)
 - [Phuoc-Chung Nguyen Van](https://github.com/phuocchung123)
+- [Tuyet-Minh Phan](https://github.com/tuyetminhphan)
 
 ## Publication
 
-[**SynKit**: An Advanced Cheminformatics Python Library for Efficient Manipulation and Analysis of Chemical Reaction Data]()
+[**SynKit**: A Graph-Based Python Framework for Rule-Based Reaction Modeling and Analysis](https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02123)
 
 
 ## License

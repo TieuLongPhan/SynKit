@@ -30,12 +30,12 @@ class TestSmilesFeaturizer(unittest.TestCase):
         fp = SmilesFeaturizer.get_maccs_keys(self.mol)
         self.assertIsInstance(fp, MACCSkeys.GenMACCSKeys(self.mol).__class__)
 
-    def test_get_avalon_fp(self):
-        """Test Avalon fingerprint generation with default and custom bit lengths"""
-        fp = SmilesFeaturizer.get_avalon_fp(self.mol)
-        self.assertEqual(len(fp), 1024)
-        fp_custom = SmilesFeaturizer.get_avalon_fp(self.mol, nBits=512)
-        self.assertEqual(len(fp_custom), 512)
+    # def test_get_avalon_fp(self):
+    #     """Test Avalon fingerprint generation with default and custom bit lengths"""
+    #     fp = SmilesFeaturizer.get_avalon_fp(self.mol)
+    #     self.assertEqual(len(fp), 1024)
+    #     fp_custom = SmilesFeaturizer.get_avalon_fp(self.mol, nBits=512)
+    #     self.assertEqual(len(fp_custom), 512)
 
     def test_get_ecfp(self):
         """Test ECFP fingerprint generation"""

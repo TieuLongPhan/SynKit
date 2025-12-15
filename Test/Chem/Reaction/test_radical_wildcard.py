@@ -26,7 +26,11 @@ class TestRadicalWildcardAdder(unittest.TestCase):
             "[CH3:1][CH2:2][C:3](=[O:4])[O:6][*:8]."
             "[OH:5][H:7]"
         )
+        print(rxn_in)
+        print(result)
+        print(expected)
         self.assertEqual(result, expected)
+        # self.assertTrue(AAMValidator.smiles_check(result, expected))
 
     def test_auto_map_selection_and_repr_str(self):
         """

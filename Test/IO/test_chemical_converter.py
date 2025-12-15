@@ -184,8 +184,9 @@ class TestChemicalConversions(unittest.TestCase):
         smarts = gml_to_smart(self.gml_h, useSmiles=False)
         self.assertIsInstance(smarts, str)
         self.assertNotEqual(rsmi, smarts)
-        self.assertTrue(AAMValidator.smiles_check(smarts, self.rsmi, "ITS"))
-        self.assertTrue(AAMValidator.smiles_check(smarts, rsmi, "ITS"))
+        revert_rsmi = rsmarts_to_rsmi(smarts)
+        self.assertTrue(AAMValidator.smiles_check(revert_rsmi, self.rsmi, "ITS"))
+        self.assertTrue(AAMValidator.smiles_check(revert_rsmi, rsmi, "ITS"))
 
     @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_smart_to_gml_explicit_hydrogen(self):
