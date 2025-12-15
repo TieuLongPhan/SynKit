@@ -1,7 +1,7 @@
 import unittest
 
 from synkit.IO.data_io import load_database
-from synkit.Synthesis.CRN.crn import CRN
+from synkit.CRN.DAG.crn import CRN
 from synkit.Synthesis.MSR.path_finder import PathFinder
 import importlib.util
 

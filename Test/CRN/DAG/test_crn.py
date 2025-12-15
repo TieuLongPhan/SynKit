@@ -1,6 +1,6 @@
 import unittest
 from synkit.IO.data_io import load_database
-from synkit.Synthesis.CRN.crn import CRN
+from synkit.CRN.DAG.crn import CRN
 import importlib.util
 
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None

@@ -1,5 +1,4 @@
 import unittest
-import networkx as nx
 
 from synkit.CRN.Hypergraph.conversion import rxns_to_hypergraph
 from synkit.CRN.Topo.canon import CRNCanonicalizer, canonical

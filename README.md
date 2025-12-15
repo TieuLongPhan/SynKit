@@ -138,7 +138,7 @@ git pull
 
 ## Publication
 
-[**SynKit**: An Advanced Cheminformatics Python Library for Efficient Manipulation and Analysis of Chemical Reaction Data]()
+[**SynKit**: A Graph-Based Python Framework for Rule-Based Reaction Modeling and Analysis](https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02123)
 
 
 ## License

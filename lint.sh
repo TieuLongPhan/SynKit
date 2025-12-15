@@ -32,6 +32,7 @@ syn_rule.py,\
 __init__.py,\
 wl_mapper.py,\
 topology.py,\
+crn_vis.py,\
 dev/*,\
 synkit/CRN/*,\
 Data \

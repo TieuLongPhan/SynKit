@@ -1,5 +1,4 @@
 import unittest
-import numpy as np
 
 from synkit.CRN.Hypergraph.conversion import rxns_to_hypergraph
 from synkit.CRN.Props.thermo import compute_thermo_summary
