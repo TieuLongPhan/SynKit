@@ -130,7 +130,7 @@ class RadicalWildcardAdder:
         wildcard_map_for: Dict[int, List[int]] = {}
 
         # Build sanitizeOps mask (skip H-adjustment)
-        keep_ops = SanitizeFlags.SANITIZE_ALL & ~SanitizeFlags.SANITIZE_ADJUSTHS
+        keep_ops = SanitizeFlags.SANITIZE_ADJUSTHS
 
         # Process one block (helper)
         def _process(frags: List[str], propagate: bool) -> List[str]:
@@ -140,10 +140,12 @@ class RadicalWildcardAdder:
                 if not smi:
                     continue
                 # Load unsanitized then re-sanitize to preserve explicit H
+                # mol = Chem.MolFromSmiles(smi, sanitize=False)
+                # if mol is None:
+                #     raise ValueError(f"Cannot parse SMILES fragment: {smi}")
+                # Chem.SanitizeMol(mol, sanitizeOps=keep_ops)
                 mol = Chem.MolFromSmiles(smi, sanitize=False)
-                if mol is None:
-                    raise ValueError(f"Cannot parse SMILES fragment: {smi}")
-                Chem.SanitizeMol(mol, sanitizeOps=keep_ops)
+                Chem.SanitizeMol(mol)
                 rw = Chem.RWMol(mol)
 
                 atoms = list(rw.GetAtoms())

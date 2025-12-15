@@ -30,6 +30,7 @@ reactor_engine.py,\
 groupoid.py,\
 syn_rule.py,\
 __init__.py,\
+wl_mapper.py,\
 topology.py,\
 dev/*,\
 synkit/CRN/*,\
