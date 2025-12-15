@@ -73,7 +73,7 @@ class TestCRNCanonicalizer(unittest.TestCase):
         c = CRNCanonicalizer(H)
 
         with self.assertRaises(RuntimeError):
-            c.summary(timeout_sec=1e-5)
+            c.summary(timeout_sec=1e-9)
 
     # ----------------------------------------------------------------------
     # Functional wrapper verifies same results
