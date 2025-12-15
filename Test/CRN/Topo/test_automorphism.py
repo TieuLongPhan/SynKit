@@ -143,7 +143,7 @@ class TestCRNAutomorphisms(unittest.TestCase):
     def test_summary_stops_due_to_timeout(self):
         H = self._example_H()
         aut = CRNAutomorphism(H)
-        res = aut.summary(timeout_sec=0.0001, max_count=5000)
+        res = aut.summary(timeout_sec=1e-9, max_count=5000)
         self.assertTrue(res["stopped_early"])
 
     # ----------------------------------------------------------------------
