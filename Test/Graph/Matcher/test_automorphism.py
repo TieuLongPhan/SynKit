@@ -3,6 +3,7 @@ import unittest
 import networkx as nx
 
 from synkit.Graph.Matcher.automorphism import Automorphism
+from synkit.Graph.Matcher.dedup_matches import deduplicate_matches_with_anchor
 
 
 class TestAutomorphismOrbits(unittest.TestCase):
@@ -82,7 +83,9 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
         G = nx.cycle_graph(3)
         auto = Automorphism(G)
 
-        unique = auto.deduplicate([])
+        unique = deduplicate_matches_with_anchor(
+            [], host_anchor=auto.anchor_component, host_orbits=auto.orbits
+        )
         self.assertEqual(unique, [])
 
     def test_equivalent_mappings_are_merged(self) -> None:
@@ -98,7 +101,9 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
         ]
         original_copy = list(mappings)
 
-        unique = auto.deduplicate(mappings)
+        unique = deduplicate_matches_with_anchor(
+            mappings, host_anchor=auto.anchor_component, host_orbits=auto.orbits
+        )
 
         # There should be only one representative
         self.assertEqual(len(unique), 1)
@@ -116,7 +121,9 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
             {"x": 1},
         ]
 
-        unique = auto.deduplicate(mappings)
+        unique = deduplicate_matches_with_anchor(
+            mappings, host_anchor=auto.anchor_component, host_orbits=auto.orbits
+        )
 
         # Center orbit index != leaf orbit index → both mappings remain
         self.assertEqual(len(unique), 2)

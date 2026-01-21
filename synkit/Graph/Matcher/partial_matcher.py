@@ -8,6 +8,7 @@ import networkx as nx
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Synthesis.Reactor.strategy import Strategy
 from synkit.Graph.Matcher.auto_est import AutoEst  # WL-1 orbit estimator
+from synkit.Graph.Matcher.dedup_matches import deduplicate_matches_with_anchor
 
 MappingDict = Dict[int, int]
 
@@ -200,7 +201,10 @@ class PartialMatcher:
         ).fit()
 
         # AutoEst.deduplicate expects Mapping[hashable, hashable]
-        return est.deduplicate(mappings)
+        maps = deduplicate_matches_with_anchor(
+            matches=mappings, host_orbits=est.orbits, host_anchor=est.anchor_component
+        )
+        return maps
 
     @staticmethod
     def _build_label_hist(

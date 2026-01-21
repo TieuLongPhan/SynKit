@@ -10,19 +10,20 @@ from ..Hypergraph.backend import _CRNGraphBackend
 
 
 # -------------------------------------------------------------------------
-# Canon: Nauty-style canonicalization
+# Canon: Exact Nauty-style individualization + refinement (no heuristic pruning)
 # -------------------------------------------------------------------------
 
 
 class CRNCanonicalizer(_CRNGraphBackend):
     """
-    Nauty-style canonicalization and automorphism enumeration for a CRN.
+    Exact canonicalization and automorphism enumeration for a CRN via
+    individualization-refinement (IR) search.
 
-    The underlying :class:`CRNHyperGraph` is first converted to either a
-    bipartite species→reaction→species DiGraph (include_rule=True) or a
-    collapsed species→species DiGraph (include_rule=False). A
-    partition-refinement search then computes a canonical labeling and
-    associated automorphisms.
+    This implementation is **exact**:
+      - No branch-shape skipping
+      - No prefix/label pruning that could drop valid automorphisms
+      - Enumerates all permutations achieving the minimal canonical label
+        (these correspond to automorphisms w.r.t. the labeling function)
     """
 
     def __init__(
@@ -35,24 +36,6 @@ class CRNCanonicalizer(_CRNGraphBackend):
         integer_ids: bool = False,
         include_stoich: bool = True,
     ) -> None:
-        """
-        Initialize a canonicalizer for a CRN.
-
-        :param hg: Hypergraph to canonicalize.
-        :type hg: CRNHyperGraph
-        :param include_rule: If True, work on bipartite species→reaction→species
-                             graph; if False, use collapsed species graph.
-        :type include_rule: bool
-        :param node_attr_keys: Node attribute keys used in partition refinement
-                               and canonical label construction.
-        :type node_attr_keys: Iterable[str]
-        :param edge_attr_keys: Edge attribute keys included in canonical labels.
-        :type edge_attr_keys: Iterable[str]
-        :param integer_ids: If True, use integer node ids in the bipartite view.
-        :type integer_ids: bool
-        :param include_stoich: If True, include stoichiometry on bipartite edges.
-        :type include_stoich: bool
-        """
         super().__init__(
             hg,
             include_rule=include_rule,
@@ -63,10 +46,6 @@ class CRNCanonicalizer(_CRNGraphBackend):
         self.edge_attr_keys: Tuple[str, ...] = tuple(edge_attr_keys)
 
     def __repr__(self) -> str:
-        """
-        :returns: String representation of the canonicalizer.
-        :rtype: str
-        """
         return (
             f"CRNCanonicalizer(include_rule={self.include_rule}, "
             f"node_attr_keys={self.node_attr_keys}, "
@@ -78,37 +57,19 @@ class CRNCanonicalizer(_CRNGraphBackend):
 
     @staticmethod
     def _freeze(x: Any) -> Any:
-        """
-        Convert nested containers into hashable equivalents.
-
-        Lists become tuples; dicts become frozensets of sorted (key, value)
-        pairs; other types are returned unchanged.
-
-        :param x: Object to convert.
-        :type x: Any
-        :returns: Hashable representation of x.
-        :rtype: Any
-        """
+        """Convert nested containers into hashable equivalents."""
         if isinstance(x, list):
             return tuple(CRNCanonicalizer._freeze(v) for v in x)
         if isinstance(x, dict):
             return frozenset(
                 (k, CRNCanonicalizer._freeze(v)) for k, v in sorted(x.items())
             )
+        if isinstance(x, set):
+            return tuple(sorted(CRNCanonicalizer._freeze(v) for v in x))
         return x
 
     def _init_part(self, G: nx.Graph) -> List[List[Any]]:
-        """
-        Build the initial node partition for refinement.
-
-        Nodes are grouped by tuples of node_attr_keys. If no node_attr_keys
-        are provided, all nodes start in a single cell.
-
-        :param G: Graph whose nodes are to be partitioned.
-        :type G: nx.Graph
-        :returns: List of partition cells, each a list of nodes.
-        :rtype: List[List[Any]]
-        """
+        """Initial partition by node attributes."""
         if not self.node_attr_keys:
             return [sorted(G.nodes())]
         buckets: Dict[Tuple[Any, ...], List[Any]] = {}
@@ -128,19 +89,13 @@ class CRNCanonicalizer(_CRNGraphBackend):
         part: List[List[Any]],
     ) -> Tuple[Any, ...]:
         """
-        Compute the refinement signature for a single node.
+        Refinement signature for node v under current partition.
 
-        The signature combines node attributes, degree information, neighbor
-        counts per partition cell, and a multiset of selected edge attributes.
-
-        :param G: Graph on which refinement is performed.
-        :type G: nx.DiGraph
-        :param v: Node whose signature is computed.
-        :type v: Any
-        :param part: Current node partition.
-        :type part: List[List[Any]]
-        :returns: Signature tuple used to split cells.
-        :rtype: Tuple[Any, ...]
+        Uses:
+          - node attributes
+          - (in_degree, out_degree)
+          - neighbor counts per cell (undirected union for directed graphs)
+          - multiset of outgoing edge attributes
         """
         node_attrs = tuple(
             self._freeze(G.nodes[v].get(a, None)) for a in self.node_attr_keys
@@ -156,7 +111,8 @@ class CRNCanonicalizer(_CRNGraphBackend):
 
         counts: List[int] = []
         for cell in part:
-            counts.append(sum(1 for n in nbrs if n in cell))
+            s = set(cell)
+            counts.append(sum(1 for n in nbrs if n in s))
         counts_t = tuple(counts)
 
         edge_mult: List[Tuple[Any, ...]] = []
@@ -174,56 +130,40 @@ class CRNCanonicalizer(_CRNGraphBackend):
         return (node_attrs, degree, counts_t, edge_mult_t)
 
     def _refine(self, G: nx.DiGraph, part: List[List[Any]]) -> List[List[Any]]:
-        """
-        Refine a partition until no further splits occur.
-
-        Each non-singleton cell is split by grouping nodes with identical
-        signatures from :meth:`_sig`. Refinement continues until stable.
-
-        :param G: Graph to refine.
-        :type G: nx.DiGraph
-        :param part: Current node partition.
-        :type part: List[List[Any]]
-        :returns: Refined partition.
-        :rtype: List[List[Any]]
-        """
+        """Refine partition until stable (exact, deterministic)."""
         changed = True
-        cache: Dict[Any, Tuple[Any, ...]] = {}
+        cache: Dict[Tuple[Any, int], Tuple[Any, ...]] = {}
         while changed:
             changed = False
             new_part: List[List[Any]] = []
+            # note: cache depends on part, but we keep it simple & exact:
+            # cache key includes an epoch id via id(part) to avoid reusing across parts.
+            epoch = id(tuple(tuple(c) for c in part))
             for cell in part:
                 if len(cell) <= 1:
                     new_part.append(cell)
                     continue
                 sigs: Dict[Tuple[Any, ...], List[Any]] = {}
                 for v in cell:
-                    if v not in cache:
-                        cache[v] = self._sig(G, v, part)
-                    s = cache[v]
+                    ck = (v, epoch)
+                    if ck not in cache:
+                        cache[ck] = self._sig(G, v, part)
+                    s = cache[ck]
                     sigs.setdefault(s, []).append(v)
+
                 if len(sigs) > 1:
                     changed = True
                     for s in sorted(sigs.keys()):
                         new_part.append(sorted(sigs[s]))
                 else:
-                    new_part.append(cell)
+                    new_part.append(sorted(cell))
             part = new_part
         return part
 
     def _label(self, G: nx.DiGraph, perm: List[Any]) -> str:
         """
-        Build a canonical label string for a full node permutation.
-
-        The label encodes node attributes in order, plus the full adjacency
-        pattern and selected edge attributes for all ordered node pairs.
-
-        :param G: Graph to label.
-        :type G: nx.DiGraph
-        :param perm: Full node permutation (ordering).
-        :type perm: List[Any]
-        :returns: Canonical label string for this permutation.
-        :rtype: str
+        Canonical label string for a full node permutation.
+        Deterministic and exact (no approximations).
         """
         node_seg = "|".join(
             ":".join(
@@ -250,29 +190,6 @@ class CRNCanonicalizer(_CRNGraphBackend):
         edge_seg = "|".join(edge_bits)
         return node_seg + "||" + edge_seg
 
-    def _partial_label(self, G: nx.DiGraph, prefix: List[Any]) -> str:
-        """
-        Build a partial label for a permutation prefix.
-
-        A long sequence of ``'{'`` characters is appended so that partial
-        labels compare lexicographically larger than any full label with
-        the same prefix, enabling safe pruning.
-
-        :param G: Graph to label.
-        :type G: nx.DiGraph
-        :param prefix: Partial node permutation.
-        :type prefix: List[Any]
-        :returns: Partial label string.
-        :rtype: str
-        """
-        node_seg = "|".join(
-            ":".join(
-                str(self._freeze(G.nodes[v].get(a, ""))) for a in self.node_attr_keys
-            )
-            for v in prefix
-        )
-        return node_seg + "{" * 1000
-
     def _search(
         self,
         G: nx.DiGraph,
@@ -287,29 +204,9 @@ class CRNCanonicalizer(_CRNGraphBackend):
         timeout_sec: Optional[float],
     ) -> bool:
         """
-        Recursive backtracking search for minimal canonical labels.
+        Exact recursive IR search for minimal canonical label.
 
-        :param G: Graph to canonicalize.
-        :type G: nx.DiGraph
-        :param part: Current node partition.
-        :type part: List[List[Any]]
-        :param prefix: Current permutation prefix.
-        :type prefix: List[Any]
-        :param best: Dict with keys ``"label"`` and ``"perm"`` for the best
-                     full label and permutation seen so far.
-        :type best: Dict[str, Optional[str]]
-        :param perms: List to collect permutations that achieve the best label.
-        :type perms: List[List[Any]]
-        :param depth: Current recursion depth.
-        :type depth: int
-        :param max_depth: Optional maximum recursion depth; None for unlimited.
-        :type max_depth: Optional[int]
-        :param start: Start time (:func:`time.time`) for timeout accounting.
-        :type start: float
-        :param timeout_sec: Optional wall-clock timeout in seconds.
-        :type timeout_sec: Optional[float]
-        :returns: True if the search stopped early due to timeout/depth.
-        :rtype: bool
+        Returns True only if stopped early due to max_depth/timeout.
         """
         if timeout_sec is not None and (time.time() - start) > timeout_sec:
             return True
@@ -318,32 +215,29 @@ class CRNCanonicalizer(_CRNGraphBackend):
 
         part = self._refine(G, part)
 
-        # Fully discrete partition: construct final permutation.
+        # Fully discrete partition: finalize permutation and score it.
         if all(len(c) == 1 for c in part):
             perm = prefix + [v for c in part for v in c]
             lab = self._label(G, perm)
             if best["label"] is None or lab < best["label"]:
-                best["label"], best["perm"] = lab, perm
+                best["label"], best["perm"] = lab, perm  # type: ignore[assignment]
                 perms.clear()
                 perms.append(perm)
             elif lab == best["label"]:
                 perms.append(perm)
             return False
 
-        # Choose first non-singleton cell for branching.
+        # Choose a non-singleton cell (deterministic choice keeps exactness).
         idx = next(i for i, c in enumerate(part) if len(c) > 1)
-        cell = part[idx]
-        cell_sorted = sorted(cell)
+        cell = sorted(part[idx])
 
-        for v in cell_sorted:
+        for v in cell:
             rest = [w for w in cell if w != v]
             new_part = (
                 part[:idx] + [[v]] + ([sorted(rest)] if rest else []) + part[idx + 1 :]
             )
             pref = prefix + [v]
-            p_lab = self._partial_label(G, pref)
-            if best["label"] is not None and p_lab > best["label"]:
-                continue
+
             if self._search(
                 G,
                 new_part,
@@ -360,14 +254,7 @@ class CRNCanonicalizer(_CRNGraphBackend):
 
     @staticmethod
     def _orbits_from_perms(perms: List[List[Any]]) -> List[Set[Any]]:
-        """
-        Derive node orbits from a list of automorphism permutations.
-
-        :param perms: List of permutations (each a list of nodes).
-        :type perms: List[List[Any]]
-        :returns: List of disjoint sets of nodes, one per orbit.
-        :rtype: List[Set[Any]]
-        """
+        """Derive node orbits from a list of automorphism permutations."""
         if not perms:
             return []
         orbit_map: Dict[Any, int] = {}
@@ -401,23 +288,13 @@ class CRNCanonicalizer(_CRNGraphBackend):
     def _maps_from_perms(
         ref: List[Any], perms: List[List[Any]]
     ) -> List[Dict[Any, Any]]:
-        """
-        Convert permutations into mapping dicts relative to a reference order.
-
-        :param ref: Reference permutation (canonical ordering of nodes).
-        :type ref: List[Any]
-        :param perms: List of permutations to convert.
-        :type perms: List[List[Any]]
-        :returns: List of mappings {ref_node -> perm_node}.
-        :rtype: List[Dict[Any, Any]]
-        """
+        """Convert permutations into mapping dicts relative to a reference order."""
         maps: List[Dict[Any, Any]] = []
         n = len(ref)
         for p in perms:
             if len(p) != n:
                 continue
-            m = {ref[i]: p[i] for i in range(n)}
-            maps.append(m)
+            maps.append({ref[i]: p[i] for i in range(n)})
         return maps
 
     def _canon(
@@ -433,21 +310,7 @@ class CRNCanonicalizer(_CRNGraphBackend):
         List[Dict[Any, Any]],
         bool,
     ]:
-        """
-        Compute canonical graph, minimal permutations, orbits and mappings.
-
-        :param max_depth: Optional maximum recursion depth; None for unlimited.
-        :type max_depth: Optional[int]
-        :param timeout_sec: Optional wall-clock timeout in seconds.
-        :type timeout_sec: Optional[float]
-        :returns: Tuple (G_can, perm, perms, orbits, maps, early_stop) where
-                  G_can is the canonical graph, perm is a representative
-                  minimal permutation, perms is the list of all minimal
-                  permutations, orbits are node orbits, maps are mapping
-                  dicts, and early_stop indicates early termination.
-        :rtype: Tuple[nx.DiGraph, List[Any], List[List[Any]], List[Set[Any]], List[Dict[Any, Any]], bool]
-        :raises RuntimeError: If no canonical form is found (e.g. due to early stop).
-        """
+        """Compute canonical graph, minimal permutations, orbits and mappings (exact)."""
         G = self.G
         best: Dict[str, Optional[str]] = {"label": None, "perm": None}
         perms: List[List[Any]] = []
@@ -466,7 +329,7 @@ class CRNCanonicalizer(_CRNGraphBackend):
             timeout_sec=timeout_sec,
         )
 
-        perm = best["perm"]
+        perm = best.get("perm")  # type: ignore[assignment]
         if perm is None:
             raise RuntimeError(
                 f"Canonical form not found; early stop (max_depth={max_depth}, timeout_sec={timeout_sec})"
@@ -487,16 +350,7 @@ class CRNCanonicalizer(_CRNGraphBackend):
         max_depth: Optional[int] = None,
         timeout_sec: Optional[float] = None,
     ) -> nx.DiGraph:
-        """
-        Return the canonical relabeled graph.
-
-        :param max_depth: Optional maximum recursion depth; None for unlimited.
-        :type max_depth: Optional[int]
-        :param timeout_sec: Optional wall-clock timeout in seconds.
-        :type timeout_sec: Optional[float]
-        :returns: Canonically relabeled DiGraph with nodes 1..N.
-        :rtype: nx.DiGraph
-        """
+        """Return the canonical relabeled graph."""
         G_can, _, _, _, _, _ = self._canon(max_depth=max_depth, timeout_sec=timeout_sec)
         return G_can
 
@@ -506,16 +360,7 @@ class CRNCanonicalizer(_CRNGraphBackend):
         max_depth: Optional[int] = None,
         timeout_sec: Optional[float] = None,
     ) -> bool:
-        """
-        Test whether the canonical graph has nontrivial automorphisms.
-
-        :param max_depth: Optional maximum recursion depth; None for unlimited.
-        :type max_depth: Optional[int]
-        :param timeout_sec: Optional wall-clock timeout in seconds.
-        :type timeout_sec: Optional[float]
-        :returns: True if more than one minimal-label permutation exists.
-        :rtype: bool
-        """
+        """True iff >1 minimal-label permutation exists."""
         _, _, perms, _, _, _ = self._canon(max_depth=max_depth, timeout_sec=timeout_sec)
         return len(perms) > 1
 
@@ -525,21 +370,11 @@ class CRNCanonicalizer(_CRNGraphBackend):
         max_depth: Optional[int] = None,
         timeout_sec: Optional[float] = None,
     ) -> Dict[str, Any]:
-        """
-        Run canonicalization and return a summary dictionary.
-
-        :param max_depth: Optional maximum recursion depth; None for unlimited.
-        :type max_depth: Optional[int]
-        :param timeout_sec: Optional wall-clock timeout in seconds.
-        :type timeout_sec: Optional[float]
-        :returns: Summary with permutations, mappings, orbits and diagnostics.
-        :rtype: Dict[str, Any]
-        """
+        """Run canonicalization and return a summary dictionary."""
         G_can, perm, perms, orbits, maps, early = self._canon(
             max_depth=max_depth,
             timeout_sec=timeout_sec,
         )
-
         return {
             "canon_graph": G_can,
             "graph_type": self.graph_type,
@@ -559,16 +394,7 @@ class CRNCanonicalizer(_CRNGraphBackend):
         max_depth: Optional[int] = None,
         timeout_sec: Optional[float] = None,
     ) -> List[Set[Any]]:
-        """
-        Compute node orbits for the canonical form.
-
-        :param max_depth: Optional maximum recursion depth; None for unlimited.
-        :type max_depth: Optional[int]
-        :param timeout_sec: Optional wall-clock timeout in seconds.
-        :type timeout_sec: Optional[float]
-        :returns: List of disjoint node sets representing orbits.
-        :rtype: List[Set[Any]]
-        """
+        """Compute node orbits for the canonical form."""
         _, _, _, orbits, _, _ = self._canon(
             max_depth=max_depth,
             timeout_sec=timeout_sec,
@@ -593,31 +419,9 @@ def canonical(
     timeout_sec: Optional[float] = None,
 ) -> CRNCanonicalizer:
     """
-    Run canonicalization and return a CRNCanonicalizer instance.
+    Run canonicalization and return a CRNCanonicalizer instance (exact).
 
-    The canonicalization is performed once (via :meth:`summary`) to
-    populate internal state; the returned object can then be queried.
-
-    :param hg: Hypergraph to canonicalize.
-    :type hg: CRNHyperGraph
-    :param include_rule: If True, use bipartite species→reaction→species view;
-                         if False, use collapsed species graph.
-    :type include_rule: bool
-    :param node_attr_keys: Node attributes used in partition refinement and
-                           canonical labels.
-    :type node_attr_keys: Iterable[str]
-    :param edge_attr_keys: Edge attributes included in canonical labels.
-    :type edge_attr_keys: Iterable[str]
-    :param integer_ids: If True, use integer node ids in bipartite view.
-    :type integer_ids: bool
-    :param include_stoich: If True, include stoichiometry on bipartite edges.
-    :type include_stoich: bool
-    :param max_depth: Optional maximum recursion depth; None for unlimited.
-    :type max_depth: Optional[int]
-    :param timeout_sec: Optional wall-clock timeout in seconds.
-    :type timeout_sec: Optional[float]
-    :returns: Canonicalizer instance with populated internal state.
-    :rtype: CRNCanonicalizer
+    NOTE: returns the canonicalizer object (not the summary dict).
     """
     canon = CRNCanonicalizer(
         hg,
@@ -627,5 +431,6 @@ def canonical(
         integer_ids=integer_ids,
         include_stoich=include_stoich,
     )
-    summary = canon.summary(max_depth=max_depth, timeout_sec=timeout_sec)
-    return summary
+    # compute once to validate / warm results (optional)
+    canon.summary(max_depth=max_depth, timeout_sec=timeout_sec)
+    return canon

@@ -80,7 +80,7 @@ class TestCRNCanonicalizer(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_functional_wrapper(self):
         H = self._example_H()
-        summary = canonical(H)
+        summary = canonical(H).summary()
 
         self.assertEqual(summary["automorphism_count"], 2)
         self.assertIn({"A", "B"}, summary["orbits"])

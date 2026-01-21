@@ -1,25 +1,43 @@
 """automorphism.py
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 Utility for computing graph automorphisms and pruning redundant sub-graph
 mappings equivalent under those symmetries.
 
 This module provides the :class:`Automorphism` helper, which computes the
 node-orbits of a graph and uses them to deduplicate subgraph-match mappings.
 
-The key idea is to group host nodes into **orbits** under the automorphism
-group of the host graph: two nodes are in the same orbit if there exists an
-automorphism :math:`\\sigma` such that :math:`\\sigma(u) = v`.
+Key idea
+--------
+Group host nodes into **orbits** under the automorphism group of the host
+graph: two nodes are in the same orbit if there exists an automorphism
+:math:`\\sigma` such that :math:`\\sigma(u) = v`.
 
-Mappings are then considered equivalent if they hit the **same multiset of
-orbits** on the host side, and a single representative is kept from each
-equivalence class.
+Mappings are considered equivalent if they hit the same **multiset of orbits**
+on the host side, and a single representative is kept.
+
+Disconnected graphs
+-------------------
+If the host graph is disconnected, we choose one connected component as an
+**anchor** (by default the *largest* component) to suppress automorphisms that
+swap isomorphic components. We then compute automorphisms **within each
+component** independently and combine component orbits. The total number of
+automorphisms is the product of component automorphism counts (excluding
+component-permutation symmetries by design due to anchoring).
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
-from itertools import groupby
-from typing import Dict, List, Mapping, Sequence, Tuple, Union
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import networkx as nx
 from networkx.algorithms.isomorphism import (
@@ -56,40 +74,10 @@ class Automorphism:
     edge_attr_keys : Sequence[str] | None, optional
         Sequence of edge attribute keys to respect in the automorphism
         computation. Defaults to ``("order",)``.
-
-    Notes
-    -----
-    The automorphism computation is performed via
-    :class:`networkx.algorithms.isomorphism.GraphMatcher` on ``graph`` against
-    itself. For chemical graphs this is usually feasible, but for very large
-    or highly symmetric graphs, the number of automorphisms can grow quickly.
-
-    Examples
-    --------
-    Basic usage:
-
-    .. code-block:: python
-
-        import networkx as nx
-        from synkit.Graph.automorphism import Automorphism
-
-        # A 4-cycle where all nodes are symmetric
-        G = nx.cycle_graph(4)
-
-        auto = Automorphism(G)
-        orbits = auto.orbits
-        # orbits == [frozenset({0, 1, 2, 3})]
-        n_sym = auto.n_automorphisms
-        # n_sym == 8 for a 4-cycle
-
-        # Imagine three subgraph mappings that only differ by rotation
-        mappings = [
-            {"a": 0, "b": 1},
-            {"a": 1, "b": 2},
-            {"a": 2, "b": 3},
-        ]
-        unique = auto.deduplicate(mappings)
-        # len(unique) == 1
+    anchor_largest_component : bool, optional
+        If ``True`` and the graph is disconnected, chooses the largest connected
+        component as an "anchor" to suppress automorphisms that swap isomorphic
+        components. Defaults to ``True``.
     """
 
     _DEF_NODE_ATTRS: Tuple[str, ...] = ("element", "charge")
@@ -98,23 +86,11 @@ class Automorphism:
     def __init__(
         self,
         graph: nx.Graph,
-        node_attr_keys: Sequence[str] | None = None,
-        edge_attr_keys: Sequence[str] | None = None,
+        node_attr_keys: Optional[Sequence[str]] = None,
+        edge_attr_keys: Optional[Sequence[str]] = None,
+        *,
+        anchor_largest_component: bool = True,
     ) -> None:
-        """
-        Initialize an :class:`Automorphism` helper.
-
-        Parameters
-        ----------
-        graph : nx.Graph
-            Host graph whose automorphisms and node orbits will be analyzed.
-        node_attr_keys : Sequence[str] | None, optional
-            Node attribute keys to be matched in the automorphism search.
-            If ``None``, defaults to :attr:`_DEF_NODE_ATTRS`.
-        edge_attr_keys : Sequence[str] | None, optional
-            Edge attribute keys to be matched in the automorphism search.
-            If ``None``, defaults to :attr:`_DEF_EDGE_ATTRS`.
-        """
         self._graph: nx.Graph = graph
         self._nkeys: Tuple[str, ...] = (
             tuple(node_attr_keys) if node_attr_keys else self._DEF_NODE_ATTRS
@@ -122,9 +98,13 @@ class Automorphism:
         self._ekeys: Tuple[str, ...] = (
             tuple(edge_attr_keys) if edge_attr_keys else self._DEF_EDGE_ATTRS
         )
+        self._anchor_largest: bool = bool(anchor_largest_component)
 
-        self._orbits: List[frozenset[NodeId]] | None = None
-        self._n_automorphisms: int | None = None
+        self._orbits: Optional[List[frozenset[NodeId]]] = None
+        self._n_automorphisms: Optional[int] = None
+        self._orbit_index: Optional[Dict[NodeId, int]] = None
+        self._components: Optional[List[frozenset[NodeId]]] = None
+        self._anchor_component: Optional[frozenset[NodeId]] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -136,13 +116,8 @@ class Automorphism:
 
         Returns
         -------
-        List[frozenset[NodeId]]
-            List of frozensets, each containing nodes mutually mapped by some
-            automorphism.
-
-        Notes
-        -----
-        The orbits are computed lazily on first access and cached afterwards.
+        list[frozenset[NodeId]]
+            Orbits, computed lazily and cached.
         """
         if self._orbits is None:
             self._analyze()
@@ -151,91 +126,103 @@ class Automorphism:
     @property
     def n_automorphisms(self) -> int:
         """
-        Number of distinct automorphisms of the host graph.
+        Number of automorphisms of the host graph.
 
         Returns
         -------
         int
-            The order (size) of the automorphism group. This is at least 1
-            (the identity automorphism), even for asymmetric graphs.
-
-        Notes
-        -----
-        The value is computed together with :attr:`orbits` and cached.
+            Group order (at least 1).
         """
         if self._n_automorphisms is None:
             self._analyze()
         return int(self._n_automorphisms)  # type: ignore[return-value]
 
-    def deduplicate(self, mappings: List[MappingDict]) -> List[MappingDict]:
+    # ------------------------------------------------------------------
+    # Connected / disconnected handling
+    # ------------------------------------------------------------------
+    @property
+    def is_connected(self) -> bool:
         """
-        Remove mappings that are equivalent under graph automorphisms.
-
-        Two mappings are considered equivalent if the multiset of **orbit
-        indices** hit by their host-side node assignments is the same. In
-        other words, we ignore which specific nodes in an orbit are hit and
-        keep a single representative mapping.
-
-        Parameters
-        ----------
-        mappings : list of MappingDict
-            List of mapping dicts from pattern-node to host-node.
+        Whether the host graph is connected (weakly for directed graphs).
 
         Returns
         -------
-        list of MappingDict
-            Pruned list retaining one representative per equivalence class.
-
-        Examples
-        --------
-        .. code-block:: python
-
-            auto = Automorphism(G)
-            unique_mappings = auto.deduplicate(all_mappings)
+        bool
+            ``True`` if connected or has 0/1 nodes, else ``False``.
         """
-        if not mappings:
-            return []
+        n = self._graph.number_of_nodes()
+        if n <= 1:
+            return True
+        return len(self.components) == 1
 
-        orbit_index: Dict[NodeId, int] = {
-            node: idx for idx, orb in enumerate(self.orbits) for node in orb
-        }
+    @property
+    def components(self) -> List[frozenset[NodeId]]:
+        """
+        Connected components (weakly for directed graphs).
 
-        def signature(mapping: MappingDict) -> Tuple[int, ...]:
-            """Sorted tuple of orbit indices hit by mapping values."""
-            return tuple(sorted(orbit_index[n] for n in mapping.values()))
+        Returns
+        -------
+        list[frozenset[NodeId]]
+            Components as frozensets of node IDs.
+        """
+        if self._components is None:
+            self._components = self._compute_components()
+        return self._components
 
-        mappings_sorted = list(mappings)
-        mappings_sorted.sort(key=signature)
+    @property
+    def anchor_component(self) -> Optional[frozenset[NodeId]]:
+        """
+        Anchor component used for disconnected graphs.
 
-        unique: List[MappingDict] = [
-            next(group) for _, group in groupby(mappings_sorted, key=signature)
-        ]
-        return unique
+        Returns
+        -------
+        frozenset[NodeId] | None
+            Anchor component node-set, or ``None`` if graph is connected.
+        """
+        if self._orbits is None:
+            self._analyze()
+        return self._anchor_component
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    def _analyze(self) -> None:
-        """
-        Compute node orbits and number of automorphisms in a single pass.
+    def _compute_components(self) -> List[frozenset[NodeId]]:
+        if self._graph.number_of_nodes() == 0:
+            return []
+        if self._graph.is_directed():
+            comps: Iterable[Iterable[NodeId]] = nx.weakly_connected_components(self._graph)  # type: ignore[arg-type]
+        else:
+            comps = nx.connected_components(self._graph)  # type: ignore[arg-type]
+        return [frozenset(c) for c in comps]
 
-        This method is idempotent and safe to call multiple times.
-        """
-        gm = GraphMatcher(
-            self._graph,
-            self._graph,
-            node_match=categorical_node_match(
-                self._nkeys,
-                ["*", 0][: len(self._nkeys)],  # defaults if attr missing
-            ),
-            edge_match=categorical_edge_match(
-                self._ekeys,
-                [1.0][: len(self._ekeys)],  # defaults if attr missing
-            ),
+    def _node_defaults(self) -> List[object]:
+        defaults: List[object] = []
+        for k in self._nkeys:
+            defaults.append(0 if k == "charge" else "*")
+        return defaults
+
+    def _edge_defaults(self) -> List[object]:
+        return [1.0 for _ in self._ekeys]
+
+    def _make_matcher(self, g: nx.Graph) -> GraphMatcher:
+        return GraphMatcher(
+            g,
+            g,
+            node_match=categorical_node_match(self._nkeys, self._node_defaults()),
+            edge_match=categorical_edge_match(self._ekeys, self._edge_defaults()),
         )
 
+    def _analyze_component(self, g: nx.Graph) -> Tuple[List[frozenset[NodeId]], int]:
+        if g.number_of_nodes() == 0:
+            return ([], 1)
+        if g.number_of_nodes() == 1:
+            node = next(iter(g.nodes))
+            return ([frozenset({node})], 1)
+
+        gm = self._make_matcher(g)
+
         orbit_sets: Dict[NodeId, set[NodeId]] = defaultdict(set)
-        n_aut: int = 0
+        n_aut = 0
 
         for auto in gm.isomorphisms_iter():
             n_aut += 1
@@ -244,49 +231,77 @@ class Automorphism:
                 orbit_sets[v].add(u)
 
         if not orbit_sets:
-            # Empty graph: no nodes, but still one (trivial) automorphism
-            if self._graph.number_of_nodes() == 0:
-                self._orbits = []
-                self._n_automorphisms = 1
-                return
+            return ([frozenset({n}) for n in g.nodes], 1)
 
-            # Asymmetric graph: only the identity automorphism
-            self._orbits = [frozenset({n}) for n in self._graph.nodes]
+        unique_orbits = {frozenset(nodes) for nodes in orbit_sets.values()}
+        return (list(unique_orbits), n_aut if n_aut > 0 else 1)
+
+    def _choose_anchor(
+        self, comps: List[frozenset[NodeId]]
+    ) -> Optional[frozenset[NodeId]]:
+        if len(comps) <= 1 or not self._anchor_largest:
+            return None
+        return max(comps, key=len)
+
+    def _sorted_orbits(
+        self, orbits: List[frozenset[NodeId]]
+    ) -> List[frozenset[NodeId]]:
+        def _key(o: frozenset[NodeId]) -> Tuple[int, str]:
+            return (len(o), "|".join(sorted((repr(x) for x in o))))
+
+        return sorted(orbits, key=_key)
+
+    def _analyze(self) -> None:
+        comps = self.components
+
+        if self._graph.number_of_nodes() == 0:
+            self._orbits = []
             self._n_automorphisms = 1
+            self._anchor_component = None
             return
 
-        # Deduplicate orbit sets (each node's set should already be its orbit)
-        unique_orbits = {frozenset(nodes) for nodes in orbit_sets.values()}
+        if len(comps) <= 1:
+            orbits, n_aut = self._analyze_component(self._graph)
+            self._orbits = self._sorted_orbits(orbits)
+            self._n_automorphisms = n_aut
+            self._anchor_component = None
+            return
 
-        self._orbits = list(unique_orbits)
-        self._n_automorphisms = n_aut if n_aut > 0 else 1
+        # Disconnected: anchor largest component; compute per-component autos
+        self._anchor_component = self._choose_anchor(comps)
+
+        all_orbits: List[frozenset[NodeId]] = []
+        total_aut = 1
+
+        for comp in comps:
+            sub = self._graph.subgraph(comp).copy()
+            orbits, n_aut = self._analyze_component(sub)
+            all_orbits.extend(orbits)
+            total_aut *= int(n_aut)
+
+        self._orbits = self._sorted_orbits(list({frozenset(o) for o in all_orbits}))
+        self._n_automorphisms = int(total_aut) if total_aut > 0 else 1
+
+    def _get_orbit_index(self) -> Dict[NodeId, int]:
+        if self._orbit_index is None:
+            self._orbit_index = {
+                node: idx for idx, orb in enumerate(self.orbits) for node in orb
+            }
+        return self._orbit_index
 
     # ------------------------------------------------------------------
     # Dunder methods
     # ------------------------------------------------------------------
     def __len__(self) -> int:
-        """
-        Return the number of distinct node orbits.
-
-        Returns
-        -------
-        int
-            Number of orbits in the host graph.
-        """
         return len(self.orbits)
 
     def __repr__(self) -> str:
-        """
-        Return a short textual summary of the helper state.
-
-        Returns
-        -------
-        str
-            Summary representation of the :class:`Automorphism` instance.
-        """
         n_nodes = self._graph.number_of_nodes()
-        n_orb = len(self)
-        n_aut = self.n_automorphisms
+        conn = "connected" if self.is_connected else "disconnected"
+        n_comp = len(self.components)
+        n_orb = len(self.orbits) if self._orbits is not None else "?"
+        n_aut = self._n_automorphisms if self._n_automorphisms is not None else "?"
         return (
-            f"<Automorphism | nodes={n_nodes} " f"orbits={n_orb} automorphisms={n_aut}>"
+            f"<Automorphism | {conn} nodes={n_nodes} comps={n_comp} "
+            f"orbits={n_orb} automorphisms={n_aut}>"
         )
