@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Synthesis Module &mdash; synkit 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API" href="api.html" />
+    <link rel="prev" title="Graph Module" href="graph.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            synkit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">IO Conversion Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chem.html">Chemical Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">Graph Module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Synthesis Module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#reaction-prediction-reactor">Reaction Prediction: Reactor</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#example-forward-prediction">Example: Forward Prediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-backward-prediction">Example: Backward Prediction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-implicit-hydrogen-networkx">Example: Implicit Hydrogen (NetworkX)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-forward-prediction-mod">Example: Forward Prediction (MØD)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-backward-prediction-with-aam-mod">Example: Backward Prediction with AAM (MØD)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#chemical-reaction-networks-crn">Chemical Reaction Networks: CRN</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#see-also">See Also</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">synkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Synthesis Module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/synthesis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="synthesis-module">
+<h1>Synthesis Module<a class="headerlink" href="#synthesis-module" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">synkit.Synthesis</span></code> package offers tools for both <strong>reaction prediction</strong> and <strong>chemical reaction network (CRN) exploration</strong>.</p>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#reaction-prediction-reactor" id="id7">Reaction Prediction: Reactor</a></p></li>
+<li><p><a class="reference internal" href="#chemical-reaction-networks-crn" id="id8">Chemical Reaction Networks: CRN</a></p></li>
+<li><p><a class="reference internal" href="#see-also" id="id9">See Also</a></p></li>
+</ul>
+</nav>
+<section id="reaction-prediction-reactor">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Reaction Prediction: Reactor</a><a class="headerlink" href="#reaction-prediction-reactor" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">synkit.Synthesis.Reactor</span></code> submodule supports two backends:</p>
+<ul class="simple">
+<li><p><strong>NetworkX-based</strong> reactor
+<a class="reference internal" href="api.html#synkit.Synthesis.Reactor.syn_reactor.SynReactor" title="synkit.Synthesis.Reactor.syn_reactor.SynReactor"><code class="xref py py-class docutils literal notranslate"><span class="pre">SynReactor</span></code></a></p></li>
+<li><p><strong>MØD-based</strong> reactor
+<a class="reference internal" href="api.html#synkit.Synthesis.Reactor.mod_reactor.MODReactor" title="synkit.Synthesis.Reactor.mod_reactor.MODReactor"><code class="xref py py-class docutils literal notranslate"><span class="pre">MODReactor</span></code></a> <span id="id1">[<a class="reference internal" href="reference.html#id4" title="Jakob L Andersen, Christoph Flamm, Daniel Merkle, and Peter F Stadler. A software package for chemically inspired graph transformation. In Graph Transformation: 9th International Conference, ICGT 2016, in Memory of Hartmut Ehrig, Held as Part of STAF 2016, Vienna, Austria, July 5-6, 2016, Proceedings 9, 73–88. Springer, 2016.">3</a>]</span>.</p></li>
+</ul>
+<p><strong>Reactor parameters</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 10.0%" />
+<col style="width: 10.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Name</strong></p></th>
+<th class="head"><p><strong>Type</strong></p></th>
+<th class="head"><p><strong>Default</strong></p></th>
+<th class="head"><p><strong>Description</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">invert</span></code></p></td>
+<td><p>bool</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+<td><p>Use <code class="docutils literal notranslate"><span class="pre">False</span></code> for <strong>forward</strong> prediction (substrate → products);
+<code class="docutils literal notranslate"><span class="pre">True</span></code> for <strong>backward</strong> prediction (target → precursors).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">explicit_h</span></code></p></td>
+<td><p>bool</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+<td><p>When <code class="docutils literal notranslate"><span class="pre">True</span></code>, all hydrogens within the reaction center
+are rendered explicitly in the resulting SMARTS.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strategy</span></code></p></td>
+<td><p>str</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">'bt'</span></code></p></td>
+<td><p>Graph-matching strategy to enumerate transformations:
+- <code class="docutils literal notranslate"><span class="pre">'comp'</span></code>: component-aware subgraph search (fastest, preferred)
+- <code class="docutils literal notranslate"><span class="pre">'all'</span></code>: exhaustive arbitrary subgraph search
+- <code class="docutils literal notranslate"><span class="pre">'bt'</span></code>: backtracking fallback (tries <code class="docutils literal notranslate"><span class="pre">comp</span></code> first, then <code class="docutils literal notranslate"><span class="pre">all</span></code> if no match)</p></td>
+</tr>
+</tbody>
+</table>
+<section id="example-forward-prediction">
+<h3>Example: Forward Prediction<a class="headerlink" href="#example-forward-prediction" title="Link to this heading"></a></h3>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">Forward reaction prediction with explicit H and backtracking strategy</span><a class="headerlink" href="#id2" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">synkit.Synthesis.Reactor.syn_reactor</span><span class="w"> </span><span class="kn">import</span> <span class="n">SynReactor</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="n">input_fw</span> <span class="o">=</span> <span class="s1">&#39;CC=O.CC=O&#39;</span>
+<span class="linenos"> 4</span><span class="n">template</span> <span class="o">=</span> <span class="s1">&#39;[C:2]=[O:3].[C:4]([H:7])[H:8]&gt;&gt;[C:2]=[C:4].[O:3]([H:7])[H:8]&#39;</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span><span class="n">reactor</span> <span class="o">=</span> <span class="n">SynReactor</span><span class="p">(</span>
+<span class="linenos"> 7</span>    <span class="n">substrate</span><span class="o">=</span><span class="n">input_fw</span><span class="p">,</span>
+<span class="linenos"> 8</span>    <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
+<span class="linenos"> 9</span>    <span class="n">invert</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>        <span class="c1"># forward prediction</span>
+<span class="linenos">10</span>    <span class="n">explicit_h</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>     <span class="c1"># show H in reaction center</span>
+<span class="linenos">11</span>    <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;bt&#39;</span>        <span class="c1"># try component search, then exhaustive</span>
+<span class="linenos">12</span><span class="p">)</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span><span class="n">smarts_list</span> <span class="o">=</span> <span class="n">reactor</span><span class="o">.</span><span class="n">smarts_list</span>
+<span class="linenos">15</span><span class="nb">print</span><span class="p">(</span><span class="n">smarts_list</span><span class="p">)</span>
+<span class="linenos">16</span><span class="c1"># &gt;&gt; [&#39;[CH3:1][CH:2]=[O:3].[CH:4]([CH:5]=[O:6])([H:7])[H:8]&gt;&gt;[CH3:1][CH:2]=[CH:4][CH:5]=[O:6].[O:3]([H:7])[H:8]&#39;, &#39;[CH3:4][CH:5]=[O:6].[CH:1]([CH:2]=[O:3])([H:7])[H:8]&gt;&gt;[CH:1]([CH:2]=[O:3])=[CH:5][CH3:4].[O:6]([H:7])[H:8]&#39;]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="example-backward-prediction">
+<h3>Example: Backward Prediction<a class="headerlink" href="#example-backward-prediction" title="Link to this heading"></a></h3>
+<div class="literal-block-wrapper docutils container" id="id3">
+<div class="code-block-caption"><span class="caption-text">Backward reaction prediction targeting product to precursors</span><a class="headerlink" href="#id3" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">synkit.Synthesis.Reactor.syn_reactor</span><span class="w"> </span><span class="kn">import</span> <span class="n">SynReactor</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;CC=CC=O.O&#39;</span>
+<span class="linenos"> 4</span><span class="n">template</span> <span class="o">=</span> <span class="s1">&#39;[C:2]=[O:3].[C:4]([H:7])[H:8]&gt;&gt;[C:2]=[C:4].[O:3]([H:7])[H:8]&#39;</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span><span class="n">reactor_bw</span> <span class="o">=</span> <span class="n">SynReactor</span><span class="p">(</span>
+<span class="linenos"> 7</span>    <span class="n">substrate</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+<span class="linenos"> 8</span>    <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
+<span class="linenos"> 9</span>    <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>         <span class="c1"># backward prediction</span>
+<span class="linenos">10</span>    <span class="n">explicit_h</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>    <span class="c1"># hydrogens implicit</span>
+<span class="linenos">11</span>    <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;comp&#39;</span>      <span class="c1"># component-aware search</span>
+<span class="linenos">12</span><span class="p">)</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span><span class="n">precursors</span> <span class="o">=</span> <span class="n">reactor_bw</span><span class="o">.</span><span class="n">smarts_list</span>
+<span class="linenos">15</span><span class="nb">print</span><span class="p">(</span><span class="n">precursors</span><span class="p">)</span>
+<span class="linenos">16</span><span class="c1"># &gt;&gt; [&#39;[CH3:1][CH:2]=[O:6].[CH3:3][CH:4]=[O:5]&gt;&gt;[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]&#39;, &#39;[CH3:1][CH3:2].[CH:3]([CH:4]=[O:5])=[O:6]&gt;&gt;[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]&#39;]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="example-implicit-hydrogen-networkx">
+<h3>Example: Implicit Hydrogen (NetworkX)<a class="headerlink" href="#example-implicit-hydrogen-networkx" title="Link to this heading"></a></h3>
+<p>In some cases you may want to use an <strong>implicit-H</strong> template. Set <cite>implicit_temp=True</cite> and <cite>explicit_h=False</cite>:</p>
+<div class="literal-block-wrapper docutils container" id="id4">
+<div class="code-block-caption"><span class="caption-text">Implicit-H template for backward prediction</span><a class="headerlink" href="#id4" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">synkit.Synthesis.Reactor.syn_reactor</span><span class="w"> </span><span class="kn">import</span> <span class="n">SynReactor</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="n">target</span> <span class="o">=</span> <span class="s1">&#39;CC=CC=O.O&#39;</span>
+<span class="linenos"> 4</span><span class="n">template</span> <span class="o">=</span> <span class="s1">&#39;[C:2]=[O:3].[CH2:4]&gt;&gt;[C:2]=[C:4].[OH2:3]&#39;</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span><span class="n">reactor_imp</span> <span class="o">=</span> <span class="n">SynReactor</span><span class="p">(</span>
+<span class="linenos"> 7</span>    <span class="n">substrate</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+<span class="linenos"> 8</span>    <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
+<span class="linenos"> 9</span>    <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>          <span class="c1"># backward prediction</span>
+<span class="linenos">10</span>    <span class="n">explicit_h</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>     <span class="c1"># hydrogens implicit</span>
+<span class="linenos">11</span>    <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;comp&#39;</span><span class="p">,</span>      <span class="c1"># component-aware search</span>
+<span class="linenos">12</span>    <span class="n">implicit_temp</span><span class="o">=</span><span class="kc">True</span>    <span class="c1"># use implicit-H template</span>
+<span class="linenos">13</span><span class="p">)</span>
+<span class="linenos">14</span>
+<span class="linenos">15</span><span class="n">precursors</span> <span class="o">=</span> <span class="n">reactor_imp</span><span class="o">.</span><span class="n">smarts_list</span>
+<span class="linenos">16</span><span class="nb">print</span><span class="p">(</span><span class="n">precursors</span><span class="p">)</span>
+<span class="linenos">17</span><span class="c1"># &gt;&gt; [&#39;[CH3:1][CH:2]=[O:6].[CH3:3][CH:4]=[O:5]&gt;&gt;[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]&#39;, &#39;[CH3:1][CH3:2].[CH:3]([CH:4]=[O:5])=[O:6]&gt;&gt;[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]&#39;]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="example-forward-prediction-mod">
+<h3>Example: Forward Prediction (MØD)<a class="headerlink" href="#example-forward-prediction-mod" title="Link to this heading"></a></h3>
+<div class="literal-block-wrapper docutils container" id="id5">
+<div class="code-block-caption"><span class="caption-text">Forward prediction (no atom-map reservation)</span><a class="headerlink" href="#id5" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">synkit.Synthesis.Reactor.mod_reactor</span><span class="w"> </span><span class="kn">import</span> <span class="n">MODReactor</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span><span class="n">input_fw</span> <span class="o">=</span> <span class="s1">&#39;CC=O.CC=O&#39;</span>
+<span class="linenos"> 4</span><span class="n">template</span> <span class="o">=</span> <span class="s1">&#39;[C:2]=[O:3].[C:4]([H:7])[H:8]&gt;&gt;[C:2]=[C:4].[O:3]([H:7])[H:8]&#39;</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span><span class="n">reactor_mod</span> <span class="o">=</span> <span class="n">MODReactor</span><span class="p">(</span>
+<span class="linenos"> 7</span>    <span class="n">substrate</span><span class="o">=</span><span class="n">input_fw</span><span class="p">,</span>
+<span class="linenos"> 8</span>    <span class="n">rule_file</span><span class="o">=</span><span class="n">template</span><span class="p">,</span>
+<span class="linenos"> 9</span>    <span class="n">invert</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>         <span class="c1"># forward direction</span>
+<span class="linenos">10</span>    <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;bt&#39;</span>         <span class="c1"># component-aware, then exhaustive</span>
+<span class="linenos">11</span><span class="p">)</span>
+<span class="linenos">12</span>
+<span class="linenos">13</span><span class="n">reaction_list</span> <span class="o">=</span> <span class="n">reactor_mod</span><span class="o">.</span><span class="n">reaction_smiles</span>
+<span class="linenos">14</span><span class="nb">print</span><span class="p">(</span><span class="n">reaction_list</span><span class="p">)</span>
+<span class="linenos">15</span><span class="c1"># &gt;&gt; [&#39;CC=O.CC=O&gt;&gt;CC=CC=O.O&#39;]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="example-backward-prediction-with-aam-mod">
+<h3>Example: Backward Prediction with AAM (MØD)<a class="headerlink" href="#example-backward-prediction-with-aam-mod" title="Link to this heading"></a></h3>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">Backward prediction (with atom-map preservation)</span><a class="headerlink" href="#id6" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">from</span><span class="w"> </span><span class="nn">synkit.Synthesis.Reactor.mod_reactor</span><span class="w"> </span><span class="kn">import</span> <span class="n">MODReactor</span>
+<span class="linenos"> 2</span><span class="kn">from</span><span class="w"> </span><span class="nn">synkit.Synthesis.Reactor.mod_aam</span><span class="w">      </span><span class="kn">import</span> <span class="n">MODAAM</span>
+<span class="linenos"> 3</span><span class="kn">from</span><span class="w"> </span><span class="nn">synkit.IO</span><span class="w">                            </span><span class="kn">import</span> <span class="n">smart_to_gml</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span><span class="n">input_bw</span> <span class="o">=</span> <span class="s1">&#39;CC=CC=O.O&#39;</span>
+<span class="linenos"> 6</span><span class="n">rule_gml</span> <span class="o">=</span> <span class="n">smart_to_gml</span><span class="p">(</span>
+<span class="linenos"> 7</span>    <span class="s1">&#39;[C:2]=[O:3].[C:4]([H:7])[H:8]&gt;&gt;[C:2]=[C:4].[O:3]([H:7])[H:8]&#39;</span><span class="p">,</span>
+<span class="linenos"> 8</span>    <span class="n">core</span><span class="o">=</span><span class="kc">True</span>
+<span class="linenos"> 9</span><span class="p">)</span>
+<span class="linenos">10</span>
+<span class="linenos">11</span><span class="n">reactor_bw</span> <span class="o">=</span> <span class="n">MODAAM</span><span class="p">(</span>
+<span class="linenos">12</span>    <span class="n">substrate</span><span class="o">=</span><span class="n">input_bw</span><span class="p">,</span>
+<span class="linenos">13</span>    <span class="n">rule_file</span><span class="o">=</span><span class="n">rule_gml</span><span class="p">,</span>
+<span class="linenos">14</span>    <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="linenos">15</span>    <span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;bt&#39;</span>
+<span class="linenos">16</span><span class="p">)</span>
+<span class="linenos">17</span>
+<span class="linenos">18</span><span class="n">smarts_list</span> <span class="o">=</span> <span class="n">reactor_bw</span><span class="o">.</span><span class="n">get_smarts</span><span class="p">()</span>
+<span class="linenos">19</span><span class="nb">print</span><span class="p">(</span><span class="n">smarts_list</span><span class="p">)</span>
+<span class="linenos">20</span><span class="c1"># &gt;&gt; [</span>
+<span class="linenos">21</span><span class="c1">#   &#39;[CH3:1][CH:2]=[O:3].[CH:4]([CH:5]=[O:6])([H:7])[H:8]&gt;&gt;[CH3:1][CH:2]=[CH:4][CH:5]=[O:6].[O:3]([H:7])[H:8]&#39;,</span>
+<span class="linenos">22</span><span class="c1">#   &#39;[CH3:1][CH:2]([H:3])[H:4].[CH:5]([CH:6]=[O:7])=[O:8]&gt;&gt;[CH3:1][CH:2]=[CH:5][CH:6]=[O:7].[H:3][O:8][H:4]&#39;</span>
+<span class="linenos">23</span><span class="c1"># ]</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="chemical-reaction-networks-crn">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Chemical Reaction Networks: CRN</a><a class="headerlink" href="#chemical-reaction-networks-crn" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">synkit.Synthesis.CRN</span></code> submodule provides classes for constructing,
+analyzing, and exploring chemical reaction networks derived from reaction rules.</p>
+</section>
+<section id="see-also">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">See Also</a><a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">synkit.IO</span></code> — format conversion utilities</p></li>
+<li><p><code class="xref py py-mod docutils literal notranslate"><span class="pre">synkit.Graph</span></code> — graph data structures and transformations</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="graph.html" class="btn btn-neutral float-left" title="Graph Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,207 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog &mdash; synkit 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Reference" href="reference.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            synkit
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">IO Conversion Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chem.html">Chemical Modeling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">Graph Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="synthesis.html">Synthesis Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">References</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#version-0-0-7">Version 0.0.7</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#io-module">IO Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#chem-module">Chem Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#graph-module">Graph Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rule-module">Rule Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#synthesis-module">Synthesis Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vis-module">Vis Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">synkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Changelog</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
+<section id="version-0-0-7">
+<h2>Version 0.0.7<a class="headerlink" href="#version-0-0-7" title="Link to this heading"></a></h2>
+<p><strong>Highlights</strong></p>
+<ul class="simple">
+<li><p>Refactored source-code structure into six primary submodules at the root level:
+<cite>IO</cite>, <cite>Chem</cite>, <cite>Graph</cite>, <cite>Rule</cite>, <cite>Synthesis</cite>, and <cite>Vis</cite>.</p></li>
+<li><p>Added MØD‐free operation mode: functions requiring MØD now raise clear errors but fall back to pure‐Python implementations where available.</p></li>
+</ul>
+<section id="io-module">
+<h3>IO Module<a class="headerlink" href="#io-module" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Exposed core I/O utilities directly in <cite>synkit.IO</cite>:
+<cite>chemical_converter.py</cite>, <cite>data_io.py</cite>, and <cite>debug.py</cite>.</p></li>
+</ul>
+</section>
+<section id="chem-module">
+<h3>Chem Module<a class="headerlink" href="#chem-module" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Introduced <strong>`CanonRSMI`</strong> for atom–atom mapping (AAM) canonicalization.</p></li>
+<li><p>Moved <strong>`AAMValidator`</strong> into <cite>synkit.Chem.Reaction</cite> for consistency.</p></li>
+</ul>
+</section>
+<section id="graph-module">
+<h3>Graph Module<a class="headerlink" href="#graph-module" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Added <strong>`SynGraph`</strong> wrapper for reaction and molecule graphs.</p></li>
+<li><p>New canonicalisation backends:
+- <strong>node‐type sort</strong>
+- <strong>Morgan‐prime hashing</strong>
+- <strong>Weisfeiler–Lehman refinement</strong></p></li>
+<li><p>Renamed “Cluster” to <strong>Matcher</strong>; enhanced <strong>`GraphMatcher`</strong> and <strong>`SubgraphMatch`</strong>.</p></li>
+<li><p>Added <strong>`SubgraphSearchEngine`</strong> with three strategies:
+- <cite>component‐aware</cite>
+- <cite>arbitrary</cite>
+- <cite>backtracking</cite></p></li>
+<li><p>Introduced <strong>`SING`</strong> and <strong>`TURBOIS`</strong> for mapping multiple patterns in a single host graph.</p></li>
+<li><p>Extended <strong>`GraphCluster`</strong> and <strong>`BatchClustering`</strong> to support both <cite>nx</cite> and <cite>mod</cite> backends.</p></li>
+<li><p>Enhanced <strong>`WLHash`</strong> to hash lists of node/edge attributes.</p></li>
+<li><p>Added <strong>`MTG`</strong> submodule for Mechanistic Transition Graphs (direct rule composition).</p></li>
+<li><p>New <strong>`Hydrogen`</strong> submodule for reaction-center H-completion and <strong>`Context`</strong> for radius-based expansion.</p></li>
+</ul>
+</section>
+<section id="rule-module">
+<h3>Rule Module<a class="headerlink" href="#rule-module" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Introduced <strong>`SynRule`</strong> wrapper supporting NetworkX graphs and GML.</p></li>
+<li><p>Reorganized into three packages:
+- <strong>Apply</strong> (retro-prediction via partial composition)
+- <strong>Compose</strong> (rule composition)
+- <strong>Modify</strong> (rule editing and H-handling)</p></li>
+<li><p>Provided non‐MØD fallbacks where possible.</p></li>
+</ul>
+</section>
+<section id="synthesis-module">
+<h3>Synthesis Module<a class="headerlink" href="#synthesis-module" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Divided into three submodules:
+- <strong>Reactor</strong> (<cite>nx</cite> via <cite>SynReactor</cite>; <cite>mod</cite> via <cite>MODReactor</cite>/<cite>MODAAM</cite>)
+- <strong>CRN</strong> (Chemical Reaction Network builder via <cite>MODCRN</cite>)
+- <strong>MSR</strong> (multi-step reaction pathfinder)</p></li>
+<li><p><strong>`SynReactor`</strong> now supports implicit‐H templates.</p></li>
+<li><p><strong>`MODCRN`</strong> wraps MØD for CRN generation; requires manual re-run for PDF summaries.</p></li>
+</ul>
+</section>
+<section id="vis-module">
+<h3>Vis Module<a class="headerlink" href="#vis-module" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Visualization tools organized under <strong>`synkit.Vis`</strong>:
+- <strong>`RXNVis`</strong> (reaction visualisation)
+- <strong>`RuleVis`</strong> (template/rule visualisation)
+- <strong>`GraphVisualizer`</strong> (generic graph editing &amp; display)</p></li>
+</ul>
+</section>
+<section id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Added comprehensive examples for each submodule.</p></li>
+<li><p>Scaffolding for an API Reference page.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="reference.html" class="btn btn-neutral float-left" title="Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
