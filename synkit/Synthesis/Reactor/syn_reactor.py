@@ -21,7 +21,10 @@ from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
-from synkit.Graph.Matcher.automorphism import Automorphism
+from synkit.Graph.Matcher.automorphism import (
+    Automorphism,
+)
+from synkit.Graph.Matcher.dedup_matches import deduplicate_matches_with_anchor
 from synkit.Graph.Matcher.auto_est import AutoEst
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
@@ -249,8 +252,12 @@ class SynReactor:
 
             # --- Automorphism pruning ----------------------------------------
             if self.automorphism and raw_maps:
-                auto = Automorphism(self.graph.raw)
-                self._mappings = auto.deduplicate(raw_maps)
+                auto = Automorphism(pattern_graph)
+                self._mappings = deduplicate_matches_with_anchor(
+                    raw_maps,
+                    pattern_orbits=auto.orbits,
+                    pattern_anchor=auto.anchor_component,
+                )
                 log.debug(
                     "Automorphism pruning: %d → %d unique mapping(s)",
                     len(raw_maps),
@@ -258,12 +265,16 @@ class SynReactor:
                 )
             else:
                 auto = AutoEst(
-                    self.graph.raw,
+                    pattern_graph,
                     node_attrs=["element", "charge", "aromatic", "hcount"],
                     edge_attrs=["order"],
                 )
                 auto.fit()
-                self._mappings = auto.deduplicate(raw_maps)
+                self._mappings = deduplicate_matches_with_anchor(
+                    raw_maps,
+                    pattern_orbits=auto.orbits,
+                    pattern_anchor=auto.anchor_component,
+                )
                 # self._mappings = raw_maps
 
             log.info("%d mapping(s) discovered", len(self._mappings))
