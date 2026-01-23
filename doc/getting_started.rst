@@ -1,118 +1,118 @@
 .. _getting-started-synkit:
 
-.. image:: https://img.shields.io/pypi/v/synkit.svg
-   :alt: PyPI version
-   :align: right
-
 Getting Started
 ===============
 
-Welcome to the **synkit** documentation! This guide walks you through installing and verifying **synkit**, a modular toolkit for chemical informatics and graph-based workflows.
+.. raw:: html
 
-Introduction
+   <div style="margin-bottom: 0.75rem;">
+     <a href="https://pypi.org/project/synkit/"><img alt="PyPI" src="https://img.shields.io/pypi/v/synkit.svg"></a>
+     <a href="https://github.com/TieuLongPhan/SynKit"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-SynKit-181717?logo=github"></a>
+   </div>
+
+Welcome! This guide gets you from **zero → first SynKit workflow** in minutes.
+
+What you get
 ------------
-**synkit** provides a suite of tools to simplify reaction canonicalization, atom-map validation, graph transformation, and more. Whether you’re automating chemical data pipelines or building custom rule-based systems, **synkit** helps you get started quickly and scale confidently.
 
-Requirements
-------------
-Before installing **synkit**, ensure that:
+SynKit is a modular toolkit for **reaction informatics** and **graph-first chemistry**:
 
-- **Python** ≥ 3.11 is available on your system.  
-- You have a working C/C++ compiler for any native extensions.  
-- (Recommended) You use an isolated virtual environment to avoid dependency conflicts.
+- reaction / AAM canonicalization
+- balance checks and standardization
+- graph construction (ITS/MTG), hashing, and matching
+- reaction rules (compose / apply / modify)
+- lightweight **CRN exploration** (:doc:`CRN <crn>`) 
 
-Virtual Environment (Recommended)
----------------------------------
-Creating an isolated environment prevents conflicts between **synkit** and other Python projects.
+Install
+-------
 
-1. **Using venv** (cross-platform)
+.. grid:: 1 1 2 2
+   :gutter: 2
 
-   .. code-block:: bash
+   .. grid-item-card:: :octicon:`package` pip (recommended)
 
-      python3 -m venv synkit-env
-      source synkit-env/bin/activate    # Linux/macOS
-      synkit-env\Scripts\activate       # Windows PowerShell
+      .. code-block:: bash
 
-2. **Using Conda** (if you prefer Conda environments)
+         python -m pip install -U pip
+         pip install synkit
 
-   .. code-block:: bash
+   .. grid-item-card:: :octicon:`container` Docker
 
-      conda create -n synkit-env python=3.11
-      conda activate synkit-env
+      .. code-block:: bash
 
-Installing Dependencies
------------------------
-Some **synkit** features require the external package **mod**.
+         docker pull tieulongphan/synkit:latest
+         docker run --rm tieulongphan/synkit:latest \
+           python -c "import importlib.metadata as m; print(m.version('synkit'))"
+
+Optional: MØD backend
+---------------------
+
+Some legacy workflows (e.g., MØD-backed CRN construction) require the external package **mod**.
 
 .. note::
-   On Linux you can install **mod** via Conda:
+   On Linux, you can install **mod** via Conda:
 
    .. code-block:: bash
 
       conda install -c jakobandersen -c conda-forge "mod>=0.17" -y
 
-   For other platforms, see the upstream instructions:  
-   <https://jakobandersen.github.io/mod/installation.html>_
-
-Installing synkit
------------------
-With your environment activated and dependencies in place, install **synkit** from PyPI:
-
-.. code-block:: bash
-
-   pip install synkit
-
-This will pull in **synkit** and all required dependencies.
-
-Quick Verification
-------------------
-After installation, verify that **synkit** is available and check its version:
+Verify your install
+-------------------
 
 .. code-block:: bash
 
    python -c "import importlib.metadata as m; print(m.version('synkit'))"
-   # Should print the installed synkit version
 
-Docker Installation
--------------------
+If this prints a version, you are ready.
 
-Install **SynKit** using Docker.
+Quick tour
+----------
 
-Pull the image:
+Try one small end-to-end snippet that touches the most common building blocks:
 
-.. code-block:: bash
+.. code-block:: python
 
-   docker pull tieulongphan/synkit:latest
+   # 1) Build a tiny CRN
+   from synkit.CRN.DAG.syncrn import SynCRN
 
-Run a quick version check:
+   rxns = ["A+B>>C", "C>>D"]
+   crn = SynCRN(rxns).build()
 
-.. code-block:: bash
+   # 2) Inspect basic counts
+   print(crn.n_species, crn.n_reactions)
 
-   docker run --rm tieulongphan/synkit:latest \
-     python -c "import importlib.metadata as m; print(m.version('synkit'))"
+   # 3) Convert to hypergraph (useful for canonicalization)
+   from synkit.CRN.Hypergraph.conversion import rxns_to_hypergraph
 
+   H = rxns_to_hypergraph(rxns)
+   print(H)
 
-Use as a base image in your own Dockerfile:
+Next steps
+----------
 
-.. code-block:: dockerfile
+.. grid:: 1 2 2 3
+   :gutter: 2
 
-   FROM tieulongphan/synkit:latest
-   WORKDIR /app
-   COPY . .
-   CMD ["python", "your_script.py"]
+   .. grid-item-card:: :octicon:`graph` CRN
+      :link: crn
+      :link-type: doc
 
+      Canonicalize and analyze reaction networks.
 
-Further Resources
------------------
-- Official documentation: `SynKit Docs <https://tieulongphan.github.io/SynKit>`_
-- Tutorials and examples: :doc:`Tutorials and Examples <getting_started>`
-- 
+   .. grid-item-card:: :octicon:`share-android` Graph Module
+      :link: graph
+      :link-type: doc
+
+      ITS/MTG, matching, clustering, WL hashing.
+
+   .. grid-item-card:: :octicon:`beaker` Chem Module
+      :link: chem
+      :link-type: doc
+
+      Standardization, balance checking, AAM validation.
 
 Support
 -------
-If you encounter issues or have questions:
 
-- Report bugs and feature requests on GitHub:  
-  `SynKit Issues <https://github.com/TieuLongPhan/SynKit/issues>`_
-
-Enjoy using **synkit**!
+- Report issues: https://github.com/TieuLongPhan/SynKit/issues
+- Releases / changelog: https://github.com/tieulongphan/synkit/releases

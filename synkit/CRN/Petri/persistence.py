@@ -1,9 +1,6 @@
-# synkit/CRN/petri/persistence.py
 from __future__ import annotations
 
 from typing import Any, List, Set
-
-import numpy as np
 
 from ..Props.utils import _species_order
 from .semiflows import find_p_semiflows

@@ -38,10 +38,10 @@ import numpy as np
 from .stoich import stoichiometric_matrix, stoichiometric_rank
 from .utils import _species_order, _split_species_reactions
 from ..Hypergraph.conversion import _as_bipartite
+import warnings
 
 LOGGER = logging.getLogger(__name__)
 
-import warnings
 
 warnings.warn(
     "synkit.CRN.Props.deficiency is under active development and may be unstable. "

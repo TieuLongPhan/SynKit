@@ -261,7 +261,12 @@ def bipartite_to_hypergraph(
 
         # synthesize readable id if no explicit one exists
         if eid is None:
-            eid = f"{rule}_{abs(hash((rnode, tuple(sorted(reactants_map.items())), tuple(sorted(products_map.items()))))) % (10**8)}"
+            payload = (
+                rnode,
+                tuple(sorted(reactants_map.items())),
+                tuple(sorted(products_map.items())),
+            )
+            eid = f"{rule}_{abs(hash(payload)) % (10**8)}"
 
         if reactants_map or products_map:
             H.add_rxn(reactants_map, products_map, rule=rule, edge_id=str(eid))

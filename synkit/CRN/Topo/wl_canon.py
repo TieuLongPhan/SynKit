@@ -22,12 +22,15 @@ def _blake_str(x: str, *, digest_size: int = 16) -> str:
 
 
 def _freeze(x: Any) -> Any:
-    if isinstance(x, list):
+    """Convert common container types into stable, hash-friendly tuples."""
+    if isinstance(x, (list, tuple)):
         return tuple(_freeze(v) for v in x)
     if isinstance(x, dict):
-        return tuple((k, _freeze(v)) for k, v in sorted(x.items()))
+        return tuple(
+            (k, _freeze(v)) for k, v in sorted(x.items(), key=lambda kv: kv[0])
+        )
     if isinstance(x, set):
-        return tuple(sorted(_freeze(v) for v in x))
+        return tuple(sorted((_freeze(v) for v in x), key=str))
     return x
 
 
@@ -35,7 +38,7 @@ def _freeze(x: Any) -> Any:
 class WLResult:
     G_can: nx.DiGraph
     colors: Dict[Any, str]  # node -> final WL color
-    orbits: List[Set[Any]]  # approximate orbits (same color)
+    orbits: List[Set[Any]]  # approximate orbits (same final color)
     iters_run: int
     stabilized: bool
     color_hist: Dict[str, int]  # color -> count
@@ -54,11 +57,12 @@ class WLCanonicalizer(_CRNGraphBackend):
 
     `automorphism_count` in `summary()` is **approximate**:
       - If `estimate_automorphisms=True`, we return ∏_c (|cell_c|!) over WL color cells.
-        This is an upper bound in many cases and can be a very loose proxy.
+        This is often an over-estimate and can be a very loose proxy.
       - Otherwise it is None.
 
-    This will NOT enumerate automorphisms / exact orbits, but it scales to graphs
-    where exact IR search explodes.
+    Notes:
+      - This does NOT enumerate automorphisms / exact orbits.
+      - Designed for speed and deterministic output.
     """
 
     def __init__(
@@ -93,7 +97,7 @@ class WLCanonicalizer(_CRNGraphBackend):
         self.automorphism_cap = int(automorphism_cap)
 
         self._last: Optional[WLResult] = None
-        self._last_key: Optional[Tuple[int, int, bool, bool, bool, int]] = None
+        self._last_key: Optional[Tuple[Any, ...]] = None
 
     def __repr__(self) -> str:
         return (
@@ -102,20 +106,111 @@ class WLCanonicalizer(_CRNGraphBackend):
             f"n_iter={self.n_iter}, graph_type={getattr(self, '_graph_type', None)})"
         )
 
-    # ------------------------- WL core -------------------------
+    # ------------------------- hashing / signatures -------------------------
 
-    def _node_seed(self, G: nx.DiGraph, v: Any) -> str:
+    def _node_seed(self, G: nx.Graph, v: Any) -> str:
         attrs = tuple(_freeze(G.nodes[v].get(k, None)) for k in self.node_attr_keys)
+
         if G.is_directed():
-            deg = (G.in_degree(v), G.out_degree(v))
+            deg = (G.in_degree(v), G.out_degree(v))  # type: ignore[attr-defined]
         else:
-            d = G.degree(v)
+            d = G.degree(v)  # type: ignore[arg-type]
             deg = (d, d)
+
         return _blake_str(f"N|{attrs}|{deg}", digest_size=self.digest_size)
 
     def _edge_sig(self, attrs: Dict[str, Any]) -> str:
         t = tuple(_freeze(attrs.get(k, None)) for k in self.edge_attr_keys)
         return _blake_str(f"E|{t}", digest_size=self.digest_size)
+
+    def _edge_sig_between(self, G: nx.Graph, u: Any, v: Any) -> str:
+        """
+        Return a stable edge signature between u->v (or u--v).
+        For Multi(Graph|DiGraph), pick the *minimum* signature across parallel edges
+        to preserve determinism.
+        """
+        data = G.get_edge_data(u, v, default=None)
+        if data is None:
+            return self._edge_sig({})
+
+        # MultiGraph/MultiDiGraph: data is dict[key -> attrs]
+        if G.is_multigraph():
+            sigs: List[str] = []
+            if isinstance(data, dict):
+                for _, attrs in data.items():
+                    if isinstance(attrs, dict):
+                        sigs.append(self._edge_sig(attrs))
+            return min(sigs) if sigs else self._edge_sig({})
+
+        # Simple Graph/DiGraph: data is attrs dict
+        if isinstance(data, dict):
+            return self._edge_sig(data)
+        return self._edge_sig({})
+
+    def _neighbors_items(
+        self,
+        G: nx.Graph,
+        v: Any,
+        colors: Dict[Any, str],
+        *,
+        direction: str,
+    ) -> List[str]:
+        """
+        Collect neighbor items of v with optional edge signatures.
+        direction: "in" | "out" | "undir"
+        """
+        items: List[str] = []
+
+        if direction == "in":
+            if not G.is_directed():
+                direction = "undir"
+            else:
+                for u in G.predecessors(v):  # type: ignore[attr-defined]
+                    es = self._edge_sig_between(G, u, v)
+                    items.append(f"{colors[u]}#{es}")
+
+        if direction == "out":
+            if not G.is_directed():
+                direction = "undir"
+            else:
+                for u in G.successors(v):  # type: ignore[attr-defined]
+                    es = self._edge_sig_between(G, v, u)
+                    items.append(f"{colors[u]}#{es}")
+
+        if direction == "undir":
+            for u in G.neighbors(v):
+                # pick a consistent orientation for edge signature
+                es = self._edge_sig_between(G, v, u) if G.has_edge(v, u) else ""
+                if not es and G.has_edge(u, v):
+                    es = self._edge_sig_between(G, u, v)
+                items.append(f"{colors[u]}#{es}")
+
+        items.sort()
+        return items
+
+    def _wl_step(self, G: nx.Graph, colors: Dict[Any, str]) -> Dict[Any, str]:
+        new_colors: Dict[Any, str] = {}
+
+        for v in G.nodes():
+            parts: List[str] = [colors[v]]
+
+            if self.include_in_neighbors:
+                in_items = self._neighbors_items(G, v, colors, direction="in")
+                parts.append("IN[" + "|".join(in_items) + "]")
+
+            if self.include_out_neighbors:
+                out_items = self._neighbors_items(G, v, colors, direction="out")
+                parts.append("OUT[" + "|".join(out_items) + "]")
+
+            new_colors[v] = _blake_str("||".join(parts), digest_size=self.digest_size)
+
+        return new_colors
+
+    @staticmethod
+    def _colors_equal(a: Dict[Any, str], b: Dict[Any, str]) -> bool:
+        if a.keys() != b.keys():
+            return False
+        return all(a[k] == b[k] for k in a.keys())
 
     @staticmethod
     def _fact_cap(n: int, cap: int) -> int:
@@ -139,15 +234,53 @@ class WLCanonicalizer(_CRNGraphBackend):
                 return self.automorphism_cap
         return out
 
-    def _wl_refine(self, G: nx.DiGraph) -> WLResult:
-        key = (
+    @staticmethod
+    def _buckets_from_colors(colors: Dict[Any, str]) -> Dict[str, List[Any]]:
+        buckets: Dict[str, List[Any]] = {}
+        for v, c in colors.items():
+            buckets.setdefault(c, []).append(v)
+        return buckets
+
+    @staticmethod
+    def _orbits_from_buckets(buckets: Dict[str, List[Any]]) -> List[Set[Any]]:
+        # sort buckets deterministically, but do not assume nodes are comparable
+        items = sorted(buckets.items(), key=lambda kv: (kv[0], len(kv[1])))
+        out: List[Set[Any]] = []
+        for _, nodes in items:
+            out.append(set(sorted(nodes, key=str)))
+        return out
+
+    @staticmethod
+    def _canonical_relabel(G: nx.Graph, colors: Dict[Any, str]) -> nx.DiGraph:
+        # stable ordering: (color, str(node)) to avoid type-comparison issues
+        order = sorted(G.nodes(), key=lambda v: (colors[v], str(v)))
+        mapping = {v: i + 1 for i, v in enumerate(order)}
+        return nx.relabel_nodes(G, mapping, copy=True)  # type: ignore[return-value]
+
+    def _cache_key(self, G: nx.Graph) -> Tuple[Any, ...]:
+        """
+        Conservative cache key:
+        - include algorithm parameters
+        - include basic graph size + identity (works if backend doesn't mutate G)
+        """
+        return (
+            id(G),
+            G.number_of_nodes(),
+            G.number_of_edges(),
             self.n_iter,
             self.digest_size,
             self.include_in_neighbors,
             self.include_out_neighbors,
             self.estimate_automorphisms,
             self.automorphism_cap,
+            self.node_attr_keys,
+            self.edge_attr_keys,
         )
+
+    # ------------------------- WL core -------------------------
+
+    def _wl_refine(self, G: nx.DiGraph) -> WLResult:
+        key = self._cache_key(G)
         if self._last is not None and self._last_key == key:
             return self._last
 
@@ -158,62 +291,17 @@ class WLCanonicalizer(_CRNGraphBackend):
 
         for it in range(self.n_iter):
             iters_run = it + 1
-            new_colors: Dict[Any, str] = {}
-
-            for v in G.nodes():
-                parts: List[str] = [colors[v]]
-
-                if self.include_in_neighbors:
-                    in_items: List[str] = []
-                    if G.is_directed():
-                        for u in G.predecessors(v):
-                            es = self._edge_sig(G[u][v])
-                            in_items.append(f"{colors[u]}#{es}")
-                    else:
-                        for u in G.neighbors(v):
-                            es = self._edge_sig(G[u][v]) if G.has_edge(u, v) else ""
-                            in_items.append(f"{colors[u]}#{es}")
-                    in_items.sort()
-                    parts.append("IN[" + "|".join(in_items) + "]")
-
-                if self.include_out_neighbors:
-                    out_items: List[str] = []
-                    if G.is_directed():
-                        for u in G.successors(v):
-                            es = self._edge_sig(G[v][u])
-                            out_items.append(f"{colors[u]}#{es}")
-                    else:
-                        for u in G.neighbors(v):
-                            es = self._edge_sig(G[v][u]) if G.has_edge(v, u) else ""
-                            out_items.append(f"{colors[u]}#{es}")
-                    out_items.sort()
-                    parts.append("OUT[" + "|".join(out_items) + "]")
-
-                new_colors[v] = _blake_str(
-                    "||".join(parts), digest_size=self.digest_size
-                )
-
-            if all(new_colors[v] == colors[v] for v in G.nodes()):
+            new_colors = self._wl_step(G, colors)
+            if self._colors_equal(new_colors, colors):
                 stabilized = True
                 colors = new_colors
                 break
-
             colors = new_colors
 
-        # buckets = WL color classes
-        buckets: Dict[str, List[Any]] = {}
-        for v, c in colors.items():
-            buckets.setdefault(c, []).append(v)
+        buckets = self._buckets_from_colors(colors)
+        orbits = self._orbits_from_buckets(buckets)
 
-        orbits: List[Set[Any]] = [
-            set(sorted(nodes))
-            for _, nodes in sorted(buckets.items(), key=lambda kv: (kv[0], len(kv[1])))
-        ]
-
-        # deterministic canonical relabeling
-        order = sorted(G.nodes(), key=lambda v: (colors[v], str(v)))
-        mapping = {v: i + 1 for i, v in enumerate(order)}
-        G_can = nx.relabel_nodes(G, mapping, copy=True)
+        G_can = self._canonical_relabel(G, colors)
 
         hist: Dict[str, int] = {c: len(nodes) for c, nodes in buckets.items()}
 
@@ -258,7 +346,6 @@ class WLCanonicalizer(_CRNGraphBackend):
             "orbits": r.orbits,
             "colors": r.colors,
             "color_hist": r.color_hist,
-            # requested key (approximate; see class docstring)
             "automorphism_count": r.automorphism_count,
         }
 
