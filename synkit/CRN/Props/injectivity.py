@@ -33,7 +33,7 @@ import itertools
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
-
+import warnings
 import networkx as nx
 import numpy as np
 
@@ -44,7 +44,6 @@ from ..Hypergraph.conversion import _as_bipartite
 
 LOGGER = logging.getLogger(__name__)
 
-import warnings
 
 warnings.warn(
     "synkit.CRN.Props.injectivity is under active development and may be unstable. "

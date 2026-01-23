@@ -4,7 +4,6 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple
 import time
 from collections import defaultdict
 
-import networkx as nx
 from networkx.algorithms.isomorphism import DiGraphMatcher
 
 from ..Hypergraph.hypergraph import CRNHyperGraph
@@ -245,7 +244,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         *,
         max_count: int = 100,
         timeout_sec: Optional[float] = 5.0,
-    ) -> CRNAutResult:
+    ) -> dict:
         """
         Run automorphism enumeration and return a :class:`CRNAutResult`.
 

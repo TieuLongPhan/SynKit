@@ -234,7 +234,10 @@ class CRNCanonicalizer(_CRNGraphBackend):
         for v in cell:
             rest = [w for w in cell if w != v]
             new_part = (
-                part[:idx] + [[v]] + ([sorted(rest)] if rest else []) + part[idx + 1 :]
+                part[:idx]
+                + [[v]]
+                + ([sorted(rest)] if rest else [])
+                + part[idx + 1 :]  # noqa
             )
             pref = prefix + [v]
 

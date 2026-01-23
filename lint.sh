@@ -22,6 +22,9 @@ rule_vis.py:C901,
 gml_to_graph.py:C901,
 wildcard.py:C901,
 its_destruction.py:C901,
+conversion.py:C901,
+injectivity.py:C901,
+deficiency.py:C901,
 mol_to_graph.py:C901" \
   --exclude=venv,\
 core_engine.py,\
@@ -34,6 +37,6 @@ wl_mapper.py,\
 topology.py,\
 crn_vis.py,\
 dev/*,\
-synkit/CRN/*,\
+synkit/CRN/dev_crn/*,\
 Data \
   --statistics

@@ -68,16 +68,6 @@ class TestCRNCanonicalizer(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             c.summary(max_depth=0)
 
-    # def test_canonical_timeout_raises_runtimeerror(self):
-    #     H = self._example_H()
-    #     c = CRNCanonicalizer(H)
-
-    #     with self.assertRaises(RuntimeError):
-    #         c.summary(timeout_sec=1e-9)
-
-    # ----------------------------------------------------------------------
-    # Functional wrapper verifies same results
-    # ----------------------------------------------------------------------
     def test_functional_wrapper(self):
         H = self._example_H()
         summary = canonical(H).summary()
