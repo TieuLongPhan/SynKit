@@ -1,3 +1,6 @@
-sphinx
-sphinx-rtd-theme
-sphinxcontrib-bibtex
+sphinx>=7.2
+pydata-sphinx-theme>=0.15
+sphinxcontrib-bibtex>=2.6
+sphinx-design>=0.6
+sphinx-copybutton>=0.5
+sphinx-togglebutton>=0.3

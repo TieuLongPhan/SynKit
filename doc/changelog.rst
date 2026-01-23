@@ -1,6 +1,35 @@
 Changelog
 =========
 
+Version 1.1.1
+-------------
+
+**Bug fixes**
+
+- Automorphism and AutoEst now prefer orbits with the largest anchor set.
+- Added ``deduplicate_matches_with_anchor``: anchor a connected component and deduplicate remaining components.
+
+**New features**
+
+- **CRNCanonicalizer (Bliss-style)**: reimplemented canonicalization using a Bliss-inspired strategy; ~10× faster on large CRNs.
+- **WLCanonicalizer**: Weisfeiler–Lehman–based approximate canonicalization for CRNs; fast orbit approximations for large/noisy networks.
+
+**Known issues**
+
+- ``CRNAutomorphism`` may not return fully correct automorphism groups in all cases.
+
+
+Version 1.1.0
+-------------
+
+**Features**
+
+- Lightweight CRN exploration (pure Python).
+- CRN property analysis utilities (stoichiometric summaries and structural checks).
+- CRN promoted to a dedicated submodule (:py:mod:`synkit.CRN`).
+- Approximate automorphism + MCS to speed up symmetry-aware computations.
+
+
 Version 0.0.7
 -------------
 

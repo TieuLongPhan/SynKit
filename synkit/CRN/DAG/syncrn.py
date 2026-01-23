@@ -18,11 +18,6 @@ except ImportError:
     Chem = None
 
 
-# --------------------------------------------------------------------------- #
-# Parallel worker (rule application on a chosen substrate mixture)
-# --------------------------------------------------------------------------- #
-
-
 def _apply_rule_worker(
     args: Tuple[int, Any, str, bool, bool, Optional[str], Tuple[str, ...]],
 ) -> Tuple[int, Tuple[str, ...], List[str]]:
@@ -40,11 +35,6 @@ def _apply_rule_worker(
 
     reactor = SynReactor.from_smiles(**kwargs)
     return idx, reactant_keys, list(reactor.smiles_list)
-
-
-# --------------------------------------------------------------------------- #
-# Small helpers to keep methods below C901
-# --------------------------------------------------------------------------- #
 
 
 def _count_lhs_components(text: str) -> Optional[int]:
@@ -194,11 +184,6 @@ def _dedup_key(
 
 def _sorted_smiles_from_ids(graph: nx.DiGraph, ids: List[int]) -> str:
     return ".".join(sorted(graph.nodes[i]["smiles"] for i in ids))
-
-
-# --------------------------------------------------------------------------- #
-# Mixture generators split by arity to reduce complexity
-# --------------------------------------------------------------------------- #
 
 
 def _iter_mixtures_arity1(

@@ -1,0 +1,317 @@
+/* =========================================================================
+   SynKit docs - custom layout & UI tuning (PyData Sphinx Theme)
+   Save as: doc/_static/custom.css
+   ========================================================================= */
+
+/* -------------------------
+   CHANGE HERE (most useful knobs)
+   ------------------------- */
+:root {
+  /* Sidebars */
+  --sk-sidebar-primary-width: 200px;    /* LEFT */
+  --sk-sidebar-secondary-width: 220px;  /* RIGHT */
+
+  /* Center width (if too wide/narrow, change these two) */
+  --sk-page-max-width: 88rem;           /* overall frame */
+  --sk-article-max-width: 68rem;        /* reading column */
+
+  /* Breakpoints */
+  --sk-desktop-force: 992px;            /* >= this: force sidebars as columns */
+  --sk-hide-right-below: 950px;         /* < this: hide right sidebar */
+
+  --sk-header-height: 64px;
+  --sk-accent: #1f77b4;
+  --sk-radius: 10px;
+}
+
+/* =========================================================================
+   Center width controls
+   ========================================================================= */
+.bd-page-width {
+  max-width: var(--sk-page-max-width) !important;        /* CHANGE HERE */
+}
+
+.bd-main .bd-content .bd-article-container {
+  max-width: var(--sk-article-max-width) !important;     /* CHANGE HERE */
+}
+
+.bd-content {
+  margin-left: 0.6rem;
+  margin-right: 0.6rem;
+}
+
+.bd-header {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+/* =========================================================================
+   Sidebar widths
+   ========================================================================= */
+.bd-sidebar-primary {
+  flex: 0 0 var(--sk-sidebar-primary-width) !important;
+  width: var(--sk-sidebar-primary-width) !important;
+  min-width: var(--sk-sidebar-primary-width) !important;
+}
+
+.bd-sidebar-secondary {
+  flex: 0 0 var(--sk-sidebar-secondary-width) !important;
+  width: var(--sk-sidebar-secondary-width) !important;
+  min-width: var(--sk-sidebar-secondary-width) !important;
+
+  max-height: calc(100vh - var(--sk-header-height));
+  overflow: auto;
+}
+
+.bd-sidebar-secondary:empty {
+  display: none;
+}
+
+/* =========================================================================
+   IMPORTANT: Force LEFT sidebar to be a real left column on desktop
+   If your nav still "moves to top", this is the fix.
+   ========================================================================= */
+@media (min-width: 992px) {
+  /* show primary sidebar */
+  .bd-sidebar-primary {
+    display: block !important;
+    visibility: visible !important;
+    transform: none !important;
+    position: sticky !important;
+    top: var(--sk-header-height);
+    align-self: start;
+    height: calc(100vh - var(--sk-header-height));
+    overflow: auto;
+  }
+
+  /* ensure nav content inside is not collapsed away */
+  .bd-sidebar-primary .sidebar-primary-items,
+  .bd-sidebar-primary .bd-docs-nav,
+  .bd-sidebar-primary nav {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* =========================================================================
+   Hide RIGHT sidebar on smaller widths (optional)
+   ========================================================================= */
+@media (max-width: 950px) {
+  .bd-sidebar-secondary {
+    display: none !important;
+  }
+}
+
+/* =========================================================================
+   Style niceties
+   ========================================================================= */
+.sd-card, .sd-card .card {
+  border-radius: 12px;
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.04);
+}
+
+div.highlight pre,
+pre.literal-block,
+.codehilite pre,
+.bd-content pre {
+  border-radius: var(--sk-radius);
+  padding: 0.9rem;
+  overflow: auto;
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.admonition {
+  border-left: 4px solid var(--sk-accent);
+  padding-left: 0.85rem;
+  border-radius: 6px;
+}
+
+.page-toc,
+.bd-sidebar-secondary .page-toc {
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.page-toc .toc-title,
+.bd-sidebar-secondary .toc-title {
+  font-weight: 600;
+}
+
+a.reference.external,
+a.reference.internal {
+  word-break: break-word;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  margin: 1.25rem 0;
+}
+
+table { border-collapse: collapse; }
+th, td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+/* =========================================================================
+   Mobile: stack naturally
+   NOTE: Keep this small so it doesn't trigger on "almost desktop".
+   ========================================================================= */
+@media (max-width: 700px) {
+  .bd-sidebar-primary,
+  .bd-sidebar-secondary {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-height: none !important;
+    position: static !important;
+  }
+
+  .bd-content {
+    padding: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* =========================================================================
+   RTD fallbacks
+   ========================================================================= */
+.wy-nav-side {
+  width: var(--sk-sidebar-primary-width) !important;
+  min-width: var(--sk-sidebar-primary-width) !important;
+}
+
+.wy-nav-content {
+  max-width: var(--sk-article-max-width) !important;
+  margin: 0 auto;
+}
+
+.sphinxsidebar:empty,
+.sphinxsidebar .sphinxsidebarwrapper:empty {
+  display: none !important;
+}
+
+.sk-globaltoc.card {
+  border-radius: 10px;
+  padding: 0.35rem 0.35rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+html[data-theme="dark"] .sk-globaltoc.card {
+  background: rgba(0, 0, 0, 0.18);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.sk-globaltoc__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+}
+
+.sk-globaltoc__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+
+.sk-globaltoc__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--sk-accent, #1f77b4);
+  display: inline-block;
+}
+
+.sk-globaltoc__toggle {
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0.15rem 0.35rem;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.sk-globaltoc__toggle:hover,
+.sk-globaltoc__toggle:focus {
+  outline: none;
+  opacity: 1;
+  background: rgba(31, 119, 180, 0.08);
+}
+
+.sk-globaltoc__body {
+  padding: 0.15rem 0.25rem 0.25rem 0.25rem;
+}
+
+/* Make the generated toctree look like a modern nav list */
+.sk-globaltoc__body ul {
+  list-style: none;
+  padding-left: 0.65rem;
+  margin: 0.2rem 0;
+}
+
+.sk-globaltoc__body li {
+  margin: 0.08rem 0;
+}
+
+.sk-globaltoc__body a {
+  display: inline-block;
+  padding: 0.18rem 0.35rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.92;
+}
+
+.sk-globaltoc__body a:hover,
+.sk-globaltoc__body a:focus {
+  background: rgba(31, 119, 180, 0.08);
+  color: var(--sk-accent, #1f77b4);
+  outline: none;
+}
+
+/* Highlight "current" page link if the theme marks it */
+.sk-globaltoc__body .current > a,
+.sk-globaltoc__body a.current {
+  background: rgba(31, 119, 180, 0.14);
+  color: var(--sk-accent, #1f77b4);
+  font-weight: 650;
+}
+
+/* Make deep nesting slightly smaller/denser */
+.sk-globaltoc__body ul ul a {
+  padding-left: 0.5rem;
+  font-size: 0.95em;
+}
+
+/* =========================================================================
+   Bibliography rendering
+   ========================================================================= */
+
+.sk-bibliography {
+  margin-top: 1rem;
+}
+
+.sk-bibliography .bibtex-bibliography {
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="dark"] .sk-bibliography .bibtex-bibliography {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}

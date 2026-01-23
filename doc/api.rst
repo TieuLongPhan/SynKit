@@ -55,6 +55,28 @@ Synthesis Module
    :undoc-members:
    :show-inheritance:
 
+
+CRN Module
+==========
+
+The :py:mod:`synkit.CRN` package provides a lightweight CRN layer (DAG + hypergraph)
+and canonicalization utilities for comparing reaction networks.
+
+.. automodule:: synkit.CRN.DAG.syncrn
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.CRN.Hypergraph.conversion
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: synkit.CRN.Topo.canon
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Graph Module
 ============
 

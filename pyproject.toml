@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.1.1"
+version = "1.1.2"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 long-description = { file = "CHANGELOG.md" }
@@ -33,10 +33,28 @@ dependencies = [
 [project.optional-dependencies]
 all = ["numpy>=2.2.0", "torch>=2.2.0"]
 docs = [
+  # Core Sphinx
   "sphinx>=6.0",
+
+  # Theme (primary) + fallback
+  "pydata-sphinx-theme",
   "sphinx-rtd-theme",
+
+  # Your enabled extensions
   "sphinxcontrib-bibtex",
+  "sphinx-design",
+  "sphinx-copybutton",
+  "sphinx-togglebutton",
+
+  # Graphviz extension uses the `graphviz` Python package
+  # (still requires the system `dot` binary to render diagrams)
+  "graphviz",
+
+  # Nice-to-have for markdown in docs if you ever add .md pages
+  # (safe even if unused)
+  "myst-parser",
 ]
+
 
 [project.urls]
 homepage      = "https://github.com/TieuLongPhan/SynKit"

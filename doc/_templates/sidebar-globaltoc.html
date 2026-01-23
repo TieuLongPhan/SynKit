@@ -1,0 +1,48 @@
+{# doc/_templates/sidebar-globaltoc.html #}
+{%- set _nav = toctree(
+    maxdepth=1,
+    collapse=False,
+    includehidden=True,
+    titles_only=False
+) -%}
+
+{%- if _nav %}
+<div class="sk-globaltoc card bd-sidebar__card">
+  <div class="sk-globaltoc__header">
+    <div class="sk-globaltoc__title">
+      <span class="sk-globaltoc__dot" aria-hidden="true"></span>
+      <span>Navigation</span>
+    </div>
+
+    <button
+      class="sk-globaltoc__toggle"
+      type="button"
+      aria-expanded="true"
+      aria-controls="sk-globaltoc-tree"
+      title="Collapse/expand"
+    >
+      <span class="sk-globaltoc__chev" aria-hidden="true">▾</span>
+    </button>
+  </div>
+
+  <div id="sk-globaltoc-tree" class="sk-globaltoc__body">
+    {{ _nav }}
+  </div>
+</div>
+
+<script>
+(function () {
+  var btn = document.querySelector(".sk-globaltoc__toggle");
+  var body = document.getElementById("sk-globaltoc-tree");
+  if (!btn || !body) return;
+
+  btn.addEventListener("click", function () {
+    var expanded = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", expanded ? "false" : "true");
+    body.style.display = expanded ? "none" : "";
+    var chev = btn.querySelector(".sk-globaltoc__chev");
+    if (chev) chev.textContent = expanded ? "▸" : "▾";
+  });
+})();
+</script>
+{%- endif %}

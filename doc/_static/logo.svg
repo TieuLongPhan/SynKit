@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="64" viewBox="0 0 240 64" role="img" aria-label="synkit logo">
+  <defs>
+    <linearGradient id="synkitGradient" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="1" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon tile -->
+  <rect x="6" y="10" width="44" height="44" rx="12" fill="url(#synkitGradient)"/>
+
+  <!-- Node-edge motif -->
+  <line x1="18" y1="42" x2="38" y2="22" stroke="#E5E7EB" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="18" cy="42" r="5" fill="#E5E7EB"/>
+  <circle cx="38" cy="22" r="5" fill="#E5E7EB"/>
+  <circle cx="34" cy="44" r="3.8" fill="#E5E7EB" opacity="0.9"/>
+  <line x1="34" y1="44" x2="26" y2="30" stroke="#E5E7EB" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="26" cy="30" r="3.8" fill="#E5E7EB" opacity="0.9"/>
+
+  <!-- Wordmark -->
+  <text x="66" y="39" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">synkit</text>
+  <text x="66" y="55" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" font-weight="500" fill="#475569">graph-first chemistry toolkit</text>
+</svg>
