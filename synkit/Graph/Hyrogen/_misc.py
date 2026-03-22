@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 import networkx as nx
 from operator import eq
 from typing import List, Set, Any, Tuple, Iterable, Optional
@@ -440,3 +440,80 @@ def get_priority(reaction_centers: List[Any]) -> List[int]:
         return indices_shortest
 
     return final_indices
+
+
+def _normalize_h_pair(h_react: int, h_prod: int) -> Tuple[int, int]:
+    """
+    Normalize reactant/product hydrogen counts to relative change form.
+
+    Examples:
+        - (1, 1) -> (0, 0)
+        - (2, 1) -> (1, 0)
+        - (1, 2) -> (0, 1)
+
+    :param h_react: Hydrogen count in reactant state.
+    :type h_react: int
+    :param h_prod: Hydrogen count in product state.
+    :type h_prod: int
+    :return: Normalized hydrogen pair.
+    :rtype: Tuple[int, int]
+    """
+    common = min(h_react, h_prod)
+    return h_react - common, h_prod - common
+
+
+def normalize_h_pair_graph(rc_graph: nx.Graph, inplace: bool = False) -> nx.Graph:
+    """
+    Normalize the hydrogen-count field inside ``typesGH`` for all nodes.
+
+    Assumption:
+        ``typesGH`` is a 2-tuple:
+            (reactant_attr, product_attr)
+
+        and each attr tuple has the form:
+            (element, aromatic, hydrogen_count, charge, neighbors)
+
+        Only the hydrogen_count field at index 2 is normalized.
+
+    :param rc_graph: Reaction-center graph.
+    :type rc_graph: nx.Graph
+    :param inplace: Whether to modify the input graph in place.
+    :type inplace: bool
+    :return: Graph with normalized ``typesGH`` hydrogen fields.
+    :rtype: nx.Graph
+    """
+    graph = rc_graph if inplace else deepcopy(rc_graph)
+
+    for node, data in graph.nodes(data=True):
+        typesgh = data.get("typesGH")
+        if typesgh is None:
+            continue
+
+        if len(typesgh) != 2:
+            raise ValueError(
+                f"Node {node} has invalid typesGH structure: expected length 2, "
+                f"got {len(typesgh)}."
+            )
+
+        react_attr, prod_attr = typesgh
+
+        if len(react_attr) < 3 or len(prod_attr) < 3:
+            raise ValueError(
+                f"Node {node} has invalid typesGH atom tuples: "
+                f"{react_attr}, {prod_attr}"
+            )
+
+        h_react = react_attr[2]
+        h_prod = prod_attr[2]
+
+        new_h_react, new_h_prod = _normalize_h_pair(h_react, h_prod)
+
+        new_react_attr = list(react_attr)
+        new_prod_attr = list(prod_attr)
+
+        new_react_attr[2] = new_h_react
+        new_prod_attr[2] = new_h_prod
+
+        data["typesGH"] = (tuple(new_react_attr), tuple(new_prod_attr))
+
+    return graph

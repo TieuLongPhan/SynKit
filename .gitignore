@@ -24,3 +24,4 @@ test_partial.py
 Data/Benchmark/synthesis/*
 Data/USPTO/*
 crn/*
+test_run.py
