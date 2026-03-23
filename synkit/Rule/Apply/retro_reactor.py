@@ -12,7 +12,6 @@ from synkit.Chem.utils import (
     count_carbons,
 )
 
-
 if importlib.util.find_spec("mod"):
     from mod import ruleGMLString, RCMatch
 else:

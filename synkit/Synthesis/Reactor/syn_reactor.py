@@ -40,7 +40,6 @@ from synkit.Graph import (
 )
 from synkit.Synthesis.Reactor.strategy import Strategy
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Typing aliases
 # ──────────────────────────────────────────────────────────────────────────────

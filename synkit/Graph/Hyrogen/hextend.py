@@ -9,7 +9,6 @@ from synkit.Graph.Feature.wl_hash import WLHash
 from synkit.Graph.Hyrogen._misc import check_hcount_change
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
 
-
 cluster = GraphCluster()
 
 

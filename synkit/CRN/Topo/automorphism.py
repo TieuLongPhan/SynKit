@@ -9,7 +9,6 @@ from networkx.algorithms.isomorphism import DiGraphMatcher
 from ..Hypergraph.hypergraph import CRNHyperGraph
 from ..Hypergraph.backend import _CRNGraphBackend
 
-
 # -------------------------------------------------------------------------
 # Helpers
 # -------------------------------------------------------------------------

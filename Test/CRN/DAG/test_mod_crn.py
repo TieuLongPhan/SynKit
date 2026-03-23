@@ -3,7 +3,6 @@ import importlib.util
 from synkit.IO.data_io import load_database
 from synkit.CRN.DAG.mod_crn import MODCRN
 
-
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 

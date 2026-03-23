@@ -6,7 +6,6 @@ from synkit.IO.chem_converter import smart_to_gml, gml_to_smart
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 
-
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 

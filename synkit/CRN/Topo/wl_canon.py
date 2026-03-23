@@ -9,7 +9,6 @@ import networkx as nx
 from ..Hypergraph.hypergraph import CRNHyperGraph
 from ..Hypergraph.backend import _CRNGraphBackend
 
-
 # -------------------------------------------------------------------------
 # Approx canon: Weisfeiler–Lehman (WL) color refinement (fast, approximate)
 # -------------------------------------------------------------------------

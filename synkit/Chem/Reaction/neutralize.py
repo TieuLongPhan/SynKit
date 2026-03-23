@@ -80,7 +80,6 @@ class Neutralize:
         charges_column: str = "total_charge_in_products",
         id_column: str = "R-id",
         reaction_column: str = "reactions",
-        keep_metadata: bool = False,
     ) -> Dict[str, Any]:
         """Add [Na+] ions to neutralize negative product charge.
 
@@ -104,26 +103,17 @@ class Neutralize:
         new_react = reaction_dict["reactants"] + addition
         new_prod = reaction_dict["products"] + addition
         new_reaction = f"{new_react}>>{new_prod}"
-        if keep_metadata:
 
-            reaction_dict.update(
-                {
-                    id_column: reaction_dict.get(id_column),
-                    reaction_column: new_reaction,
-                    "reactants": new_react,
-                    "products": new_prod,
-                    charges_column: 0,
-                }
-            )
-            return reaction_dict
-
-        return {
-            id_column: reaction_dict.get(id_column),
-            reaction_column: new_reaction,
-            "reactants": new_react,
-            "products": new_prod,
-            charges_column: 0,
-        }
+        reaction_dict.update(
+            {
+                id_column: reaction_dict.get(id_column),
+                reaction_column: new_reaction,
+                "reactants": new_react,
+                "products": new_prod,
+                charges_column: 0,
+            }
+        )
+        return reaction_dict
 
     @staticmethod
     def fix_positive_charge(
@@ -131,7 +121,6 @@ class Neutralize:
         charges_column: str = "total_charge_in_products",
         id_column: str = "R-id",
         reaction_column: str = "reactions",
-        keep_metadata: bool = False,
     ) -> Dict[str, Any]:
         """Add [Cl‑] ions to neutralize positive product charge.
 
@@ -155,31 +144,21 @@ class Neutralize:
         new_react = reaction_dict["reactants"] + addition
         new_prod = reaction_dict["products"] + addition
         new_reaction = f"{new_react}>>{new_prod}"
-
-        if keep_metadata:
-
-            reaction_dict.update(
-                {
-                    id_column: reaction_dict.get(id_column),
-                    reaction_column: new_reaction,
-                    "reactants": new_react,
-                    "products": new_prod,
-                    charges_column: 0,
-                }
-            )
-            return reaction_dict
-
-        return {
-            id_column: reaction_dict.get(id_column),
-            reaction_column: new_reaction,
-            "reactants": new_react,
-            "products": new_prod,
-            charges_column: 0,
-        }
+        reaction_dict.update(
+            {
+                id_column: reaction_dict.get(id_column),
+                reaction_column: new_reaction,
+                "reactants": new_react,
+                "products": new_prod,
+                charges_column: 0,
+            }
+        )
+        return reaction_dict
 
     @staticmethod
     def fix_unbalanced_charged(
-        reaction_dict: Dict[str, Any], reaction_column: str, keep_metadata: bool = False
+        reaction_dict: Dict[str, Any],
+        reaction_column: str,
     ) -> Dict[str, Any]:
         """Detect and neutralize unbalanced product charge by adding
         counter‑ions.
@@ -194,9 +173,9 @@ class Neutralize:
         rd = Neutralize.calculate_charge_dict(reaction_dict, reaction_column)
         total = rd.get("total_charge_in_products", 0)
         if total > 0:
-            return Neutralize.fix_positive_charge(rd, keep_metadata=keep_metadata)
+            return Neutralize.fix_positive_charge(rd)
         if total < 0:
-            return Neutralize.fix_negative_charge(rd, keep_metadata=keep_metadata)
+            return Neutralize.fix_negative_charge(rd)
         return rd
 
     @classmethod
@@ -205,7 +184,6 @@ class Neutralize:
         reaction_dicts: List[Dict[str, Any]],
         reaction_column: str,
         n_jobs: int = 4,
-        keep_metadata: bool = False,
     ) -> List[Dict[str, Any]]:
         """Neutralize charges in multiple reaction dictionaries in parallel.
 
@@ -222,7 +200,8 @@ class Neutralize:
         """
         return Parallel(n_jobs=n_jobs)(
             delayed(cls.fix_unbalanced_charged)(
-                d, reaction_column, keep_metadata=keep_metadata
+                d,
+                reaction_column,
             )
             for d in reaction_dicts
         )

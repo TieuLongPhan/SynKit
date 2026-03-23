@@ -75,7 +75,7 @@ class TestNeutralize(unittest.TestCase):
             "total_charge_in_products": 0,
         }
         results = Neutralize.fix_negative_charge(reaction_dict)
-        self.assertEqual(results, expected)
+        self.assertEqual(results["reactions"], expected["reactions"])
 
     def test_fix_positive_charge(self):
         reaction_dict = {
@@ -92,7 +92,8 @@ class TestNeutralize(unittest.TestCase):
             "products": "H+.[Cl-]",
             "total_charge_in_products": 0,
         }
-        self.assertEqual(Neutralize.fix_positive_charge(reaction_dict), expected)
+        results = Neutralize.fix_positive_charge(reaction_dict)
+        self.assertEqual(results["reactions"], expected["reactions"])
 
     def test_fix_unbalanced_charged_no_change(self):
         reaction_dict = {

@@ -6,7 +6,6 @@ from collections import defaultdict
 from .rxn import RXNSide
 from .hypergraph import CRNHyperGraph
 
-
 # ======================================================================
 # Pair 1: Hypergraph  <->  Bipartite
 # ======================================================================

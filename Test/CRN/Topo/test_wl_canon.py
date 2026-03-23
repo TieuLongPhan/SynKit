@@ -9,7 +9,6 @@ from synkit.CRN.Topo.wl_canon import (
     wl_canonical,
 )
 
-
 # ----------------------------------------------------------------------
 # Local orbit comparison helpers (test-only)
 # ----------------------------------------------------------------------

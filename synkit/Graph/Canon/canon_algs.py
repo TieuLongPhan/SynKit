@@ -21,7 +21,6 @@ from typing import Any, Dict, List, Tuple
 import networkx as nx
 import numpy as np
 
-
 Digest = str
 
 

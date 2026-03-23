@@ -24,7 +24,6 @@ from importlib.metadata import PackageNotFoundError, version as _get_version
 from pathlib import Path
 from typing import Optional
 
-
 # ---------------------------------------------------------------------
 # Path setup
 # ---------------------------------------------------------------------

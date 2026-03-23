@@ -6,7 +6,6 @@ import networkx as nx
 
 from synkit.CRN.Props import stoich
 
-
 # ---------------------------------------------------------------------------
 # Helpers to build small test networks
 # ---------------------------------------------------------------------------
