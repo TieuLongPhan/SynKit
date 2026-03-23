@@ -6,7 +6,6 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, Iterat
 
 import networkx as nx
 
-
 NodeSig = Counter  # Counter[str, int]
 EdgeSig = Counter  # Counter[str, int]
 DegSig = Counter  # Counter[int, int]

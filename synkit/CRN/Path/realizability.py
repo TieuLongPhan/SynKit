@@ -45,7 +45,6 @@ from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
 # shared Petri container + type aliases
 from synkit.CRN.Petri import PetriNet, Place, TransitionId, Multiset
 
-
 # ---------------------------------------------------------------------------
 # PathwayRealizability core
 # ---------------------------------------------------------------------------

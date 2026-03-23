@@ -27,7 +27,7 @@ import networkx as nx
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
-from synkit.Graph.Hyrogen._misc import standardize_hydrogen
+from synkit.Graph.Hyrogen._misc import normalize_h_pair_graph
 from synkit.IO.chem_converter import rsmi_to_its, gml_to_its
 
 __all__ = ["SynRule"]
@@ -125,25 +125,37 @@ class SynRule:
         # Fragment decomposition
         rc_graph = rc.copy()
         if self._implicit_h:
-            standardize_hydrogen(rc_graph, in_place=True)
+            rc_graph = normalize_h_pair_graph(rc_graph)
+
         left_graph, right_graph = its_decompose(rc_graph)
 
         # Optional H-stripping
         if self._implicit_h:
             self._strip_explicit_h(rc_graph, left_graph, right_graph)
-
         # Update typesGH tuples with new hcount
         for node, att in rc_graph.nodes(data=True):
             # unpack the old tuples
             t0, t1 = att["typesGH"]
 
             # build new versions with the updated hcount at position 2
-            new_t0 = (t0[0], t0[1], left_graph.nodes[node]["hcount"], t0[3], t0[4])
-            new_t1 = (t1[0], t1[1], right_graph.nodes[node]["hcount"], t1[3], t1[4])
+            new_t0 = (
+                t0[0],
+                t0[1],
+                left_graph.nodes[node]["hcount"] + t0[2],
+                t0[3],
+                t0[4],
+            )
+            new_t1 = (
+                t1[0],
+                t1[1],
+                right_graph.nodes[node]["hcount"] + t1[2],
+                t1[3],
+                t1[4],
+            )
 
             # reassign the attribute to a fresh tuple-of-tuples
             att["typesGH"] = (new_t0, new_t1)
-
+        left_graph, right_graph = its_decompose(rc_graph)
         # ---------- wrap graphs ---------------------------------------- #
         self.rc = SynGraph(rc_graph, self._canonicaliser, canon=canon)
         self.left = SynGraph(left_graph, self._canonicaliser, canon=canon)

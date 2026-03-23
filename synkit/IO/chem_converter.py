@@ -13,7 +13,6 @@ from synkit.IO.gml_to_nx import GMLToNX
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
 
-
 _BRACKET_DIGIT_PATTERN: Pattern = re.compile(r"\[([^\]]*?)\](\d+)")
 _BRACKET_MAP_PATTERN: Pattern = re.compile(r"\[([^\]]+):(\d+)\]")
 

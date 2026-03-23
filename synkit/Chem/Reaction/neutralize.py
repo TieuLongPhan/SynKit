@@ -104,13 +104,16 @@ class Neutralize:
         new_prod = reaction_dict["products"] + addition
         new_reaction = f"{new_react}>>{new_prod}"
 
-        return {
-            id_column: reaction_dict.get("R-id"),
-            reaction_column: new_reaction,
-            "reactants": new_react,
-            "products": new_prod,
-            charges_column: 0,
-        }
+        reaction_dict.update(
+            {
+                id_column: reaction_dict.get(id_column),
+                reaction_column: new_reaction,
+                "reactants": new_react,
+                "products": new_prod,
+                charges_column: 0,
+            }
+        )
+        return reaction_dict
 
     @staticmethod
     def fix_positive_charge(
@@ -141,18 +144,21 @@ class Neutralize:
         new_react = reaction_dict["reactants"] + addition
         new_prod = reaction_dict["products"] + addition
         new_reaction = f"{new_react}>>{new_prod}"
-
-        return {
-            id_column: reaction_dict.get("R-id"),
-            reaction_column: new_reaction,
-            "reactants": new_react,
-            "products": new_prod,
-            charges_column: 0,
-        }
+        reaction_dict.update(
+            {
+                id_column: reaction_dict.get(id_column),
+                reaction_column: new_reaction,
+                "reactants": new_react,
+                "products": new_prod,
+                charges_column: 0,
+            }
+        )
+        return reaction_dict
 
     @staticmethod
     def fix_unbalanced_charged(
-        reaction_dict: Dict[str, Any], reaction_column: str
+        reaction_dict: Dict[str, Any],
+        reaction_column: str,
     ) -> Dict[str, Any]:
         """Detect and neutralize unbalanced product charge by adding
         counter‑ions.
@@ -174,7 +180,10 @@ class Neutralize:
 
     @classmethod
     def parallel_fix_unbalanced_charge(
-        cls, reaction_dicts: List[Dict[str, Any]], reaction_column: str, n_jobs: int = 4
+        cls,
+        reaction_dicts: List[Dict[str, Any]],
+        reaction_column: str,
+        n_jobs: int = 4,
     ) -> List[Dict[str, Any]]:
         """Neutralize charges in multiple reaction dictionaries in parallel.
 
@@ -190,6 +199,9 @@ class Neutralize:
         :rtype: List[Dict[str, Any]]
         """
         return Parallel(n_jobs=n_jobs)(
-            delayed(cls.fix_unbalanced_charged)(d, reaction_column)
+            delayed(cls.fix_unbalanced_charged)(
+                d,
+                reaction_column,
+            )
             for d in reaction_dicts
         )

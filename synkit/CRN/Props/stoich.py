@@ -20,7 +20,6 @@ except Exception:
 from .utils import _species_and_reaction_order
 from ..Hypergraph.conversion import _as_bipartite
 
-
 # ---------------------------------------------------------------------------
 # S⁻, S⁺ and S = S⁺ − S⁻  (stoichiometric matrices)
 # ---------------------------------------------------------------------------

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Callable, Dict, FrozenSet, Iterable, List, Optional, Tuple
 
-
 Sig = Tuple[Tuple, Tuple]
 
 

@@ -15,7 +15,6 @@ from synkit.Graph.Hyrogen._misc import (
     check_equivariant_graph,
 )
 
-
 logger = setup_logging()
 
 

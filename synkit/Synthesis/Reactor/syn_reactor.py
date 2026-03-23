@@ -28,14 +28,17 @@ from synkit.Graph.Matcher.dedup_matches import deduplicate_matches_with_anchor
 from synkit.Graph.Matcher.auto_est import AutoEst
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
-from synkit.Graph.Hyrogen._misc import h_to_implicit, h_to_explicit, has_XH
+from synkit.Graph.Hyrogen._misc import (
+    h_to_implicit,
+    h_to_explicit,
+    has_XH,
+)
 from synkit.Graph import (
     remove_wildcard_nodes,
     add_wildcard_subgraph_for_unmapped,
     has_wildcard_node,
 )
 from synkit.Synthesis.Reactor.strategy import Strategy
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Typing aliases
@@ -213,7 +216,6 @@ class SynReactor:
         if self._mappings is None:
             log.debug("Finding sub‑graph mappings (strategy=%s)", self.strategy)
             pattern_graph = self.rule.left.raw
-
             # Handle explicit‑H constraints
             if has_XH(pattern_graph):
                 self._flag_pattern_has_explicit_H = True
@@ -393,6 +395,7 @@ class SynReactor:
             graph = rsmi_to_its(tpl)
         else:  # pragma: no cover
             raise TypeError(f"Unsupported template type: {type(tpl)}")
+        # graph = normalize_h_pair_graph(graph)
 
         # Invert if asked -----------------------------------------------------
         if self.invert:
@@ -401,7 +404,6 @@ class SynReactor:
                 return SynRule(
                     graph,
                     canonicaliser=self.canonicaliser or GraphCanonicaliser(),
-                    implicit_h=False,
                 )
             else:
                 graph = self._invert_template(graph, balance_its=False)
@@ -413,7 +415,6 @@ class SynReactor:
                 return SynRule(
                     graph,
                     canonicaliser=self.canonicaliser or GraphCanonicaliser(),
-                    implicit_h=False,
                 )
             return SynRule(
                 graph, canonicaliser=self.canonicaliser or GraphCanonicaliser()

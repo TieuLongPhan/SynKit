@@ -7,7 +7,6 @@ from networkx.algorithms import isomorphism
 from networkx.algorithms.isomorphism import GraphMatcher
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
-
 # Alias for any NetworkX graph type
 graph_types = Union[nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph]
 

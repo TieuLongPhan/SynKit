@@ -4,7 +4,6 @@ from synkit.IO.chem_converter import smart_to_gml
 from synkit.Chem.Reaction.aam_validator import AAMValidator
 from synkit.Rule.Apply.reactor_rule import ReactorRule
 
-
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 

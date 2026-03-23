@@ -8,7 +8,6 @@ import networkx as nx
 from ..Hypergraph.hypergraph import CRNHyperGraph
 from ..Hypergraph.backend import _CRNGraphBackend
 
-
 # -------------------------------------------------------------------------
 # Canon: Exact Nauty-style individualization + refinement (no heuristic pruning)
 # -------------------------------------------------------------------------

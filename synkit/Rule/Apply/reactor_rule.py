@@ -18,7 +18,6 @@ from synkit.Synthesis.reactor_utils import (
     _get_reagent_rsmi,
 )
 
-
 if importlib.util.find_spec("mod"):
     from mod import ruleGMLString
 else:

@@ -7,7 +7,6 @@ from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.cleaning import Cleaning
 from synkit.Chem.utils import find_longest_fragment
 
-
 logger = setup_logging()
 
 if importlib.util.find_spec("mod"):

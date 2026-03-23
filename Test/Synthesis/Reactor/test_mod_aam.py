@@ -5,7 +5,6 @@ from synkit.Chem.Reaction.aam_validator import AAMValidator
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Synthesis.Reactor.mod_aam import MODAAM
 
-
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 

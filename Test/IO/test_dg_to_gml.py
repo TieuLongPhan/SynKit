@@ -8,7 +8,6 @@ from synkit.IO.dg_to_gml import DGToGML
 # from synkit.Synthesis.Reactor.reactor_engine import ReactorEngine
 from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 
-
 MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
