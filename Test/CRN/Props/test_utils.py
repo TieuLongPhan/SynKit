@@ -1,7 +1,7 @@
 import unittest
 import networkx as nx
 
-from synkit.CRN.Hypergraph.conversion import rxns_to_hypergraph, hypergraph_to_bipartite
+from synkit.CRN.Structure.conversion import rxns_to_hypergraph, hypergraph_to_bipartite
 
 from synkit.CRN.Props.utils import (
     _split_species_reactions,

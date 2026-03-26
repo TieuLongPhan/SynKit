@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Tuple
 
 import networkx as nx
 
-from ..Hypergraph.conversion import _as_bipartite
+from ..Structure.conversion import _as_bipartite
 
 LOGGER = logging.getLogger(__name__)
 

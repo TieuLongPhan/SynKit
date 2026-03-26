@@ -37,7 +37,7 @@ import numpy as np
 
 from .stoich import stoichiometric_matrix, stoichiometric_rank
 from .utils import _species_order, _split_species_reactions
-from ..Hypergraph.conversion import _as_bipartite
+from ..Structure.conversion import _as_bipartite
 import warnings
 
 LOGGER = logging.getLogger(__name__)

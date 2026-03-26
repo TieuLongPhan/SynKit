@@ -40,7 +40,7 @@ import numpy as np
 from .stoich import stoichiometric_matrix
 from .deficiency import DeficiencyAnalyzer
 from .utils import _split_species_reactions, _species_and_reaction_order
-from ..Hypergraph.conversion import _as_bipartite
+from ..Structure.conversion import _as_bipartite
 
 LOGGER = logging.getLogger(__name__)
 

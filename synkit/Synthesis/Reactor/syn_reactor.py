@@ -113,7 +113,7 @@ class SynReactor:
     partial: bool = False
     embed_threshold: Optional[int] = None
     embed_pre_filter: bool = False
-    automorphism: bool = False
+    automorphism: bool = True
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
