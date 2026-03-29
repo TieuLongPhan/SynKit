@@ -2,7 +2,7 @@ name: Test & Lint
 
 on:
   push:
-    branches: [ "main", "partialits", "staging", "att_graph" ]
+    branches: [ "main", "staging", "dev_crn" ]
   pull_request:
     branches: [ "main" ]
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.1.2"
+version = "1.2"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 long-description = { file = "CHANGELOG.md" }
@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-all = ["numpy>=2.2.0", "torch>=2.2.0"]
+all = ["numpy>=2.2.0", "torch>=2.2.0", "sympy>=1.13.1"]
 docs = [
   # Core Sphinx
   "sphinx>=6.0",

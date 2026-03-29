@@ -1,6 +1,6 @@
 package:
   name: synkit
-  version: "1.1.2"
+  version: "1.2"
 
 source:
   path: ..
@@ -27,6 +27,7 @@ requirements:
     - requests >=2.32.3
     - regex >=2024.11.6
     - numpy >=2.2.0
+    - sympy >=1.13.1
 
 about:
   home:        https://github.com/TieuLongPhan/SynKit
