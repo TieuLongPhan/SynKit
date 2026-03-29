@@ -1,380 +1,477 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple
-import time
-from collections import defaultdict
+from typing import Any, Dict, Iterator, List, Optional, Set, Tuple
 
-from networkx.algorithms.isomorphism import DiGraphMatcher
+import networkx as nx
 
-from ..Structure.hypergraph import CRNHyperGraph
-from ..Structure.backend import _CRNGraphBackend
-
-# -------------------------------------------------------------------------
-# Helpers
-# -------------------------------------------------------------------------
+from ._common import AutomorphismResult, SymmetryConfig
+from ._ir import IRCanonicalEngine
+from .canon import CRNCanonicalizer
+from .wl_canon import WLCanonicalizer
 
 
-def _node_match(keys: Iterable[str]):
+class CRNAutomorphism:
     """
-    Build a simple node-attribute equality matcher for VF2.
+    Exact automorphism analysis for a chemical reaction network graph.
 
-    :param keys: Iterable of node attribute keys to compare.
-    :type keys: Iterable[str]
-    :returns: Callable suitable for :class:`DiGraphMatcher`.
-    :rtype: Callable[[Dict[str, Any], Dict[str, Any]], bool]
-    """
-    keys = tuple(keys)
+    This class provides a convenient public interface for exact automorphism
+    queries, orbit extraction, and quick nontrivial-symmetry checks. When
+    possible, it reuses an existing exact canonicalization engine so that
+    canonicalization and automorphism queries share the same cached search.
 
-    def match(a1: Dict[str, Any], a2: Dict[str, Any]) -> bool:
-        for k in keys:
-            if a1.get(k) != a2.get(k):
-                return False
-        return True
+    :param source:
+        Input source. This may be:
+        - a CRN-like object
+        - a NetworkX graph
+        - an existing :class:`CRNCanonicalizer`
+        - an existing :class:`IRCanonicalEngine`
+    :type source: Any
 
-    return match
+    :param include_rule:
+        Whether rule/reaction nodes should be included when constructing the
+        internal graph representation.
+    :type include_rule: bool
 
+    :param integer_ids:
+        Whether integer-style identifiers should be preferred when supported by
+        the upstream graph builder.
+    :type integer_ids: bool
 
-def _should_stop(
-    start: float,
-    timeout_sec: Optional[float],
-    *,
-    count: Optional[int] = None,
-    max_count: Optional[int] = None,
-) -> bool:
-    """
-    Check whether enumeration should stop due to timeout or count limits.
+    :param include_stoich:
+        Whether stoichiometric information should be included in the internal
+        representation.
+    :type include_stoich: bool
 
-    :param start: Start time in seconds (from :func:`time.time`).
-    :type start: float
-    :param timeout_sec: Maximum allowed wall-clock time in seconds, or None.
-    :type timeout_sec: Optional[float]
-    :param count: Current number of results produced, if applicable.
-    :type count: Optional[int]
-    :param max_count: Maximum number of results allowed, or None.
-    :type max_count: Optional[int]
-    :returns: True if timeout or count limit has been reached.
-    :rtype: bool
-    """
-    if timeout_sec is not None and (time.time() - start) > timeout_sec:
-        return True
-    if max_count is not None and count is not None and count >= max_count:
-        return True
-    return False
+    :param wl_iters:
+        Maximum number of Weisfeiler-Lehman refinement iterations.
+    :type wl_iters: int
 
+    :param wl_digest_size:
+        Digest size used by the WL canonicalizer.
+    :type wl_digest_size: int
 
-# -------------------------------------------------------------------------
-# Automorphism analysis
-# -------------------------------------------------------------------------
+    :param config:
+        Symmetry configuration controlling semantic versus topological matching.
+        If ``None``, :meth:`SymmetryConfig.semantic` is used.
+    :type config: Optional[SymmetryConfig]
 
+    Notes
+    -----
+    For best performance, construct a :class:`CRNCanonicalizer` first and pass
+    it here so canonicalization and automorphism queries reuse the same cached
+    exact search engine.
 
-class CRNAutomorphism(_CRNGraphBackend):
-    """
-    Automorphism analysis for a CRN graph (bipartite or species view).
+    Examples
+    --------
+    .. code-block:: python
 
-    The underlying :class:`CRNHyperGraph` is converted to either:
+        from synkit.CRN.Sym.auto import CRNAutomorphism
 
-      * a bipartite species→reaction→species DiGraph (when ``include_rule=True``), or
-      * a collapsed species→species DiGraph (when ``include_rule=False``),
+        auto = CRNAutomorphism(crn)
+        print(auto.has_nontrivial_automorphism())
+        print(auto.orbits())
 
-    and then VF2 is used to enumerate graph automorphisms
-    (:class:`networkx.algorithms.isomorphism.DiGraphMatcher` with
-    ``G`` as both pattern and host).
+        summary = auto.summary(max_count=50, timeout_sec=10.0)
+        print(summary.automorphism_count)
     """
 
     def __init__(
         self,
-        hg: CRNHyperGraph,
+        source: Any,
         *,
-        include_rule: bool = False,
-        node_attr_keys: Iterable[str] = ("kind",),
+        include_rule: bool = True,
         integer_ids: bool = False,
         include_stoich: bool = True,
+        wl_iters: int = 20,
+        wl_digest_size: int = 16,
+        config: Optional[SymmetryConfig] = None,
     ) -> None:
         """
-        :param hg: Hypergraph whose automorphisms are to be analyzed.
-        :type hg: CRNHyperGraph
-        :param include_rule: If True, work on bipartite species→reaction→species
-                             graph; if False, use collapsed species graph.
+        Initialize the automorphism analyzer.
+
+        :param source:
+            Input source, canonicalizer, or exact IR engine.
+        :type source: Any
+
+        :param include_rule:
+            Whether rule/reaction nodes are included.
         :type include_rule: bool
-        :param node_attr_keys: Node attribute keys used to distinguish nodes
-                               during isomorphism testing.
-        :type node_attr_keys: Iterable[str]
-        :param integer_ids: If True, use integer node ids in the bipartite view.
+
+        :param integer_ids:
+            Whether integer-style identifiers should be preferred.
         :type integer_ids: bool
-        :param include_stoich: If True, include stoichiometry attributes on
-                               bipartite edges.
+
+        :param include_stoich:
+            Whether stoichiometric information should be included.
         :type include_stoich: bool
+
+        :param wl_iters:
+            Maximum number of WL iterations.
+        :type wl_iters: int
+
+        :param wl_digest_size:
+            Digest size used internally by WL hashing.
+        :type wl_digest_size: int
+
+        :param config:
+            Symmetry configuration. If omitted, semantic mode is used.
+        :type config: Optional[SymmetryConfig]
         """
-        super().__init__(
-            hg,
+        self.config, self.wl, self._engine = self._build_components(
+            source,
             include_rule=include_rule,
             integer_ids=integer_ids,
             include_stoich=include_stoich,
+            wl_iters=wl_iters,
+            wl_digest_size=wl_digest_size,
+            config=config,
         )
-        self.node_attr_keys = tuple(node_attr_keys)
-        self._matcher = _node_match(self.node_attr_keys)
 
-    def __repr__(self) -> str:
+    @staticmethod
+    def _build_from_canonicalizer(
+        source: CRNCanonicalizer,
+    ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
         """
-        :returns: String representation of the automorphism helper.
+        Reuse components from an existing canonicalizer.
+
+        :param source:
+            Canonicalizer instance.
+        :type source: CRNCanonicalizer
+
+        :returns:
+            Tuple ``(config, wl, engine)``.
+        :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
+        """
+        return source.config, source.wl, source.engine
+
+    @staticmethod
+    def _build_from_engine(
+        source: IRCanonicalEngine,
+    ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
+        """
+        Reuse components from an existing exact IR engine.
+
+        :param source:
+            Exact IR engine.
+        :type source: IRCanonicalEngine
+
+        :returns:
+            Tuple ``(config, wl, engine)``.
+        :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
+        """
+        return source.config, source.wl, source
+
+    @staticmethod
+    def _build_fresh(
+        source: Any,
+        *,
+        include_rule: bool,
+        integer_ids: bool,
+        include_stoich: bool,
+        wl_iters: int,
+        wl_digest_size: int,
+        config: Optional[SymmetryConfig],
+    ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
+        """
+        Build fresh WL and exact IR components from a raw source object.
+
+        :param source:
+            Input source object.
+        :type source: Any
+
+        :param include_rule:
+            Whether rule/reaction nodes are included.
+        :type include_rule: bool
+
+        :param integer_ids:
+            Whether integer-style identifiers should be preferred.
+        :type integer_ids: bool
+
+        :param include_stoich:
+            Whether stoichiometric information should be included.
+        :type include_stoich: bool
+
+        :param wl_iters:
+            Maximum number of WL iterations.
+        :type wl_iters: int
+
+        :param wl_digest_size:
+            Digest size for WL hashing.
+        :type wl_digest_size: int
+
+        :param config:
+            Optional symmetry configuration.
+        :type config: Optional[SymmetryConfig]
+
+        :returns:
+            Tuple ``(config, wl, engine)``.
+        :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
+        """
+        cfg = config or SymmetryConfig.semantic()
+        wl = WLCanonicalizer(
+            source,
+            include_rule=include_rule,
+            integer_ids=integer_ids,
+            include_stoich=include_stoich,
+            n_iter=wl_iters,
+            digest_size=wl_digest_size,
+            config=cfg,
+        )
+        engine = IRCanonicalEngine(
+            source,
+            include_rule=include_rule,
+            integer_ids=integer_ids,
+            include_stoich=include_stoich,
+            wl_iters=wl_iters,
+            wl_digest_size=wl_digest_size,
+            config=cfg,
+        )
+        return cfg, wl, engine
+
+    @classmethod
+    def _build_components(
+        cls,
+        source: Any,
+        *,
+        include_rule: bool,
+        integer_ids: bool,
+        include_stoich: bool,
+        wl_iters: int,
+        wl_digest_size: int,
+        config: Optional[SymmetryConfig],
+    ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
+        """
+        Build or reuse the internal symmetry-analysis components.
+
+        :param source:
+            Input source, canonicalizer, or engine.
+        :type source: Any
+
+        :param include_rule:
+            Whether rule/reaction nodes are included.
+        :type include_rule: bool
+
+        :param integer_ids:
+            Whether integer-style identifiers should be preferred.
+        :type integer_ids: bool
+
+        :param include_stoich:
+            Whether stoichiometric information should be included.
+        :type include_stoich: bool
+
+        :param wl_iters:
+            Maximum number of WL iterations.
+        :type wl_iters: int
+
+        :param wl_digest_size:
+            Digest size for WL hashing.
+        :type wl_digest_size: int
+
+        :param config:
+            Optional symmetry configuration.
+        :type config: Optional[SymmetryConfig]
+
+        :returns:
+            Tuple ``(config, wl, engine)``.
+        :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
+        """
+        if isinstance(source, CRNCanonicalizer):
+            return cls._build_from_canonicalizer(source)
+        if isinstance(source, IRCanonicalEngine):
+            return cls._build_from_engine(source)
+        return cls._build_fresh(
+            source,
+            include_rule=include_rule,
+            integer_ids=integer_ids,
+            include_stoich=include_stoich,
+            wl_iters=wl_iters,
+            wl_digest_size=wl_digest_size,
+            config=config,
+        )
+
+    @property
+    def G(self) -> nx.DiGraph:
+        """
+        Return the internal directed graph used for analysis.
+
+        :returns:
+            Internal directed graph.
+        :rtype: nx.DiGraph
+        """
+        return self._engine.G
+
+    @property
+    def graph_type(self) -> str:
+        """
+        Return the graph type label.
+
+        :returns:
+            Graph type string.
         :rtype: str
         """
-        return (
-            f"CRNAutomorphism(include_rule={self.include_rule}, "
-            f"node_attr_keys={self.node_attr_keys}, "
-            f"graph_type={getattr(self, '_graph_type', None)})"
-        )
+        return self._engine.graph_type
 
-    # --- internal helpers ---------------------------------------------------
-
-    def _graph_matcher(self) -> DiGraphMatcher:
-        """
-        Build a DiGraphMatcher for G vs G with node attribute matching.
-
-        :returns: Configured :class:`DiGraphMatcher` for automorphism search.
-        :rtype: DiGraphMatcher
-        """
-        G = self.G
-        return DiGraphMatcher(G, G, node_match=self._matcher)
-
-    # --- public API ---------------------------------------------------------
-
-    def iter(
+    def automorphisms_iter(
         self,
         *,
         max_count: Optional[int] = None,
         timeout_sec: Optional[float] = None,
     ) -> Iterator[Dict[Any, Any]]:
         """
-        Lazy generator of automorphism mappings.
+        Iterate over sampled automorphism mappings.
 
-        Each mapping is a dict ``{node -> node}`` representing a graph
-        automorphism. Enumeration stops when ``max_count`` or ``timeout_sec``
-        is reached (if provided).
+        This method delegates to the exact IR engine and yields the sampled
+        automorphism mappings that were collected during the search.
 
-        :param max_count: Maximum number of mappings to yield, or None.
+        :param max_count:
+            Optional maximum number of mappings to collect.
         :type max_count: Optional[int]
-        :param timeout_sec: Maximum wall-clock time in seconds, or None.
-        :type timeout_sec: Optional[float]
-        :returns: Iterator over automorphism mappings.
-        :rtype: Iterator[Dict[Any, Any]]
-        """
-        GM = self._graph_matcher()
-        start = time.time()
-        yielded = 0
 
-        for m in GM.isomorphisms_iter():
+        :param timeout_sec:
+            Optional timeout in seconds.
+        :type timeout_sec: Optional[float]
+
+        :yields:
+            Automorphism mappings as ``node -> node`` dictionaries.
+        :rtype: Iterator[Dict[Any, Any]]
+
+        Examples
+        --------
+        .. code-block:: python
+
+            auto = CRNAutomorphism(crn)
+            for mapping in auto.automorphisms_iter(max_count=5):
+                print(mapping)
+        """
+        res = self._engine.run(max_count=max_count, timeout_sec=timeout_sec)
+        for m in res.sample_mappings:
             yield dict(m)
-            yielded += 1
-            if _should_stop(start, timeout_sec, count=yielded, max_count=max_count):
-                break
 
     def has_nontrivial_automorphism(
-        self,
-        *,
-        timeout_sec: Optional[float] = 5.0,
+        self, *, timeout_sec: Optional[float] = 5.0
     ) -> bool:
         """
-        Test quickly whether a non-identity automorphism exists.
+        Check whether the graph has a nontrivial automorphism.
 
-        Enumeration stops as soon as a mapping is found that is not the
-        identity mapping (or when timeout is reached).
+        A fast WL-based orbit test is used first. If WL leaves no ambiguous
+        cells, the graph is treated as having no nontrivial automorphism.
+        Otherwise, an exact search is run and stopped after two equivalent
+        automorphisms are found.
 
-        :param timeout_sec: Maximum wall-clock time in seconds.
+        :param timeout_sec:
+            Optional timeout in seconds for the exact fallback check.
         :type timeout_sec: Optional[float]
-        :returns: True if a nontrivial automorphism is found.
+
+        :returns:
+            ``True`` if a nontrivial automorphism exists.
         :rtype: bool
         """
-        GM = self._graph_matcher()
-        start = time.time()
-
-        for m in GM.isomorphisms_iter():
-            if _should_stop(start, timeout_sec):
-                return False
-            if any(node != mapped for node, mapped in m.items()):
-                return True
-        return False
-
-    def _compute_orbits_from_mappings(
-        self,
-        nodes: List[Any],
-        mappings: Iterable[Dict[Any, Any]],
-    ) -> Tuple[List[Set[Any]], int]:
-        """
-        Group nodes into orbits using a stream of automorphism mappings.
-
-        :param nodes: List of nodes in the underlying graph.
-        :type nodes: List[Any]
-        :param mappings: Iterable of automorphism mappings ``{node -> node}``.
-        :type mappings: Iterable[Dict[Any, Any]]
-        :returns: Tuple ``(orbits, used_count)`` where ``orbits`` is a list
-                  of sets and ``used_count`` the number of mappings consumed.
-        :rtype: Tuple[List[Set[Any]], int]
-        """
-        parent: Dict[Any, Any] = {n: n for n in nodes}
-
-        def find(x: Any) -> Any:
-            while parent[x] != x:
-                parent[x] = parent[parent[x]]
-                x = parent[x]
-            return x
-
-        def union(x: Any, y: Any) -> None:
-            rx, ry = find(x), find(y)
-            if rx == ry:
-                return
-            parent[ry] = rx
-
-        used = 0
-        for m in mappings:
-            used += 1
-            for src, dst in m.items():
-                union(src, dst)
-
-        buckets: Dict[Any, Set[Any]] = defaultdict(set)
-        for n in nodes:
-            r = find(n)
-            buckets[r].add(n)
-
-        return list(buckets.values()), used
+        if all(len(cell) == 1 for cell in self.wl.orbits()):
+            return False
+        res = self._engine.run(
+            max_count=2, timeout_sec=timeout_sec, stop_after_two=True
+        )
+        return res.automorphism_count > 1
 
     def summary(
         self,
         *,
         max_count: int = 100,
         timeout_sec: Optional[float] = 5.0,
-    ) -> dict:
+    ) -> AutomorphismResult:
         """
-        Run automorphism enumeration and return a :class:`CRNAutResult`.
+        Compute an automorphism summary.
 
-        This method:
-
-          * enumerates automorphisms via VF2 (up to ``max_count`` or ``timeout_sec``),
-          * collects a sample of mappings,
-          * groups nodes into orbits using all consumed mappings.
-
-        :param max_count: Maximum number of automorphisms to sample.
+        :param max_count:
+            Maximum number of sampled mappings to retain.
         :type max_count: int
-        :param timeout_sec: Optional wall-clock timeout in seconds.
+
+        :param timeout_sec:
+            Optional timeout in seconds.
         :type timeout_sec: Optional[float]
-        :returns: Automorphism summary for the CRN-derived graph.
-        :rtype: CRNAutResult
+
+        :returns:
+            Automorphism summary result.
+        :rtype: AutomorphismResult
         """
-        GM = self._graph_matcher()
-        G = self.G
-        nodes = list(G.nodes())
-        start = time.time()
-        count = 0
-        samples: List[Dict[Any, Any]] = []
-        stopped = False
-
-        # We'll store mappings in a list for orbit construction.
-        used_mappings: List[Dict[Any, Any]] = []
-
-        try:
-            for m in GM.isomorphisms_iter():
-                count += 1
-                mdict = dict(m)
-                used_mappings.append(mdict)
-                if len(samples) < max_count:
-                    samples.append(mdict)
-
-                if _should_stop(start, timeout_sec, count=count, max_count=max_count):
-                    stopped = True
-                    break
-
-        except Exception:
-            stopped = True
-
-        orbits, used_count = self._compute_orbits_from_mappings(nodes, used_mappings)
-        elapsed = time.time() - start
-        return {
-            "graph_type": self.graph_type,
-            "node_attr_keys": self.node_attr_keys,
-            "automorphism_count": count,
-            "sample_mappings": samples,
-            "orbits": orbits,
-            "mapping_count_used": used_count,
-            "elapsed_seconds": elapsed,
-            "stopped_early": stopped,
-        }
+        return self._engine.automorphism_result(
+            max_count=max_count, timeout_sec=timeout_sec
+        )
 
     def orbits(
         self,
         *,
         max_count: int = 1000,
-        timeout_sec: float = 5.0,
-    ) -> Dict[str, Any]:
+        timeout_sec: Optional[float] = 5.0,
+    ) -> List[Set[Any]]:
         """
-        Approximate node orbits from sampled automorphisms.
+        Compute orbit classes from sampled automorphisms.
 
-        Nodes that are mutually mapped by some automorphism are placed in
-        the same orbit (using a union–find structure).
-
-        :param max_count: Maximum number of mappings to sample for orbit computation.
+        :param max_count:
+            Maximum number of sampled mappings to retain.
         :type max_count: int
-        :param timeout_sec: Maximum wall-clock time in seconds.
-        :type timeout_sec: float
-        :returns: Summary with orbit sets and diagnostics.
-        :rtype: Dict[str, Any]
+
+        :param timeout_sec:
+            Optional timeout in seconds.
+        :type timeout_sec: Optional[float]
+
+        :returns:
+            Orbit partition induced by the sampled automorphisms.
+        :rtype: List[Set[Any]]
         """
-        res = self.summary(max_count=max_count, timeout_sec=timeout_sec)
-        return res.orbits
+        return self.summary(max_count=max_count, timeout_sec=timeout_sec).orbits
 
+    def wl_orbits(self) -> List[Set[Any]]:
+        """
+        Return approximate WL color-class orbits.
 
-# -------------------------------------------------------------------------
-# Functional convenience API
-# -------------------------------------------------------------------------
+        These are faster but weaker than exact automorphism orbits.
+
+        :returns:
+            WL-based orbit partition.
+        :rtype: List[Set[Any]]
+        """
+        return self.wl.orbits()
 
 
 def detect_automorphisms(
-    hg: CRNHyperGraph,
+    source: Any,
     *,
-    include_rule: bool = False,
-    node_attr_keys: Iterable[str] = ("kind",),
-    integer_ids: bool = False,
-    include_stoich: bool = True,
-    max_count: Optional[int] = 5000,
-    timeout_sec: Optional[float] = 10.0,
-) -> Dict[str, Any]:
+    max_count: int = 100,
+    timeout_sec: Optional[float] = 5.0,
+    **kwargs: Any,
+) -> AutomorphismResult:
     """
-    Convenience wrapper around :class:`CRNAutomorphism`.
+    Convenience wrapper for automorphism detection.
 
-    Runs automorphism summarization (and optionally orbit computation)
-    with reasonable defaults.
+    :param source:
+        Input source, canonicalizer, or engine.
+    :type source: Any
 
-    :param hg: Hypergraph to analyze.
-    :type hg: CRNHyperGraph
-    :param include_rule: If True, work on bipartite species→reaction→species
-                         graph; if False, use collapsed species graph.
-    :type include_rule: bool
-    :param node_attr_keys: Node attributes used to distinguish nodes.
-    :type node_attr_keys: Iterable[str]
-    :param integer_ids: If True, use integer node ids in bipartite view.
-    :type integer_ids: bool
-    :param include_stoich: If True, include stoichiometry on bipartite edges.
-    :type include_stoich: bool
-    :param max_count: Maximum number of mappings to count/sample; if None,
-                      a large default is used.
-    :type max_count: Optional[int]
-    :param timeout_sec: Maximum wall-clock time in seconds; if None, a large
-                        default is used.
+    :param max_count:
+        Maximum number of sampled mappings to retain.
+    :type max_count: int
+
+    :param timeout_sec:
+        Optional timeout in seconds.
     :type timeout_sec: Optional[float]
-    :returns: Combined summary (and optionally orbit) information.
-    :rtype: Dict[str, Any]
+
+    :param kwargs:
+        Additional keyword arguments forwarded to :class:`CRNAutomorphism`.
+    :type kwargs: Any
+
+    :returns:
+        Automorphism summary result.
+    :rtype: AutomorphismResult
+
+    Examples
+    --------
+    .. code-block:: python
+
+        result = detect_automorphisms(crn, max_count=50, timeout_sec=10.0)
+        print(result.automorphism_count)
+        print(result.orbits)
     """
-    analyzer = CRNAutomorphism(
-        hg,
-        include_rule=include_rule,
-        node_attr_keys=node_attr_keys,
-        integer_ids=integer_ids,
-        include_stoich=include_stoich,
+    return CRNAutomorphism(source, **kwargs).summary(
+        max_count=max_count, timeout_sec=timeout_sec
     )
-    if max_count is None:
-        max_count = 10_000_000
-    if timeout_sec is None:
-        timeout_sec = 1e9
-
-    info = analyzer.summary(max_count=max_count, timeout_sec=timeout_sec)
-
-    return info

@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, List, Set
-
-from ..Props.utils import _species_order
-from .semiflows import find_p_semiflows
+from .semiflows import find_p_semiflows, stoichiometric_matrix
 from .structure import find_siphons
-from ..Structure.conversion import _as_bipartite
+
+
+@dataclass(frozen=True)
+class PersistenceCheckResult:
+    """Structured result of the siphon-based persistence sufficient test."""
+
+    persistence_ok: bool
+    siphons: List[Set[str]]
+    semiflow_supports: List[Set[str]]
+    uncovered_siphons: List[Set[str]]
 
 
 def siphon_persistence_condition(
@@ -15,66 +23,49 @@ def siphon_persistence_condition(
     max_siphon_size: int | None = None,
 ) -> bool:
     """
-    Check an Angeli–De Leenheer–Sontag-style **persistence** sufficient condition:
+    Check the Angeli–De Leenheer–Sontag siphon/P-semiflow sufficient condition.
 
-    *Every minimal siphon contains the support of some P-semiflow.*
-
-    We proceed as follows:
-
-    1. Enumerate all minimal siphons (via :func:`find_siphons`) up to
-       size ``max_siphon_size`` (brute-force).
-    2. Compute a basis of P-semiflows using :func:`find_p_semiflows`.
-    3. For each basis vector, compute its *support* (species whose
-       coefficient has absolute value larger than a small tolerance).
-    4. Check that for every siphon :math:`S`, there exists a semiflow
-       support :math:`T` such that :math:`T \\subseteq S`.
-
-    If this holds, then the Angeli–De Leenheer–Sontag criterion for
-    persistence is satisfied for the given structural data (under
-    suitable kinetic assumptions).
-
-    :param crn: Network-like object (CRNHyperGraph or bipartite graph).
-    :type crn: Any
-    :param rtol: Numerical tolerance for SVD-based nullspace computation.
-    :type rtol: float
-    :param max_siphon_size: Maximum siphon size considered during
-        enumeration. If ``None``, all sizes are considered.
-    :type max_siphon_size: int or None
-    :returns: ``True`` if every minimal siphon contains the support of
-        at least one approximate P-semiflow; ``False`` otherwise.
-    :rtype: bool
-
-    :reference: Angeli, De Leenheer & Sontag (2007), Math. Biosci. —
-        persistence results for chemical reaction networks.
+    The condition holds when every minimal siphon contains the support of some
+    P-semiflow.
     """
-    G = _as_bipartite(crn)
+    return siphon_persistence_details(
+        crn,
+        rtol=rtol,
+        max_siphon_size=max_siphon_size,
+    ).persistence_ok
 
-    siphons = find_siphons(G, max_size=max_siphon_size)
+
+def siphon_persistence_details(
+    crn: Any,
+    *,
+    rtol: float = 1e-12,
+    max_siphon_size: int | None = None,
+    support_tol: float = 1e-8,
+) -> PersistenceCheckResult:
+    """
+    Return detailed information for the siphon-based persistence test.
+    """
+    siphons = find_siphons(crn, max_size=max_siphon_size, names="id")
     if not siphons:
-        # No siphons -> condition is vacuously true.
-        return True
+        return PersistenceCheckResult(True, [], [], [])
 
-    # P-semiflows (left nullspace)
-    Y = find_p_semiflows(G, rtol=rtol)
-    if Y.size == 0:
-        return False
+    species_order, _, _ = stoichiometric_matrix(crn)
+    y = find_p_semiflows(crn, rtol=rtol)
+    if y.size == 0:
+        return PersistenceCheckResult(False, siphons, [], list(siphons))
 
-    _, species_labels, _ = _species_order(G)
-
-    # supports of semiflows (indices where |y_i| > tol)
-    tol = 1e-8
     supports: List[Set[str]] = []
-    for k in range(Y.shape[1]):
-        y = Y[:, k]
-        S = {species_labels[i] for i, val in enumerate(y) if abs(val) > tol}
-        if S:
-            supports.append(S)
+    for j in range(y.shape[1]):
+        supp = {
+            species_order[i] for i, val in enumerate(y[:, j]) if abs(val) > support_tol
+        }
+        if supp:
+            supports.append(supp)
 
-    if not supports:
-        return False
-
-    # condition: for each siphon S, ∃ semiflow support T ⊆ S
-    for S in siphons:
-        if not any(T.issubset(S) for T in supports):
-            return False
-    return True
+    uncovered = [set(s) for s in siphons if not any(t.issubset(s) for t in supports)]
+    return PersistenceCheckResult(
+        persistence_ok=(len(uncovered) == 0),
+        siphons=[set(s) for s in siphons],
+        semiflow_supports=supports,
+        uncovered_siphons=uncovered,
+    )

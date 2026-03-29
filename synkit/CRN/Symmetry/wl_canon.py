@@ -1,76 +1,231 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
-import hashlib
+from time import perf_counter
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import networkx as nx
 
-from ..Structure.hypergraph import CRNHyperGraph
-from ..Structure.backend import _CRNGraphBackend
-
-# -------------------------------------------------------------------------
-# Approx canon: Weisfeiler–Lehman (WL) color refinement (fast, approximate)
-# -------------------------------------------------------------------------
-
-
-def _blake_str(x: str, *, digest_size: int = 16) -> str:
-    h = hashlib.blake2b(digest_size=digest_size)
-    h.update(x.encode("utf-8", errors="replace"))
-    return h.hexdigest()
-
-
-def _freeze(x: Any) -> Any:
-    """Convert common container types into stable, hash-friendly tuples."""
-    if isinstance(x, (list, tuple)):
-        return tuple(_freeze(v) for v in x)
-    if isinstance(x, dict):
-        return tuple(
-            (k, _freeze(v)) for k, v in sorted(x.items(), key=lambda kv: kv[0])
-        )
-    if isinstance(x, set):
-        return tuple(sorted((_freeze(v) for v in x), key=str))
-    return x
+from ._common import (
+    SymmetryConfig,
+    approx_automorphism_count_from_cells,
+    build_fast_signature,
+    edge_token,
+    graph_key_from_order,
+    hash_text,
+    node_token,
+    prepare_graph,
+)
 
 
 @dataclass(frozen=True)
-class WLResult:
-    G_can: nx.DiGraph
-    colors: Dict[Any, str]  # node -> final WL color
-    orbits: List[Set[Any]]  # approximate orbits (same final color)
+class _WLState:
+    """
+    Internal cached WL state.
+
+    :param colors:
+        Final node colors after WL refinement.
+    :type colors: Dict[Any, str]
+
+    :param cells:
+        Final WL color cells as sorted node lists.
+    :type cells: List[List[Any]]
+
+    :param orbits:
+        Approximate node orbits induced by final WL colors.
+    :type orbits: List[Set[Any]]
+
+    :param color_hist:
+        Histogram of final colors.
+    :type color_hist: Dict[str, int]
+
+    :param iters_run:
+        Number of WL iterations actually performed.
+    :type iters_run: int
+
+    :param stabilized:
+        Whether refinement stabilized before the iteration limit.
+    :type stabilized: bool
+
+    :param canonical_order:
+        Deterministic node order induced by final WL colors.
+    :type canonical_order: List[Any]
+
+    :param approx_automorphism_count:
+        Approximate automorphism count derived from WL cells.
+    :type approx_automorphism_count: Optional[int]
+    """
+
+    colors: Dict[Any, str]
+    cells: List[List[Any]]
+    orbits: List[Set[Any]]
+    color_hist: Dict[str, int]
     iters_run: int
     stabilized: bool
-    color_hist: Dict[str, int]  # color -> count
-    automorphism_count: Optional[int]  # approximate (optional)
+    canonical_order: List[Any]
+    approx_automorphism_count: Optional[int]
 
 
-class WLCanonicalizer(_CRNGraphBackend):
+@dataclass(frozen=True)
+class WLCanonicalResult:
     """
-    Fast *approximate* canonicalization + orbit-like partition using
-    Weisfeiler–Lehman (1-WL) refinement on the CRN graph view.
+    Approximate canonicalization result from WL refinement.
 
-    What you get:
-      - `orbits()` returns sets of nodes that are *WL-indistinguishable*
-        (same final color). This is an *approximation* of true automorphism orbits.
-      - `graph()` returns a deterministic relabeling 1..N based on (color, tie-break).
+    This mirrors the exact canonicalizer style, but remains approximate.
 
-    `automorphism_count` in `summary()` is **approximate**:
-      - If `estimate_automorphisms=True`, we return ∏_c (|cell_c|!) over WL color cells.
-        This is often an over-estimate and can be a very loose proxy.
-      - Otherwise it is None.
+    :param canon_graph:
+        Graph canonically relabeled according to the WL order.
+    :type canon_graph: nx.DiGraph
 
-    Notes:
-      - This does NOT enumerate automorphisms / exact orbits.
-      - Designed for speed and deterministic output.
+    :param graph_type:
+        Graph representation type, e.g. ``"bipartite"`` or ``"species"``.
+    :type graph_type: str
+
+    :param canonical_order:
+        Deterministic node order induced by the final WL partition.
+    :type canonical_order: List[Any]
+
+    :param canonical_key:
+        Canonical graph key derived from the WL order.
+    :type canonical_key: Any
+
+    :param automorphism_count:
+        Approximate automorphism count from WL cells.
+    :type automorphism_count: Optional[int]
+
+    :param orbits:
+        Approximate node orbits from the final WL cells.
+    :type orbits: List[Set[Any]]
+
+    :param colors:
+        Final WL color mapping.
+    :type colors: Dict[Any, str]
+
+    :param color_hist:
+        Histogram of final WL colors.
+    :type color_hist: Dict[str, int]
+
+    :param iters_run:
+        Number of WL iterations actually performed.
+    :type iters_run: int
+
+    :param stabilized:
+        Whether WL refinement stabilized before the maximum iteration count.
+    :type stabilized: bool
+
+    :param exact:
+        Always ``False`` for WL refinement.
+    :type exact: bool
+
+    :param elapsed_seconds:
+        Runtime in seconds for building the result object.
+    :type elapsed_seconds: float
+    """
+
+    canon_graph: nx.DiGraph
+    graph_type: str
+    canonical_order: List[Any]
+    canonical_key: Any
+    automorphism_count: Optional[int]
+    orbits: List[Set[Any]]
+    colors: Dict[Any, str]
+    color_hist: Dict[str, int]
+    iters_run: int
+    stabilized: bool
+    exact: bool
+    elapsed_seconds: float
+
+
+class WLCanonicalizer:
+    """
+    Fast approximate canonicalizer for SynKit CRN graphs using direction-aware
+    1-WL refinement.
+
+    This class is designed as a lightweight companion to the exact CRN
+    canonicalizer. It gives:
+
+    - deterministic WL-based canonical relabeling
+    - approximate orbit partitions
+    - approximate automorphism counts from WL cells
+    - fast signatures for cheap prefiltering
+
+    Compared with the exact canonicalizer, this class is much faster but not
+    guaranteed to distinguish all non-isomorphic graphs or recover exact
+    automorphism groups.
+
+    :param source:
+        Input CRN representation. This may be a prepared
+        :class:`networkx.DiGraph`, an object exposing ``to_digraph()``, or any
+        object accepted by :func:`prepare_graph`.
+    :type source: Any
+
+    :param include_rule:
+        Whether rule nodes should be included in the prepared graph.
+    :type include_rule: bool
+
+    :param integer_ids:
+        Whether integer node identifiers should be used during graph
+        preparation.
+    :type integer_ids: bool
+
+    :param include_stoich:
+        Whether stoichiometric edge attributes should be preserved during graph
+        preparation.
+    :type include_stoich: bool
+
+    :param n_iter:
+        Maximum number of WL refinement iterations.
+    :type n_iter: int
+
+    :param digest_size:
+        Digest size used when hashing node and edge signatures.
+    :type digest_size: int
+
+    :param include_in_neighbors:
+        Whether incoming neighbors should contribute to refinement.
+    :type include_in_neighbors: bool
+
+    :param include_out_neighbors:
+        Whether outgoing neighbors should contribute to refinement.
+    :type include_out_neighbors: bool
+
+    :param estimate_automorphisms:
+        Whether to compute an approximate automorphism count from the final WL
+        cells.
+    :type estimate_automorphisms: bool
+
+    :param automorphism_cap:
+        Cap applied to approximate automorphism counts.
+    :type automorphism_cap: int
+
+    :param config:
+        Symmetry semantics configuration controlling which node and edge
+        attributes participate in WL coloring.
+    :type config: Optional[SymmetryConfig]
+
+    Example
+    -------
+    .. code-block:: python
+
+        from synkit.CRN.Sym import WLCanonicalizer, SymmetryConfig
+
+        wl = WLCanonicalizer(
+            syn.to_digraph(),
+            include_rule=True,
+            config=SymmetryConfig.topological(),
+        )
+
+        print(wl.has_nontrivial_automorphism())
+        print(wl.orbits())
+        print(wl.canonical_order())
+        print(wl.summary()["automorphism_count"])
     """
 
     def __init__(
         self,
-        hg: CRNHyperGraph,
+        source: Any,
         *,
-        include_rule: bool = False,
-        node_attr_keys: Iterable[str] = ("kind",),
-        edge_attr_keys: Iterable[str] = ("role", "stoich"),
+        include_rule: bool = True,
         integer_ids: bool = False,
         include_stoich: bool = True,
         n_iter: int = 20,
@@ -79,61 +234,242 @@ class WLCanonicalizer(_CRNGraphBackend):
         include_out_neighbors: bool = True,
         estimate_automorphisms: bool = True,
         automorphism_cap: int = 10**18,
+        config: Optional[SymmetryConfig] = None,
     ) -> None:
-        super().__init__(
-            hg,
-            include_rule=include_rule,
-            integer_ids=integer_ids,
-            include_stoich=include_stoich,
-        )
-        self.node_attr_keys: Tuple[str, ...] = tuple(node_attr_keys)
-        self.edge_attr_keys: Tuple[str, ...] = tuple(edge_attr_keys)
+        """
+        Initialize the WL canonicalizer.
+
+        :param source:
+            Input CRN representation.
+        :type source: Any
+
+        :param include_rule:
+            Whether rule nodes should be included in the prepared graph.
+        :type include_rule: bool
+
+        :param integer_ids:
+            Whether integer node identifiers should be used during graph
+            preparation.
+        :type integer_ids: bool
+
+        :param include_stoich:
+            Whether stoichiometric edge attributes should be preserved.
+        :type include_stoich: bool
+
+        :param n_iter:
+            Maximum number of WL refinement rounds.
+        :type n_iter: int
+
+        :param digest_size:
+            Digest size used when hashing WL signatures.
+        :type digest_size: int
+
+        :param include_in_neighbors:
+            Whether incoming neighborhoods should be used.
+        :type include_in_neighbors: bool
+
+        :param include_out_neighbors:
+            Whether outgoing neighborhoods should be used.
+        :type include_out_neighbors: bool
+
+        :param estimate_automorphisms:
+            Whether to estimate automorphism count from final WL cells.
+        :type estimate_automorphisms: bool
+
+        :param automorphism_cap:
+            Maximum cap for approximate automorphism counting.
+        :type automorphism_cap: int
+
+        :param config:
+            Symmetry semantics configuration.
+        :type config: Optional[SymmetryConfig]
+
+        :returns:
+            None.
+        :rtype: None
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(
+                syn.to_digraph(),
+                include_rule=True,
+                n_iter=20,
+                digest_size=16,
+            )
+        """
+        self.source = source
+        self.include_rule = bool(include_rule)
+        self.integer_ids = bool(integer_ids)
+        self.include_stoich = bool(include_stoich)
         self.n_iter = int(n_iter)
         self.digest_size = int(digest_size)
         self.include_in_neighbors = bool(include_in_neighbors)
         self.include_out_neighbors = bool(include_out_neighbors)
         self.estimate_automorphisms = bool(estimate_automorphisms)
         self.automorphism_cap = int(automorphism_cap)
+        self.config = config or SymmetryConfig.semantic()
 
-        self._last: Optional[WLResult] = None
-        self._last_key: Optional[Tuple[Any, ...]] = None
-
-    def __repr__(self) -> str:
-        return (
-            f"WLCanonicalizer(include_rule={self.include_rule}, "
-            f"node_attr_keys={self.node_attr_keys}, edge_attr_keys={self.edge_attr_keys}, "
-            f"n_iter={self.n_iter}, graph_type={getattr(self, '_graph_type', None)})"
+        self._G, self._graph_type = prepare_graph(
+            source,
+            include_rule=self.include_rule,
+            integer_ids=self.integer_ids,
+            include_stoich=self.include_stoich,
         )
 
-    # ------------------------- hashing / signatures -------------------------
+        self._state_cache: Optional[_WLState] = None
+        self._summary_cache: Optional[WLCanonicalResult] = None
+        self._fast_signature: Optional[Tuple[Any, ...]] = None
+        self._cache_key_last: Optional[Tuple[Any, ...]] = None
 
-    def _node_seed(self, G: nx.Graph, v: Any) -> str:
-        attrs = tuple(_freeze(G.nodes[v].get(k, None)) for k in self.node_attr_keys)
+    def __repr__(self) -> str:
+        """
+        Return a concise representation.
 
-        if G.is_directed():
-            deg = (G.in_degree(v), G.out_degree(v))  # type: ignore[attr-defined]
-        else:
-            d = G.degree(v)  # type: ignore[arg-type]
-            deg = (d, d)
+        :returns:
+            String representation.
+        :rtype: str
 
-        return _blake_str(f"N|{attrs}|{deg}", digest_size=self.digest_size)
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl)
+        """
+        return (
+            f"WLCanonicalizer(include_rule={self.include_rule}, "
+            f"graph_type={self.graph_type}, n_iter={self.n_iter}, "
+            f"digest_size={self.digest_size})"
+        )
+
+    @property
+    def G(self) -> nx.DiGraph:
+        """
+        Return the prepared graph.
+
+        :returns:
+            Prepared directed graph.
+        :rtype: nx.DiGraph
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.G.number_of_nodes(), wl.G.number_of_edges())
+        """
+        return self._G
+
+    @property
+    def graph_type(self) -> str:
+        """
+        Return the graph representation type.
+
+        :returns:
+            Graph representation type.
+        :rtype: str
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn, include_rule=True)
+            print(wl.graph_type)
+        """
+        return self._graph_type
+
+    def _cache_key(self) -> Tuple[Any, ...]:
+        """
+        Build a conservative cache key for the current graph and parameters.
+
+        :returns:
+            Cache key tuple.
+        :rtype: Tuple[Any, ...]
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl._cache_key())
+        """
+        return (
+            id(self.G),
+            self.G.number_of_nodes(),
+            self.G.number_of_edges(),
+            self.include_rule,
+            self.integer_ids,
+            self.include_stoich,
+            self.n_iter,
+            self.digest_size,
+            self.include_in_neighbors,
+            self.include_out_neighbors,
+            self.estimate_automorphisms,
+            self.automorphism_cap,
+            self.config,
+        )
+
+    def _node_seed(self, v: Any) -> str:
+        """
+        Compute the initial WL color for one node.
+
+        The seed combines the semantic node token and the directed degree.
+
+        :param v:
+            Node identifier.
+        :type v: Any
+
+        :returns:
+            Initial hashed node color.
+        :rtype: str
+        """
+        tok = node_token(self.G.nodes[v], self.config)
+        deg = (self.G.in_degree(v), self.G.out_degree(v))
+        return hash_text(f"N|{tok}|{deg}", digest_size=self.digest_size)
 
     def _edge_sig(self, attrs: Dict[str, Any]) -> str:
-        t = tuple(_freeze(attrs.get(k, None)) for k in self.edge_attr_keys)
-        return _blake_str(f"E|{t}", digest_size=self.digest_size)
+        """
+        Compute a hashed signature for one edge attribute dictionary.
 
-    def _edge_sig_between(self, G: nx.Graph, u: Any, v: Any) -> str:
+        :param attrs:
+            Edge attributes.
+        :type attrs: Dict[str, Any]
+
+        :returns:
+            Hashed edge signature.
+        :rtype: str
         """
-        Return a stable edge signature between u->v (or u--v).
-        For Multi(Graph|DiGraph), pick the *minimum* signature across parallel edges
-        to preserve determinism.
+        return hash_text(
+            f"E|{edge_token(attrs, self.config)}",
+            digest_size=self.digest_size,
+        )
+
+    def _edge_sig_between(self, u: Any, v: Any) -> str:
         """
-        data = G.get_edge_data(u, v, default=None)
+        Return a stable signature for the edge between two nodes.
+
+        For multigraphs, the minimum signature over parallel edges is used to
+        keep the behavior deterministic.
+
+        :param u:
+            Source node.
+        :type u: Any
+
+        :param v:
+            Target node.
+        :type v: Any
+
+        :returns:
+            Stable edge signature.
+        :rtype: str
+        """
+        data = self.G.get_edge_data(u, v, default=None)
         if data is None:
             return self._edge_sig({})
 
-        # MultiGraph/MultiDiGraph: data is dict[key -> attrs]
-        if G.is_multigraph():
+        if self.G.is_multigraph():
             sigs: List[str] = []
             if isinstance(data, dict):
                 for _, attrs in data.items():
@@ -141,100 +477,132 @@ class WLCanonicalizer(_CRNGraphBackend):
                         sigs.append(self._edge_sig(attrs))
             return min(sigs) if sigs else self._edge_sig({})
 
-        # Simple Graph/DiGraph: data is attrs dict
         if isinstance(data, dict):
             return self._edge_sig(data)
+
         return self._edge_sig({})
 
     def _neighbors_items(
         self,
-        G: nx.Graph,
-        v: Any,
         colors: Dict[Any, str],
+        v: Any,
         *,
         direction: str,
     ) -> List[str]:
         """
-        Collect neighbor items of v with optional edge signatures.
-        direction: "in" | "out" | "undir"
+        Collect colored neighbor-edge descriptors for one node.
+
+        :param colors:
+            Current node colors.
+        :type colors: Dict[Any, str]
+
+        :param v:
+            Node identifier.
+        :type v: Any
+
+        :param direction:
+            Neighborhood direction, one of ``"in"``, ``"out"``, or ``"undir"``.
+        :type direction: str
+
+        :returns:
+            Sorted color-edge descriptors.
+        :rtype: List[str]
         """
         items: List[str] = []
 
         if direction == "in":
-            if not G.is_directed():
+            if not self.G.is_directed():
                 direction = "undir"
             else:
-                for u in G.predecessors(v):  # type: ignore[attr-defined]
-                    es = self._edge_sig_between(G, u, v)
-                    items.append(f"{colors[u]}#{es}")
+                for u in self.G.predecessors(v):
+                    items.append(f"{colors[u]}#{self._edge_sig_between(u, v)}")
 
         if direction == "out":
-            if not G.is_directed():
+            if not self.G.is_directed():
                 direction = "undir"
             else:
-                for u in G.successors(v):  # type: ignore[attr-defined]
-                    es = self._edge_sig_between(G, v, u)
-                    items.append(f"{colors[u]}#{es}")
+                for u in self.G.successors(v):
+                    items.append(f"{colors[u]}#{self._edge_sig_between(v, u)}")
 
         if direction == "undir":
-            for u in G.neighbors(v):
-                # pick a consistent orientation for edge signature
-                es = self._edge_sig_between(G, v, u) if G.has_edge(v, u) else ""
-                if not es and G.has_edge(u, v):
-                    es = self._edge_sig_between(G, u, v)
+            for u in self.G.neighbors(v):
+                es = self._edge_sig_between(v, u) if self.G.has_edge(v, u) else ""
+                if not es and self.G.has_edge(u, v):
+                    es = self._edge_sig_between(u, v)
                 items.append(f"{colors[u]}#{es}")
 
         items.sort()
         return items
 
-    def _wl_step(self, G: nx.Graph, colors: Dict[Any, str]) -> Dict[Any, str]:
+    def _refine_once(self, colors: Dict[Any, str]) -> Dict[Any, str]:
+        """
+        Perform one WL refinement round.
+
+        :param colors:
+            Current node colors.
+        :type colors: Dict[Any, str]
+
+        :returns:
+            Refined node colors.
+        :rtype: Dict[Any, str]
+        """
         new_colors: Dict[Any, str] = {}
 
-        for v in G.nodes():
+        for v in self.G.nodes():
             parts: List[str] = [colors[v]]
 
             if self.include_in_neighbors:
-                in_items = self._neighbors_items(G, v, colors, direction="in")
-                parts.append("IN[" + "|".join(in_items) + "]")
+                parts.append(
+                    "IN["
+                    + "|".join(self._neighbors_items(colors, v, direction="in"))
+                    + "]"
+                )
 
             if self.include_out_neighbors:
-                out_items = self._neighbors_items(G, v, colors, direction="out")
-                parts.append("OUT[" + "|".join(out_items) + "]")
+                parts.append(
+                    "OUT["
+                    + "|".join(self._neighbors_items(colors, v, direction="out"))
+                    + "]"
+                )
 
-            new_colors[v] = _blake_str("||".join(parts), digest_size=self.digest_size)
+            new_colors[v] = hash_text("||".join(parts), digest_size=self.digest_size)
 
         return new_colors
 
     @staticmethod
     def _colors_equal(a: Dict[Any, str], b: Dict[Any, str]) -> bool:
+        """
+        Compare two color mappings exactly.
+
+        :param a:
+            First color mapping.
+        :type a: Dict[Any, str]
+
+        :param b:
+            Second color mapping.
+        :type b: Dict[Any, str]
+
+        :returns:
+            ``True`` if both mappings are identical.
+        :rtype: bool
+        """
         if a.keys() != b.keys():
             return False
-        return all(a[k] == b[k] for k in a.keys())
-
-    @staticmethod
-    def _fact_cap(n: int, cap: int) -> int:
-        """Compute n! but stop growing beyond cap (to avoid huge ints)."""
-        out = 1
-        for k in range(2, n + 1):
-            out *= k
-            if out >= cap:
-                return cap
-        return out
-
-    def _estimate_aut_count(self, cell_sizes: List[int]) -> int:
-        """
-        Very rough proxy: product of factorials of WL color cell sizes.
-        Often an over-estimate; capped at `automorphism_cap`.
-        """
-        out = 1
-        for s in cell_sizes:
-            out *= self._fact_cap(s, self.automorphism_cap)
-            if out >= self.automorphism_cap:
-                return self.automorphism_cap
-        return out
+        return all(a[k] == b[k] for k in a)
 
     @staticmethod
     def _buckets_from_colors(colors: Dict[Any, str]) -> Dict[str, List[Any]]:
+        """
+        Group nodes by final color.
+
+        :param colors:
+            Node-to-color mapping.
+        :type colors: Dict[Any, str]
+
+        :returns:
+            Color buckets.
+        :rtype: Dict[str, List[Any]]
+        """
         buckets: Dict[str, List[Any]] = {}
         for v, c in colors.items():
             buckets.setdefault(c, []).append(v)
@@ -242,7 +610,17 @@ class WLCanonicalizer(_CRNGraphBackend):
 
     @staticmethod
     def _orbits_from_buckets(buckets: Dict[str, List[Any]]) -> List[Set[Any]]:
-        # sort buckets deterministically, but do not assume nodes are comparable
+        """
+        Build approximate orbit sets from color buckets.
+
+        :param buckets:
+            Color buckets.
+        :type buckets: Dict[str, List[Any]]
+
+        :returns:
+            Approximate orbit sets.
+        :rtype: List[Set[Any]]
+        """
         items = sorted(buckets.items(), key=lambda kv: (kv[0], len(kv[1])))
         out: List[Set[Any]] = []
         for _, nodes in items:
@@ -250,47 +628,54 @@ class WLCanonicalizer(_CRNGraphBackend):
         return out
 
     @staticmethod
-    def _canonical_relabel(G: nx.Graph, colors: Dict[Any, str]) -> nx.DiGraph:
-        # stable ordering: (color, str(node)) to avoid type-comparison issues
-        order = sorted(G.nodes(), key=lambda v: (colors[v], str(v)))
-        mapping = {v: i + 1 for i, v in enumerate(order)}
-        return nx.relabel_nodes(G, mapping, copy=True)  # type: ignore[return-value]
-
-    def _cache_key(self, G: nx.Graph) -> Tuple[Any, ...]:
+    def _canonical_order_from_colors(
+        G: nx.DiGraph,
+        colors: Dict[Any, str],
+    ) -> List[Any]:
         """
-        Conservative cache key:
-        - include algorithm parameters
-        - include basic graph size + identity (works if backend doesn't mutate G)
+        Build a deterministic node order from final colors.
+
+        :param G:
+            Input graph.
+        :type G: nx.DiGraph
+
+        :param colors:
+            Final color mapping.
+        :type colors: Dict[Any, str]
+
+        :returns:
+            Deterministic canonical order.
+        :rtype: List[Any]
         """
-        return (
-            id(G),
-            G.number_of_nodes(),
-            G.number_of_edges(),
-            self.n_iter,
-            self.digest_size,
-            self.include_in_neighbors,
-            self.include_out_neighbors,
-            self.estimate_automorphisms,
-            self.automorphism_cap,
-            self.node_attr_keys,
-            self.edge_attr_keys,
-        )
+        return sorted(G.nodes(), key=lambda v: (colors[v], str(v)))
 
-    # ------------------------- WL core -------------------------
+    def _run(self) -> _WLState:
+        """
+        Run WL refinement once and cache the result.
 
-    def _wl_refine(self, G: nx.DiGraph) -> WLResult:
-        key = self._cache_key(G)
-        if self._last is not None and self._last_key == key:
-            return self._last
+        :returns:
+            Internal cached WL state.
+        :rtype: _WLState
 
-        colors: Dict[Any, str] = {v: self._node_seed(G, v) for v in G.nodes()}
+        Example
+        -------
+        .. code-block:: python
 
+            wl = WLCanonicalizer(syn)
+            state = wl._run()
+            print(state.iters_run, state.stabilized)
+        """
+        key = self._cache_key()
+        if self._state_cache is not None and self._cache_key_last == key:
+            return self._state_cache
+
+        colors: Dict[Any, str] = {v: self._node_seed(v) for v in self.G.nodes()}
         stabilized = False
         iters_run = 0
 
         for it in range(self.n_iter):
             iters_run = it + 1
-            new_colors = self._wl_step(G, colors)
+            new_colors = self._refine_once(colors)
             if self._colors_equal(new_colors, colors):
                 stabilized = True
                 colors = new_colors
@@ -298,90 +683,328 @@ class WLCanonicalizer(_CRNGraphBackend):
             colors = new_colors
 
         buckets = self._buckets_from_colors(colors)
+        cells = [
+            sorted(nodes, key=str)
+            for _, nodes in sorted(
+                buckets.items(),
+                key=lambda kv: (kv[0], tuple(map(str, kv[1]))),
+            )
+        ]
         orbits = self._orbits_from_buckets(buckets)
+        color_hist = {c: len(nodes) for c, nodes in buckets.items()}
+        canonical_order = self._canonical_order_from_colors(self.G, colors)
 
-        G_can = self._canonical_relabel(G, colors)
-
-        hist: Dict[str, int] = {c: len(nodes) for c, nodes in buckets.items()}
-
-        aut_count: Optional[int] = None
+        approx_count: Optional[int] = None
         if self.estimate_automorphisms:
-            cell_sizes = [len(nodes) for nodes in buckets.values()]
-            aut_count = self._estimate_aut_count(cell_sizes)
+            approx_count = approx_automorphism_count_from_cells(
+                cells,
+                cap=self.automorphism_cap,
+            )
 
-        out = WLResult(
-            G_can=G_can,
+        self._state_cache = _WLState(
             colors=colors,
+            cells=cells,
             orbits=orbits,
+            color_hist=color_hist,
             iters_run=iters_run,
             stabilized=stabilized,
-            color_hist=hist,
-            automorphism_count=aut_count,
+            canonical_order=canonical_order,
+            approx_automorphism_count=approx_count,
         )
-        self._last = out
-        self._last_key = key
-        return out
+        self._summary_cache = None
+        self._fast_signature = None
+        self._cache_key_last = key
+        return self._state_cache
 
-    # ------------------------- public API -------------------------
+    def colors(self) -> Dict[Any, str]:
+        """
+        Return final WL colors.
+
+        :returns:
+            Mapping from node to final color.
+        :rtype: Dict[Any, str]
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.colors())
+        """
+        return dict(self._run().colors)
+
+    def color_of(self, v: Any) -> str:
+        """
+        Return the final WL color of one node.
+
+        :param v:
+            Node identifier.
+        :type v: Any
+
+        :returns:
+            Final WL color.
+        :rtype: str
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.color_of(1))
+        """
+        return self._run().colors[v]
 
     def orbits(self) -> List[Set[Any]]:
-        r = self._wl_refine(self.G)
-        return r.orbits
+        """
+        Return approximate WL orbit sets.
+
+        :returns:
+            Approximate orbits induced by final WL colors.
+        :rtype: List[Set[Any]]
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.orbits())
+        """
+        return [set(x) for x in self._run().orbits]
+
+    def wl_orbits(self) -> List[Set[Any]]:
+        """
+        Alias for :meth:`orbits`.
+
+        :returns:
+            Approximate WL orbit sets.
+        :rtype: List[Set[Any]]
+        """
+        return self.orbits()
+
+    def has_nontrivial_automorphism(self) -> bool:
+        """
+        Heuristically detect whether symmetry may be present.
+
+        This is approximate and simply checks whether any WL color cell has size
+        greater than one.
+
+        :returns:
+            ``True`` if WL detects a non-singleton cell, else ``False``.
+        :rtype: bool
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.has_nontrivial_automorphism())
+        """
+        return any(len(cell) > 1 for cell in self._run().cells)
+
+    def canonical_order(self) -> List[Any]:
+        """
+        Return the deterministic WL node order.
+
+        :returns:
+            WL-based canonical node order.
+        :rtype: List[Any]
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.canonical_order())
+        """
+        return list(self._run().canonical_order)
+
+    def canonical_key(self) -> Any:
+        """
+        Return the canonical key induced by the WL order.
+
+        :returns:
+            WL canonical key.
+        :rtype: Any
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.canonical_key())
+        """
+        return graph_key_from_order(self.G, self.canonical_order(), self.config)
+
+    def canonical_graph(self) -> nx.DiGraph:
+        """
+        Return the canonically relabeled graph using the WL order.
+
+        :returns:
+            WL-canonically relabeled graph.
+        :rtype: nx.DiGraph
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            G_can = wl.canonical_graph()
+            print(sorted(G_can.nodes()))
+        """
+        order = self.canonical_order()
+        mapping = {v: i + 1 for i, v in enumerate(order)}
+        return nx.relabel_nodes(self.G, mapping, copy=True)
 
     def graph(self) -> nx.DiGraph:
-        r = self._wl_refine(self.G)
-        return r.G_can
+        """
+        Alias for :meth:`canonical_graph`, matching the older canon style.
+
+        :returns:
+            WL-canonically relabeled graph.
+        :rtype: nx.DiGraph
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            G_can = wl.graph()
+        """
+        return self.canonical_graph()
+
+    def canonical_result(self) -> WLCanonicalResult:
+        """
+        Build an approximate canonicalization result in a CRN-canon-like format.
+
+        :returns:
+            Approximate canonicalization result.
+        :rtype: WLCanonicalResult
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            result = wl.canonical_result()
+            print(result.canonical_order)
+            print(result.automorphism_count)
+        """
+        if self._summary_cache is not None:
+            return self._summary_cache
+
+        start = perf_counter()
+        state = self._run()
+        can_graph = self.canonical_graph()
+        can_key = graph_key_from_order(self.G, state.canonical_order, self.config)
+
+        self._summary_cache = WLCanonicalResult(
+            canon_graph=can_graph,
+            graph_type=self.graph_type,
+            canonical_order=list(state.canonical_order),
+            canonical_key=can_key,
+            automorphism_count=state.approx_automorphism_count,
+            orbits=[set(x) for x in state.orbits],
+            colors=dict(state.colors),
+            color_hist=dict(state.color_hist),
+            iters_run=state.iters_run,
+            stabilized=state.stabilized,
+            exact=False,
+            elapsed_seconds=perf_counter() - start,
+        )
+        return self._summary_cache
 
     def summary(self) -> Dict[str, Any]:
-        r = self._wl_refine(self.G)
+        """
+        Return a dictionary summary in a format close to the exact canonicalizer.
+
+        The reported automorphism count and orbit sets are WL-based
+        approximations.
+
+        :returns:
+            Summary dictionary.
+        :rtype: Dict[str, Any]
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            info = wl.summary()
+            print(info["automorphism_count"])
+            print(info["orbits"])
+        """
+        res = self.canonical_result()
         return {
-            "canon_graph": r.G_can,
-            "graph_type": self.graph_type,
-            "node_attr_keys": self.node_attr_keys,
-            "edge_attr_keys": self.edge_attr_keys,
-            "n_iter": self.n_iter,
-            "iters_run": r.iters_run,
-            "stabilized": r.stabilized,
-            "orbits": r.orbits,
-            "colors": r.colors,
-            "color_hist": r.color_hist,
-            "automorphism_count": r.automorphism_count,
+            "canon_graph": res.canon_graph,
+            "graph_type": res.graph_type,
+            "automorphism_count": res.automorphism_count,
+            "orbits": res.orbits,
+            "canonical_perm": res.canonical_order,
+            "canonical_key": res.canonical_key,
+            "colors": res.colors,
+            "color_hist": res.color_hist,
+            "iters_run": res.iters_run,
+            "stabilized": res.stabilized,
+            "exact": res.exact,
+            "elapsed_seconds": res.elapsed_seconds,
         }
 
+    def fast_signature(self) -> Tuple[Any, ...]:
+        """
+        Return a fast graph signature using graph statistics and WL color
+        histogram.
 
-# -------------------------------------------------------------------------
-# Functional convenience API
-# -------------------------------------------------------------------------
+        This is useful as a cheap prefilter before exact graph isomorphism or
+        exact canonicalization.
+
+        :returns:
+            Fast graph signature.
+        :rtype: Tuple[Any, ...]
+
+        Example
+        -------
+        .. code-block:: python
+
+            wl = WLCanonicalizer(syn)
+            print(wl.fast_signature())
+        """
+        if self._fast_signature is None:
+            state = self._run()
+            self._fast_signature = build_fast_signature(
+                self.G,
+                self.graph_type,
+                self.config,
+                wl_color_hist=state.color_hist,
+            )
+        return self._fast_signature
 
 
-def wl_canonical(
-    hg: CRNHyperGraph,
-    *,
-    include_rule: bool = False,
-    node_attr_keys: Iterable[str] = ("kind",),
-    edge_attr_keys: Iterable[str] = ("role", "stoich"),
-    integer_ids: bool = False,
-    include_stoich: bool = True,
-    n_iter: int = 20,
-    digest_size: int = 16,
-    include_in_neighbors: bool = True,
-    include_out_neighbors: bool = True,
-    estimate_automorphisms: bool = True,
-    automorphism_cap: int = 10**18,
-) -> WLCanonicalizer:
-    canon = WLCanonicalizer(
-        hg,
-        include_rule=include_rule,
-        node_attr_keys=node_attr_keys,
-        edge_attr_keys=edge_attr_keys,
-        integer_ids=integer_ids,
-        include_stoich=include_stoich,
-        n_iter=n_iter,
-        digest_size=digest_size,
-        include_in_neighbors=include_in_neighbors,
-        include_out_neighbors=include_out_neighbors,
-        estimate_automorphisms=estimate_automorphisms,
-        automorphism_cap=automorphism_cap,
-    )
-    canon.summary()
-    return canon
+def wl_canonical(source: Any, **kwargs: Any) -> nx.DiGraph:
+    """
+    Convenience function returning the WL-canonically relabeled graph.
+
+    :param source:
+        Input CRN representation.
+    :type source: Any
+
+    :param kwargs:
+        Additional keyword arguments forwarded to :class:`WLCanonicalizer`.
+    :type kwargs: Any
+
+    :returns:
+        WL-canonically relabeled graph.
+    :rtype: nx.DiGraph
+
+    Example
+    -------
+    .. code-block:: python
+
+        from synkit.CRN.Sym import SymmetryConfig, wl_canonical
+
+        G_can = wl_canonical(
+            syn.to_digraph(),
+            include_rule=True,
+            config=SymmetryConfig.topological(),
+        )
+    """
+    return WLCanonicalizer(source, **kwargs).canonical_graph()

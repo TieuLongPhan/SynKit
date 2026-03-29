@@ -1,166 +1,300 @@
+from __future__ import annotations
+
 import unittest
-import time
+from typing import Any, Iterable, List, Set
+
 import networkx as nx
 
-from synkit.CRN.Structure.conversion import rxns_to_hypergraph
-from synkit.CRN.Symmetry.automorphism import (
-    _node_match,
-    _should_stop,
-    CRNAutomorphism,
-    detect_automorphisms,
-)
+from synkit.CRN.Structure import SynCRN
+from synkit.CRN.Symmetry.automorphism import CRNAutomorphism, detect_automorphisms
+from synkit.CRN.Symmetry.canon import CRNCanonicalizer
+from synkit.CRN.Symmetry._ir import IRCanonicalEngine
+from synkit.CRN.Symmetry._common import SymmetryConfig
 
 
-class TestCRNAutomorphisms(unittest.TestCase):
+class TestCRNAutomorphismHelpers(unittest.TestCase):
+    """Small helper checks for orbit partitions."""
 
-    def _example_H(self):
-        rxns = ["A+B>>C", "C+D>>E", "E+F>>G+D"]
-        return rxns_to_hypergraph(rxns)
+    @staticmethod
+    def flatten_orbits(orbits: Iterable[Set[Any]]) -> Set[Any]:
+        out: Set[Any] = set()
+        for cell in orbits:
+            out.update(cell)
+        return out
 
-    # ----------------------------------------------------------------------
-    # Helpers: _node_match
-    # ----------------------------------------------------------------------
-    def test_node_match_matching(self):
-        match = _node_match(["kind"])
-        a = {"kind": "species", "x": 1}
-        b = {"kind": "species", "x": 99}
-        self.assertTrue(match(a, b))
+    @staticmethod
+    def assert_partition(
+        testcase: unittest.TestCase,
+        universe: Set[Any],
+        orbits: List[Set[Any]],
+    ) -> None:
+        """Assert that ``orbits`` forms a valid partition of ``universe``."""
+        seen: Set[Any] = set()
+        for cell in orbits:
+            testcase.assertIsInstance(cell, set)
+            testcase.assertTrue(cell, "Orbit cells should be non-empty.")
+            testcase.assertTrue(
+                seen.isdisjoint(cell),
+                f"Orbit cells overlap: already saw {seen & cell}",
+            )
+            seen.update(cell)
 
-    def test_node_match_not_matching(self):
-        match = _node_match(["kind"])
-        a = {"kind": "species"}
-        b = {"kind": "reaction"}
-        self.assertFalse(match(a, b))
+        testcase.assertEqual(
+            seen,
+            universe,
+            "Orbit partition should cover exactly the graph nodes.",
+        )
 
-    def test_node_match_missing_key(self):
-        match = _node_match(["kind"])
-        a = {"kind": "species"}
-        b = {}
-        self.assertFalse(match(a, b))
 
-    # ----------------------------------------------------------------------
-    # Helpers: _should_stop
-    # ----------------------------------------------------------------------
-    def test_should_stop_due_to_timeout(self):
-        start = time.time() - 10
-        self.assertTrue(_should_stop(start, timeout_sec=0.1))
+class TestCRNAutomorphism(unittest.TestCase):
+    """
+    Unit tests for exact automorphism analysis on SynCRN-format graphs.
 
-    def test_should_stop_due_to_max_count(self):
-        start = time.time()
-        self.assertTrue(_should_stop(start, timeout_sec=None, count=10, max_count=10))
+    Assumed SynCRN format
+    ---------------------
+    - directed bipartite graph
+    - species nodes and rule nodes
+    - edges species -> rule for reactants
+    - edges rule -> species for products
+    - reaction ids preserved in the graph representation
+    """
 
-    def test_should_not_stop(self):
-        start = time.time()
-        self.assertFalse(_should_stop(start, timeout_sec=100, count=1, max_count=100))
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.medium = [
+            "AJ>>N",
+            "AK>>AF",
+            "A+AK>>AE",
+            "AE+AJ>>W",
+            "A+AJ>>M",
+            "AB+AI>>O",
+            "AC+AJ>>U",
+            "AB+AK>>Z",
+            "AF+AI>>S",
+            "AB+AJ>>H",
+            "AD+AI>>Q",
+            "AE+AI>>E",
+            "AE+AJ>>K",
+            "A+AJ>>Y",
+            "AI>>AD",
+            "AE>>AJ",
+            "AE+AI>>R",
+            "AF+AJ>>L",
+            "AD>>AI",
+            "AC+AI>>P",
+            "AC>>AH",
+            "A+AI>>X",
+            "A+AI>>G",
+            "AE+AK>>AC",
+            "AI>>M",
+            "AD+AJ>>J",
+            "AF+AJ>>X",
+            "AD+AI>>D",
+            "AJ>>AE",
+            "AC+AJ>>I",
+            "AF+AK>>AD",
+            "AB+AJ>>T",
+            "AB+AI>>B",
+            "AC+AI>>C",
+            "AF+AI>>F",
+            "AB>>AG",
+            "AC+AK>>AA",
+            "AD+AK>>AB",
+            "AD+AJ>>V",
+            "AF>>AK",
+        ]
 
-    # ----------------------------------------------------------------------
-    # CRNAutomorphism basic behavior
-    # ----------------------------------------------------------------------
-    def test_identity_automorphism_exists_species_graph(self):
-        H = self._example_H()
-        aut = CRNAutomorphism(H, include_rule=False, node_attr_keys=["kind"])
-        maps = list(aut.iter(max_count=10))
-        self.assertTrue(any(all(k == v for k, v in m.items()) for m in maps))
+    def test_build_from_syncrn_and_digraph(self) -> None:
+        """Fresh analyzer should be constructible from SynCRN and digraph."""
+        syn = SynCRN.from_reaction_strings(["A>>B", "B>>C"])
+        g = syn.to_digraph()
 
-    def test_nontrivial_automorphism_species_graph(self):
+        auto_from_syn = CRNAutomorphism(syn)
+        auto_from_g = CRNAutomorphism(g)
+
+        self.assertIsInstance(auto_from_syn.G, nx.DiGraph)
+        self.assertIsInstance(auto_from_g.G, nx.DiGraph)
+        self.assertEqual(set(auto_from_syn.G.nodes()), set(auto_from_g.G.nodes()))
+        self.assertEqual(set(auto_from_syn.G.edges()), set(auto_from_g.G.edges()))
+
+    def test_graph_property_returns_internal_digraph(self) -> None:
+        """The public ``G`` property should expose the internal graph."""
+        syn = SynCRN.from_reaction_strings(["A>>B"])
+        auto = CRNAutomorphism(syn)
+
+        self.assertIs(auto.G, auto._engine.G)
+        self.assertIsInstance(auto.G, nx.DiGraph)
+
+    def test_reuse_from_canonicalizer(self) -> None:
+        """Passing a canonicalizer should reuse config, WL, and engine."""
+        syn = SynCRN.from_reaction_strings(["A>>B", "B>>C"])
+        canon = CRNCanonicalizer(syn)
+
+        auto = CRNAutomorphism(canon)
+
+        self.assertIs(auto.config, canon.config)
+        self.assertIs(auto.wl, canon.wl)
+        self.assertIs(auto._engine, canon.engine)
+
+    def test_reuse_from_engine(self) -> None:
+        """Passing an IR engine should reuse that engine directly."""
+        syn = SynCRN.from_reaction_strings(["A>>B", "B>>C"])
+        engine = IRCanonicalEngine(syn)
+
+        auto = CRNAutomorphism(engine)
+
+        self.assertIs(auto.config, engine.config)
+        self.assertIs(auto.wl, engine.wl)
+        self.assertIs(auto._engine, engine)
+
+    def test_asymmetric_network_has_no_nontrivial_automorphism(self) -> None:
+        """A small chain should not have nontrivial automorphisms."""
+        syn = SynCRN.from_reaction_strings(
+            [
+                "A>>B",
+                "B>>C",
+                "C>>D",
+            ]
+        )
+        auto = CRNAutomorphism(syn)
+
+        self.assertFalse(auto.has_nontrivial_automorphism(timeout_sec=2.0))
+
+        result = auto.summary(max_count=20, timeout_sec=2.0)
+        self.assertGreaterEqual(result.automorphism_count, 1)
+
+        for cell in result.orbits:
+            self.assertEqual(len(cell), 1)
+
+    def test_medium_network_is_rigid_in_semantic_mode(self) -> None:
         """
-        This CRN has no symmetry: nodes all have unique degree patterns.
+        In semantic mode, the provided medium network is expected to be rigid.
+
+        This matches the current observed behavior: automorphism_count == 1.
         """
-        H = self._example_H()
-        aut = CRNAutomorphism(H, include_rule=False, node_attr_keys=["kind"])
-        self.assertTrue(aut.has_nontrivial_automorphism(timeout_sec=1))
+        syn = SynCRN.from_reaction_strings(self.medium)
+        auto = CRNAutomorphism(syn, config=SymmetryConfig.semantic())
 
-    def test_orbits_species_graph(self):
+        self.assertFalse(auto.has_nontrivial_automorphism(timeout_sec=10.0))
+
+        result = auto.summary(max_count=512, timeout_sec=20.0)
+        self.assertEqual(result.automorphism_count, 1)
+
+    def test_medium_network_has_nontrivial_automorphism_in_topological_mode(
+        self,
+    ) -> None:
         """
-        No symmetries => every node in its own orbit.
+        In topological mode, labels are ignored more aggressively, so the
+        medium example should expose nontrivial symmetry.
         """
-        H = self._example_H()
-        aut = CRNAutomorphism(H, include_rule=False)
-        res = aut.summary()
+        syn = SynCRN.from_reaction_strings(self.medium)
+        auto = CRNAutomorphism(syn, config=SymmetryConfig.topological())
 
-        orbits = res["orbits"]
-        G = aut.G
-        self.assertGreaterEqual(len(G.nodes()), len(orbits))
+        self.assertTrue(auto.has_nontrivial_automorphism(timeout_sec=10.0))
 
-    def test_summary_dict_keys_exist(self):
-        H = self._example_H()
-        aut = CRNAutomorphism(H)
-        res = aut.summary(max_count=5, timeout_sec=1)
+    def test_medium_summary_count_is_512_in_topological_mode(self) -> None:
+        """
+        The provided medium network is expected to have 512 automorphisms
+        in topological mode.
+        """
+        syn = SynCRN.from_reaction_strings(self.medium)
+        auto = CRNAutomorphism(syn, config=SymmetryConfig.topological())
 
-        self.assertIn("graph_type", res)
-        self.assertIn("automorphism_count", res)
-        self.assertIn("orbits", res)
-        self.assertIn("sample_mappings", res)
-        self.assertIn("mapping_count_used", res)
-        self.assertIn("elapsed_seconds", res)
-        self.assertIn("stopped_early", res)
+        result = auto.summary(max_count=512, timeout_sec=20.0)
+        self.assertEqual(result.automorphism_count, 512)
 
-    # ----------------------------------------------------------------------
-    # Bipartite graph tests
-    # ----------------------------------------------------------------------
-    def test_bipartite_graph_has_more_nodes(self):
-        H = self._example_H()
-        aut_species = CRNAutomorphism(H, include_rule=False)
-        aut_bip = CRNAutomorphism(H, include_rule=True)
+    def test_orbits_form_partition_of_graph_nodes(self) -> None:
+        """Exact orbit output should form a valid partition."""
+        syn = SynCRN.from_reaction_strings(self.medium)
+        auto = CRNAutomorphism(syn, config=SymmetryConfig.topological())
 
-        Gs = aut_species.G
-        Gb = aut_bip.G
+        orbits = auto.orbits(max_count=512, timeout_sec=20.0)
+        universe = set(auto.G.nodes())
 
-        self.assertGreater(Gb.number_of_nodes(), Gs.number_of_nodes())
+        TestCRNAutomorphismHelpers.assert_partition(self, universe, orbits)
 
-        # confirm bipartite structure
-        kinds = nx.get_node_attributes(Gb, "kind")
-        self.assertIn("species", kinds.values())
-        self.assertIn("reaction", kinds.values())
+    def test_wl_orbits_form_partition_of_graph_nodes(self) -> None:
+        """WL color classes should also form a valid partition."""
+        syn = SynCRN.from_reaction_strings(self.medium)
+        auto = CRNAutomorphism(syn, config=SymmetryConfig.topological())
 
-    def test_bipartite_identity_automorphism(self):
-        H = self._example_H()
-        aut = CRNAutomorphism(H, include_rule=True)
-        maps = list(aut.iter(max_count=5))
-        self.assertTrue(any(all(k == v for k, v in m.items()) for m in maps))
+        wl_orbits = auto.wl_orbits()
+        universe = set(auto.G.nodes())
 
-    def test_bipartite_nontrivial_aut(self):
-        H = self._example_H()
-        aut = CRNAutomorphism(H, include_rule=True)
-        self.assertTrue(aut.has_nontrivial_automorphism(timeout_sec=1))
+        TestCRNAutomorphismHelpers.assert_partition(self, universe, wl_orbits)
 
-    # ----------------------------------------------------------------------
-    # max_count and timeout behavior
-    # ----------------------------------------------------------------------
-    def test_iter_max_count_limit(self):
-        H = self._example_H()
-        aut = CRNAutomorphism(H)
+    def test_automorphisms_iter_yields_dict_mappings(self) -> None:
+        """``automorphisms_iter`` should yield node->node dictionaries."""
+        syn = SynCRN.from_reaction_strings(self.medium)
+        auto = CRNAutomorphism(syn, config=SymmetryConfig.topological())
 
-        maps = list(aut.iter(max_count=1))
-        self.assertLessEqual(len(maps), 1)
+        mappings = list(auto.automorphisms_iter(max_count=5, timeout_sec=10.0))
 
-    def test_summary_stops_due_to_max_count(self):
-        H = self._example_H()
-        aut = CRNAutomorphism(H)
-        res = aut.summary(max_count=1)
-        self.assertLessEqual(res["mapping_count_used"], 1)
+        self.assertGreaterEqual(len(mappings), 1)
+        for mapping in mappings:
+            self.assertIsInstance(mapping, dict)
+            self.assertTrue(set(mapping.keys()).issubset(set(auto.G.nodes())))
+            self.assertTrue(set(mapping.values()).issubset(set(auto.G.nodes())))
 
-    # def test_summary_stops_due_to_timeout(self):
-    #     H = self._example_H()
-    #     aut = CRNAutomorphism(H)
-    #     res = aut.summary(timeout_sec=1e-9, max_count=5000)
-    #     self.assertTrue(res["stopped_early"])
+    def test_detect_automorphisms_wrapper_matches_summary(self) -> None:
+        """The convenience wrapper should agree with the class-based API."""
+        syn = SynCRN.from_reaction_strings(self.medium)
+        cfg = SymmetryConfig.topological()
 
-    # ----------------------------------------------------------------------
-    # Functional wrapper detect_automorphisms
-    # ----------------------------------------------------------------------
-    def test_detect_automorphisms_wrapper(self):
-        H = self._example_H()
-        res = detect_automorphisms(H, include_rule=False, node_attr_keys=["kind"])
-        self.assertEqual(res["graph_type"], "species")
-        self.assertGreaterEqual(res["automorphism_count"], 1)
+        result_fn = detect_automorphisms(
+            syn,
+            max_count=512,
+            timeout_sec=20.0,
+            config=cfg,
+        )
+        result_cls = CRNAutomorphism(syn, config=cfg).summary(
+            max_count=512,
+            timeout_sec=20.0,
+        )
 
-    def test_detect_automorphisms_bipartite(self):
-        H = self._example_H()
-        res = detect_automorphisms(H, include_rule=True)
-        self.assertEqual(res["graph_type"], "bipartite")
-        self.assertIn("orbits", res)
-        self.assertGreaterEqual(res["automorphism_count"], 1)
+        self.assertEqual(result_fn.automorphism_count, result_cls.automorphism_count)
+        self.assertEqual(
+            {frozenset(cell) for cell in result_fn.orbits},
+            {frozenset(cell) for cell in result_cls.orbits},
+        )
+
+    def test_explicit_config_is_respected(self) -> None:
+        """Passing an explicit config should be preserved."""
+        syn = SynCRN.from_reaction_strings(["A>>B", "B>>C"])
+        cfg = SymmetryConfig.semantic()
+
+        auto = CRNAutomorphism(syn, config=cfg)
+
+        self.assertIs(auto.config, cfg)
+
+    def test_construct_from_prebuilt_digraph_in_semantic_mode(self) -> None:
+        """
+        The class should work directly from ``syn.to_digraph()``.
+
+        In semantic mode, the medium graph is currently rigid.
+        """
+        syn = SynCRN.from_reaction_strings(self.medium)
+        crn = syn.to_digraph()
+
+        auto = CRNAutomorphism(crn, config=SymmetryConfig.semantic())
+        result = auto.summary(max_count=64, timeout_sec=10.0)
+
+        self.assertIsInstance(auto.G, nx.DiGraph)
+        self.assertEqual(result.automorphism_count, 1)
+
+    def test_construct_from_prebuilt_digraph_in_topological_mode(self) -> None:
+        """
+        The class should also detect symmetry from a prebuilt digraph when
+        using topological matching.
+        """
+        syn = SynCRN.from_reaction_strings(self.medium)
+        crn = syn.to_digraph()
+
+        auto = CRNAutomorphism(crn, config=SymmetryConfig.topological())
+        result = auto.summary(max_count=64, timeout_sec=10.0)
+
+        self.assertIsInstance(auto.G, nx.DiGraph)
+        self.assertGreaterEqual(result.automorphism_count, 2)
 
 
 if __name__ == "__main__":

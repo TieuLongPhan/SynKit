@@ -30,10 +30,23 @@ __all__ = [
 
 def _require_sympy() -> None:
     """
-    Ensure SymPy is available for symbolic CRN dynamics helpers.
+    Ensure that SymPy is available before using symbolic CRN dynamics helpers.
+
+    This helper centralizes the optional dependency check used by symbolic
+    routines such as symbolic Jacobian construction and exact determinant
+    evaluation.
 
     :raises ImportError:
-        If :mod:`sympy` is not installed.
+        If :mod:`sympy` is not installed or could not be imported.
+
+    Example
+    -------
+    .. code-block:: python
+
+        try:
+            _require_sympy()
+        except ImportError as exc:
+            print(exc)
     """
     if not _SYMPY_AVAILABLE or sp is None:
         raise ImportError(
@@ -44,14 +57,34 @@ def _require_sympy() -> None:
 
 def _safe_symbol_token(value: Any) -> str:
     """
-    Convert an arbitrary object to a safe symbol token.
+    Convert an arbitrary object into a SymPy-safe symbol token.
 
-    Non-alphanumeric characters are replaced by underscores.
+    Non-alphanumeric characters are replaced by underscores. If the resulting
+    token is empty, ``\"x\"`` is used. If the token starts with a digit, a
+    leading underscore is prepended.
 
-    :param value: Object to convert.
-    :type value: Any
-    :returns: Safe token suitable for SymPy symbol names.
-    :rtype: str
+    :param value:
+        Arbitrary object to convert into a symbol-safe token.
+    :type value:
+        Any
+
+    :returns:
+        Sanitized token suitable for building SymPy symbol names.
+    :rtype:
+        str
+
+    Example
+    -------
+    .. code-block:: python
+
+        _safe_symbol_token("A")
+        _safe_symbol_token("species-1")
+        _safe_symbol_token("3-node")
+
+        # possible outputs:
+        # "A"
+        # "species_1"
+        # "_3_node"
     """
     text = str(value)
     token = "".join(ch if ch.isalnum() else "_" for ch in text)
@@ -64,12 +97,33 @@ def _safe_symbol_token(value: Any) -> str:
 
 def _sympy_matrix_from_numpy(A: np.ndarray) -> "sp.Matrix":
     """
-    Convert a numeric NumPy matrix to a SymPy matrix with simplified entries.
+    Convert a numeric NumPy array into a SymPy matrix.
 
-    :param A: Input numeric matrix.
-    :type A: numpy.ndarray
-    :returns: SymPy matrix with entries converted via :func:`sympy.nsimplify`.
-    :rtype: sympy.Matrix
+    Each entry is passed through :func:`sympy.nsimplify` so that integer and
+    rational values are preserved when possible.
+
+    :param A:
+        Numeric array to convert.
+    :type A:
+        numpy.ndarray
+
+    :returns:
+        SymPy matrix with simplified symbolic entries.
+    :rtype:
+        sp.Matrix
+
+    :raises ImportError:
+        If :mod:`sympy` is not available.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import numpy as np
+
+        A = np.array([[1.0, -1.0], [0.0, 2.0]])
+        M = _sympy_matrix_from_numpy(A)
+        print(M)
     """
     _require_sympy()
     return sp.Matrix([[sp.nsimplify(x) for x in row] for row in np.asarray(A)])
@@ -82,38 +136,61 @@ def _structural_sign_pattern(
     tol: float = 1e-12,
 ) -> np.ndarray:
     """
-    Internal helper to compute the sign pattern of the symbolic Jacobian.
+    Compute the structural sign pattern of the symbolic Jacobian.
 
-    For the symbolic Jacobian :math:`G = S R`, entry :math:`G_{ik}` is a sum
-    over reactions :math:`j` of terms
+    For a symbolic Jacobian of the form ``G = S R``, the sign of entry
+    ``G[i, k]`` depends on the stoichiometric effects in row ``i`` and on
+    whether species ``k`` participates as a reactant in the corresponding
+    rule columns. This routine derives the sign pattern directly from the
+    stoichiometric matrices without constructing the full symbolic Jacobian.
 
-    .. math::
+    Returned entries are one of:
 
-        S_{ij} \\cdot r'_{jk},
+    - ``"0"``
+    - ``"+"``
+    - ``"-"``
+    - ``"mixed"``
 
-    where :math:`r'_{jk}` is a positive symbol if species :math:`k` is a
-    reactant of reaction :math:`j`, and zero otherwise.
+    :param S:
+        Net stoichiometric matrix with shape ``(n_species, n_rules)``.
+    :type S:
+        numpy.ndarray
+    :param S_minus:
+        Reactant stoichiometric matrix with shape ``(n_species, n_rules)``.
+    :type S_minus:
+        numpy.ndarray
+    :param tol:
+        Numerical tolerance used to test structural positivity or negativity.
+    :type tol:
+        float
 
-    The structural sign is therefore determined only by the signs of the
-    contributing :math:`S_{ij}` values among reactions for which species
-    :math:`k` is a reactant.
+    :returns:
+        Matrix of sign labels with shape ``(n_species, n_species)``.
+    :rtype:
+        numpy.ndarray
 
-    Returned values are one of:
-      - ``"0"``
-      - ``"+"``
-      - ``"-"``
-      - ``"mixed"``
+    Example
+    -------
+    .. code-block:: python
 
-    :param S: Stoichiometric matrix of shape ``(n_species, n_reactions)``.
-    :type S: numpy.ndarray
-    :param S_minus: Reactant matrix of shape ``(n_species, n_reactions)``.
-    :type S_minus: numpy.ndarray
-    :param tol: Small tolerance for zero testing.
-    :type tol: float
-    :returns: Sign-pattern matrix of shape ``(n_species, n_species)``.
-    :rtype: numpy.ndarray
+        import numpy as np
+
+        S = np.array([
+            [-1,  0],
+            [ 1, -1],
+            [ 0,  1],
+        ], dtype=float)
+
+        S_minus = np.array([
+            [1, 0],
+            [0, 1],
+            [0, 0],
+        ], dtype=float)
+
+        P = _structural_sign_pattern(S, S_minus)
+        print(P)
     """
-    n_species, n_reactions = S.shape
+    n_species, n_rules = S.shape
     out = np.full((n_species, n_species), "0", dtype=object)
 
     for i in range(n_species):  # affected species / row of G
@@ -121,8 +198,8 @@ def _structural_sign_pattern(
             has_pos = False
             has_neg = False
 
-            for j in range(n_reactions):
-                if S_minus[k, j] > tol:
+            for j in range(n_rules):
+                if float(S_minus[k, j]) > tol:
                     coeff = float(S[i, j])
                     if coeff > tol:
                         has_pos = True
@@ -147,13 +224,42 @@ def _structural_sign_pattern(
 
 def _jacobian_pattern_bipartite(A: np.ndarray) -> Tuple[nx.Graph, List[str], List[str]]:
     """
-    Build the row/column bipartite graph for a boolean Jacobian pattern.
+    Build the row/column bipartite graph for a Jacobian sparsity pattern.
 
-    :param A: Boolean or truthy matrix of shape ``(n, n)``.
-    :type A: numpy.ndarray
+    The bipartite graph is used for structural-rank diagnostics via maximum
+    matching. Row nodes correspond to Jacobian rows and column nodes correspond
+    to Jacobian columns. An edge is added when the corresponding entry in the
+    sparsity matrix is nonzero.
+
+    :param A:
+        Boolean or truthy/falsy Jacobian sparsity matrix.
+    :type A:
+        numpy.ndarray
+
     :returns:
-        Tuple ``(B, row_nodes, col_nodes)`` where ``B`` is a bipartite graph.
-    :rtype: Tuple[networkx.Graph, List[str], List[str]]
+        Tuple containing:
+
+        - bipartite graph,
+        - ordered row-node names,
+        - ordered column-node names.
+    :rtype:
+        Tuple[nx.Graph, List[str], List[str]]
+
+    Example
+    -------
+    .. code-block:: python
+
+        import numpy as np
+
+        A = np.array([
+            [True, False],
+            [True, True],
+        ], dtype=bool)
+
+        B, row_nodes, col_nodes = _jacobian_pattern_bipartite(A)
+        print(row_nodes)
+        print(col_nodes)
+        print(B.number_of_edges())
     """
     n_rows, n_cols = A.shape
     B = nx.Graph()
@@ -175,37 +281,55 @@ def _jacobian_pattern_bipartite(A: np.ndarray) -> Tuple[nx.Graph, List[str], Lis
 @dataclass
 class StructuralSingularitySummary:
     """
-    Summary of structural singularity diagnostics for the symbolic Jacobian.
+    Summary of structural singularity diagnostics for a symbolic Jacobian.
 
-    The summary combines:
+    The diagnostics are species-level because the Jacobian is a
+    species-by-species object, even though the underlying SynCRN graph is
+    bipartite with species nodes and rule nodes.
 
-    - a sparsity-pattern structural-rank check via bipartite matching, and
-    - an optional exact symbolic determinant check for small systems.
-
-    Pattern-level checks can prove singularity, but they cannot detect
-    cancellations in the determinant. The exact symbolic determinant can.
-
-    :param n_species: Number of species.
-    :type n_species: int
-    :param structural_rank: Structural rank of the Jacobian sparsity pattern.
-    :type structural_rank: int
+    :param n_species:
+        Number of species, i.e. Jacobian dimension.
+    :type n_species:
+        int
+    :param structural_rank:
+        Structural rank inferred from the Jacobian sparsity pattern.
+    :type structural_rank:
+        int
     :param has_perfect_matching:
-        Whether the Jacobian sparsity pattern admits a perfect matching.
-    :type has_perfect_matching: bool
+        Whether the bipartite sparsity graph admits a perfect matching.
+    :type has_perfect_matching:
+        bool
     :param pattern_singular:
-        Whether the sparsity pattern is singular, i.e. structural rank is
-        strictly less than ``n_species``.
-    :type pattern_singular: bool
+        Whether the Jacobian is singular at the structural-pattern level.
+    :type pattern_singular:
+        bool
     :param determinant_checked:
         Whether an exact symbolic determinant was computed.
-    :type determinant_checked: bool
+    :type determinant_checked:
+        bool
     :param determinant_expr:
-        Exact symbolic determinant expression when computed, else ``None``.
-    :type determinant_expr: Any or None
+        Exact symbolic determinant expression, if evaluated.
+    :type determinant_expr:
+        Optional[Any]
     :param determinant_is_zero:
-        Whether the exact determinant simplifies to zero. ``None`` if not
-        checked.
-    :type determinant_is_zero: bool or None
+        Whether the exact symbolic determinant simplified to zero.
+    :type determinant_is_zero:
+        Optional[bool]
+
+    Example
+    -------
+    .. code-block:: python
+
+        summary = StructuralSingularitySummary(
+            n_species=3,
+            structural_rank=2,
+            has_perfect_matching=False,
+            pattern_singular=True,
+            determinant_checked=False,
+        )
+
+        print(summary.classification)
+        print(summary.to_dict())
     """
 
     n_species: int
@@ -219,14 +343,31 @@ class StructuralSingularitySummary:
     @property
     def classification(self) -> str:
         """
-        Return a concise structural-singularity classification string.
+        Return a concise structural-singularity classification label.
 
-        Possible values are:
+        Possible values include pattern-level singularity, exact symbolic
+        singularity, exact symbolic nonsingularity, or the case where only
+        the sparsity-pattern analysis was performed.
 
-        - ``"singular_by_pattern"``
-        - ``"singular_by_exact_determinant"``
-        - ``"structurally_nonsingular"``
-        - ``"pattern_nonsingular_exact_unchecked"``
+        :returns:
+            Classification string summarizing the diagnostic outcome.
+        :rtype:
+            str
+
+        Example
+        -------
+        .. code-block:: python
+
+            summary = StructuralSingularitySummary(
+                n_species=4,
+                structural_rank=4,
+                has_perfect_matching=True,
+                pattern_singular=False,
+                determinant_checked=True,
+                determinant_is_zero=False,
+            )
+
+            print(summary.classification)
         """
         if self.pattern_singular:
             return "singular_by_pattern"
@@ -238,7 +379,22 @@ class StructuralSingularitySummary:
 
     def to_dict(self) -> Dict[str, Any]:
         """
-        Return a plain dictionary representation.
+        Convert the summary to a plain dictionary.
+
+        Symbolic determinant expressions are stringified so the result is easier
+        to serialize or log.
+
+        :returns:
+            Plain dictionary representation of the summary.
+        :rtype:
+            Dict[str, Any]
+
+        Example
+        -------
+        .. code-block:: python
+
+            d = summary.to_dict()
+            print(d["classification"])
         """
         return {
             "n_species": self.n_species,
@@ -255,17 +411,28 @@ class StructuralSingularitySummary:
 
     def __str__(self) -> str:
         """
-        Human-readable multi-line summary.
+        Return a readable multiline summary.
+
+        :returns:
+            Human-readable diagnostic summary.
+        :rtype:
+            str
+
+        Example
+        -------
+        .. code-block:: python
+
+            print(summary)
         """
         lines = [
             "StructuralSingularitySummary(",
-            f"  n_species           = {self.n_species}",
-            f"  structural_rank     = {self.structural_rank}",
-            f"  has_perfect_matching= {self.has_perfect_matching}",
-            f"  pattern_singular    = {self.pattern_singular}",
-            f"  determinant_checked = {self.determinant_checked}",
-            f"  determinant_is_zero = {self.determinant_is_zero}",
-            f"  classification      = {self.classification}",
+            f"  n_species            = {self.n_species}",
+            f"  structural_rank      = {self.structural_rank}",
+            f"  has_perfect_matching = {self.has_perfect_matching}",
+            f"  pattern_singular     = {self.pattern_singular}",
+            f"  determinant_checked  = {self.determinant_checked}",
+            f"  determinant_is_zero  = {self.determinant_is_zero}",
+            f"  classification       = {self.classification}",
             ")",
         ]
         return "\n".join(lines)
@@ -276,46 +443,63 @@ def symbolic_reactivity_matrix(
     *,
     symbol_prefix: str = "rprime",
     tol: float = 1e-12,
-) -> Tuple[List[str], List[str], "sp.Matrix"]:
+) -> Tuple[List[Any], List[Any], "sp.Matrix"]:
     """
-    Build the symbolic reactivity matrix :math:`R`.
+    Build the symbolic reactivity matrix ``R``.
 
-    For a CRN with species set :math:`M` and reaction set :math:`E`,
-    the matrix :math:`R` has shape ``(|E|, |M|)``. Entry ``R[j, i]`` is a
-    positive symbolic variable if species ``i`` is a reactant of reaction
-    ``j``, and zero otherwise.
+    For a SynCRN with ``n_species`` species nodes and ``n_rules`` rule nodes,
+    the matrix ``R`` has shape ``(n_rules, n_species)``. Entry ``R[j, i]`` is
+    a positive symbolic variable if species ``i`` is a reactant of rule ``j``,
+    and zero otherwise.
 
-    This encodes the structural local dependence of reaction rates on species
-    concentrations under broad monotone kinetics.
+    This matrix captures the structural dependence of reaction rates on species
+    concentrations without assuming a specific kinetic law beyond positive
+    reactant sensitivity.
 
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param symbol_prefix: Prefix used when naming positive symbolic variables.
-    :type symbol_prefix: str
-    :param tol: Small tolerance used to test whether an entry of ``S_minus`` is
-                structurally positive.
-    :type tol: float
+    :param crn:
+        SynCRN graph or SynCRN-like object in the species/rule representation.
+    :type crn:
+        Any
+    :param symbol_prefix:
+        Prefix used when naming symbolic reactivity variables.
+    :type symbol_prefix:
+        str
+    :param tol:
+        Tolerance used to decide whether a reactant stoichiometric entry is
+        structurally positive.
+    :type tol:
+        float
+
     :returns:
-        Tuple ``(species_order, reaction_order, R)`` where ``R`` is a SymPy
-        matrix of shape ``(n_reactions, n_species)``.
-    :rtype: Tuple[List[str], List[str], sympy.Matrix]
+        Tuple containing:
 
+        - species node order,
+        - rule node order,
+        - symbolic reactivity matrix ``R``.
+    :rtype:
+        Tuple[List[Any], List[Any], sp.Matrix]
+
+    :raises ImportError:
+        If :mod:`sympy` is not available.
+
+    Example
+    -------
     .. code-block:: python
 
-        from synkit.CRN.Props.dynamics import symbolic_reactivity_matrix
-
-        sp_order, rxn_order, R = symbolic_reactivity_matrix(G)
+        species_order, rule_order, R = symbolic_reactivity_matrix(crn)
+        print(species_order)
+        print(rule_order)
         print(R)
     """
     _require_sympy()
 
-    species_order, reaction_order, S_minus, _S_plus = build_S_minus_plus(crn)
+    species_order, rule_order, S_minus, _S_plus = build_S_minus_plus(crn)
     n_species = len(species_order)
-    n_reactions = len(reaction_order)
+    n_rules = len(rule_order)
 
     rows = []
-    for j in range(n_reactions):
-        r_tok = _safe_symbol_token(reaction_order[j])
+    for j in range(n_rules):
+        r_tok = _safe_symbol_token(rule_order[j])
         row = []
         for i in range(n_species):
             s_tok = _safe_symbol_token(species_order[i])
@@ -326,7 +510,7 @@ def symbolic_reactivity_matrix(
         rows.append(row)
 
     R = sp.Matrix(rows)
-    return species_order, reaction_order, R
+    return species_order, rule_order, R
 
 
 def symbolic_jacobian(
@@ -334,38 +518,52 @@ def symbolic_jacobian(
     *,
     symbol_prefix: str = "rprime",
     tol: float = 1e-12,
-) -> Tuple[List[str], List[str], "sp.Matrix"]:
+) -> Tuple[List[Any], List[Any], "sp.Matrix"]:
     """
-    Build the symbolic Jacobian :math:`G = S R`.
+    Build the symbolic Jacobian ``G = S R``.
 
-    Here :math:`S` is the stoichiometric matrix and :math:`R` is the symbolic
-    reactivity matrix induced by reactant incidence. The result captures the
-    local species-to-species interaction structure implied by the CRN under
-    broad monotone kinetics, without requiring a fully specified rate law.
+    Here ``S`` is the species-by-rule stoichiometric matrix and ``R`` is the
+    rule-by-species symbolic reactivity matrix induced by reactant incidence.
+    The resulting Jacobian is a species-by-species symbolic matrix describing
+    local structural influence in the CRN dynamics.
 
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param symbol_prefix: Prefix used for symbolic reactivity variables.
-    :type symbol_prefix: str
-    :param tol: Small tolerance forwarded to
-                :func:`symbolic_reactivity_matrix`.
-    :type tol: float
+    :param crn:
+        SynCRN graph or SynCRN-like object in the species/rule representation.
+    :type crn:
+        Any
+    :param symbol_prefix:
+        Prefix used for symbolic reactivity variables.
+    :type symbol_prefix:
+        str
+    :param tol:
+        Tolerance forwarded to :func:`symbolic_reactivity_matrix`.
+    :type tol:
+        float
+
     :returns:
-        Tuple ``(species_order, reaction_order, G)`` where ``G`` is a SymPy
-        matrix of shape ``(n_species, n_species)``.
-    :rtype: Tuple[List[str], List[str], sympy.Matrix]
+        Tuple containing:
 
+        - species node order,
+        - rule node order,
+        - symbolic Jacobian ``G``.
+    :rtype:
+        Tuple[List[Any], List[Any], sp.Matrix]
+
+    :raises ImportError:
+        If :mod:`sympy` is not available.
+
+    Example
+    -------
     .. code-block:: python
 
-        from synkit.CRN.Props.dynamics import symbolic_jacobian
-
-        sp_order, rxn_order, Gsym = symbolic_jacobian(G)
-        print(Gsym)
+        species_order, rule_order, G = symbolic_jacobian(crn)
+        print(G.shape)
+        print(G)
     """
     _require_sympy()
 
-    species_order, reaction_order, S = build_S(crn)
-    _sp_order, _rxn_order, R = symbolic_reactivity_matrix(
+    species_order, rule_order, S = build_S(crn)
+    _sp_order, _rule_order, R = symbolic_reactivity_matrix(
         crn,
         symbol_prefix=symbol_prefix,
         tol=tol,
@@ -373,37 +571,47 @@ def symbolic_jacobian(
 
     S_sym = _sympy_matrix_from_numpy(S)
     G = S_sym * R
-    return species_order, reaction_order, G
+    return species_order, rule_order, G
 
 
 def jacobian_sparsity(
     crn: Any,
     *,
     tol: float = 1e-12,
-) -> Tuple[List[str], np.ndarray]:
+) -> Tuple[List[Any], np.ndarray]:
     """
     Return the boolean sparsity pattern of the symbolic Jacobian.
 
     Entry ``A[i, k]`` is ``True`` if species ``k`` can structurally influence
-    species ``i`` through the local linearized dynamics implied by the CRN.
+    species ``i`` through at least one rule under the local linearized
+    dynamics.
 
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param tol: Small tolerance for zero testing.
-    :type tol: float
+    :param crn:
+        SynCRN graph or SynCRN-like object in the species/rule representation.
+    :type crn:
+        Any
+    :param tol:
+        Tolerance used for structural zero testing.
+    :type tol:
+        float
+
     :returns:
-        Tuple ``(species_order, A)`` where ``A`` is a boolean matrix of shape
-        ``(n_species, n_species)``.
-    :rtype: Tuple[List[str], numpy.ndarray]
+        Tuple containing:
 
+        - species node order,
+        - boolean Jacobian sparsity matrix.
+    :rtype:
+        Tuple[List[Any], numpy.ndarray]
+
+    Example
+    -------
     .. code-block:: python
 
-        from synkit.CRN.Props.dynamics import jacobian_sparsity
-
-        sp_order, A = jacobian_sparsity(G)
+        species_order, A = jacobian_sparsity(crn)
+        print(species_order)
         print(A.astype(int))
     """
-    species_order, _reaction_order, S_minus, S_plus = build_S_minus_plus(crn)
+    species_order, _rule_order, S_minus, S_plus = build_S_minus_plus(crn)
     S = S_plus - S_minus
     sign_pat = _structural_sign_pattern(S, S_minus, tol=tol)
     A = sign_pat != "0"
@@ -414,7 +622,7 @@ def jacobian_sign_pattern(
     crn: Any,
     *,
     tol: float = 1e-12,
-) -> Tuple[List[str], np.ndarray]:
+) -> Tuple[List[Any], np.ndarray]:
     """
     Compute the structural sign pattern of the symbolic Jacobian.
 
@@ -425,27 +633,35 @@ def jacobian_sign_pattern(
     - ``"-"``
     - ``"mixed"``
 
-    The sign is determined structurally from the stoichiometric matrix and the
-    reactant incidence pattern, assuming positive local rate sensitivities with
-    respect to reactants.
+    The value ``"mixed"`` means that multiple structurally valid paths exist
+    with conflicting positive and negative net effects.
 
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param tol: Small tolerance for zero testing.
-    :type tol: float
+    :param crn:
+        SynCRN graph or SynCRN-like object in the species/rule representation.
+    :type crn:
+        Any
+    :param tol:
+        Tolerance used for structural zero testing.
+    :type tol:
+        float
+
     :returns:
-        Tuple ``(species_order, P)`` where ``P`` is an object array of shape
-        ``(n_species, n_species)`` containing sign strings.
-    :rtype: Tuple[List[str], numpy.ndarray]
+        Tuple containing:
 
+        - species node order,
+        - Jacobian sign-pattern matrix.
+    :rtype:
+        Tuple[List[Any], numpy.ndarray]
+
+    Example
+    -------
     .. code-block:: python
 
-        from synkit.CRN.Props.dynamics import jacobian_sign_pattern
-
-        sp_order, P = jacobian_sign_pattern(G)
+        species_order, P = jacobian_sign_pattern(crn)
+        print(species_order)
         print(P)
     """
-    species_order, _reaction_order, S_minus, S_plus = build_S_minus_plus(crn)
+    species_order, _rule_order, S_minus, S_plus = build_S_minus_plus(crn)
     S = S_plus - S_minus
     P = _structural_sign_pattern(S, S_minus, tol=tol)
     return species_order, P
@@ -455,40 +671,67 @@ def species_influence_graph(
     crn: Any,
     *,
     tol: float = 1e-12,
+    use_labels: bool = False,
 ) -> nx.DiGraph:
     """
     Build the species influence graph induced by the symbolic Jacobian.
 
-    Nodes are species. A directed edge ``u -> v`` is added when species ``u``
-    can structurally influence species ``v`` in the local linearized dynamics.
+    Nodes represent species. A directed edge ``u -> v`` is added when species
+    ``u`` can structurally influence species ``v`` in the local linearized
+    dynamics.
+
     Edge attribute ``sign`` is one of:
 
     - ``"+"``
     - ``"-"``
     - ``"mixed"``
 
-    Diagonal self-loops are included when the Jacobian has structurally nonzero
-    diagonal entries.
+    Additional edge attributes record the original source and target species
+    node identifiers.
 
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param tol: Small tolerance for zero testing.
-    :type tol: float
-    :returns: Directed species influence graph.
-    :rtype: networkx.DiGraph
+    :param crn:
+        SynCRN graph or SynCRN-like object in the species/rule representation.
+    :type crn:
+        Any
+    :param tol:
+        Tolerance used for structural zero testing.
+    :type tol:
+        float
+    :param use_labels:
+        If ``True`` and ``crn`` is a NetworkX graph, use node labels when
+        available; otherwise use original node identifiers.
+    :type use_labels:
+        bool
 
+    :returns:
+        Directed species influence graph.
+    :rtype:
+        nx.DiGraph
+
+    Example
+    -------
     .. code-block:: python
 
-        from synkit.CRN.Props.dynamics import species_influence_graph
+        G_inf = species_influence_graph(crn, use_labels=True)
 
-        Gi = species_influence_graph(G)
-        print(Gi.edges(data=True))
+        print(G_inf.nodes(data=True))
+        print(G_inf.edges(data=True))
     """
     species_order, P = jacobian_sign_pattern(crn, tol=tol)
 
+    label_map: Dict[Any, Any] = {}
+    if use_labels and isinstance(
+        crn, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)
+    ):
+        for s in species_order:
+            label_map[s] = crn.nodes[s].get("label", s)
+    else:
+        for s in species_order:
+            label_map[s] = s
+
     G_inf = nx.DiGraph()
     for s in species_order:
-        G_inf.add_node(s)
+        G_inf.add_node(label_map[s], source_node=s)
 
     n_species = len(species_order)
     for i in range(n_species):  # target row
@@ -496,9 +739,11 @@ def species_influence_graph(
             sign = str(P[i, k])
             if sign != "0":
                 G_inf.add_edge(
-                    species_order[k],
-                    species_order[i],
+                    label_map[species_order[k]],
+                    label_map[species_order[i]],
                     sign=sign,
+                    source_species=species_order[k],
+                    target_species=species_order[i],
                 )
 
     return G_inf
@@ -514,34 +759,57 @@ def structural_singularity_summary(
     """
     Diagnose structural singularity of the symbolic Jacobian.
 
-    This function performs:
+    This routine performs two levels of analysis:
 
-    1. a structural-rank / perfect-matching check on the Jacobian sparsity
-       pattern, and
-    2. an optional exact symbolic determinant check for small systems.
+    1. structural-rank and perfect-matching diagnostics on the Jacobian
+       sparsity pattern, and
+    2. optional exact symbolic determinant evaluation for sufficiently small
+       systems.
 
-    The exact determinant step is useful because a Jacobian can be
-    pattern-nonsingular yet still have an identically zero determinant due to
-    symbolic cancellation.
+    Pattern-level singularity indicates that the Jacobian is singular for all
+    admissible parameter values consistent with the sparsity structure. If the
+    pattern is not singular, an exact determinant test may still detect
+    symbolic cancellation and prove singularity for small systems.
 
-    :param crn: Hypergraph or bipartite NetworkX graph.
-    :type crn: Any
-    :param tol: Small tolerance for zero testing.
-    :type tol: float
+    :param crn:
+        SynCRN graph or SynCRN-like object in the species/rule representation.
+    :type crn:
+        Any
+    :param tol:
+        Tolerance used for structural zero testing.
+    :type tol:
+        float
     :param max_exact_size:
         Maximum number of species for which the exact symbolic determinant is
         computed.
-    :type max_exact_size: int
-    :param symbol_prefix: Prefix used for symbolic reactivity variables.
-    :type symbol_prefix: str
-    :returns: Structural singularity summary.
-    :rtype: StructuralSingularitySummary
+    :type max_exact_size:
+        int
+    :param symbol_prefix:
+        Prefix used for symbolic reactivity variables.
+    :type symbol_prefix:
+        str
 
+    :returns:
+        Structured summary of Jacobian structural-singularity diagnostics.
+    :rtype:
+        StructuralSingularitySummary
+
+    :raises ImportError:
+        If exact symbolic determinant evaluation is requested but
+        :mod:`sympy` is not available.
+
+    Example
+    -------
     .. code-block:: python
 
-        from synkit.CRN.Props.dynamics import structural_singularity_summary
+        summary = structural_singularity_summary(
+            crn,
+            max_exact_size=6,
+            symbol_prefix="rprime",
+        )
 
-        summary = structural_singularity_summary(G)
+        print(summary)
+        print(summary.to_dict())
         print(summary.classification)
     """
     species_order, A = jacobian_sparsity(crn, tol=tol)
@@ -560,7 +828,7 @@ def structural_singularity_summary(
     if n_species <= max_exact_size:
         _require_sympy()
         determinant_checked = True
-        _sp_order, _rxn_order, G = symbolic_jacobian(
+        _sp_order, _rule_order, G = symbolic_jacobian(
             crn,
             symbol_prefix=symbol_prefix,
             tol=tol,

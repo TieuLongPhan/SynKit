@@ -1,84 +1,40 @@
 from __future__ import annotations
 
-"""
-Forward reachability utilities for chemical reaction networks.
-
-This module implements layer-by-layer forward reachability on CRN
-hypergraphs. In contrast to pathway realizability, which asks whether a
-prescribed reaction flow admits a feasible firing order, reachability
-starts from an initial set or multiset of species and asks:
-
-1. which reactions are enabled,
-2. which new species become reachable,
-3. at what layer each reaction/species is first reached.
-
-High-level entry point: :class:`PathwayReachability`.
-
-Typical workflow
-----------------
-
-1. Start from a :class:`CRNHyperGraph`::
-
-       from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
-
-       hg = CRNHyperGraph()
-       hg.parse_rxns(["A+B>>C", "C+D>>E"])
-
-2. Convert the hypergraph into the simple tuple format used here via
-   :func:`hypergraph_to_reachability_inputs`.
-
-3. Load the data into :class:`PathwayReachability` and call one of:
-
-   * :meth:`compute_layers_set` for qualitative/set reachability,
-   * :meth:`compute_layers_multiset` for stoichiometric/multiset reachability.
-
-Notes
------
-Two semantics are provided:
-
-* **set reachability**:
-  a species is either available or not; reactions may fire once they are
-  enabled by presence of all reactants.
-
-* **multiset reachability**:
-  species counts matter; firing a reaction consumes reactants and produces
-  products, allowing explicit state evolution over markings.
-
-The set semantics is usually what is meant by:
-"what is reachable in the first, second, third, ... step?"
-
-References
-----------
-- Classical CRN / Petri-net reachability terminology.
-- Murata (1989), Proc. IEEE — Petri nets: Properties, analysis and applications.
-"""
-
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 import json
 
-from synkit.CRN.Structure.hypergraph import CRNHyperGraph
+from ._adapter import tokenize_syncrn_incidence
 
-# shared type alias
 Multiset = Dict[str, int]
-
-
-# ---------------------------------------------------------------------------
-# Reachability config + result containers
-# ---------------------------------------------------------------------------
 
 
 @dataclass
 class ReachabilityConfig:
     """
-    Configuration container for reachability traversal.
+    Configuration for forward reachability traversal.
 
-    :param max_layers: Maximum number of forward-expansion layers.
+    This configuration controls how many propagation layers are explored and
+    whether the traversal should terminate as soon as no newly reachable
+    species are discovered.
+
+    :param max_layers:
+        Maximum number of forward layers to compute.
     :type max_layers: int
-    :param stop_when_no_new_species: If ``True``, stop once no new species are
-        discovered in the current layer.
+    :param stop_when_no_new_species:
+        If ``True``, stop once a layer produces no newly reachable species,
+        even if reactions are still enabled.
     :type stop_when_no_new_species: bool
+
+    Example
+    -------
+    .. code-block:: python
+
+        cfg = ReachabilityConfig(
+            max_layers=100,
+            stop_when_no_new_species=True,
+        )
     """
 
     max_layers: int = 10_000
@@ -88,16 +44,37 @@ class ReachabilityConfig:
 @dataclass
 class ReachabilityLayer:
     """
-    One forward-expansion layer.
+    One forward reachability layer.
 
-    :param depth: Layer index (1-based).
+    A layer summarizes what became newly active at a given traversal depth.
+    In set semantics, a reaction is considered enabled when all of its
+    reactant species are already reachable. In multiset semantics, a reaction
+    is enabled when the current marking contains sufficient multiplicity for
+    each reactant.
+
+    :param depth:
+        Layer index, starting at ``1`` for the first propagation step.
     :type depth: int
-    :param newly_enabled_reactions: Reactions first enabled at this layer.
+    :param newly_enabled_reactions:
+        Reaction identifiers that became enabled at this layer.
     :type newly_enabled_reactions: List[str]
-    :param newly_reachable_species: Species first reached at this layer.
+    :param newly_reachable_species:
+        Species that became reachable for the first time at this layer.
     :type newly_reachable_species: List[str]
-    :param all_reachable_species: Cumulative reachable species after this layer.
+    :param all_reachable_species:
+        Complete set of reachable species after this layer is applied.
     :type all_reachable_species: List[str]
+
+    Example
+    -------
+    .. code-block:: python
+
+        layer = ReachabilityLayer(
+            depth=2,
+            newly_enabled_reactions=["r3", "r4"],
+            newly_reachable_species=["E", "F"],
+            all_reachable_species=["A", "B", "C", "D", "E", "F"],
+        )
     """
 
     depth: int
@@ -111,15 +88,35 @@ class ReachabilityResult:
     """
     Container for forward reachability results.
 
-    :param initial_species: Initial available species.
+    This object stores the initial support, the layered traversal trace, and
+    the first depth at which each species or reaction became reachable or
+    enabled.
+
+    :param initial_species:
+        Initial reachable species support used to seed the traversal.
     :type initial_species: List[str]
-    :param layers: Layer-by-layer reachability result.
+    :param layers:
+        Ordered list of reachability layers.
     :type layers: List[ReachabilityLayer]
-    :param species_first_depth: Mapping species -> first depth reached
-        (depth 0 means initially present).
+    :param species_first_depth:
+        Mapping from species identifier to the first layer depth at which that
+        species became reachable. Initial species are assigned depth ``0``.
     :type species_first_depth: Dict[str, int]
-    :param reaction_first_depth: Mapping reaction id -> first depth enabled.
+    :param reaction_first_depth:
+        Mapping from reaction identifier to the first layer depth at which that
+        reaction became enabled.
     :type reaction_first_depth: Dict[str, int]
+
+    Example
+    -------
+    .. code-block:: python
+
+        result = ReachabilityResult(
+            initial_species=["A", "B"],
+            layers=[],
+            species_first_depth={"A": 0, "B": 0},
+            reaction_first_depth={},
+        )
     """
 
     initial_species: List[str]
@@ -128,63 +125,71 @@ class ReachabilityResult:
     reaction_first_depth: Dict[str, int]
 
 
-# ---------------------------------------------------------------------------
-# PathwayReachability core
-# ---------------------------------------------------------------------------
-
-
 class PathwayReachability:
     """
-    High-level forward reachability utilities for CRNs.
+    Forward reachability utilities for SynCRN pathway analysis.
 
-    Use case
-    --------
-    1. Construct an instance (optionally with a :class:`ReachabilityConfig`).
-    2. Load a hypergraph via :meth:`load_hypergraph`.
-    3. Call one of:
+    This class provides layered forward propagation over a reaction hypergraph.
+    It supports two related semantics:
 
-       * :meth:`compute_layers_set`
-       * :meth:`compute_layers_multiset`
+    - **Set semantics**:
+      a reaction is enabled once all reactant species are present in the
+      reachable set; stoichiometric multiplicities are ignored for enabling.
+    - **Multiset semantics**:
+      a reaction is enabled only when the current marking contains enough
+      copies of each reactant species to satisfy stoichiometric coefficients.
 
-    Hypergraph format
-    -----------------
-    The internal representation mirrors that used in pathway realizability:
+    The class can be loaded either from tokenized ``vertices`` / ``edges``
+    data or directly from a SynCRN-like object via :meth:`load_syncrn`.
 
-    * ``vertices`` — iterable of species identifiers (strings).
-    * ``edges`` — mapping ``edge_id -> (tail_multiset, head_multiset)``.
+    Internally, reactions are stored as a mapping
 
-    :param config: Optional configuration for forward traversal.
-    :type config: ReachabilityConfig or None
+    ``reaction_id -> (tail_multiset, head_multiset)``
 
-    Examples
-    --------
+    where the tail is the reactant multiset and the head is the product
+    multiset.
+
+    :param config:
+        Optional reachability configuration. If omitted, a default
+        :class:`ReachabilityConfig` is used.
+    :type config: Optional[ReachabilityConfig]
+
+    Example
+    -------
     .. code-block:: python
 
-        from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
-        from synkit.CRN.Path.reachability import (
-            hypergraph_to_reachability_inputs, PathwayReachability
+        rr = PathwayReachability()
+        rr.load_hypergraph(
+            vertices=["A", "B", "C", "D"],
+            edges={
+                "r1": ({"A": 1, "B": 1}, {"C": 1}),
+                "r2": ({"C": 1}, {"D": 1}),
+            },
         )
 
-        hg = CRNHyperGraph()
-        hg.parse_rxns(["A+B>>C", "C+D>>E", "E+F>>G+D"])
-
-        vertices, edges = hypergraph_to_reachability_inputs(hg)
-
-        rr = PathwayReachability()
-        rr.load_hypergraph(vertices, edges)
-
-        out = rr.compute_layers_set(initial_species={"A", "B", "D", "F"})
-        for layer in out.layers:
-            print(layer)
+        result = rr.compute_layers_set(initial_species=["A", "B"])
+        print(result.species_first_depth)
+        # {'A': 0, 'B': 0, 'C': 1, 'D': 2}
     """
 
     def __init__(self, config: Optional[ReachabilityConfig] = None) -> None:
+        """
+        Initialize an empty reachability engine.
+
+        :param config:
+            Optional reachability configuration.
+        :type config: Optional[ReachabilityConfig]
+        """
         self.vertices: Set[str] = set()
         self.edges: Dict[str, Tuple[Multiset, Multiset]] = {}
+        self.species_token_to_id: Dict[str, str] = {}
+        self.reaction_token_to_id: Dict[str, str] = {}
+        self.species_id_to_token: Dict[str, str] = {}
+        self.reaction_id_to_token: Dict[str, str] = {}
         self._config = config or ReachabilityConfig()
 
     # ------------------------------------------------------------------
-    # Data loading
+    # data loading
     # ------------------------------------------------------------------
 
     def load_hypergraph(
@@ -193,32 +198,123 @@ class PathwayReachability:
         edges: Mapping[str, Tuple[Mapping[str, int], Mapping[str, int]]],
     ) -> "PathwayReachability":
         """
-        Load a hypergraph into the object.
+        Load a tokenized reaction hypergraph directly.
 
-        :param vertices: Species identifiers.
+        Each edge must map a reaction identifier to a pair
+        ``(tail_multiset, head_multiset)``, where both multisets map species
+        identifiers to strictly positive stoichiometric coefficients.
+
+        Non-positive coefficients are discarded during normalization.
+
+        :param vertices:
+            Iterable of species identifiers.
         :type vertices: Iterable[str]
-        :param edges: Mapping ``edge_id -> (tail_multiset, head_multiset)``.
+        :param edges:
+            Mapping from reaction identifier to
+            ``(reactant_multiset, product_multiset)``.
         :type edges: Mapping[str, Tuple[Mapping[str, int], Mapping[str, int]]]
-        :returns: ``self`` (for fluent chaining).
+        :returns:
+            The current instance, to allow fluent chaining.
         :rtype: PathwayReachability
+
+        Example
+        -------
+        .. code-block:: python
+
+            rr = PathwayReachability().load_hypergraph(
+                vertices=["A", "B", "C"],
+                edges={
+                    "r1": ({"A": 1}, {"B": 1}),
+                    "r2": ({"B": 1}, {"C": 1}),
+                },
+            )
         """
-        self.vertices = set(vertices)
+        self.vertices = set(str(v) for v in vertices)
         self.edges = {
-            eid: (dict(tail), dict(head)) for eid, (tail, head) in edges.items()
+            str(eid): (
+                {str(s): int(v) for s, v in tail.items() if int(v) > 0},
+                {str(s): int(v) for s, v in head.items() if int(v) > 0},
+            )
+            for eid, (tail, head) in edges.items()
+        }
+        self.species_token_to_id = {v: v for v in self.vertices}
+        self.reaction_token_to_id = {eid: eid for eid in self.edges}
+        self.species_id_to_token = {v: v for v in self.vertices}
+        self.reaction_id_to_token = {eid: eid for eid in self.edges}
+        return self
+
+    def load_syncrn(
+        self,
+        crn: object,
+        *,
+        species: str = "label",
+        reaction: str = "id",
+    ) -> "PathwayReachability":
+        """
+        Load reachability data from a SynCRN-like object.
+
+        This method delegates tokenization to
+        :func:`tokenize_syncrn_incidence`, then stores both the tokenized
+        hypergraph and the forward/backward token-id lookup tables.
+
+        :param crn:
+            SynCRN-like object to tokenize.
+        :type crn: object
+        :param species:
+            Species attribute used during tokenization, such as ``"label"`` or
+            another species node attribute supported by the adapter.
+        :type species: str
+        :param reaction:
+            Reaction attribute used during tokenization, such as ``"id"``.
+        :type reaction: str
+        :returns:
+            The current instance, to allow fluent chaining.
+        :rtype: PathwayReachability
+
+        Example
+        -------
+        .. code-block:: python
+
+            rr = PathwayReachability().load_syncrn(
+                syncrn_object,
+                species="label",
+                reaction="id",
+            )
+        """
+        vertices, edges, species_token_to_id, reaction_token_to_id, _ = (
+            tokenize_syncrn_incidence(
+                crn,
+                species=species,
+                reaction=reaction,
+            )
+        )
+        self.load_hypergraph(vertices, edges)
+        self.species_token_to_id = species_token_to_id
+        self.reaction_token_to_id = reaction_token_to_id
+        self.species_id_to_token = {
+            sid: tok for tok, sid in species_token_to_id.items()
+        }
+        self.reaction_id_to_token = {
+            rid: tok for tok, rid in reaction_token_to_id.items()
         }
         return self
 
     # ------------------------------------------------------------------
-    # Small helpers
+    # small helpers
     # ------------------------------------------------------------------
 
-    def _normalize_marking(self, marking: Mapping[str, int]) -> Dict[str, int]:
+    @staticmethod
+    def _normalize_marking(marking: Mapping[str, int]) -> Dict[str, int]:
         """
-        Normalize a marking by keeping only positive counts.
+        Normalize a marking into a clean positive multiset.
 
-        :param marking: Input species-count mapping.
+        Species with non-positive counts are removed.
+
+        :param marking:
+            Input species-count mapping.
         :type marking: Mapping[str, int]
-        :returns: Normalized marking with positive integer counts only.
+        :returns:
+            Normalized marking containing only strictly positive counts.
         :rtype: Dict[str, int]
         """
         return {str(s): int(v) for s, v in marking.items() if int(v) > 0}
@@ -226,25 +322,32 @@ class PathwayReachability:
     @staticmethod
     def _support(marking: Mapping[str, int]) -> Set[str]:
         """
-        Return the support of a marking, i.e. species with positive count.
+        Return the support of a marking.
 
-        :param marking: Species-count mapping.
+        The support is the set of species whose count is strictly positive.
+
+        :param marking:
+            Input species-count mapping.
         :type marking: Mapping[str, int]
-        :returns: Species with strictly positive count.
+        :returns:
+            Set of species present with positive multiplicity.
         :rtype: Set[str]
         """
         return {s for s, v in marking.items() if int(v) > 0}
 
     def _enabled_reactions_for_set(self, reachable: Set[str]) -> List[str]:
         """
-        Return reactions enabled under qualitative/set semantics.
+        Return reactions enabled under set semantics.
 
-        A reaction is enabled if all reactant species are present in the
-        currently reachable set.
+        A reaction is enabled if all reactant species are already members of
+        the reachable set. Stoichiometric coefficients are ignored for the
+        enabling condition.
 
-        :param reachable: Currently reachable species.
+        :param reachable:
+            Current reachable species set.
         :type reachable: Set[str]
-        :returns: Enabled reaction identifiers.
+        :returns:
+            List of enabled reaction identifiers.
         :rtype: List[str]
         """
         enabled: List[str] = []
@@ -257,17 +360,19 @@ class PathwayReachability:
         """
         Return reactions enabled under multiset semantics.
 
-        A reaction is enabled if each reactant is available with at least its
-        required multiplicity in the current marking.
+        A reaction is enabled if the marking contains at least the required
+        stoichiometric coefficient for every reactant species.
 
-        :param marking: Current species-count mapping.
+        :param marking:
+            Current species marking.
         :type marking: Mapping[str, int]
-        :returns: Enabled reaction identifiers.
+        :returns:
+            List of enabled reaction identifiers.
         :rtype: List[str]
         """
         enabled: List[str] = []
         for eid, (tail, _) in self.edges.items():
-            if all(marking.get(s, 0) >= int(coeff) for s, coeff in tail.items()):
+            if all(int(marking.get(s, 0)) >= int(coeff) for s, coeff in tail.items()):
                 enabled.append(eid)
         return enabled
 
@@ -277,33 +382,34 @@ class PathwayReachability:
         reaction_ids: Iterable[str],
     ) -> Dict[str, int]:
         """
-        Fire each listed reaction once using synchronous/batched semantics.
+        Fire a batch of reactions once each from the given marking.
 
-        Consumption and production are accumulated against a copy of the input
-        marking, then cleaned to retain only positive counts.
+        Reactants are consumed and products are produced exactly once for each
+        reaction in ``reaction_ids``. The resulting marking is normalized so
+        that non-positive counts are removed.
 
-        :param marking: Input marking.
+        :param marking:
+            Input marking before firing.
         :type marking: Mapping[str, int]
-        :param reaction_ids: Reactions to fire once each.
+        :param reaction_ids:
+            Iterable of reaction identifiers to fire once.
         :type reaction_ids: Iterable[str]
-        :returns: Updated marking after batch firing.
+        :returns:
+            Updated normalized marking after the batch firing.
         :rtype: Dict[str, int]
         """
-        next_marking = dict(marking)
-
+        nxt = dict(marking)
         for eid in reaction_ids:
             tail, head = self.edges[eid]
-
             for s, coeff in tail.items():
-                next_marking[s] = next_marking.get(s, 0) - int(coeff)
-
+                nxt[s] = nxt.get(s, 0) - int(coeff)
             for s, coeff in head.items():
-                next_marking[s] = next_marking.get(s, 0) + int(coeff)
-
-        return {s: v for s, v in next_marking.items() if v > 0}
+                nxt[s] = nxt.get(s, 0) + int(coeff)
+        return self._normalize_marking(nxt)
 
     @staticmethod
     def _update_first_depth_maps(
+        *,
         depth: int,
         enabled_now: Iterable[str],
         new_species: Set[str],
@@ -312,31 +418,40 @@ class PathwayReachability:
         species_first_depth: Dict[str, int],
     ) -> None:
         """
-        Update first-depth bookkeeping for reactions and species.
+        Update first-seen depth maps for reactions and species.
 
-        :param depth: Current traversal depth.
+        Reactions are assigned a first depth only once, when first observed as
+        enabled. Species are assigned a first depth when they first appear in
+        the newly reached set.
+
+        :param depth:
+            Current traversal depth.
         :type depth: int
-        :param enabled_now: Reactions enabled or fired at this depth.
+        :param enabled_now:
+            Reactions enabled at the current depth.
         :type enabled_now: Iterable[str]
-        :param new_species: Species newly reached at this depth.
+        :param new_species:
+            Species that became newly reachable at the current depth.
         :type new_species: Set[str]
-        :param seen_reactions: Reactions already assigned a first depth.
+        :param seen_reactions:
+            Mutable set of reactions already assigned a first depth.
         :type seen_reactions: Set[str]
-        :param reaction_first_depth: Output mapping reaction -> first depth.
+        :param reaction_first_depth:
+            Output mapping from reaction identifier to first enabling depth.
         :type reaction_first_depth: Dict[str, int]
-        :param species_first_depth: Output mapping species -> first depth.
+        :param species_first_depth:
+            Output mapping from species identifier to first reachability depth.
         :type species_first_depth: Dict[str, int]
         """
         for eid in enabled_now:
             if eid not in seen_reactions:
                 reaction_first_depth[eid] = depth
                 seen_reactions.add(eid)
-
         for s in sorted(new_species):
             species_first_depth[s] = depth
 
     # ------------------------------------------------------------------
-    # Set / qualitative reachability
+    # main computations
     # ------------------------------------------------------------------
 
     def compute_layers_set(
@@ -345,26 +460,49 @@ class PathwayReachability:
         max_layers: Optional[int] = None,
     ) -> ReachabilityResult:
         """
-        Compute qualitative forward reachability by layers.
+        Compute layered forward reachability in set semantics.
 
-        A reaction becomes enabled when all of its reactant species are
-        present in the currently reachable set. Once enabled, its products
-        are added to the reachable set.
+        In this mode, only species presence matters. Stoichiometric
+        multiplicities are ignored when deciding whether a reaction is enabled.
 
-        This is the natural semantics for questions like:
-        "what is reachable in the first, second, third, ... step?"
+        The algorithm proceeds layer by layer:
+        1. find all reactions whose reactants are already reachable,
+        2. keep only reactions not previously seen as enabled,
+        3. collect all products they produce,
+        4. add any newly produced species to the reachable set.
 
-        :param initial_species: Species available at depth 0.
+        :param initial_species:
+            Initial set of reachable species.
         :type initial_species: Iterable[str]
-        :param max_layers: Optional override for maximum number of layers.
-            Defaults to :attr:`ReachabilityConfig.max_layers`.
-        :type max_layers: int or None
-        :returns: Layered reachability result.
+        :param max_layers:
+            Optional layer cap overriding the instance configuration.
+        :type max_layers: Optional[int]
+        :returns:
+            Reachability result containing the full layered traversal trace.
         :rtype: ReachabilityResult
+
+        Example
+        -------
+        .. code-block:: python
+
+            rr = PathwayReachability().load_hypergraph(
+                vertices=["A", "B", "C", "D"],
+                edges={
+                    "r1": ({"A": 1, "B": 1}, {"C": 1}),
+                    "r2": ({"C": 1}, {"D": 1}),
+                },
+            )
+
+            result = rr.compute_layers_set(initial_species=["A", "B"])
+
+            for layer in result.layers:
+                print(layer.depth, layer.newly_reachable_species)
+
+            # 1 ['C']
+            # 2 ['D']
         """
         max_layers = max_layers if max_layers is not None else self._config.max_layers
-
-        reachable: Set[str] = set(initial_species)
+        reachable: Set[str] = {str(x) for x in initial_species}
         seen_reactions: Set[str] = set()
 
         species_first_depth: Dict[str, int] = {s: 0 for s in reachable}
@@ -378,11 +516,9 @@ class PathwayReachability:
                 if eid not in seen_reactions
             ]
             produced_this_round: Set[str] = set()
-
             for eid in newly_enabled:
                 _, head = self.edges[eid]
                 produced_this_round.update(head.keys())
-
             new_species = produced_this_round - reachable
 
             if not newly_enabled and not new_species:
@@ -396,7 +532,6 @@ class PathwayReachability:
                 reaction_first_depth=reaction_first_depth,
                 species_first_depth=species_first_depth,
             )
-
             reachable.update(new_species)
 
             layers.append(
@@ -412,15 +547,11 @@ class PathwayReachability:
                 break
 
         return ReachabilityResult(
-            initial_species=sorted(set(initial_species)),
+            initial_species=sorted(set(str(x) for x in initial_species)),
             layers=layers,
             species_first_depth=species_first_depth,
             reaction_first_depth=reaction_first_depth,
         )
-
-    # ------------------------------------------------------------------
-    # Multiset / stoichiometric reachability
-    # ------------------------------------------------------------------
 
     def compute_layers_multiset(
         self,
@@ -428,25 +559,44 @@ class PathwayReachability:
         max_layers: Optional[int] = None,
     ) -> ReachabilityResult:
         """
-        Compute one possible layer-by-layer stoichiometric evolution.
+        Compute layered forward reachability in multiset semantics.
 
-        At each layer, all currently enabled reactions are fired once in
-        batch. Reactant multiplicities are respected.
+        In this mode, species counts matter. A reaction is enabled only if the
+        current marking contains enough multiplicity for every reactant. At
+        each layer, all currently enabled reactions are fired once in batch.
 
-        This is not the full Petri-net reachability problem; rather, it is a
-        deterministic forward simulation under synchronous/batched firing.
+        This procedure is useful when approximate token-flow behavior is
+        desired, but it should not be confused with exhaustive Petri-net
+        reachability analysis over all possible firing sequences.
 
-        :param initial_marking: Initial species counts.
+        :param initial_marking:
+            Initial species marking.
         :type initial_marking: Mapping[str, int]
-        :param max_layers: Optional override for maximum number of layers.
-            Defaults to :attr:`ReachabilityConfig.max_layers`.
-        :type max_layers: int or None
-        :returns: Layered reachability result based on cumulative support
-            of the marking.
+        :param max_layers:
+            Optional layer cap overriding the instance configuration.
+        :type max_layers: Optional[int]
+        :returns:
+            Reachability result containing the full layered traversal trace.
         :rtype: ReachabilityResult
+
+        Example
+        -------
+        .. code-block:: python
+
+            rr = PathwayReachability().load_hypergraph(
+                vertices=["A", "B", "C"],
+                edges={
+                    "r1": ({"A": 2}, {"B": 1}),
+                    "r2": ({"B": 1}, {"C": 1}),
+                },
+            )
+
+            result = rr.compute_layers_multiset(initial_marking={"A": 2})
+
+            print(result.species_first_depth)
+            # {'A': 0, 'B': 1, 'C': 2}
         """
         max_layers = max_layers if max_layers is not None else self._config.max_layers
-
         marking = self._normalize_marking(initial_marking)
         support = self._support(marking)
 
@@ -498,23 +648,35 @@ class PathwayReachability:
         )
 
     # ------------------------------------------------------------------
-    # Export
+    # export helpers
     # ------------------------------------------------------------------
 
     def export_layers_json(
-        self,
-        result: ReachabilityResult,
-        fn: str,
+        self, result: ReachabilityResult, fn: str
     ) -> "PathwayReachability":
         """
-        Export a reachability result to JSON.
+        Export a reachability result to a JSON file.
 
-        :param result: Reachability result produced by this class.
+        The output contains the initial species set, first-depth maps, and the
+        full list of layered traversal records.
+
+        :param result:
+            Reachability result to serialize.
         :type result: ReachabilityResult
-        :param fn: Output filename.
+        :param fn:
+            Output JSON filename.
         :type fn: str
-        :returns: ``self``.
+        :returns:
+            The current instance, to allow fluent chaining.
         :rtype: PathwayReachability
+        :raises OSError:
+            Raised if the target file cannot be written.
+
+        Example
+        -------
+        .. code-block:: python
+
+            rr.export_layers_json(result, "reachability_layers.json")
         """
         data = {
             "initial_species": result.initial_species,
@@ -535,145 +697,113 @@ class PathwayReachability:
         return self
 
     def __repr__(self) -> str:  # pragma: no cover - simple repr
-        return (
-            f"<PathwayReachability vertices={len(self.vertices)} "
-            f"edges={len(self.edges)}>"
-        )
+        """
+        Return a compact developer-friendly representation.
+
+        :returns:
+            String representation including the number of vertices and edges.
+        :rtype: str
+        """
+        return f"<PathwayReachability vertices={len(self.vertices)} edges={len(self.edges)}>"
 
 
-# ---------------------------------------------------------------------------
-# Adapters and small harness (for CRNHyperGraph)
-# ---------------------------------------------------------------------------
-
-
-def _side_to_dict(side: object) -> Dict[str, int]:
-    """
-    Convert a :class:`RXNSide`-like or mapping-like object to ``dict[str,int]``.
-
-    The function is deliberately defensive and supports:
-
-    * plain dicts,
-    * objects exposing ``.items()`` (e.g. :class:`RXNSide`),
-    * objects exposing ``.data`` (dict-like),
-    * iterables of tokens (interpreted as multiplicity 1).
-
-    :param side: Input side description (reactants or products).
-    :type side: object
-    :returns: Plain dictionary mapping species labels to integer counts.
-    :rtype: Dict[str, int]
-    """
-    if side is None:
-        return {}
-    if isinstance(side, dict):
-        return {str(k): int(v) for k, v in side.items()}
-
-    # Try mapping-like behaviour
-    try:
-        return {str(k): int(v) for k, v in side.items()}  # type: ignore[attr-defined]
-    except Exception:
-        pass
-
-    # Try `.data` attribute (e.g. RXNSide)
-    d = getattr(side, "data", None)
-    if isinstance(d, dict):
-        return {str(k): int(v) for k, v in d.items()}
-
-    # Fallback: treat as iterable of species labels
-    try:
-        out: Dict[str, int] = {}
-        for x in side:  # type: ignore[arg-type]
-            sx = str(x)
-            out[sx] = out.get(sx, 0) + 1
-        return out
-    except Exception:
-        return {}
-
-
-def hypergraph_to_reachability_inputs(
-    hg: CRNHyperGraph,
+def syncrn_to_reachability_inputs(
+    crn: object,
+    *,
+    species: str = "label",
+    reaction: str = "id",
 ) -> Tuple[List[str], Dict[str, Tuple[Dict[str, int], Dict[str, int]]]]:
     """
-    Convert :class:`CRNHyperGraph` into the tuple format used by
-    :class:`PathwayReachability`.
+    Convert a SynCRN-like object into tokenized reachability inputs.
 
-    Outputs
-    -------
-    * ``vertices``: list of species names (strings).
-    * ``edges_map``: ``{edge_id: (tail_dict, head_dict)}``.
+    This is a lightweight adapter returning only the tokenized species list and
+    reaction hyperedges needed by :class:`PathwayReachability`.
 
-    :param hg: Hypergraph describing the CRN.
-    :type hg: CRNHyperGraph
-    :returns: Tuple ``(vertices, edges_map)``.
+    :param crn:
+        SynCRN-like object to tokenize.
+    :type crn: object
+    :param species:
+        Species attribute used during tokenization.
+    :type species: str
+    :param reaction:
+        Reaction attribute used during tokenization.
+    :type reaction: str
+    :returns:
+        Pair ``(vertices, edges)`` where ``vertices`` is the species token list
+        and ``edges`` maps reaction token to ``(tail_multiset, head_multiset)``.
     :rtype: Tuple[List[str], Dict[str, Tuple[Dict[str, int], Dict[str, int]]]]
 
-    Examples
-    --------
+    Example
+    -------
     .. code-block:: python
 
-        vertices, edges = hypergraph_to_reachability_inputs(hg)
-        rr = PathwayReachability().load_hypergraph(vertices, edges)
+        vertices, edges = syncrn_to_reachability_inputs(
+            syncrn_object,
+            species="label",
+            reaction="id",
+        )
     """
-    vertices = list(hg.species_list())
-    edges: Dict[str, Tuple[Dict[str, int], Dict[str, int]]] = {}
-
-    for e in hg.edge_list():
-        eid = getattr(e, "id", None) or getattr(e, "edge_id", None) or str(e)
-        r_side = _side_to_dict(getattr(e, "reactants", getattr(e, "lhs", None)))
-        p_side = _side_to_dict(getattr(e, "products", getattr(e, "rhs", None)))
-        edges[eid] = (r_side, p_side)
-
+    vertices, edges, _, _, _ = tokenize_syncrn_incidence(
+        crn, species=species, reaction=reaction
+    )
     return vertices, edges
 
 
-def run_reachability_from_rxn_strings(
-    rxns: Iterable[str],
+def run_reachability_from_syncrn(
+    crn: object,
     initial_species: Iterable[str],
+    *,
+    species: str = "label",
+    reaction: str = "id",
     verbose: bool = True,
 ) -> Tuple[PathwayReachability, ReachabilityResult]:
     """
-    Convenience harness:
+    Run layered qualitative reachability directly from a SynCRN-like object.
 
-    * Build a :class:`CRNHyperGraph` from reaction strings.
-    * Convert to PathwayReachability inputs.
-    * Run qualitative layered reachability.
+    This convenience function constructs a :class:`PathwayReachability`
+    instance, loads the tokenized SynCRN representation, computes set-based
+    layered reachability, and optionally prints a human-readable traversal
+    summary.
 
-    :param rxns: Iterable of reaction strings (``"A + B >> C"`` etc.).
-    :type rxns: Iterable[str]
-    :param initial_species: Species available at depth 0.
+    :param crn:
+        SynCRN-like object to analyze.
+    :type crn: object
+    :param initial_species:
+        Initial reachable species set.
     :type initial_species: Iterable[str]
-    :param verbose: If ``True``, print a small summary to stdout.
+    :param species:
+        Species attribute used during tokenization.
+    :type species: str
+    :param reaction:
+        Reaction attribute used during tokenization.
+    :type reaction: str
+    :param verbose:
+        If ``True``, print the tokenized edges and each traversal layer.
     :type verbose: bool
-    :returns: Tuple ``(rr, result)`` where ``rr`` is the configured
-        :class:`PathwayReachability` instance and ``result`` is the
-        layered reachability output.
+    :returns:
+        Pair ``(reachability_engine, result)``.
     :rtype: Tuple[PathwayReachability, ReachabilityResult]
 
-    Examples
-    --------
+    Example
+    -------
     .. code-block:: python
 
-        rxns = ["A+B>>C", "C+D>>E", "E+F>>G+D"]
-        rr, result = run_reachability_from_rxn_strings(
-            rxns,
-            initial_species={"A", "B", "D", "F"},
+        rr, result = run_reachability_from_syncrn(
+            syncrn_object,
+            initial_species=["A", "B"],
+            species="label",
+            reaction="id",
+            verbose=True,
         )
-        print(result.species_first_depth)
     """
-    hg = CRNHyperGraph()
-    hg.parse_rxns(list(rxns))
-
-    vertices, edges = hypergraph_to_reachability_inputs(hg)
-    rr = PathwayReachability()
-    rr.load_hypergraph(vertices=vertices, edges=edges)
-
+    rr = PathwayReachability().load_syncrn(crn, species=species, reaction=reaction)
     result = rr.compute_layers_set(initial_species=initial_species)
 
     if verbose:
         print("Edges:")
-        for eid, (t, h) in edges.items():
+        for eid, (t, h) in rr.edges.items():
             print(f"  {eid}: {t} >> {h}")
-
-        print("Initial species:", sorted(set(initial_species)))
+        print("Initial species:", sorted(set(str(x) for x in initial_species)))
         for layer in result.layers:
             print(f"Layer {layer.depth}:")
             print("  Newly enabled reactions:", layer.newly_enabled_reactions)

@@ -1,207 +1,240 @@
-# synkit/CRN/petri/structure.py
 from __future__ import annotations
 
 from itertools import combinations
-from typing import Any, List, Set
+from typing import Any, Dict, List, Set
 
-import networkx as nx
-
-from ..Props.utils import _split_species_reactions, _species_order
-from ..Structure.conversion import _as_bipartite
+from .net import PetriNet
 
 
-def _is_siphon_indices(
-    G: nx.Graph,
-    species_nodes_sorted: List[Any],
-    reaction_nodes: List[Any],
-    S_idx: Set[int],
-) -> bool:
+def _as_petri(crn: Any) -> PetriNet:
     """
-    Check the **siphon** condition on a set of species indices.
+    Convert a SynCRN-like object into a :class:`PetriNet`.
 
-    A set :math:`S` of species is a siphon if, whenever a reaction
-    produces some species in :math:`S`, that reaction also consumes at
-    least one species in :math:`S` (Murata, 1989).
+    If ``crn`` is already a :class:`PetriNet`, it is returned unchanged.
+    Otherwise, the object is converted using :meth:`PetriNet.from_syncrn`.
+
+    :param crn: SynCRN-like object or an existing :class:`PetriNet`.
+    :type crn: Any
+    :returns: Petri-net representation of the input object.
+    :rtype: PetriNet
     """
-    if not S_idx:
+    return crn if isinstance(crn, PetriNet) else PetriNet.from_syncrn(crn)
+
+
+def _is_siphon(net: PetriNet, places: Set[str]) -> bool:
+    """
+    Test whether a set of places is a siphon.
+
+    A place set ``S`` is a siphon if every transition that produces tokens into
+    ``S`` also consumes at least one token from ``S``.
+
+    :param net: Petri net to inspect.
+    :type net: PetriNet
+    :param places: Candidate place set.
+    :type places: Set[str]
+    :returns:
+        ``True`` if ``places`` is a non-empty siphon, otherwise ``False``.
+    :rtype: bool
+    """
+    if not places:
         return False
-
-    S_nodes = {species_nodes_sorted[i] for i in S_idx}
-
-    for r in reaction_nodes:
-        # does reaction produce any species in S?
-        produces = False
-        for u, v, data in G.edges(r, data=True):
-            s_node = v if u == r else u
-            if (
-                s_node in S_nodes
-                and data.get("role") == "product"
-                and data.get("stoich", 0) > 0
-            ):
-                produces = True
-                break
-        if not produces:
+    for tid in net.transition_order:
+        t = net.transitions[tid]
+        produces_into_s = any(p in places and w > 0 for p, w in t.post.items())
+        if not produces_into_s:
             continue
-
-        # then it must consume at least one species in S
-        consumes = False
-        for u, v, data in G.edges(r, data=True):
-            s_node = v if u == r else u
-            if (
-                s_node in S_nodes
-                and data.get("role") == "reactant"
-                and data.get("stoich", 0) > 0
-            ):
-                consumes = True
-                break
-        if not consumes:
+        consumes_from_s = any(p in places and w > 0 for p, w in t.pre.items())
+        if not consumes_from_s:
             return False
     return True
 
 
-def _is_trap_indices(
-    G: nx.Graph,
-    species_nodes_sorted: List[Any],
-    reaction_nodes: List[Any],
-    S_idx: Set[int],
-) -> bool:
+def _is_trap(net: PetriNet, places: Set[str]) -> bool:
     """
-    Check the **trap** condition on a set of species indices.
+    Test whether a set of places is a trap.
 
-    A set :math:`S` of species is a trap if, whenever a reaction
-    consumes some species in :math:`S`, that reaction also produces
-    at least one species in :math:`S` (Murata, 1989).
+    A place set ``S`` is a trap if every transition that consumes tokens from
+    ``S`` also produces at least one token back into ``S``.
+
+    :param net: Petri net to inspect.
+    :type net: PetriNet
+    :param places: Candidate place set.
+    :type places: Set[str]
+    :returns:
+        ``True`` if ``places`` is a non-empty trap, otherwise ``False``.
+    :rtype: bool
     """
-    if not S_idx:
+    if not places:
         return False
-
-    S_nodes = {species_nodes_sorted[i] for i in S_idx}
-
-    for r in reaction_nodes:
-        # does reaction consume any species in S?
-        consumes = False
-        for u, v, data in G.edges(r, data=True):
-            s_node = v if u == r else u
-            if (
-                s_node in S_nodes
-                and data.get("role") == "reactant"
-                and data.get("stoich", 0) > 0
-            ):
-                consumes = True
-                break
-        if not consumes:
+    for tid in net.transition_order:
+        t = net.transitions[tid]
+        consumes_from_s = any(p in places and w > 0 for p, w in t.pre.items())
+        if not consumes_from_s:
             continue
-
-        # then it must produce at least one species in S
-        produces = False
-        for u, v, data in G.edges(r, data=True):
-            s_node = v if u == r else u
-            if (
-                s_node in S_nodes
-                and data.get("role") == "product"
-                and data.get("stoich", 0) > 0
-            ):
-                produces = True
-                break
-        if not produces:
+        produces_into_s = any(p in places and w > 0 for p, w in t.post.items())
+        if not produces_into_s:
             return False
     return True
 
 
-def _minimal_sets(candidates: List[Set[int]]) -> List[Set[int]]:
+def _minimal_sets(candidates: List[Set[str]]) -> List[Set[str]]:
     """
-    Return inclusion-minimal sets from a list of integer subsets.
+    Reduce a collection of candidate sets to inclusion-minimal sets.
 
-    A set :math:`S` is kept if it is not a strict superset of any other
-    candidate already in the output.
+    The result contains only those sets for which no strict subset is also
+    present among the candidates.
 
-    :reference: Standard minimality filtering in Petri net analysis.
+    :param candidates: Candidate place sets.
+    :type candidates: List[Set[str]]
+    :returns: Inclusion-minimal subset of the input candidates.
+    :rtype: List[Set[str]]
     """
-    out: List[Set[int]] = []
-    for S in candidates:
-        if any(T.issubset(S) for T in out):
+    candidates = sorted(candidates, key=lambda s: (len(s), sorted(s)))
+    out: List[Set[str]] = []
+    for s in candidates:
+        if any(t.issubset(s) for t in out):
             continue
-        # remove supersets of S already in out
-        out = [T for T in out if not S.issubset(T)]
-        out.append(S)
+        out = [t for t in out if not s.issubset(t)]
+        out.append(s)
     return out
 
 
-def find_siphons(crn: Any, *, max_size: int | None = None) -> List[Set[str]]:
+def _render_place_sets(
+    net: PetriNet,
+    sets_: List[Set[str]],
+    *,
+    names: str,
+) -> List[Set[str]]:
     """
-    Enumerate **minimal siphons** via brute-force subset search.
+    Render place sets either by internal ids or by place labels.
 
-    A siphon is a set of species with the property that any reaction that
-    produces one of those species also consumes at least one of them
-    (Murata, 1989). This routine enumerates all *inclusion-minimal*
-    siphons up to ``max_size``.
+    :param net: Petri net providing place-name lookup.
+    :type net: PetriNet
+    :param sets_: Place sets expressed in internal place ids.
+    :type sets_: List[Set[str]]
+    :param names:
+        Output naming mode. Supported values are ``"id"`` and ``"label"``.
+    :type names: str
+    :returns:
+        Place sets rendered according to the requested naming convention.
+    :rtype: List[Set[str]]
+    :raises ValueError: If ``names`` is not ``"id"`` or ``"label"``.
+    """
+    if names == "id":
+        return [set(s) for s in sets_]
+    if names == "label":
+        return [{net.place_name(p) for p in s} for s in sets_]
+    raise ValueError("names must be 'id' or 'label'")
 
-    This is practical only for small networks (typically up to
-    :math:`\\sim 10` species).
 
-    :param crn: Network-like object (CRNHyperGraph or bipartite graph).
+def find_siphons(
+    crn: Any,
+    *,
+    max_size: int | None = None,
+    names: str = "label",
+) -> List[Set[str]]:
+    """
+    Enumerate inclusion-minimal siphons of a SynCRN Petri-net view.
+
+    The search is performed by brute-force subset enumeration up to the
+    requested size bound, followed by inclusion-minimal filtering.
+
+    :param crn: SynCRN-like object or :class:`PetriNet`.
     :type crn: Any
-    :param max_size: Optional maximum size of siphons to search for. If
-        ``None``, all subset sizes are considered.
-    :type max_size: int or None
-    :returns: List of minimal siphons, each represented as a set of
-        species labels (in the deterministic order induced by
-        :func:`_species_order`).
-    :rtype: list[set[str]]
+    :param max_size:
+        Maximum siphon size to consider. ``None`` means all sizes.
+    :type max_size: int | None
+    :param names:
+        Whether to return internal place ids or species labels.
+        Supported values are ``"id"`` and ``"label"``.
+    :type names: str
+    :returns: Inclusion-minimal siphons.
+    :rtype: List[Set[str]]
     """
-    G = _as_bipartite(crn)
-    species_nodes_sorted, species_labels, _ = _species_order(G)
-    _, reaction_nodes = _split_species_reactions(G)
+    net = _as_petri(crn)
+    places = net.place_order
+    n = len(places)
+    limit = n if max_size is None else min(max_size, n)
 
-    n_s = len(species_labels)
-    if max_size is None:
-        max_size = n_s
-
-    all_indices = list(range(n_s))
-    candidates: List[Set[int]] = []
-    for k in range(1, max_size + 1):
-        for combo in combinations(all_indices, k):
-            S_idx = set(combo)
-            if _is_siphon_indices(G, species_nodes_sorted, reaction_nodes, S_idx):
-                candidates.append(S_idx)
-
-    minimal = _minimal_sets(candidates)
-    return [set(species_labels[i] for i in S_idx) for S_idx in minimal]
+    candidates: List[Set[str]] = []
+    for k in range(1, limit + 1):
+        for combo in combinations(places, k):
+            s = set(combo)
+            if _is_siphon(net, s):
+                candidates.append(s)
+    return _render_place_sets(net, _minimal_sets(candidates), names=names)
 
 
-def find_traps(crn: Any, *, max_size: int | None = None) -> List[Set[str]]:
+def find_traps(
+    crn: Any,
+    *,
+    max_size: int | None = None,
+    names: str = "label",
+) -> List[Set[str]]:
     """
-    Enumerate **minimal traps** via brute-force subset search.
+    Enumerate inclusion-minimal traps of a SynCRN Petri-net view.
 
-    A trap is a set of species with the property that any reaction that
-    consumes one of those species also produces at least one of them
-    (Murata, 1989). This routine enumerates all inclusion-minimal traps
-    up to ``max_size``.
+    The search is performed by brute-force subset enumeration up to the
+    requested size bound, followed by inclusion-minimal filtering.
 
-    :param crn: Network-like object (CRNHyperGraph or bipartite graph).
+    :param crn: SynCRN-like object or :class:`PetriNet`.
     :type crn: Any
-    :param max_size: Optional maximum size of traps to search for. If
-        ``None``, all subset sizes are considered.
-    :type max_size: int or None
-    :returns: List of minimal traps, each represented as a set of
-        species labels.
-    :rtype: list[set[str]]
+    :param max_size:
+        Maximum trap size to consider. ``None`` means all sizes.
+    :type max_size: int | None
+    :param names:
+        Whether to return internal place ids or species labels.
+        Supported values are ``"id"`` and ``"label"``.
+    :type names: str
+    :returns: Inclusion-minimal traps.
+    :rtype: List[Set[str]]
     """
-    G = _as_bipartite(crn)
-    species_nodes_sorted, species_labels, _ = _species_order(G)
-    _, reaction_nodes = _split_species_reactions(G)
+    net = _as_petri(crn)
+    places = net.place_order
+    n = len(places)
+    limit = n if max_size is None else min(max_size, n)
 
-    n_s = len(species_labels)
-    if max_size is None:
-        max_size = n_s
+    candidates: List[Set[str]] = []
+    for k in range(1, limit + 1):
+        for combo in combinations(places, k):
+            s = set(combo)
+            if _is_trap(net, s):
+                candidates.append(s)
+    return _render_place_sets(net, _minimal_sets(candidates), names=names)
 
-    all_indices = list(range(n_s))
-    candidates: List[Set[int]] = []
-    for k in range(1, max_size + 1):
-        for combo in combinations(all_indices, k):
-            S_idx = set(combo)
-            if _is_trap_indices(G, species_nodes_sorted, reaction_nodes, S_idx):
-                candidates.append(S_idx)
 
-    minimal = _minimal_sets(candidates)
-    return [set(species_labels[i] for i in S_idx) for S_idx in minimal]
+def species_transition_neighborhoods(crn: Any) -> Dict[str, Dict[str, List[str]]]:
+    """
+    Return per-species producer and consumer transition neighborhoods.
+
+    This is a small structural helper that is often useful when debugging
+    siphons, traps, and reachability issues.
+
+    The returned dictionary is keyed by internal place id. For each place, the
+    value contains the display label, the transitions that produce tokens into
+    the place, and the transitions that consume tokens from it.
+
+    :param crn: SynCRN-like object or :class:`PetriNet`.
+    :type crn: Any
+    :returns:
+        Mapping from place id to a dictionary with keys ``"label"``,
+        ``"producer_transitions"``, and ``"consumer_transitions"``.
+    :rtype: Dict[str, Dict[str, List[str]]]
+    """
+    net = _as_petri(crn)
+    out: Dict[str, Dict[str, List[str]]] = {}
+    for p in net.place_order:
+        producers: List[str] = []
+        consumers: List[str] = []
+        for tid in net.transition_order:
+            t = net.transitions[tid]
+            if p in t.post:
+                producers.append(tid)
+            if p in t.pre:
+                consumers.append(tid)
+        out[p] = {
+            "label": net.place_name(p),
+            "producer_transitions": producers,
+            "consumer_transitions": consumers,
+        }
+    return out

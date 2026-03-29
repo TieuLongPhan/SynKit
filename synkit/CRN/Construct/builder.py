@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SynCRN:
+class CRNExpand:
     rules: List[Any]
     repeats: int = 50
 
@@ -498,7 +498,7 @@ class SynCRN:
         return self.derivations.as_dicts()
 
 
-def build_syncrn_from_smarts(
+def build_crn_from_smarts(
     rules: List[str],
     seeds: List[str],
     *,
@@ -519,7 +519,7 @@ def build_syncrn_from_smarts(
     dedup_delta: bool = True,
     dedup_across_rules: bool = False,
 ) -> nx.DiGraph:
-    crn = SynCRN(
+    crn = CRNExpand(
         rules=rules,
         repeats=repeats,
         explicit_h=explicit_h,
