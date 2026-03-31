@@ -13,5 +13,4 @@ __all__ = [
     "FrontierStrategy",
     "DerivationRecord",
     "DerivationLog",
-    
 ]

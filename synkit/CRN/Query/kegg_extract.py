@@ -5,56 +5,87 @@ import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from rxnmapper import RXNMapper
+try:
+    from rxnmapper import RXNMapper as _RXNMapper
+except Exception:
+    _RXNMapper = None
 
 from .kegg_api import KEGGClient
 from .kegg_parse import (
-    collect_compound_ids_from_equations,
-    extract_compound_ids_from_text,
+    get_compound_ids_from_equations,
+    get_compound_ids_from_text,
     molblock_to_smiles,
     normalize_module_id,
     parse_kegg_field_blocks,
     reaction_smiles_from_equation,
 )
 
-
 _RID_PATTERN = re.compile(r"R\d{5}")
 
 
-@dataclass
+ReactionEquationMap = dict[str, Optional[str]]
+CompoundTable = dict[str, dict[str, Any]]
+ReactionSmilesMap = dict[str, str]
+MissingByReaction = dict[str, dict[str, list[str]]]
+JSONDict = dict[str, Any]
+
+
+@dataclass(slots=True)
 class KEGGExtractor:
     """
-    High-level extractor for KEGG pathway/module reaction data.
+    High-level extractor for KEGG pathway and module reaction data.
 
-    This class downloads KEGG entries, resolves module membership, collects
-    reaction equations, builds compound tables, constructs reaction SMILES, and
-    optionally computes atom-mapped reaction rules.
+    This class orchestrates KEGG entry retrieval, module membership parsing,
+    reaction equation collection, compound-table construction, reaction SMILES
+    assembly, and optional atom mapping.
 
     :param client:
-        Optional KEGG REST client.
+        Optional KEGG REST client. When omitted, a default :class:`KEGGClient`
+        instance is created during :meth:`__post_init__`.
     :type client: Optional[KEGGClient]
+    :param mapper_cls:
+        Optional atom-mapper class used by :meth:`atom_map_reactions`. The
+        class must be instantiable without arguments and must provide
+        ``get_attention_guided_atom_maps``.
+    :type mapper_cls: Optional[type[Any]]
+
+    Example
+    -------
+    .. code-block:: python
+
+        extractor = KEGGExtractor()
+        data = extractor.build_module_json(
+            "M00001",
+            with_compounds=True,
+            with_atom_maps=False,
+        )
     """
 
     client: Optional[KEGGClient] = None
+    mapper_cls: Optional[type[Any]] = _RXNMapper
 
     def __post_init__(self) -> None:
         if self.client is None:
             self.client = KEGGClient()
 
-    # ---------------------------------------------------------------------
-    # Raw KEGG accessors
-    # ---------------------------------------------------------------------
     def get_modules_from_pathway(self, pathway_id: str) -> List[str]:
         """
         Extract module IDs from a KEGG pathway entry.
 
         :param pathway_id:
-            KEGG pathway identifier, e.g. ``"hsa00010"``.
+            KEGG pathway identifier such as ``"hsa00010"``.
         :type pathway_id: str
 
         :returns:
-            Canonical module IDs such as ``["M00001", "M00002"]``.
-        :rtype: List[str]
+            Canonical KEGG module identifiers such as ``["M00001",
+            "M00002"]``.
+        :rtype: list[str]
+
+        Example
+        -------
+        .. code-block:: python
+
+            modules = extractor.get_modules_from_pathway("hsa00010")
         """
         text = self.client.get_text(f"get/{pathway_id}")
         payloads = parse_kegg_field_blocks(text, "MODULE")
@@ -73,12 +104,18 @@ class KEGGExtractor:
         Collect KEGG reaction IDs from a module entry.
 
         :param module_id:
-            KEGG module ID, e.g. ``"M00001"``.
+            KEGG module identifier such as ``"M00001"``.
         :type module_id: str
 
         :returns:
-            Sorted reaction IDs.
-        :rtype: List[str]
+            Sorted unique KEGG reaction identifiers.
+        :rtype: list[str]
+
+        Example
+        -------
+        .. code-block:: python
+
+            reaction_ids = extractor.get_reaction_ids_from_module("M00001")
         """
         text = self.client.get_text(f"get/{module_id}")
         payloads = parse_kegg_field_blocks(text, "REACTION")
@@ -94,28 +131,40 @@ class KEGGExtractor:
         Fetch the KEGG equation string for a reaction.
 
         :param reaction_id:
-            KEGG reaction ID, e.g. ``"R00200"``.
+            KEGG reaction identifier such as ``"R00200"``.
         :type reaction_id: str
 
         :returns:
-            Equation string if present, otherwise ``None``.
+            Equation string when present, otherwise ``None``.
         :rtype: Optional[str]
+
+        Example
+        -------
+        .. code-block:: python
+
+            equation = extractor.get_equation_for_reaction("R00200")
         """
         text = self.client.get_text(f"get/rn:{reaction_id}")
         payloads = parse_kegg_field_blocks(text, "EQUATION")
         return payloads[0].strip() if payloads else None
 
-    def get_module_equations(self, module_id: str) -> Dict[str, Optional[str]]:
+    def get_module_equations(self, module_id: str) -> ReactionEquationMap:
         """
-        Build ``{reaction_id: equation}`` for a module.
+        Build a reaction-to-equation mapping for a KEGG module.
 
         :param module_id:
-            KEGG module ID.
+            KEGG module identifier.
         :type module_id: str
 
         :returns:
-            Reaction-equation mapping.
-        :rtype: Dict[str, Optional[str]]
+            Mapping from reaction identifier to equation string.
+        :rtype: dict[str, Optional[str]]
+
+        Example
+        -------
+        .. code-block:: python
+
+            equations = extractor.get_module_equations("M00001")
         """
         reaction_ids = self.get_reaction_ids_from_module(module_id)
         return {
@@ -123,38 +172,52 @@ class KEGGExtractor:
             for reaction_id in reaction_ids
         }
 
-    def get_pathway_module_equations(
+    def get_pathway_equations(
         self,
         pathway_id: str,
     ) -> Dict[str, Dict[str, Optional[str]]]:
         """
-        Build nested module/reaction equation mapping for a pathway.
+        Build nested module/reaction equation mappings for a pathway.
 
         :param pathway_id:
             KEGG pathway identifier.
         :type pathway_id: str
 
         :returns:
-            ``{module_id: {reaction_id: equation}}``.
-        :rtype: Dict[str, Dict[str, Optional[str]]]
+            Mapping of the form ``{module_id: {reaction_id: equation}}``.
+        :rtype: dict[str, dict[str, Optional[str]]]
+
+        Example
+        -------
+        .. code-block:: python
+
+            nested = extractor.get_pathway_equations("hsa00010")
         """
         modules = self.get_modules_from_pathway(pathway_id)
-        return {module_id: self.get_module_equations(module_id) for module_id in modules}
+        return {
+            module_id: self.get_module_equations(module_id) for module_id in modules
+        }
 
-    # ---------------------------------------------------------------------
-    # Compound accessors
-    # ---------------------------------------------------------------------
     def get_compound_name(self, compound_id: str) -> Optional[str]:
         """
         Retrieve the primary KEGG compound name.
 
+        When multiple synonyms are present in the ``NAME`` field, only the
+        first entry is returned.
+
         :param compound_id:
-            KEGG compound ID, e.g. ``"C00001"``.
+            KEGG compound identifier such as ``"C00001"``.
         :type compound_id: str
 
         :returns:
-            First listed compound name if available, otherwise ``None``.
+            Primary compound name if available, otherwise ``None``.
         :rtype: Optional[str]
+
+        Example
+        -------
+        .. code-block:: python
+
+            name = extractor.get_compound_name("C00001")
         """
         text = self.client.get_text(f"get/cpd:{compound_id}")
         payloads = parse_kegg_field_blocks(text, "NAME")
@@ -169,12 +232,18 @@ class KEGGExtractor:
         Retrieve the KEGG MOL block for a compound.
 
         :param compound_id:
-            KEGG compound ID.
+            KEGG compound identifier.
         :type compound_id: str
 
         :returns:
-            MOL block text or ``None`` if unavailable.
+            MOL block text when available, otherwise ``None``.
         :rtype: Optional[str]
+
+        Example
+        -------
+        .. code-block:: python
+
+            molblock = extractor.get_compound_molblock("C00001")
         """
         return self.client.get_optional_text(f"get/cpd:{compound_id}/mol")
 
@@ -183,18 +252,28 @@ class KEGGExtractor:
         compound_ids: List[str],
     ) -> Dict[str, Dict[str, Any]]:
         """
-        Build a KEGG compound table.
+        Build a compound table for a list of KEGG compound identifiers.
+
+        Each returned record includes the KEGG compound identifier, the primary
+        compound name, the optional MOL block, and a canonical SMILES string
+        derived from the MOL block when RDKit parsing succeeds.
 
         :param compound_ids:
-            KEGG compound IDs.
-        :type compound_ids: List[str]
+            KEGG compound identifiers.
+        :type compound_ids: list[str]
 
         :returns:
-            Mapping
+            Compound table of the form
             ``{cid: {"id", "name", "smiles", "molblock"}}``.
-        :rtype: Dict[str, Dict[str, Any]]
+        :rtype: dict[str, dict[str, Any]]
+
+        Example
+        -------
+        .. code-block:: python
+
+            compounds = extractor.build_compound_table(["C00001", "C00002"])
         """
-        compounds: Dict[str, Dict[str, Any]] = {}
+        compounds: CompoundTable = {}
 
         for compound_id in compound_ids:
             name = self.get_compound_name(compound_id)
@@ -210,31 +289,36 @@ class KEGGExtractor:
 
         return compounds
 
-    # ---------------------------------------------------------------------
-    # Reaction SMILES and atom mapping
-    # ---------------------------------------------------------------------
     def build_reaction_smiles_dict(
         self,
         parsed_by_rid: Dict[str, Any],
         compounds_by_cid: Dict[str, Dict[str, Any]],
-    ) -> Tuple[Dict[str, str], Dict[str, Dict[str, List[str]]]]:
+    ) -> tuple[ReactionSmilesMap, MissingByReaction]:
         """
-        Build reaction SMILES for a reaction dictionary.
+        Build reaction SMILES strings for parsed KEGG equations.
 
         :param parsed_by_rid:
-            Parsed equation objects keyed by reaction ID.
-        :type parsed_by_rid: Dict[str, Any]
-
+            Parsed equation objects keyed by reaction identifier.
+        :type parsed_by_rid: Mapping[str, Any]
         :param compounds_by_cid:
-            Compound table keyed by compound ID.
-        :type compounds_by_cid: Dict[str, Dict[str, Any]]
+            Compound table keyed by KEGG compound identifier.
+        :type compounds_by_cid: Mapping[str, Mapping[str, Any]]
 
         :returns:
             Tuple ``(reaction_smiles_by_id, missing_by_id)``.
-        :rtype: Tuple[Dict[str, str], Dict[str, Dict[str, List[str]]]]
+        :rtype: tuple[dict[str, str], dict[str, dict[str, list[str]]]]
+
+        Example
+        -------
+        .. code-block:: python
+
+            rsmi_by_rid, missing = extractor.build_reaction_smiles_dict(
+                parsed_by_rid,
+                compounds_by_cid,
+            )
         """
-        reaction_smiles: Dict[str, str] = {}
-        missing_by_rid: Dict[str, Dict[str, List[str]]] = {}
+        reaction_smiles: ReactionSmilesMap = {}
+        missing_by_rid: MissingByReaction = {}
 
         for reaction_id, parsed_equation in parsed_by_rid.items():
             rsmi, missing = reaction_smiles_from_equation(
@@ -255,13 +339,19 @@ class KEGGExtractor:
 
         :param reaction_smiles_by_id:
             Mapping ``{reaction_id: reaction_smiles}``.
-        :type reaction_smiles_by_id: Dict[str, str]
+        :type reaction_smiles_by_id: Mapping[str, str]
 
         :returns:
             Mapping ``{reaction_id: mapped_reaction_smiles_or_none}``.
-        :rtype: Dict[str, Optional[str]]
+        :rtype: dict[str, Optional[str]]
+
+        Example
+        -------
+        .. code-block:: python
+
+            mapped = extractor.atom_map_reactions({"R00001": "CCO>>CC=O"})
         """
-        mapper = RXNMapper()
+        mapper = self.mapper_cls() if self.mapper_cls is not None else None
         mapped_by_id: Dict[str, Optional[str]] = {}
 
         for reaction_id, reaction_smiles in reaction_smiles_by_id.items():
@@ -281,28 +371,33 @@ class KEGGExtractor:
 
         return mapped_by_id
 
-    # ---------------------------------------------------------------------
-    # Missing data reporting
-    # ---------------------------------------------------------------------
     def build_missing_compound_report(
         self,
         equations_by_rid: Dict[str, Optional[str]],
         compounds_by_cid: Dict[str, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    ) -> JSONDict:
         """
         Build a report for compounds lacking SMILES.
 
         :param equations_by_rid:
-            Reaction equations keyed by reaction ID.
-        :type equations_by_rid: Dict[str, Optional[str]]
-
+            Reaction equations keyed by reaction identifier.
+        :type equations_by_rid: dict[str, Optional[str]]
         :param compounds_by_cid:
-            Compound records keyed by KEGG compound ID.
-        :type compounds_by_cid: Dict[str, Dict[str, Any]]
+            Compound records keyed by KEGG compound identifier.
+        :type compounds_by_cid: Mapping[str, Mapping[str, Any]]
 
         :returns:
-            Missing compound report with per-reaction provenance.
-        :rtype: Dict[str, Any]
+            Report containing missing compounds and per-reaction provenance.
+        :rtype: dict[str, Any]
+
+        Example
+        -------
+        .. code-block:: python
+
+            report = extractor.build_missing_compound_report(
+                equations_by_rid,
+                compounds_by_cid,
+            )
         """
         cid_to_rids: Dict[str, Set[str]] = {}
 
@@ -310,7 +405,7 @@ class KEGGExtractor:
             if not equation:
                 continue
 
-            for compound_id in extract_compound_ids_from_text(equation):
+            for compound_id in get_compound_ids_from_text(equation):
                 cid_to_rids.setdefault(compound_id, set()).add(reaction_id)
 
         missing_compounds: List[Dict[str, Any]] = []
@@ -338,12 +433,9 @@ class KEGGExtractor:
             "reactions_involving_missing": sorted(involving_reactions),
         }
 
-    # ---------------------------------------------------------------------
-    # JSON builders
-    # ---------------------------------------------------------------------
     def build_kegg_json(
         self,
-        equations_by_rid: Dict[str, Optional[str]],
+        equations_by_rid: ReactionEquationMap,
         *,
         smiles_by_rid: Optional[Dict[str, str]] = None,
         rules_by_rid: Optional[Dict[str, Optional[str]]] = None,
@@ -353,28 +445,31 @@ class KEGGExtractor:
         Build a compact KEGG JSON block with reactions and molecules.
 
         :param equations_by_rid:
-            Reaction equations keyed by reaction ID.
-        :type equations_by_rid: Dict[str, Optional[str]]
-
+            Reaction equations keyed by reaction identifier.
+        :type equations_by_rid: dict[str, Optional[str]]
         :param smiles_by_rid:
-            Optional reaction SMILES keyed by reaction ID.
-        :type smiles_by_rid: Optional[Dict[str, str]]
-
+            Optional reaction SMILES keyed by reaction identifier.
+        :type smiles_by_rid: Optional[Mapping[str, str]]
         :param rules_by_rid:
-            Optional mapped rule strings keyed by reaction ID.
-        :type rules_by_rid: Optional[Dict[str, Optional[str]]]
-
+            Optional atom-mapped reaction strings keyed by reaction identifier.
+        :type rules_by_rid: Optional[Mapping[str, Optional[str]]]
         :param molecules_by_cid:
-            Optional molecule table keyed by compound ID.
-        :type molecules_by_cid: Optional[Dict[str, Dict[str, Any]]]
+            Optional molecule table keyed by compound identifier.
+        :type molecules_by_cid: Optional[Mapping[str, Mapping[str, Any]]]
 
         :returns:
-            JSON-like dictionary with ``"reactions"`` and ``"molecules"``.
-        :rtype: Dict[str, Any]
+            Dictionary with ``"reactions"`` and ``"molecules"`` entries.
+        :rtype: dict[str, Any]
+
+        Example
+        -------
+        .. code-block:: python
+
+            data = extractor.build_kegg_json(equations_by_rid)
         """
-        smiles_by_rid = smiles_by_rid or {}
-        rules_by_rid = rules_by_rid or {}
-        molecules_by_cid = molecules_by_cid or {}
+        smiles_by_rid = dict(smiles_by_rid or {})
+        rules_by_rid = dict(rules_by_rid or {})
+        molecules_by_cid = dict(molecules_by_cid or {})
 
         all_compound_ids: Set[str] = set()
         reactions: List[Dict[str, Any]] = []
@@ -384,7 +479,7 @@ class KEGGExtractor:
             if not equation:
                 continue
 
-            all_compound_ids.update(extract_compound_ids_from_text(equation))
+            all_compound_ids.update(get_compound_ids_from_text(equation))
             reactions.append(
                 {
                     "id": reaction_id,
@@ -417,34 +512,39 @@ class KEGGExtractor:
         with_compounds: bool = True,
         with_atom_maps: bool = True,
         save_as: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> JSONDict:
         """
         Build a JSON block for a KEGG module.
 
         :param module_id:
             KEGG module ID.
         :type module_id: str
-
         :param with_compounds:
-            Whether to resolve compound names/MOL/SMILES.
+            Whether to resolve compound names, MOL blocks, and SMILES strings.
         :type with_compounds: bool
-
         :param with_atom_maps:
-            Whether to compute atom-mapped reaction rules.
+            Whether to compute atom-mapped reactions.
         :type with_atom_maps: bool
-
         :param save_as:
-            Optional JSON output path.
+            Optional output path for writing the JSON block to disk.
         :type save_as: Optional[str]
 
         :returns:
             Module JSON dictionary.
-        :rtype: Dict[str, Any]
+        :rtype: dict[str, Any]
+
+        Example
+        -------
+        .. code-block:: python
+
+            data = extractor.build_module_json(
+                "M00001",
+                with_compounds=True,
+                with_atom_maps=False,
+            )
         """
         equations_by_rid = self.get_module_equations(module_id)
-        compound_ids, parsed_by_rid = collect_compound_ids_from_equations(
-            equations_by_rid
-        )
+        compound_ids, parsed_by_rid = get_compound_ids_from_equations(equations_by_rid)
 
         compounds_by_cid = (
             self.build_compound_table(compound_ids) if with_compounds else {}
@@ -462,7 +562,7 @@ class KEGGExtractor:
             else {}
         )
 
-        data = {"module_id": module_id}
+        data: JSONDict = {"module_id": module_id}
         data.update(
             self.build_kegg_json(
                 equations_by_rid,
@@ -504,29 +604,36 @@ class KEGGExtractor:
         with_compounds: bool = True,
         with_atom_maps: bool = True,
         save_as: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> JSONDict:
         """
         Build a JSON block for a KEGG pathway, organized by module.
 
         :param pathway_id:
             KEGG pathway ID.
         :type pathway_id: str
-
         :param with_compounds:
             Whether to resolve compound records.
         :type with_compounds: bool
-
         :param with_atom_maps:
-            Whether to compute atom-mapped rules.
+            Whether to compute atom-mapped reactions.
         :type with_atom_maps: bool
-
         :param save_as:
-            Optional JSON output path.
+            Optional output path for writing the JSON block to disk.
         :type save_as: Optional[str]
 
         :returns:
             Pathway JSON dictionary.
-        :rtype: Dict[str, Any]
+        :rtype: dict[str, Any]
+
+        Example
+        -------
+        .. code-block:: python
+
+            data = extractor.build_pathway_json(
+                "hsa00010",
+                with_compounds=True,
+                with_atom_maps=False,
+            )
         """
         modules = self.get_modules_from_pathway(pathway_id)
         by_module: Dict[str, Any] = {}
@@ -550,7 +657,7 @@ class KEGGExtractor:
                     module_block["missing"].get("reactions_involving_missing", [])
                 )
 
-        data = {
+        data: JSONDict = {
             "pathway_id": pathway_id,
             "modules": modules,
             "by_module": by_module,

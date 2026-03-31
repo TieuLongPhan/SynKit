@@ -30,8 +30,12 @@ def _split_reaction_smiles(reaction_smiles: str) -> Tuple[List[str], List[str]]:
     left = left.strip()
     right = right.strip()
 
-    reactants = [token.strip() for token in left.split(".") if token.strip()] if left else []
-    products = [token.strip() for token in right.split(".") if token.strip()] if right else []
+    reactants = (
+        [token.strip() for token in left.split(".") if token.strip()] if left else []
+    )
+    products = (
+        [token.strip() for token in right.split(".") if token.strip()] if right else []
+    )
 
     return reactants, products
 
@@ -359,8 +363,16 @@ def abstract_reaction_network(
 
     abstracted_reactions: List[str] = []
     for reactants, products in parsed_reactions:
-        left = reactant_join.join(molecule_to_label[mol] for mol in reactants) if reactants else ""
-        right = product_join.join(molecule_to_label[mol] for mol in products) if products else ""
+        left = (
+            reactant_join.join(molecule_to_label[mol] for mol in reactants)
+            if reactants
+            else ""
+        )
+        right = (
+            product_join.join(molecule_to_label[mol] for mol in products)
+            if products
+            else ""
+        )
         abstracted_reactions.append(f"{left}>>{right}")
 
     if deduplicate:

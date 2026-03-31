@@ -51,7 +51,9 @@ class KEGGImputer:
         """
         Restore a molecule list while preserving original order and appending new IDs.
         """
-        original_ids = [record[id_key] for record in original_molecules if id_key in record]
+        original_ids = [
+            record[id_key] for record in original_molecules if id_key in record
+        ]
         restored: List[Dict[str, Any]] = []
 
         for molecule_id in original_ids:
