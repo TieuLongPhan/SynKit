@@ -85,7 +85,7 @@ def parse_kegg_field_blocks(text: str, field: str) -> list[str]:
     while i < len(lines):
         line = lines[i]
         if line.startswith(field):
-            payload = line[len(field) :].strip()
+            payload = line[len(field):].strip()
             j = i + 1
             continuation: list[str] = []
 

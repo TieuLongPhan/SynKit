@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional, Mapping
 
 try:
     from rxnmapper import RXNMapper as _RXNMapper
@@ -68,7 +68,33 @@ class KEGGExtractor:
         if self.client is None:
             self.client = KEGGClient()
 
-    def get_modules_from_pathway(self, pathway_id: str) -> List[str]:
+    @staticmethod
+    def save_json(data: Mapping[str, Any], save_as: Optional[str]) -> None:
+        """
+        Save JSON data to disk when an output path is provided.
+
+        :param data:
+            JSON-serializable data to write.
+        :type data: Mapping[str, Any]
+        :param save_as:
+            Optional output path.
+        :type save_as: Optional[str]
+
+        :returns:
+            ``None``.
+        :rtype: None
+
+        Example
+        -------
+        .. code-block:: python
+
+            KEGGExtractor._save_json({"x": 1}, "out.json")
+        """
+        if save_as:
+            with open(save_as, "w", encoding="utf-8") as handle:
+                json.dump(data, handle, ensure_ascii=False, indent=2)
+
+    def get_modules_from_pathway(self, pathway_id: str) -> list[str]:
         """
         Extract module IDs from a KEGG pathway entry.
 
@@ -90,7 +116,7 @@ class KEGGExtractor:
         text = self.client.get_text(f"get/{pathway_id}")
         payloads = parse_kegg_field_blocks(text, "MODULE")
 
-        modules: List[str] = []
+        modules: list[str] = []
         for payload in payloads:
             for token in payload.split():
                 normalized = normalize_module_id(token)
@@ -99,7 +125,7 @@ class KEGGExtractor:
 
         return modules
 
-    def get_reaction_ids_from_module(self, module_id: str) -> List[str]:
+    def get_reaction_ids_from_module(self, module_id: str) -> list[str]:
         """
         Collect KEGG reaction IDs from a module entry.
 
@@ -120,7 +146,7 @@ class KEGGExtractor:
         text = self.client.get_text(f"get/{module_id}")
         payloads = parse_kegg_field_blocks(text, "REACTION")
 
-        reaction_ids: Set[str] = set()
+        reaction_ids: set[str] = set()
         for payload in payloads:
             reaction_ids.update(_RID_PATTERN.findall(payload))
 
@@ -175,7 +201,7 @@ class KEGGExtractor:
     def get_pathway_equations(
         self,
         pathway_id: str,
-    ) -> Dict[str, Dict[str, Optional[str]]]:
+    ) -> dict[str, ReactionEquationMap]:
         """
         Build nested module/reaction equation mappings for a pathway.
 
@@ -249,8 +275,8 @@ class KEGGExtractor:
 
     def build_compound_table(
         self,
-        compound_ids: List[str],
-    ) -> Dict[str, Dict[str, Any]]:
+        compound_ids: list[str],
+    ) -> CompoundTable:
         """
         Build a compound table for a list of KEGG compound identifiers.
 
@@ -291,8 +317,8 @@ class KEGGExtractor:
 
     def build_reaction_smiles_dict(
         self,
-        parsed_by_rid: Dict[str, Any],
-        compounds_by_cid: Dict[str, Dict[str, Any]],
+        parsed_by_rid: Mapping[str, Any],
+        compounds_by_cid: Mapping[str, Mapping[str, Any]],
     ) -> tuple[ReactionSmilesMap, MissingByReaction]:
         """
         Build reaction SMILES strings for parsed KEGG equations.
@@ -332,8 +358,8 @@ class KEGGExtractor:
 
     def atom_map_reactions(
         self,
-        reaction_smiles_by_id: Dict[str, str],
-    ) -> Dict[str, Optional[str]]:
+        reaction_smiles_by_id: Mapping[str, str],
+    ) -> dict[str, Optional[str]]:
         """
         Atom-map reaction SMILES using RXNMapper.
 
@@ -352,7 +378,7 @@ class KEGGExtractor:
             mapped = extractor.atom_map_reactions({"R00001": "CCO>>CC=O"})
         """
         mapper = self.mapper_cls() if self.mapper_cls is not None else None
-        mapped_by_id: Dict[str, Optional[str]] = {}
+        mapped_by_id: dict[str, Optional[str]] = {}
 
         for reaction_id, reaction_smiles in reaction_smiles_by_id.items():
             if (
@@ -373,8 +399,8 @@ class KEGGExtractor:
 
     def build_missing_compound_report(
         self,
-        equations_by_rid: Dict[str, Optional[str]],
-        compounds_by_cid: Dict[str, Dict[str, Any]],
+        equations_by_rid: ReactionEquationMap,
+        compounds_by_cid: Mapping[str, Mapping[str, Any]],
     ) -> JSONDict:
         """
         Build a report for compounds lacking SMILES.
@@ -399,7 +425,7 @@ class KEGGExtractor:
                 compounds_by_cid,
             )
         """
-        cid_to_rids: Dict[str, Set[str]] = {}
+        cid_to_rids: dict[str, set[str]] = {}
 
         for reaction_id, equation in equations_by_rid.items():
             if not equation:
@@ -408,9 +434,9 @@ class KEGGExtractor:
             for compound_id in get_compound_ids_from_text(equation):
                 cid_to_rids.setdefault(compound_id, set()).add(reaction_id)
 
-        missing_compounds: List[Dict[str, Any]] = []
-        missing_ids: Set[str] = set()
-        involving_reactions: Set[str] = set()
+        missing_compounds: list[dict[str, Any]] = []
+        missing_ids: set[str] = set()
+        involving_reactions: set[str] = set()
 
         for compound_id, record in compounds_by_cid.items():
             if record.get("smiles") is None:
@@ -437,10 +463,10 @@ class KEGGExtractor:
         self,
         equations_by_rid: ReactionEquationMap,
         *,
-        smiles_by_rid: Optional[Dict[str, str]] = None,
-        rules_by_rid: Optional[Dict[str, Optional[str]]] = None,
-        molecules_by_cid: Optional[Dict[str, Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
+        smiles_by_rid: Optional[Mapping[str, str]] = None,
+        rules_by_rid: Optional[Mapping[str, Optional[str]]] = None,
+        molecules_by_cid: Optional[Mapping[str, Mapping[str, Any]]] = None,
+    ) -> JSONDict:
         """
         Build a compact KEGG JSON block with reactions and molecules.
 
@@ -471,8 +497,8 @@ class KEGGExtractor:
         rules_by_rid = dict(rules_by_rid or {})
         molecules_by_cid = dict(molecules_by_cid or {})
 
-        all_compound_ids: Set[str] = set()
-        reactions: List[Dict[str, Any]] = []
+        all_compound_ids: set[str] = set()
+        reactions: list[dict[str, Any]] = []
 
         for reaction_id in sorted(equations_by_rid.keys()):
             equation = equations_by_rid[reaction_id]
@@ -489,7 +515,7 @@ class KEGGExtractor:
                 }
             )
 
-        molecules: List[Dict[str, Any]] = []
+        molecules: list[dict[str, Any]] = []
         for compound_id in sorted(all_compound_ids):
             record = molecules_by_cid.get(
                 compound_id,
@@ -591,9 +617,7 @@ class KEGGExtractor:
                 "reactions_involving_missing": [],
             }
 
-        if save_as:
-            with open(save_as, "w", encoding="utf-8") as handle:
-                json.dump(data, handle, ensure_ascii=False, indent=2)
+        self.save_json(data, save_as)
 
         return data
 
@@ -636,10 +660,10 @@ class KEGGExtractor:
             )
         """
         modules = self.get_modules_from_pathway(pathway_id)
-        by_module: Dict[str, Any] = {}
+        by_module: dict[str, Any] = {}
 
-        aggregate_missing_ids: Set[str] = set()
-        aggregate_reaction_ids: Set[str] = set()
+        aggregate_missing_ids: set[str] = set()
+        aggregate_reaction_ids: set[str] = set()
 
         for module_id in modules:
             module_block = self.build_module_json(
@@ -669,8 +693,6 @@ class KEGGExtractor:
                 "reactions_involving_missing": sorted(aggregate_reaction_ids),
             }
 
-        if save_as:
-            with open(save_as, "w", encoding="utf-8") as handle:
-                json.dump(data, handle, ensure_ascii=False, indent=2)
+        self.save_json(data, save_as)
 
         return data
