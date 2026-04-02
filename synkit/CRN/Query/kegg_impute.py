@@ -304,7 +304,6 @@ class KEGGImputer:
     @staticmethod
     def _infer_impacted_reaction_ids(
         reactions: List[Dict[str, Any]],
-        missing_block: Dict[str, Any],
         updated_compound_ids: Set[str],
         *,
         reaction_id_key: str,
@@ -321,9 +320,6 @@ class KEGGImputer:
         :param reactions:
             Reaction records from a module block.
         :type reactions: List[Dict[str, Any]]
-        :param missing_block:
-            Existing missing-compound summary block.
-        :type missing_block: Dict[str, Any]
         :param updated_compound_ids:
             Compound identifiers whose records were changed by imputation.
         :type updated_compound_ids: Set[str]
@@ -344,20 +340,12 @@ class KEGGImputer:
 
             impacted = KEGGImputer._infer_impacted_reaction_ids(
                 reactions,
-                missing_block,
                 {"C00138"},
                 reaction_id_key="id",
                 equation_key="reaction",
             )
         """
         impacted: Set[str] = set()
-
-        for record in (missing_block or {}).get("missing_compounds", []):
-            if record.get("id") in updated_compound_ids:
-                impacted.update(record.get("reactions", []))
-
-        if impacted:
-            return impacted
 
         for reaction in reactions:
             reaction_id = reaction.get(reaction_id_key)
@@ -544,7 +532,6 @@ class KEGGImputer:
 
         molecules = new_data.get("molecules", []) or []
         reactions = new_data.get("reactions", []) or []
-        missing_block = new_data.get("missing", {}) or {}
 
         reaction_fixes, molecule_fixes = self._split_fixes(
             fixes,
@@ -583,7 +570,6 @@ class KEGGImputer:
         impacted_reaction_ids.update(
             self._infer_impacted_reaction_ids(
                 reactions,
-                missing_block,
                 updated_compound_ids,
                 reaction_id_key=reaction_id_key,
                 equation_key=equation_key,

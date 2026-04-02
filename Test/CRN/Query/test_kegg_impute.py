@@ -74,37 +74,29 @@ class TestKEGGImputer(unittest.TestCase):
         )
         self.assertEqual([m["id"] for m in restored], ["C00002", "C00001", "C00003"])
 
-    def test_infer_impacted_reaction_ids_prefers_missing_block(self):
+    def test_infer_impacted_reaction_ids(self):
         reactions = [{"id": "R1", "reaction": "C00002 => C00003"}]
-        missing_block = {
-            "missing_compounds": [
-                {"id": "C00002", "reactions": ["R_missing"]},
-                {"id": "C99999", "reactions": ["R_other"]},
-            ]
-        }
         impacted = KEGGImputer._infer_impacted_reaction_ids(
             reactions,
-            missing_block,
-            {"C00002"},
-            reaction_id_key="id",
-            equation_key="reaction",
-        )
-        self.assertEqual(impacted, {"R_missing"})
-
-    def test_infer_impacted_reaction_ids_falls_back_to_equation_scan(self):
-        reactions = [
-            {"id": "R1", "reaction": "C00002 => C00003"},
-            {"id": "R2", "reaction": "C00005 => C00006"},
-            {"id": None, "reaction": "C00002 => C00007"},
-        ]
-        impacted = KEGGImputer._infer_impacted_reaction_ids(
-            reactions,
-            {},
             {"C00002"},
             reaction_id_key="id",
             equation_key="reaction",
         )
         self.assertEqual(impacted, {"R1"})
+
+    def test_infer_impacted_reaction_ids_falls_back_to_equation_scan(self):
+        reactions = [
+            {"id": "R1", "reaction": "C00002 => C00003"},
+            {"id": "R2", "reaction": "C00005 => C00006"},
+            {"id": "R3", "reaction": "C00002 => C00007"},
+        ]
+        impacted = KEGGImputer._infer_impacted_reaction_ids(
+            reactions,
+            {"C00002"},
+            reaction_id_key="id",
+            equation_key="reaction",
+        )
+        self.assertEqual(impacted, {"R1", "R3"})
 
     def test_rebuild_reaction_fields_updates_only_impacted_reactions(self):
         extractor = TrackingExtractor()
