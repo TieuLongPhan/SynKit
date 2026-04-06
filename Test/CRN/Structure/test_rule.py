@@ -1,7 +1,5 @@
 import unittest
 
-# Adjust this import to your real module path
-# from your_module import Rule
 from synkit.CRN.Structure.rule import Rule
 
 
