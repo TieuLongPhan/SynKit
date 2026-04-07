@@ -32,7 +32,7 @@ rxns = [
     "A+G>>C+H",
     "I>>J",
     "I+K+L>>M+N+O",
-    "I+K+P>>M+Q+O",
+    "B+AH+P>>AI+AA+Q+O",
     "H>>J+I",
     "A+R>>C+M",
     "E>>R",
