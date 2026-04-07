@@ -103,4 +103,4 @@ Where to go next
 
 - :doc:`Graph Module <graph>` — matching engines and isomorphism strategies
 - :doc:`Chem Module <chem>` — reaction standardization and mapping validation
-- :doc:`API Reference <api>` — auto-generated API docs for :py:mod:`synkit.Rule`
+- :doc:`API Reference <api/index>` — auto-generated API docs for :py:mod:`synkit.Rule`
