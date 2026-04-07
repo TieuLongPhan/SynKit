@@ -888,7 +888,7 @@ def _build_reactions_from_parsed_strings(
             source_kind="rule",
             lhs=lhs,
             rhs=rhs,
-            label=rid,
+            label=rule_repr if has_rules and rule_repr is not None else rid,
             step=None,
             rule_index=rule_index,
             app_index=None,

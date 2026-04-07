@@ -207,7 +207,7 @@ class CRNAutomorphism:
             Tuple ``(config, wl, engine)``.
         :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
         """
-        cfg = config or SymmetryConfig.semantic()
+        cfg = config or SymmetryConfig.topological()
         wl = WLCanonicalizer(
             source,
             include_rule=include_rule,

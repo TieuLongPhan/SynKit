@@ -116,7 +116,7 @@ Documentation quick links
       ITS/MTG construction, WL hashing, and cluster/search primitives.
 
    .. grid-item-card:: :octicon:`terminal` API Reference
-      :link: api
+      :link: api/index
       :link-type: doc
 
       Auto-generated API docs and class references.
@@ -159,7 +159,7 @@ Funded by the European Union Horizon Europe Doctoral Network (Marie-Skłodowska-
    rule
    synthesis
    crn
-   api
+   api/index
    reference
    changelog
 

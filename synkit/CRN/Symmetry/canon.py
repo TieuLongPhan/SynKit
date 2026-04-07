@@ -107,7 +107,7 @@ class CRNCanonicalizer:
             None
         :rtype: None
         """
-        self.config = config or SymmetryConfig.semantic()
+        self.config = config or SymmetryConfig.topological()
         self.wl = WLCanonicalizer(
             source,
             include_rule=include_rule,
