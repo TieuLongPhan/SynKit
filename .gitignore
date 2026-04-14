@@ -27,3 +27,4 @@ crn/*
 test_run.py
 Data/Study/CRN/case_formose/*
 Data/Study/CRN/case_glycolysis/*
+synkit/Graph/dev/*

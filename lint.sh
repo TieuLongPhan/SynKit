@@ -38,5 +38,6 @@ topology.py,\
 crn_vis.py,\
 dev/*,\
 synkit/CRN/dev_crn/*,\
+synkit/Graph/dev/*,\
 Data \
   --statistics
