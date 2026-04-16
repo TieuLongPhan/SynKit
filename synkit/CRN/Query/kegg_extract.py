@@ -12,11 +12,15 @@ except Exception:
 
 from .kegg_api import KEGGClient
 from .kegg_parse import (
+    equation_to_text,
     get_compound_ids_from_equations,
     get_compound_ids_from_text,
     molblock_to_smiles,
     normalize_module_id,
+    orient_equation_to_module,
+    parse_equation,
     parse_kegg_field_blocks,
+    parse_module_reaction_directions,
     reaction_smiles_from_equation,
 )
 
@@ -127,7 +131,8 @@ class KEGGExtractor:
 
     def get_reaction_ids_from_module(self, module_id: str) -> list[str]:
         """
-        Collect KEGG reaction IDs from a module entry.
+        Collect KEGG reaction IDs from a module entry, preserving module order when
+        directional REACTION lines can be parsed.
 
         :param module_id:
             KEGG module identifier such as ``"M00001"``.
@@ -144,8 +149,11 @@ class KEGGExtractor:
             reaction_ids = extractor.get_reaction_ids_from_module("M00001")
         """
         text = self.client.get_text(f"get/{module_id}")
-        payloads = parse_kegg_field_blocks(text, "REACTION")
+        directions = parse_module_reaction_directions(text)
+        if directions:
+            return list(directions.keys())
 
+        payloads = parse_kegg_field_blocks(text, "REACTION")
         reaction_ids: set[str] = set()
         for payload in payloads:
             reaction_ids.update(_RID_PATTERN.findall(payload))
@@ -192,11 +200,29 @@ class KEGGExtractor:
 
             equations = extractor.get_module_equations("M00001")
         """
-        reaction_ids = self.get_reaction_ids_from_module(module_id)
-        return {
-            reaction_id: self.get_equation_for_reaction(reaction_id)
-            for reaction_id in reaction_ids
-        }
+        module_text = self.client.get_text(f"get/{module_id}")
+        directions = parse_module_reaction_directions(module_text)
+
+        reaction_ids = list(directions.keys()) if directions else self.get_reaction_ids_from_module(module_id)
+
+        equations_by_rid: ReactionEquationMap = {}
+
+        for reaction_id in reaction_ids:
+            equation = self.get_equation_for_reaction(reaction_id)
+            if equation is None:
+                equations_by_rid[reaction_id] = None
+                continue
+
+            if reaction_id not in directions:
+                equations_by_rid[reaction_id] = equation
+                continue
+
+            left_ids, right_ids, module_arrow = directions[reaction_id]
+            parsed = parse_equation(equation)
+            oriented = orient_equation_to_module(parsed, left_ids, right_ids)
+            equations_by_rid[reaction_id] = equation_to_text(oriented, arrow=module_arrow)
+
+        return equations_by_rid
 
     def get_pathway_equations(
         self,

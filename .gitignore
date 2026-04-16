@@ -3,7 +3,7 @@
 *.csv
 */catboost_info/*
 
-*.json
+
 *.pkl.gz
 *.pdf
 *.log
@@ -11,7 +11,7 @@
 dev/*
 *.rdf
 test_syn_reactor.py
-*.ipynb
+
 Data/Benchmark/*
 *.json.gz
 # *.png

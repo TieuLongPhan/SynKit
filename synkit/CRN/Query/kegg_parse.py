@@ -9,6 +9,10 @@ from rdkit import Chem
 _CID_PATTERN = re.compile(r"C\d{5}")
 _MODULE_PATTERN = re.compile(r"M\d{5}")
 _TERM_PATTERN = re.compile(r"^(?:(\d+)\s+)?(C\d{5})$")
+_RID_PATTERN = re.compile(r"R\d{5}")
+_MODULE_REACTION_LINE = re.compile(
+    r"^(?P<rids>R\d{5}(?:,R\d{5})*)\s+(?P<lhs>.+?)\s*(?P<arrow><=>|->|=>|<-|<=)\s*(?P<rhs>.+)$"
+)
 
 CompoundStoich = tuple[str, int]
 CompoundRecord = Mapping[str, Any]
@@ -173,12 +177,11 @@ def parse_side(side: str) -> list[CompoundStoich]:
 
     return parsed
 
-
 def parse_equation(equation: str) -> KEGGEquation:
     """
     Parse a KEGG equation string into reactants, products, and arrow type.
 
-    Supported arrows are ``<=>``, ``=>``, and ``<=``.
+    Supported arrows are ``<=>``, ``<->``, ``=>``, ``->``, ``<=``, and ``<-``.
 
     :param equation:
         KEGG equation string.
@@ -200,11 +203,20 @@ def parse_equation(equation: str) -> KEGGEquation:
     if "<=>" in equation:
         lhs, rhs = equation.split("<=>")
         reversible = True
+    elif "<->" in equation:
+        lhs, rhs = equation.split("<->")
+        reversible = True
     elif "=>" in equation:
         lhs, rhs = equation.split("=>")
         reversible = False
+    elif "->" in equation:
+        lhs, rhs = equation.split("->")
+        reversible = False
     elif "<=" in equation:
         rhs, lhs = equation.split("<=")
+        reversible = False
+    elif "<-" in equation:
+        rhs, lhs = equation.split("<-")
         reversible = False
     else:
         raise ValueError(f"Unknown KEGG equation arrow in: {equation!r}")
@@ -392,3 +404,95 @@ def reaction_smiles_from_equation(
             missing["products"].append(compound_id)
 
     return ".".join(reactant_smiles) + ">>" + ".".join(product_smiles), missing
+
+
+def parse_module_reaction_directions(
+    text: str,
+) -> dict[str, tuple[list[str], list[str], str]]:
+    """
+    Parse directional hints from a KEGG MODULE entry.
+
+    Returns
+    -------
+    dict
+        Mapping:
+        {
+            reaction_id: (left_compound_ids, right_compound_ids, arrow)
+        }
+    """
+    directions: dict[str, tuple[list[str], list[str], str]] = {}
+
+    in_reaction = False
+    for line in text.splitlines():
+        if line.startswith("REACTION"):
+            payload = line[len("REACTION") :].strip()
+            in_reaction = True
+        elif in_reaction and (line.startswith(" ") or line.startswith("\t")):
+            payload = line.strip()
+        else:
+            if in_reaction:
+                break
+            continue
+
+        match = _MODULE_REACTION_LINE.match(payload)
+        if not match:
+            continue
+
+        reaction_ids = _RID_PATTERN.findall(match.group("rids"))
+        left_ids = get_compound_ids_from_text(match.group("lhs"))
+        right_ids = get_compound_ids_from_text(match.group("rhs"))
+        arrow = match.group("arrow")
+
+        for rid in reaction_ids:
+            directions[rid] = (left_ids, right_ids, arrow)
+
+    return directions
+
+   
+def orient_equation_to_module(
+    parsed: KEGGEquation,
+    left_ids: list[str],
+    right_ids: list[str],
+) -> KEGGEquation:
+    """
+    Orient a parsed KEGG equation according to module direction.
+    """
+    reactant_ids = {cid for cid, _ in parsed.reactants}
+    product_ids = {cid for cid, _ in parsed.products}
+
+    left_set = set(left_ids)
+    right_set = set(right_ids)
+
+    keep_score = len(left_set & reactant_ids) + len(right_set & product_ids)
+    flip_score = len(left_set & product_ids) + len(right_set & reactant_ids)
+
+    if flip_score > keep_score:
+        return KEGGEquation(
+            reactants=list(parsed.products),
+            products=list(parsed.reactants),
+            reversible=parsed.reversible,
+        )
+
+    return parsed 
+
+
+def equation_to_text(parsed: KEGGEquation, arrow: str | None = None) -> str:
+    """
+    Convert KEGGEquation back to text, optionally forcing the arrow from the
+    module hint.
+    """
+    def side_to_text(items: list[tuple[str, int]]) -> str:
+        parts = []
+        for cid, coeff in items:
+            parts.append(f"{coeff} {cid}" if coeff != 1 else cid)
+        return " + ".join(parts)
+
+    if arrow == "->":
+        arrow = "=>"
+    elif arrow == "<-":
+        arrow = "<="
+
+    if arrow is None:
+        arrow = "<=>" if parsed.reversible else "=>"
+
+    return f"{side_to_text(parsed.reactants)} {arrow} {side_to_text(parsed.products)}"
