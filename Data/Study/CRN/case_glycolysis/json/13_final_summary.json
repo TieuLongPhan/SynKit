@@ -1,0 +1,61 @@
+{
+  "network": {
+    "n_species": 40,
+    "n_reactions": 34,
+    "n_rules": 34
+  },
+  "symmetry": {
+    "has_nontrivial_automorphism": true,
+    "automorphism_count": 2
+  },
+  "stoich": {
+    "shape": [
+      40,
+      34
+    ],
+    "rank": 23,
+    "dim_left_kernel": 17,
+    "dim_right_kernel": 11
+  },
+  "path_H": {
+    "qualitative_n": 2,
+    "validated_n": 2,
+    "realizable_certificate": [
+      "50",
+      "55",
+      "52"
+    ]
+  },
+  "path_I": {
+    "qualitative_n": 2,
+    "validated_n": 2,
+    "realizable_certificate": [
+      "50",
+      "55",
+      "52",
+      "47"
+    ]
+  },
+  "petri": {
+    "persistence_ok": false,
+    "n_siphons": 13,
+    "n_traps": 15,
+    "n_p_semiflows": 40,
+    "n_t_semiflows": 34
+  },
+  "thermo": {
+    "conservative": true,
+    "consistent": false,
+    "irreversible_futile_cycles": true
+  },
+  "dynamics": {
+    "jacobian_n_species": 40,
+    "jacobian_sparsity_shape": [
+      40,
+      40
+    ],
+    "species_influence_nodes": 40,
+    "species_influence_edges": 236,
+    "structural_singularity_classification": "singular_by_pattern"
+  }
+}

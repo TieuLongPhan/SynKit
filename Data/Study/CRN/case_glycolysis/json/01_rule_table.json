@@ -1,0 +1,206 @@
+[
+  {
+    "rule_id": "1",
+    "rule_repr": "r1",
+    "rule_index": 0,
+    "label": "r0"
+  },
+  {
+    "rule_id": "2",
+    "rule_repr": "r2",
+    "rule_index": 1,
+    "label": "r1"
+  },
+  {
+    "rule_id": "3",
+    "rule_repr": "r3",
+    "rule_index": 2,
+    "label": "r2"
+  },
+  {
+    "rule_id": "4",
+    "rule_repr": "r4",
+    "rule_index": 3,
+    "label": "r3"
+  },
+  {
+    "rule_id": "5",
+    "rule_repr": "r5",
+    "rule_index": 4,
+    "label": "r4"
+  },
+  {
+    "rule_id": "6",
+    "rule_repr": "r6",
+    "rule_index": 5,
+    "label": "r5"
+  },
+  {
+    "rule_id": "7",
+    "rule_repr": "r7",
+    "rule_index": 6,
+    "label": "r6"
+  },
+  {
+    "rule_id": "8",
+    "rule_repr": "r8",
+    "rule_index": 7,
+    "label": "r7"
+  },
+  {
+    "rule_id": "9",
+    "rule_repr": "r9",
+    "rule_index": 8,
+    "label": "r8"
+  },
+  {
+    "rule_id": "10",
+    "rule_repr": "r10",
+    "rule_index": 9,
+    "label": "r9"
+  },
+  {
+    "rule_id": "11",
+    "rule_repr": "r11",
+    "rule_index": 10,
+    "label": "r10"
+  },
+  {
+    "rule_id": "12",
+    "rule_repr": "r12",
+    "rule_index": 11,
+    "label": "r11"
+  },
+  {
+    "rule_id": "13",
+    "rule_repr": "r13",
+    "rule_index": 12,
+    "label": "r12"
+  },
+  {
+    "rule_id": "14",
+    "rule_repr": "r14",
+    "rule_index": 13,
+    "label": "r13"
+  },
+  {
+    "rule_id": "15",
+    "rule_repr": "r15",
+    "rule_index": 14,
+    "label": "r14"
+  },
+  {
+    "rule_id": "16",
+    "rule_repr": "r16",
+    "rule_index": 15,
+    "label": "r15"
+  },
+  {
+    "rule_id": "17",
+    "rule_repr": "r17",
+    "rule_index": 16,
+    "label": "r16"
+  },
+  {
+    "rule_id": "18",
+    "rule_repr": "r18",
+    "rule_index": 17,
+    "label": "r17"
+  },
+  {
+    "rule_id": "19",
+    "rule_repr": "r19",
+    "rule_index": 18,
+    "label": "r18"
+  },
+  {
+    "rule_id": "20",
+    "rule_repr": "r20",
+    "rule_index": 19,
+    "label": "r19"
+  },
+  {
+    "rule_id": "21",
+    "rule_repr": "r21",
+    "rule_index": 20,
+    "label": "r20"
+  },
+  {
+    "rule_id": "22",
+    "rule_repr": "r22",
+    "rule_index": 21,
+    "label": "r21"
+  },
+  {
+    "rule_id": "23",
+    "rule_repr": "r23",
+    "rule_index": 22,
+    "label": "r22"
+  },
+  {
+    "rule_id": "24",
+    "rule_repr": "r24",
+    "rule_index": 23,
+    "label": "r23"
+  },
+  {
+    "rule_id": "25",
+    "rule_repr": "r25",
+    "rule_index": 24,
+    "label": "r24"
+  },
+  {
+    "rule_id": "26",
+    "rule_repr": "r26",
+    "rule_index": 25,
+    "label": "r25"
+  },
+  {
+    "rule_id": "27",
+    "rule_repr": "r27",
+    "rule_index": 26,
+    "label": "r26"
+  },
+  {
+    "rule_id": "28",
+    "rule_repr": "r28",
+    "rule_index": 27,
+    "label": "r27"
+  },
+  {
+    "rule_id": "29",
+    "rule_repr": "r29",
+    "rule_index": 28,
+    "label": "r28"
+  },
+  {
+    "rule_id": "30",
+    "rule_repr": "r30",
+    "rule_index": 29,
+    "label": "r29"
+  },
+  {
+    "rule_id": "31",
+    "rule_repr": "r31",
+    "rule_index": 30,
+    "label": "r30"
+  },
+  {
+    "rule_id": "32",
+    "rule_repr": "r32",
+    "rule_index": 31,
+    "label": "r31"
+  },
+  {
+    "rule_id": "33",
+    "rule_repr": "r33",
+    "rule_index": 32,
+    "label": "r32"
+  },
+  {
+    "rule_id": "34",
+    "rule_repr": "r34",
+    "rule_index": 33,
+    "label": "r33"
+  }
+]

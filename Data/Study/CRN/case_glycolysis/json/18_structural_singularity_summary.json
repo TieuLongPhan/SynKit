@@ -1,0 +1,10 @@
+{
+  "n_species": 40,
+  "structural_rank": 32,
+  "has_perfect_matching": false,
+  "pattern_singular": true,
+  "determinant_checked": false,
+  "determinant_expr": null,
+  "determinant_is_zero": null,
+  "classification": "singular_by_pattern"
+}

@@ -1,0 +1,1 @@
+persistence_ok=False, p_semiflows=17, t_semiflows=11, siphons=13, traps=15

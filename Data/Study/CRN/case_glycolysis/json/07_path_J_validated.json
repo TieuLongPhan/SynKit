@@ -1,0 +1,62 @@
+[
+  {
+    "depth": 4,
+    "reactions": [
+      "50",
+      "55",
+      "43",
+      "47"
+    ],
+    "flow": {
+      "50": 1,
+      "55": 1,
+      "43": 1,
+      "47": 1
+    },
+    "reached_species": [
+      "A",
+      "C",
+      "G",
+      "H",
+      "I",
+      "J",
+      "S",
+      "T"
+    ],
+    "realizable": false,
+    "certificate": null
+  },
+  {
+    "depth": 4,
+    "reactions": [
+      "50",
+      "55",
+      "52",
+      "47"
+    ],
+    "flow": {
+      "50": 1,
+      "55": 1,
+      "52": 1,
+      "47": 1
+    },
+    "reached_species": [
+      "A",
+      "C",
+      "G",
+      "H",
+      "I",
+      "J",
+      "S",
+      "T",
+      "W"
+    ],
+    "realizable": true,
+    "certificate": [
+      "50",
+      "55",
+      "52",
+      "47"
+    ]
+  }
+]

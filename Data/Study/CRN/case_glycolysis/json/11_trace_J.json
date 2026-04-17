@@ -1,0 +1,120 @@
+[
+  {
+    "reaction_id": "50",
+    "rule_repr": "r10",
+    "equation_label": "50: S + C >> A + T  (rule_id=10, rule_repr=r10)",
+    "equation_smiles": "50: OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O + Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O >> Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O + O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O  (rule_id=10, rule_repr=r10)",
+    "lhs": [
+      {
+        "sid": "19",
+        "label": "S",
+        "coeff": 1,
+        "smiles": "OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O"
+      },
+      {
+        "sid": "3",
+        "label": "C",
+        "coeff": 1,
+        "smiles": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O"
+      }
+    ],
+    "rhs": [
+      {
+        "sid": "1",
+        "label": "A",
+        "coeff": 1,
+        "smiles": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O"
+      },
+      {
+        "sid": "20",
+        "label": "T",
+        "coeff": 1,
+        "smiles": "O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O"
+      }
+    ]
+  },
+  {
+    "reaction_id": "55",
+    "rule_repr": "r15",
+    "equation_label": "55: T >> G  (rule_id=15, rule_repr=r15)",
+    "equation_smiles": "55: O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O >> O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O  (rule_id=15, rule_repr=r15)",
+    "lhs": [
+      {
+        "sid": "20",
+        "label": "T",
+        "coeff": 1,
+        "smiles": "O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O"
+      }
+    ],
+    "rhs": [
+      {
+        "sid": "7",
+        "label": "G",
+        "coeff": 1,
+        "smiles": "O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O"
+      }
+    ]
+  },
+  {
+    "reaction_id": "52",
+    "rule_repr": "r12",
+    "equation_label": "52: A + G >> W + H  (rule_id=12, rule_repr=r12)",
+    "equation_smiles": "52: Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O + O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O >> Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]1O + O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O  (rule_id=12, rule_repr=r12)",
+    "lhs": [
+      {
+        "sid": "1",
+        "label": "A",
+        "coeff": 1,
+        "smiles": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O"
+      },
+      {
+        "sid": "7",
+        "label": "G",
+        "coeff": 1,
+        "smiles": "O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O"
+      }
+    ],
+    "rhs": [
+      {
+        "sid": "23",
+        "label": "W",
+        "coeff": 1,
+        "smiles": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]1O"
+      },
+      {
+        "sid": "8",
+        "label": "H",
+        "coeff": 1,
+        "smiles": "O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O"
+      }
+    ]
+  },
+  {
+    "reaction_id": "47",
+    "rule_repr": "r7",
+    "equation_label": "47: H >> J + I  (rule_id=7, rule_repr=r7)",
+    "equation_smiles": "47: O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O >> O=C[C@H](O)COP(=O)(O)O + O=C(CO)COP(=O)(O)O  (rule_id=7, rule_repr=r7)",
+    "lhs": [
+      {
+        "sid": "8",
+        "label": "H",
+        "coeff": 1,
+        "smiles": "O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O"
+      }
+    ],
+    "rhs": [
+      {
+        "sid": "10",
+        "label": "J",
+        "coeff": 1,
+        "smiles": "O=C[C@H](O)COP(=O)(O)O"
+      },
+      {
+        "sid": "9",
+        "label": "I",
+        "coeff": 1,
+        "smiles": "O=C(CO)COP(=O)(O)O"
+      }
+    ]
+  }
+]

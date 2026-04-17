@@ -1,0 +1,5 @@
+SynCRN: 7 species, 3 reactions
+  8: S + C >> A + T rule 0
+  9: T >> G rule 1
+  10: A + G >> W + H rule 2
+Species: S, C, A, T, G, W, H

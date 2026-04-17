@@ -27,77 +27,85 @@ from synkit.CRN.Props.dynamics import (
 # =============================================================================
 
 rxns = [
-    "A+B>>C+D",
-    "E>>D+F",
-    "A+G>>C+H",
-    "I>>J",
-    "I+K+L>>M+N+O",
-    "B+AH+P>>AI+AA+Q+O",
-    "H>>J+I",
-    "A+R>>C+M",
-    "E>>R",
-    "A+S>>C+T",
-    "U+S>>V+T",
-    "C+G>>W+H",
-    "I+F+X+X>>R+O+O+Y+Y",
-    "S+C>>T+W",
-    "T>>G",
-    "A+Z>>C+D+AA",
-    "AB+Z>>AC+D+AA",
-    "AD+Z>>AE+D+AA",
-    "H+F>>G+K",
-    "B+AF>>AG+AA",
-    "B+AH+L>>AI+AA+N+O",
-    "X+X+B+AH>>Y+Y+AI+AA+O+O",
-    "AI+AJ>>AH+AK",
-    "AG+AL>>AK+AF",
-    "AJ+L>>AL+N+O",
-    "B+AH+AM>>AI+AA+AN",
+        "A+B>>C+D",
+        "E>>B+F",
+        "C+G>>A+H",
+        "I>>J",
+        "J+K+L>>M+N+O",
+        "J+K+P>>M+Q+O",
+        "H>>I+J",
+        "A+M>>C+R",
+        "R>>E",
+        "C+S>>A+T",
+        "U+S>>V+T",
+        "A+G>>W+H",
+        "J+F+X+X>>R+O+O+Y+Y",
+        "S+A>>T+W",
+        "T>>G",
+        "C+Z>>A+B+AA",
+        "AB+Z>>AC+B+AA",
+        "B+F>>E",
+        "AD+Z>>AE+B+AA",
+        "H+F>>G+K",
+        "J>>I",
+        "M+N+O>>J+K+L",
+        "M+Q+O>>J+K+P",
+        "I+J>>H",
+        "C+R>>A+M",
+        "E>>R",
+        "D+AF>>AG+AA",
+        "D+AH+L>>AI+AA+N+O",
+        "D+AH+P>>AI+AA+Q+O",
+        "X+X+D+AH>>Y+Y+AI+AA+O+O",
+        "AH+AJ>>AI+AK",
+        "AG+AL>>AJ+AF",
+        "AK+L>>AL+N+O",
+        "D+AH+AM>>AI+AA+AN"
 ]
 
 rules = [f"r{i}" for i in range(1, len(rxns) + 1)]
 
 species_smiles = {
-    "A": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
-    "B": "CC(=O)C(=O)O",
-    "C": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
-    "D": "C=C(OP(=O)(O)O)C(=O)O",
-    "E": "O=C(O)[C@@H](CO)OP(=O)(O)O",
-    "F": "O",
-    "G": "O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O",
-    "H": "O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O",
-    "I": "O=C[C@H](O)COP(=O)(O)O",
-    "J": "O=C(CO)COP(=O)(O)O",
-    "K": "O=P(O)(O)O",
-    "L": "NC(=O)c1ccc[n+]([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)c1",
-    "M": "O=C(OP(=O)(O)O)[C@H](O)COP(=O)(O)O",
-    "N": "NC(=O)C1=CN([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)C=CC1",
-    "O": "[H+]",
-    "P": "NC(=O)c1ccc[n+]([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](OP(=O)(O)O)[C@@H]3O)[C@@H](O)[C@H]2O)c1",
-    "Q": "NC(=O)C1=CN([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](OP(=O)(O)O)[C@@H]3O)[C@@H](O)[C@H]2O)C=CC1",
-    "R": "O=C(O)[C@H](O)COP(=O)(O)O",
-    "S": "OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O",
-    "T": "O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O",
-    "U": "O=P(O)(O)OP(=O)(O)OP(=O)(O)O",
-    "V": "O=P(O)(O)OP(=O)(O)O",
-    "W": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]1O",
-    "X": "S1[Fe+]S[Fe+]1",
-    "Y": "S1[Fe]S[Fe+]1",
-    "Z": "O=C(O)CC(=O)C(=O)O",
-    "AA": "O=C=O",
-    "AB": "Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1",
-    "AC": "Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1",
-    "AD": "O=c1[nH]cnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
-    "AE": "O=c1[nH]cnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
-    "AF": "Cc1ncc(C[n+]2csc(CCOP(=O)(O)OP(=O)(O)O)c2C)c(N)n1",
-    "AG": "Cc1ncc(C[n+]2c(C(C)O)sc(CCOP(=O)(O)OP(=O)(O)O)c2C)c(N)n1",
-    "AH": "CC(C)(COP(=O)(O)OP(=O)(O)OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1OP(=O)(O)O)[C@@H](O)C(=O)NCCC(=O)NCCS",
-    "AI": "CC(=O)SCCNC(=O)CCNC(=O)[C@H](O)C(C)(C)COP(=O)(O)OP(=O)(O)OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1OP(=O)(O)O",
-    "AJ": "NC(=O)CCCC[C@@H](S)CCS",
-    "AK": "NC(=O)CCCC[C@@H](S)CCSC(C)=O",
-    "AL": "NC(=O)CCCC[C@@H]1CCSS1",
-    "AM": "CC2(C=C1(N=C3(C(=O)NC(=O)N=C(N(CC(O)C(O)C(O)COP([O-])(=O)[O-])C1=CC(C)=2)3)))",
-    "AN": "CC2(C=C1(NC3(C(=O)NC(=O)NC(N(CC(O)C(O)C(O)COP([O-])(=O)[O-])C1=CC(C)=2)=3)))",
+        "A": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
+        "B": "C=C(OP(=O)(O)O)C(=O)O",
+        "C": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
+        "D": "CC(=O)C(=O)O",
+        "E": "O=C(O)[C@@H](CO)OP(=O)(O)O",
+        "F": "O",
+        "G": "O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O",
+        "H": "O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O",
+        "I": "O=C(CO)COP(=O)(O)O",
+        "J": "O=C[C@H](O)COP(=O)(O)O",
+        "K": "O=P(O)(O)O",
+        "L": "NC(=O)c1ccc[n+]([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)c1",
+        "M": "O=C(OP(=O)(O)O)[C@H](O)COP(=O)(O)O",
+        "N": "NC(=O)C1=CN([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](O)[C@@H]3O)[C@@H](O)[C@H]2O)C=CC1",
+        "O": "[H+]",
+        "P": "NC(=O)c1ccc[n+]([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](OP(=O)(O)O)[C@@H]3O)[C@@H](O)[C@H]2O)c1",
+        "Q": "NC(=O)C1=CN([C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](OP(=O)(O)O)[C@@H]3O)[C@@H](O)[C@H]2O)C=CC1",
+        "R": "O=C(O)[C@H](O)COP(=O)(O)O",
+        "S": "OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O",
+        "T": "O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O",
+        "U": "O=P(O)(O)OP(=O)(O)OP(=O)(O)O",
+        "V": "O=P(O)(O)OP(=O)(O)O",
+        "W": "Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]1O",
+        "X": "S1[Fe+]S[Fe+]1",
+        "Y": "S1[Fe]S[Fe+]1",
+        "Z": "O=C(O)CC(=O)C(=O)O",
+        "AA": "O=C=O",
+        "AB": "Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1",
+        "AC": "Nc1nc2c(ncn2[C@@H]2O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]2O)c(=O)[nH]1",
+        "AD": "O=c1[nH]cnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
+        "AE": "O=c1[nH]cnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O",
+        "AF": "Cc1ncc(C[n+]2csc(CCOP(=O)(O)OP(=O)(O)O)c2C)c(N)n1",
+        "AG": "Cc1ncc(C[n+]2c(C(C)O)sc(CCOP(=O)(O)OP(=O)(O)O)c2C)c(N)n1",
+        "AH": "CC(C)(COP(=O)(O)OP(=O)(O)OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1OP(=O)(O)O)[C@@H](O)C(=O)NCCC(=O)NCCS",
+        "AI": "CC(=O)SCCNC(=O)CCNC(=O)[C@H](O)C(C)(C)COP(=O)(O)OP(=O)(O)OC[C@H]1O[C@@H](n2cnc3c(N)ncnc32)[C@H](O)[C@@H]1OP(=O)(O)O",
+        "AJ": "NC(=O)CCCC[C@@H](S)CCSC(C)=O",
+        "AK": "NC(=O)CCCC[C@@H](S)CCS",
+        "AL": "NC(=O)CCCC[C@@H]1CCSS1",
+        "AM": "CC2(C=C1(N=C3(C(=O)NC(=O)N=C(N(CC(O)C(O)C(O)COP([O-])(=O)[O-])C1=CC(C)=2)3)))",
+        "AN": "CC2(C=C1(NC3(C(=O)NC(=O)NC(N(CC(O)C(O)C(O)COP([O-])(=O)[O-])C1=CC(C)=2)=3)))"
 }
 
 
@@ -511,16 +519,16 @@ save_json(
 
 
 # =============================================================================
-# Experiment 3 — Qualitative path search first
+# Experiment 3 — Qualitative path search
 # =============================================================================
 
 log_header("Experiment 3A — Qualitative path search to H")
 
 cands_H_qual = run_pathfinder_from_syncrn(
     syn,
-    source_species=["A", "S"],
-    target_species=["H"],
-    initial_marking={"A": 1, "S": 1},
+    source_species=["C", "S"],         
+    target_species=["H"],              
+    initial_marking={"C": 1, "S": 1},  
     species="label",
     reaction="id",
     max_depth=4,
@@ -534,13 +542,14 @@ logger.info("\n%s", block)
 save_text("03_path_H_qualitative.txt", block)
 save_json("04_path_H_qualitative.json", [candidate_to_dict(c) for c in cands_H_qual])
 
-log_header("Experiment 3B — Qualitative path search to I")
 
-cands_I_qual = run_pathfinder_from_syncrn(
+log_header("Experiment 3B — Qualitative path search to J")
+
+cands_J_qual = run_pathfinder_from_syncrn(
     syn,
-    source_species=["A", "S"],
-    target_species=["I"],
-    initial_marking={"A": 1, "S": 1},
+    source_species=["C", "S"],         
+    target_species=["J"],              
+    initial_marking={"C": 1, "S": 1},
     species="label",
     reaction="id",
     max_depth=5,
@@ -549,10 +558,10 @@ cands_I_qual = run_pathfinder_from_syncrn(
     verbose=True,
 )
 
-block = pretty_candidate_block("Qualitative candidates to I", cands_I_qual, syn)
+block = pretty_candidate_block("Qualitative candidates to J", cands_J_qual, syn)
 logger.info("\n%s", block)
-save_text("04_path_I_qualitative.txt", block)
-save_json("05_path_I_qualitative.json", [candidate_to_dict(c) for c in cands_I_qual])
+save_text("04_path_J_qualitative.txt", block)
+save_json("05_path_J_qualitative.json", [candidate_to_dict(c) for c in cands_J_qual])
 
 
 # =============================================================================
@@ -563,9 +572,9 @@ log_header("Experiment 4A — Exact validation to H")
 
 cands_H = run_pathfinder_from_syncrn(
     syn,
-    source_species=["A", "S"],
-    target_species=["H"],
-    initial_marking={"A": 1, "S": 1},
+    source_species=["C", "S"],      
+    target_species=["H"],               
+    initial_marking={"C": 1, "S": 1},  
     species="label",
     reaction="id",
     max_depth=4,
@@ -579,13 +588,14 @@ logger.info("\n%s", block)
 save_text("05_path_H_validated.txt", block)
 save_json("06_path_H_validated.json", [candidate_to_dict(c) for c in cands_H])
 
-log_header("Experiment 4B — Exact validation to I")
 
-cands_I = run_pathfinder_from_syncrn(
+log_header("Experiment 4B — Exact validation to J")
+
+cands_J = run_pathfinder_from_syncrn(
     syn,
-    source_species=["A", "S"],
-    target_species=["I"],
-    initial_marking={"A": 1, "S": 1},
+    source_species=["C", "S"],         
+    target_species=["J"],              
+    initial_marking={"C": 1, "S": 1}, 
     species="label",
     reaction="id",
     max_depth=5,
@@ -594,10 +604,10 @@ cands_I = run_pathfinder_from_syncrn(
     verbose=True,
 )
 
-block = pretty_candidate_block("Validated candidates to I", cands_I, syn)
+block = pretty_candidate_block("Validated candidates to J", cands_J, syn)
 logger.info("\n%s", block)
-save_text("06_path_I_validated.txt", block)
-save_json("07_path_I_validated.json", [candidate_to_dict(c) for c in cands_I])
+save_text("06_path_J_validated.txt", block)
+save_json("07_path_J_validated.json", [candidate_to_dict(c) for c in cands_J])
 
 
 # =============================================================================
@@ -615,7 +625,7 @@ else:
     pr_H = PathwayRealizability().load_syncrn_and_flow(
         syn,
         flow=flow_H,
-        initial_marking={"A": 1, "S": 1},
+        initial_marking={"C": 1, "S": 1}, 
         species="label",
         reaction="id",
     )
@@ -658,9 +668,9 @@ log_header("Experiment 5B — Initial-marking sensitivity for false-positive H p
 
 false_positive_flow = {"50": 1, "55": 1, "43": 1}
 initial_markings = [
-    {"A": 1, "S": 1},
-    {"A": 2, "S": 1},
-    {"A": 1, "S": 1, "G": 1},
+    {"C": 1, "S": 1},          
+    {"C": 2, "S": 1},         
+    {"C": 1, "S": 1, "G": 1},  
 ]
 
 sensitivity_rows = []
@@ -700,17 +710,17 @@ else:
     save_text("07_trace_H.txt", trace_H_txt)
     save_json("10_trace_H.json", trace_H)
 
-log_header("Experiment 6B — Trace realizable I certificate back to real molecules")
+log_header("Experiment 6B — Trace realizable J certificate back to real molecules")
 
-cert_I = first_realizable_certificate(cands_I)
-if cert_I is None:
-    logger.info("No realizable I certificate to trace.")
+cert_J = first_realizable_certificate(cands_J)
+if cert_J is None:
+    logger.info("No realizable J certificate to trace.")
 else:
-    trace_I = certificate_trace(syn, cert_I)
-    trace_I_txt = dump_certificate_trace_text("I certificate trace", trace_I)
-    logger.info("\n%s", trace_I_txt)
-    save_text("08_trace_I.txt", trace_I_txt)
-    save_json("11_trace_I.json", trace_I)
+    trace_J = certificate_trace(syn, cert_J)
+    trace_J_txt = dump_certificate_trace_text("J certificate trace", trace_J)
+    logger.info("\n%s", trace_J_txt)
+    save_text("08_trace_J.txt", trace_J_txt)
+    save_json("11_trace_J.json", trace_J)
 
 
 # =============================================================================
@@ -738,27 +748,26 @@ else:
     save_text("10_subnetwork_H_label.txt", eq_H_label)
     save_text("11_subnetwork_H_smiles.txt", eq_H_smiles)
 
-log_header("Experiment 7B — Minimal realizing subnetwork to I")
+log_header("Experiment 7B — Minimal realizing subnetwork to J")
 
-if cert_I is None:
-    logger.info("No realizable I certificate.")
+if cert_J is None:
+    logger.info("No realizable J certificate.")
 else:
-    syn_I = build_subnetwork_from_certificate(syn, cert_I, species="label")
-    attach_smiles_to_species(syn_I, species_smiles)
+    syn_J = build_subnetwork_from_certificate(syn, cert_J, species="label")
+    attach_smiles_to_species(syn_J, species_smiles)
 
-    desc_I = syn_I.describe(include_species=True, species="label")
-    eq_I_label = "\n".join(
-        syn_I.to_equations(species="label", include_id=True, include_rule=True)
+    desc_J = syn_J.describe(include_species=True, species="label")
+    eq_J_label = "\n".join(
+        syn_J.to_equations(species="label", include_id=True, include_rule=True)
     )
-    eq_I_smiles = "\n".join(
-        syn_I.to_equations(species="smiles", include_id=True, include_rule=True)
+    eq_J_smiles = "\n".join(
+        syn_J.to_equations(species="smiles", include_id=True, include_rule=True)
     )
 
-    logger.info("\n%s", desc_I)
-    save_text("12_subnetwork_I_description.txt", desc_I)
-    save_text("13_subnetwork_I_label.txt", eq_I_label)
-    save_text("14_subnetwork_I_smiles.txt", eq_I_smiles)
-
+    logger.info("\n%s", desc_J)
+    save_text("12_subnetwork_J_description.txt", desc_J)
+    save_text("13_subnetwork_J_label.txt", eq_J_label)
+    save_text("14_subnetwork_J_smiles.txt", eq_J_smiles)
 
 # =============================================================================
 # Experiment 8 — Petri structural analysis
@@ -897,9 +906,9 @@ final_summary = {
         "realizable_certificate": cert_H,
     },
     "path_I": {
-        "qualitative_n": len(cands_I_qual),
-        "validated_n": len(cands_I),
-        "realizable_certificate": cert_I,
+        "qualitative_n": len(cands_J_qual),
+        "validated_n": len(cands_J),
+        "realizable_certificate": cert_J,
     },
     "petri": {
         "persistence_ok": bool(an.persistence_ok),

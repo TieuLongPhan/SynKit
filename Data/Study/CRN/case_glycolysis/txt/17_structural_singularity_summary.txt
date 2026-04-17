@@ -1,0 +1,9 @@
+StructuralSingularitySummary(
+  n_species            = 40
+  structural_rank      = 32
+  has_perfect_matching = False
+  pattern_singular     = True
+  determinant_checked  = False
+  determinant_is_zero  = None
+  classification       = singular_by_pattern
+)

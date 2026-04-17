@@ -1,0 +1,31 @@
+[
+  {
+    "initial_marking": {
+      "C": 1,
+      "S": 1
+    },
+    "realizable": false,
+    "certificate": null
+  },
+  {
+    "initial_marking": {
+      "C": 2,
+      "S": 1
+    },
+    "realizable": true,
+    "certificate": [
+      "50",
+      "55",
+      "43"
+    ]
+  },
+  {
+    "initial_marking": {
+      "C": 1,
+      "S": 1,
+      "G": 1
+    },
+    "realizable": false,
+    "certificate": null
+  }
+]
