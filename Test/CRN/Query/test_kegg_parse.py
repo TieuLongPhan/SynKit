@@ -6,14 +6,17 @@ from rdkit import Chem
 
 from synkit.CRN.Query.kegg_parse import (
     KEGGEquation,
-    get_compound_ids_from_equations,
+    equation_to_text,
     expand_stoichiometry,
+    get_compound_ids_from_equations,
     get_compound_ids_from_text,
     molblock_to_smiles,
     normalize_module_id,
-    parse_side,
+    orient_equation_to_module,
     parse_equation,
     parse_kegg_field_blocks,
+    parse_module_reaction_directions,
+    parse_side,
     reaction_smiles_from_equation,
 )
 
@@ -79,10 +82,6 @@ class TestKEGGParsing(unittest.TestCase):
         self.assertEqual(parsed.reactants, [("C00001", 1), ("C00002", 1)])
         self.assertEqual(parsed.products, [("C00003", 1)])
         self.assertFalse(parsed.reversible)
-
-    def test_parse_equation_raises_on_unknown_arrow(self) -> None:
-        with self.assertRaises(ValueError):
-            parse_equation("C00001 -> C00002")
 
     def test_get_compound_ids_from_equations(self) -> None:
         equations = {
@@ -158,6 +157,252 @@ class TestKEGGParsing(unittest.TestCase):
         self.assertEqual(reaction_smiles, "O>>CC=O")
         self.assertEqual(missing["reactants"], ["C00002", "C00002"])
         self.assertEqual(missing["products"], ["C00004"])
+
+    def test_parse_kegg_field_blocks_stops_at_next_non_continuation_field(self) -> None:
+        text = (
+            "MODULE      M00001 First module\n"
+            "            continued text\n"
+            "NAME        Example name\n"
+            "            name continuation\n"
+        )
+
+        payloads = parse_kegg_field_blocks(text, "MODULE")
+
+        self.assertEqual(payloads, ["M00001 First module continued text"])
+
+    def test_normalize_module_id_finds_embedded_identifier(self) -> None:
+        self.assertEqual(
+            normalize_module_id("prefix text M00042 suffix text"),
+            "M00042",
+        )
+
+    def test_parse_side_handles_extra_spacing(self) -> None:
+        parsed = parse_side("  3 C00001   +   C00002  +  2 C00003 ")
+        self.assertEqual(
+            parsed,
+            [("C00001", 3), ("C00002", 1), ("C00003", 2)],
+        )
+
+    def test_parse_side_accepts_zero_coefficient(self) -> None:
+        parsed = parse_side("0 C00001 + C00002")
+        self.assertEqual(parsed, [("C00001", 0), ("C00002", 1)])
+
+    def test_parse_equation_reversible_alternate_arrow(self) -> None:
+        parsed = parse_equation("C00001 <-> C00002 + 2 C00003")
+        self.assertEqual(parsed.reactants, [("C00001", 1)])
+        self.assertEqual(parsed.products, [("C00002", 1), ("C00003", 2)])
+        self.assertTrue(parsed.reversible)
+
+    def test_parse_equation_forward_short_arrow(self) -> None:
+        parsed = parse_equation("C00001 -> C00002")
+        self.assertEqual(parsed.reactants, [("C00001", 1)])
+        self.assertEqual(parsed.products, [("C00002", 1)])
+        self.assertFalse(parsed.reversible)
+
+    def test_parse_equation_reverse_short_arrow(self) -> None:
+        parsed = parse_equation("C00002 <- C00001")
+        self.assertEqual(parsed.reactants, [("C00001", 1)])
+        self.assertEqual(parsed.products, [("C00002", 1)])
+        self.assertFalse(parsed.reversible)
+
+    def test_parse_equation_raises_on_unknown_arrow(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_equation("C00001 = C00002")
+
+    def test_parse_equation_handles_empty_left_side(self) -> None:
+        parsed = parse_equation("=> C00001")
+        self.assertEqual(parsed.reactants, [])
+        self.assertEqual(parsed.products, [("C00001", 1)])
+        self.assertFalse(parsed.reversible)
+
+    def test_get_compound_ids_from_equations_propagates_parse_error(self) -> None:
+        equations = {
+            "R00001": "C00001 => C00002",
+            "R00002": "C00003 = C00004",
+        }
+
+        with self.assertRaises(ValueError):
+            get_compound_ids_from_equations(equations)
+
+    def test_molblock_to_smiles_empty_string(self) -> None:
+        self.assertIsNone(molblock_to_smiles(""))
+
+    def test_expand_stoichiometry_empty_input(self) -> None:
+        self.assertEqual(expand_stoichiometry([]), [])
+
+    def test_reaction_smiles_from_equation_empty_both_sides(self) -> None:
+        parsed = KEGGEquation(reactants=[], products=[], reversible=False)
+        reaction_smiles, missing = reaction_smiles_from_equation(parsed, {})
+
+        self.assertEqual(reaction_smiles, ">>")
+        self.assertEqual(missing, {"reactants": [], "products": []})
+
+    def test_reaction_smiles_from_equation_missing_duplicates_are_preserved(
+        self,
+    ) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 3)],
+            products=[("C00002", 2)],
+            reversible=False,
+        )
+
+        reaction_smiles, missing = reaction_smiles_from_equation(parsed, {})
+
+        self.assertEqual(reaction_smiles, ">>")
+        self.assertEqual(missing["reactants"], ["C00001", "C00001", "C00001"])
+        self.assertEqual(missing["products"], ["C00002", "C00002"])
+
+    def test_parse_module_reaction_directions_single_and_multiple_rids(self) -> None:
+        text = (
+            "ENTRY       M00001\n"
+            "REACTION    R00001 C00001 + C00002 -> C00003\n"
+            "            R00002,R00003 C00003 + C00004 <=> C00005 + C00006\n"
+            "NAME        Example module\n"
+        )
+
+        directions = parse_module_reaction_directions(text)
+
+        self.assertEqual(
+            directions["R00001"],
+            (["C00001", "C00002"], ["C00003"], "->"),
+        )
+        self.assertEqual(
+            directions["R00002"],
+            (["C00003", "C00004"], ["C00005", "C00006"], "<=>"),
+        )
+        self.assertEqual(
+            directions["R00003"],
+            (["C00003", "C00004"], ["C00005", "C00006"], "<=>"),
+        )
+
+    def test_parse_module_reaction_directions_stops_after_reaction_block(self) -> None:
+        text = (
+            "ENTRY       M00001\n"
+            "REACTION    R00001 C00001 -> C00002\n"
+            "NAME        Example module\n"
+            "            R99999 C00003 -> C00004\n"
+        )
+
+        directions = parse_module_reaction_directions(text)
+
+        self.assertEqual(list(directions), ["R00001"])
+        self.assertNotIn("R99999", directions)
+
+    def test_parse_module_reaction_directions_ignores_malformed_lines(self) -> None:
+        text = (
+            "ENTRY       M00001\n"
+            "REACTION    malformed text without proper reaction id\n"
+            "            R00001 C00001 + C00002 => C00003\n"
+        )
+
+        directions = parse_module_reaction_directions(text)
+
+        self.assertEqual(
+            directions,
+            {"R00001": (["C00001", "C00002"], ["C00003"], "=>")},
+        )
+
+    def test_orient_equation_to_module_keeps_orientation_when_already_matching(
+        self,
+    ) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 1), ("C00002", 1)],
+            products=[("C00003", 1)],
+            reversible=True,
+        )
+
+        oriented = orient_equation_to_module(
+            parsed,
+            left_ids=["C00001", "C00002"],
+            right_ids=["C00003"],
+        )
+
+        self.assertEqual(oriented.reactants, [("C00001", 1), ("C00002", 1)])
+        self.assertEqual(oriented.products, [("C00003", 1)])
+        self.assertTrue(oriented.reversible)
+
+    def test_orient_equation_to_module_flips_orientation_when_module_matches_reverse(
+        self,
+    ) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 1), ("C00002", 1)],
+            products=[("C00003", 1)],
+            reversible=True,
+        )
+
+        oriented = orient_equation_to_module(
+            parsed,
+            left_ids=["C00003"],
+            right_ids=["C00001", "C00002"],
+        )
+
+        self.assertEqual(oriented.reactants, [("C00003", 1)])
+        self.assertEqual(oriented.products, [("C00001", 1), ("C00002", 1)])
+        self.assertTrue(oriented.reversible)
+
+    def test_orient_equation_to_module_tie_keeps_original_orientation(self) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 1)],
+            products=[("C00002", 1)],
+            reversible=False,
+        )
+
+        oriented = orient_equation_to_module(
+            parsed,
+            left_ids=["C00001", "C00002"],
+            right_ids=[],
+        )
+
+        self.assertEqual(oriented.reactants, [("C00001", 1)])
+        self.assertEqual(oriented.products, [("C00002", 1)])
+
+    def test_equation_to_text_default_irreversible_arrow(self) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 2), ("C00002", 1)],
+            products=[("C00003", 1)],
+            reversible=False,
+        )
+
+        self.assertEqual(
+            equation_to_text(parsed),
+            "2 C00001 + C00002 => C00003",
+        )
+
+    def test_equation_to_text_default_reversible_arrow(self) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 1)],
+            products=[("C00002", 1)],
+            reversible=True,
+        )
+
+        self.assertEqual(equation_to_text(parsed), "C00001 <=> C00002")
+
+    def test_equation_to_text_normalizes_module_forward_arrow(self) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 1)],
+            products=[("C00002", 1)],
+            reversible=False,
+        )
+
+        self.assertEqual(equation_to_text(parsed, arrow="->"), "C00001 => C00002")
+
+    def test_equation_to_text_normalizes_module_reverse_arrow(self) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 1)],
+            products=[("C00002", 1)],
+            reversible=False,
+        )
+
+        self.assertEqual(equation_to_text(parsed, arrow="<-"), "C00001 <= C00002")
+
+    def test_equation_to_text_forces_explicit_arrow_override(self) -> None:
+        parsed = KEGGEquation(
+            reactants=[("C00001", 1)],
+            products=[("C00002", 2)],
+            reversible=True,
+        )
+
+        self.assertEqual(equation_to_text(parsed, arrow="=>"), "C00001 => 2 C00002")
 
 
 if __name__ == "__main__":

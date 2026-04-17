@@ -203,7 +203,11 @@ class KEGGExtractor:
         module_text = self.client.get_text(f"get/{module_id}")
         directions = parse_module_reaction_directions(module_text)
 
-        reaction_ids = list(directions.keys()) if directions else self.get_reaction_ids_from_module(module_id)
+        reaction_ids = (
+            list(directions.keys())
+            if directions
+            else self.get_reaction_ids_from_module(module_id)
+        )
 
         equations_by_rid: ReactionEquationMap = {}
 
@@ -220,7 +224,9 @@ class KEGGExtractor:
             left_ids, right_ids, module_arrow = directions[reaction_id]
             parsed = parse_equation(equation)
             oriented = orient_equation_to_module(parsed, left_ids, right_ids)
-            equations_by_rid[reaction_id] = equation_to_text(oriented, arrow=module_arrow)
+            equations_by_rid[reaction_id] = equation_to_text(
+                oriented, arrow=module_arrow
+            )
 
         return equations_by_rid
 

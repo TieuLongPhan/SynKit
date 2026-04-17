@@ -177,6 +177,7 @@ def parse_side(side: str) -> list[CompoundStoich]:
 
     return parsed
 
+
 def parse_equation(equation: str) -> KEGGEquation:
     """
     Parse a KEGG equation string into reactants, products, and arrow type.
@@ -448,7 +449,7 @@ def parse_module_reaction_directions(
 
     return directions
 
-   
+
 def orient_equation_to_module(
     parsed: KEGGEquation,
     left_ids: list[str],
@@ -473,7 +474,7 @@ def orient_equation_to_module(
             reversible=parsed.reversible,
         )
 
-    return parsed 
+    return parsed
 
 
 def equation_to_text(parsed: KEGGEquation, arrow: str | None = None) -> str:
@@ -481,6 +482,7 @@ def equation_to_text(parsed: KEGGEquation, arrow: str | None = None) -> str:
     Convert KEGGEquation back to text, optionally forcing the arrow from the
     module hint.
     """
+
     def side_to_text(items: list[tuple[str, int]]) -> str:
         parts = []
         for cid, coeff in items:
