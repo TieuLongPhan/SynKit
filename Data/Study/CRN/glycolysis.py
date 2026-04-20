@@ -905,7 +905,7 @@ final_summary = {
         "validated_n": len(cands_H),
         "realizable_certificate": cert_H,
     },
-    "path_I": {
+    "path_J": {
         "qualitative_n": len(cands_J_qual),
         "validated_n": len(cands_J),
         "realizable_certificate": cert_J,
