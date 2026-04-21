@@ -15,6 +15,7 @@ from ._common import (
     hash_text,
     node_token,
     prepare_graph,
+    canonical_graph_from_order,
 )
 
 
@@ -852,8 +853,11 @@ class WLCanonicalizer:
             print(sorted(G_can.nodes()))
         """
         order = self.canonical_order()
-        mapping = {v: i + 1 for i, v in enumerate(order)}
-        return nx.relabel_nodes(self.G, mapping, copy=True)
+        return canonical_graph_from_order(
+            self.G,
+            order,
+            integer_ids=self.integer_ids,
+        )
 
     def graph(self) -> nx.DiGraph:
         """
@@ -948,7 +952,7 @@ class WLCanonicalizer:
             "exact": res.exact,
             "elapsed_seconds": res.elapsed_seconds,
         }
-
+        
     def fast_signature(self) -> Tuple[Any, ...]:
         """
         Return a fast graph signature using graph statistics and WL color

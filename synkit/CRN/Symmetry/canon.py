@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Set
 
 import networkx as nx
 
-from ._common import CanonicalResult, SymmetryConfig
+from ._common import CanonicalResult, SymmetryConfig, canonical_graph_from_order
 from ._ir import IRCanonicalEngine
 from .wl_canon import WLCanonicalizer
 
@@ -223,8 +223,11 @@ class CRNCanonicalizer:
             print(g_canon.nodes())
         """
         order = self.canonical_order(timeout_sec=timeout_sec)
-        relabel = {v: i + 1 for i, v in enumerate(order)}
-        return nx.relabel_nodes(self.G, relabel, copy=True)
+        return canonical_graph_from_order(
+            self.G,
+            order,
+            integer_ids=self.wl.integer_ids,
+        )
 
     def canonical_key(self, *, timeout_sec: Optional[float] = None):
         """
@@ -385,12 +388,15 @@ class CRNCanonicalizer:
         """
         if include_automorphisms:
             res = self._engine.run(max_count=max_count, timeout_sec=timeout_sec)
-            relabel = {v: i + 1 for i, v in enumerate(res.canonical_order)}
             return {
                 "graph_type": self.graph_type,
                 "canonical_perm": res.canonical_order,
                 "canonical_key": res.canonical_key,
-                "canon_graph": nx.relabel_nodes(self.G, relabel, copy=True),
+                "canon_graph": canonical_graph_from_order(
+                    self.G,
+                    res.canonical_order,
+                    integer_ids=self.wl.integer_ids,
+                ),
                 "automorphism_count": res.automorphism_count,
                 "sample_permutations": res.sample_permutations,
                 "mappings": res.sample_mappings,
@@ -400,12 +406,15 @@ class CRNCanonicalizer:
             }
 
         cres = self.canonical_result(timeout_sec=timeout_sec)
-        relabel = {v: i + 1 for i, v in enumerate(cres.canonical_order)}
         return {
             "graph_type": self.graph_type,
             "canonical_perm": cres.canonical_order,
             "canonical_key": cres.canonical_key,
-            "canon_graph": nx.relabel_nodes(self.G, relabel, copy=True),
+            "canon_graph": canonical_graph_from_order(
+                self.G,
+                cres.canonical_order,
+                integer_ids=self.wl.integer_ids,
+            ),
             "elapsed_seconds": cres.elapsed_seconds,
         }
 
