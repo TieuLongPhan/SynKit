@@ -538,52 +538,10 @@ def _copy_as_digraph(G: nx.Graph) -> nx.DiGraph:
     return H
 
 
-
-def _remove_stoich_attrs(G: nx.DiGraph) -> nx.DiGraph:
-    """
-    Return a copy of G with stoichiometric edge attributes removed.
-    """
-    H = G.__class__()
-    H.graph.update(dict(G.graph))
-
-    for n, attrs in G.nodes(data=True):
-        H.add_node(n, **dict(attrs))
-
-    if G.is_multigraph():
-        for u, v, k, attrs in G.edges(keys=True, data=True):
-            new_attrs = dict(attrs)
-            new_attrs.pop("stoich", None)
-            H.add_edge(u, v, key=k, **new_attrs)
-    else:
-        for u, v, attrs in G.edges(data=True):
-            new_attrs = dict(attrs)
-            new_attrs.pop("stoich", None)
-            H.add_edge(u, v, **new_attrs)
-
-    return H
-
-
-def _integerize_graph_nodes(G: nx.DiGraph) -> nx.DiGraph:
-    """
-    Return a copy of G with node ids relabeled to consecutive integers starting at 1.
-
-    Original labels are stored in node attribute ``source_node_id``.
-    """
-    order = sorted(G.nodes(), key=str)
-    mapping = {old: i + 1 for i, old in enumerate(order)}
-    H = nx.relabel_nodes(G, mapping, copy=True)
-
-    for old, new in mapping.items():
-        H.nodes[new]["source_node_id"] = old
-
-    return H
-
-
 def prepare_graph(
     source: Any,
     *,
     include_rule: bool = True,
-    integer_ids: bool = False,
     include_stoich: bool = True,
 ) -> Tuple[nx.DiGraph, str]:
     """
@@ -602,10 +560,6 @@ def prepare_graph(
         species-rule graph rather than a species-only graph.
     :type include_rule: bool
 
-    :param integer_ids:
-        Reserved compatibility flag.
-    :type integer_ids: bool
-
     :param include_stoich:
         Reserved compatibility flag.
     :type include_stoich: bool
@@ -617,23 +571,15 @@ def prepare_graph(
     :raises TypeError:
         If the input is unsupported.
     """
-    _ = integer_ids
     _ = include_stoich
 
     if isinstance(source, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)):
-        G = _copy_as_digraph(source)
-    elif hasattr(source, "to_digraph") and callable(source.to_digraph):
-        G = _copy_as_digraph(source.to_digraph())
-    else:
-        raise TypeError("Expected a NetworkX graph or an object with to_digraph().")
-
-    if not include_stoich:
-        G = _remove_stoich_attrs(G)
-
-    if integer_ids:
-        G = _integerize_graph_nodes(G)
-
-    return G, ("bipartite" if include_rule else "species")
+        return _copy_as_digraph(source), "bipartite" if include_rule else "species"
+    if hasattr(source, "to_digraph") and callable(source.to_digraph):
+        return _copy_as_digraph(source.to_digraph()), (
+            "bipartite" if include_rule else "species"
+        )
+    raise TypeError("Expected a NetworkX graph or an object with to_digraph().")
 
 
 def _first_present(attrs: Mapping[str, Any], keys: Sequence[str]) -> Any:
@@ -1126,46 +1072,3 @@ def orbits_from_mappings(
     for n in nodes:
         buckets[find(n)].add(n)
     return list(buckets.values())
-
-
-def canonical_graph_from_order(
-    G: nx.DiGraph,
-    order: Sequence[Any],
-    *,
-    integer_ids: bool = False,
-) -> nx.DiGraph:
-    """
-    Build a canonical graph from a canonical node order.
-
-    If ``integer_ids`` is True, nodes are relabeled to 1..n.
-    Otherwise, original node labels are preserved, but nodes are inserted in
-    canonical order.
-    """
-    if integer_ids:
-        mapping = {v: i + 1 for i, v in enumerate(order)}
-        return nx.relabel_nodes(G, mapping, copy=True)
-
-    H = G.__class__()
-    H.graph.update(dict(G.graph))
-
-    for v in order:
-        H.add_node(v, **dict(G.nodes[v]))
-
-    pos = {v: i for i, v in enumerate(order)}
-
-    if G.is_multigraph():
-        edges = sorted(
-            G.edges(keys=True, data=True),
-            key=lambda x: (pos[x[0]], pos[x[1]], str(x[2]), str(x[3])),
-        )
-        for u, v, k, attrs in edges:
-            H.add_edge(u, v, key=k, **dict(attrs))
-    else:
-        edges = sorted(
-            G.edges(data=True),
-            key=lambda x: (pos[x[0]], pos[x[1]], str(x[2])),
-        )
-        for u, v, attrs in edges:
-            H.add_edge(u, v, **dict(attrs))
-
-    return H

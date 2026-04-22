@@ -15,7 +15,6 @@ from ._common import (
     hash_text,
     node_token,
     prepare_graph,
-    canonical_graph_from_order,
 )
 
 
@@ -164,11 +163,6 @@ class WLCanonicalizer:
         Whether rule nodes should be included in the prepared graph.
     :type include_rule: bool
 
-    :param integer_ids:
-        Whether integer node identifiers should be used during graph
-        preparation.
-    :type integer_ids: bool
-
     :param include_stoich:
         Whether stoichiometric edge attributes should be preserved during graph
         preparation.
@@ -227,7 +221,6 @@ class WLCanonicalizer:
         source: Any,
         *,
         include_rule: bool = True,
-        integer_ids: bool = False,
         include_stoich: bool = True,
         n_iter: int = 20,
         digest_size: int = 16,
@@ -247,11 +240,6 @@ class WLCanonicalizer:
         :param include_rule:
             Whether rule nodes should be included in the prepared graph.
         :type include_rule: bool
-
-        :param integer_ids:
-            Whether integer node identifiers should be used during graph
-            preparation.
-        :type integer_ids: bool
 
         :param include_stoich:
             Whether stoichiometric edge attributes should be preserved.
@@ -302,7 +290,6 @@ class WLCanonicalizer:
         """
         self.source = source
         self.include_rule = bool(include_rule)
-        self.integer_ids = bool(integer_ids)
         self.include_stoich = bool(include_stoich)
         self.n_iter = int(n_iter)
         self.digest_size = int(digest_size)
@@ -315,7 +302,6 @@ class WLCanonicalizer:
         self._G, self._graph_type = prepare_graph(
             source,
             include_rule=self.include_rule,
-            integer_ids=self.integer_ids,
             include_stoich=self.include_stoich,
         )
 
@@ -401,7 +387,6 @@ class WLCanonicalizer:
             self.G.number_of_nodes(),
             self.G.number_of_edges(),
             self.include_rule,
-            self.integer_ids,
             self.include_stoich,
             self.n_iter,
             self.digest_size,
@@ -853,11 +838,8 @@ class WLCanonicalizer:
             print(sorted(G_can.nodes()))
         """
         order = self.canonical_order()
-        return canonical_graph_from_order(
-            self.G,
-            order,
-            integer_ids=self.integer_ids,
-        )
+        mapping = {v: i + 1 for i, v in enumerate(order)}
+        return nx.relabel_nodes(self.G, mapping, copy=True)
 
     def graph(self) -> nx.DiGraph:
         """
@@ -952,7 +934,7 @@ class WLCanonicalizer:
             "exact": res.exact,
             "elapsed_seconds": res.elapsed_seconds,
         }
-        
+
     def fast_signature(self) -> Tuple[Any, ...]:
         """
         Return a fast graph signature using graph statistics and WL color

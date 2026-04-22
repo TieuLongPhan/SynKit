@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Set
 
 import networkx as nx
 
-from ._common import CanonicalResult, SymmetryConfig, canonical_graph_from_order
+from ._common import CanonicalResult, SymmetryConfig
 from ._ir import IRCanonicalEngine
 from .wl_canon import WLCanonicalizer
 
@@ -33,10 +33,6 @@ class CRNCanonicalizer:
         Whether rule / reaction nodes should be included explicitly in the
         canonicalization model.
     :type include_rule: bool
-    :param integer_ids:
-        Whether to normalize node identifiers into integer-based ids in the
-        internal representation.
-    :type integer_ids: bool
     :param include_stoich:
         Whether stoichiometric information should be included in the canonical
         representation and symmetry analysis.
@@ -73,7 +69,6 @@ class CRNCanonicalizer:
         source: Any,
         *,
         include_rule: bool = True,
-        integer_ids: bool = False,
         include_stoich: bool = True,
         wl_iters: int = 20,
         wl_digest_size: int = 16,
@@ -88,9 +83,6 @@ class CRNCanonicalizer:
         :param include_rule:
             Whether rule / reaction nodes are included in the internal model.
         :type include_rule: bool
-        :param integer_ids:
-            Whether integer ids should be used internally.
-        :type integer_ids: bool
         :param include_stoich:
             Whether stoichiometric information is included.
         :type include_stoich: bool
@@ -111,7 +103,6 @@ class CRNCanonicalizer:
         self.wl = WLCanonicalizer(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             n_iter=wl_iters,
             digest_size=wl_digest_size,
@@ -120,7 +111,6 @@ class CRNCanonicalizer:
         self._engine = IRCanonicalEngine(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             wl_iters=wl_iters,
             wl_digest_size=wl_digest_size,
@@ -223,11 +213,8 @@ class CRNCanonicalizer:
             print(g_canon.nodes())
         """
         order = self.canonical_order(timeout_sec=timeout_sec)
-        return canonical_graph_from_order(
-            self.G,
-            order,
-            integer_ids=self.wl.integer_ids,
-        )
+        relabel = {v: i + 1 for i, v in enumerate(order)}
+        return nx.relabel_nodes(self.G, relabel, copy=True)
 
     def canonical_key(self, *, timeout_sec: Optional[float] = None):
         """
@@ -388,15 +375,12 @@ class CRNCanonicalizer:
         """
         if include_automorphisms:
             res = self._engine.run(max_count=max_count, timeout_sec=timeout_sec)
+            relabel = {v: i + 1 for i, v in enumerate(res.canonical_order)}
             return {
                 "graph_type": self.graph_type,
                 "canonical_perm": res.canonical_order,
                 "canonical_key": res.canonical_key,
-                "canon_graph": canonical_graph_from_order(
-                    self.G,
-                    res.canonical_order,
-                    integer_ids=self.wl.integer_ids,
-                ),
+                "canon_graph": nx.relabel_nodes(self.G, relabel, copy=True),
                 "automorphism_count": res.automorphism_count,
                 "sample_permutations": res.sample_permutations,
                 "mappings": res.sample_mappings,
@@ -406,15 +390,12 @@ class CRNCanonicalizer:
             }
 
         cres = self.canonical_result(timeout_sec=timeout_sec)
+        relabel = {v: i + 1 for i, v in enumerate(cres.canonical_order)}
         return {
             "graph_type": self.graph_type,
             "canonical_perm": cres.canonical_order,
             "canonical_key": cres.canonical_key,
-            "canon_graph": canonical_graph_from_order(
-                self.G,
-                cres.canonical_order,
-                integer_ids=self.wl.integer_ids,
-            ),
+            "canon_graph": nx.relabel_nodes(self.G, relabel, copy=True),
             "elapsed_seconds": cres.elapsed_seconds,
         }
 

@@ -17,7 +17,6 @@ class CRNSymmetry:
         source: Any,
         *,
         include_rule: bool = True,
-        integer_ids: bool = False,
         include_stoich: bool = True,
         wl_iters: int = 20,
         wl_digest_size: int = 16,
@@ -26,7 +25,6 @@ class CRNSymmetry:
         self.config = config or SymmetryConfig.topological()
         self.kwargs = dict(
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             wl_iters=wl_iters,
             wl_digest_size=wl_digest_size,
@@ -37,7 +35,6 @@ class CRNSymmetry:
             n_iter=wl_iters,
             digest_size=wl_digest_size,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             config=self.config,
         )

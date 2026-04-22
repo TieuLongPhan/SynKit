@@ -88,11 +88,6 @@ class IRCanonicalEngine:
         Whether rule/reaction node semantics should be encoded into node tokens.
     :type include_rule: bool
 
-    :param integer_ids:
-        Whether integer-style IDs should be preferred when supported by the
-        upstream graph builder.
-    :type integer_ids: bool
-
     :param include_stoich:
         Whether stoichiometric edge/node information should be included in the
         canonicalization tokens.
@@ -145,7 +140,6 @@ class IRCanonicalEngine:
         source: Any,
         *,
         include_rule: bool = True,
-        integer_ids: bool = False,
         include_stoich: bool = True,
         wl_iters: int = 20,
         wl_digest_size: int = 16,
@@ -161,10 +155,6 @@ class IRCanonicalEngine:
         :param include_rule:
             Whether rule/reaction semantics are included.
         :type include_rule: bool
-
-        :param integer_ids:
-            Whether integer IDs should be preserved or preferred when possible.
-        :type integer_ids: bool
 
         :param include_stoich:
             Whether stoichiometric information is encoded into the graph tokens.
@@ -187,7 +177,6 @@ class IRCanonicalEngine:
         self.wl = WLCanonicalizer(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             n_iter=wl_iters,
             digest_size=wl_digest_size,
