@@ -542,7 +542,6 @@ def prepare_graph(
     source: Any,
     *,
     include_rule: bool = True,
-    integer_ids: bool = False,
     include_stoich: bool = True,
 ) -> Tuple[nx.DiGraph, str]:
     """
@@ -561,10 +560,6 @@ def prepare_graph(
         species-rule graph rather than a species-only graph.
     :type include_rule: bool
 
-    :param integer_ids:
-        Reserved compatibility flag.
-    :type integer_ids: bool
-
     :param include_stoich:
         Reserved compatibility flag.
     :type include_stoich: bool
@@ -576,7 +571,6 @@ def prepare_graph(
     :raises TypeError:
         If the input is unsupported.
     """
-    _ = integer_ids
     _ = include_stoich
 
     if isinstance(source, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)):

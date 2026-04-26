@@ -32,11 +32,6 @@ class CRNAutomorphism:
         internal graph representation.
     :type include_rule: bool
 
-    :param integer_ids:
-        Whether integer-style identifiers should be preferred when supported by
-        the upstream graph builder.
-    :type integer_ids: bool
-
     :param include_stoich:
         Whether stoichiometric information should be included in the internal
         representation.
@@ -80,7 +75,6 @@ class CRNAutomorphism:
         source: Any,
         *,
         include_rule: bool = True,
-        integer_ids: bool = False,
         include_stoich: bool = True,
         wl_iters: int = 20,
         wl_digest_size: int = 16,
@@ -96,10 +90,6 @@ class CRNAutomorphism:
         :param include_rule:
             Whether rule/reaction nodes are included.
         :type include_rule: bool
-
-        :param integer_ids:
-            Whether integer-style identifiers should be preferred.
-        :type integer_ids: bool
 
         :param include_stoich:
             Whether stoichiometric information should be included.
@@ -120,7 +110,6 @@ class CRNAutomorphism:
         self.config, self.wl, self._engine = self._build_components(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             wl_iters=wl_iters,
             wl_digest_size=wl_digest_size,
@@ -166,7 +155,6 @@ class CRNAutomorphism:
         source: Any,
         *,
         include_rule: bool,
-        integer_ids: bool,
         include_stoich: bool,
         wl_iters: int,
         wl_digest_size: int,
@@ -182,10 +170,6 @@ class CRNAutomorphism:
         :param include_rule:
             Whether rule/reaction nodes are included.
         :type include_rule: bool
-
-        :param integer_ids:
-            Whether integer-style identifiers should be preferred.
-        :type integer_ids: bool
 
         :param include_stoich:
             Whether stoichiometric information should be included.
@@ -211,7 +195,6 @@ class CRNAutomorphism:
         wl = WLCanonicalizer(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             n_iter=wl_iters,
             digest_size=wl_digest_size,
@@ -220,7 +203,6 @@ class CRNAutomorphism:
         engine = IRCanonicalEngine(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             wl_iters=wl_iters,
             wl_digest_size=wl_digest_size,
@@ -234,7 +216,6 @@ class CRNAutomorphism:
         source: Any,
         *,
         include_rule: bool,
-        integer_ids: bool,
         include_stoich: bool,
         wl_iters: int,
         wl_digest_size: int,
@@ -250,10 +231,6 @@ class CRNAutomorphism:
         :param include_rule:
             Whether rule/reaction nodes are included.
         :type include_rule: bool
-
-        :param integer_ids:
-            Whether integer-style identifiers should be preferred.
-        :type integer_ids: bool
 
         :param include_stoich:
             Whether stoichiometric information should be included.
@@ -282,7 +259,6 @@ class CRNAutomorphism:
         return cls._build_fresh(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             wl_iters=wl_iters,
             wl_digest_size=wl_digest_size,

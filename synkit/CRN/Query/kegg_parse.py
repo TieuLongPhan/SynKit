@@ -426,7 +426,7 @@ def parse_module_reaction_directions(
     in_reaction = False
     for line in text.splitlines():
         if line.startswith("REACTION"):
-            payload = line[len("REACTION") :].strip()
+            payload = line[len("REACTION"):].strip()
             in_reaction = True
         elif in_reaction and (line.startswith(" ") or line.startswith("\t")):
             payload = line.strip()
