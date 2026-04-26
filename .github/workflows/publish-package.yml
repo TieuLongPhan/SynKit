@@ -1,6 +1,71 @@
 name: PyPI publish
 
 on:
+  push:
+    branches:
+      - beta
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-publish-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and validate package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build source and wheel distributions
+        run: |
+          python -m build --sdist --wheel
+
+      - name: Check package metadata
+        run: |
+          python -m twine check dist/*
+
+      - name: Show built artifacts
+        run: |
+          ls -lh dist/
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish package to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/synkit
+
+    permissions:name: PyPI publish
+
+on:
   release:
     types: [published]
 
@@ -8,7 +73,84 @@ permissions:
   contents: read
 
 jobs:
+  build:name: PyPI publish
+
+on:
+  push:
+    branches:
+      - beta
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-publish-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
   build:
+    name: Build and validate package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build source and wheel distributions
+        run: |
+          python -m build --sdist --wheel
+
+      - name: Check package metadata
+        run: |
+          python -m twine check dist/*
+
+      - name: Show built artifacts
+        run: |
+          ls -lh dist/
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish package to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/synkit
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
     name: Build package
     runs-on: ubuntu-latest
     steps:
@@ -47,3 +189,15 @@ jobs:
         path: dist/
     - name: Publish package to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
