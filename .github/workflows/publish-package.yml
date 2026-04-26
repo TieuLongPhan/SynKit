@@ -5,7 +5,8 @@ on:
     branches:
       - beta
   release:
-    types: [published]
+    types:
+      - published
 
 permissions:
   contents: read
@@ -32,82 +33,29 @@ jobs:
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip
-          python -m pip install build twine
+          python -m pip install build twine packaging
 
-      - name: Build source and wheel distributions
+      - name: Validate beta version on beta branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/beta'
         run: |
-          python -m build --sdist --wheel
+          python - <<'PY'
+          import tomllib
+          from packaging.version import Version
 
-      - name: Check package metadata
-        run: |
-          python -m twine check dist/*
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
 
-      - name: Show built artifacts
-        run: |
-          ls -lh dist/
+          version = data["project"]["version"]
+          parsed = Version(version)
 
-      - name: Upload distribution artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
-          if-no-files-found: error
-          retention-days: 7
+          if not parsed.is_prerelease:
+              raise SystemExit(
+                  f"Beta branch must use a pre-release version, e.g. 0.1.0b1. "
+                  f"Current version is: {version}"
+              )
 
-  publish:
-    name: Publish package to PyPI
-    needs: build
-    runs-on: ubuntu-latest
-
-    environment:
-      name: pypi
-      url: https://pypi.org/p/synkit
-
-    permissions:name: PyPI publish
-
-on:
-  release:
-    types: [published]
-
-permissions:
-  contents: read
-
-jobs:
-  build:name: PyPI publish
-
-on:
-  push:
-    branches:
-      - beta
-  release:
-    types: [published]
-
-permissions:
-  contents: read
-
-concurrency:
-  group: pypi-publish-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: false
-
-jobs:
-  build:
-    name: Build and validate package
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install build twine
+          print(f"Valid beta/pre-release version: {version}")
+          PY
 
       - name: Build source and wheel distributions
         run: |
@@ -139,56 +87,6 @@ jobs:
       url: https://pypi.org/p/synkit
 
     permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Download distribution artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/
-
-      - name: Publish package to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-    name: Build package
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build
-    - name: Build package
-      run: python -m build
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: package
-        path: dist/
-      
-  publish:
-    name: Upload release to PyPI
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/synkit
-    permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
-    steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: package
-        path: dist/
-    - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
       contents: read
       id-token: write
 
