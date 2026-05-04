@@ -10,7 +10,44 @@ permissions:
   contents: read
 
 jobs:
+  build_check:
+    name: Build conda package on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          channels: conda-forge
+          auto-update-conda: true
+          auto-activate-base: true
+
+      - name: Create & activate build env
+        shell: bash -l {0}
+        run: |
+          conda create -n build python=3.11 'conda-build>=3.21' -c conda-forge -y
+          conda activate build
+
+      - name: Build conda package
+        shell: bash -l {0}
+        run: |
+          conda activate build
+          rm -rf conda-bld && mkdir conda-bld
+          conda-build recipe --output-folder ./conda-bld
+          find conda-bld -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print
+
   build:
+    needs: build_check
     runs-on: ubuntu-latest
     outputs:
       pkg_paths: ${{ steps.build.outputs.paths }}

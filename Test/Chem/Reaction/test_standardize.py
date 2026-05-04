@@ -40,6 +40,16 @@ class TestStandardize(unittest.TestCase):
         result = self.standardizer.standardize_rsmi(rsmi)
         self.assertIsNone(result)
 
+    def test_standardize_rsmi_removes_invalid_fragments_by_default(self):
+        rsmi = "CCC.C1CC>>O"
+        result = self.standardizer.standardize_rsmi(rsmi)
+        self.assertEqual(result, "CCC>>O")
+
+    def test_standardize_rsmi_returns_none_when_invalid_fragments_are_kept(self):
+        rsmi = "CCC.C1CC>>O"
+        result = self.standardizer.standardize_rsmi(rsmi, remove_invalid=False)
+        self.assertIsNone(result)
+
     def test_fit(self):
         rsmi = "[CH3:1][C:2](=[O:3])[O:4]C>>[CH3:1][C:2](=[O:3])[OH:4]"
         expected = "COC(C)=O>>CC(=O)O"
@@ -52,6 +62,16 @@ class TestStandardize(unittest.TestCase):
         result = self.standardizer.fit(rsmi, remove_aam=False)
         print(result)
         self.assertEqual(result, expected)
+
+    def test_fit_removes_invalid_fragments_by_default(self):
+        rsmi = "CCC.C1CC>>O"
+        result = self.standardizer.fit(rsmi)
+        self.assertEqual(result, "CCC>>O")
+
+    def test_fit_returns_none_when_invalid_fragments_are_kept(self):
+        rsmi = "CCC.C1CC>>O"
+        result = self.standardizer.fit(rsmi, remove_invalid=False)
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":

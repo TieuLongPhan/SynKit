@@ -1,0 +1,40 @@
+{
+  "found": true,
+  "flow": {
+    "50": 1,
+    "55": 1,
+    "52": 1
+  },
+  "exact_realizable": true,
+  "certificate": [
+    "50",
+    "55",
+    "52"
+  ],
+  "scaled_realizable": true,
+  "scale": 1,
+  "borrow_realizable": true,
+  "borrow": {},
+  "summary": {
+    "n_species": 40,
+    "n_reactions": 34,
+    "active_flow": {
+      "50": 1,
+      "52": 1,
+      "55": 1
+    },
+    "initial_marking": {
+      "C": 1,
+      "S": 1
+    },
+    "goal_exact": {
+      "__ext__50": 0,
+      "__target__50": 1,
+      "__ext__52": 0,
+      "__target__52": 1,
+      "__ext__55": 0,
+      "__target__55": 1
+    },
+    "goal_atleast": {}
+  }
+}

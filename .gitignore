@@ -3,15 +3,15 @@
 *.csv
 */catboost_info/*
 
-*.json
+
 *.pkl.gz
 *.pdf
-*.log
+
 .coverage
 dev/*
 *.rdf
 test_syn_reactor.py
-*.ipynb
+
 Data/Benchmark/*
 *.json.gz
 # *.png
@@ -26,5 +26,9 @@ Data/USPTO/*
 crn/*
 test_run.py
 Data/Study/CRN/case_formose/*
-Data/Study/CRN/case_glycolysis/*
+
 synkit/Graph/dev/*
+*.ipynb
+*.json
+*.txt
+*.log

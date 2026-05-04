@@ -33,10 +33,6 @@ class CRNCanonicalizer:
         Whether rule / reaction nodes should be included explicitly in the
         canonicalization model.
     :type include_rule: bool
-    :param integer_ids:
-        Whether to normalize node identifiers into integer-based ids in the
-        internal representation.
-    :type integer_ids: bool
     :param include_stoich:
         Whether stoichiometric information should be included in the canonical
         representation and symmetry analysis.
@@ -73,7 +69,6 @@ class CRNCanonicalizer:
         source: Any,
         *,
         include_rule: bool = True,
-        integer_ids: bool = False,
         include_stoich: bool = True,
         wl_iters: int = 20,
         wl_digest_size: int = 16,
@@ -88,9 +83,6 @@ class CRNCanonicalizer:
         :param include_rule:
             Whether rule / reaction nodes are included in the internal model.
         :type include_rule: bool
-        :param integer_ids:
-            Whether integer ids should be used internally.
-        :type integer_ids: bool
         :param include_stoich:
             Whether stoichiometric information is included.
         :type include_stoich: bool
@@ -111,7 +103,6 @@ class CRNCanonicalizer:
         self.wl = WLCanonicalizer(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             n_iter=wl_iters,
             digest_size=wl_digest_size,
@@ -120,7 +111,6 @@ class CRNCanonicalizer:
         self._engine = IRCanonicalEngine(
             source,
             include_rule=include_rule,
-            integer_ids=integer_ids,
             include_stoich=include_stoich,
             wl_iters=wl_iters,
             wl_digest_size=wl_digest_size,

@@ -1,0 +1,36 @@
+SynCRN: 40 species, 34 reactions
+  41: A + B >> C + D rule 0
+  42: E >> B + F rule 1
+  43: C + G >> A + H rule 2
+  44: I >> J rule 3
+  45: J + K + L >> M + N + O rule 4
+  46: J + K + P >> M + O + Q rule 5
+  47: H >> J + I rule 6
+  48: A + M >> R + C rule 7
+  49: R >> E rule 8
+  50: S + C >> A + T rule 9
+  51: S + U >> T + V rule 10
+  52: A + G >> W + H rule 11
+  53: J + 2X + F >> 2O + R + 2Y rule 12
+  54: A + S >> T + W rule 13
+  55: T >> G rule 14
+  56: Z + C >> A + B + AA rule 15
+  57: Z + AB >> B + AA + AC rule 16
+  58: B + F >> E rule 17
+  59: Z + AD >> B + AA + AE rule 18
+  60: F + H >> K + G rule 19
+  61: J >> I rule 20
+  62: M + N + O >> J + K + L rule 21
+  63: M + O + Q >> J + K + P rule 22
+  64: J + I >> H rule 23
+  65: R + C >> A + M rule 24
+  66: E >> R rule 25
+  67: AF + D >> AA + AG rule 26
+  68: L + AH + D >> N + O + AA + AI rule 27
+  69: P + AH + D >> O + Q + AA + AI rule 28
+  70: 2X + AH + D >> 2O + 2Y + AA + AI rule 29
+  71: AH + AJ >> AI + AK rule 30
+  72: AG + AL >> AF + AJ rule 31
+  73: L + AK >> N + O + AL rule 32
+  74: AH + AM + D >> AA + AI + AN rule 33
+Species: A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, AA, AB, AC, AD, AE, AF, AG, AH, AI, AJ, AK, AL, AM, AN

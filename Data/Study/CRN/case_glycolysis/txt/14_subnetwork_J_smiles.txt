@@ -1,0 +1,4 @@
+10: OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O + Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O >> Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O + O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O  (rule_id=1, rule_repr=r10)
+11: O=P(O)(O)OC[C@H]1O[C@H](O)[C@H](O)[C@@H](O)[C@@H]1O >> O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O  (rule_id=2, rule_repr=r15)
+12: Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O + O=P(O)(O)OC[C@H]1OC(O)(CO)[C@@H](O)[C@@H]1O >> Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)O)[C@@H](O)[C@H]1O + O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O  (rule_id=3, rule_repr=r12)
+13: O=P(O)(O)OC[C@H]1OC(O)(COP(=O)(O)O)[C@@H](O)[C@@H]1O >> O=C[C@H](O)COP(=O)(O)O + O=C(CO)COP(=O)(O)O  (rule_id=4, rule_repr=r7)

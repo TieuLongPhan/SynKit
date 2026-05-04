@@ -1,0 +1,20 @@
+Qualitative candidates to H
+===========================
+
+Candidate 1
+depth: 3
+reactions: ['50', '55', '43']
+rules: ['r10', 'r15', 'r3']
+flow: {'50': 1, '55': 1, '43': 1}
+reached_species: ['A', 'C', 'G', 'H', 'S', 'T']
+realizable: False
+certificate: None
+
+Candidate 2
+depth: 3
+reactions: ['50', '55', '52']
+rules: ['r10', 'r15', 'r12']
+flow: {'50': 1, '55': 1, '52': 1}
+reached_species: ['A', 'C', 'G', 'H', 'S', 'T', 'W']
+realizable: False
+certificate: None

@@ -130,7 +130,6 @@ class TestCRNSymmetry(unittest.TestCase):
         sym = CRNSymmetry(
             syn,
             include_rule=False,
-            integer_ids=True,
             include_stoich=False,
             wl_iters=7,
             wl_digest_size=12,
@@ -141,7 +140,6 @@ class TestCRNSymmetry(unittest.TestCase):
             sym.kwargs,
             {
                 "include_rule": False,
-                "integer_ids": True,
                 "include_stoich": False,
                 "wl_iters": 7,
                 "wl_digest_size": 12,

@@ -1,0 +1,4 @@
+10: S + C >> A + T  (rule_id=1, rule_repr=r10)
+11: T >> G  (rule_id=2, rule_repr=r15)
+12: A + G >> W + H  (rule_id=3, rule_repr=r12)
+13: H >> J + I  (rule_id=4, rule_repr=r7)

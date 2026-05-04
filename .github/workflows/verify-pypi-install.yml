@@ -15,7 +15,13 @@ on:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    name: Verify PyPI install on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - name: Setup Python

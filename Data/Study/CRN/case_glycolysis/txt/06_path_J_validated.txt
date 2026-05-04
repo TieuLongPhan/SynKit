@@ -1,0 +1,20 @@
+Validated candidates to J
+=========================
+
+Candidate 1
+depth: 4
+reactions: ['50', '55', '43', '47']
+rules: ['r10', 'r15', 'r3', 'r7']
+flow: {'50': 1, '55': 1, '43': 1, '47': 1}
+reached_species: ['A', 'C', 'G', 'H', 'I', 'J', 'S', 'T']
+realizable: False
+certificate: None
+
+Candidate 2
+depth: 4
+reactions: ['50', '55', '52', '47']
+rules: ['r10', 'r15', 'r12', 'r7']
+flow: {'50': 1, '55': 1, '52': 1, '47': 1}
+reached_species: ['A', 'C', 'G', 'H', 'I', 'J', 'S', 'T', 'W']
+realizable: True
+certificate: ['50', '55', '52', '47']

@@ -1,49 +1,101 @@
 name: PyPI publish
 
 on:
+  push:
+    branches:
+      - beta
   release:
-    types: [published]
+    types:
+      - published
 
 permissions:
   contents: read
 
+concurrency:
+  group: pypi-publish-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
-    name: Build package
+    name: Build and validate package
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build
-    - name: Build package
-      run: python -m build
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: package
-        path: dist/
-      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine packaging
+
+      - name: Validate beta version on beta branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/beta'
+        run: |
+          python - <<'PY'
+          import tomllib
+          from packaging.version import Version
+
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
+
+          version = data["project"]["version"]
+          parsed = Version(version)
+
+          if not parsed.is_prerelease:
+              raise SystemExit(
+                  f"Beta branch must use a pre-release version, e.g. 0.1.0b1. "
+                  f"Current version is: {version}"
+              )
+
+          print(f"Valid beta/pre-release version: {version}")
+          PY
+
+      - name: Build source and wheel distributions
+        run: |
+          python -m build --sdist --wheel
+
+      - name: Check package metadata
+        run: |
+          python -m twine check dist/*
+
+      - name: Show built artifacts
+        run: |
+          ls -lh dist/
+
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
   publish:
-    name: Upload release to PyPI
+    name: Publish package to PyPI
     needs: build
     runs-on: ubuntu-latest
+
     environment:
       name: pypi
       url: https://pypi.org/p/synkit
+
     permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+      contents: read
+      id-token: write
+
     steps:
-    - name: Download artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: package
-        path: dist/
-    - name: Publish package to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Download distribution artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -42,11 +42,13 @@ class TestAtomFeatureExtractor(unittest.TestCase):
             "partial_charge",
             "hybridization",
             "in_ring",
-            "implicit_hcount",
             "neighbors",
             "atom_map",
         }
         self.assertTrue(expected.issubset(set(feat.keys())))
+        self.assertEqual(feat["element"], "C")
+        self.assertEqual(feat["neighbors"], ["C"])
+        self.assertNotIn("implicit_hcount", feat)
 
     @unittest.skipIf(DESCRIPTORS is None, "PerMolDescriptors not available")
     def test_full_profile_includes_distances_and_permol(self):

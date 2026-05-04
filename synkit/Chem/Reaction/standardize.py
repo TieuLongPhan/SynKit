@@ -72,7 +72,34 @@ class Standardize:
         return valid
 
     @staticmethod
-    def standardize_rsmi(rsmi: str, stereo: bool = False) -> Optional[str]:
+    def _parse_molecule_fragments(
+        smiles_list: List[str],
+    ) -> Tuple[List[Chem.Mol], bool]:
+        """Parse and sanitize SMILES fragments.
+
+        :param smiles_list: List of SMILES strings to validate.
+        :type smiles_list: List[str]
+        :returns: Tuple of valid molecules and whether any fragment was invalid.
+        :rtype: Tuple[List[rdkit.Chem.Mol], bool]
+        """
+        valid: List[Chem.Mol] = []
+        had_invalid = False
+        for smi in smiles_list:
+            mol = Chem.MolFromSmiles(smi, sanitize=False)
+            if mol:
+                try:
+                    Chem.SanitizeMol(mol)
+                    valid.append(mol)
+                except Exception:
+                    had_invalid = True
+            else:
+                had_invalid = True
+        return valid, had_invalid
+
+    @staticmethod
+    def standardize_rsmi(
+        rsmi: str, stereo: bool = False, remove_invalid: bool = True
+    ) -> Optional[str]:
         """
         Normalize a reaction SMILES: validate molecules, sort fragments, optionally keep stereo.
 
@@ -80,6 +107,10 @@ class Standardize:
         :type rsmi: str
         :param stereo: If True, include stereochemistry in the output. Defaults to False.
         :type stereo: bool
+        :param remove_invalid: If True, drop invalid fragments and standardize
+            remaining molecules. If False, return None when any invalid fragment
+            exists. Defaults to True.
+        :type remove_invalid: bool
         :returns: Standardized reaction SMILES or None if no valid molecules remain.
         :rtype: Optional[str]
         :raises ValueError: If the input format is invalid.
@@ -91,8 +122,15 @@ class Standardize:
                 "Invalid reaction SMILES format. Expected 'reactants>>products'."
             )
 
-        react_mols = Standardize.filter_valid_molecules(react_str.split("."))
-        prod_mols = Standardize.filter_valid_molecules(prod_str.split("."))
+        react_mols, react_invalid = Standardize._parse_molecule_fragments(
+            react_str.split(".")
+        )
+        prod_mols, prod_invalid = Standardize._parse_molecule_fragments(
+            prod_str.split(".")
+        )
+
+        if not remove_invalid and (react_invalid or prod_invalid):
+            return None
 
         if not react_mols or not prod_mols:
             return None
@@ -107,7 +145,11 @@ class Standardize:
         return f"{sorted_react}>>{sorted_prod}"
 
     def fit(
-        self, rsmi: str, remove_aam: bool = True, ignore_stereo: bool = True
+        self,
+        rsmi: str,
+        remove_aam: bool = True,
+        ignore_stereo: bool = True,
+        remove_invalid: bool = True,
     ) -> Optional[str]:
         """
         Full standardization pipeline: strip atom‑mapping, normalize SMILES, fix hydrogen notation.
@@ -118,15 +160,21 @@ class Standardize:
         :type remove_aam: bool
         :param ignore_stereo: If True, drop stereochemistry. Defaults to True.
         :type ignore_stereo: bool
+        :param remove_invalid: If True, drop invalid fragments and standardize
+            remaining molecules. If False, return None when any invalid fragment
+            exists. Defaults to True.
+        :type remove_invalid: bool
         :returns: The standardized reaction SMILES, or None if standardization fails.
         :rtype: Optional[str]
         """
-        if remove_aam:
-            rsmi = self.remove_atom_mapping(rsmi)
-
-        std = self.standardize_rsmi(rsmi, stereo=not ignore_stereo)
+        std = self.standardize_rsmi(
+            rsmi, stereo=not ignore_stereo, remove_invalid=remove_invalid
+        )
         if std is None:
             return None
+
+        if remove_aam:
+            std = self.remove_atom_mapping(std)
 
         # Format any double‑hydrogen notation
         return std.replace("[HH]", "[H][H]")

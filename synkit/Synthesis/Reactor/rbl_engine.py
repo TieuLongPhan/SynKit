@@ -953,7 +953,7 @@ class RBLEngine:
                     reason="quick_check_match",
                     metadata={"solution_index": idx, "n_solutions": len(sols)},
                 )
-                return sols[idx]
+                return sols
 
         return None
 

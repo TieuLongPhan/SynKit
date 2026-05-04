@@ -19,99 +19,68 @@ logger = setup_logging()
 
 
 class MolToGraph:
-    """
-    Convert an RDKit molecule into a :class:`networkx.Graph`.
+    """Convert an RDKit molecule into a NetworkX molecular graph.
 
-    This class provides a flexible RDKit-to-NetworkX conversion layer with
-    support for:
+    The converter preserves the public API while adding corrected lone-pair
+    bookkeeping for aromatic heteroatoms, especially pyrrolic / ``[nH]``-like
+    aromatic nitrogen. RDKit aromatic bonds have order ``1.5``; for aromatic
+    lone-pair donor heteroatoms, this class counts aromatic bonds as sigma bonds
+    during lone-pair estimation.
 
-    - selective node and edge attributes
-    - minimal or full atom feature profiles
-    - optional topology annotation
-    - backward-compatible one-shot graph creation
-    - chainable graph construction and retrieval
+    Important node fields are ``estimated_lone_pairs``, ``lone_pairs``
+    backward-compatible alias, ``available_lone_pairs``, ``available_lp``,
+    ``bond_order_sum``, ``lp_bond_order_sum``, ``valence_electrons``, and
+    ``oxidation_state``.
 
-    The default public workflow is :meth:`transform`, which directly returns a
-    graph. For chainable usage, :meth:`transform_store` stores the graph on the
-    instance and returns ``self``.
-
-    Lone-pair-related information is exposed through heuristic atom-level
-    attributes such as ``estimated_lone_pairs``, ``available_lp``,
-    ``bond_order_sum``, and ``valence_electrons``. These are intended as useful
-    approximate descriptors rather than exact quantum-mechanical quantities.
-
-    Bond-level aromatic systems are represented using both the native RDKit
-    aromatic form and an auxiliary kekulized form. As a result, an edge can
-    expose:
-
-    - ``order``: bond order from the original RDKit molecule
-    - ``bond_type``: bond type from the original RDKit molecule
-    - ``aromatic``: aromatic flag from the original RDKit molecule
-    - ``kekule_order``: localized single/double bond order from a kekulized copy
-    - ``kekule_bond_type``: localized bond type from a kekulized copy
-
-    This allows downstream code to preserve aromaticity while also using an
-    explicit resonance assignment as an extra feature.
-
-    :param node_attrs:
-        Optional list of node attribute names to retain. If ``None``, all
-        computed node attributes are kept.
+    :param node_attrs: Optional whitelist of node attributes to keep.
     :type node_attrs: Optional[List[str]]
-    :param edge_attrs:
-        Optional list of edge attribute names to retain. If ``None``, all
-        computed edge attributes are kept.
+    :param edge_attrs: Optional whitelist of edge attributes to keep.
     :type edge_attrs: Optional[List[str]]
-    :param attr_profile:
-        Attribute profile to use. Supported values are ``"minimal"`` and
-        ``"full"``. The full profile attempts to compute
-        :class:`PerMolDescriptors`.
+    :param attr_profile: Atom feature profile, either ``"minimal"`` or
+        ``"full"``.
     :type attr_profile: str
-    :param with_topology:
-        If ``True``, apply :class:`GraphAnnotator` after graph construction.
+    :param with_topology: If ``True``, run :class:`GraphAnnotator` on the graph.
     :type with_topology: bool
-
-    :raises ValueError:
-        If ``attr_profile`` is not one of the supported profile names.
-
-    .. note::
-       Lone-pair estimation is based on simple valence-electron bookkeeping and
-       may be inaccurate for hypervalent atoms, strongly delocalized systems,
-       organometallics, or unusual valence states.
-
-    **Example**
+    :raises ValueError: If ``attr_profile`` is unsupported.
 
     .. code-block:: python
 
         from rdkit import Chem
+        from synkit.IO.mol_to_graph import MolToGraph
 
-        mol = Chem.MolFromSmiles("CC(=O)O")
+        mol = Chem.MolFromSmiles("c1cc[nH]c1")
+        graph = MolToGraph(attr_profile="minimal").transform(mol)
 
-        converter = MolToGraph(
-            attr_profile="minimal",
-            with_topology=False,
-        )
-        g = converter.transform(mol)
-
-        print(g.number_of_nodes())
-        print(g.number_of_edges())
-
-    **Chainable example**
+        for node, data in graph.nodes(data=True):
+            print(node, data["element"], data["lone_pairs"], data["available_lp"])
 
     .. code-block:: python
 
-        from rdkit import Chem
-
-        mol = Chem.MolFromSmiles("c1ccccc1O")
-
-        converter = MolToGraph(attr_profile="full", with_topology=True)
-        converter.transform_store(mol)
-        g = converter.graph
-
-        print(converter)
-        print(g.nodes(data=True))
+        mol = Chem.MolFromSmiles("[CH3:1][CH2:2][Br:3]")
+        graph = MolToGraph(
+            node_attrs=["element", "atom_map", "charge", "lone_pairs"],
+            edge_attrs=["order", "kekule_order"],
+        ).transform(mol, use_index_as_atom_map=True)
     """
 
     SUPPORTED_PROFILES = ("minimal", "full")
+
+    # Pauling electronegativities used for oxidation-state bookkeeping.
+    # Missing elements are skipped instead of guessed.
+    PAULING_EN: Dict[str, float] = {
+        "H": 2.20,
+        "B": 2.04,
+        "C": 2.55,
+        "N": 3.04,
+        "O": 3.44,
+        "F": 3.98,
+        "P": 2.19,
+        "S": 2.58,
+        "Cl": 3.16,
+        "Br": 2.96,
+        "I": 2.66,
+        "Se": 2.55,
+    }
 
     def __init__(
         self,
@@ -121,37 +90,17 @@ class MolToGraph:
         attr_profile: str = "minimal",
         with_topology: bool = False,
     ) -> None:
-        """
-        Initialize a molecule-to-graph converter.
+        """Initialize the converter.
 
-        :param node_attrs:
-            Optional list of node attribute names to keep. If ``None``, all
-            available node attributes are retained.
+        :param node_attrs: Optional node-attribute whitelist.
         :type node_attrs: Optional[List[str]]
-        :param edge_attrs:
-            Optional list of edge attribute names to keep. If ``None``, all
-            available edge attributes are retained.
+        :param edge_attrs: Optional edge-attribute whitelist.
         :type edge_attrs: Optional[List[str]]
-        :param attr_profile:
-            Feature profile to use. Must be ``"minimal"`` or ``"full"``.
+        :param attr_profile: Feature profile, ``"minimal"`` or ``"full"``.
         :type attr_profile: str
-        :param with_topology:
-            Whether to apply graph topology annotation after graph creation.
+        :param with_topology: Whether to add topology annotations.
         :type with_topology: bool
-
-        :raises ValueError:
-            If an unsupported ``attr_profile`` is provided.
-
-        **Example**
-
-        .. code-block:: python
-
-            converter = MolToGraph(
-                node_attrs=["element", "charge", "estimated_lone_pairs"],
-                edge_attrs=["order", "bond_type", "kekule_order"],
-                attr_profile="minimal",
-                with_topology=False,
-            )
+        :raises ValueError: If ``attr_profile`` is unsupported.
         """
         if attr_profile not in self.SUPPORTED_PROFILES:
             raise ValueError(
@@ -165,12 +114,15 @@ class MolToGraph:
         self.edge_attrs: Optional[List[str]] = (
             None if edge_attrs is None else list(edge_attrs)
         )
-
         self.attr_profile: str = attr_profile
         self.with_topology: bool = bool(with_topology)
 
         self._graph: Optional[nx.Graph] = None
         self._last_mol: Optional[Chem.Mol] = None
+
+    # ------------------------------------------------------------------
+    # Public conversion API
+    # ------------------------------------------------------------------
 
     def transform(
         self,
@@ -178,55 +130,33 @@ class MolToGraph:
         drop_non_aam: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
-        """
-        Build and return a :class:`networkx.Graph` from an RDKit molecule.
+        """Build a NetworkX graph from an RDKit molecule.
 
-        This is the main backward-compatible entry point. It converts an RDKit
-        molecule into a graph whose nodes represent atoms and whose edges
-        represent bonds.
-
-        Aromatic bonds are read from the original molecule, while localized bond
-        orders are optionally recovered from a kekulized copy and exposed under
-        ``kekule_order``.
-
-        :param mol:
-            RDKit molecule to convert.
+        :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam:
-            If ``True``, atoms with atom-map number ``0`` are excluded. This
-            requires ``use_index_as_atom_map=True``.
+        :param drop_non_aam: If ``True``, exclude atoms with atom-map ``0``.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map:
-            If ``True``, use explicit atom-map numbers when present and non-zero.
-            Otherwise, use ``atom index + 1`` as node identifiers.
+        :param use_index_as_atom_map: If ``True``, use non-zero atom-map numbers
+            as node identifiers; otherwise use ``atom index + 1``.
         :type use_index_as_atom_map: bool
-
-        :returns:
-            Constructed molecular graph.
+        :returns: Molecular graph with atom and bond attributes.
         :rtype: nx.Graph
-
-        :raises ValueError:
-            If ``drop_non_aam=True`` while ``use_index_as_atom_map=False``.
-
-        **Example**
+        :raises ValueError: If ``drop_non_aam=True`` but
+            ``use_index_as_atom_map=False``.
 
         .. code-block:: python
 
-            from rdkit import Chem
-
-            mol = Chem.MolFromSmiles("[CH3:1][OH:2]")
-            g = MolToGraph().transform(
+            mol = Chem.MolFromSmiles("[CH3:1][CH2:2][Br:3]")
+            graph = MolToGraph().transform(
                 mol,
-                drop_non_aam=False,
+                drop_non_aam=True,
                 use_index_as_atom_map=True,
             )
-
-            print(g.nodes(data=True))
-            print(g.edges(data=True))
         """
         if drop_non_aam and not use_index_as_atom_map:
             raise ValueError(
-                "drop_non_aam and use_index_as_atom_map must both be True to drop unmapped atoms."
+                "drop_non_aam and use_index_as_atom_map must both be True "
+                "to drop unmapped atoms."
             )
 
         self._last_mol = mol
@@ -237,6 +167,7 @@ class MolToGraph:
             logger.debug("Gasteiger computation failed (best-effort). Continuing.")
 
         kek_mol: Optional[Chem.Mol] = self._make_kekule_copy(mol)
+        oxidation_states = self.estimate_oxidation_states(mol, kek_mol=kek_mol)
 
         per: Optional[PerMolDescriptors] = None
         if self.attr_profile == "full":
@@ -248,15 +179,11 @@ class MolToGraph:
 
         extractor = AtomFeatureExtractor(mol, per=per, profile=self.attr_profile)
 
-        G = nx.Graph()
+        graph = nx.Graph()
         index_to_id: Dict[int, int] = {}
 
         for atom in mol.GetAtoms():
-            try:
-                atom_map = atom.GetAtomMapNum()
-            except Exception:
-                atom_map = 0
-
+            atom_map = self._safe_atom_map(atom)
             atom_id = (
                 atom_map
                 if (use_index_as_atom_map and atom_map != 0)
@@ -268,21 +195,36 @@ class MolToGraph:
 
             try:
                 props = extractor.build_dict(atom)
-                props = self._augment_atom_properties(atom, props)
-            except Exception:
-                props = self._gather_atom_properties(atom)
+                props = self._augment_atom_properties(
+                    atom,
+                    props,
+                    oxidation_state=oxidation_states.get(atom.GetIdx()),
+                    profile=self.attr_profile,
+                )
+            except Exception as exc:
+                logger.debug(
+                    "AtomFeatureExtractor failed for atom %s: %s",
+                    atom.GetIdx(),
+                    exc,
+                )
+                props = self._gather_atom_properties(
+                    atom,
+                    oxidation_state=oxidation_states.get(atom.GetIdx()),
+                    profile=self.attr_profile,
+                )
 
             if self.node_attrs is not None:
                 props = {k: v for k, v in props.items() if k in self.node_attrs}
 
-            G.add_node(atom_id, **props)
+            graph.add_node(atom_id, **props)
             index_to_id[atom.GetIdx()] = atom_id
 
         for bond in mol.GetBonds():
-            b_idx = bond.GetBeginAtomIdx()
-            e_idx = bond.GetEndAtomIdx()
-            begin = index_to_id.get(b_idx)
-            end = index_to_id.get(e_idx)
+            begin_idx = bond.GetBeginAtomIdx()
+            end_idx = bond.GetEndAtomIdx()
+
+            begin = index_to_id.get(begin_idx)
+            end = index_to_id.get(end_idx)
             if begin is None or end is None:
                 continue
 
@@ -295,7 +237,12 @@ class MolToGraph:
 
             try:
                 bprops = self._gather_bond_properties(bond, kek_bond=kek_bond)
-            except Exception:
+            except Exception as exc:
+                logger.debug(
+                    "Bond property collection failed for bond %s: %s",
+                    bond.GetIdx(),
+                    exc,
+                )
                 original_order = (
                     bond.GetBondTypeAsDouble()
                     if hasattr(bond, "GetBondTypeAsDouble")
@@ -333,15 +280,15 @@ class MolToGraph:
             if self.edge_attrs is not None:
                 bprops = {k: v for k, v in bprops.items() if k in self.edge_attrs}
 
-            G.add_edge(begin, end, **bprops)
+            graph.add_edge(begin, end, **bprops)
 
         if self.with_topology:
             try:
-                GraphAnnotator(G, in_place=True).annotate()
+                GraphAnnotator(graph, in_place=True).annotate()
             except Exception as exc:
                 logger.debug("GraphAnnotator failed: %s", exc)
 
-        return G
+        return graph
 
     def transform_store(
         self,
@@ -349,37 +296,16 @@ class MolToGraph:
         drop_non_aam: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> "MolToGraph":
-        """
-        Build a graph from ``mol``, store it internally, and return ``self``.
+        """Build, store, and return ``self``.
 
-        This method is useful for fluent or chainable workflows where the
-        resulting graph is later accessed through the :attr:`graph` property.
-
-        :param mol:
-            RDKit molecule to convert.
+        :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam:
-            If ``True``, atoms with atom-map number ``0`` are excluded.
+        :param drop_non_aam: If ``True``, exclude atoms with atom-map ``0``.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map:
-            Whether to use atom-map numbers as node identifiers when available.
+        :param use_index_as_atom_map: If ``True``, use atom maps as node IDs.
         :type use_index_as_atom_map: bool
-
-        :returns:
-            The current converter instance.
+        :returns: Current converter instance.
         :rtype: MolToGraph
-
-        **Example**
-
-        .. code-block:: python
-
-            from rdkit import Chem
-
-            mol = Chem.MolFromSmiles("CCN")
-
-            converter = MolToGraph()
-            converter.transform_store(mol)
-            g = converter.graph
         """
         self._graph = self.transform(
             mol,
@@ -390,23 +316,11 @@ class MolToGraph:
 
     @property
     def graph(self) -> nx.Graph:
-        """
-        Return the last graph produced by :meth:`transform_store`.
+        """Return the graph produced by :meth:`transform_store`.
 
-        :returns:
-            The stored molecular graph.
+        :returns: Stored molecular graph.
         :rtype: nx.Graph
-
-        :raises RuntimeError:
-            If no graph has been stored yet.
-
-        **Example**
-
-        .. code-block:: python
-
-            converter = MolToGraph()
-            converter.transform_store(mol)
-            g = converter.graph
+        :raises RuntimeError: If no graph has been stored yet.
         """
         if self._graph is None:
             raise RuntimeError(
@@ -415,18 +329,16 @@ class MolToGraph:
         return self._graph
 
     def __repr__(self) -> str:
-        """
-        Return a concise string representation of the converter state.
+        """Return a compact representation.
 
-        :returns:
-            String representation including profile, topology option, attribute
-            filters, and last graph size.
+        :returns: Developer-facing representation string.
         :rtype: str
         """
         try:
             n = self._graph.number_of_nodes() if self._graph is not None else 0
         except Exception:
             n = -1
+
         return (
             f"{self.__class__.__name__}(profile={self.attr_profile!r}, "
             f"with_topology={self.with_topology}, node_attrs={self.node_attrs!r}, "
@@ -435,33 +347,44 @@ class MolToGraph:
 
     @classmethod
     def help(cls) -> str:
-        """
-        Return a short machine-readable help string for this class.
+        """Return a short usage string.
 
-        :returns:
-            A compact usage summary.
+        :returns: Usage summary.
         :rtype: str
         """
         return (
             "MolToGraph.help() -> str\n\n"
             "Create with MolToGraph(node_attrs=[...], edge_attrs=[...], "
             "attr_profile='minimal'|'full', with_topology=False).\n"
-            "Use `.transform(mol)` to get an nx.Graph (backwards-compatible),\n"
-            "or `.transform_store(mol)` to build and store the graph on the instance\n"
-            "and then retrieve it via `.graph` (chainable)."
+            "Use `.transform(mol)` to get an nx.Graph, or `.transform_store(mol)` "
+            "to build and store the graph on the instance."
         )
+
+    # ------------------------------------------------------------------
+    # Safe RDKit helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _safe_atom_map(atom: Chem.Atom) -> int:
+        """Return atom-map number or ``0``.
+
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: Atom-map number.
+        :rtype: int
+        """
+        try:
+            return int(atom.GetAtomMapNum())
+        except Exception:
+            return 0
 
     @staticmethod
     def _safe_bond_order_sum(atom: Chem.Atom) -> float:
-        """
-        Return the sum of bond orders around an atom.
+        """Return raw RDKit bond-order sum.
 
-        :param atom:
-            Atom whose incident bond orders will be summed.
+        :param atom: RDKit atom.
         :type atom: Chem.Atom
-
-        :returns:
-            Sum of bond orders.
+        :returns: Incident bond-order sum.
         :rtype: float
         """
         try:
@@ -471,16 +394,11 @@ class MolToGraph:
 
     @staticmethod
     def _safe_valence_electrons(atom: Chem.Atom) -> int:
-        """
-        Return the number of valence electrons for an atom.
+        """Return outer-shell valence electron count.
 
-        :param atom:
-            Atom whose outer-shell electron count will be estimated from the
-            periodic table.
+        :param atom: RDKit atom.
         :type atom: Chem.Atom
-
-        :returns:
-            Number of outer-shell electrons.
+        :returns: Valence electron count, or ``0`` on failure.
         :rtype: int
         """
         try:
@@ -490,35 +408,73 @@ class MolToGraph:
             return 0
 
     @staticmethod
-    def _make_kekule_copy(mol: Chem.Mol) -> Optional[Chem.Mol]:
+    def _explicit_h_neighbor_count(atom: Chem.Atom) -> int:
+        """Count explicit hydrogen neighbors.
+
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: Number of explicit hydrogen neighbors.
+        :rtype: int
         """
-        Return a kekulized copy of ``mol``.
+        try:
+            return sum(1 for nb in atom.GetNeighbors() if nb.GetAtomicNum() == 1)
+        except Exception:
+            return 0
 
-        The returned copy has aromatic bond flags cleared and explicit localized
-        single/double bond assignments. This helper is used to derive
-        ``kekule_order`` and ``kekule_bond_type`` while preserving aromatic
-        information from the original molecule.
+    @staticmethod
+    def _non_neighbor_h_count(atom: Chem.Atom) -> int:
+        """Count hydrogens not represented as explicit neighbors.
 
-        :param mol:
-            Input molecule.
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: Non-neighbor hydrogen count.
+        :rtype: int
+        """
+        try:
+            return int(atom.GetTotalNumHs(includeNeighbors=False))
+        except TypeError:
+            try:
+                return int(atom.GetTotalNumHs())
+            except Exception:
+                return 0
+        except Exception:
+            return 0
+
+    @staticmethod
+    def _total_h_count(atom: Chem.Atom) -> int:
+        """Count explicit-neighbor and non-neighbor hydrogens.
+
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: Total hydrogen count.
+        :rtype: int
+        """
+        return MolToGraph._explicit_h_neighbor_count(
+            atom
+        ) + MolToGraph._non_neighbor_h_count(atom)
+
+    @staticmethod
+    def _heavy_neighbor_count(atom: Chem.Atom) -> int:
+        """Count non-hydrogen neighbors.
+
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: Heavy-neighbor count.
+        :rtype: int
+        """
+        try:
+            return sum(1 for nb in atom.GetNeighbors() if nb.GetAtomicNum() != 1)
+        except Exception:
+            return 0
+
+    @staticmethod
+    def _make_kekule_copy(mol: Chem.Mol) -> Optional[Chem.Mol]:
+        """Return a kekulized copy, or ``None`` on failure.
+
+        :param mol: RDKit molecule.
         :type mol: Chem.Mol
-
-        :returns:
-            Kekulized copy of the molecule, or ``None`` if kekulization fails.
+        :returns: Kekulized molecule copy or ``None``.
         :rtype: Optional[Chem.Mol]
-
-        **Example**
-
-        .. code-block:: python
-
-            from rdkit import Chem
-
-            mol = Chem.MolFromSmiles("c1ccccc1")
-            kek = MolToGraph._make_kekule_copy(mol)
-
-            if kek is not None:
-                for bond in kek.GetBonds():
-                    print(bond.GetBondType(), bond.GetBondTypeAsDouble())
         """
         try:
             kek = Chem.Mol(mol)
@@ -528,111 +484,495 @@ class MolToGraph:
             logger.debug("Failed to create kekulized copy: %s", exc)
             return None
 
+    # ------------------------------------------------------------------
+    # Lone-pair estimation
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _is_aromatic_lone_pair_donor(cls, atom: Chem.Atom) -> bool:
+        """Detect aromatic heteroatoms whose lone pair contributes to aromaticity.
+
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: ``True`` if aromatic bonds should be counted as sigma bonds
+            for lone-pair bookkeeping.
+        :rtype: bool
+        """
+        try:
+            if not atom.GetIsAromatic():
+                return False
+
+            atomic_num = int(atom.GetAtomicNum())
+            formal_charge = int(atom.GetFormalCharge())
+            total_h = cls._total_h_count(atom)
+            heavy_degree = cls._heavy_neighbor_count(atom)
+
+            if atomic_num == 7:
+                aromatic_bonds = 0
+                nonaromatic_heavy_sigma_bonds = 0
+                for bond in atom.GetBonds():
+                    other = bond.GetOtherAtom(atom)
+                    if bond.GetIsAromatic():
+                        aromatic_bonds += 1
+                    elif (
+                        other.GetAtomicNum() != 1
+                        and float(bond.GetBondTypeAsDouble()) <= 1.1
+                    ):
+                        nonaromatic_heavy_sigma_bonds += 1
+
+                if formal_charge <= 0 and aromatic_bonds >= 2:
+                    if total_h > 0 and heavy_degree == 2:
+                        return True
+                    if (
+                        total_h == 0
+                        and heavy_degree == 3
+                        and nonaromatic_heavy_sigma_bonds >= 1
+                    ):
+                        return True
+
+                if formal_charge < 0 and heavy_degree <= 2:
+                    return True
+
+                return False
+
+            if atomic_num in {8, 16, 34, 52}:
+                if formal_charge <= 0 and heavy_degree <= 2:
+                    return True
+
+            if atomic_num == 15:
+                if formal_charge <= 0 and total_h > 0 and heavy_degree == 2:
+                    return True
+
+            return False
+
+        except Exception:
+            return False
+
+    @classmethod
+    def _bond_order_sum_for_lone_pairs(cls, atom: Chem.Atom) -> float:
+        """Return bond-order sum used for lone-pair bookkeeping.
+
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: Corrected lone-pair bond-order sum.
+        :rtype: float
+        """
+        try:
+            aromatic_lp_donor = cls._is_aromatic_lone_pair_donor(atom)
+            total = 0.0
+
+            for bond in atom.GetBonds():
+                try:
+                    if aromatic_lp_donor and bond.GetIsAromatic():
+                        total += 1.0
+                    else:
+                        total += float(bond.GetBondTypeAsDouble())
+                except Exception:
+                    total += 1.0
+
+            return total
+
+        except Exception:
+            return 0.0
+
     @classmethod
     def estimate_lone_pairs(cls, atom: Chem.Atom) -> int:
-        """
-        Estimate the number of lone pairs on an atom.
+        """Estimate total lone-pair count.
 
-        The estimate is based on simple valence bookkeeping:
-
-        .. code-block:: text
-
-            nonbonding_electrons =
-                valence_electrons
-                - formal_charge
-                - radical_electrons
-                - bond_order_sum
-                - total_hcount
-
-            lone_pairs = floor(nonbonding_electrons / 2)
-
-        :param atom:
-            Atom for which lone pairs will be estimated.
+        :param atom: RDKit atom.
         :type atom: Chem.Atom
-
-        :returns:
-            Estimated number of lone pairs.
+        :returns: Estimated total lone-pair count.
         :rtype: int
-
-        .. note::
-           This estimate is heuristic and may be inaccurate for aromatic,
-           resonance-delocalized, hypervalent, or otherwise nonclassical atoms.
-
-        **Example**
 
         .. code-block:: python
 
-            mol = Chem.MolFromSmiles("O")
-            atom = mol.GetAtomWithIdx(0)
-            lp = MolToGraph.estimate_lone_pairs(atom)
-            print(lp)
+            mol = Chem.MolFromSmiles("c1cc[nH]c1")
+            n_atom = next(a for a in mol.GetAtoms() if a.GetSymbol() == "N")
+            print(MolToGraph.estimate_lone_pairs(n_atom))
         """
         try:
-            valence_electrons = cls._safe_valence_electrons(atom)
-            formal_charge = int(atom.GetFormalCharge())
-            radical_electrons = int(atom.GetNumRadicalElectrons())
-            bond_order_sum = int(round(cls._safe_bond_order_sum(atom)))
-            total_hcount = int(atom.GetTotalNumHs())
+            valence_electrons = float(cls._safe_valence_electrons(atom))
+            formal_charge = float(int(atom.GetFormalCharge()))
+            radical_electrons = float(int(atom.GetNumRadicalElectrons()))
+            bond_order_sum = float(cls._bond_order_sum_for_lone_pairs(atom))
+            non_neighbor_h = float(cls._non_neighbor_h_count(atom))
 
             nonbonding_electrons = (
                 valence_electrons
                 - formal_charge
                 - radical_electrons
                 - bond_order_sum
-                - total_hcount
+                - non_neighbor_h
             )
-            return max(0, nonbonding_electrons // 2)
+
+            lone_pairs = int((nonbonding_electrons + 1e-8) // 2)
+            return max(0, lone_pairs)
+
         except Exception:
             return 0
+
+    @classmethod
+    def estimate_available_lone_pairs(cls, atom: Chem.Atom) -> int:
+        """Estimate lone pairs locally available for ``LP-/B+`` donation.
+
+        :param atom: RDKit atom.
+        :type atom: Chem.Atom
+        :returns: Locally available lone-pair count.
+        :rtype: int
+        """
+        total_lp = cls.estimate_lone_pairs(atom)
+
+        if total_lp <= 0:
+            return 0
+
+        try:
+            atomic_num = int(atom.GetAtomicNum())
+            formal_charge = int(atom.GetFormalCharge())
+            total_h = cls._total_h_count(atom)
+
+            if formal_charge > 0:
+                return 0
+
+            if atom.GetIsAromatic():
+                if atomic_num == 7 and total_h > 0:
+                    return 0
+                if atomic_num in {8, 16, 34, 52}:
+                    return max(0, total_lp - 1)
+
+            return total_lp
+
+        except Exception:
+            return total_lp
+
+    # ------------------------------------------------------------------
+    # Oxidation-state estimation
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _bond_order_for_oxidation_state(
+        cls,
+        bond: Chem.Bond,
+        kek_bond: Optional[Chem.Bond] = None,
+        *,
+        prefer_kekule: bool = True,
+    ) -> float:
+        """Return bond order for oxidation-state bookkeeping.
+
+        :param bond: Original RDKit bond.
+        :type bond: Chem.Bond
+        :param kek_bond: Matching bond from a kekulized copy.
+        :type kek_bond: Optional[Chem.Bond]
+        :param prefer_kekule: Whether to use ``kek_bond`` when available.
+        :type prefer_kekule: bool
+        :returns: Bond order.
+        :rtype: float
+        """
+        try:
+            if prefer_kekule and kek_bond is not None:
+                return float(kek_bond.GetBondTypeAsDouble())
+            return float(bond.GetBondTypeAsDouble())
+        except Exception:
+            return 1.0
+
+    @classmethod
+    def estimate_oxidation_states(
+        cls,
+        mol: Chem.Mol,
+        *,
+        kek_mol: Optional[Chem.Mol] = None,
+        prefer_kekule: bool = True,
+        en_tie_threshold: float = 0.05,
+    ) -> Dict[int, float]:
+        """Estimate atom oxidation states.
+
+        For each bond, bond electrons are assigned to the more electronegative
+        atom. Formal charge is used as the starting value.
+
+        :param mol: RDKit molecule.
+        :type mol: Chem.Mol
+        :param kek_mol: Optional kekulized copy of ``mol``.
+        :type kek_mol: Optional[Chem.Mol]
+        :param prefer_kekule: Whether to prefer kekulized bond orders.
+        :type prefer_kekule: bool
+        :param en_tie_threshold: Electronegativity-difference threshold for
+            treating a bond as a tie.
+        :type en_tie_threshold: float
+        :returns: Oxidation states keyed by RDKit atom index.
+        :rtype: Dict[int, float]
+        """
+        ox: Dict[int, float] = {}
+
+        try:
+            for atom in mol.GetAtoms():
+                ox[atom.GetIdx()] = float(atom.GetFormalCharge())
+
+            for bond in mol.GetBonds():
+                a = bond.GetBeginAtom()
+                b = bond.GetEndAtom()
+
+                i = a.GetIdx()
+                j = b.GetIdx()
+
+                elem_i = a.GetSymbol()
+                elem_j = b.GetSymbol()
+
+                en_i = cls.PAULING_EN.get(elem_i)
+                en_j = cls.PAULING_EN.get(elem_j)
+
+                if en_i is None or en_j is None:
+                    continue
+
+                kek_bond: Optional[Chem.Bond] = None
+                if kek_mol is not None:
+                    try:
+                        kek_bond = kek_mol.GetBondWithIdx(bond.GetIdx())
+                    except Exception:
+                        kek_bond = None
+
+                order = cls._bond_order_for_oxidation_state(
+                    bond,
+                    kek_bond=kek_bond,
+                    prefer_kekule=prefer_kekule,
+                )
+
+                if abs(order) < 1e-12:
+                    continue
+
+                diff = float(en_i) - float(en_j)
+
+                if abs(diff) <= en_tie_threshold:
+                    continue
+
+                if diff > 0:
+                    ox[i] -= order
+                    ox[j] += order
+                else:
+                    ox[i] += order
+                    ox[j] -= order
+
+            return ox
+
+        except Exception as exc:
+            logger.debug("Oxidation-state estimation failed: %s", exc)
+            return ox
+
+    @classmethod
+    def oxidation_states_by_atom_map(
+        cls,
+        mol: Chem.Mol,
+        *,
+        kek_mol: Optional[Chem.Mol] = None,
+        prefer_kekule: bool = True,
+        en_tie_threshold: float = 0.05,
+    ) -> Dict[int, Dict[str, Any]]:
+        """Return oxidation states keyed by non-zero atom-map number.
+
+        :param mol: Mapped RDKit molecule.
+        :type mol: Chem.Mol
+        :param kek_mol: Optional kekulized copy.
+        :type kek_mol: Optional[Chem.Mol]
+        :param prefer_kekule: Whether to prefer kekulized bond orders.
+        :type prefer_kekule: bool
+        :param en_tie_threshold: Electronegativity tie threshold.
+        :type en_tie_threshold: float
+        :returns: Oxidation-state records keyed by atom-map number.
+        :rtype: Dict[int, Dict[str, Any]]
+        """
+        if kek_mol is None:
+            kek_mol = cls._make_kekule_copy(mol)
+
+        ox = cls.estimate_oxidation_states(
+            mol,
+            kek_mol=kek_mol,
+            prefer_kekule=prefer_kekule,
+            en_tie_threshold=en_tie_threshold,
+        )
+
+        out: Dict[int, Dict[str, Any]] = {}
+
+        for atom in mol.GetAtoms():
+            amap = cls._safe_atom_map(atom)
+            if amap == 0:
+                continue
+
+            out[amap] = {
+                "atom_idx": atom.GetIdx(),
+                "element": atom.GetSymbol(),
+                "charge": atom.GetFormalCharge(),
+                "oxidation_state": ox.get(atom.GetIdx(), 0.0),
+            }
+
+        return out
+
+    @classmethod
+    def reaction_oxidation_state_delta_from_rsmi(
+        cls,
+        rsmi: str,
+        *,
+        threshold: float = 0.5,
+        prefer_kekule: bool = True,
+        en_tie_threshold: float = 0.05,
+    ) -> Dict[int, Dict[str, Any]]:
+        """Compute oxidation-state changes for mapped reaction SMILES.
+
+        Positive ``delta`` means oxidation; negative ``delta`` means reduction.
+
+        :param rsmi: Mapped reaction SMILES containing ``">>"``.
+        :type rsmi: str
+        :param threshold: Minimum absolute delta to report.
+        :type threshold: float
+        :param prefer_kekule: Whether to prefer kekulized bond orders.
+        :type prefer_kekule: bool
+        :param en_tie_threshold: Electronegativity tie threshold.
+        :type en_tie_threshold: float
+        :returns: Significant oxidation-state changes keyed by atom map.
+        :rtype: Dict[int, Dict[str, Any]]
+        :raises ValueError: If ``rsmi`` lacks ``">>"``.
+
+        .. code-block:: python
+
+            rsmi = "[CH3:1][OH:2]>>[CH2:1]=[O:2]"
+            print(MolToGraph.reaction_oxidation_state_delta_from_rsmi(rsmi))
+        """
+        if ">>" not in rsmi:
+            raise ValueError("Expected mapped reaction SMILES containing '>>'.")
+
+        reactants_smi, products_smi = rsmi.split(">>", 1)
+
+        def _side_maps(side_smi: str) -> Dict[int, Dict[str, Any]]:
+            merged: Dict[int, Dict[str, Any]] = {}
+
+            for smi in side_smi.split("."):
+                smi = smi.strip()
+                if not smi:
+                    continue
+
+                mol = Chem.MolFromSmiles(smi)
+                if mol is None:
+                    continue
+
+                merged.update(
+                    cls.oxidation_states_by_atom_map(
+                        mol,
+                        prefer_kekule=prefer_kekule,
+                        en_tie_threshold=en_tie_threshold,
+                    )
+                )
+
+            return merged
+
+        r_by_map = _side_maps(reactants_smi)
+        p_by_map = _side_maps(products_smi)
+
+        changes: Dict[int, Dict[str, Any]] = {}
+
+        for amap in sorted(set(r_by_map) | set(p_by_map)):
+            r = r_by_map.get(amap)
+            p = p_by_map.get(amap)
+
+            if r is None or p is None:
+                changes[amap] = {
+                    "reactant": r,
+                    "product": p,
+                    "reason": "atom_map_missing_on_one_side",
+                }
+                continue
+
+            delta = float(p["oxidation_state"]) - float(r["oxidation_state"])
+
+            if abs(delta) >= threshold:
+                changes[amap] = {
+                    "element": (r["element"], p["element"]),
+                    "reactant_os": round(float(r["oxidation_state"]), 3),
+                    "product_os": round(float(p["oxidation_state"]), 3),
+                    "delta": round(delta, 3),
+                    "classification": "oxidized" if delta > 0 else "reduced",
+                }
+
+        return changes
+
+    # ------------------------------------------------------------------
+    # Atom and bond property collection
+    # ------------------------------------------------------------------
 
     @classmethod
     def _augment_atom_properties(
         cls,
         atom: Chem.Atom,
         props: Dict[str, Any],
+        oxidation_state: Optional[float] = None,
+        *,
+        profile: str = "full",
     ) -> Dict[str, Any]:
-        """
-        Add lone-pair and electron bookkeeping fields to an atom property dict.
+        """Add electron-bookkeeping fields to existing atom attributes.
 
-        :param atom:
-            Atom used to compute additional properties.
+        For both profiles sets ``oxidation_state``, ``radical``,
+        ``available_lp``, and the backward-compatible ``lone_pairs`` alias.
+        The ``"full"`` profile additionally sets ``bond_order_sum``,
+        ``lp_bond_order_sum``, ``valence_electrons``,
+        ``estimated_lone_pairs``, and ``available_lone_pairs``.
+
+        :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :param props:
-            Existing atom property dictionary.
+        :param props: Existing atom attributes from
+            :class:`~synkit.Chem.Molecule.atom_features.AtomFeatureExtractor`.
         :type props: Dict[str, Any]
-
-        :returns:
-            Enriched atom property dictionary.
+        :param oxidation_state: Pre-computed oxidation state, or ``None``.
+        :type oxidation_state: Optional[float]
+        :param profile: Feature profile — ``"minimal"`` or ``"full"``.
+        :type profile: str
+        :returns: Augmented atom attributes dict.
         :rtype: Dict[str, Any]
         """
         new_props = dict(props)
 
-        bond_order_sum = cls._safe_bond_order_sum(atom)
-        valence_electrons = cls._safe_valence_electrons(atom)
         estimated_lone_pairs = cls.estimate_lone_pairs(atom)
+        available_lone_pairs = cls.estimate_available_lone_pairs(atom)
 
-        new_props.setdefault("bond_order_sum", round(bond_order_sum, 3))
-        new_props.setdefault("valence_electrons", valence_electrons)
-        new_props.setdefault("estimated_lone_pairs", estimated_lone_pairs)
-        new_props.setdefault("available_lp", estimated_lone_pairs > 0)
-        new_props.setdefault("lone_pairs", estimated_lone_pairs)
+        new_props["oxidation_state"] = (
+            None if oxidation_state is None else round(float(oxidation_state), 3)
+        )
+        new_props["radical"] = int(atom.GetNumRadicalElectrons())
+        new_props["available_lp"] = available_lone_pairs > 0
+        # Backward-compatible field used by SynEltra.
+        new_props["lone_pairs"] = estimated_lone_pairs
+
+        if profile == "full":
+            new_props["bond_order_sum"] = round(cls._safe_bond_order_sum(atom), 3)
+            new_props["lp_bond_order_sum"] = round(
+                cls._bond_order_sum_for_lone_pairs(atom), 3
+            )
+            new_props["valence_electrons"] = cls._safe_valence_electrons(atom)
+            new_props["estimated_lone_pairs"] = estimated_lone_pairs
+            new_props["available_lone_pairs"] = available_lone_pairs
 
         return new_props
 
     @staticmethod
-    def _gather_atom_properties(atom: Chem.Atom) -> Dict[str, Any]:
-        """
-        Collect a full set of atom-level graph node attributes.
+    def _gather_atom_properties(
+        atom: Chem.Atom,
+        oxidation_state: Optional[float] = None,
+        *,
+        profile: str = "full",
+    ) -> Dict[str, Any]:
+        """Collect fallback atom-level node attributes.
 
-        This is a legacy-compatible helper used as a fallback when the feature
-        extractor path is unavailable or fails.
+        Minimal profile keys: ``element``, ``aromatic``, ``hcount``,
+        ``charge``, ``radical``, ``isomer``, ``partial_charge``,
+        ``hybridization``, ``in_ring``, ``neighbors``, ``atom_map``,
+        ``oxidation_state``, ``available_lp``, ``lone_pairs``.
 
-        :param atom:
-            Atom to describe.
+        Full profile additionally includes ``bond_order_sum``,
+        ``lp_bond_order_sum``, ``valence_electrons``,
+        ``estimated_lone_pairs``, ``available_lone_pairs``.
+
+        :param atom: RDKit atom.
         :type atom: Chem.Atom
-
-        :returns:
-            Dictionary of atom properties.
+        :param oxidation_state: Pre-computed oxidation state, or ``None``.
+        :type oxidation_state: Optional[float]
+        :param profile: Feature profile — ``"minimal"`` or ``"full"``.
+        :type profile: str
+        :returns: Node attribute dict.
         :rtype: Dict[str, Any]
         """
         try:
@@ -649,16 +989,11 @@ class MolToGraph:
         except Exception:
             neighbors = []
 
-        try:
-            atom_map = atom.GetAtomMapNum()
-        except Exception:
-            atom_map = 0
-
-        bond_order_sum = round(MolToGraph._safe_bond_order_sum(atom), 3)
-        valence_electrons = MolToGraph._safe_valence_electrons(atom)
+        atom_map = MolToGraph._safe_atom_map(atom)
         estimated_lone_pairs = MolToGraph.estimate_lone_pairs(atom)
+        available_lone_pairs = MolToGraph.estimate_available_lone_pairs(atom)
 
-        return {
+        props: Dict[str, Any] = {
             "element": atom.GetSymbol(),
             "aromatic": atom.GetIsAromatic(),
             "hcount": atom.GetTotalNumHs(),
@@ -668,39 +1003,38 @@ class MolToGraph:
             "partial_charge": gcharge,
             "hybridization": str(atom.GetHybridization()),
             "in_ring": atom.IsInRing(),
-            "implicit_hcount": atom.GetNumImplicitHs(),
             "neighbors": neighbors,
             "atom_map": atom_map,
-            "bond_order_sum": bond_order_sum,
-            "valence_electrons": valence_electrons,
-            "estimated_lone_pairs": estimated_lone_pairs,
-            "available_lp": estimated_lone_pairs > 0,
+            "oxidation_state": (
+                None if oxidation_state is None else round(float(oxidation_state), 3)
+            ),
+            "available_lp": available_lone_pairs > 0,
             "lone_pairs": estimated_lone_pairs,
         }
+
+        if profile == "full":
+            props["bond_order_sum"] = round(MolToGraph._safe_bond_order_sum(atom), 3)
+            props["lp_bond_order_sum"] = round(
+                MolToGraph._bond_order_sum_for_lone_pairs(atom), 3
+            )
+            props["valence_electrons"] = MolToGraph._safe_valence_electrons(atom)
+            props["estimated_lone_pairs"] = estimated_lone_pairs
+            props["available_lone_pairs"] = available_lone_pairs
+
+        return props
 
     @staticmethod
     def _gather_bond_properties(
         bond: Chem.Bond,
         kek_bond: Optional[Chem.Bond] = None,
     ) -> Dict[str, Any]:
-        """
-        Collect a full set of bond-level graph edge attributes.
+        """Collect bond-level edge attributes.
 
-        The input ``bond`` is read from the original molecule, so native RDKit
-        aromaticity and aromatic bond typing are preserved. If ``kek_bond`` is
-        provided, it is assumed to be the corresponding bond from a kekulized
-        copy of the same molecule and is used to expose localized bond
-        information.
-
-        :param bond:
-            Bond from the original molecule.
+        :param bond: Original RDKit bond.
         :type bond: Chem.Bond
-        :param kek_bond:
-            Matching bond from a kekulized copy of the molecule.
+        :param kek_bond: Matching bond from a kekulized copy.
         :type kek_bond: Optional[Chem.Bond]
-
-        :returns:
-            Dictionary of bond properties.
+        :returns: Edge attributes.
         :rtype: Dict[str, Any]
         """
         try:
@@ -719,9 +1053,9 @@ class MolToGraph:
             ez = "N"
 
         try:
-            conj = bond.GetIsConjugated()
+            conjugated = bond.GetIsConjugated()
         except Exception:
-            conj = False
+            conjugated = False
 
         try:
             in_ring = bond.IsInRing()
@@ -754,91 +1088,72 @@ class MolToGraph:
             "kekule_order": kekule_order,
             "kekule_bond_type": kekule_bond_type,
             "ez_isomer": ez,
-            "conjugated": conj,
+            "conjugated": conjugated,
             "in_ring": in_ring,
         }
 
+    # ------------------------------------------------------------------
+    # Stereochemistry helpers
+    # ------------------------------------------------------------------
+
     @staticmethod
     def get_stereochemistry(atom: Chem.Atom) -> str:
-        """
-        Return a simple atom stereochemistry label.
+        """Return ``S``, ``R``, or ``N`` from the RDKit chiral tag.
 
-        :param atom:
-            Atom to inspect.
+        :param atom: RDKit atom.
         :type atom: Chem.Atom
-
-        :returns:
-            ``"S"``, ``"R"``, or ``"N"`` if not assigned.
+        :returns: Simple atom stereochemistry label.
         :rtype: str
         """
-        ch = atom.GetChiralTag()
-        if ch == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
+        chiral_tag = atom.GetChiralTag()
+        if chiral_tag == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
             return "S"
-        if ch == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
+        if chiral_tag == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
             return "R"
         return "N"
 
     @staticmethod
     def get_bond_stereochemistry(bond: Chem.Bond) -> str:
-        """
-        Return a simple double-bond stereochemistry label.
+        """Return ``E``, ``Z``, or ``N`` for double-bond stereochemistry.
 
-        :param bond:
-            Bond to inspect.
+        :param bond: RDKit bond.
         :type bond: Chem.Bond
-
-        :returns:
-            ``"E"``, ``"Z"``, or ``"N"`` if not applicable or not assigned.
+        :returns: Simple bond stereochemistry label.
         :rtype: str
         """
         if bond.GetBondType() != Chem.BondType.DOUBLE:
             return "N"
-        st = bond.GetStereo()
-        if st == Chem.BondStereo.STEREOE:
+
+        stereo = bond.GetStereo()
+        if stereo == Chem.BondStereo.STEREOE:
             return "E"
-        if st == Chem.BondStereo.STEREOZ:
+        if stereo == Chem.BondStereo.STEREOZ:
             return "Z"
         return "N"
 
+    # ------------------------------------------------------------------
+    # Mapping and legacy API
+    # ------------------------------------------------------------------
+
     @staticmethod
     def has_atom_mapping(mol: Chem.Mol) -> bool:
-        """
-        Check whether a molecule contains at least one non-zero atom-map number.
+        """Return whether any atom has a non-zero atom-map number.
 
-        :param mol:
-            Molecule to inspect.
+        :param mol: RDKit molecule.
         :type mol: Chem.Mol
-
-        :returns:
-            ``True`` if any atom has a non-zero atom-map number.
+        :returns: ``True`` if mapped.
         :rtype: bool
         """
         return any(atom.GetAtomMapNum() != 0 for atom in mol.GetAtoms())
 
     @staticmethod
     def random_atom_mapping(mol: Chem.Mol) -> Chem.Mol:
-        """
-        Assign random atom-map numbers from ``1..n`` to all atoms in a molecule.
+        """Assign random atom-map numbers from ``1`` to ``n`` in-place.
 
-        The molecule is modified in place and also returned for convenience.
-
-        :param mol:
-            Molecule to modify.
+        :param mol: RDKit molecule to mutate.
         :type mol: Chem.Mol
-
-        :returns:
-            The same molecule instance with updated atom-map numbers.
+        :returns: Same molecule with assigned atom-map numbers.
         :rtype: Chem.Mol
-
-        **Example**
-
-        .. code-block:: python
-
-            mol = Chem.MolFromSmiles("CCO")
-            mol = MolToGraph.random_atom_mapping(mol)
-
-            for atom in mol.GetAtoms():
-                print(atom.GetIdx(), atom.GetAtomMapNum())
         """
         indices = list(range(1, mol.GetNumAtoms() + 1))
         random.shuffle(indices)
@@ -854,51 +1169,50 @@ class MolToGraph:
         light_weight: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
-        """
-        Backward-compatible high-level graph converter.
+        """Backward-compatible graph converter.
 
-        This method mirrors the previous public API and provides either a
-        lightweight or detailed graph representation.
+        New code should usually prefer :meth:`transform`.
 
-        :param mol:
-            Molecule to convert.
+        :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam:
-            If ``True``, drop atoms whose atom-map number is zero.
+        :param drop_non_aam: If ``True``, remove atoms with atom-map ``0``.
         :type drop_non_aam: bool
-        :param light_weight:
-            If ``True``, build a lightweight graph with reduced attributes.
-            Otherwise, build the detailed legacy graph.
+        :param light_weight: If ``True``, use reduced attributes.
         :type light_weight: bool
-        :param use_index_as_atom_map:
-            Whether to use atom-map numbers as node identifiers when present.
+        :param use_index_as_atom_map: If ``True``, use atom maps as node IDs.
         :type use_index_as_atom_map: bool
-
-        :returns:
-            Constructed molecular graph.
+        :returns: Molecular graph.
         :rtype: nx.Graph
-
-        :raises ValueError:
-            If ``drop_non_aam=True`` while ``use_index_as_atom_map=False``.
-
-        **Example**
+        :raises ValueError: If ``drop_non_aam=True`` but
+            ``use_index_as_atom_map=False``.
 
         .. code-block:: python
 
-            mol = Chem.MolFromSmiles("CCO")
-
-            g1 = MolToGraph.mol_to_graph(mol, light_weight=True)
-            g2 = MolToGraph.mol_to_graph(mol, light_weight=False)
+            mol = Chem.MolFromSmiles("[CH3:1][CH2:2][Br:3]")
+            graph = MolToGraph.mol_to_graph(
+                mol,
+                drop_non_aam=True,
+                light_weight=True,
+                use_index_as_atom_map=True,
+            )
         """
         if drop_non_aam and not use_index_as_atom_map:
             raise ValueError(
                 "drop_non_aam and use_index_as_atom_map must be both False or both True."
             )
+
         if light_weight:
             return cls._create_light_weight_graph(
-                mol, drop_non_aam, use_index_as_atom_map
+                mol,
+                drop_non_aam=drop_non_aam,
+                use_index_as_atom_map=use_index_as_atom_map,
             )
-        return cls._create_detailed_graph(mol, drop_non_aam, use_index_as_atom_map)
+
+        return cls._create_detailed_graph(
+            mol,
+            drop_non_aam=drop_non_aam,
+            use_index_as_atom_map=use_index_as_atom_map,
+        )
 
     @classmethod
     def _create_light_weight_graph(
@@ -907,35 +1221,30 @@ class MolToGraph:
         drop_non_aam: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
-        """
-        Create a lightweight graph with reduced atom and bond attributes.
+        """Create a lightweight graph with corrected lone-pair fields.
 
-        This lightweight representation now also exposes ``aromatic`` and
-        ``kekule_order`` for bonds when available.
+        Node attributes: ``element``, ``aromatic``, ``hcount``, ``charge``,
+        ``radical``, ``neighbors``, ``atom_map``, ``oxidation_state``,
+        ``available_lp``, ``lone_pairs``.  Edge attributes: ``order``,
+        ``bond_type``, ``aromatic``, ``kekule_order``, ``kekule_bond_type``.
 
-        :param mol:
-            Molecule to convert.
+        :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam:
-            Whether to exclude atoms with zero atom-map number.
+        :param drop_non_aam: If ``True``, remove atoms with atom-map ``0``.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map:
-            Whether to prefer atom-map numbers over ``atom index + 1``.
+        :param use_index_as_atom_map: If ``True``, use atom-map numbers as node
+            IDs for mapped atoms; unmapped atoms fall back to
+            ``atom.GetIdx() + 1``.
         :type use_index_as_atom_map: bool
-
-        :returns:
-            Lightweight graph representation.
+        :returns: Lightweight molecular graph.
         :rtype: nx.Graph
         """
-        G = nx.Graph()
+        graph = nx.Graph()
         kek_mol: Optional[Chem.Mol] = cls._make_kekule_copy(mol)
+        oxidation_states = cls.estimate_oxidation_states(mol, kek_mol=kek_mol)
 
         for atom in mol.GetAtoms():
-            try:
-                atom_map = atom.GetAtomMapNum()
-            except Exception:
-                atom_map = 0
-
+            atom_map = cls._safe_atom_map(atom)
             atom_id = (
                 atom_map
                 if (use_index_as_atom_map and atom_map != 0)
@@ -951,96 +1260,109 @@ class MolToGraph:
                 neighbors = []
 
             estimated_lone_pairs = cls.estimate_lone_pairs(atom)
+            available_lone_pairs = cls.estimate_available_lone_pairs(atom)
 
-            G.add_node(
+            graph.add_node(
                 atom_id,
                 element=atom.GetSymbol(),
                 aromatic=atom.GetIsAromatic(),
                 hcount=atom.GetTotalNumHs(),
                 charge=atom.GetFormalCharge(),
+                radical=atom.GetNumRadicalElectrons(),
                 neighbors=neighbors,
                 atom_map=atom_map,
-                bond_order_sum=round(cls._safe_bond_order_sum(atom), 3),
-                valence_electrons=cls._safe_valence_electrons(atom),
-                estimated_lone_pairs=estimated_lone_pairs,
-                available_lp=estimated_lone_pairs > 0,
+                oxidation_state=round(
+                    float(oxidation_states.get(atom.GetIdx(), 0.0)), 3
+                ),
+                available_lp=available_lone_pairs > 0,
                 lone_pairs=estimated_lone_pairs,
             )
 
-            for bond in atom.GetBonds():
-                nbr = bond.GetOtherAtom(atom)
+        for bond in mol.GetBonds():
+            begin_atom = bond.GetBeginAtom()
+            end_atom = bond.GetEndAtom()
+
+            begin_map = cls._safe_atom_map(begin_atom)
+            end_map = cls._safe_atom_map(end_atom)
+
+            if drop_non_aam and (begin_map == 0 or end_map == 0):
+                continue
+
+            begin_id = (
+                begin_map
+                if (use_index_as_atom_map and begin_map != 0)
+                else begin_atom.GetIdx() + 1
+            )
+            end_id = (
+                end_map
+                if (use_index_as_atom_map and end_map != 0)
+                else end_atom.GetIdx() + 1
+            )
+
+            kek_bond: Optional[Chem.Bond] = None
+            if kek_mol is not None:
                 try:
-                    nbr_id = (
-                        nbr.GetAtomMapNum()
-                        if use_index_as_atom_map and nbr.GetAtomMapNum() != 0
-                        else nbr.GetIdx() + 1
-                    )
+                    kek_bond = kek_mol.GetBondWithIdx(bond.GetIdx())
                 except Exception:
-                    nbr_id = nbr.GetIdx() + 1
+                    kek_bond = None
 
-                if drop_non_aam and nbr.GetAtomMapNum() == 0:
-                    continue
+            try:
+                order = bond.GetBondTypeAsDouble()
+            except Exception:
+                order = 1.0
 
-                kek_bond: Optional[Chem.Bond] = None
-                if kek_mol is not None:
-                    try:
-                        kek_bond = kek_mol.GetBondWithIdx(bond.GetIdx())
-                    except Exception:
-                        kek_bond = None
+            try:
+                aromatic = bond.GetIsAromatic()
+            except Exception:
+                aromatic = False
 
-                try:
-                    order = bond.GetBondTypeAsDouble()
-                except Exception:
-                    order = 1.0
+            try:
+                bond_type = str(bond.GetBondType())
+            except Exception:
+                bond_type = "UNKNOWN"
 
-                try:
-                    aromatic = bond.GetIsAromatic()
-                except Exception:
-                    aromatic = False
-
-                try:
-                    kekule_order = (
-                        kek_bond.GetBondTypeAsDouble()
-                        if kek_bond is not None
-                        else order
-                    )
-                except Exception:
-                    kekule_order = order
-
-                G.add_edge(
-                    atom_id,
-                    nbr_id,
-                    order=order,
-                    aromatic=aromatic,
-                    kekule_order=kekule_order,
+            try:
+                kekule_order = (
+                    kek_bond.GetBondTypeAsDouble() if kek_bond is not None else order
                 )
-        return G
+            except Exception:
+                kekule_order = order
+
+            try:
+                kekule_bond_type = (
+                    str(kek_bond.GetBondType()) if kek_bond is not None else bond_type
+                )
+            except Exception:
+                kekule_bond_type = bond_type
+
+            graph.add_edge(
+                begin_id,
+                end_id,
+                order=order,
+                bond_type=bond_type,
+                aromatic=aromatic,
+                kekule_order=kekule_order,
+                kekule_bond_type=kekule_bond_type,
+            )
+
+        return graph
 
     @classmethod
     def _create_detailed_graph(
         cls,
         mol: Chem.Mol,
-        drop_non_aam: bool = True,
-        use_index_as_atom_map: bool = True,
+        drop_non_aam: bool = False,
+        use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
-        """
-        Create a detailed graph with full atom and bond attributes.
+        """Create a detailed graph with fallback atom and bond attributes.
 
-        This method implements the older detailed conversion flow used by the
-        legacy API.
-
-        :param mol:
-            Molecule to convert.
+        :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam:
-            Whether to exclude atoms with zero atom-map number.
+        :param drop_non_aam: If ``True``, remove unmapped atoms.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map:
-            Whether to prefer atom-map numbers over ``atom index + 1``.
+        :param use_index_as_atom_map: If ``True``, use atom maps as node IDs.
         :type use_index_as_atom_map: bool
-
-        :returns:
-            Detailed graph representation.
+        :returns: Detailed molecular graph.
         :rtype: nx.Graph
         """
         try:
@@ -1048,16 +1370,13 @@ class MolToGraph:
         except Exception:
             logger.debug("Gasteiger compute failed inside _create_detailed_graph.")
 
-        G = nx.Graph()
+        graph = nx.Graph()
         idx_map: Dict[int, int] = {}
         kek_mol: Optional[Chem.Mol] = cls._make_kekule_copy(mol)
+        oxidation_states = cls.estimate_oxidation_states(mol, kek_mol=kek_mol)
 
         for atom in mol.GetAtoms():
-            try:
-                atom_map = atom.GetAtomMapNum()
-            except Exception:
-                atom_map = 0
-
+            atom_map = cls._safe_atom_map(atom)
             atom_id = (
                 atom_map
                 if (use_index_as_atom_map and atom_map != 0)
@@ -1067,13 +1386,20 @@ class MolToGraph:
             if drop_non_aam and atom_map == 0:
                 continue
 
-            G.add_node(atom_id, **cls._gather_atom_properties(atom))
+            graph.add_node(
+                atom_id,
+                **cls._gather_atom_properties(
+                    atom,
+                    oxidation_state=oxidation_states.get(atom.GetIdx()),
+                ),
+            )
             idx_map[atom.GetIdx()] = atom_id
 
         for bond in mol.GetBonds():
-            b = idx_map.get(bond.GetBeginAtomIdx())
-            e = idx_map.get(bond.GetEndAtomIdx())
-            if b is None or e is None:
+            begin = idx_map.get(bond.GetBeginAtomIdx())
+            end = idx_map.get(bond.GetEndAtomIdx())
+
+            if begin is None or end is None:
                 continue
 
             kek_bond: Optional[Chem.Bond] = None
@@ -1083,35 +1409,24 @@ class MolToGraph:
                 except Exception:
                     kek_bond = None
 
-            G.add_edge(b, e, **cls._gather_bond_properties(bond, kek_bond=kek_bond))
+            graph.add_edge(
+                begin,
+                end,
+                **cls._gather_bond_properties(bond, kek_bond=kek_bond),
+            )
 
-        return G
+        return graph
 
     @staticmethod
     def add_partial_charges(mol: Chem.Mol) -> None:
-        """
-        Compute and assign Gasteiger partial charges to a molecule in place.
+        """Compute Gasteiger partial charges in-place.
 
-        :param mol:
-            Molecule to modify.
+        :param mol: RDKit molecule to modify.
         :type mol: Chem.Mol
-
-        :returns:
-            ``None``. The molecule is modified in place.
+        :returns: ``None``.
         :rtype: None
-
-        **Example**
-
-        .. code-block:: python
-
-            mol = Chem.MolFromSmiles("CCO")
-            MolToGraph.add_partial_charges(mol)
-
-            for atom in mol.GetAtoms():
-                if atom.HasProp("_GasteigerCharge"):
-                    print(atom.GetProp("_GasteigerCharge"))
         """
         try:
             AllChem.ComputeGasteigerCharges(mol)
-        except Exception as e:
-            logger.error("Error computing Gasteiger charges: %s", e)
+        except Exception as exc:
+            logger.error("Error computing Gasteiger charges: %s", exc)
