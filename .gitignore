@@ -28,3 +28,7 @@ test_run.py
 Data/Study/CRN/case_formose/*
 
 synkit/Graph/dev/*
+*.ipynb
+*.json
+*.txt
+*.log

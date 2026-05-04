@@ -192,7 +192,6 @@ class AtomFeatureExtractor:
             "partial_charge": round(float(gcharge), 3),
             "hybridization": str(atom.GetHybridization()),
             "in_ring": bool(atom.IsInRing()),
-            "implicit_hcount": int(atom.GetNumImplicitHs()),
             "neighbors": neighbor_symbols,
             "atom_map": atom_map,
         }

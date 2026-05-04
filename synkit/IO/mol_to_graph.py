@@ -46,7 +46,7 @@ class MolToGraph:
     .. code-block:: python
 
         from rdkit import Chem
-        from synkit.Chem.Molecule.mol_to_graph import MolToGraph
+        from synkit.IO.mol_to_graph import MolToGraph
 
         mol = Chem.MolFromSmiles("c1cc[nH]c1")
         graph = MolToGraph(attr_profile="minimal").transform(mol)
@@ -199,6 +199,7 @@ class MolToGraph:
                     atom,
                     props,
                     oxidation_state=oxidation_states.get(atom.GetIdx()),
+                    profile=self.attr_profile,
                 )
             except Exception as exc:
                 logger.debug(
@@ -209,6 +210,7 @@ class MolToGraph:
                 props = self._gather_atom_properties(
                     atom,
                     oxidation_state=oxidation_states.get(atom.GetIdx()),
+                    profile=self.attr_profile,
                 )
 
             if self.node_attrs is not None:
@@ -899,40 +901,50 @@ class MolToGraph:
         atom: Chem.Atom,
         props: Dict[str, Any],
         oxidation_state: Optional[float] = None,
+        *,
+        profile: str = "full",
     ) -> Dict[str, Any]:
-        """Add corrected electron-bookkeeping fields.
+        """Add electron-bookkeeping fields to existing atom attributes.
+
+        For both profiles sets ``oxidation_state``, ``radical``,
+        ``available_lp``, and the backward-compatible ``lone_pairs`` alias.
+        The ``"full"`` profile additionally sets ``bond_order_sum``,
+        ``lp_bond_order_sum``, ``valence_electrons``,
+        ``estimated_lone_pairs``, and ``available_lone_pairs``.
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :param props: Existing atom attributes.
+        :param props: Existing atom attributes from
+            :class:`~synkit.Chem.Molecule.atom_features.AtomFeatureExtractor`.
         :type props: Dict[str, Any]
-        :param oxidation_state: Optional oxidation state.
+        :param oxidation_state: Pre-computed oxidation state, or ``None``.
         :type oxidation_state: Optional[float]
-        :returns: Augmented atom attributes.
+        :param profile: Feature profile — ``"minimal"`` or ``"full"``.
+        :type profile: str
+        :returns: Augmented atom attributes dict.
         :rtype: Dict[str, Any]
         """
         new_props = dict(props)
 
-        raw_bond_order_sum = cls._safe_bond_order_sum(atom)
-        lp_bond_order_sum = cls._bond_order_sum_for_lone_pairs(atom)
-        valence_electrons = cls._safe_valence_electrons(atom)
-
         estimated_lone_pairs = cls.estimate_lone_pairs(atom)
         available_lone_pairs = cls.estimate_available_lone_pairs(atom)
 
-        new_props["bond_order_sum"] = round(raw_bond_order_sum, 3)
-        new_props["lp_bond_order_sum"] = round(lp_bond_order_sum, 3)
-        new_props["valence_electrons"] = valence_electrons
         new_props["oxidation_state"] = (
             None if oxidation_state is None else round(float(oxidation_state), 3)
         )
-
-        new_props["estimated_lone_pairs"] = estimated_lone_pairs
-        new_props["available_lone_pairs"] = available_lone_pairs
+        new_props["radical"] = int(atom.GetNumRadicalElectrons())
         new_props["available_lp"] = available_lone_pairs > 0
-
         # Backward-compatible field used by SynEltra.
         new_props["lone_pairs"] = estimated_lone_pairs
+
+        if profile == "full":
+            new_props["bond_order_sum"] = round(cls._safe_bond_order_sum(atom), 3)
+            new_props["lp_bond_order_sum"] = round(
+                cls._bond_order_sum_for_lone_pairs(atom), 3
+            )
+            new_props["valence_electrons"] = cls._safe_valence_electrons(atom)
+            new_props["estimated_lone_pairs"] = estimated_lone_pairs
+            new_props["available_lone_pairs"] = available_lone_pairs
 
         return new_props
 
@@ -940,14 +952,27 @@ class MolToGraph:
     def _gather_atom_properties(
         atom: Chem.Atom,
         oxidation_state: Optional[float] = None,
+        *,
+        profile: str = "full",
     ) -> Dict[str, Any]:
         """Collect fallback atom-level node attributes.
 
+        Minimal profile keys: ``element``, ``aromatic``, ``hcount``,
+        ``charge``, ``radical``, ``isomer``, ``partial_charge``,
+        ``hybridization``, ``in_ring``, ``neighbors``, ``atom_map``,
+        ``oxidation_state``, ``available_lp``, ``lone_pairs``.
+
+        Full profile additionally includes ``bond_order_sum``,
+        ``lp_bond_order_sum``, ``valence_electrons``,
+        ``estimated_lone_pairs``, ``available_lone_pairs``.
+
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :param oxidation_state: Optional oxidation state.
+        :param oxidation_state: Pre-computed oxidation state, or ``None``.
         :type oxidation_state: Optional[float]
-        :returns: Node attributes.
+        :param profile: Feature profile — ``"minimal"`` or ``"full"``.
+        :type profile: str
+        :returns: Node attribute dict.
         :rtype: Dict[str, Any]
         """
         try:
@@ -965,14 +990,10 @@ class MolToGraph:
             neighbors = []
 
         atom_map = MolToGraph._safe_atom_map(atom)
-
-        raw_bond_order_sum = round(MolToGraph._safe_bond_order_sum(atom), 3)
-        lp_bond_order_sum = round(MolToGraph._bond_order_sum_for_lone_pairs(atom), 3)
-        valence_electrons = MolToGraph._safe_valence_electrons(atom)
         estimated_lone_pairs = MolToGraph.estimate_lone_pairs(atom)
         available_lone_pairs = MolToGraph.estimate_available_lone_pairs(atom)
 
-        return {
+        props: Dict[str, Any] = {
             "element": atom.GetSymbol(),
             "aromatic": atom.GetIsAromatic(),
             "hcount": atom.GetTotalNumHs(),
@@ -982,20 +1003,25 @@ class MolToGraph:
             "partial_charge": gcharge,
             "hybridization": str(atom.GetHybridization()),
             "in_ring": atom.IsInRing(),
-            "implicit_hcount": atom.GetNumImplicitHs(),
             "neighbors": neighbors,
             "atom_map": atom_map,
-            "bond_order_sum": raw_bond_order_sum,
-            "lp_bond_order_sum": lp_bond_order_sum,
-            "valence_electrons": valence_electrons,
             "oxidation_state": (
                 None if oxidation_state is None else round(float(oxidation_state), 3)
             ),
-            "estimated_lone_pairs": estimated_lone_pairs,
-            "available_lone_pairs": available_lone_pairs,
             "available_lp": available_lone_pairs > 0,
             "lone_pairs": estimated_lone_pairs,
         }
+
+        if profile == "full":
+            props["bond_order_sum"] = round(MolToGraph._safe_bond_order_sum(atom), 3)
+            props["lp_bond_order_sum"] = round(
+                MolToGraph._bond_order_sum_for_lone_pairs(atom), 3
+            )
+            props["valence_electrons"] = MolToGraph._safe_valence_electrons(atom)
+            props["estimated_lone_pairs"] = estimated_lone_pairs
+            props["available_lone_pairs"] = available_lone_pairs
+
+        return props
 
     @staticmethod
     def _gather_bond_properties(
@@ -1197,11 +1223,18 @@ class MolToGraph:
     ) -> nx.Graph:
         """Create a lightweight graph with corrected lone-pair fields.
 
+        Node attributes: ``element``, ``aromatic``, ``hcount``, ``charge``,
+        ``radical``, ``neighbors``, ``atom_map``, ``oxidation_state``,
+        ``available_lp``, ``lone_pairs``.  Edge attributes: ``order``,
+        ``bond_type``, ``aromatic``, ``kekule_order``, ``kekule_bond_type``.
+
         :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :param drop_non_aam: If ``True``, remove unmapped atoms.
+        :param drop_non_aam: If ``True``, remove atoms with atom-map ``0``.
         :type drop_non_aam: bool
-        :param use_index_as_atom_map: If ``True``, use atom maps as node IDs.
+        :param use_index_as_atom_map: If ``True``, use atom-map numbers as node
+            IDs for mapped atoms; unmapped atoms fall back to
+            ``atom.GetIdx() + 1``.
         :type use_index_as_atom_map: bool
         :returns: Lightweight molecular graph.
         :rtype: nx.Graph
@@ -1235,16 +1268,12 @@ class MolToGraph:
                 aromatic=atom.GetIsAromatic(),
                 hcount=atom.GetTotalNumHs(),
                 charge=atom.GetFormalCharge(),
+                radical=atom.GetNumRadicalElectrons(),
                 neighbors=neighbors,
                 atom_map=atom_map,
-                bond_order_sum=round(cls._safe_bond_order_sum(atom), 3),
-                lp_bond_order_sum=round(cls._bond_order_sum_for_lone_pairs(atom), 3),
-                valence_electrons=cls._safe_valence_electrons(atom),
                 oxidation_state=round(
                     float(oxidation_states.get(atom.GetIdx(), 0.0)), 3
                 ),
-                estimated_lone_pairs=estimated_lone_pairs,
-                available_lone_pairs=available_lone_pairs,
                 available_lp=available_lone_pairs > 0,
                 lone_pairs=estimated_lone_pairs,
             )
@@ -1322,8 +1351,8 @@ class MolToGraph:
     def _create_detailed_graph(
         cls,
         mol: Chem.Mol,
-        drop_non_aam: bool = True,
-        use_index_as_atom_map: bool = True,
+        drop_non_aam: bool = False,
+        use_index_as_atom_map: bool = False,
     ) -> nx.Graph:
         """Create a detailed graph with fallback atom and bond attributes.
 
