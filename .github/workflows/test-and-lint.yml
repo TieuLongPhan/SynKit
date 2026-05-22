@@ -2,7 +2,7 @@ name: Test & Lint
 
 on:
   push:
-    branches: [ "main", "staging", "fix_query" ]
+    branches: [ "main", "staging", "mech" ]
   pull_request:
     branches: [ "main" ]
 
