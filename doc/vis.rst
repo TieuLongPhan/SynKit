@@ -168,6 +168,38 @@ Use ``projection=True`` when you need to inspect how an ITS decomposes back into
 left and right molecular graphs. Use the default ITS-only view for reports and
 notebooks.
 
+MTG Timelines
+-------------
+
+Compact MTG visualization has two complementary views:
+
+* ``draw_mtg_graph`` shows the fused MTG as a timeline graph;
+* ``draw_mtg_steps`` reconstructs ordered ITS steps and draws each step with
+  the ITS renderer.
+
+.. code-block:: python
+
+   from synkit.Graph.MTG.mtg import MTG
+   from synkit.Vis import draw_mtg_graph, draw_mtg_steps
+
+   mtg = MTG([step_1_its, step_2_its])
+
+   fig, ax = draw_mtg_graph(
+       mtg,
+       title="MTG timeline",
+       mode="timeline",
+   )
+
+   fig, axes = draw_mtg_steps(
+       mtg,
+       include_composed=True,
+       show_edge_labels=True,
+   )
+
+Use the timeline graph to see transient bonds and electron-state paths across
+the mechanism. Use the step panels when you need to check each reconstructed
+ITS independently.
+
 Diagnostic Graph View
 ---------------------
 
@@ -198,4 +230,3 @@ The older visualization classes are still exported for compatibility:
 New code should use ``draw_molecule_graph``, ``draw_reaction_graph``, and
 ``draw_its_from_rsmi`` unless a legacy workflow specifically depends on the
 class-based API.
-

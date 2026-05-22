@@ -19,6 +19,10 @@ Modern molecule/reaction/ITS renderers
    :members:
    :show-inheritance:
 
+.. automodule:: synkit.Vis.mtg_drawer
+   :members:
+   :show-inheritance:
+
 Diagnostic adapter layer
 ------------------------
 

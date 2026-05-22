@@ -21,6 +21,7 @@ from .reaction_drawer import (
     find_reaction_highlights,
 )
 from .its_drawer import draw_its_from_rsmi, draw_its_graph, draw_its_only
+from .mtg_drawer import draw_mtg_graph, draw_mtg_steps
 
 __all__ = [
     "GraphVisualizer",
@@ -44,4 +45,6 @@ __all__ = [
     "draw_its_from_rsmi",
     "draw_its_graph",
     "draw_its_only",
+    "draw_mtg_graph",
+    "draw_mtg_steps",
 ]
