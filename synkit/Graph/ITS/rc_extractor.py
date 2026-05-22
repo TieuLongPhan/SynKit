@@ -30,6 +30,7 @@ class RCExtractor:
     - ``hcount`` (after hydrogen-pair normalization)
     - ``charge``
     - ``lone_pairs`` (or alias ``lp``)
+    - ``radical``
     - ``valence_electrons``
 
     Default exported attribute sets
@@ -47,12 +48,15 @@ class RCExtractor:
     - ``hybridization``
     - ``atom_map``
     - ``lone_pairs``
+    - ``radical``
     - ``valence_electrons``
     - ``partial_charge``
 
     Default edge attributes:
 
     - ``kekule_order``
+    - ``sigma_order``
+    - ``pi_order``
     - ``order``
     - ``bond_type``
     - ``conjugated``
@@ -123,6 +127,7 @@ class RCExtractor:
         "hcount",
         "charge",
         "lone_pairs",
+        "radical",
         "valence_electrons",
     )
     LP_ALIASES = ("lone_pairs", "lp")
@@ -136,12 +141,15 @@ class RCExtractor:
         "hybridization",
         "atom_map",
         "lone_pairs",
+        "radical",
         "valence_electrons",
         "partial_charge",
     )
 
     DEFAULT_EDGE_ATTRS = (
         "kekule_order",
+        "sigma_order",
+        "pi_order",
         "order",
         "bond_type",
         "conjugated",
@@ -152,6 +160,7 @@ class RCExtractor:
         self,
         node_attrs: Iterable[str] | None = None,
         edge_attrs: Iterable[str] | None = None,
+        preserve_full_attrs: bool = False,
     ) -> None:
         """
         Initialize the reaction-center extractor.
@@ -164,9 +173,14 @@ class RCExtractor:
             ``graph.graph["rc"]["edge_attrs"]``. If ``None``, the class
             defaults are used.
         :type edge_attrs: Iterable[str] | None
+        :param preserve_full_attrs: If ``True``, export complete node and edge
+            attribute dictionaries in the RC metadata snapshots instead of the
+            configured attribute subset.
+        :type preserve_full_attrs: bool
         """
         self._node_attrs = tuple(node_attrs or self.DEFAULT_NODE_ATTRS)
         self._edge_attrs = tuple(edge_attrs or self.DEFAULT_EDGE_ATTRS)
+        self.preserve_full_attrs = preserve_full_attrs
 
     def __repr__(self) -> str:
         """
@@ -421,7 +435,11 @@ class RCExtractor:
         """
         collected: dict[int, dict[str, Any]] = {}
         for node in nodes:
-            selected = self._select_attrs(graph.nodes[node], self.node_attrs)
+            selected = (
+                dict(graph.nodes[node])
+                if self.preserve_full_attrs
+                else self._select_attrs(graph.nodes[node], self.node_attrs)
+            )
             if selected:
                 collected[node] = selected
         return collected
@@ -445,7 +463,11 @@ class RCExtractor:
         collected: dict[tuple[int, int], dict[str, Any]] = {}
         for u, v in edges:
             edge_key = self._edge_key(u, v)
-            selected = self._select_attrs(graph.edges[u, v], self.edge_attrs)
+            selected = (
+                dict(graph.edges[u, v])
+                if self.preserve_full_attrs
+                else self._select_attrs(graph.edges[u, v], self.edge_attrs)
+            )
             if selected:
                 collected[edge_key] = selected
         return collected

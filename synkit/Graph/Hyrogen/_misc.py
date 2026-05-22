@@ -134,6 +134,9 @@ def h_to_explicit(G: nx.Graph, nodes: List[int] = None, its: bool = False) -> nx
         if heavy not in H2:
             continue
         count = H2.nodes[heavy].get("hcount", 0)
+        if its and _is_pair_hcount(count):
+            max_node = _expand_paired_its_hydrogens(H2, heavy, max_node)
+            continue
         if count <= 0:
             continue
 
@@ -162,6 +165,65 @@ def h_to_explicit(G: nx.Graph, nodes: List[int] = None, its: bool = False) -> nx
         normalize_edge_orders(H2)
 
     return H2
+
+
+def _is_pair_hcount(value: Any) -> bool:
+    """Return whether a value is a 2-item integer hydrogen-count pair."""
+    return (
+        isinstance(value, (list, tuple))
+        and len(value) == 2
+        and all(isinstance(item, int) for item in value)
+    )
+
+
+def _paired_hydrogen_node_attrs(present: Tuple[bool, bool]) -> dict:
+    """Build named paired attrs for a tuple-style ITS hydrogen node."""
+    return {
+        "element": ("H", "H"),
+        "aromatic": (False, False),
+        "hcount": (0, 0),
+        "charge": (0, 0),
+        "radical": (0, 0),
+        "lone_pairs": (0, 0),
+        "valence_electrons": (1, 1),
+        "neighbors": ([], []),
+        "atom_map": (0, 0),
+        "present": present,
+    }
+
+
+def _expand_paired_its_hydrogens(
+    graph: nx.Graph,
+    heavy: int,
+    max_node: int,
+) -> int:
+    """Expand paired ITS hydrogen counts into shared and side-only H nodes."""
+    react_h, prod_h = graph.nodes[heavy]["hcount"]
+    shared = min(react_h, prod_h)
+    react_only = react_h - shared
+    prod_only = prod_h - shared
+
+    expansion_plan = (
+        [((True, True), (1.0, 1.0))] * shared
+        + [((True, False), (1.0, 0.0))] * react_only
+        + [((False, True), (0.0, 1.0))] * prod_only
+    )
+
+    for present, bond_pair in expansion_plan:
+        max_node += 1
+        graph.add_node(max_node, **_paired_hydrogen_node_attrs(present))
+        graph.add_edge(
+            heavy,
+            max_node,
+            order=bond_pair,
+            kekule_order=bond_pair,
+            sigma_order=bond_pair,
+            pi_order=(0.0, 0.0),
+            standard_order=bond_pair[0] - bond_pair[1],
+        )
+
+    graph.nodes[heavy]["hcount"] = (0, 0)
+    return max_node
 
 
 def implicit_hydrogen(
@@ -464,16 +526,17 @@ def _normalize_h_pair(h_react: int, h_prod: int) -> Tuple[int, int]:
 
 def normalize_h_pair_graph(rc_graph: nx.Graph, inplace: bool = False) -> nx.Graph:
     """
-    Normalize the hydrogen-count field inside ``typesGH`` for all nodes.
+    Normalize paired hydrogen counts for all ITS nodes.
 
-    Assumption:
-        ``typesGH`` is a 2-tuple:
-            (reactant_attr, product_attr)
+    New-style ITS nodes may store ``hcount`` directly as
+    ``(reactant_hcount, product_hcount)``. Legacy ITS nodes may instead store
+    hydrogen counts inside ``typesGH``:
 
-        and each attr tuple has the form:
-            (element, aromatic, hydrogen_count, charge, neighbors)
+        ``typesGH = (reactant_attr, product_attr)``
 
-        Only the hydrogen_count field at index 2 is normalized.
+    where each side tuple has the form
+    ``(element, aromatic, hydrogen_count, charge, neighbors)``.
+    Both representations are normalized when present.
 
     :param rc_graph: Reaction-center graph.
     :type rc_graph: nx.Graph
@@ -485,6 +548,14 @@ def normalize_h_pair_graph(rc_graph: nx.Graph, inplace: bool = False) -> nx.Grap
     graph = rc_graph if inplace else deepcopy(rc_graph)
 
     for node, data in graph.nodes(data=True):
+        hcount = data.get("hcount")
+        if (
+            isinstance(hcount, (list, tuple))
+            and len(hcount) == 2
+            and all(isinstance(value, int) for value in hcount)
+        ):
+            data["hcount"] = _normalize_h_pair(hcount[0], hcount[1])
+
         typesgh = data.get("typesGH")
         if typesgh is None:
             continue

@@ -54,6 +54,25 @@ class TestGraphToMol(unittest.TestCase):
         mol = self.converter.graph_to_mol(graph)
         self.assertEqual(Chem.CanonSmiles(Chem.MolToSmiles(mol)), "[NH4+]")
 
+    def test_molecule_with_radical(self):
+        graph = nx.Graph()
+        graph.add_node(0, element="C", charge=0, radical=1)
+
+        mol = self.converter.graph_to_mol(graph, sanitize=False)
+
+        self.assertEqual(mol.GetAtomWithIdx(0).GetNumRadicalElectrons(), 1)
+
+    def test_aromatic_order_is_reperceived_on_sanitized_output(self):
+        graph = nx.cycle_graph(6)
+        nx.set_node_attributes(graph, "C", "element")
+        nx.set_node_attributes(graph, 0, "charge")
+        nx.set_edge_attributes(graph, 1.5, "order")
+
+        mol = self.converter.graph_to_mol(graph)
+
+        self.assertEqual(Chem.MolToSmiles(mol), "c1ccccc1")
+        self.assertTrue(all(bond.GetIsAromatic() for bond in mol.GetBonds()))
+
 
 if __name__ == "__main__":
     unittest.main()

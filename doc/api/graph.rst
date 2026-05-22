@@ -196,14 +196,6 @@ Matcher
 MTG
 ---
 
-.. automodule:: synkit.Graph.MTG.group_comp
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.Graph.MTG.groupoid
-   :members:
-   :show-inheritance:
-
 .. automodule:: synkit.Graph.MTG.mcs_matcher
    :members:
    :show-inheritance:

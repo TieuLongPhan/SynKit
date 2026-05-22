@@ -115,6 +115,12 @@ Documentation quick links
 
       ITS/MTG construction, WL hashing, and cluster/search primitives.
 
+   .. grid-item-card:: :octicon:`eye` Visualization
+      :link: vis
+      :link-type: doc
+
+      Molecule, reaction, ITS, and diagnostic graph rendering.
+
    .. grid-item-card:: :octicon:`terminal` API Reference
       :link: api/index
       :link-type: doc
@@ -159,7 +165,7 @@ Funded by the European Union Horizon Europe Doctoral Network (Marie-Skłodowska-
    rule
    synthesis
    crn
+   vis
    api/index
    reference
    changelog
-

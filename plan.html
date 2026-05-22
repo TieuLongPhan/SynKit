@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Electron-Aware Reactor Design Plan</title>
+  <style>
+    :root {
+      --ink: #202124;
+      --muted: #5f6368;
+      --line: #dadce0;
+      --panel: #f8f9fa;
+      --accent: #174ea6;
+      --good: #137333;
+      --warn: #b06000;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.58;
+      color: var(--ink);
+      max-width: 980px;
+      margin: 40px auto;
+      padding: 0 24px 60px;
+    }
+
+    h1, h2, h3 {
+      line-height: 1.25;
+    }
+
+    h1 {
+      font-size: 32px;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 12px;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      margin-top: 36px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 6px;
+    }
+
+    h3 {
+      margin-top: 24px;
+    }
+
+    p, li {
+      max-width: 880px;
+    }
+
+    code {
+      background: #eef1f4;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: #202124;
+      color: #f1f3f4;
+      padding: 16px;
+      overflow-x: auto;
+      border-radius: 6px;
+    }
+
+    .summary,
+    .decision,
+    .note,
+    .risk {
+      border-left: 4px solid var(--accent);
+      background: var(--panel);
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+
+    .decision strong {
+      color: var(--accent);
+    }
+
+    .note {
+      border-left-color: var(--good);
+    }
+
+    .risk {
+      border-left-color: var(--warn);
+    }
+
+    .step {
+      margin: 34px 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 16px 0;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f3f4;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Electron-Aware Reactor Design Plan</h1>
+
+  <section class="summary">
+    <h2>What We Are Trying To Do</h2>
+    <p>
+      The current SynKit reactor can apply structural reaction rules, but its
+      main matching logic is still mostly blind to electron state. Molecular
+      graphs already know about lone pairs and radicals, but that information is
+      not yet consistently exposed or used by the reactor.
+    </p>
+
+    <p>
+      The goal is to make the reactor gradually become electron-aware:
+    </p>
+
+    <ul>
+      <li>lone pairs should become visible and usable,</li>
+      <li>radicals should become visible and usable,</li>
+      <li>charge should eventually be checked from Lewis-style bookkeeping,</li>
+      <li>aromatic matching and electron accounting should stop being forced into the same bond attribute.</li>
+    </ul>
+
+    <p>
+      We do not want to break old templates immediately. The correct shape is a
+      staged migration: expose the right data first, add observability next,
+      enforce later.
+    </p>
+  </section>
+
+  <section>
+    <h2>Current State In The Repository</h2>
+
+    <h3>What already exists</h3>
+    <ul>
+      <li>
+        <code>mol_to_graph.py</code> already computes:
+        <code>lone_pairs</code>,
+        <code>available_lp</code>,
+        <code>radical</code>,
+        and richer bookkeeping fields.
+      </li>
+      <li>
+        The newer ITS path already supports named paired attributes such as:
+        <code>lone_pairs=(2,1)</code>.
+      </li>
+      <li>
+        <code>kekule_order</code> already exists on graph edges and can represent
+        a Kekule form separately from aromatic bond order.
+      </li>
+      <li>
+        Some older mechanism code already recomputes charge from local electron
+        inventory, which strongly suggests the intended chemistry model.
+      </li>
+    </ul>
+
+    <h3>What is missing</h3>
+    <ul>
+      <li>
+        Default graph conversion currently does not expose the small electron-state
+        surface by default.
+      </li>
+      <li>
+        <code>SynReactor</code> currently matches mostly on
+        <code>element</code> and <code>charge</code>.
+      </li>
+      <li>
+        Lone pairs are not part of reactor matching semantics.
+      </li>
+      <li>
+        Radicals are handled mostly by wildcard decoration after the fact, not as
+        true state in the reactor core.
+      </li>
+      <li>
+        <code>GraphToMol</code> does not yet write radical state back into RDKit atoms,
+        so radical round-tripping is incomplete.
+      </li>
+      <li>
+        Reaction-center extraction knows about lone-pair changes, but not yet
+        radical changes.
+      </li>
+    </ul>
+  </section>
+
+  <section class="step">
+    <h2>Step 1: Expose The Small Electron-State Surface</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      Add these to the default public node attributes:
+      <code>lone_pairs</code>,
+      <code>available_lp</code>,
+      <code>radical</code>.
+    </div>
+
+    <p>
+      This is the minimum useful set for electron-aware reaction behavior:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Meaning</th>
+          <th>Why reactor needs it</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>lone_pairs</code></td>
+          <td>Number of lone pairs on the atom</td>
+          <td>Needed to know whether an atom can serve as an electron-pair donor</td>
+        </tr>
+        <tr>
+          <td><code>available_lp</code></td>
+          <td>Whether at least one lone pair is locally available for donation</td>
+          <td>Useful as a compact chemistry-facing flag</td>
+        </tr>
+        <tr>
+          <td><code>radical</code></td>
+          <td>Number of unpaired electrons</td>
+          <td>Needed to distinguish radical from closed-shell matching</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>Why not expose everything?</strong>
+      We should not push all detailed bookkeeping into every default graph yet.
+      Fields like <code>valence_electrons</code>, oxidation state, and LP diagnostics
+      are useful internally, but they are a larger public surface than v1 needs.
+    </div>
+  </section>
+
+  <section class="step">
+    <h2>Step 2: Expose Two Bond Views Instead Of One</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      Default edge attributes should include both
+      <code>order</code> and <code>kekule_order</code>.
+    </div>
+
+    <p>
+      These two fields answer different questions:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Use</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>order</code></td>
+          <td>Graph identity / aromatic matching</td>
+          <td>Aromatic edge can stay represented as <code>1.5</code></td>
+        </tr>
+        <tr>
+          <td><code>kekule_order</code></td>
+          <td>Electron bookkeeping / mechanistic bond changes</td>
+          <td>Same aromatic system represented as alternating single/double bonds</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      This separation prevents a recurring confusion:
+    </p>
+
+    <ul>
+      <li>For matching, aromatic systems are often better treated aromatically.</li>
+      <li>For electron movement, sigma and pi changes are easier to reason about in Kekule form.</li>
+    </ul>
+
+    <div class="decision">
+      <strong>Related decision:</strong>
+      Do not store separate <code>sigma</code> and <code>pi</code> fields in v1.
+      Derive them from <code>kekule_order</code> when needed.
+    </div>
+
+    <pre><code>0 -> 1  means new sigma bond
+1 -> 2  means added pi bond
+2 -> 1  means lost pi bond</code></pre>
+  </section>
+
+  <section class="step">
+    <h2>Step 3: Use Named Paired ITS Attributes For Electron State</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      The electron-aware reactor should target the newer named paired ITS
+      representation, not extend the old positional <code>typesGH</code> tuple.
+    </div>
+
+    <p>
+      Good electron-aware ITS state should look like this:
+    </p>
+
+    <pre><code>element      = ("O", "O")
+lone_pairs   = (2, 1)
+radical      = (0, 0)
+charge       = (0, 1)
+hcount       = (1, 0)</code></pre>
+
+    <p>
+      This is preferable to adding more positions into a legacy tuple like:
+    </p>
+
+    <pre><code>(element, aromatic, hcount, charge, neighbors, ...)</code></pre>
+
+    <p>
+      because named attributes:
+    </p>
+
+    <ul>
+      <li>are easier to read,</li>
+      <li>are harder to misuse,</li>
+      <li>allow lone pairs and radicals to evolve independently,</li>
+      <li>make validation code much clearer.</li>
+    </ul>
+
+    <div class="note">
+      <strong>Important:</strong>
+      This does not mean all old <code>typesGH</code> code must disappear immediately.
+      It means the new electron-aware path should be built on the named paired form,
+      and any legacy adapters should be explicit.
+    </div>
+  </section>
+
+  <section class="step">
+    <h2>Step 4: Make Radical Changes First-Class Reaction-Center Events</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      Reaction-center extraction should treat radical change the same way it
+      already treats lone-pair change.
+    </div>
+
+    <p>
+      Today a node can enter the reaction center because:
+    </p>
+
+    <ul>
+      <li>its element changes,</li>
+      <li>its hydrogen count changes,</li>
+      <li>its charge changes,</li>
+      <li>its lone-pair count changes,</li>
+      <li>its valence-electron count changes.</li>
+    </ul>
+
+    <p>
+      Add:
+    </p>
+
+    <ul>
+      <li><code>radical</code> changes.</li>
+    </ul>
+
+    <p>
+      Example:
+    </p>
+
+    <pre><code>radical = (1, 0)</code></pre>
+
+    <p>
+      should be a reason that the atom belongs to the reaction center.
+    </p>
+  </section>
+
+  <section class="step">
+    <h2>Step 5: Define Matching Semantics Clearly</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      Lone pairs and radicals do not use the same matching rule.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Matching Rule</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>hcount</code></td>
+          <td>host &gt;= template</td>
+          <td>Already existing behavior</td>
+        </tr>
+        <tr>
+          <td><code>lone_pairs</code></td>
+          <td>host &gt;= template</td>
+          <td>If a template needs one LP donor, an atom with two LPs still satisfies that requirement</td>
+        </tr>
+        <tr>
+          <td><code>radical</code></td>
+          <td>host == template</td>
+          <td>One radical electron is chemically different from zero or two</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      This means:
+    </p>
+
+    <pre><code>template lone_pairs = 1
+host lone_pairs     = 2
+=> allowed
+
+template radical = 1
+host radical     = 0
+=> rejected in strict mode</code></pre>
+  </section>
+
+  <section class="step">
+    <h2>Step 6: Add A Compatibility Mode To SynReactor</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      Add an explicit <code>electron_mode</code> parameter.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Mode</th>
+          <th>Behavior</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>legacy</code></td>
+          <td>Current matching behavior only</td>
+          <td>Preserve old workflows exactly</td>
+        </tr>
+        <tr>
+          <td><code>warn</code></td>
+          <td>Run current behavior but report electron-aware mismatches</td>
+          <td>Audit templates and datasets safely</td>
+        </tr>
+        <tr>
+          <td><code>strict</code></td>
+          <td>Reject mappings that violate electron constraints</td>
+          <td>Future chemically stricter mode</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="decision">
+      <strong>Initial default:</strong>
+      <code>electron_mode="warn"</code>
+    </div>
+
+    <p>
+      This gives us visibility before enforcement. Old templates may accidentally
+      depend on broad matching behavior; we should learn where before changing
+      results.
+    </p>
+  </section>
+
+  <section class="step">
+    <h2>Step 7: Change The Meaning Of Charge</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      Charge should move toward “derived plus validated,” not remain the primary
+      electron-state source of truth.
+    </div>
+
+    <p>
+      For a Lewis-style graph, charge can be recomputed locally from:
+    </p>
+
+    <pre><code>charge =
+    valence_electrons
+    - (2 * lone_pairs + hcount + bond_order_sum)</code></pre>
+
+    <p>
+      In the first implementation:
+    </p>
+
+    <ul>
+      <li>do not auto-correct charge yet,</li>
+      <li>recompute it after rewrite,</li>
+      <li>compare recomputed charge with represented charge,</li>
+      <li>warn in <code>warn</code> mode,</li>
+      <li>reject in <code>strict</code> mode.</li>
+    </ul>
+
+    <div class="risk">
+      <strong>Why not auto-overwrite immediately?</strong>
+      Because auto-correction can hide bad transformations and make debugging
+      much harder. First we want validation signal; later we can decide whether
+      canonical recomputation should become authoritative.
+    </div>
+  </section>
+
+  <section class="step">
+    <h2>Step 8: Preserve Radical State During Output</h2>
+
+    <div class="decision">
+      <strong>Decision:</strong>
+      Radical state must survive graph -> RDKit -> SMILES conversion.
+    </div>
+
+    <p>
+      Today the read direction exists:
+    </p>
+
+    <pre><code>RDKit atom -> graph node["radical"]</code></pre>
+
+    <p>
+      But the write direction is missing:
+    </p>
+
+    <pre><code>graph node["radical"] -> RDKit atom</code></pre>
+
+    <p>
+      Without that second half, the reactor can carry correct radical state
+      internally and still lose it when serializing products.
+    </p>
+
+    <p>
+      So <code>GraphToMol</code> must set RDKit radical electrons from the graph
+      node attribute during reconstruction.
+    </p>
+  </section>
+
+  <section class="step">
+    <h2>Step 9: Keep Existing Wildcard Radical Tools As Transitional Support</h2>
+
+    <div class="decision">

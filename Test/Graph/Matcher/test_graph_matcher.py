@@ -148,6 +148,34 @@ class TestGraphMatcherEngine(unittest.TestCase):
         g2.nodes["b"]["charge"] = 0
         self.assertFalse(self.gm.isomorphic(g1, g2))
 
+    def test_lone_pairs_use_host_greater_or_equal_semantics(self):
+        host = nx.Graph()
+        host.add_node(1, element="O", lone_pairs=3, radical=0, hcount=0)
+
+        pattern = nx.Graph()
+        pattern.add_node(10, element="O", lone_pairs=2, radical=0, hcount=0)
+
+        gm = GraphMatcherEngine(
+            node_attrs=["element", "lone_pairs", "radical"],
+            edge_attrs=[],
+            max_mappings=None,
+        )
+        self.assertEqual(gm.get_mappings(host, pattern), [{10: 1}])
+
+    def test_radical_requires_exact_match(self):
+        host = nx.Graph()
+        host.add_node(1, element="O", lone_pairs=3, radical=1, hcount=0)
+
+        pattern = nx.Graph()
+        pattern.add_node(10, element="O", lone_pairs=2, radical=0, hcount=0)
+
+        gm = GraphMatcherEngine(
+            node_attrs=["element", "lone_pairs", "radical"],
+            edge_attrs=[],
+            max_mappings=None,
+        )
+        self.assertEqual(gm.get_mappings(host, pattern), [])
+
     def test_available_backends(self):
         # available_backends should list at least 'nx'
         backends = GraphMatcherEngine.available_backends()

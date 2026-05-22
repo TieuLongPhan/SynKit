@@ -46,6 +46,25 @@ class TestGraphCanonicaliser(unittest.TestCase):
             sigG, sigH, "Different graphs should have different signatures"
         )
 
+    def test_electron_state_changes_canonical_signature(self):
+        neutral = nx.Graph()
+        neutral.add_node(1, element="N", charge=0, lone_pairs=1, radical=0)
+
+        radical = nx.Graph()
+        radical.add_node(1, element="N", charge=0, lone_pairs=1, radical=1)
+
+        lone_pair_changed = nx.Graph()
+        lone_pair_changed.add_node(1, element="N", charge=0, lone_pairs=0, radical=0)
+
+        self.assertNotEqual(
+            self.canon.canonical_signature(neutral),
+            self.canon.canonical_signature(radical),
+        )
+        self.assertNotEqual(
+            self.canon.canonical_signature(neutral),
+            self.canon.canonical_signature(lone_pair_changed),
+        )
+
     def test_make_canonical_graph_structure(self):
         G_can = self.canon.make_canonical_graph(self.G_swapped)
         # Canonical graph should have nodes labeled 1 and 2

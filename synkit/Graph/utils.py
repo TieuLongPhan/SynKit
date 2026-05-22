@@ -81,6 +81,7 @@ def add_wildcard_subgraph_for_unmapped(
     mapping: Dict[Any, Any],
     edge_keys: List[str] = ["order"],
     inplace: bool = False,
+    tuple_mode: bool = False,
 ) -> Tuple[nx.Graph, Dict[Any, Any]]:
     """Extend G with wildcard nodes/edges for every L-node not already mapped,
     preserving original L->G mapping and returning the full mapping.
@@ -97,6 +98,9 @@ def add_wildcard_subgraph_for_unmapped(
         Edge attributes to copy (first element if list/tuple). Default ['order'].
     inplace : bool, optional
         If True, modify G in place; otherwise modify a copy.
+    tuple_mode : bool, optional
+        If True, scalarize tuple ITS node attrs onto the left side before
+        adding wildcard placeholders to the host graph.
 
     Returns
     -------
@@ -116,12 +120,38 @@ def add_wildcard_subgraph_for_unmapped(
 
     # Prepare new node IDs
     next_id = max(G_ext.nodes, default=-1) + 1
+    used_atom_maps = {
+        data.get("atom_map")
+        for _, data in G_ext.nodes(data=True)
+        if data.get("atom_map") not in (None, 0)
+    }
+
+    def _next_unused_atom_map(start: int) -> int:
+        candidate = start
+        while candidate in used_atom_maps:
+            candidate += 1
+        return candidate
 
     # Add wildcard nodes for each unmapped L node
     for l_node in unmapped:
         attrs = L.nodes[l_node].copy()
+        if tuple_mode:
+            attrs = {
+                key: (
+                    value[0] if isinstance(value, tuple) and len(value) == 2 else value
+                )
+                for key, value in attrs.items()
+                if key != "typesGH"
+            }
+            left_types = L.nodes[l_node].get("typesGH", (None, None))[0]
+            if left_types is not None:
+                attrs["typesGH"] = (left_types, left_types)
         attrs["element"] = "*"
-        attrs.setdefault("atom_map", next_id)
+        atom_map = attrs.get("atom_map")
+        if atom_map in (None, 0) or atom_map in used_atom_maps:
+            atom_map = _next_unused_atom_map(next_id)
+        attrs["atom_map"] = atom_map
+        used_atom_maps.add(atom_map)
         G_ext.add_node(next_id, **attrs)
         L_to_G[l_node] = next_id
         next_id += 1

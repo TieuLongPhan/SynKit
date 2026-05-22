@@ -302,6 +302,7 @@ class RBLEngine:
         max_mappings_per_pair: int = 1,
         implicit_temp: bool = True,
         explicit_h: bool = False,
+        electron_diagnostics: bool = False,
         embed_threshold: int = 10_000,
         reactor_cls: type = SynReactor,
         wildcard_adder_cls: type = RadicalWildcardAdder,
@@ -338,6 +339,7 @@ class RBLEngine:
         # Reactor behaviour flags
         self.implicit_temp: bool = bool(implicit_temp)
         self.explicit_h: bool = bool(explicit_h)
+        self.electron_diagnostics: bool = bool(electron_diagnostics)
         self.embed_threshold: int = int(embed_threshold)
 
         # Dependencies (DI)
@@ -369,6 +371,11 @@ class RBLEngine:
         self._backward_its: List[ITSLike] = []
         self._fused_its: List[ITSLike] = []
         self._fused_rsmis: List[str] = []
+        self._diagnostics: Dict[str, List[Dict[str, Any]]] = {
+            "forward": [],
+            "backward": [],
+            "quick_check": [],
+        }
 
         # Result / termination bookkeeping
         self._last_stop_mode: str = "not_run"
@@ -441,6 +448,7 @@ class RBLEngine:
         self._backward_its = []
         self._fused_its = []
         self._fused_rsmis = []
+        self._diagnostics = {"forward": [], "backward": [], "quick_check": []}
         self._last_stop_mode = "not_run"
         self._last_stop_reason = "not_run"
         self._last_stop_metadata = {}
@@ -561,7 +569,13 @@ class RBLEngine:
             "n_forward_its": len(self._forward_its),
             "n_backward_its": len(self._backward_its),
             "n_fused_its": len(self._fused_its),
+            "diagnostics": self.diagnostics,
         }
+
+    @property
+    def diagnostics(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Electron diagnostics grouped by reactor stage."""
+        return {stage: list(reports) for stage, reports in self._diagnostics.items()}
 
     # ------------------------------------------------------------------
     # Template preparation
@@ -713,7 +727,10 @@ class RBLEngine:
             automorphism=False,
             invert=invert,
             embed_threshold=self.embed_threshold,
+            electron_diagnostics=self.electron_diagnostics,
         )
+        stage = "backward" if invert else "forward"
+        self._diagnostics[stage].extend(getattr(reactor, "diagnostics", []) or [])
 
         out: List[ITSLike] = []
         its_list: Sequence[ITSLike] = getattr(reactor, "its", []) or []
@@ -934,6 +951,10 @@ class RBLEngine:
             automorphism=False,
             invert=False,
             embed_threshold=self.embed_threshold,
+            electron_diagnostics=self.electron_diagnostics,
+        )
+        self._diagnostics["quick_check"].extend(
+            getattr(reactor, "diagnostics", []) or []
         )
 
         sols: Sequence[str] = getattr(reactor, "smarts", []) or []

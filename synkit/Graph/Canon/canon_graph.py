@@ -316,8 +316,8 @@ class GraphCanonicaliser:
         nodes = sorted(g.nodes(data=True), key=lambda x: self._node_key(*x))
         edges = sorted(g.edges(data=True), key=lambda x: self._edge_key(*x))
 
-        node_str = ";".join(f"{n}:{self._node_key(n,d)}" for n, d in nodes)
-        edge_str = ";".join(f"{(u,v)}:{self._edge_key(u,v,d)}" for u, v, d in edges)
+        node_str = ";".join(f"{n}:{self._node_key(n, d)}" for n, d in nodes)
+        edge_str = ";".join(f"{(u, v)}:{self._edge_key(u, v, d)}" for u, v, d in edges)
         return f"N[{node_str}]|E[{edge_str}]"
 
     # ------------------------------------------------------------------ #

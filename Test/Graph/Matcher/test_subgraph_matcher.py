@@ -1,8 +1,15 @@
 import unittest
+import networkx as nx
 from synkit.IO.data_io import load_from_pickle
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Graph.ITS.its_decompose import get_rc
-from synkit.Graph.Matcher.subgraph_matcher import SubgraphMatch, SubgraphSearchEngine
+from synkit.Graph.Matcher.subgraph_matcher import (
+    SubgraphMatch,
+    SubgraphSearchEngine,
+    diagnose_candidate_node_match,
+    electron_aware_edge_match,
+    resolve_template_match_attrs,
+)
 
 # Determine if the rule backend is available
 try:
@@ -130,6 +137,134 @@ class TestSubGraphSearchEngine(unittest.TestCase):
             edge_attrs=["order"],
         )
         self.assertEqual(len(mapping), 0)
+
+    def test_electron_aware_node_matching(self):
+        host = nx.Graph()
+        host.add_node(1, element="O", lone_pairs=3, radical=0, hcount=1)
+
+        pattern = nx.Graph()
+        pattern.add_node(10, element="O", lone_pairs=2, radical=0, hcount=0)
+
+        matches = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=["element", "lone_pairs", "radical"],
+            edge_attrs=[],
+        )
+        self.assertEqual(matches, [{10: 1}])
+
+    def test_electron_aware_node_matching_rejects_low_lone_pairs(self):
+        host = nx.Graph()
+        host.add_node(1, element="O", lone_pairs=1, radical=0, hcount=0)
+
+        pattern = nx.Graph()
+        pattern.add_node(10, element="O", lone_pairs=2, radical=0, hcount=0)
+
+        matches = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=["element", "lone_pairs", "radical"],
+            edge_attrs=[],
+        )
+        self.assertEqual(matches, [])
+
+    def test_resolve_template_match_attrs_keeps_legacy_template_legacy(self):
+        pattern = nx.Graph()
+        pattern.add_node(1, element="O", charge=0)
+        pattern.add_edge(1, 2, order=1.0)
+
+        node_attrs, edge_attrs = resolve_template_match_attrs(pattern)
+
+        self.assertEqual(node_attrs, ["element", "charge"])
+        self.assertEqual(edge_attrs, ["order"])
+
+    def test_resolve_template_match_attrs_uses_new_template_fields(self):
+        pattern = nx.Graph()
+        pattern.add_node(
+            1,
+            element="O",
+            charge=0,
+            aromatic=False,
+            hcount=0,
+            lone_pairs=2,
+            radical=0,
+        )
+        pattern.add_node(
+            2,
+            element="C",
+            charge=0,
+            aromatic=False,
+            hcount=3,
+            lone_pairs=0,
+            radical=0,
+        )
+        pattern.add_edge(1, 2, order=2.0, sigma_order=1.0, pi_order=1.0)
+
+        node_attrs, edge_attrs = resolve_template_match_attrs(pattern)
+
+        self.assertEqual(
+            node_attrs,
+            [
+                "element",
+                "charge",
+                "aromatic",
+                "hcount",
+                "lone_pairs",
+                "radical",
+            ],
+        )
+        self.assertEqual(edge_attrs, ["order", "sigma_order", "pi_order"])
+
+    def test_resolve_template_match_attrs_uses_aromatic_n_pi_role(self):
+        pattern = nx.Graph()
+        pattern.add_node(
+            1,
+            element="N",
+            charge=0,
+            aromatic=True,
+            hcount=0,
+            lone_pairs=1,
+            radical=0,
+            aromatic_n_pi_count=1,
+        )
+
+        node_attrs, _ = resolve_template_match_attrs(pattern)
+
+        self.assertIn("aromatic_n_pi_count", node_attrs)
+
+    def test_diagnose_candidate_node_match_reports_electron_reason(self):
+        diagnostic = diagnose_candidate_node_match(
+            {"element": "O", "lone_pairs": 1, "radical": 0},
+            {"element": "O", "lone_pairs": 2, "radical": 1},
+            ["element", "lone_pairs", "radical"],
+        )
+
+        self.assertFalse(diagnostic["matched"])
+        self.assertEqual(
+            diagnostic["reasons"],
+            [
+                "lone_pairs: host 1 < pattern 2",
+                "radical: host 0 != pattern 1",
+            ],
+        )
+
+    def test_electron_aware_edge_matching_ignores_aromatic_kekule_phase(self):
+        self.assertTrue(
+            electron_aware_edge_match(
+                {"order": 1.5, "sigma_order": 1.0, "pi_order": 1.0},
+                {"order": 1.5, "sigma_order": 1.0, "pi_order": 0.0},
+                ["order", "sigma_order", "pi_order"],
+            )
+        )
+
+    def test_electron_aware_edge_matching_keeps_non_aromatic_sigma_pi_exact(self):
+        self.assertFalse(
+            electron_aware_edge_match(
+                {"order": 2.0, "sigma_order": 1.0, "pi_order": 1.0},
+                {"order": 2.0, "sigma_order": 1.0, "pi_order": 0.0},
+                ["order", "sigma_order", "pi_order"],
+            )
+        )
 
 
 if __name__ == "__main__":

@@ -57,12 +57,15 @@ class ITSReverter:
         "neighbors",
         "atom_map",
         "lone_pairs",
+        "radical",
         "valence_electrons",
     )
 
     #: edge attributes commonly stored in ITS and worth restoring
     DEFAULT_EDGE_ATTRS = (
         "kekule_order",
+        "sigma_order",
+        "pi_order",
         "order",
         "bond_type",
         "conjugated",
@@ -126,6 +129,10 @@ class ITSReverter:
         :returns: Whether the node exists on that side.
         :rtype: bool
         """
+        present = attrs.get("present")
+        if isinstance(present, tuple) and len(present) == 2:
+            return bool(present[idx])
+
         element = cls._pick_side_value(attrs.get("element"), idx)
         return element not in (None, "")
 

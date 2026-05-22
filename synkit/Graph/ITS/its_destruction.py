@@ -35,13 +35,26 @@ class ITSDestruction:
         its_graph: nx.Graph,
         node_attrs: Optional[List[str]] = None,
         edge_share: str = "order",
+        edge_attrs: Optional[List[str]] = None,
         clean_wildcard: bool = False,
     ):
         if node_attrs is None:
-            node_attrs = ["element", "charge", "hcount", "aromatic", "atom_map"]
+            node_attrs = [
+                "element",
+                "charge",
+                "hcount",
+                "aromatic",
+                "radical",
+                "lone_pairs",
+                "valence_electrons",
+                "atom_map",
+            ]
+        if edge_attrs is None:
+            edge_attrs = [edge_share, "kekule_order", "sigma_order", "pi_order"]
         self._its = its_graph
         self.node_attrs = node_attrs
         self.edge_share = edge_share
+        self.edge_attrs = edge_attrs
         self.clean_wildcard = clean_wildcard
         self._G: Optional[nx.Graph] = None
         self._H: Optional[nx.Graph] = None
@@ -143,10 +156,19 @@ class ITSDestruction:
                     order_g, order_h = order_tuple
                 else:
                     order_g = order_h = 0.0
+                g_edge_attrs: Dict[str, Any] = {}
+                h_edge_attrs: Dict[str, Any] = {}
+                for attr in self.edge_attrs:
+                    value = data.get(attr)
+                    if isinstance(value, tuple) and len(value) == 2:
+                        g_edge_attrs[attr], h_edge_attrs[attr] = value
+                    elif value is not None:
+                        g_edge_attrs[attr] = value
+                        h_edge_attrs[attr] = value
                 if isinstance(order_g, (int, float)) and order_g > 0:
-                    G.add_edge(u, v, order=order_g)
+                    G.add_edge(u, v, **g_edge_attrs)
                 if isinstance(order_h, (int, float)) and order_h > 0:
-                    H.add_edge(u, v, order=order_h)
+                    H.add_edge(u, v, **h_edge_attrs)
 
         # Apply wildcard cleaning if requested (without neighbor contraction)
         if self.clean_wildcard:

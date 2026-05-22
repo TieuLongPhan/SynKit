@@ -232,7 +232,7 @@ class GraphVisualizer:
         for n, d in g.nodes(data=True):
             charge = d.get("charge", 0)
             cstr = "" if charge == 0 else f"{charge:+}"
-            lbl = f"{d.get(symbol_key,'')}{cstr}"
+            lbl = f"{d.get(symbol_key, '')}{cstr}"
             if show_atom_map:
                 lbl += f" ({d.get(aam_key)})"
             labels[n] = lbl

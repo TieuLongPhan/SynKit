@@ -558,6 +558,11 @@ class MolToGraph:
         :rtype: float
         """
         try:
+            if atom.GetIsAromatic():
+                # Lone-pair bookkeeping needs the Kekule heavy-atom valence,
+                # not presentation bond orders such as three aromatic 1.5 bonds.
+                return float(atom.GetTotalValence() - cls._non_neighbor_h_count(atom))
+
             aromatic_lp_donor = cls._is_aromatic_lone_pair_donor(atom)
             total = 0.0
 
@@ -936,13 +941,13 @@ class MolToGraph:
         new_props["available_lp"] = available_lone_pairs > 0
         # Backward-compatible field used by SynEltra.
         new_props["lone_pairs"] = estimated_lone_pairs
+        new_props["valence_electrons"] = cls._safe_valence_electrons(atom)
 
         if profile == "full":
             new_props["bond_order_sum"] = round(cls._safe_bond_order_sum(atom), 3)
             new_props["lp_bond_order_sum"] = round(
                 cls._bond_order_sum_for_lone_pairs(atom), 3
             )
-            new_props["valence_electrons"] = cls._safe_valence_electrons(atom)
             new_props["estimated_lone_pairs"] = estimated_lone_pairs
             new_props["available_lone_pairs"] = available_lone_pairs
 
@@ -960,11 +965,12 @@ class MolToGraph:
         Minimal profile keys: ``element``, ``aromatic``, ``hcount``,
         ``charge``, ``radical``, ``isomer``, ``partial_charge``,
         ``hybridization``, ``in_ring``, ``neighbors``, ``atom_map``,
-        ``oxidation_state``, ``available_lp``, ``lone_pairs``.
+        ``oxidation_state``, ``available_lp``, ``lone_pairs``,
+        ``valence_electrons``.
 
         Full profile additionally includes ``bond_order_sum``,
-        ``lp_bond_order_sum``, ``valence_electrons``,
-        ``estimated_lone_pairs``, ``available_lone_pairs``.
+        ``lp_bond_order_sum``, ``estimated_lone_pairs``,
+        ``available_lone_pairs``.
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
@@ -1010,6 +1016,7 @@ class MolToGraph:
             ),
             "available_lp": available_lone_pairs > 0,
             "lone_pairs": estimated_lone_pairs,
+            "valence_electrons": MolToGraph._safe_valence_electrons(atom),
         }
 
         if profile == "full":
@@ -1017,7 +1024,6 @@ class MolToGraph:
             props["lp_bond_order_sum"] = round(
                 MolToGraph._bond_order_sum_for_lone_pairs(atom), 3
             )
-            props["valence_electrons"] = MolToGraph._safe_valence_electrons(atom)
             props["estimated_lone_pairs"] = estimated_lone_pairs
             props["available_lone_pairs"] = available_lone_pairs
 
@@ -1081,16 +1087,28 @@ class MolToGraph:
         except Exception:
             kekule_bond_type = bond_type
 
+        sigma_order, pi_order = MolToGraph._split_sigma_pi_order(kekule_order)
+
         return {
             "order": order,
             "bond_type": bond_type,
             "aromatic": aromatic,
             "kekule_order": kekule_order,
+            "sigma_order": sigma_order,
+            "pi_order": pi_order,
             "kekule_bond_type": kekule_bond_type,
             "ez_isomer": ez,
             "conjugated": conjugated,
             "in_ring": in_ring,
         }
+
+    @staticmethod
+    def _split_sigma_pi_order(kekule_order: float) -> tuple[float, float]:
+        """Split a Kekule bond order into sigma and pi contributions."""
+        order = max(0.0, float(kekule_order))
+        if order <= 0:
+            return 0.0, 0.0
+        return 1.0, max(0.0, order - 1.0)
 
     # ------------------------------------------------------------------
     # Stereochemistry helpers
@@ -1225,8 +1243,10 @@ class MolToGraph:
 
         Node attributes: ``element``, ``aromatic``, ``hcount``, ``charge``,
         ``radical``, ``neighbors``, ``atom_map``, ``oxidation_state``,
-        ``available_lp``, ``lone_pairs``.  Edge attributes: ``order``,
-        ``bond_type``, ``aromatic``, ``kekule_order``, ``kekule_bond_type``.
+        ``available_lp``, ``lone_pairs``, ``valence_electrons``.
+        Edge attributes: ``order``, ``bond_type``, ``aromatic``,
+        ``kekule_order``, ``sigma_order``, ``pi_order``,
+        ``kekule_bond_type``.
 
         :param mol: RDKit molecule.
         :type mol: Chem.Mol
@@ -1276,6 +1296,7 @@ class MolToGraph:
                 ),
                 available_lp=available_lone_pairs > 0,
                 lone_pairs=estimated_lone_pairs,
+                valence_electrons=cls._safe_valence_electrons(atom),
             )
 
         for bond in mol.GetBonds():

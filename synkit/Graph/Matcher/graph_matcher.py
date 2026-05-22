@@ -77,9 +77,10 @@ class GraphMatcherEngine:
         :class:`~networkx.algorithms.isomorphism.GraphMatcher`.
         * ``"rule"`` – optional, requires the third‑party *mod* package.
     node_attrs, edge_attrs:
-        Lists of attribute keys that must match exactly between candidate
-        nodes/edges.  ``hcount`` is treated specially – the host must be **≥**
-        the pattern (to allow aggregated counts).
+        Lists of attribute keys used for matching. ``hcount`` and
+        ``lone_pairs`` are treated specially: the host must be **≥** the
+        pattern. Other requested attributes, including ``radical``, match
+        exactly.
     wl1_filter:
         If *True*, a fast WL‑based colour refinement pre‑filter discards host
         graphs that cannot possibly contain the pattern.
@@ -162,11 +163,15 @@ class GraphMatcherEngine:
             return nm
 
         def nm(nh, np, _attrs=attrs):  # noqa: ANN001 – external signature
-            # Strict equality for selected attributes …
             for k in _attrs:
-                if nh.get(k) != np.get(k):
+                host_value = nh.get(k, 0 if k in {"hcount", "lone_pairs"} else None)
+                pattern_value = np.get(k, 0 if k in {"hcount", "lone_pairs"} else None)
+                if k in {"hcount", "lone_pairs"}:
+                    if host_value < pattern_value:
+                        return False
+                    continue
+                if host_value != pattern_value:
                     return False
-            # … plus host‑≥‑pattern for "hcount" if present.
             return nh.get("hcount", 0) >= np.get("hcount", 0)
 
         return nm
@@ -230,17 +235,19 @@ class GraphMatcherEngine:
         if not isinstance(g1, nx.Graph) or not isinstance(g2, nx.Graph):
             raise TypeError("NX backend expects `networkx.Graph` objects.")
 
-        # Put the *smaller* graph first – helps GraphMatcher.
-        if g1.number_of_nodes() > g2.number_of_nodes():
-            g1, g2 = g2, g1  # type: ignore[misc]
+        # Treat the larger graph as host so comparator semantics remain
+        # host-first for subgraph checks.
+        host, pattern = (g1, g2)
+        if g1.number_of_nodes() < g2.number_of_nodes():
+            host, pattern = g2, g1
 
-        if not self._pre_check(g2, g1):  # g2 is the (larger) host
+        if not self._pre_check(host, pattern):
             return False
 
-        gm = _NXGraphMatcher(g1, g2, node_match=self._nm, edge_match=self._em)
+        gm = _NXGraphMatcher(host, pattern, node_match=self._nm, edge_match=self._em)
         return (
             gm.is_isomorphic()
-            if g1.number_of_nodes() == g2.number_of_nodes()
+            if host.number_of_nodes() == pattern.number_of_nodes()
             else gm.subgraph_is_isomorphic()
         )
 
@@ -253,7 +260,7 @@ class GraphMatcherEngine:
         if not self._pre_check(host, pattern):
             return []
 
-        gm = _NXGraphMatcher(pattern, host, node_match=self._nm, edge_match=self._em)
+        gm = _NXGraphMatcher(host, pattern, node_match=self._nm, edge_match=self._em)
 
         # Full blow isomorphism (same #nodes / #edges)? Then a single call tells
         # us everything and is much faster than iterating via *isomorphisms_iter*.
@@ -261,7 +268,16 @@ class GraphMatcherEngine:
             pattern.number_of_nodes() == host.number_of_nodes()
             and pattern.number_of_edges() == host.number_of_edges()
         ):
-            return [gm.mapping] if gm.is_isomorphic() else []
+            return (
+                [
+                    {
+                        pattern_node: host_node
+                        for host_node, pattern_node in gm.mapping.items()
+                    }
+                ]
+                if gm.is_isomorphic()
+                else []
+            )
 
         # Sub‑isomorphisms.
         iso_iter = gm.subgraph_isomorphisms_iter()
@@ -271,7 +287,10 @@ class GraphMatcherEngine:
             )  # local import – cheap and avoids polluting global namespace
 
             iso_iter = islice(iso_iter, self.max_mappings)
-        return list(iso_iter)
+        return [
+            {pattern_node: host_node for host_node, pattern_node in mapping.items()}
+            for mapping in iso_iter
+        ]
 
     # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
     # Rule (GML) backend – thin wrappers around ``mod.ruleGMLString``
