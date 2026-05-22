@@ -3,7 +3,7 @@ name: PyPI publish
 on:
   push:
     branches:
-      - beta
+      - mech
   release:
     types:
       - published
