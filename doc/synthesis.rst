@@ -70,6 +70,22 @@ Reactor parameters
        - ``'comp'``: component-aware matching (fastest; recommended for multi-component SMILES)
        - ``'all'``: exhaustive arbitrary subgraph search (most expensive)
        - ``'bt'``: fallback strategy (tries ``comp`` first, then ``all`` if no match is found)
+   * - ``template_format``
+     - str
+     - ``'typesGH'``
+     - ITS representation used when the template is a reaction string.
+       Use ``'tuple'`` for the Lewis State Graph representation.
+   * - ``electron_diagnostics``
+     - bool
+     - ``False``
+     - When ``True``, keep Lewis-state accounting diagnostics on generated ITS
+       objects. This is useful when inspecting charge, lone-pair, or radical
+       recomputation. The option name remains ``electron_diagnostics`` for API
+       compatibility.
+   * - ``automorphism``
+     - bool
+     - ``True``
+     - Deduplicate symmetry-equivalent matches before rewriting.
 
 Example: Forward Prediction (NetworkX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,6 +189,75 @@ while keeping ``explicit_h=False``.
         '[CH3:1][CH:2]=[O:6].[CH3:3][CH:4]=[O:5]>>[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]',
         '[CH3:1][CH3:2].[CH:3]([CH:4]=[O:5])=[O:6]>>[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]'
       ]
+
+Lewis State Graph Templates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The NetworkX reactor can consume Lewis State Graph (LSG) templates. This is
+the SynKit-native path for transformations where valence-state information
+matters: lone pairs, radicals, valence electrons, and sigma/pi bond components
+are stored in the template and used during matching/rewrite. In the current API
+LSG construction is requested with ``format="tuple"``.
+
+There are two common entry points:
+
+.. code-block:: python
+   :caption: Build the LSG template explicitly
+   :linenos:
+
+   from synkit.IO import rsmi_to_its
+   from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+
+   smart = "[NH3:1].[CH3:2][Cl:3]>>[NH3+:1][CH3:2].[Cl-:3]"
+   substrate = "CCl.N"
+   template = rsmi_to_its(smart, core=False, format="tuple")
+
+   reactor = SynReactor(
+       substrate=substrate,
+       template=template,
+       implicit_temp=True,
+       explicit_h=False,
+       electron_diagnostics=True,
+   )
+
+   print(reactor.smarts)
+
+.. code-block:: python
+   :caption: Let SynReactor build an LSG template from a reaction string
+   :linenos:
+
+   reactor = SynReactor(
+       substrate="CCl.N",
+       template="[NH3:1].[CH3:2][Cl:3]>>[NH3+:1][CH3:2].[Cl-:3]",
+       template_format="tuple",
+       implicit_temp=True,
+       explicit_h=False,
+       electron_diagnostics=True,
+   )
+
+LSG rewrite policy:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Concept
+     - Policy
+   * - Bond truth
+     - ``sigma_order`` and ``pi_order`` are authoritative in new mode.
+   * - Product reconstruction
+     - ``kekule_order`` is computed from ``sigma_order + pi_order`` before
+       conversion through RDKit.
+   * - Charge
+     - Charge is recomputed from valence electrons, lone pairs, hydrogen count,
+       radical count, and Kekule bond-order sum.
+   * - Aromaticity
+     - Aromatic flags are still useful for matching and display, but aromatic
+       ``order=1.5`` is not used as the LSG-authoritative rewrite value.
+
+.. note::
+
+   LSG rewriting is currently a SynKit ``SynReactor`` path. MØD-backed
+   reactors remain on the legacy rule representation.
 
 Example: Forward Prediction (MØD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

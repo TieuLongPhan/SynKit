@@ -206,6 +206,9 @@ class TestLowLevelHelpers(unittest.TestCase):
         self.assertTrue(B.has_edge("row:1", "col:1"))
 
 
+@unittest.skipUnless(
+    dynamics._SYMPY_AVAILABLE, "sympy is required for symbolic dynamics tests"
+)
 class TestDynamicsMatrices(unittest.TestCase):
     def test_symbolic_reactivity_matrix_cycle(self) -> None:
         G = make_cycle_crn()
@@ -429,6 +432,9 @@ class TestStructuralSingularitySummaryDataclass(unittest.TestCase):
         self.assertIn("classification", text)
 
 
+@unittest.skipUnless(
+    dynamics._SYMPY_AVAILABLE, "sympy is required for exact singularity tests"
+)
 class TestStructuralSingularitySummary(unittest.TestCase):
     def test_single_step_is_singular_by_pattern(self) -> None:
         G = make_single_step_crn()

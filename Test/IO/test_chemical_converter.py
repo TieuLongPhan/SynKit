@@ -235,6 +235,14 @@ class TestChemicalConversions(unittest.TestCase):
         rc = rsmi_to_its(smart, core=True)
         self.assertFalse(graph_isomorphism(its, rc))
 
+    def test_tuple_rsmi_to_rc(self):
+        smart = "[CH3:5][CH:1]=[CH2:2].[H:3][H:4]>>[CH3:5][CH2:1][CH3:2]"
+        its = rsmi_to_its(smart, format="tuple")
+        rc = rsmi_to_its(smart, core=True, format="tuple")
+
+        self.assertFalse(graph_isomorphism(its, rc))
+        self.assertIn("radical", next(iter(its.nodes(data=True)))[1])
+
     def test_its_to_rsmi(self):
         smart = "[CH3:5][CH:1]=[CH2:2].[H:3][H:4]>>[CH3:5][CH:1]([H:3])[CH2:2][H:4]"
         its = rsmi_to_its(smart)
@@ -243,6 +251,39 @@ class TestChemicalConversions(unittest.TestCase):
             CanonRSMI().canonicalise(smart).canonical_rsmi,
             CanonRSMI().canonicalise(new_smart).canonical_rsmi,
         )
+
+    def test_tuple_its_to_rsmi(self):
+        smart = "[CH3:5][CH:1]=[CH2:2].[H:3][H:4]>>[CH3:5][CH2:1][CH3:2]"
+        its = rsmi_to_its(smart, format="tuple")
+        new_smart = its_to_rsmi(its, format="tuple")
+
+        self.assertEqual(
+            CanonRSMI().canonicalise(smart).canonical_rsmi,
+            CanonRSMI().canonicalise(new_smart).canonical_rsmi,
+        )
+
+    def test_tuple_its_to_rsmi_reperceives_aromatic_product(self):
+        smart = "[CH2:1]1[CH:2]=[CH:3][CH:4]=[CH:5][CH2:6]1>>[cH:1]1[cH:2][cH:3][cH:4][cH:5][cH:6]1"
+        its = rsmi_to_its(smart, format="tuple")
+        new_smart = its_to_rsmi(its, format="tuple")
+
+        self.assertEqual(
+            CanonRSMI().canonicalise(smart).canonical_rsmi,
+            CanonRSMI().canonicalise(new_smart).canonical_rsmi,
+        )
+
+    def test_tuple_rsmi_to_its_explicit_hydrogen(self):
+        smart = "[CH3:1][CH2:2]>>[CH2:1]=[CH2:2]"
+        its = rsmi_to_its(smart, explicit_hydrogen=True, format="tuple")
+
+        hydrogens = [
+            attrs
+            for _, attrs in its.nodes(data=True)
+            if attrs.get("element") == ("H", "H")
+        ]
+
+        self.assertTrue(hydrogens)
+        self.assertTrue(any(attrs["present"] != (True, True) for attrs in hydrogens))
 
     def test_rsmi_to_rsmarts_and_back(self):
         rsmi = "[H:3][O:4].[N:1][C:2]>>[C:2][O:4].[N:1][H:3]"

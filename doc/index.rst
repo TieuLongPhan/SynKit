@@ -34,6 +34,45 @@ production workflows.
    :align: center
    :width: 100%
 
+Version 1.4.0 highlights
+------------------------
+
+.. raw:: html
+
+   <div class="sk-badge-row">
+     <span class="sk-badge">Lewis State Graph</span>
+     <span class="sk-badge green">graph-native FG</span>
+     <span class="sk-badge purple">MTG timelines</span>
+     <span class="sk-badge">modern Vis</span>
+   </div>
+
+.. grid:: 1 1 2 4
+   :gutter: 2
+
+   .. grid-item-card:: :octicon:`zap` Lewis State Graph
+      :class-card: sk-feature-card
+
+      LSG stores sigma/pi orders, lone pairs, radicals, valence electrons, and
+      charge recomputation metadata for the pure-Python reactor.
+
+   .. grid-item-card:: :octicon:`filter` Functional Groups
+      :class-card: sk-feature-card
+
+      Native ``networkx`` functional-group detection now replaces the previous
+      external FG helper and returns graph-indexed labels.
+
+   .. grid-item-card:: :octicon:`git-branch` MTG
+      :class-card: sk-feature-card
+
+      Mechanistic Transition Graphs keep temporal bond histories and can be
+      projected back to ordered ITS steps or composed transformations.
+
+   .. grid-item-card:: :octicon:`eye` Visualization
+      :class-card: sk-feature-card
+
+      Modern drawers cover molecule graphs, reaction panels, ITS-only views,
+      Lewis-state labels, and compact MTG timelines.
+
 
 .. Core features
 .. -------------
@@ -115,6 +154,12 @@ Documentation quick links
 
       ITS/MTG construction, WL hashing, and cluster/search primitives.
 
+   .. grid-item-card:: :octicon:`eye` Visualization
+      :link: vis
+      :link-type: doc
+
+      Molecule, reaction, ITS, and diagnostic graph rendering.
+
    .. grid-item-card:: :octicon:`terminal` API Reference
       :link: api/index
       :link-type: doc
@@ -159,7 +204,7 @@ Funded by the European Union Horizon Europe Doctoral Network (Marie-Skłodowska-
    rule
    synthesis
    crn
+   vis
    api/index
    reference
    changelog
-

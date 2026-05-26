@@ -85,6 +85,8 @@ def _default_node_key(node_id: NodeId, data: NodeData) -> Tuple[Any, ...]:
     return (
         data.get("element", ""),
         data.get("charge", 0),
+        data.get("lone_pairs", 0),
+        data.get("radical", 0),
         data.get("aromatic", False),
         # data.get("atom_map", 0),
         data.get("hcount", 0),
@@ -149,7 +151,14 @@ class GraphCanonicaliser:
         backend: Literal["generic", "wl", "morgan", "nauty"] = "generic",
         wl_iterations: int = 3,
         morgan_radius: int = 3,
-        node_attrs: List[str] = ["element", "aromatic", "charge", "hcount"],
+        node_attrs: List[str] = [
+            "element",
+            "aromatic",
+            "charge",
+            "lone_pairs",
+            "radical",
+            "hcount",
+        ],
         node_sort_key: T_NodeSortKey = _default_node_key,
         edge_sort_key: T_EdgeSortKey = _default_edge_key,
     ) -> None:
@@ -316,8 +325,8 @@ class GraphCanonicaliser:
         nodes = sorted(g.nodes(data=True), key=lambda x: self._node_key(*x))
         edges = sorted(g.edges(data=True), key=lambda x: self._edge_key(*x))
 
-        node_str = ";".join(f"{n}:{self._node_key(n,d)}" for n, d in nodes)
-        edge_str = ";".join(f"{(u,v)}:{self._edge_key(u,v,d)}" for u, v, d in edges)
+        node_str = ";".join(f"{n}:{self._node_key(n, d)}" for n, d in nodes)
+        edge_str = ";".join(f"{(u, v)}:{self._edge_key(u, v, d)}" for u, v, d in edges)
         return f"N[{node_str}]|E[{edge_str}]"
 
     # ------------------------------------------------------------------ #

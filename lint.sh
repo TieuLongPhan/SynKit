@@ -25,12 +25,13 @@ its_destruction.py:C901,
 conversion.py:C901,
 injectivity.py:C901,
 deficiency.py:C901,
-mol_to_graph.py:C901" \
+mol_to_graph.py:C901,
+detector.py:C901,
+mtg.py:C901" \
   --exclude=venv,\
 core_engine.py,\
 rule_apply.py,\
 reactor_engine.py,\
-groupoid.py,\
 syn_rule.py,\
 __init__.py,\
 wl_mapper.py,\

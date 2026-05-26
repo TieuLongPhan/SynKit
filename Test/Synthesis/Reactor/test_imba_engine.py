@@ -60,7 +60,7 @@ class TestImbaEngine(unittest.TestCase):
             partial=True,
         )
         out = engine.smarts_list
-        self.assertEqual(len(out), 3)
+        self.assertEqual(len(out), 2)
         out_rsmi = Standardize().fit(out[0], remove_aam=True)
         self.assertIn("*", out_rsmi)
         self.assertNotEqual(out_rsmi, self.rsmi)
@@ -76,7 +76,7 @@ class TestImbaEngine(unittest.TestCase):
         )
 
         out_clean = engine_clean.smarts_list
-        self.assertEqual(len(out_clean), 3)
+        self.assertEqual(len(out_clean), 2)
         # outs = [Standardize().fit(o, remove_aam=True) for o in out_clean]
         # self.assertIn(self.rsmi, outs)
 
@@ -88,6 +88,18 @@ class TestImbaEngine(unittest.TestCase):
             rsmi = Standardize().fit("not_a_rsmi", remove_aam=True)
             wild = WildCard().rsmi_with_wildcards(rsmi)
             _ = rsmi_to_its(wild, core=True)
+
+    def test_diagnostics_passthrough_is_opt_in(self):
+        engine = ImbaEngine(
+            "[CH3:1][CH3:2]",
+            "[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]",
+            add_wildcard=False,
+            electron_diagnostics=True,
+        )
+
+        self.assertEqual(len(engine.smarts_list), 1)
+        self.assertEqual(len(engine.diagnostics), 1)
+        self.assertEqual(engine.diagnostics[0]["mismatch_count"], 0)
 
 
 if __name__ == "__main__":

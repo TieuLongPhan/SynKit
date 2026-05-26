@@ -27,8 +27,14 @@ import networkx as nx
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
+from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Hyrogen._misc import normalize_h_pair_graph
-from synkit.IO.chem_converter import rsmi_to_its, gml_to_its
+from synkit.IO.chem_converter import (
+    ITSFormat,
+    detect_its_format,
+    rsmi_to_its,
+    gml_to_its,
+)
 
 __all__ = ["SynRule"]
 
@@ -76,14 +82,16 @@ class SynRule:
         *,
         canon: bool = True,
         implicit_h: bool = True,
+        format: ITSFormat = "typesGH",
     ) -> "SynRule":
         """Instantiate from a SMARTS string."""
         return cls(
-            rsmi_to_its(smart),
+            rsmi_to_its(smart, format=format),
             name=name,
             canonicaliser=canonicaliser,
             canon=canon,
             implicit_h=implicit_h,
+            format=format,
         )
 
     @classmethod
@@ -116,6 +124,7 @@ class SynRule:
         *,
         canon: bool = True,
         implicit_h: bool = True,
+        format: Optional[ITSFormat] = None,
     ) -> None:
         self._name = name
         self._canon_enabled = canon
@@ -124,38 +133,37 @@ class SynRule:
 
         # Fragment decomposition
         rc_graph = rc.copy()
+        self._format = format or detect_its_format(rc_graph)
         if self._implicit_h:
             rc_graph = normalize_h_pair_graph(rc_graph)
 
-        left_graph, right_graph = its_decompose(rc_graph)
+        left_graph, right_graph = self._decompose(rc_graph, self._format)
 
         # Optional H-stripping
-        if self._implicit_h:
+        if self._implicit_h and self._format == "typesGH":
             self._strip_explicit_h(rc_graph, left_graph, right_graph)
-        # Update typesGH tuples with new hcount
-        for node, att in rc_graph.nodes(data=True):
-            # unpack the old tuples
-            t0, t1 = att["typesGH"]
-
-            # build new versions with the updated hcount at position 2
-            new_t0 = (
-                t0[0],
-                t0[1],
-                left_graph.nodes[node]["hcount"] + t0[2],
-                t0[3],
-                t0[4],
-            )
-            new_t1 = (
-                t1[0],
-                t1[1],
-                right_graph.nodes[node]["hcount"] + t1[2],
-                t1[3],
-                t1[4],
-            )
-
-            # reassign the attribute to a fresh tuple-of-tuples
-            att["typesGH"] = (new_t0, new_t1)
-        left_graph, right_graph = its_decompose(rc_graph)
+            # Update typesGH tuples with new hcount.
+            for node, att in rc_graph.nodes(data=True):
+                t0, t1 = att["typesGH"]
+                new_t0 = (
+                    t0[0],
+                    t0[1],
+                    left_graph.nodes[node]["hcount"] + t0[2],
+                    t0[3],
+                    t0[4],
+                )
+                new_t1 = (
+                    t1[0],
+                    t1[1],
+                    right_graph.nodes[node]["hcount"] + t1[2],
+                    t1[3],
+                    t1[4],
+                )
+                att["typesGH"] = (new_t0, new_t1)
+            left_graph, right_graph = self._decompose(rc_graph, self._format)
+        elif self._implicit_h and self._format == "tuple":
+            self._strip_explicit_h_tuple(rc_graph, left_graph, right_graph)
+            left_graph, right_graph = self._decompose(rc_graph, self._format)
         # ---------- wrap graphs ---------------------------------------- #
         self.rc = SynGraph(rc_graph, self._canonicaliser, canon=canon)
         self.left = SynGraph(left_graph, self._canonicaliser, canon=canon)
@@ -168,6 +176,14 @@ class SynRule:
     # ================================================================== #
     # Private utilities                                                  #
     # ================================================================== #
+    @staticmethod
+    def _decompose(rc: nx.Graph, format: ITSFormat) -> tuple[nx.Graph, nx.Graph]:
+        """Return left/right fragments for either supported ITS representation."""
+        if format == "tuple":
+            reverter = ITSReverter(rc)
+            return reverter.to_reactant_graph(), reverter.to_product_graph()
+        return its_decompose(rc)
+
     @staticmethod
     def _strip_explicit_h(
         rc: nx.Graph,
@@ -233,6 +249,97 @@ class SynRule:
                     if g.nodes[nbr].get("element") != "H":
                         g.nodes[nbr]["hcount"] += 1
                 g.remove_node(h)
+
+    @staticmethod
+    def _strip_explicit_h_tuple(
+        rc: nx.Graph,
+        left: nx.Graph,
+        right: nx.Graph,
+    ) -> None:
+        """Tuple-style equivalent of legacy explicit-H stripping."""
+
+        def _removable_on(graph: nx.Graph, h: int) -> bool:
+            if not graph.has_node(h):
+                return False
+            nbrs = list(graph.neighbors(h))
+            if not nbrs:
+                return False
+            return not all(graph.nodes[n].get("element") == "H" for n in nbrs)
+
+        def _fully_removable(h: int) -> bool:
+            return _removable_on(left, h) and _removable_on(right, h)
+
+        for graph in (left, right):
+            for _, data in graph.nodes(data=True):
+                if data.get("element") != "H":
+                    data.setdefault("h_pairs", [])
+                    data.setdefault("h_pairs_left", [])
+                    data.setdefault("h_pairs_right", [])
+                    data.setdefault("h_pair_atom_maps", {})
+
+        for _, data in rc.nodes(data=True):
+            element = data.get("element")
+            is_h = (
+                isinstance(element, tuple)
+                and len(element) == 2
+                and all(value == "H" for value in element)
+            )
+            if not is_h:
+                data.setdefault("h_pairs", [])
+                data.setdefault("h_pairs_left", [])
+                data.setdefault("h_pairs_right", [])
+                data.setdefault("h_pair_atom_maps", {})
+
+        removable = sorted(
+            node
+            for node, attrs in left.nodes(data=True)
+            if attrs.get("element") == "H"
+            and right.has_node(node)
+            and _fully_removable(node)
+        )
+
+        for pair_id, h in enumerate(removable, start=1):
+            atom_map = left.nodes[h].get("atom_map", h)
+            for side, graph in (("left", left), ("right", right)):
+                for nbr in list(graph.neighbors(h)):
+                    if graph.nodes[nbr].get("element") != "H":
+                        graph.nodes[nbr]["hcount"] += 1
+                        graph.nodes[nbr].setdefault("h_pairs", []).append(pair_id)
+                        graph.nodes[nbr].setdefault(f"h_pairs_{side}", []).append(
+                            pair_id
+                        )
+                        graph.nodes[nbr].setdefault("h_pair_atom_maps", {})[
+                            pair_id
+                        ] = atom_map
+                graph.remove_node(h)
+            if rc.has_node(h):
+                rc.remove_node(h)
+
+        for node, attrs in rc.nodes(data=True):
+            if node not in left or node not in right:
+                continue
+            if attrs.get("element") == ("H", "H"):
+                continue
+            left_h = left.nodes[node].get("hcount", 0)
+            right_h = right.nodes[node].get("hcount", 0)
+            attrs["hcount"] = (left_h, right_h)
+            attrs["h_pairs"] = sorted(
+                set(left.nodes[node].get("h_pairs", []))
+                | set(right.nodes[node].get("h_pairs", []))
+            )
+            attrs["h_pairs_left"] = sorted(left.nodes[node].get("h_pairs_left", []))
+            attrs["h_pairs_right"] = sorted(right.nodes[node].get("h_pairs_right", []))
+            attrs["h_pair_atom_maps"] = {
+                **left.nodes[node].get("h_pair_atom_maps", {}),
+                **right.nodes[node].get("h_pair_atom_maps", {}),
+            }
+            typesgh = attrs.get("typesGH")
+            if typesgh and len(typesgh) == 2:
+                react_attr, prod_attr = typesgh
+                attrs["typesGH"] = (
+                    tuple(list(react_attr[:2]) + [left_h] + list(react_attr[3:])),
+                    tuple(list(prod_attr[:2]) + [right_h] + list(prod_attr[3:])),
+                )
 
     # ================================================================== #
     # Dunder methods                                                     #

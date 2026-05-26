@@ -47,6 +47,7 @@ class ImbaEngine:
         partial: bool = False,
         embed_threshold: float = None,
         embed_pre_filter: bool = False,
+        electron_diagnostics: bool = False,
     ) -> None:
         # Assign parameters
         self.substrate = substrate
@@ -60,8 +61,10 @@ class ImbaEngine:
         self.partial = partial
         self.embed_threshold = embed_threshold
         self.embed_pre_filter = embed_pre_filter
+        self.electron_diagnostics = electron_diagnostics
         # Internal state
         self._results: List[str] = []
+        self._diagnostics = []
         # Auto-run fit on init
         self.fit()
 
@@ -111,8 +114,10 @@ class ImbaEngine:
             canonicaliser=self.canonicaliser,
             embed_threshold=self.embed_threshold,
             embed_pre_filter=self.embed_pre_filter,
+            electron_diagnostics=self.electron_diagnostics,
         )
         raw_smarts: List[str] = reactor.smarts_list
+        self._diagnostics = reactor.diagnostics
 
         # Add radical wildcards if requested
         if self.add_wildcard:
@@ -144,6 +149,11 @@ class ImbaEngine:
         :rtype: List[str]
         """
         return self._results.copy()
+
+    @property
+    def diagnostics(self) -> list[dict]:
+        """Electron diagnostics from the last underlying reactor run."""
+        return list(self._diagnostics)
 
     def __len__(self) -> int:
         """

@@ -105,6 +105,126 @@ __all__: Sequence[str] = [
 ]
 
 
+def electron_aware_node_match(
+    host_data: EdgeAttr,
+    pattern_data: EdgeAttr,
+    node_attrs: Sequence[str],
+) -> bool:
+    """Compare node attributes with chemistry-aware cardinality semantics.
+
+    Attributes in ``node_attrs`` are exact matches except:
+
+    - ``hcount``: host must be greater than or equal to pattern
+    - ``lone_pairs``: host must be greater than or equal to pattern
+    - ``aromatic_n_pi_count``: exact aromatic-N role label when present
+    ``radical`` therefore remains exact whenever the caller includes it in
+    ``node_attrs``.
+    """
+    for attr in node_attrs:
+        host_value = host_data.get(
+            attr, 0 if attr in {"hcount", "lone_pairs"} else None
+        )
+        pattern_value = pattern_data.get(
+            attr, 0 if attr in {"hcount", "lone_pairs"} else None
+        )
+        if attr in {"hcount", "lone_pairs"}:
+            if host_value < pattern_value:
+                return False
+            continue
+        if host_value != pattern_value:
+            return False
+    return True
+
+
+def electron_aware_edge_match(
+    host_data: EdgeAttr,
+    pattern_data: EdgeAttr,
+    edge_attrs: Sequence[str],
+) -> bool:
+    """Compare edge attrs while treating aromatic Kekule phase as non-semantic.
+
+    Aromatic presentation bonds are matched by ``order == 1.5``. Their
+    particular ``sigma_order`` / ``pi_order`` split depends on the chosen
+    Kekule form and is not stable across independently parsed graphs.
+    """
+    host_is_aromatic = host_data.get("order") == 1.5
+    pattern_is_aromatic = pattern_data.get("order") == 1.5
+    for attr in edge_attrs:
+        if (
+            attr in {"sigma_order", "pi_order"}
+            and host_is_aromatic
+            and pattern_is_aromatic
+        ):
+            continue
+        if host_data.get(attr) != pattern_data.get(attr):
+            return False
+    return True
+
+
+def explain_node_mismatch(
+    host_data: EdgeAttr,
+    pattern_data: EdgeAttr,
+    node_attrs: Sequence[str],
+) -> list[str]:
+    """Return node-level mismatch reasons using matcher semantics."""
+    reasons: list[str] = []
+    for attr in node_attrs:
+        host_value = host_data.get(
+            attr, 0 if attr in {"hcount", "lone_pairs"} else None
+        )
+        pattern_value = pattern_data.get(
+            attr, 0 if attr in {"hcount", "lone_pairs"} else None
+        )
+        if attr in {"hcount", "lone_pairs"}:
+            if host_value < pattern_value:
+                reasons.append(f"{attr}: host {host_value} < pattern {pattern_value}")
+            continue
+        if host_value != pattern_value:
+            reasons.append(f"{attr}: host {host_value!r} != pattern {pattern_value!r}")
+    return reasons
+
+
+def resolve_template_match_attrs(
+    pattern: nx.Graph,
+    *,
+    legacy_node_attrs: Sequence[str] = ("element", "charge"),
+    legacy_edge_attrs: Sequence[str] = ("order",),
+) -> tuple[list[str], list[str]]:
+    """Choose match attrs from what the template actually carries.
+
+    Legacy templates keep the legacy attribute set. Electron-aware templates opt
+    into extra constraints only when those attrs are present on the template.
+    """
+    node_attrs = list(legacy_node_attrs)
+    edge_attrs = list(legacy_edge_attrs)
+
+    for attr in (
+        "aromatic",
+        "hcount",
+        "lone_pairs",
+        "radical",
+        "aromatic_n_pi_count",
+    ):
+        if any(attr in data for _, data in pattern.nodes(data=True)):
+            node_attrs.append(attr)
+
+    for attr in ("sigma_order", "pi_order"):
+        if any(attr in data for _, _, data in pattern.edges(data=True)):
+            edge_attrs.append(attr)
+
+    return node_attrs, edge_attrs
+
+
+def diagnose_candidate_node_match(
+    host_data: EdgeAttr,
+    pattern_data: EdgeAttr,
+    node_attrs: Sequence[str],
+) -> dict[str, Any]:
+    """Return a compact node-match diagnostic payload."""
+    reasons = explain_node_mismatch(host_data, pattern_data, node_attrs)
+    return {"matched": not reasons, "reasons": reasons}
+
+
 # ---------------------------------------------------------------------------
 # Core engine class
 # ---------------------------------------------------------------------------
@@ -315,8 +435,7 @@ class SubgraphSearchEngine:
             count = sum(
                 1
                 for _, host_data in host.nodes(data=True)
-                if all(host_data.get(a) == pat_data.get(a) for a in node_attrs)
-                and host_data.get("hcount", 0) >= pat_data.get("hcount", 0)
+                if electron_aware_node_match(host_data, pat_data, node_attrs)
                 and host.degree(_) >= pat_deg
             )
             # if no candidates; impossible match
@@ -347,7 +466,8 @@ class SubgraphSearchEngine:
         host, pattern
             NetworkX graphs (host ≥ pattern).
         node_attrs, edge_attrs
-            Keys of attributes to match exactly (plus `hcount` ≥).
+            Keys of attributes to match; ``hcount`` and ``lone_pairs`` use
+            host-greater-or-equal semantics, while the rest are exact.
         strategy
             Matching strategy code or enum ("all", "comp", "bt").
         max_results
@@ -426,12 +546,10 @@ class SubgraphSearchEngine:
         """Classic VF2 over the whole host graph."""
 
         def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
-            return all(nh.get(k) == np.get(k) for k in node_attrs) and nh.get(
-                "hcount", 0
-            ) >= np.get("hcount", 0)
+            return electron_aware_node_match(nh, np, node_attrs)
 
         def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
-            return all(eh.get(k) == ep.get(k) for k in edge_attrs)
+            return electron_aware_edge_match(eh, ep, edge_attrs)
 
         gm = GraphMatcher(host, pattern, node_match=node_match, edge_match=edge_match)
         results: List[MappingDict] = []
@@ -467,12 +585,10 @@ class SubgraphSearchEngine:
             return []
 
         def node_match(nh: EdgeAttr, np: EdgeAttr) -> bool:
-            if any(nh.get(a) != np.get(a) for a in node_attrs):
-                return False
-            return nh.get("hcount", 0) >= np.get("hcount", 0)
+            return electron_aware_node_match(nh, np, node_attrs)
 
         def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
-            return all(eh.get(a) == ep.get(a) for a in edge_attrs)
+            return electron_aware_edge_match(eh, ep, edge_attrs)
 
         per_cc: List[List[Tuple[int, MappingDict]]] = []
         for pc in pat_ccs:

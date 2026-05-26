@@ -90,6 +90,7 @@ class TestMolToGraph(unittest.TestCase):
             "aromatic",
             "radical",
             "lone_pairs",
+            "valence_electrons",
             "available_lp",
             "oxidation_state",
         ):
@@ -112,6 +113,8 @@ class TestMolToGraph(unittest.TestCase):
             "bond_type",
             "aromatic",
             "kekule_order",
+            "sigma_order",
+            "pi_order",
             "kekule_bond_type",
             "ez_isomer",
             "conjugated",
@@ -156,6 +159,28 @@ class TestMolToGraph(unittest.TestCase):
         g = MolToGraph(edge_attrs=["order"]).transform(self.mol)
         for _, _, data in g.edges(data=True):
             self.assertEqual(set(data.keys()), {"order"})
+
+    def test_sigma_pi_order_split_matches_kekule_order(self):
+        mol = Chem.MolFromSmiles("C#CC=C")
+        g = MolToGraph().transform(mol)
+        for _, _, data in g.edges(data=True):
+            self.assertEqual(
+                data["kekule_order"],
+                data["sigma_order"] + data["pi_order"],
+            )
+
+    def test_aromatic_bonds_preserve_matching_and_rewrite_views(self):
+        mol = Chem.MolFromSmiles("c1ccccc1")
+        g = MolToGraph().transform(mol)
+
+        self.assertEqual({data["order"] for _, _, data in g.edges(data=True)}, {1.5})
+        self.assertEqual(
+            {
+                (data["kekule_order"], data["sigma_order"], data["pi_order"])
+                for _, _, data in g.edges(data=True)
+            },
+            {(1.0, 1.0, 0.0), (2.0, 1.0, 1.0)},
+        )
 
     def test_drop_non_aam_requires_use_index(self):
         with self.assertRaises(ValueError):
@@ -240,6 +265,66 @@ class TestMolToGraph(unittest.TestCase):
             self.assertIn("radical", data)
 
     # ------------------------------------------------------------------
+    # Lone-pair chemistry audit
+    # ------------------------------------------------------------------
+
+    def test_lone_pair_audit_matrix(self):
+        cases = {
+            "O": [("O", 2)],
+            "[OH-]": [("O", 3)],
+            "N": [("N", 1)],
+            "[NH4+]": [("N", 0)],
+            "[Cl-]": [("Cl", 4)],
+            "n1ccccc1": [("N", 1)],
+            "[nH]1cccc1": [("N", 1)],
+            "C=O": [("O", 2)],
+            "[CH3]": [("C", 0)],
+            "S": [("S", 2)],
+            "[SH-]": [("S", 3)],
+            "[SH3+]": [("S", 1)],
+            "P": [("P", 1)],
+            "[PH4+]": [("P", 0)],
+            "P(=O)(O)(O)O": [("P", 0)],
+            "S(=O)(=O)(O)O": [("S", 0)],
+        }
+
+        for smiles, expected_atoms in cases.items():
+            with self.subTest(smiles=smiles):
+                mol = Chem.MolFromSmiles(smiles)
+                observed = [
+                    (atom.GetSymbol(), MolToGraph.estimate_lone_pairs(atom))
+                    for atom in mol.GetAtoms()
+                    if atom.GetSymbol() in {symbol for symbol, _ in expected_atoms}
+                ]
+                self.assertEqual(observed[: len(expected_atoms)], expected_atoms)
+
+    def test_lone_pairs_match_for_explicit_and_implicit_hydrogen_forms(self):
+        equivalent_pairs = [
+            ("O", "[OH2]"),
+            ("N", "[NH3]"),
+            ("[nH]1cccc1", "[n]1([H])cccc1"),
+            ("Oc1ccccc1", "[OH]c1ccccc1"),
+            ("Nc1ccccc1", "[NH2]c1ccccc1"),
+        ]
+
+        for implicit_smiles, explicit_smiles in equivalent_pairs:
+            with self.subTest(
+                implicit_smiles=implicit_smiles,
+                explicit_smiles=explicit_smiles,
+            ):
+                implicit_mol = Chem.MolFromSmiles(implicit_smiles)
+                explicit_mol = Chem.MolFromSmiles(explicit_smiles)
+                implicit_values = [
+                    MolToGraph.estimate_lone_pairs(atom)
+                    for atom in implicit_mol.GetAtoms()
+                ]
+                explicit_values = [
+                    MolToGraph.estimate_lone_pairs(atom)
+                    for atom in explicit_mol.GetAtoms()
+                ]
+                self.assertEqual(implicit_values, explicit_values)
+
+    # ------------------------------------------------------------------
     # Lone-pair estimation
     # ------------------------------------------------------------------
 
@@ -254,6 +339,14 @@ class TestMolToGraph(unittest.TestCase):
         n_atom = next(a for a in mol.GetAtoms() if a.GetSymbol() == "N")
         lp = MolToGraph.estimate_lone_pairs(n_atom)
         self.assertGreater(lp, 0)
+
+    def test_estimate_lone_pairs_fused_aromatic_bridgehead_n(self):
+        mol = Chem.MolFromSmiles("c1nc2cnccn2c1")
+        n_atoms = [atom for atom in mol.GetAtoms() if atom.GetSymbol() == "N"]
+        self.assertEqual(
+            [MolToGraph.estimate_lone_pairs(atom) for atom in n_atoms],
+            [1, 1, 1],
+        )
 
     def test_estimate_available_lone_pairs_pyrrolic_n_zero(self):
         # [nH] lone pair is conjugated into the ring — not available for donation

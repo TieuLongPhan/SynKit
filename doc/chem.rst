@@ -120,6 +120,27 @@ and downstream CRN construction.
 
       'CC=O.CC=O>>CC=CC=O.O'
 
+Tautomerization and functional-group support
+--------------------------------------------
+
+``Tautomerize`` now uses SynKit's native functional-group detector instead of
+an external FG utility. The detector works on the same molecular graph
+representation used elsewhere in SynKit, so tautomer targets and graph-indexed
+functional-group labels stay aligned.
+
+.. code-block:: python
+   :caption: Detecting tautomer-relevant functional groups
+   :linenos:
+
+   from synkit.Graph.FG import smiles_to_graph_and_functional_groups
+
+   graph, groups = smiles_to_graph_and_functional_groups("C=C(O)C")
+   print(groups)
+
+The tautomerization helper still keeps a small local compatibility rule for
+geminal diols. Those are treated as hydrated-carbonyl repair targets, not as a
+general public functional-group label.
+
 See Also
 --------
 

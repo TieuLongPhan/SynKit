@@ -18,7 +18,12 @@ class PartialEngine:
     :type template: str
     """
 
-    def __init__(self, smi: str, template: str) -> None:
+    def __init__(
+        self,
+        smi: str,
+        template: str,
+        electron_diagnostics: bool = False,
+    ) -> None:
         """Initialize the PartialEngine.
 
         - Removes explicit hydrogens from the given template SMARTS.
@@ -39,6 +44,8 @@ class PartialEngine:
 
         # Build host graph from the provided SMILES or rsmi
         self.host = smiles_to_graph(smi)
+        self.electron_diagnostics = electron_diagnostics
+        self._diagnostics = []
 
     def fit(self, invert: bool = False) -> list[str]:
         """Apply the template in one direction to generate radical‐wildcarded
@@ -63,8 +70,15 @@ class PartialEngine:
             implicit_temp=True,
             explicit_h=False,
             invert=invert,
+            electron_diagnostics=self.electron_diagnostics,
         )
         # Generate SMARTS, then inject radical wildcards
         smarts_list = reactor.smarts_list
+        self._diagnostics = reactor.diagnostics
         wildcarded = [RadicalWildcardAdder().transform(rxn) for rxn in smarts_list]
         return wildcarded
+
+    @property
+    def diagnostics(self) -> list[dict]:
+        """Electron diagnostics from the last reactor run."""
+        return list(self._diagnostics)

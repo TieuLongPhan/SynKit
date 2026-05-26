@@ -31,6 +31,16 @@ class TestRuleMatcher(unittest.TestCase):
         # The returned rule graph should be isomorphic to the input rule
         self.assertTrue(nx.is_isomorphic(returned_rule, rule))
 
+    def test_tuple_rule_match_balance(self):
+        input_rsmi = "CC[CH2:3][Cl:1].[NH2:2][H:4]>>CC[CH2:3][NH2:2].[Cl:1][H:4]"
+        rule = rsmi_to_its(input_rsmi, core=True, format="tuple")
+        rsmi_std = Standardize().fit(input_rsmi)
+        matcher = RuleMatcher(rsmi_std, rule)
+        smarts, returned_rule = matcher.get_result()
+
+        self.assertEqual(Standardize().fit(smarts), rsmi_std)
+        self.assertIs(returned_rule, rule)
+
     def test_rbl_missing_product(self):
         """Partial (RBL) match when product fragments are missing in rule."""
         rsmi = "CC(Br)C.CB(O)O>>CC(C)C"
@@ -88,6 +98,17 @@ class TestRuleMatcher(unittest.TestCase):
         out = buf.getvalue()
         self.assertIn("RuleMatcher for RSMI", out)
         self.assertIn("Candidate SMARTS patterns:", out)
+
+    def test_diagnostics_passthrough_is_opt_in(self):
+        input_rsmi = "CC[CH2:3][Cl:1].[NH2:2][H:4]>>CC[CH2:3][NH2:2].[Cl:1][H:4]"
+        rule = rsmi_to_its(input_rsmi, core=True)
+        matcher = RuleMatcher(
+            Standardize().fit(input_rsmi),
+            rule,
+            electron_diagnostics=True,
+        )
+
+        self.assertTrue(matcher.diagnostics)
 
 
 if __name__ == "__main__":

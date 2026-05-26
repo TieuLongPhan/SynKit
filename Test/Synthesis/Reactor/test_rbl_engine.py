@@ -126,6 +126,20 @@ class TestRBLEngineAPI(unittest.TestCase):
         self.assertIn("wildcard_element='X*'", rep)
         self.assertIn("reactor_cls=", rep)
 
+    def test_diagnostics_are_grouped_by_reactor_stage(self) -> None:
+        engine = RBLEngine(early_stop=False, electron_diagnostics=True)
+        engine.process(
+            "CCC(=O)OC>>CCC(=O)OCC",
+            "[C:1][O:2].[O:3][H:4]>>[C:1][O:3].[O:2][H:4]",
+        )
+
+        self.assertEqual(
+            set(engine.diagnostics), {"forward", "backward", "quick_check"}
+        )
+        self.assertTrue(engine.diagnostics["forward"])
+        self.assertTrue(engine.diagnostics["backward"])
+        self.assertIn("diagnostics", engine.result)
+
     def test_quick_check_short_circuits_pipeline(self) -> None:
         """
         When early_stop=True and _quick_check succeeds, process()

@@ -24,11 +24,15 @@ class ITSConstruction:
         "partial_charge": 0,
         "hybridization": "",
         "lone_pairs": 0,
+        "radical": 0,
         "valence_electrons": 0,
     }
 
     CORE_EDGE_DEFAULTS: Dict[str, Any] = {
         "order": 0.0,
+        "kekule_order": 0.0,
+        "sigma_order": 0.0,
+        "pi_order": 0.0,
         "ez_isomer": "",
         "bond_type": "",
         "conjugated": False,
@@ -235,6 +239,7 @@ class ITSConstruction:
             )
 
             its.nodes[n]["typesGH"] = (g_tuple, h_tuple)
+            its.nodes[n]["present"] = (n in G, n in H)
 
             for i, attr in enumerate(node_attrs):
                 its.nodes[n][attr] = (g_tuple[i], h_tuple[i]) if store else g_tuple[i]
@@ -446,8 +451,16 @@ class ITSConstruction:
             "hcount",
             "charge",
             "neighbors",
+            "lone_pairs",
+            "radical",
+            "valence_electrons",
         ]
-        edge_attrs = edge_attrs or ["order"]
+        edge_attrs = edge_attrs or [
+            "order",
+            "kekule_order",
+            "sigma_order",
+            "pi_order",
+        ]
 
         node_defaults = ITSConstruction._resolve_defaults(
             attributes_defaults, ITSConstruction.CORE_NODE_DEFAULTS
