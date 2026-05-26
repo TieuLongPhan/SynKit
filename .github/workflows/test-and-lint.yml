@@ -20,11 +20,11 @@ jobs:
 
     steps:
       # 0) Check out the code
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # 1) Install Miniconda (downloaded — the “bundled” version was removed)
       - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"      # <<–‑‑ mandatory or the action fails
           python-version: "3.11"
