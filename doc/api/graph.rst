@@ -76,6 +76,33 @@ Features
    :members:
    :show-inheritance:
 
+Functional groups
+-----------------
+
+.. automodule:: synkit.Graph.FG.api
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.FG.audit
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.FG.catalog
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.FG.detector
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.FG.model
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.FG.ring_system
+   :members:
+   :show-inheritance:
+
 Hydrogen utilities
 ------------------
 
@@ -123,6 +150,17 @@ ITS
    :show-inheritance:
 
 .. automodule:: synkit.Graph.ITS.partial_its
+   :members:
+   :show-inheritance:
+
+Mechanistic and Lewis-state utilities
+-------------------------------------
+
+.. automodule:: synkit.Graph.Mech.conversion
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.Mech.electron_accounting
    :members:
    :show-inheritance:
 

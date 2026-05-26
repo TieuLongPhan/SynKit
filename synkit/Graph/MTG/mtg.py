@@ -34,7 +34,7 @@ from synkit.Graph.MTG.utils import (
     compute_standard_order,
 )
 from synkit.Graph.canon_graph import GraphCanonicaliser
-from synkit.IO import its_to_rsmi, rsmi_to_its
+from synkit.IO import ITSFormat, its_to_rsmi, rsmi_to_its
 
 NodeID = int
 MissingOrder = Tuple[Set[float], Set[float]]
@@ -63,6 +63,9 @@ class MTG:
     :param mappings: Optional list of precomputed mappings; computed via MCS if None.
     :param node_label_names: Keys for node-label matching.
     :param canonicaliser: Optional GraphCanonicaliser for snapshot canonicalisation.
+    :param its_format: ITS format used when ``sequences`` contains RSMI strings.
+        Defaults to ``"tuple"`` for Lewis State Graph MTGs. Pass
+        ``"typesGH"`` to build legacy MTGs from strings.
     :raises ValueError: On invalid sequence or mapping lengths.
     :raises RuntimeError: On mapping failures.
     """
@@ -76,6 +79,7 @@ class MTG:
         canonicaliser: GraphCanonicaliser | None = None,
         mcs_mol: bool = False,
         mcs: bool = False,
+        its_format: ITSFormat = "tuple",
     ) -> None:
         if len(sequences) < 2:
             raise ValueError("Need at least two snapshots.")
@@ -84,6 +88,7 @@ class MTG:
         self._canonicaliser = canonicaliser
         self.mcs_mol = mcs_mol
         self.mcs = mcs
+        self.its_format = its_format
 
         self._graphs = self._prepare_graph_sequence(sequences)
         self._k = len(self._graphs)
@@ -443,7 +448,11 @@ class MTG:
     ) -> List[nx.Graph]:
         out: List[nx.Graph] = []
         for item in seq:
-            g = rsmi_to_its(item, core=False) if isinstance(item, str) else item
+            g = (
+                rsmi_to_its(item, core=False, format=self.its_format)
+                if isinstance(item, str)
+                else item
+            )
             if self._canonicaliser:
                 g = self._canonicaliser.canonicalise_graph(g).canonical_graph
             if self._is_tuple_its(g):

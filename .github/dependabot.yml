@@ -1,10 +1,79 @@
-# .github/dependabot.yml
 version: 2
+
 updates:
   - package-ecosystem: "pip"
-    directory: "/"                # location of requirements.txt or pyproject.toml
-    target-branch: "staging"      # open PRs against staging instead of main
+    directory: "/"
+    target-branch: "staging"
     schedule:
-      interval: "weekly"          # check for updates once a week
-    open-pull-requests-limit: 5   # max concurrent Dependabot PRs
-    rebase-strategy: "auto"       # auto-rebase PRs when they fall out of date
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    groups:
+      python-runtime:
+        patterns:
+          - "networkx"
+          - "pandas"
+          - "rdkit"
+          - "regex"
+          - "requests"
+          - "scikit-learn"
+          - "seaborn"
+      python-optional:
+        patterns:
+          - "numpy"
+          - "sympy"
+          - "torch"
+      docs:
+        patterns:
+          - "sphinx*"
+          - "pydata-sphinx-theme"
+          - "sphinx-rtd-theme"
+          - "graphviz"
+          - "myst-parser"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "staging"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:30"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    target-branch: "staging"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 2
+    rebase-strategy: "auto"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "deps"
+      include: "scope"

@@ -7,7 +7,12 @@ matplotlib.use("Agg")
 
 from synkit.Graph.ITS.its_construction import ITSConstruction  # noqa: E402
 from synkit.Graph.MTG.mtg import MTG  # noqa: E402
-from synkit.Vis.mtg_drawer import draw_mtg_graph, draw_mtg_steps  # noqa: E402
+from synkit.IO import load_database  # noqa: E402
+from synkit.Vis.mtg_drawer import (  # noqa: E402
+    _mtg_display_graph,
+    draw_mtg_graph,
+    draw_mtg_steps,
+)
 
 
 class TestMTGDrawer(unittest.TestCase):
@@ -88,6 +93,39 @@ class TestMTGDrawer(unittest.TestCase):
         self.assertEqual(dict(graph.nodes(data=True)), before_nodes)
         self.assertEqual(list(graph.edges(data=True)), before_edges)
 
+    def test_draw_mtg_graph_supports_3d_layout(self):
+        mtg = self._mtg()
+
+        fig, ax = draw_mtg_graph(mtg, dimension="3d", layout="spring")
+
+        self.assertIs(fig, ax.figure)
+        self.assertEqual(getattr(ax, "name", None), "3d")
+
+    def test_mtg_edge_labels_compress_by_default(self):
+        graph = self._mtg().get_mtg()
+
+        compact = _mtg_display_graph(
+            graph,
+            mode="timeline",
+            show_atom_map=True,
+            show_node_badges=False,
+            hydrogen_mode="changed",
+            changed_only=True,
+            compress=True,
+        )
+        full = _mtg_display_graph(
+            graph,
+            mode="timeline",
+            show_atom_map=True,
+            show_node_badges=False,
+            hydrogen_mode="changed",
+            changed_only=True,
+            compress=False,
+        )
+
+        self.assertEqual(compact.edges[1, 2]["label"], "1→1")
+        self.assertEqual(full.edges[1, 2]["label"], "1→0→1")
+
     def test_draw_mtg_steps_draws_ordered_its_panels_and_composed_panel(self):
         mtg = self._mtg()
 
@@ -95,11 +133,32 @@ class TestMTGDrawer(unittest.TestCase):
 
         self.assertIs(fig, axes[0].figure)
         self.assertEqual(len(axes), 3)
-        self.assertEqual([ax.get_title() for ax in axes], ["Step 1", "Step 2", "Composed"])
+        self.assertEqual(
+            [ax.get_title() for ax in axes], ["Step 1", "Step 2", "Composed"]
+        )
 
     def test_draw_mtg_steps_validates_indices(self):
         with self.assertRaises(IndexError):
             draw_mtg_steps(self._mtg(), steps=[2])
+
+    def test_draw_mtg_graph_handles_real_neutral_mechanism(self):
+        data = load_database("Data/Testcase/mech.json.gz")[0]
+        neutral = data["mechanisms"][1]
+        steps = [step["smart_string"] for step in neutral["steps"]]
+        mtg = MTG(steps, mcs_mol=True)
+        graph = mtg.get_mtg()
+
+        fig, ax = draw_mtg_graph(
+            mtg,
+            title=neutral["mech_name"],
+            hydrogen_mode="changed",
+            show_edge_labels=True,
+        )
+
+        self.assertIs(fig, ax.figure)
+        self.assertEqual(ax.get_title(), "Aldol reaction (neutral cat)")
+        self.assertTrue(mtg._tuple_its)
+        self.assertFalse(any("typesGH" in attrs for _, attrs in graph.nodes(data=True)))
 
 
 if __name__ == "__main__":

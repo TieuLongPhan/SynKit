@@ -13,6 +13,15 @@ For normal chemistry work, prefer the molecule, reaction, and ITS helpers from
 ``synkit.Vis``. The generic graph drawer is useful when debugging attributes or
 new graph representations, but it is intentionally less polished.
 
+.. raw:: html
+
+   <div class="sk-badge-row">
+     <span class="sk-badge">molecule graph</span>
+     <span class="sk-badge green">reaction panel</span>
+     <span class="sk-badge purple">ITS-only</span>
+     <span class="sk-badge">MTG timeline</span>
+   </div>
+
 Molecular Graphs From SMILES
 ----------------------------
 
@@ -39,6 +48,16 @@ with atom-map-aware labels.
        aromatic_style="circle",
    )
    ax.figure
+
+.. container:: figure
+
+   .. image:: ./figures/vis_molecule_aspirin.png
+      :alt: Molecular graph visualization of aspirin
+      :align: center
+      :width: 760px
+
+   *Figure:* A molecular graph rendered from aspirin SMILES with aromatic rings
+   drawn compactly and atom indices visible.
 
 Useful molecule options:
 
@@ -71,6 +90,15 @@ and bonds that change.
        title="SN2 reaction",
        show_atom_map=True,
    )
+
+.. container:: figure
+
+   .. image:: ./figures/vis_reaction_sn2.png
+      :alt: Reaction panel visualization for an SN2 reaction
+      :align: center
+      :width: 820px
+
+   *Figure:* Reactant/product panels with the reaction center highlighted.
 
 ITS Graphs
 ----------
@@ -111,10 +139,10 @@ ITS edge-label modes:
    * - ``edge_label_mode="none"``
      - Hide edge labels and use only edge color/style.
 
-Electron Labels
----------------
+Lewis-State Labels
+------------------
 
-For tuple/electron-aware ITS graphs, node labels can show charge, lone-pair, or
+For Lewis State Graph / ITS graphs, node labels can show charge, lone-pair, or
 radical changes. Use one signal at a time for readable figures.
 
 .. code-block:: python
@@ -132,7 +160,17 @@ radical changes. Use one signal at a time for readable figures.
        electron_label_mode="lone_pair",
    )
 
-Electron-label modes:
+.. container:: figure
+
+   .. image:: ./figures/vis_lsg_sn2.png
+      :alt: Lewis State Graph visualization for SN2 lone-pair changes
+      :align: center
+      :width: 820px
+
+   *Figure:* LSG/ITS view of the SN2 example. Bond colors show broken/formed
+   edges and the node badges show a lone-pair transfer.
+
+Lewis-state label modes:
 
 .. list-table::
    :header-rows: 1
@@ -146,7 +184,8 @@ Electron-label modes:
    * - ``electron_label_mode="radical"``
      - Show radical changes.
    * - ``electron_label_mode="all"``
-     - Show every changed electron attribute. This is useful for debugging but can be busy.
+     - Show every changed Lewis-state attribute. This is useful for debugging
+       but can be busy.
 
 Reactant/Product Projections
 ----------------------------
@@ -182,12 +221,23 @@ Compact MTG visualization has two complementary views:
    from synkit.Graph.MTG.mtg import MTG
    from synkit.Vis import draw_mtg_graph, draw_mtg_steps
 
-   mtg = MTG([step_1_its, step_2_its])
+   # Step RSMI strings are converted to Lewis State Graph ITS by default.
+   mtg = MTG(step_rsmis, mcs_mol=True)
 
    fig, ax = draw_mtg_graph(
        mtg,
-       title="MTG timeline",
+       title="MTG changed core",
        mode="timeline",
+       changed_only=True,
+       show_edge_labels=True,
+       compress=True,
+   )
+
+   fig, ax = draw_mtg_graph(
+       mtg,
+       title="MTG timeline 3D",
+       dimension="3d",
+       layout="spring",
    )
 
    fig, axes = draw_mtg_steps(
@@ -196,9 +246,54 @@ Compact MTG visualization has two complementary views:
        show_edge_labels=True,
    )
 
-Use the timeline graph to see transient bonds and electron-state paths across
+.. container:: figure
+
+   .. image:: ./figures/vis_mtg_timeline.png
+      :alt: Compact MTG timeline visualization
+      :align: center
+      :width: 760px
+
+   *Figure:* Compact MTG changed-core view for the neutral aldol mechanism.
+   Green edges are net formed, red edges are net broken, and pink dashed edges
+   are transient timelines.
+
+.. container:: figure
+
+   .. image:: ./figures/vis_mtg_steps.png
+      :alt: MTG step projection visualization
+      :align: center
+      :width: 900px
+
+   *Figure:* Ordered ITS step panels reconstructed from the MTG, plus the
+   composed outer-state view.
+
+Use the timeline graph to see transient bonds and Lewis-state paths across
 the mechanism. Use the step panels when you need to check each reconstructed
 ITS independently.
+
+The 2D view is the default and gives a flattened changed-core drawing. The 3D
+view is optional and is useful when a dense MTG has too many overlapping
+timeline edges in a single plane.
+
+MTG display conventions:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Signal
+     - Display
+   * - Edge timeline
+     - Compressed first/final state by default, such as ``1-1``. Set
+       ``compress=False`` to show a full state path such as ``1-2-1-2-1``.
+       ``∅`` means the edge or atom is outside that state.
+   * - Formed / broken edge
+     - Green for net formation, red for net loss.
+   * - Transient edge
+     - Pink dashed edge for any changing timeline that is not simple net
+       formation or net loss.
+   * - Step panels
+     - Reuse the ITS-only renderer so a step can be checked with the same
+       visual language as a normal LSG/ITS graph.
 
 Diagnostic Graph View
 ---------------------

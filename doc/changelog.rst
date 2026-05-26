@@ -1,6 +1,94 @@
 Changelog
 =========
 
+Version 1.4.0
+-------------
+
+**Highlights**
+
+- Added the Lewis State Graph (LSG) framework for ``SynReactor``. LSG
+  templates carry ``lone_pairs``, ``radical``, ``valence_electrons``,
+  ``sigma_order``, ``pi_order``, and ``kekule_order`` so the NetworkX reactor
+  can rewrite from explicit valence-state information while keeping the legacy
+  ``typesGH`` path available.
+- Added graph-native functional-group detection under ``synkit.Graph.FG``.
+  The detector works directly on SynKit molecular ``networkx`` graphs and
+  provides a SMILES convenience API returning both the graph and detected
+  ``(name, atom_indices)`` labels.
+- Added compact MTG and visualization helpers for LSG/ITS and MTG timeline
+  inspection. The modern Vis API now covers molecule graphs, reaction panels,
+  ITS-only drawings, Lewis-state labels, and MTG step/timeline panels.
+
+**Lewis State Graph reactor**
+
+- LSG matching now uses explicit valence-state fields for new-mode templates:
+  element, charge, lone-pair count, radical count, and bond changes represented
+  by ``sigma_order`` / ``pi_order`` / ``kekule_order``.
+- Product charge recomputation is driven from Lewis-state accounting in
+  new-mode rewrites, with ``kekule_order = sigma_order + pi_order`` used
+  instead of aromatic ``order`` values.
+- Hydrogen handling was tightened for explicit-H reaction centers, implicit-H
+  templates, and simple ``H-H`` transfer cases.
+- Atom-map preservation for LSG-reactor SMARTS output was fixed by using graph
+  node identity where the template does not carry original AAM.
+- Real-case regression tooling was added around the first smart-database
+  fixture, batch round trips, and previously failing LSG rewrite examples.
+
+**Functional groups**
+
+- Added ``FunctionalGroupDetector``, ``FunctionalGroupRegistry``,
+  ``FunctionalGroupAudit``, and
+  ``smiles_to_graph_and_functional_groups``.
+- Added hierarchical family handling so more specific labels such as
+  ``carboxylic_acid`` suppress generic nested labels such as ``carbonyl`` when
+  appropriate.
+- Added aromatic ring-system detection, selected fused heteroaromatic public
+  names, and transform-relevant families across carbonyl/acyl, oxygen,
+  nitrogen/C=N, sulfur, boron, silicon, and phosphorus chemistry.
+- Replaced the previous ``fgutils`` usage in tautomerization support with the
+  SynKit-native functional-group API.
+
+**MTG**
+
+- MTG construction from RSMI strings now defaults to Lewis State Graph ITS,
+  producing compact atom and bond timelines without ``typesGH``. Use
+  ``its_format="typesGH"`` to request legacy string conversion.
+- Reworked the MTG plan around LSG/ITS representation: invariant atom fields
+  are stored once, while temporal fields store compact histories across
+  mechanism snapshots.
+- Added round-trip coverage for converting reaction sequences to MTG and back
+  to ordered ITS steps / composed ITS views.
+- Marked aromatic relabeling and partial-order mechanism DAGs as active design
+  areas rather than solved MTG semantics.
+
+**Visualization**
+
+- Added ``draw_molecule_graph``, ``draw_reaction_graph``,
+  ``draw_its_from_rsmi``, ``draw_its_only``, ``draw_mtg_graph``, and
+  ``draw_mtg_steps`` as the preferred modern rendering helpers.
+- Added compact LSG/ITS labels for ``kekule_order`` transitions and optional
+  ``sigma/pi`` labels that suppress unchanged components.
+- Added selectable Lewis-state labels for charge, lone-pair, and radical
+  changes.
+- Added Matplotlib ``Agg`` smoke tests for molecule, reaction, ITS, visual
+  adapter, and MTG drawing paths.
+
+**Compatibility and known limits**
+
+- Legacy ITS / ``typesGH`` behavior remains available for existing workflows.
+- MØD-backed workflows remain separate from the new SynKit LSG reactor path.
+- Aromatic LSG matching is still conservative. Some aromatic false-positive
+  or false-negative cases require a future aromatic-system relabeling policy
+  rather than a local matcher tweak.
+- Functional-group fused positional isomers such as quinoline vs isoquinoline
+  are not fully distinguished yet.
+
+**Infrastructure**
+
+- Added ``networkx>=3.3`` to ``requirements.txt`` so non-Linux CI jobs do not
+  rely on the Linux-only ``mod`` install to pull in NetworkX indirectly.
+
+
 Version 1.1.1
 -------------
 

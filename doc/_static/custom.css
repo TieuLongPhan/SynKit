@@ -21,6 +21,8 @@
 
   --sk-header-height: 64px;
   --sk-accent: #1f77b4;
+  --sk-accent-2: #0f766e;
+  --sk-accent-3: #7c3aed;
   --sk-radius: 10px;
 }
 
@@ -43,6 +45,23 @@
 .bd-header {
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
+}
+
+/* Keep the PyData header tools slightly farther to the right. */
+@media (min-width: 992px) {
+  .navbar-header-items {
+    justify-content: flex-end;
+  }
+
+  .navbar-header-items__end {
+    margin-left: auto;
+    padding-right: 0.45rem;
+    column-gap: 0.35rem;
+  }
+
+  .navbar-header-items__end .navbar-persistent--container {
+    margin-right: 0.65rem;
+  }
 }
 
 /* =========================================================================
@@ -111,6 +130,74 @@
 .sd-card, .sd-card .card {
   border-radius: 12px;
   box-shadow: 0 1px 6px rgba(15, 23, 42, 0.04);
+}
+
+.sk-feature-card {
+  border: 1px solid rgba(31, 119, 180, 0.16);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.88));
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.sk-feature-card .sd-card-title {
+  color: var(--sk-accent);
+}
+
+html[data-theme="dark"] .sk-feature-card {
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.78), rgba(15, 23, 42, 0.78));
+  border-color: rgba(125, 211, 252, 0.18);
+}
+
+.sk-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.75rem 0 1.1rem;
+}
+
+.sk-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.18rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(31, 119, 180, 0.1);
+  color: var(--sk-accent);
+  font-weight: 650;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+}
+
+.sk-badge.green {
+  background: rgba(15, 118, 110, 0.1);
+  color: var(--sk-accent-2);
+}
+
+.sk-badge.purple {
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--sk-accent-3);
+}
+
+.bd-content .list-table table {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  display: table;
+}
+
+.bd-content .list-table th {
+  background: rgba(31, 119, 180, 0.07);
+  font-size: 0.84rem;
+}
+
+html[data-theme="dark"] .bd-content .list-table table {
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+html[data-theme="dark"] .bd-content .list-table th {
+  background: rgba(125, 211, 252, 0.09);
 }
 
 div.highlight pre,

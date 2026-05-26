@@ -299,6 +299,32 @@ class TestCuratedTupleMTGMechanisms(unittest.TestCase):
         self.assertEqual(len(exported), len(steps))
         self.assertTrue(all(">>" in step for step in exported))
 
+    def test_string_sequences_default_to_lewis_state_graph(self):
+        data = load_database("./Data/Testcase/mech.json.gz")
+        mech = data[0]["mechanisms"][1]
+        steps = [step["smart_string"] for step in mech["steps"]]
+
+        mtg = MTG(steps, mcs_mol=True)
+        graph = mtg.get_mtg()
+
+        self.assertTrue(mtg._tuple_its)
+        self.assertFalse(any("typesGH" in attrs for _, attrs in graph.nodes(data=True)))
+        self.assertTrue(
+            all("sigma_order" in attrs for _, _, attrs in graph.edges(data=True))
+        )
+
+    def test_string_sequences_can_request_legacy_typesgh(self):
+        data = load_database("./Data/Testcase/mech.json.gz")
+        mech = data[0]["mechanisms"][1]
+        steps = [step["smart_string"] for step in mech["steps"][:2]]
+
+        mtg = MTG(steps, mcs_mol=True, its_format="typesGH")
+
+        self.assertFalse(mtg._tuple_its)
+        self.assertTrue(
+            any("typesGH" in attrs for _, attrs in mtg.get_mtg().nodes(data=True))
+        )
+
     def test_mech_fixture_tuple_mtg_automatic_mapping_matches_identity_mapping(self):
         data = load_database("./Data/Testcase/mech.json.gz")
         mech = data[0]["mechanisms"][1]

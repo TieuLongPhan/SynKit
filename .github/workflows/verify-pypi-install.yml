@@ -1,65 +1,96 @@
-# .github/workflows/verify-synkit-pypi-install.yml
-name: Verify SynKit PyPI install
+name: Verify PyPI install
 
 on:
   workflow_dispatch:
     inputs:
-      branches:
+      package-version:
+        description: "Optional exact SynKit version to install, for example 1.4.0"
+        required: false
         type: string
-        required: true
-        default: refractor
-
-  # Scheduled test every Monday at 03:00 UTC
   schedule:
-    - cron: '0 3 * * 1'
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-pypi-install-${{ github.event_name }}-${{ github.event.inputs['package-version'] || 'latest' }}
+  cancel-in-progress: false
 
 jobs:
   verify:
-    name: Verify PyPI install on ${{ matrix.os }}
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
 
     steps:
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
 
-      - name: Create & activate virtualenv, upgrade pip, install SynKit
+      - name: Install SynKit from PyPI
+        shell: bash
         run: |
-          python -m venv venv
-          source venv/bin/activate
           python -m pip install --upgrade pip
-          pip install synkit[all]
 
-      - name: Show installed SynKit version
+          version="${{ github.event.inputs['package-version'] }}"
+          if [ -n "$version" ]; then
+            python -m pip install "synkit==$version"
+          else
+            python -m pip install synkit
+          fi
+          python -m pip install packaging
+
+      - name: Show installed package metadata
+        shell: bash
         run: |
-          source venv/bin/activate
-          python -c "import importlib.metadata as m; print('SynKit version:', m.version('synkit'))"
+          python - <<'PY'
+          import importlib.metadata as metadata
+          import sys
 
-      - name: Write smoke-test script
+          print("Python:", sys.version)
+          print("SynKit:", metadata.version("synkit"))
+          PY
+
+      - name: Run import and smoke tests
+        shell: bash
         run: |
-          cat << 'EOF' > test_synkit.py
-          from synkit.IO import rsmi_to_rsmarts
+          python - <<'PY'
+          import importlib.metadata as metadata
 
-          template = (
-              '[C:2]=[O:3].[C:4]([H:7])[H:8]'
-              '>>'
-              '[C:2]=[C:4].[O:3]([H:7])[H:8]'
-          )
+          from packaging.version import Version
 
-          smart = rsmi_to_rsmarts(template)
-          print("Reaction SMARTS:", smart)
-          EOF
+          from synkit.IO import rsmi_to_its, rsmi_to_rsmarts
 
-      - name: Run smoke-test
-        run: |
-          source venv/bin/activate
-          python test_synkit.py
+          rsmi = "[CH3:1][Cl:2].[NH3:3]>>[CH3:1][NH3+:3].[Cl-:2]"
+          smarts = rsmi_to_rsmarts(rsmi)
+          assert ">>" in smarts
 
-      - name: Success message
-        run: echo "✅ synkit[all] installed and smoke-test passed"
+          version = Version(metadata.version("synkit"))
+          if version >= Version("1.4.0"):
+            import networkx as nx
+
+            from synkit.Graph.MTG.mtg import MTG
+
+            its = rsmi_to_its(rsmi, core=False, format="tuple")
+            assert isinstance(its, nx.Graph)
+            assert not any("typesGH" in attrs for _, attrs in its.nodes(data=True))
+
+            mtg_steps = [
+              "[CH3:1][Cl:2].[NH3:3]>>[CH3:1][NH3+:3].[Cl-:2]",
+              "[CH3:1][NH3+:3].[Cl-:2]>>[CH3:1][NH2:3].[Cl:2][H]",
+            ]
+            mtg = MTG(mtg_steps, mcs_mol=True)
+            graph = mtg.get_mtg()
+            assert mtg._tuple_its
+            assert graph.number_of_nodes() > 0
+
+          print("PyPI SynKit smoke tests passed.")
+          PY
