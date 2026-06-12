@@ -6,7 +6,7 @@ matplotlib.use("Agg")
 
 # flake8: noqa: E402
 from synkit.IO.chem_converter import rsmi_to_graph  # noqa: E402
-from synkit.Vis.reaction_drawer import (  # noqa: E402
+from synkit.Vis.molecule import (  # noqa: E402
     draw_reaction_graph,
     draw_reaction_graphs,
     find_reaction_highlights,

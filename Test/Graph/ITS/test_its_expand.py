@@ -23,6 +23,24 @@ class TestPartialExpand(unittest.TestCase):
         )
         self.assertTrue(AAMValidator.smiles_check(output_rsmi, expected_rsmi, "ITS"))
 
+    def test_expand_preserve_sparse_atom_maps(self):
+        input_rsmi = (
+            "Br[C:64]1=[CH:63][CH:62]=[C:61]([S-:10])[CH:72]=[CH:73]1."
+            "C[CH+:20][C:31]1=[C:32](C)[CH:33]=[C:34](C)[CH:35]=[C:36]1C"
+            ">>"
+            "C[CH:20]([S:10][C:61]1=[CH:62][CH:63]=[C:64](Br)[CH:73]=[CH:72]1)"
+            "[C:31]1=[C:32](C)[CH:33]=[C:34](C)[CH:35]=[C:36]1C"
+        )
+
+        output_rsmi = ITSExpand.expand_aam_with_its(
+            input_rsmi,
+            relabel=False,
+            preserve_older_map=True,
+        )
+
+        self.assertIn(":10]", output_rsmi)
+        self.assertIn(":20]", output_rsmi)
+
 
 if __name__ == "__main__":
     unittest.main()

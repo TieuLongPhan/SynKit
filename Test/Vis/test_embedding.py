@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from synkit.Vis.embedding import Embedding
+from synkit.Vis.space import Embedding
 
 
 class TestEmbedding(unittest.TestCase):

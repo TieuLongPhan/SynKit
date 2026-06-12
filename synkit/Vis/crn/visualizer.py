@@ -940,7 +940,7 @@ class CRNVisualizer:
         # Save/view
         if save:
             base, ext = os.path.splitext(save)
-            outfile = dot.render(filename=base, cleanup=True)
+            dot.render(filename=base, cleanup=True)
             # Graphviz adds extension; if user gave a PNG path, we’re good.
         if show:
             try:

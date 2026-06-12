@@ -37,3 +37,4 @@ test_syn.py
 .gitignore
 measure_candidate_stages.py
 run_valid_bug_cases.py
+debug/*

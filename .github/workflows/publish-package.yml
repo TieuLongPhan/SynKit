@@ -3,7 +3,7 @@ name: PyPI publish
 on:
   push:
     branches:
-      - beta
+      - mech
   release:
     types:
       - published
@@ -35,8 +35,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install build twine packaging
 
-      - name: Validate beta version on beta branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/beta'
+      - name: Validate beta version on mech branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/mech'
         run: |
           python - <<'PY'
           import tomllib
@@ -50,8 +50,8 @@ jobs:
 
           if not parsed.is_prerelease:
               raise SystemExit(
-                  f"Beta branch must use a pre-release version, e.g. 0.1.0b1. "
-                  f"Current version is: {version}"
+                  f"Mech branch beta publish must use a pre-release version, "
+                  f"e.g. 0.1.0b1. Current version is: {version}"
               )
 
           print(f"Valid beta/pre-release version: {version}")

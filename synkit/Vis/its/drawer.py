@@ -16,7 +16,7 @@ import networkx as nx
 from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.IO.chem_converter import rsmi_to_its
-from synkit.Vis.molecule_drawer import (
+from synkit.Vis.molecule.drawer import (
     _draw_aromatic_circles,
     _draw_bond_lines,
     _edge_is_aromatic,
@@ -27,7 +27,7 @@ from synkit.Vis.molecule_drawer import (
     _luminance,
     _set_padded_limits,
 )
-from synkit.Vis.reaction_drawer import draw_reaction_graphs, find_reaction_highlights
+from synkit.Vis.molecule.reaction import draw_reaction_graphs, find_reaction_highlights
 from synkit.Vis.visual_drawer import draw_graph
 
 
@@ -134,7 +134,7 @@ def draw_its_graph(
 
     # Draw panels directly here so the diagnostic ITS delta can share one
     # figure with the molecular projections.
-    from synkit.Vis.reaction_drawer import _components, _draw_arrow, _draw_part
+    from synkit.Vis.molecule.reaction import _components, _draw_arrow, _draw_part
 
     highlights = find_reaction_highlights(reactant, product)
     panel = 0

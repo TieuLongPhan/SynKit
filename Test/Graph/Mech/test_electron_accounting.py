@@ -7,6 +7,7 @@ from synkit.Graph.Mech.electron_accounting import (
     bond_order_sum,
     graph_to_sanitized_kekule_mol,
     recompute_charge,
+    refresh_changed_atom_charge,
     refresh_electron_fields,
 )
 
@@ -72,6 +73,36 @@ class TestElectronAccounting(unittest.TestCase):
         self.assertEqual(bond_order_sum(refreshed, 1), 2.0)
         self.assertEqual(recompute_charge(refreshed, 1), 0.0)
         self.assertFalse(refreshed.nodes[1]["charge_mismatch"])
+
+    def test_refresh_changed_atom_charge_only_updates_selected_maps(self):
+        graph = nx.Graph()
+        graph.add_node(
+            "o",
+            atom_map=1,
+            element="O",
+            charge=99,
+            hcount=1,
+            lone_pairs=3,
+            radical=0,
+            valence_electrons=6,
+        )
+        graph.add_node(
+            "c",
+            atom_map=2,
+            element="C",
+            charge=99,
+            hcount=3,
+            lone_pairs=0,
+            radical=0,
+            valence_electrons=4,
+        )
+
+        reports = refresh_changed_atom_charge(graph, [1])
+
+        self.assertEqual(len(reports), 1)
+        self.assertEqual(reports[0].atom_map, 1)
+        self.assertEqual(graph.nodes["o"]["charge"], -1)
+        self.assertEqual(graph.nodes["c"]["charge"], 99)
 
     def test_refresh_detects_charge_mismatch(self):
         graph = nx.Graph()

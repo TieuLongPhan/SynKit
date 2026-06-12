@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from synkit.IO.chem_converter import rsmi_to_graph
-from synkit.Vis.molecule_drawer import draw_molecule_graph
+from synkit.Vis.molecule.drawer import draw_molecule_graph
 
 
 @dataclass(frozen=True)

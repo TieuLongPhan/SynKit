@@ -100,31 +100,19 @@ class ITSExpand:
             )
 
     @staticmethod
-    def _validate_atom_maps_within_range(
-        atom_maps: list[int],
-        n_nodes: int,
-    ) -> None:
-        """Validate that atom-map numbers can be used as contiguous node IDs.
-
-        In the side graph, we want final node IDs to remain exactly ``1..N``.
-        Therefore, a mapped atom can only be moved to its atom-map number if
-        that number is within ``1..N``.
+    def _validate_positive_atom_maps(atom_maps: list[int]) -> None:
+        """Validate that atom-map numbers can be used as node IDs.
 
         :param atom_maps: Nonzero atom-map numbers.
         :type atom_maps: list[int]
-        :param n_nodes: Number of nodes in the side graph.
-        :type n_nodes: int
-        :raises ValueError: If any atom-map number is outside ``1..N``.
+        :raises ValueError: If any atom-map number is not positive.
         """
-        bad_targets = [
-            atom_map for atom_map in atom_maps if atom_map < 1 or atom_map > n_nodes
-        ]
+        bad_targets = [atom_map for atom_map in atom_maps if atom_map < 1]
 
         if bad_targets:
             raise ValueError(
-                "Cannot keep side graph node ids contiguous from 1..N while "
-                f"also using atom_map as node id. The following atom maps are "
-                f"outside 1..{n_nodes}: {bad_targets}"
+                "Cannot use non-positive atom_map values as node ids. "
+                f"Invalid atom maps: {bad_targets}"
             )
 
     @staticmethod
@@ -154,16 +142,32 @@ class ITSExpand:
         return mapping, used_ids
 
     @staticmethod
+    def _next_free_positive_id(used_ids: set[int], start: int = 1) -> int:
+        """Return the smallest positive integer not present in ``used_ids``.
+
+        :param used_ids: Node IDs already occupied by mapped atoms.
+        :type used_ids: set[int]
+        :param start: First candidate ID.
+        :type start: int
+        :returns: Available positive node ID.
+        :rtype: int
+        """
+        candidate = max(1, start)
+        while candidate in used_ids:
+            candidate += 1
+        return candidate
+
+    @staticmethod
     def _assign_unmapped_nodes(
         graph,
         mapping: dict,
         used_ids: set[int],
     ) -> dict:
-        """Assign unmapped atoms while preserving contiguous node IDs.
+        """Assign unmapped atoms while avoiding mapped atom-map IDs.
 
         Unmapped atoms keep their original node ID when possible. If an
-        unmapped atom's node ID conflicts with a mapped atom's target ID, it is
-        moved into one of the remaining free IDs inside ``1..N``.
+        unmapped atom's node ID conflicts with a mapped atom-map target, it is
+        moved into the smallest unused positive ID.
 
         :param graph: Molecular side graph.
         :type graph: networkx.Graph
@@ -174,9 +178,7 @@ class ITSExpand:
         :returns: Complete old-node to new-node mapping.
         :rtype: dict
         """
-        n_nodes = graph.number_of_nodes()
-        free_ids = set(range(1, n_nodes + 1)) - used_ids
-        pending_unmapped = []
+        next_candidate = 1
 
         for node, data in graph.nodes(data=True):
             atom_map = ITSExpand._atom_map(data)
@@ -184,36 +186,39 @@ class ITSExpand:
             if atom_map != 0:
                 continue
 
-            if isinstance(node, int) and node in free_ids:
+            if isinstance(node, int) and node > 0 and node not in used_ids:
                 mapping[node] = node
-                free_ids.remove(node)
-            else:
-                pending_unmapped.append(node)
+                used_ids.add(node)
+                next_candidate = max(next_candidate, node + 1)
+                continue
 
-        for old_node, new_node in zip(pending_unmapped, sorted(free_ids)):
-            mapping[old_node] = new_node
+            new_node = ITSExpand._next_free_positive_id(used_ids, next_candidate)
+            mapping[node] = new_node
+            used_ids.add(new_node)
+            next_candidate = new_node + 1
 
         return mapping
 
     @staticmethod
-    def _validate_contiguous_mapping(mapping: dict, n_nodes: int) -> None:
-        """Validate that a mapping produces exactly node IDs ``1..N``.
+    def _validate_complete_unique_mapping(mapping: dict, n_nodes: int) -> None:
+        """Validate that every source node maps to a unique target node.
 
         :param mapping: Old-node to new-node mapping.
         :type mapping: dict
         :param n_nodes: Number of nodes in the graph.
         :type n_nodes: int
-        :raises RuntimeError: If the mapped node IDs are not exactly ``1..N``.
+        :raises RuntimeError: If the mapping is incomplete or has collisions.
         """
-        expected_ids = set(range(1, n_nodes + 1))
-        actual_ids = set(mapping.values())
-
-        if actual_ids != expected_ids:
-            missing = sorted(expected_ids - actual_ids)
-            extra = sorted(actual_ids - expected_ids)
+        if len(mapping) != n_nodes:
             raise RuntimeError(
-                f"Reindexing failed. Missing node ids: {missing}; "
-                f"extra node ids: {extra}"
+                f"Reindexing failed. Expected {n_nodes} mapped nodes; "
+                f"got {len(mapping)}."
+            )
+
+        if len(set(mapping.values())) != n_nodes:
+            raise RuntimeError(
+                "Reindexing failed. Multiple source nodes map to the same "
+                "target node id."
             )
 
     @staticmethod
@@ -224,25 +229,25 @@ class ITSExpand:
 
         1. Every atom with ``atom_map != 0`` is assigned to node ID
            ``atom_map``.
-        2. The final node IDs are exactly contiguous from ``1..N``.
+        2. Every unmapped atom is assigned a unique positive node ID that does
+           not collide with preserved atom-map IDs.
 
         :param graph: Molecular side graph.
         :type graph: networkx.Graph
         :returns: Old-node to new-node mapping.
         :rtype: dict
-        :raises ValueError: If atom-map values are duplicated or incompatible
-            with contiguous node IDs.
+        :raises ValueError: If atom-map values are duplicated or non-positive.
         """
         n_nodes = graph.number_of_nodes()
         atom_maps = ITSExpand._nonzero_atom_maps(graph)
 
         ITSExpand._validate_unique_atom_maps(atom_maps)
-        ITSExpand._validate_atom_maps_within_range(atom_maps, n_nodes)
+        ITSExpand._validate_positive_atom_maps(atom_maps)
 
         mapping, used_ids = ITSExpand._assign_mapped_nodes(graph)
         mapping = ITSExpand._assign_unmapped_nodes(graph, mapping, used_ids)
 
-        ITSExpand._validate_contiguous_mapping(mapping, n_nodes)
+        ITSExpand._validate_complete_unique_mapping(mapping, n_nodes)
 
         return mapping
 
@@ -317,7 +322,9 @@ class ITSExpand:
     def reindex_side_graph_by_atom_map(graph):
         """Reindex a side graph so mapped atoms use ``atom_map`` as node ID.
 
-        The returned graph keeps node IDs contiguous from ``1..N``.
+        The returned graph keeps mapped atom node IDs equal to their atom-map
+        values. Unmapped atom node IDs remain compact where possible, but may
+        become sparse to avoid collisions with preserved atom maps.
 
         This is useful because the reaction-center graph produced by
         ``ITSConstruction().ITSGraph(...)`` uses atom-map numbers as node IDs,
@@ -344,10 +351,10 @@ class ITSExpand:
 
         :param graph: Molecular side graph.
         :type graph: networkx.Graph
-        :returns: Reindexed side graph with contiguous node IDs.
+        :returns: Reindexed side graph with preserved mapped node IDs.
         :rtype: networkx.Graph
         :raises ValueError: If atom-map numbers cannot be safely used as node
-            IDs while preserving ``1..N`` indexing.
+            IDs.
         """
         mapping = ITSExpand._build_side_graph_reindex_mapping(graph)
         return ITSExpand._rebuild_graph_with_mapping(graph, mapping)

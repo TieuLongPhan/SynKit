@@ -2,9 +2,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-plt.rc("text", usetex=True)  # Enable LaTeX rendering
-plt.rc("font", family="serif")  # Optional: use serif font
-
 
 def scatter_plot(
     data_train,

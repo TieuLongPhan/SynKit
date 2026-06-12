@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
-from synkit.Vis.its_drawer import draw_its_only
+from synkit.Vis.its.drawer import draw_its_only
 
 ELEMENT_COLORS = {
     "H": "#ffffff",

@@ -5,7 +5,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 from synkit.IO import rsmi_to_its  # noqa: E402
-from synkit.Vis.its_drawer import (  # noqa: E402
+from synkit.Vis.its import (  # noqa: E402
     draw_its_from_rsmi,
     draw_its_graph,
     draw_its_only,
@@ -65,7 +65,7 @@ class TestITSDrawer(unittest.TestCase):
         self.assertEqual(ax.get_title(), "sigma/pi ITS")
 
     def test_sigma_pi_labels_only_include_changed_components(self):
-        from synkit.Vis.its_drawer import _its_display_graph
+        from synkit.Vis.its.drawer import _its_display_graph
 
         its = rsmi_to_its(self.rsmi, core=False, format="tuple")
         display = _its_display_graph(its)
@@ -80,7 +80,7 @@ class TestITSDrawer(unittest.TestCase):
         self.assertTrue(all("π" not in label for label in labels))
 
     def test_electron_labels_capture_charge_and_lone_pair_changes_separately(self):
-        from synkit.Vis.its_drawer import _its_display_graph
+        from synkit.Vis.its.drawer import _its_display_graph
 
         rsmi = "[CH3:1][Cl:2].[NH3:3]>>[CH3:1][NH3+:3].[Cl-:2]"
         its = rsmi_to_its(rsmi, core=False, format="tuple")
