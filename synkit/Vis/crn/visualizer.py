@@ -5,6 +5,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    TYPE_CHECKING,
     Tuple,
 )
 
@@ -15,7 +16,8 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
-from graphviz import Digraph
+if TYPE_CHECKING:
+    from graphviz import Digraph
 
 
 class CRNVisualizer:
@@ -704,6 +706,7 @@ class CRNVisualizer:
         node_attr: Optional[Dict[str, str]],
         edge_attr: Optional[Dict[str, str]],
     ) -> Digraph:
+        from graphviz import Digraph
 
         ga = dict(rankdir="LR", splines="spline", nodesep="0.4", ranksep="1.0")
         if graph_attr:
@@ -787,6 +790,7 @@ class CRNVisualizer:
         node_attr: Optional[Dict[str, str]],
         edge_attr: Optional[Dict[str, str]],
     ) -> Digraph:
+        from graphviz import Digraph
 
         ga = dict(splines="spline", overlap="false")
         if graph_attr:
@@ -862,6 +866,8 @@ class CRNVisualizer:
         node_attr: Optional[Dict[str, str]],
         edge_attr: Optional[Dict[str, str]],
     ):
+        from graphviz import Digraph
+
         # Build/obtain species graph
         if hasattr(self.hg, "to_species_graph"):
             Gs = self.hg.to_species_graph()
