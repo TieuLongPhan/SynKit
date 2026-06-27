@@ -248,7 +248,7 @@ class WLSel:
         if self.element_key is None:
             return g
         key = self.element_key
-        keep = [n for n, d in g.nodes(data=True) if d.get(key) != "*"]
+        keep = [n for n, d in g.nodes(data=True) if d.get(key) not in ("*", ("*", "*"))]
         return g.subgraph(keep)
 
     def _base_labels(self, g: nx.Graph) -> List[str]:

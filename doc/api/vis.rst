@@ -7,19 +7,19 @@ graph adapters, CRNs, embeddings, and output export helpers.
 Modern molecule/reaction/ITS renderers
 --------------------------------------
 
-.. automodule:: synkit.Vis.molecule_drawer
+.. automodule:: synkit.Vis.molecule.drawer
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.reaction_drawer
+.. automodule:: synkit.Vis.molecule.reaction
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.its_drawer
+.. automodule:: synkit.Vis.its.drawer
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.mtg_drawer
+.. automodule:: synkit.Vis.mtg.drawer
    :members:
    :show-inheritance:
 
@@ -37,11 +37,11 @@ Diagnostic adapter layer
 Legacy and utility visualizers
 ------------------------------
 
-.. automodule:: synkit.Vis.rxn_vis
+.. automodule:: synkit.Vis.reaction.rxn
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.rule_vis
+.. automodule:: synkit.Vis.reaction.rule
    :members:
    :show-inheritance:
 
@@ -49,15 +49,15 @@ Legacy and utility visualizers
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.chemical_space
+.. automodule:: synkit.Vis.space.chemical
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.crn_vis
+.. automodule:: synkit.Vis.crn.visualizer
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.embedding
+.. automodule:: synkit.Vis.space.embedding
    :members:
    :show-inheritance:
 

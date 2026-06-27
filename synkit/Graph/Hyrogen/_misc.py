@@ -406,25 +406,37 @@ def check_hcount_change(react_graph: nx.Graph, prod_graph: nx.Graph) -> int:
     Returns:
     int: The maximum hydrogen change observed across all nodes.
     """
-    # max_hydrogen_change = 0
+
+    def _coerce_hcount(value: Any) -> int:
+        try:
+            if isinstance(value, (tuple, list)):
+                values = [int(item or 0) for item in value]
+                return max(values, default=0)
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
     hcount_break, _ = check_explicit_hydrogen(react_graph)
     hcount_form, _ = check_explicit_hydrogen(prod_graph)
 
-    for node_id, attrs in react_graph.nodes(data=True):
-        react_hcount = attrs.get("hcount", 0)
-        if node_id in prod_graph:
-            prod_hcount = prod_graph.nodes[node_id].get("hcount", 0)
-        else:
-            prod_hcount = 0
+    for node_id in set(react_graph.nodes) | set(prod_graph.nodes):
+        react_hcount = (
+            _coerce_hcount(react_graph.nodes[node_id].get("hcount", 0))
+            if node_id in react_graph
+            else 0
+        )
+        prod_hcount = (
+            _coerce_hcount(prod_graph.nodes[node_id].get("hcount", 0))
+            if node_id in prod_graph
+            else 0
+        )
 
         if react_hcount >= prod_hcount:
             hcount_break += react_hcount - prod_hcount
         else:
             hcount_form += prod_hcount - react_hcount
 
-        max_hydrogen_change = max(hcount_break, hcount_form)
-
-    return max_hydrogen_change
+    return max(hcount_break, hcount_form)
 
 
 def get_cycle_member_rings(G: nx.Graph, type="minimal") -> List[int]:

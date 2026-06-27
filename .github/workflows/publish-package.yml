@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - beta
+      - mech
   release:
     types:
       - published
@@ -55,6 +56,35 @@ jobs:
               )
 
           print(f"Valid beta/pre-release version: {version}")
+          PY
+
+      - name: Validate mech meta version on mech branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/mech'
+        run: |
+          python - <<'PY'
+          import tomllib
+          from packaging.version import Version
+
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
+
+          version = data["project"]["version"]
+          parsed = Version(version)
+          version_text = str(parsed).lower()
+
+          if not parsed.is_prerelease:
+              raise SystemExit(
+                  f"Mech branch must use a PyPI pre-release/meta version. "
+                  f"Current version is: {version}"
+              )
+
+          if "mech" not in version_text:
+              raise SystemExit(
+                  f"Mech branch version must include 'mech' in its metadata, "
+                  f"e.g. 0.1.0.dev1+mech. Current version is: {version}"
+              )
+
+          print(f"Valid mech meta pre-release version: {version}")
           PY
 
       - name: Build source and wheel distributions

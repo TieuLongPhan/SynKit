@@ -128,6 +128,10 @@ def electron_aware_node_match(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
         )
         if attr in {"hcount", "lone_pairs"}:
+            if host_value is None:
+                host_value = 0
+            if pattern_value is None:
+                pattern_value = 0
             if host_value < pattern_value:
                 return False
             continue
