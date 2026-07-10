@@ -8,7 +8,7 @@ matplotlib.use("Agg")
 from synkit.Graph.ITS.its_construction import ITSConstruction  # noqa: E402
 from synkit.Graph.MTG.mtg import MTG  # noqa: E402
 from synkit.IO import load_database  # noqa: E402
-from synkit.Vis.mtg.drawer import (  # noqa: E402
+from synkit.Vis.mtg_drawer import (  # noqa: E402
     _mtg_display_graph,
     draw_mtg_graph,
     draw_mtg_steps,

@@ -11,6 +11,7 @@ from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 
 class TestSynReactorRealCases(unittest.TestCase):
+    REAL_CASE_BATCH_SIZE = 34393
     REAL_CASE_BATCH_SIZE = 100
     PROGRESS_STEPS = 10
     ERROR_LOG = Path("error.txt")

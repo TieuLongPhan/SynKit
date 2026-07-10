@@ -168,11 +168,11 @@ class SynReactor:
         """Validate and enforce consistency of `explicit_h` and
         `implicit_temp`.
 
-        :raises ValueError: If `explicit_h` is True while `implicit_temp` is True.
+        :raises ValueError: If `explicit_h` is True while `implicit_temp` is False.
         """
         if self.implicit_temp and self.explicit_h:
             raise ValueError(
-                "`explicit_h` cannot be True when `implicit_temp` is True."
+                "`explicit_h` cannot be True when `implicit_temp` is False."
             )
 
     # ------------------------------------------------------------------
@@ -278,13 +278,6 @@ class SynReactor:
             pattern_graph = self._with_aromatic_n_pi_roles(pattern_graph)
             matching_host = self._with_aromatic_n_pi_roles(self._matching_host_graph())
             node_attrs, edge_attrs = resolve_template_match_attrs(pattern_graph)
-            # For electron-aware (LWG/tuple-format) templates sigma/pi edge
-            # matching is sufficient to identify reaction-centre atoms.
-            # Dropping charge from node_attrs avoids false mismatches due to
-            # protonation-state differences between template and substrate
-            # (e.g. HN3 in local_mapper vs azide anion in org_rxn).
-            if "sigma_order" in edge_attrs and "pi_order" in edge_attrs:
-                node_attrs = [a for a in node_attrs if a != "charge"]
 
             # --- Choose matcher ------------------------------------------------
             if self.partial:
@@ -928,11 +921,7 @@ class SynReactor:
                 representative_indices.append(bucket[0][0])
                 continue
             prepared = [prepared for _, prepared in bucket]
-            classes, _ = cluster.iterative_cluster(
-                prepared,
-                nodeMatch=cluster.nodeMatch,
-                edgeMatch=cluster.edgeMatch,
-            )
+            classes, _ = cluster.iterative_cluster(prepared)
             for cls in classes:
                 representative_indices.append(bucket[min(cls)][0])
 
@@ -1071,15 +1060,7 @@ class SynReactor:
                 left_value = host_n.get(key)
                 if left_value is None:
                     left_value = rc_value[0]
-                if key == "lone_pairs":
-                    # Apply the template's LP delta to the host's actual
-                    # reactant LP rather than the template's absolute product
-                    # value. This preserves the host's charge state so that
-                    # e.g. [O-] → [OH-] rather than [OH+].
-                    rc_delta = rc_value[1] - rc_value[0]
-                    host_n[key] = (left_value, left_value + rc_delta)
-                else:
-                    host_n[key] = (left_value, rc_value[1])
+                host_n[key] = (left_value, rc_value[1])
 
         host_n["template_charge"] = (host_n.get("charge"), product_types[3])
 

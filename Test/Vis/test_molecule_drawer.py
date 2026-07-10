@@ -6,7 +6,7 @@ import networkx as nx
 matplotlib.use("Agg")
 
 from synkit.IO.chem_converter import smiles_to_graph  # noqa: E402
-from synkit.Vis.molecule import draw_molecule_graph  # noqa: E402
+from synkit.Vis.molecule_drawer import draw_molecule_graph  # noqa: E402
 
 
 class TestMoleculeDrawer(unittest.TestCase):

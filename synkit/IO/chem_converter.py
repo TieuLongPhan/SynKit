@@ -666,28 +666,20 @@ def its_to_rsmi(
             sanitize=sanitize,
             preserve_atom_maps=preserved_hydrogens,
         )
-        product_smiles = graph_to_smi(
-            product_graph,
-            sanitize=sanitize,
-            preserve_atom_maps=preserved_hydrogens,
-        )
-        if product_smiles is None:
-            try:
-                if explicit_hydrogen:
-                    product = product_graph
-                else:
-                    from synkit.Graph.Hyrogen._misc import implicit_hydrogen
+        try:
+            if explicit_hydrogen:
+                product = product_graph
+            else:
+                from synkit.Graph.Hyrogen._misc import implicit_hydrogen
 
-                    product = implicit_hydrogen(
-                        product_graph,
-                        set(preserved_hydrogens),
-                    )
-                product_smiles = Chem.MolToSmiles(
-                    graph_to_sanitized_kekule_mol(product)
+                product = implicit_hydrogen(
+                    product_graph,
+                    set(preserved_hydrogens),
                 )
-            except Exception as exc:
-                logger.debug("Error generating tuple product SMILES: %s", exc)
-                product_smiles = None
+            product_smiles = Chem.MolToSmiles(graph_to_sanitized_kekule_mol(product))
+        except Exception as exc:
+            logger.debug("Error generating tuple product SMILES: %s", exc)
+            product_smiles = None
         rsmi = (
             f"{reactant_smiles}>>{product_smiles}"
             if reactant_smiles is not None and product_smiles is not None

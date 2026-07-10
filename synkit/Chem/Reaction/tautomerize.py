@@ -121,10 +121,7 @@ class Tautomerize:
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             return []
-        try:
-            graph, groups = smiles_to_graph_and_functional_groups(smiles)
-        except ValueError:
-            return []
+        graph, groups = smiles_to_graph_and_functional_groups(smiles)
         node_to_idx = {
             (
                 atom.GetAtomMapNum() if atom.GetAtomMapNum() else atom.GetIdx() + 1
