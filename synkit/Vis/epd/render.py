@@ -395,11 +395,12 @@ def draw_its_graph(
     show_atom_map: bool = True,
     atom_radius: float = 0.24,
     show_all_its_labels: bool = False,
+    show_changed_labels: bool = True,
     use_rc_glow: bool = True,
     fade_non_rc: bool = False,
     show_node_changes: bool = True,
 ) -> None:
-    """Draw an ITS panel with ``(before, after)`` bond labels."""
+    """Draw an ITS panel with optional ``(before, after)`` bond labels."""
     for u, v, _ in its_graph.edges(data=True):
         sign = its_edge_change_sign(
             its_graph,
@@ -440,7 +441,7 @@ def draw_its_graph(
             zorder=1,
         )
 
-        if changed or show_all_its_labels:
+        if show_all_its_labels or (show_changed_labels and changed):
             txt = ax.text(
                 *mid(pos[u], pos[v]),
                 label,
@@ -499,23 +500,37 @@ def draw_its_graph(
             mt.set_path_effects([pe.withStroke(linewidth=1.4, foreground="white")])
 
 
-def add_legend(ax: plt.Axes, style, anchor=(0.5, -0.04)) -> None:
-    """Add a minimal legend beneath the plot."""
-    handles = [
-        Line2D(
-            [0], [0], color=style.broken_color, lw=4.0, label="bond order decreases"
-        ),
-        Line2D(
-            [0], [0], color=style.forming_color, lw=4.0, label="bond order increases"
-        ),
-        Line2D([0], [0], color=style.shift_color, lw=4.0, label="bond shift"),
-    ]
+def add_legend(ax: plt.Axes, style, transitions=None, anchor=(0.5, -0.04)) -> None:
+    """Add a compact legend containing only electron-flow families in use."""
+    kinds = {str(getattr(transition, "kind", "")) for transition in (transitions or [])}
+    if not kinds:
+        kinds = {"LP-/B+", "B-/LP+", "B-/B+"}
+
+    handles = []
+    if "B-/LP+" in kinds:
+        handles.append(
+            Line2D([0], [0], color=style.broken_color, lw=4.0, label="bond breaks")
+        )
+    if "LP-/B+" in kinds:
+        handles.append(
+            Line2D([0], [0], color=style.forming_color, lw=4.0, label="bond forms")
+        )
+    if "B-/B+" in kinds:
+        handles.append(
+            Line2D([0], [0], color=style.shift_color, lw=4.0, label="bond shift")
+        )
+    if any(kind in {"LP-/H+", "H-/LP+", "H-/B+"} for kind in kinds):
+        handles.append(
+            Line2D([0], [0], color=style.proton_color, lw=4.0, label="proton transfer")
+        )
+    if not handles:
+        return
     leg = ax.legend(
         handles=handles,
         loc="lower center",
         bbox_to_anchor=anchor,
         bbox_transform=ax.transAxes,
-        ncol=3,
+        ncol=min(len(handles), 3),
         frameon=False,
         fontsize=10.5,
         handlelength=2.8,

@@ -164,6 +164,25 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 
+
+def _strip_legacy_autodoc_bodies(app, what, name, obj, options, lines):
+    """Keep API object inventories buildable while legacy docstrings migrate.
+
+    SynKit's API reference intentionally lists the public modules, classes,
+    methods, and signatures.  A large portion of the older source docstrings
+    is free-form text rather than valid reStructuredText, however; feeding
+    those bodies to Sphinx produces malformed-list, indentation, and unknown
+    role errors.  The hand-written guides in ``doc/`` provide the narrative
+    documentation, while autodoc remains a reliable generated API inventory.
+    """
+    lines.clear()
+
+
+def setup(app):
+    """Register documentation-build hooks."""
+    app.connect("autodoc-process-docstring", _strip_legacy_autodoc_bodies)
+
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "networkx": ("https://networkx.org/documentation/stable/", None),
@@ -202,6 +221,11 @@ try:
     html_theme = "pydata_sphinx_theme"
 
     html_theme_options = {
+        "logo": {
+            "image_light": "_static/logo.svg",
+            "image_dark": "_static/logo-dark.svg",
+            "alt_text": "SynKit",
+        },
         # Header
         "navbar_start": ["navbar-logo"],
         # IMPORTANT: keep navbar-nav so the theme can compute the active section

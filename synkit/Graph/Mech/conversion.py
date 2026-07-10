@@ -73,6 +73,69 @@ def split_arrow_code(arrow_code: str) -> list[str]:
     return [s.strip() for s in arrow_code.split(";") if s.strip()]
 
 
+def ef_arrow_code_to_arrow_code(ef_arrow_code: str) -> str:
+    """Normalize an EF-SMIRKS hyphen-form flow code for SynKit conversion.
+
+    EF-SMIRKS stores one electron-flow step as ``source-target``; SynKit's
+    internal arrow-code helpers use ``source=target``.  For example,
+    ``"10,20-20,21"`` becomes ``"10,20=20,21"``.
+
+    :param ef_arrow_code: Semicolon-separated hyphen-form electron-flow code.
+    :type ef_arrow_code: str
+    :returns: Equivalent equals-form SynKit arrow code.
+    :rtype: str
+    :raises ValueError: If a step does not contain exactly one ``"-"``.
+    """
+    normalized_steps = []
+    for step in split_arrow_code(ef_arrow_code):
+        if step.count("-") != 1:
+            raise ValueError(
+                "An EF-SMIRKS electron-flow step must contain exactly one '-': "
+                f"{step!r}"
+            )
+        lhs, rhs = step.split("-", 1)
+        normalized_steps.append(f"{lhs.strip()}={rhs.strip()}")
+    if not normalized_steps:
+        raise ValueError("EF-SMIRKS electron-flow code is empty.")
+    return ";".join(normalized_steps)
+
+
+def arrow_code_to_ef_arrow_code(arrow_code: str) -> str:
+    """Convert internal equals-form arrow code to EF-SMIRKS hyphen form.
+
+    :param arrow_code: Semicolon-separated SynKit arrow code.
+    :type arrow_code: str
+    :returns: Equivalent hyphen-form electron-flow code.
+    :rtype: str
+    """
+    return ";".join(step.replace("=", "-", 1) for step in split_arrow_code(arrow_code))
+
+
+def split_ef_smirks(ef_smirks: str) -> tuple[str, str]:
+    """Split an EF-SMIRKS string into reaction SMILES and flow code.
+
+    An EF-SMIRKS is an atom-mapped reaction SMILES followed by whitespace and
+    a hyphen-form electron-flow code, e.g. ``"[CH3:1][Cl:2]>>[CH3:1].[Cl-:2]
+    1-1,2"``.
+
+    :param ef_smirks: RSMI followed by whitespace and electron-flow code.
+    :type ef_smirks: str
+    :returns: Reaction SMILES and hyphen-form electron-flow code.
+    :rtype: tuple[str, str]
+    :raises ValueError: If the input lacks an RSMI arrow or flow code.
+    """
+    try:
+        reaction_smiles, ef_arrow_code = ef_smirks.strip().rsplit(None, 1)
+    except ValueError as exc:
+        raise ValueError(
+            "EF-SMIRKS must contain reaction SMILES followed by whitespace and "
+            "an electron-flow code."
+        ) from exc
+    if ">>" not in reaction_smiles:
+        raise ValueError("EF-SMIRKS reaction component must contain '>>'.")
+    return reaction_smiles, ef_arrow_code
+
+
 def arrow_atom_maps(arrow_code: str) -> set[int]:
     """Return all atom maps used in an arrow code.
 
@@ -944,6 +1007,105 @@ def convert_reaction_arrow(
     result["diagnostics"] = diagnostics
 
     return result
+
+
+def ef_smirks_to_epd(
+    ef_smirks: str,
+    orbital_class: Optional[str] = None,
+    strict_bond_lookup: bool = True,
+) -> dict[str, Any]:
+    """Complete AAM and convert an EF-SMIRKS string into EPD data.
+
+    The supplied atom maps used by the electron-flow code are preserved. All
+    remaining atoms receive maps through :class:`ITSExpand`.  The result
+    contains both generic ``epd`` and Lewis-wavefunction-aware ``epd_lw``
+    records; the latter uses local ITS bond orders to distinguish sigma and pi
+    edits.
+
+    :param ef_smirks: RSMI followed by a hyphen-form electron-flow code.
+    :type ef_smirks: str
+    :param orbital_class: Optional source-dataset metadata.
+    :type orbital_class: Optional[str]
+    :param strict_bond_lookup: Whether missing ITS bond lookups should raise.
+    :type strict_bond_lookup: bool
+    :returns: Completed AAM, generic EPD, typed ``epd_lw``, and diagnostics.
+    :rtype: dict[str, Any]
+    """
+    reaction_smiles, ef_arrow_code = split_ef_smirks(ef_smirks)
+    arrow_code = ef_arrow_code_to_arrow_code(ef_arrow_code)
+    result = convert_reaction_arrow(
+        reaction_smiles=reaction_smiles,
+        arrow_code=arrow_code,
+        orbital_class=orbital_class,
+        expand_aam=True,
+        remove_non_arrow_maps=True,
+        strict_bond_lookup=strict_bond_lookup,
+    )
+    result.update(
+        {
+            "ef_smirks": ef_smirks,
+            "ef_arrow_code": ef_arrow_code,
+            "complete_aam": result["expanded_rsmi"],
+            "epd": result["converted"],
+            "epd_lw": result["typed_converted"],
+        }
+    )
+    return result
+
+
+def epd_to_ef_smirks(complete_aam: str, epd: list[list[Any]]) -> str:
+    """Reconstruct an EF-SMIRKS string from complete AAM and EPD records.
+
+    ``epd`` may contain generic action names (``"B-/B+"``) or typed Lewis
+    names (``"Sigma-/Pi+"``). Only action direction and source/target map
+    lists are needed to reconstruct the electron-flow code.
+
+    :param complete_aam: Fully atom-mapped reaction SMILES.
+    :type complete_aam: str
+    :param epd: Generic or typed EPD records of ``[action, source, target]``.
+    :type epd: list[list[Any]]
+    :returns: EF-SMIRKS text with a hyphen-form electron-flow code.
+    :rtype: str
+    :raises ValueError: If AAM or EPD records are malformed or unsupported.
+    """
+    if complete_aam.count(">>") != 1:
+        raise ValueError("complete_aam must contain exactly one '>>'.")
+    if not epd:
+        raise ValueError("epd must contain at least one electron-pushing step.")
+
+    def format_maps(atom_maps: list[int]) -> str:
+        """Format an atom-map sequence for one EF-SMIRKS endpoint."""
+        return ",".join(str(atom_map) for atom_map in atom_maps)
+
+    steps = []
+    for record in epd:
+        if len(record) < 3:
+            raise ValueError(f"Invalid EPD record: {record!r}")
+        action, source, target = record[:3]
+        action_parts = str(action).split("/", 1)
+        if len(action_parts) != 2:
+            raise ValueError(f"Invalid EPD action: {action!r}")
+        consumed, produced = action_parts
+        source = [int(atom_map) for atom_map in source]
+        target = [int(atom_map) for atom_map in target]
+
+        if consumed == "LP-" and len(source) == 1 and len(target) in {1, 2}:
+            lhs, rhs = source, target
+        elif produced == "LP+" and len(source) == 2 and len(target) == 1:
+            lhs, rhs = source, target
+        elif (
+            consumed.endswith("-")
+            and produced.endswith("+")
+            and len(source) == 2
+            and len(target) == 2
+        ):
+            lhs, rhs = source, target
+        else:
+            raise ValueError(f"Unsupported EPD record for EF-SMIRKS: {record!r}")
+
+        steps.append(f"{format_maps(lhs)}-{format_maps(rhs)}")
+
+    return f"{complete_aam} {';'.join(steps)}"
 
 
 def convert_record(

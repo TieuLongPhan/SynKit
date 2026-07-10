@@ -1,6 +1,63 @@
 Changelog
 =========
 
+Version 1.5
+-----------
+
+**Atom-to-atom mapping**
+
+- Replaced the former monolithic ``wl_mapper`` module with the modular
+  ``synkit.Chem.Reaction.Mapper`` package. The public entry point is
+  ``AAMapper``, which combines WL/SLAP mapping with optional exact
+  reaction-centre refinement, symmetry-distinct enumeration, and certificates.
+- Added mapped-reaction ITS hashing, mapped-reaction deduplication, and
+  electron-balance checks to the mapper chemistry layer.
+- Added hydrogen-count-aware ranking and reaction-centre-only explicit-H
+  output for mapped reactions.
+- Made ``scipy>=1.14.0`` a required dependency because the WL/SLAP mapper and
+  exact refinement use SciPy's linear-assignment solver.
+
+**Synthesis**
+
+- Expanded ``RBLEngine`` with explicit ``fast_track``, ``early_stop``, and
+  ``full`` execution modes, pluggable exact or approximate MCS matching, and
+  wildcard-aware ITS fusion.
+
+**EF-SMIRKS conversion**
+
+- Added ``ef_smirks_to_epd`` and ``epd_to_ef_smirks``. The forward helper
+  preserves flow-code maps, completes AAM, and returns generic EPD plus typed
+  ``epd_lw`` records; the reverse helper reconstructs EF-SMIRKS from complete
+  AAM and either EPD representation.
+- Exposed these helpers from both ``synkit.IO`` and ``synkit.IO.conversion``.
+
+**Electron-pushing visualization**
+
+- Added an EF-SMIRKS-to-EPD visualization workflow using
+  ``MechanismVisualizer``. It renders the completed AAM, typed ``epd_lw``
+  flow, product, and ITS changes in one trajectory figure.
+- Refined trajectory layout, arrow styling, spacing, and legends. Step-number
+  bubbles, ITS bond-pair labels, and electron-state badges are now opt-in so
+  report figures remain compact by default.
+
+**Documentation and user interface**
+
+- Added a versioned EF-SMIRKS/EPD figure and API examples for direct use from
+  ``synkit.IO``.
+- Improved dark-mode navigation contrast and added a dedicated dark-theme logo.
+
+**Highlights**
+
+- Added the Lewis State Graph (LSG) reactor representation, graph-native
+  functional-group detection, compact MTG timelines, and modern molecule,
+  reaction, ITS, and MTG visualization helpers.
+
+**Compatibility**
+
+- ``AAMValidator`` remains available from ``synkit.Chem.Reaction`` as a
+  backward-compatible import path. New mapper code should import public
+  classes from ``synkit.Chem.Reaction.Mapper``.
+
 Version 1.4.0
 -------------
 

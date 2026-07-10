@@ -6,6 +6,9 @@ Input/output helpers and format conversion utilities.
 Core conversion
 ---------------
 
+.. automodule:: synkit.IO.conversion
+   :members:
+
 .. automodule:: synkit.IO.chem_converter
    :members:
 

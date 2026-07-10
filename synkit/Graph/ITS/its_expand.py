@@ -128,6 +128,17 @@ class ITSExpand:
             )
 
     @staticmethod
+    def _validate_positive_atom_maps(atom_maps: list[int]) -> None:
+        """Validate that atom-map numbers are valid positive node IDs."""
+        bad_targets = [atom_map for atom_map in atom_maps if atom_map < 1]
+
+        if bad_targets:
+            raise ValueError(
+                "Cannot use non-positive atom_map values as node ids. "
+                f"Invalid atom maps: {bad_targets}"
+            )
+
+    @staticmethod
     def _assign_mapped_nodes(graph) -> tuple[dict, set[int]]:
         """Assign mapped atoms to node IDs equal to their atom-map numbers.
 
@@ -196,6 +207,33 @@ class ITSExpand:
         return mapping
 
     @staticmethod
+    def _assign_unmapped_nodes_sparse(
+        graph,
+        mapping: dict,
+        used_ids: set[int],
+    ) -> dict:
+        """Assign unmapped atoms without changing preserved sparse map IDs."""
+        next_candidate = 1
+
+        for node, data in graph.nodes(data=True):
+            if ITSExpand._atom_map(data) != 0:
+                continue
+
+            if isinstance(node, int) and node > 0 and node not in used_ids:
+                mapping[node] = node
+                used_ids.add(node)
+                next_candidate = max(next_candidate, node + 1)
+                continue
+
+            while next_candidate in used_ids:
+                next_candidate += 1
+            mapping[node] = next_candidate
+            used_ids.add(next_candidate)
+            next_candidate += 1
+
+        return mapping
+
+    @staticmethod
     def _validate_contiguous_mapping(mapping: dict, n_nodes: int) -> None:
         """Validate that a mapping produces exactly node IDs ``1..N``.
 
@@ -217,14 +255,35 @@ class ITSExpand:
             )
 
     @staticmethod
-    def _build_side_graph_reindex_mapping(graph) -> dict:
+    def _validate_complete_unique_mapping(mapping: dict, n_nodes: int) -> None:
+        """Validate that every source node maps to one unique target node."""
+        if len(mapping) != n_nodes:
+            raise RuntimeError(
+                f"Reindexing failed. Expected {n_nodes} mapped nodes; "
+                f"got {len(mapping)}."
+            )
+
+        if len(set(mapping.values())) != n_nodes:
+            raise RuntimeError(
+                "Reindexing failed. Multiple source nodes map to the same "
+                "target node id."
+            )
+
+    @staticmethod
+    def _build_side_graph_reindex_mapping(
+        graph,
+        contiguous: bool = True,
+    ) -> dict:
         """Build an old-node to new-node mapping for a side graph.
 
         The mapping satisfies two conditions:
 
         1. Every atom with ``atom_map != 0`` is assigned to node ID
            ``atom_map``.
-        2. The final node IDs are exactly contiguous from ``1..N``.
+        2. The final node IDs are exactly contiguous from ``1..N`` when
+           ``contiguous=True``. With ``contiguous=False``, existing positive,
+           sparse atom-map IDs are retained and unmapped atoms receive unused
+           positive IDs.
 
         :param graph: Molecular side graph.
         :type graph: networkx.Graph
@@ -237,12 +296,22 @@ class ITSExpand:
         atom_maps = ITSExpand._nonzero_atom_maps(graph)
 
         ITSExpand._validate_unique_atom_maps(atom_maps)
-        ITSExpand._validate_atom_maps_within_range(atom_maps, n_nodes)
+        if contiguous:
+            ITSExpand._validate_atom_maps_within_range(atom_maps, n_nodes)
+        else:
+            ITSExpand._validate_positive_atom_maps(atom_maps)
 
         mapping, used_ids = ITSExpand._assign_mapped_nodes(graph)
-        mapping = ITSExpand._assign_unmapped_nodes(graph, mapping, used_ids)
-
-        ITSExpand._validate_contiguous_mapping(mapping, n_nodes)
+        if contiguous:
+            mapping = ITSExpand._assign_unmapped_nodes(graph, mapping, used_ids)
+            ITSExpand._validate_contiguous_mapping(mapping, n_nodes)
+        else:
+            mapping = ITSExpand._assign_unmapped_nodes_sparse(
+                graph,
+                mapping,
+                used_ids,
+            )
+            ITSExpand._validate_complete_unique_mapping(mapping, n_nodes)
 
         return mapping
 
@@ -314,10 +383,12 @@ class ITSExpand:
         return new_graph
 
     @staticmethod
-    def reindex_side_graph_by_atom_map(graph):
+    def reindex_side_graph_by_atom_map(graph, contiguous: bool = True):
         """Reindex a side graph so mapped atoms use ``atom_map`` as node ID.
 
-        The returned graph keeps node IDs contiguous from ``1..N``.
+        By default, the returned graph keeps node IDs contiguous from ``1..N``.
+        Set ``contiguous=False`` to preserve valid sparse map IDs such as
+        ``:10`` and ``:21``; this is needed by the EF-SMIRKS expansion path.
 
         This is useful because the reaction-center graph produced by
         ``ITSConstruction().ITSGraph(...)`` uses atom-map numbers as node IDs,
@@ -344,12 +415,14 @@ class ITSExpand:
 
         :param graph: Molecular side graph.
         :type graph: networkx.Graph
-        :returns: Reindexed side graph with contiguous node IDs.
+        :param contiguous: Whether the returned node IDs must be ``1..N``.
+        :type contiguous: bool
+        :returns: Reindexed side graph.
         :rtype: networkx.Graph
         :raises ValueError: If atom-map numbers cannot be safely used as node
             IDs while preserving ``1..N`` indexing.
         """
-        mapping = ITSExpand._build_side_graph_reindex_mapping(graph)
+        mapping = ITSExpand._build_side_graph_reindex_mapping(graph, contiguous)
         return ITSExpand._rebuild_graph_with_mapping(graph, mapping)
 
     @staticmethod
@@ -424,7 +497,10 @@ class ITSExpand:
 
         # Node IDs remain contiguous from 1..N.
         if preserve_older_map:
-            side_graph = ITSExpand.reindex_side_graph_by_atom_map(side_graph)
+            side_graph = ITSExpand.reindex_side_graph_by_atom_map(
+                side_graph,
+                contiguous=False,
+            )
 
         # Reconstruct the full ITS graph.
         its_graph = ITSBuilder().ITSGraph(side_graph, rc_graph)

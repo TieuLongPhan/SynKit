@@ -23,6 +23,17 @@ Modern molecule/reaction/ITS renderers
    :members:
    :show-inheritance:
 
+Electron-pushing diagrams
+-------------------------
+
+.. automodule:: synkit.Vis.epd
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Vis.epd.visualizer
+   :members:
+   :show-inheritance:
+
 Diagnostic adapter layer
 ------------------------
 
@@ -34,14 +45,14 @@ Diagnostic adapter layer
    :members:
    :show-inheritance:
 
-Legacy and utility visualizers
-------------------------------
+Reaction, graph, and chemical-space utilities
+----------------------------------------------
 
-.. automodule:: synkit.Vis.rxn_vis
+.. automodule:: synkit.Vis.reaction.rxn
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.rule_vis
+.. automodule:: synkit.Vis.reaction.rule
    :members:
    :show-inheritance:
 
@@ -49,15 +60,18 @@ Legacy and utility visualizers
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.chemical_space
+.. automodule:: synkit.Vis.space.chemical
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.crn_vis
+.. automodule:: synkit.Vis.space.embedding
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.embedding
+CRN visualizer
+--------------
+
+.. automodule:: synkit.Vis.crn.visualizer
    :members:
    :show-inheritance:
 

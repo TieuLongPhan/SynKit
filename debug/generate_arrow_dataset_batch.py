@@ -150,7 +150,7 @@ def main() -> None:
     # ── split into batches ───────────────────────────────────────────────────
     batches: list[list[tuple[int, str, str, str | None]]] = []
     for start in range(0, total, args.batch_size):
-        chunk = target.iloc[start: start + args.batch_size]
+        chunk = target.iloc[start : start + args.batch_size]
         rows = [
             (
                 int(row["index"]),

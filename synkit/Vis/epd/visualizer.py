@@ -97,12 +97,12 @@ def _draw_step_key(
 
     txt = ax.text(
         0.01,
-        -0.075,
+        -0.045,
         "\n".join(lines),
         transform=ax.transAxes,
         ha="left",
         va="top",
-        fontsize=9.2,
+        fontsize=8.7,
         color=style.electron_badge_color,
         family="monospace",
         linespacing=1.28,
@@ -282,13 +282,14 @@ class MechanismVisualizer:
         show_its: bool = True,
         reference_layout: str = "its",
         show_atom_map: bool = True,
-        step_labels: bool = True,
-        gap: float = 3.0,
+        step_labels: bool = False,
+        gap: float = 1.7,
         show_legend: bool = True,
         fade_non_rc: bool = False,
         use_rc_glow: bool = True,
         show_all_its_labels: bool = False,
-        show_its_node_changes: bool = True,
+        show_its_node_changes: bool = False,
+        show_its_bond_labels: bool = False,
         show_product: bool = True,
         show_step_table: bool = True,
         max_step_table_rows: int = 8,
@@ -334,6 +335,10 @@ class MechanismVisualizer:
             Show pair labels on all ITS edges, not only changed ones.
         show_its_node_changes:
             Show compact charge/lone-pair changes next to ITS atoms.
+        show_its_bond_labels:
+            Show ``(before, after)`` labels on changed ITS bonds. Bond color
+            already communicates the change, so this is disabled by default
+            for cleaner report figures.
         show_product:
             When ``product_graph`` is provided, include a product panel.
         show_step_table:
@@ -375,7 +380,7 @@ class MechanismVisualizer:
 
         show_product_panel = bool(show_product and product_graph is not None)
         if figsize is None:
-            figsize = (16, 6.8) if show_product_panel else (14, 6.4)
+            figsize = (15.6, 5.8) if show_product_panel else (12.4, 5.4)
 
         if not show_its:
             raise ValueError("This visualizer is designed for show_its=True.")
@@ -503,11 +508,12 @@ class MechanismVisualizer:
             use_rc_glow=use_rc_glow,
             fade_non_rc=fade_non_rc,
             show_node_changes=show_its_node_changes,
+            show_changed_labels=show_its_bond_labels,
         )
 
         panel_positions = [pos_r, pos_its] if pos_p is None else [pos_r, pos_p, pos_its]
         top_y = (
-            max(p[1] for pos in panel_positions for p in pos.values()) + 0.82 * scale_r
+            max(p[1] for pos in panel_positions for p in pos.values()) + 0.66 * scale_r
         )
 
         ax.text(
@@ -543,8 +549,11 @@ class MechanismVisualizer:
         )
 
         if title:
-            ax.set_title(
-                title, fontsize=self.main_title_fontsize, pad=8, color="#111111"
+            fig.suptitle(
+                title,
+                fontsize=self.main_title_fontsize,
+                color="#111111",
+                y=0.985,
             )
 
         if show_step_table:
@@ -554,19 +563,22 @@ class MechanismVisualizer:
             add_legend(
                 ax,
                 self.style,
-                anchor=(0.74, -0.10) if show_step_table else (0.5, -0.04),
+                transitions=transitions,
+                anchor=(0.76, -0.072) if show_step_table else (0.5, -0.025),
             )
 
         all_pos = [p for pos in panel_positions for p in pos.values()]
         xs = [p[0] for p in all_pos]
         ys = [p[1] for p in all_pos]
-        pad = 0.95 * max(scale_r, scale_its)
+        pad = 0.72 * max(scale_r, scale_its)
 
         ax.set_xlim(min(xs) - pad, max(xs) + pad)
         ax.set_ylim(min(ys) - pad, max(ys) + pad)
         ax.set_aspect("equal")
         ax.axis("off")
-        plt.tight_layout(rect=[0, 0.18 if show_step_table else 0.06, 1, 1])
+        plt.tight_layout(
+            rect=[0, 0.15 if show_step_table else 0.04, 1, 0.93 if title else 1]
+        )
         return fig, ax
 
     def _visualize_elementary_steps(  # noqa: C901

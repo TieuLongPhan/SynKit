@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - beta
-      - mech
+      - beta
   release:
     types:
       - published
@@ -58,8 +58,8 @@ jobs:
           print(f"Valid beta/pre-release version: {version}")
           PY
 
-      - name: Validate mech pre-release version on mech branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/mech'
+      - name: Validate beta pre-release version on beta branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/beta'
         run: |
           python - <<'PY'
           import tomllib
@@ -73,12 +73,12 @@ jobs:
 
           if not parsed.is_prerelease:
               raise SystemExit(
-                  f"Mech branch must use a PyPI pre-release version, "
+                  f"beta branch must use a PyPI pre-release version, "
                   f"e.g. 0.1.0b1 or 0.1.0.dev1. "
                   f"Current version is: {version}"
               )
 
-          print(f"Valid mech pre-release version: {version}")
+          print(f"Valid beta pre-release version: {version}")
           PY
 
       - name: Build source and wheel distributions
