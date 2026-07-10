@@ -16,7 +16,6 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
 from synkit.Graph.ITS.rc_extractor import RCExtractor
 from synkit.Graph.ITS.its_reverter import ITSReverter
-from synkit.Graph.Mech.electron_accounting import graph_to_sanitized_kekule_mol
 
 _BRACKET_DIGIT_PATTERN: Pattern[str] = re.compile(r"\[([^\]]*?)\](\d+)")
 _BRACKET_MAP_PATTERN: Pattern[str] = re.compile(r"\[([^\]]+):(\d+)\]")
@@ -676,7 +675,11 @@ def its_to_rsmi(
                     product_graph,
                     set(preserved_hydrogens),
                 )
-            product_smiles = Chem.MolToSmiles(graph_to_sanitized_kekule_mol(product))
+            product_smiles = graph_to_smi(
+                product,
+                sanitize=sanitize,
+                preserve_atom_maps=preserved_hydrogens,
+            )
         except Exception as exc:
             logger.debug("Error generating tuple product SMILES: %s", exc)
             product_smiles = None
