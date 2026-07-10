@@ -70,6 +70,22 @@ Reactor parameters
        - ``'comp'``: component-aware matching (fastest; recommended for multi-component SMILES)
        - ``'all'``: exhaustive arbitrary subgraph search (most expensive)
        - ``'bt'``: fallback strategy (tries ``comp`` first, then ``all`` if no match is found)
+   * - ``template_format``
+     - str
+     - ``'typesGH'``
+     - ITS representation used when the template is a reaction string.
+       Use ``'tuple'`` for the Lewis State Graph representation.
+   * - ``electron_diagnostics``
+     - bool
+     - ``False``
+     - When ``True``, keep Lewis-state accounting diagnostics on generated ITS
+       objects. This is useful when inspecting charge, lone-pair, or radical
+       recomputation. The option name remains ``electron_diagnostics`` for API
+       compatibility.
+   * - ``automorphism``
+     - bool
+     - ``True``
+     - Deduplicate symmetry-equivalent matches before rewriting.
 
 Example: Forward Prediction (NetworkX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -174,6 +190,75 @@ while keeping ``explicit_h=False``.
         '[CH3:1][CH3:2].[CH:3]([CH:4]=[O:5])=[O:6]>>[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]'
       ]
 
+Lewis State Graph Templates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The NetworkX reactor can consume Lewis State Graph (LSG) templates. This is
+the SynKit-native path for transformations where valence-state information
+matters: lone pairs, radicals, valence electrons, and sigma/pi bond components
+are stored in the template and used during matching/rewrite. In the current API
+LSG construction is requested with ``format="tuple"``.
+
+There are two common entry points:
+
+.. code-block:: python
+   :caption: Build the LSG template explicitly
+   :linenos:
+
+   from synkit.IO import rsmi_to_its
+   from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+
+   smart = "[NH3:1].[CH3:2][Cl:3]>>[NH3+:1][CH3:2].[Cl-:3]"
+   substrate = "CCl.N"
+   template = rsmi_to_its(smart, core=False, format="tuple")
+
+   reactor = SynReactor(
+       substrate=substrate,
+       template=template,
+       implicit_temp=True,
+       explicit_h=False,
+       electron_diagnostics=True,
+   )
+
+   print(reactor.smarts)
+
+.. code-block:: python
+   :caption: Let SynReactor build an LSG template from a reaction string
+   :linenos:
+
+   reactor = SynReactor(
+       substrate="CCl.N",
+       template="[NH3:1].[CH3:2][Cl:3]>>[NH3+:1][CH3:2].[Cl-:3]",
+       template_format="tuple",
+       implicit_temp=True,
+       explicit_h=False,
+       electron_diagnostics=True,
+   )
+
+LSG rewrite policy:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Concept
+     - Policy
+   * - Bond truth
+     - ``sigma_order`` and ``pi_order`` are authoritative in new mode.
+   * - Product reconstruction
+     - ``kekule_order`` is computed from ``sigma_order + pi_order`` before
+       conversion through RDKit.
+   * - Charge
+     - Charge is recomputed from valence electrons, lone pairs, hydrogen count,
+       radical count, and Kekule bond-order sum.
+   * - Aromaticity
+     - Aromatic flags are still useful for matching and display, but aromatic
+       ``order=1.5`` is not used as the LSG-authoritative rewrite value.
+
+.. note::
+
+   LSG rewriting is currently a SynKit ``SynReactor`` path. MØD-backed
+   reactors remain on the legacy rule representation.
+
 Example: Forward Prediction (MØD)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -241,6 +326,35 @@ together with a GML rule representation.
         '[CH3:1][CH:2]=[O:3].[CH:4]([CH:5]=[O:6])([H:7])[H:8]>>[CH3:1][CH:2]=[CH:4][CH:5]=[O:6].[O:3]([H:7])[H:8]',
         '[CH3:1][CH:2]([H:3])[H:4].[CH:5]([CH:6]=[O:7])=[O:8]>>[CH3:1][CH:2]=[CH:5][CH:6]=[O:7].[H:3][O:8][H:4]'
       ]
+
+Radical-based linking
+---------------------
+
+``RBLEngine`` links forward and backward template applications through a
+wildcard-aware reaction-centre overlap. It is useful when a direct reactor
+application is insufficient and the two sides need to be fused through a
+shared core.
+
+Choose the execution mode according to the required recall and cost:
+
+- ``"fast_track"`` performs only a cheap reactor round-trip.
+- ``"early_stop"`` (the default) also constructs ITS candidates but stops
+  before maximum-common-subgraph (MCS) fusion.
+- ``"full"`` performs wildcard-aware MCS fusion and returns all collected
+  unique candidates; it is the most expensive mode.
+
+.. code-block:: python
+   :caption: Run the RBL engine with its default exact MCS matcher
+
+   from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+
+   engine = RBLEngine(mode="early_stop")
+   result = engine.process(reaction_rsmi, template)
+   candidates = result.fused_rsmis
+
+Use ``mode="full"`` only when the early path does not provide enough
+candidates. ``matcher_cls`` accepts ``ApproxMCSMatcher`` for a faster,
+heuristic alternative on large or highly symmetric ITS graphs.
 
 See Also
 --------

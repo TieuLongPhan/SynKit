@@ -290,7 +290,7 @@ class RBLEngine:
     def __init__(
         self,
         *,
-        wildcard_element: str = "*",
+        wildcard_element: Any = ("*", "*"),
         element_key: str = "element",
         node_attrs: Optional[Sequence[str]] = None,
         edge_attrs: Optional[Sequence[str]] = None,
@@ -299,9 +299,11 @@ class RBLEngine:
         mcs_side: str = "l",
         early_stop: bool = True,
         fast_paths_only: bool = False,
+        mode: str | None = None,
         max_mappings_per_pair: int = 1,
         implicit_temp: bool = True,
         explicit_h: bool = False,
+        electron_diagnostics: bool = False,
         embed_threshold: int = 10_000,
         reactor_cls: type = SynReactor,
         wildcard_adder_cls: type = RadicalWildcardAdder,
@@ -318,7 +320,7 @@ class RBLEngine:
         logger: Optional[logging.Logger] = None,
     ) -> None:
         # Core config
-        self.wildcard_element: str = wildcard_element
+        self.wildcard_element: Any = wildcard_element
         self.element_key: str = element_key
         self.node_attrs: List[str] = (
             list(node_attrs)
@@ -331,13 +333,28 @@ class RBLEngine:
         self.prune_wc: bool = prune_wc
         self.prune_automorphisms: bool = prune_automorphisms
         self.mcs_side: str = mcs_side
-        self.early_stop: bool = early_stop
-        self.fast_paths_only: bool = bool(fast_paths_only)
+        valid_modes = ("fast_track", "early_stop", "full")
+        if mode is not None and mode not in valid_modes:
+            raise ValueError(f"Invalid mode {mode!r}. Choose from {valid_modes}.")
+        self.mode = mode
+        if mode == "fast_track":
+            self.early_stop = True
+            self.fast_paths_only = True
+        elif mode == "early_stop":
+            self.early_stop = True
+            self.fast_paths_only = False
+        elif mode == "full":
+            self.early_stop = False
+            self.fast_paths_only = False
+        else:
+            self.early_stop = bool(early_stop)
+            self.fast_paths_only = bool(fast_paths_only)
         self.max_mappings_per_pair: int = max(1, int(max_mappings_per_pair))
 
         # Reactor behaviour flags
         self.implicit_temp: bool = bool(implicit_temp)
         self.explicit_h: bool = bool(explicit_h)
+        self.electron_diagnostics: bool = bool(electron_diagnostics)
         self.embed_threshold: int = int(embed_threshold)
 
         # Dependencies (DI)
@@ -369,6 +386,11 @@ class RBLEngine:
         self._backward_its: List[ITSLike] = []
         self._fused_its: List[ITSLike] = []
         self._fused_rsmis: List[str] = []
+        self._diagnostics: Dict[str, List[Dict[str, Any]]] = {
+            "forward": [],
+            "backward": [],
+            "quick_check": [],
+        }
 
         # Result / termination bookkeeping
         self._last_stop_mode: str = "not_run"
@@ -441,6 +463,7 @@ class RBLEngine:
         self._backward_its = []
         self._fused_its = []
         self._fused_rsmis = []
+        self._diagnostics = {"forward": [], "backward": [], "quick_check": []}
         self._last_stop_mode = "not_run"
         self._last_stop_reason = "not_run"
         self._last_stop_metadata = {}
@@ -561,7 +584,13 @@ class RBLEngine:
             "n_forward_its": len(self._forward_its),
             "n_backward_its": len(self._backward_its),
             "n_fused_its": len(self._fused_its),
+            "diagnostics": self.diagnostics,
         }
+
+    @property
+    def diagnostics(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Electron diagnostics grouped by reactor stage."""
+        return {stage: list(reports) for stage, reports in self._diagnostics.items()}
 
     # ------------------------------------------------------------------
     # Template preparation
@@ -617,7 +646,12 @@ class RBLEngine:
     # Reaction application core helpers
     # ------------------------------------------------------------------
 
-    def _safe_its_to_rsmi(self, its_graph: ITSLike) -> Optional[str]:
+    def _safe_its_to_rsmi(
+        self,
+        its_graph: ITSLike,
+        *,
+        fmt: str = "tuple",
+    ) -> Optional[str]:
         """
         Safely convert ITS to RSMI, returning ``None`` on failure.
 
@@ -627,7 +661,7 @@ class RBLEngine:
         :rtype: Optional[str]
         """
         try:
-            return self.its_to_rsmi_fn(its_graph)
+            return self.its_to_rsmi_fn(its_graph, format=fmt)
         except Exception as exc:  # pragma: no cover - defensive
             self.logger.debug("ITS→RSMI conversion failed: %s", exc)
             return None
@@ -642,7 +676,7 @@ class RBLEngine:
         :rtype: Optional[ITSLike]
         """
         try:
-            return self.rsmi_to_its_fn(rsmi)
+            return self.rsmi_to_its_fn(rsmi, format="tuple")
         except Exception as exc:  # pragma: no cover - defensive
             self.logger.debug("RSMI→ITS conversion failed: %s", exc)
             return None
@@ -713,13 +747,16 @@ class RBLEngine:
             automorphism=False,
             invert=invert,
             embed_threshold=self.embed_threshold,
+            electron_diagnostics=self.electron_diagnostics,
         )
+        stage = "backward" if invert else "forward"
+        self._diagnostics[stage].extend(getattr(reactor, "diagnostics", []) or [])
 
         out: List[ITSLike] = []
         its_list: Sequence[ITSLike] = getattr(reactor, "its", []) or []
 
         for its_graph in its_list:
-            rsmi = self._safe_its_to_rsmi(its_graph)
+            rsmi = self._safe_its_to_rsmi(its_graph, fmt="typesGH")
             if rsmi is None:
                 continue
 
@@ -795,10 +832,11 @@ class RBLEngine:
             return True
 
         wildcard = self.wildcard_element
+        scalar_wildcard = wildcard[0] if isinstance(wildcard, tuple) else wildcard
         element_key = self.element_key
 
         for _, data in G.nodes(data=True):
-            if data.get(element_key) == wildcard:
+            if data.get(element_key) in (wildcard, scalar_wildcard):
                 return True
         return False
 
@@ -820,17 +858,22 @@ class RBLEngine:
         :rtype: nx.Graph
         """
         wildcard = self.wildcard_element
+        scalar_wildcard = wildcard[0] if isinstance(wildcard, tuple) else wildcard
         element_key = self.element_key
 
         wildcard_nodes = [
-            n for n, d in G.nodes(data=True) if d.get(element_key) == wildcard
+            n
+            for n, d in G.nodes(data=True)
+            if d.get(element_key) in (wildcard, scalar_wildcard)
         ]
         if not wildcard_nodes:
             return G
 
         for n in wildcard_nodes:
             data = G.nodes[n]
-            data[element_key] = "H"
+            data[element_key] = (
+                ("H", "H") if isinstance(data.get(element_key), tuple) else "H"
+            )
 
             if "typesGH" in data and isinstance(data["typesGH"], tuple):
                 gh1, gh2 = data["typesGH"]
@@ -841,7 +884,16 @@ class RBLEngine:
         for _, d in G.nodes(data=True):
             if "neighbors" not in d:
                 continue
-            d["neighbors"] = [("H" if x == wildcard else x) for x in d["neighbors"]]
+            neighbors = d["neighbors"]
+            if isinstance(neighbors, tuple) and len(neighbors) == 2:
+                d["neighbors"] = (
+                    [("H" if x == scalar_wildcard else x) for x in neighbors[0]],
+                    [("H" if x == scalar_wildcard else x) for x in neighbors[1]],
+                )
+            else:
+                d["neighbors"] = [
+                    ("H" if x == scalar_wildcard else x) for x in neighbors
+                ]
 
         return G
 
@@ -862,13 +914,13 @@ class RBLEngine:
         node_defaults: List[Any] = []
         for attr in self.node_attrs:
             if attr == "element":
-                node_defaults.append("*")
+                node_defaults.append(self.wildcard_element)
             elif attr == "aromatic":
-                node_defaults.append(False)
+                node_defaults.append((False, False))
             elif attr == "charge":
-                node_defaults.append(0)
+                node_defaults.append((0, 0))
             else:
-                node_defaults.append("*")
+                node_defaults.append(self.wildcard_element)
 
         matcher = self.matcher_cls(
             node_attrs=self.node_attrs,
@@ -934,6 +986,10 @@ class RBLEngine:
             automorphism=False,
             invert=False,
             embed_threshold=self.embed_threshold,
+            electron_diagnostics=self.electron_diagnostics,
+        )
+        self._diagnostics["quick_check"].extend(
+            getattr(reactor, "diagnostics", []) or []
         )
 
         sols: Sequence[str] = getattr(reactor, "smarts", []) or []
@@ -1352,7 +1408,7 @@ class RBLEngine:
         if rw_adder is None:
             rw_adder = self.wildcard_adder_cls()
 
-        rsmi1 = self._safe_its_to_rsmi(graph)
+        rsmi1 = self._safe_its_to_rsmi(graph, fmt="tuple")
         if rsmi1 is None:
             return None
 
@@ -1369,7 +1425,7 @@ class RBLEngine:
         if isinstance(its_back, nx.Graph) and replace_wc:
             its_back = self.replace_wildcard_with_H(its_back)
 
-        rsmi_final = self._safe_its_to_rsmi(its_back)
+        rsmi_final = self._safe_its_to_rsmi(its_back, fmt="tuple")
         return rsmi_final
 
     # ------------------------------------------------------------------
@@ -1507,11 +1563,17 @@ class RBLEngine:
 
         # Filter: keep only ITS graphs that *contain* wildcard atoms
         sel_fw = GraphCollectionSelector(self._forward_its)
-        sel_fw.select_wc(select_with_wc=True)
+        sel_fw.select_wc(
+            wildcard=self.wildcard_element,
+            select_with_wc=True,
+        )
         self._forward_its = sel_fw.filtered
 
         sel_bw = GraphCollectionSelector(self._backward_its)
-        sel_bw.select_wc(select_with_wc=True)
+        sel_bw.select_wc(
+            wildcard=self.wildcard_element,
+            select_with_wc=True,
+        )
         self._backward_its = sel_bw.filtered
 
         # Full fusion + post-processing (only when fast-path-only is False)

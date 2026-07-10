@@ -3,8 +3,10 @@ from typing import Union, List, Any
 from synkit.Graph.Matcher.turbo_iso import TurboISO
 from synkit.Graph.Matcher.sing import SING
 from synkit.Graph.ITS import its_decompose
+from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphMatch
 from synkit.Graph.Hyrogen._misc import h_to_explicit
+from synkit.IO.chem_converter import detect_its_format
 
 
 class RuleFilter:
@@ -76,7 +78,7 @@ class RuleFilter:
 
         # Decompose patterns via ITS
         self._patterns = [
-            its_decompose(r)[1] if self._invert else its_decompose(r)[0]
+            self._decompose_rule(r)[1] if self._invert else self._decompose_rule(r)[0]
             for r in self._rules
         ]
 
@@ -98,6 +100,14 @@ class RuleFilter:
         # Perform filtering and collect matched rules
         self._matches = [self._match(p) for p in self._patterns]
         self._new_rules = [r for r, m in zip(self._rules, self._matches) if m]
+
+    @staticmethod
+    def _decompose_rule(rule: nx.Graph) -> tuple[nx.Graph, nx.Graph]:
+        """Return left/right rule fragments for either ITS representation."""
+        if detect_its_format(rule) == "tuple":
+            reverter = ITSReverter(rule)
+            return reverter.to_reactant_graph(), reverter.to_product_graph()
+        return its_decompose(rule)
 
     def _match(self, pattern: nx.Graph) -> bool:
         """Test whether the given pattern occurs as a subgraph in the host.

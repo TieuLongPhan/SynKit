@@ -15,8 +15,8 @@ SynKit
      <a href="https://hub.docker.com/r/tieulongphan/synkit">
        <img alt="Docker image" src="https://img.shields.io/docker/v/tieulongphan/synkit/latest?label=container">
      </a>
-     <a href="https://doi.org/10.5281/zenodo.15269901">
-       <img alt="Zenodo DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.15269901.svg">
+    <a href="https://doi.org/10.5281/zenodo.16925060">
+      <img alt="Zenodo DOI (v1.0.0)" src="https://zenodo.org/badge/DOI/10.5281/zenodo.16925060.svg">
      </a>
      <a href="https://github.com/TieuLongPhan/SynKit/blob/main/LICENSE">
        <img alt="License" src="https://img.shields.io/github/license/TieuLongPhan/SynKit.svg">
@@ -33,7 +33,6 @@ production workflows.
    :alt: SynKit overview
    :align: center
    :width: 100%
-
 
 .. Core features
 .. -------------
@@ -115,6 +114,12 @@ Documentation quick links
 
       ITS/MTG construction, WL hashing, and cluster/search primitives.
 
+   .. grid-item-card:: :octicon:`eye` Visualization
+      :link: vis
+      :link-type: doc
+
+      Molecule, reaction, ITS, and diagnostic graph rendering.
+
    .. grid-item-card:: :octicon:`terminal` API Reference
       :link: api/index
       :link-type: doc
@@ -124,8 +129,16 @@ Documentation quick links
 Citation
 --------
 
-Please cite **SynKit** when used in published work. Prefer the archived DOI for a specific release
-and include the Git commit/tag for reproducibility.
+Please cite the SynKit paper when using the software. For exact release
+provenance, also cite the archived **v1.0.0** Zenodo snapshot and record the
+Git tag or commit used for the analysis.
+
+- Paper: `SynKit: A Graph-Based Python Framework for Rule-Based Reaction
+  Modeling and Analysis <https://pubs.acs.org/doi/10.1021/acs.jcim.5c02123>`_,
+  *Journal of Chemical Information and Modeling* **2025**, 65 (24),
+  13012–13019. DOI: `10.1021/acs.jcim.5c02123
+  <https://doi.org/10.1021/acs.jcim.5c02123>`_.
+- Archive: `SynKit v1.0.0 on Zenodo <https://doi.org/10.5281/zenodo.16925060>`_.
 
 ~~~~~~~
 
@@ -133,9 +146,20 @@ and include the Git commit/tag for reproducibility.
 
    @article{phan2025synkit,
      title = {SynKit: A Graph-Based Python Framework for Rule-Based Reaction Modeling and Analysis},
+     author = {Phan, Tieu-Long and González Laffitte, Marcos E. and Fagerberg, Rolf and Gatter, Thomas and Stadler, Peter F.},
+     journal = {Journal of Chemical Information and Modeling},
+     volume = {65},
+     number = {24},
+     pages = {13012--13019},
+     year = {2025},
+     doi = {10.1021/acs.jcim.5c02123}
+   }
+
+   @software{synkit_v1_0_0,
+     title = {SynKit v1.0.0},
      author = {Phan, Tieu-Long and others},
      year = {2025},
-     doi = {10.5281/zenodo.15269901}
+     doi = {10.5281/zenodo.16925060}
    }
 
 Contributions & support
@@ -146,7 +170,8 @@ For contribution enquiries or collaborations: **tieu@bioinf.uni-leipzig.de**
 
 Acknowledgments
 ---------------
-Funded by the European Union Horizon Europe Doctoral Network (Marie-Skłodowska-Curie, grant No. 101072930 — TACsy).
+Funded by the European Union Horizon Europe Doctoral Network
+(Marie-Skłodowska-Curie, grant No. 101072930 — `TACsy <https://tacsy.eu/>`_).
 
 .. toctree::
    :maxdepth: 1
@@ -159,7 +184,7 @@ Funded by the European Union Horizon Europe Doctoral Network (Marie-Skłodowska-
    rule
    synthesis
    crn
+   vis
    api/index
    reference
    changelog
-

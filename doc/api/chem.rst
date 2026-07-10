@@ -46,7 +46,29 @@ Reaction
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Reaction.Mapper.wl_mapper
+Atom-to-atom mapping
+---------------------
+
+The mapper is split into a public chemistry front end, the WL/SLAP matching
+engine, and optional exact refinement tools. Most applications should start
+with :class:`synkit.Chem.Reaction.Mapper.AAMapper`; the lower-level modules
+are useful for inspecting mappings, resolving symmetric reaction centres, or
+obtaining an optimality certificate. The exact helpers are available from
+``synkit.Chem.Reaction.Mapper.exact``.
+
+.. automodule:: synkit.Chem.Reaction.Mapper.chem.aam
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Reaction.Mapper.chem.its
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Reaction.Mapper.chem.smiles
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Reaction.Mapper.slap.sequential
    :members:
    :show-inheritance:
 

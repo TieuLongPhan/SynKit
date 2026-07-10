@@ -55,7 +55,11 @@ class RuleMatcher:
     """
 
     def __init__(
-        self, rsmi: str, rule: Union[str, nx.Graph], explicit_h: bool = True
+        self,
+        rsmi: str,
+        rule: Union[str, nx.Graph],
+        explicit_h: bool = True,
+        electron_diagnostics: bool = False,
     ) -> None:
         """Initialize the matcher by standardizing the RSMI, building graphs,
         checking balance, and computing the match.
@@ -74,6 +78,8 @@ class RuleMatcher:
             rule = rsmi_to_its(rule, core=True)
         self.rule = rule
         self.explicit_h = explicit_h
+        self.electron_diagnostics = electron_diagnostics
+        self._diagnostics: list[dict] = []
         self.balanced = BalanceReactionCheck(n_jobs=1).rsmi_balance_check(self.rsmi)
 
         # Compute and store the match result
@@ -103,9 +109,14 @@ class RuleMatcher:
             None.
         :rtype: Optional[tuple[str, nx.Graph]]
         """
-        reactor = SynReactor(substrate=self.r_graph, template=self.rule)
+        reactor = SynReactor(
+            substrate=self.r_graph,
+            template=self.rule,
+            electron_diagnostics=self.electron_diagnostics,
+        )
         for smarts in reactor.smarts_list:
             if self.std.fit(smarts) == self.rsmi:
+                self._diagnostics = reactor.diagnostics
                 return smarts, self.rule
         return None
 
@@ -120,12 +131,17 @@ class RuleMatcher:
         :rtype: Optional[tuple[str, nx.Graph]]
         """
         # Product‑side fragments
-        reactor = SynReactor(substrate=self.r_graph, template=self.rule)
+        reactor = SynReactor(
+            substrate=self.r_graph,
+            template=self.rule,
+            electron_diagnostics=self.electron_diagnostics,
+        )
         for smarts in reactor.smarts_list:
             std_r = self.std.fit(smarts)
             if self.all_in(
                 self.rsmi.split(">>")[1].split("."), std_r.split(">>")[1].split(".")
             ):
+                self._diagnostics = reactor.diagnostics
                 return smarts, self.rule
 
         # Reactant‑side with inverted template
@@ -134,12 +150,14 @@ class RuleMatcher:
             template=self.rule,
             invert=True,
             explicit_h=self.explicit_h,
+            electron_diagnostics=self.electron_diagnostics,
         )
         for smarts in reactor.smarts_list:
             std_r = self.std.fit(smarts)
             if self.all_in(
                 self.rsmi.split(">>")[0].split("."), std_r.split(">>")[0].split(".")
             ):
+                self._diagnostics = reactor.diagnostics
                 return smarts, self.rule
 
         return None
@@ -156,6 +174,11 @@ class RuleMatcher:
         :rtype: bool
         """
         return set(a).issubset(b)
+
+    @property
+    def diagnostics(self) -> list[dict]:
+        """Electron diagnostics from the reactor that produced the match."""
+        return list(self._diagnostics)
 
     def help(self) -> None:
         """Print internal state and candidate SMARTS patterns for debugging.

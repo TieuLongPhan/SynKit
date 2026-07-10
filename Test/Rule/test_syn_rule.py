@@ -94,6 +94,43 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         self.assertIn("left=(|V|=", r)
         self.assertIn("right=(|V|=", r)
 
+    def test_tuple_rule_preserves_tuple_representation(self):
+        smart = "[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]"
+
+        rule = SynRule.from_smart(
+            smart,
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+        )
+
+        self.assertEqual(rule._format, "tuple")
+        self.assertEqual(rule.rc.raw.nodes[1]["element"], ("C", "C"))
+        self.assertEqual(rule.rc.raw.edges[1, 2]["pi_order"], (0.0, 1.0))
+        self.assertEqual(rule.left.raw.edges[1, 2]["pi_order"], 0.0)
+        self.assertEqual(rule.right.raw.edges[1, 2]["pi_order"], 1.0)
+
+    def test_tuple_rule_implicit_h_strips_removable_explicit_hydrogens(self):
+        smart = "[CH3:1][Cl:2].[O:3]([H:4])[H:5]>>[CH3:1][O:3][H:4].[Cl:2][H:5]"
+        rule = SynRule.from_smart(
+            smart,
+            canon=False,
+            implicit_h=True,
+            format="tuple",
+        )
+
+        self.assertFalse(
+            any(data["element"] == "H" for _, data in rule.left.raw.nodes(data=True))
+        )
+        self.assertFalse(
+            any(data["element"] == "H" for _, data in rule.right.raw.nodes(data=True))
+        )
+        self.assertEqual(rule.rc.raw.nodes[1]["hcount"], (0, 0))
+        self.assertEqual(rule.rc.raw.nodes[2]["hcount"], (0, 1))
+        self.assertEqual(rule.rc.raw.nodes[3]["hcount"], (2, 1))
+        self.assertTrue(rule.rc.raw.nodes[2]["h_pairs"])
+        self.assertTrue(rule.rc.raw.nodes[3]["h_pairs"])
+
 
 if __name__ == "__main__":
     unittest.main()

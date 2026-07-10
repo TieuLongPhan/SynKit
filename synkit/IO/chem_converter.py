@@ -27,11 +27,14 @@ DEFAULT_NODE_ATTRS = (
     "aromatic",
     "hcount",
     "charge",
+    "radical",
+    "lone_pairs",
+    "valence_electrons",
     "neighbors",
     "atom_map",
 )
 
-DEFAULT_EDGE_ATTRS = ("order",)
+DEFAULT_EDGE_ATTRS = ("order", "kekule_order", "sigma_order", "pi_order")
 
 logger = setup_logging()
 
@@ -71,6 +74,42 @@ def _validate_its_format(format: str) -> ITSFormat:
             f"Unsupported format: {format!r}. " f"Expected one of {valid_formats}."
         )
     return format
+
+
+def detect_its_format(graph: nx.Graph) -> ITSFormat:
+    """
+    Detect the ITS storage representation used by a graph.
+
+    Legacy ITS graphs keep scalar node attributes and store side-specific
+    values only in ``typesGH``. Tuple ITS graphs store direct paired node and
+    edge attributes such as ``element=("C", "C")`` or
+    ``sigma_order=(1.0, 1.0)``.
+
+    :param graph: ITS-like graph to inspect.
+    :type graph: nx.Graph
+    :return: Detected ITS format.
+    :rtype: ITSFormat
+    """
+    tuple_node_keys = (
+        "element",
+        "aromatic",
+        "hcount",
+        "charge",
+        "radical",
+        "lone_pairs",
+        "valence_electrons",
+    )
+    tuple_edge_keys = ("kekule_order", "sigma_order", "pi_order")
+
+    for _, attrs in graph.nodes(data=True):
+        if any(_is_pair(attrs.get(key)) for key in tuple_node_keys):
+            return "tuple"
+
+    for _, _, attrs in graph.edges(data=True):
+        if any(_is_pair(attrs.get(key)) for key in tuple_edge_keys):
+            return "tuple"
+
+    return "typesGH"
 
 
 def _split_rsmi(rsmi: str) -> tuple[str, str]:
@@ -525,8 +564,8 @@ def rsmi_to_its(
     :type node_attrs: Optional[Sequence[str]]
     :param edge_attrs: Edge attributes to include in graph construction.
     :type edge_attrs: Optional[Sequence[str]]
-    :param explicit_hydrogen: If ``True`` and ``format="typesGH"``,
-        convert implicit hydrogens to explicit nodes.
+    :param explicit_hydrogen: If ``True``, convert implicit hydrogens to
+        explicit nodes for the selected ITS format.
     :type explicit_hydrogen: bool
     :param format: ITS format.
     :type format: ITSFormat
@@ -568,6 +607,10 @@ def rsmi_to_its(
         node_attrs=resolved_node_attrs,
         edge_attrs=resolved_edge_attrs,
     )
+    if explicit_hydrogen:
+        from synkit.Graph.Hyrogen._misc import h_to_explicit
+
+        its_graph = h_to_explicit(its_graph, None, True)
     if core:
         its_graph = RCExtractor(
             node_attrs=resolved_node_attrs,
@@ -611,13 +654,48 @@ def its_to_rsmi(
     validated_format = _validate_its_format(format)
     reactant_graph, product_graph = _decompose_its(its, validated_format)
 
-    rsmi = graph_to_rsmi(
-        reactant_graph,
-        product_graph,
-        its,
-        sanitize,
-        explicit_hydrogen,
-    )
+    if validated_format == "tuple":
+        preserved_hydrogens = (
+            []
+            if explicit_hydrogen
+            else _get_preserved_hydrogen_maps(its, validated_format)
+        )
+        reactant_smiles = graph_to_smi(
+            reactant_graph,
+            sanitize=sanitize,
+            preserve_atom_maps=preserved_hydrogens,
+        )
+        try:
+            if explicit_hydrogen:
+                product = product_graph
+            else:
+                from synkit.Graph.Hyrogen._misc import implicit_hydrogen
+
+                product = implicit_hydrogen(
+                    product_graph,
+                    set(preserved_hydrogens),
+                )
+            product_smiles = graph_to_smi(
+                product,
+                sanitize=sanitize,
+                preserve_atom_maps=preserved_hydrogens,
+            )
+        except Exception as exc:
+            logger.debug("Error generating tuple product SMILES: %s", exc)
+            product_smiles = None
+        rsmi = (
+            f"{reactant_smiles}>>{product_smiles}"
+            if reactant_smiles is not None and product_smiles is not None
+            else None
+        )
+    else:
+        rsmi = graph_to_rsmi(
+            reactant_graph,
+            product_graph,
+            its,
+            sanitize,
+            explicit_hydrogen,
+        )
 
     if rsmi is None:
         raise ValueError("Failed to convert ITS graph to reaction SMILES.")

@@ -43,6 +43,18 @@ class TestPartialEngine(unittest.TestCase):
         ]
         self.assertEqual(result, expected)
 
+    def test_diagnostics_passthrough_is_opt_in(self):
+        engine = PartialEngine(
+            "CCC(=O)OC",
+            "[C:1][O:2].[O:3][H:4]>>[C:1][O:3].[O:2][H:4]",
+            electron_diagnostics=True,
+        )
+
+        result = engine.fit(invert=False)
+
+        self.assertTrue(result)
+        self.assertTrue(engine.diagnostics)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,14 +36,18 @@ class TransformationFP:
 
     @staticmethod
     def convert_arr2vec(arr: np.ndarray) -> cDataStructs.ExplicitBitVect:
-        """Convert a NumPy array of bits into an RDKit ExplicitBitVect.
+        """Convert a non-negative NumPy array into an RDKit bit vector.
 
-        :param arr: Array of 0/1 values representing a fingerprint.
+        :param arr: Array of non-negative fingerprint values.
         :type arr: np.ndarray
-        :returns: RDKit bit vector constructed from the bit string.
+        :returns: RDKit bit vector with positive values encoded as 1.
         :rtype: cDataStructs.ExplicitBitVect
+        :raises ValueError: If the array contains negative or non-finite values.
         """
-        bitstr = "".join(str(int(x)) for x in arr.flatten())
+        flat = np.asarray(arr).flatten()
+        if not np.isfinite(flat).all() or (flat < 0).any():
+            raise ValueError("Bit-vector output requires non-negative finite values.")
+        bitstr = "".join("1" if x else "0" for x in flat)
         return cDataStructs.CreateFromBitString(bitstr)
 
     def fit(

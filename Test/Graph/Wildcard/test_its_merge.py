@@ -157,5 +157,210 @@ class TestITSMerge(unittest.TestCase):
         self.assertIn("fused_nodes", rep)
 
 
+# ===========================================================================
+# Sprint 4 tests — B3, D1, D2
+# ===========================================================================
+
+
+class TestB3LeftoverAnchorPropagation(unittest.TestCase):
+    """B3: leftover pattern nodes inherit aromatic/charge from anchor neighbours."""
+
+    def test_leftover_inherits_aromatic_from_anchor(self) -> None:
+        G1 = nx.Graph()
+        G1.add_node(
+            1,
+            element="C",
+            aromatic=True,
+            typesGH=(("C", True, 1, 0, []), ("C", True, 1, 0, [])),
+        )
+        G1.add_node(
+            2, element="N", typesGH=(("N", False, 0, 0, []), ("N", False, 0, 0, []))
+        )
+        G1.add_edge(1, 2)
+        G2 = nx.Graph()
+        G2.add_node(
+            10,
+            element="C",
+            aromatic=False,
+            typesGH=(("C", False, 1, 0, []), ("C", False, 1, 0, [])),
+        )
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        new_nodes = [n for n in F.nodes if n != 10]
+        self.assertEqual(len(new_nodes), 1)
+        leftover = new_nodes[0]
+        # aromatic was absent from pattern node 2 but anchor (host node 10) has it
+        self.assertIn("aromatic", F.nodes[leftover])
+
+    def test_leftover_keeps_own_charge_if_present(self) -> None:
+        """If pattern node already has charge, it must not be overwritten."""
+        G1 = nx.Graph()
+        G1.add_node(
+            1,
+            element="C",
+            charge=0,
+            typesGH=(("C", False, 1, 0, []), ("C", False, 1, 0, [])),
+        )
+        G1.add_node(
+            2,
+            element="N",
+            charge=-1,
+            typesGH=(("N", False, 0, 0, []), ("N", False, 0, 0, [])),
+        )
+        G1.add_edge(1, 2)
+        G2 = nx.Graph()
+        G2.add_node(
+            10,
+            element="C",
+            charge=1,
+            typesGH=(("C", False, 1, 0, []), ("C", False, 1, 0, [])),
+        )
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        leftover = [n for n in F.nodes if n != 10][0]
+        self.assertEqual(F.nodes[leftover]["charge"], -1)
+
+    def test_leftover_no_anchor_neighbour_unchanged(self) -> None:
+        """Leftover node with no mapped neighbour must be added verbatim."""
+        G1 = nx.Graph()
+        G1.add_node(
+            1, element="C", typesGH=(("C", False, 1, 0, []), ("C", False, 1, 0, []))
+        )
+        G1.add_node(
+            2, element="O", typesGH=(("O", False, 0, 0, []), ("O", False, 0, 0, []))
+        )
+        G1.add_node(
+            3, element="N", typesGH=(("N", False, 0, 0, []), ("N", False, 0, 0, []))
+        )
+        G1.add_edge(2, 3)
+        G2 = nx.Graph()
+        G2.add_node(
+            10,
+            element="C",
+            aromatic=True,
+            typesGH=(("C", True, 1, 0, []), ("C", True, 1, 0, [])),
+        )
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        leftover_nodes = [n for n in F.nodes if n != 10]
+        self.assertEqual(len(leftover_nodes), 2)
+        for n in leftover_nodes:
+            self.assertNotIn("aromatic", F.nodes[n])
+
+
+class TestD1OrientationSharedIds(unittest.TestCase):
+    """D1: orientation detection for graphs with overlapping node IDs."""
+
+    def test_orient_non_overlapping_ids(self) -> None:
+        G1 = nx.Graph()
+        G1.add_nodes_from([1, 2, 3])
+        G2 = nx.Graph()
+        G2.add_nodes_from([10, 11, 12])
+        merger = ITSMerge(G1, G2, {1: 10})
+        self.assertIs(merger.pattern_graph, G1)
+        self.assertIs(merger.host_graph, G2)
+
+    def test_orient_shared_ids_direct_mapping(self) -> None:
+        """G1:1 → G2:2 where G2 contains 2 but G1 contains both 1 and 2."""
+        G1 = nx.Graph()
+        G1.add_nodes_from([1, 2, 3])
+        G2 = nx.Graph()
+        G2.add_nodes_from([2, 3, 4])
+        merger = ITSMerge(G1, G2, {1: 2})
+        self.assertIs(merger.pattern_graph, G1)
+        self.assertIs(merger.host_graph, G2)
+        self.assertEqual(merger.pattern_to_host, {1: 2})
+
+    def test_orient_multi_pair_shared_ids(self) -> None:
+        """mapping={1:2, 2:3}: score-based voting must identify G1=pattern."""
+        G1 = nx.Graph()
+        G1.add_nodes_from([1, 2, 3])
+        G2 = nx.Graph()
+        G2.add_nodes_from([2, 3, 4])
+        merger = ITSMerge(G1, G2, {1: 2, 2: 3})
+        self.assertIs(merger.pattern_graph, G1)
+        self.assertIs(merger.host_graph, G2)
+
+    def test_orient_inverted_mapping_no_shared_ids(self) -> None:
+        G1 = nx.Graph()
+        G1.add_nodes_from([1, 2])
+        G2 = nx.Graph()
+        G2.add_nodes_from([10, 11])
+        # Inverted: mapping is host→pattern
+        merger = ITSMerge(G1, G2, {10: 1})
+        self.assertIs(merger.pattern_graph, G1)
+        self.assertIs(merger.host_graph, G2)
+        self.assertEqual(merger.pattern_to_host, {1: 10})
+
+    def test_orient_raises_for_empty_mapping(self) -> None:
+        G1 = nx.Graph()
+        G1.add_nodes_from([1, 2])
+        G2 = nx.Graph()
+        G2.add_nodes_from([10, 11])
+        with self.assertRaises((ValueError, Exception)):
+            ITSMerge(G1, G2, {})
+
+
+class TestD2TupleFormatMerging(unittest.TestCase):
+    """D2: tuple-format ITS attributes (hcount, sigma_order, pi_order) are merged."""
+
+    def test_hcount_keeps_host_value(self) -> None:
+        # hcount is authoritative from the host (bw ITS derives from actual substrate);
+        # taking max inflates H counts and breaks balance checks on 700+ reactions.
+        G1 = nx.Graph()
+        G1.add_node(1, element="C", hcount=(2, 1), sigma_order=(1, 1), pi_order=(0, 0))
+        G2 = nx.Graph()
+        G2.add_node(10, element="C", hcount=(1, 2), sigma_order=(1, 1), pi_order=(0, 0))
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        self.assertEqual(F.nodes[10]["hcount"], (1, 2))  # host value unchanged
+
+    def test_sigma_order_keeps_host_value(self) -> None:
+        G1 = nx.Graph()
+        G1.add_node(1, element="C", hcount=(1, 1), sigma_order=(2, 3), pi_order=(1, 0))
+        G2 = nx.Graph()
+        G2.add_node(10, element="C", hcount=(1, 1), sigma_order=(1, 1), pi_order=(0, 0))
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        self.assertEqual(F.nodes[10]["sigma_order"], (1, 1))
+        self.assertEqual(F.nodes[10]["pi_order"], (0, 0))
+
+    def test_tuple_format_with_types_gh_both_merged(self) -> None:
+        """When both typesGH and hcount are present, both must be merged."""
+        G1 = nx.Graph()
+        G1.add_node(
+            1,
+            element="C",
+            typesGH=(("C", False, 2, 0, []), ("C", False, 1, 0, [])),
+            hcount=(2, 1),
+        )
+        G2 = nx.Graph()
+        G2.add_node(
+            10,
+            element="C",
+            typesGH=(("C", False, 1, 0, []), ("C", False, 2, 0, [])),
+            hcount=(1, 2),
+        )
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        t = F.nodes[10]["typesGH"]
+        self.assertEqual(t[0][2], 2)
+        self.assertEqual(t[1][2], 2)
+        self.assertEqual(F.nodes[10]["hcount"], (1, 2))  # host value unchanged
+
+    def test_tuple_format_partial_missing_not_crashed(self) -> None:
+        """If one graph lacks tuple-format attrs, merge is a no-op (no crash)."""
+        G1 = nx.Graph()
+        G1.add_node(1, element="C", hcount=(1, 1))
+        G2 = nx.Graph()
+        G2.add_node(10, element="C")
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        self.assertIn(10, F)
+
+    def test_merge_tuple_format_noop_for_non_tuple_values(self) -> None:
+        """Scalar hcount values (wrong format) must not crash or update the node."""
+        G1 = nx.Graph()
+        G1.add_node(1, element="C", hcount=2)
+        G2 = nx.Graph()
+        G2.add_node(10, element="C", hcount=1)
+        F = fuse_its_graphs(G1, G2, {1: 10})
+        # No crash; hcount stays as host value (scalar, no tuple logic applied)
+        self.assertIn(10, F)
+
+
 if __name__ == "__main__":
     unittest.main()

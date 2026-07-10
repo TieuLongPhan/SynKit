@@ -14,6 +14,12 @@ class TestTransformationFP(unittest.TestCase):
         self.assertIsInstance(bit_vect, cDataStructs.ExplicitBitVect)
         self.assertEqual(bit_vect.GetNumBits(), len(input_array))
 
+    def test_convert_arr2vec_rejects_signed_values(self):
+        """Signed reaction differences cannot be encoded as bit vectors."""
+        input_array = np.array([1, 0, -1, 1])
+        with self.assertRaises(ValueError):
+            TransformationFP.convert_arr2vec(input_array)
+
     def test_fit(self):
         """Test the generation of reaction fingerprints from reaction SMILES"""
         reaction_smiles = "CCO.CCN>>CCOC(C)N"
@@ -50,6 +56,13 @@ class TestTransformationFP(unittest.TestCase):
         abs_val = False  # without taking absolute values
         reaction_fp = TransformationFP().fit(reaction_smiles, symbols, fp_type, abs_val)
         self.assertIsInstance(reaction_fp, np.ndarray)
+
+    def test_fit_rejects_signed_bit_vector_output(self):
+        """Negative difference fingerprints must remain array output."""
+        with self.assertRaises(ValueError):
+            TransformationFP().fit(
+                "CCO>>CCN", ">>", "maccs", abs=False, return_array=False
+            )
 
 
 if __name__ == "__main__":

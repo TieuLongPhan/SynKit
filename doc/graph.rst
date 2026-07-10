@@ -12,6 +12,7 @@ Key submodules include:
 - **Matcher** — graph isomorphism and subgraph search engines
 - **ITS** — Internal Transition State (ITS) graph construction and decomposition
 - **MTG** — Mechanistic Transition Graph generation and exploration
+- **FG** — graph-native functional-group detection and audit tooling
 - **Context** — reaction-center expansion for context-aware matching and analysis
 
 .. raw:: html
@@ -48,6 +49,12 @@ Key submodules include:
 
       Build **Mechanistic Transition Graphs** from reaction-center ITS graphs to represent
       stepwise mechanisms and compare pathways.
+
+   .. grid-item-card:: :octicon:`filter` FG
+      :class-card: sd-shadow-sm
+
+      Detect functional groups directly on SynKit molecular graphs, with
+      hierarchical labels and aromatic ring-system reporting.
 
 Graph Canonicalization
 ----------------------
@@ -178,9 +185,57 @@ ITS
 The ``synkit.Graph.ITS`` package supports the construction and decomposition of
 **Internal Transition State (ITS)** graphs:
 
-- :py:class:`~synkit.Graph.ITS.its_construction.ITSConstructor` — build ITS graphs from reactant/product graphs
+- :py:class:`~synkit.Graph.ITS.its_construction.ITSConstruction` — build ITS graphs from reactant/product graphs
 - :py:func:`~synkit.Graph.ITS.its_decompose.get_rc` — extract the minimal reaction-center subgraph
 - :py:func:`~synkit.Graph.ITS.its_decompose.its_decompose` — split an ITS graph into reactant/product graphs
+
+Lewis State Graph fields
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+SynKit 1.4 introduces the Lewis State Graph (LSG) framework for the
+pure-Python reactor and new mechanistic work. Legacy ITS remains available,
+but LSG is the preferred representation when valence-state information must be
+explicit. In the current API this representation is requested with
+``format="tuple"``.
+
+Important LSG fields:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Field
+     - Meaning
+   * - ``sigma_order`` / ``pi_order``
+     - Authoritative bond components for Lewis-state rewriting.
+   * - ``kekule_order``
+     - Integer-like bond order used for product reconstruction; normally
+       ``sigma_order + pi_order``.
+   * - ``lone_pairs`` / ``radical``
+     - Valence-state fields used by LSG matching and product accounting.
+   * - ``valence_electrons``
+     - Element valence-shell reference used when recomputing charge.
+   * - ``order``
+     - Legacy or presentation order. Aromatic ``1.5`` values are useful for
+       matching and visualization, but not the LSG-authoritative rewrite
+       source.
+
+.. code-block:: python
+   :caption: Building an LSG/ITS graph with Lewis-state fields
+   :linenos:
+
+   from synkit.IO import rsmi_to_its
+
+   rsmi = "[CH3:1][Cl:2].[NH3:3]>>[CH3:1][NH3+:3].[Cl-:2]"
+   its = rsmi_to_its(rsmi, format="tuple", core=False)
+
+   print(its.nodes[2]["lone_pairs"])
+   print(its.edges[1, 2]["sigma_order"])
+
+.. note::
+
+   Aromatic LSG matching is intentionally conservative. Aromaticity is still
+   useful for presentation and pruning, but full aromatic-system relabeling is
+   tracked as ongoing work.
 
 Example: Construct and Visualize an ITS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,61 +287,172 @@ The ``synkit.Graph.MTG`` package provides tools for constructing and analyzing
 - :py:class:`~synkit.Graph.MTG.mcs_matcher.MCSMatcher` — maximum common substructure mappings
 - :py:class:`~synkit.Graph.MTG.mtg.MTG` — MTG construction from ITS graphs and MCS mapping
 
-Example: Generate an MTG (with Composite Reaction Visualization)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This example builds reaction-center ITS graphs for two mechanistic sequences, constructs
-MTGs, and visualizes both MTG-style centers and minimal centers (without MTG annotations).
+The current MTG direction is aligned with LSG/ITS. Invariant atom data such
+as ``element`` and ``atom_map`` should be stored once, while temporal fields
+such as ``charge``, ``hcount``, ``lone_pairs``, ``radical``,
+``sigma_order``, and ``pi_order`` store compact histories across snapshots.
+This avoids redundant ``*_step_history`` attributes and makes MTG-to-ITS
+round trips easier to inspect.
 
 .. code-block:: python
-   :caption: Building and visualizing MTGs for aldol mechanisms
+   :caption: MTG to ordered ITS steps
    :linenos:
 
    from synkit.Graph.MTG.mtg import MTG
-   from synkit.Graph.ITS.its_decompose import get_rc
-   from synkit.examples import load_example
-   import matplotlib.pyplot as plt
-   from synkit.Vis.graph_visualizer import GraphVisualizer
 
-   data = load_example("aldol")
+   mtg = MTG([step_1_its, step_2_its])
+   step_its = mtg.get_its_steps()
+   composed = mtg.get_compose_its()
 
-   mech_neutral = data[0]['mechanisms'][1]['steps']
-   smart_neutral = [i['smart_string'] for i in mech_neutral]
+When an MTG is built from RSMI strings, SynKit 1.4.0 converts those strings
+to Lewis State Graph ITS by default:
 
-   mech_acid = data[0]['mechanisms'][2]['steps']
-   smart_acid = [i['smart_string'] for i in mech_acid]
+.. code-block:: python
+   :caption: RSMI sequence to LSG MTG
+   :linenos:
 
-   # neutral
-   mtg = MTG(smart_neutral, mcs_mol=True)
-   its_neutral = mtg.get_compose_its()
-   mtg_rc_neutral = get_rc(its_neutral, keep_mtg=True)
-   rc_neutral = get_rc(its_neutral, keep_mtg=False)
+   mtg = MTG(step_rsmis, mcs_mol=True)
 
-   # acid
-   mtg = MTG(smart_acid, mcs_mol=True)
-   its_acid = mtg.get_compose_its()
-   mtg_rc_acid = get_rc(its_acid, keep_mtg=True)
-   rc_acid = get_rc(its_acid, keep_mtg=False)
+Legacy string conversion is still available for compatibility:
 
-   fig, ax = plt.subplots(2, 2, figsize=(16, 8))
-   vis = GraphVisualizer()
+.. code-block:: python
+   :caption: Legacy MTG from RSMI strings
+   :linenos:
 
-   vis.plot_its(mtg_rc_neutral, ax=ax[0, 0], use_edge_color=True, og=True, title='A. MTG (neutral)')
-   vis.plot_its(rc_neutral, ax=ax[0, 1], use_edge_color=True, og=True, title='B. Reaction center (neutral)')
-   vis.plot_its(mtg_rc_acid, ax=ax[1, 0], use_edge_color=True, og=True, title='C. MTG (acid)')
-   vis.plot_its(rc_acid, ax=ax[1, 1], use_edge_color=True, og=True, title='D. Reaction center (acid)')
+   mtg = MTG(step_rsmis, mcs_mol=True, its_format="typesGH")
 
-   plt.tight_layout()
-   plt.show()
+Compact MTG data model
+~~~~~~~~~~~~~~~~~~~~~~
+
+An LSG-backed MTG is a normal ``networkx.Graph``. Node attributes split into
+two categories:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Attribute type
+     - Examples
+     - Meaning
+   * - Invariant atom fields
+     - ``element``, ``atom_map``, ``valence_electrons``
+     - Stored once because the atom identity does not change across the
+       mechanism.
+   * - State timelines
+     - ``hcount``, ``charge``, ``radical``, ``lone_pairs``, ``present``
+     - Tuples with one value per mechanism state. For ``n`` elementary
+       steps, these timelines have length ``n + 1``.
+   * - Bond timelines
+     - ``kekule_order``, ``sigma_order``, ``pi_order``
+     - Tuples with one bond state per mechanism state. ``None`` means the
+       bond or one endpoint is outside that state; ``0`` means both atoms are
+       present but no bond exists.
+
+This compact form intentionally avoids legacy ``typesGH`` and redundant
+``*_step_history`` attributes in the new Lewis State Graph path.
+
+Example: LSG MTG changed core
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This example reads a stepwise aldol mechanism, constructs an LSG-backed MTG
+directly from the RSMI strings, and visualizes the changed core. The default
+MTG string conversion uses ``format="tuple"`` internally, so the result stores
+Lewis-state timelines rather than legacy ``typesGH`` fields.
+
+.. code-block:: python
+   :caption: Building and visualizing a compact LSG MTG
+   :linenos:
+
+   from synkit.IO import load_database
+   from synkit.Graph.MTG.mtg import MTG
+   from synkit.Vis import draw_mtg_graph
+
+   data = load_database("Data/Testcase/mech.json.gz")[0]
+   neutral = data["mechanisms"][1]
+   steps = [step["smart_string"] for step in neutral["steps"]]
+
+   mtg = MTG(steps, mcs_mol=True)
+   graph = mtg.get_mtg()
+
+   assert mtg._tuple_its
+   assert not any("typesGH" in attrs for _, attrs in graph.nodes(data=True))
+
+   fig, ax = draw_mtg_graph(
+       mtg,
+       title=f"{neutral['mech_name']} - changed core",
+       changed_only=True,
+       show_edge_labels=True,
+       compress=True,
+   )
+
+``compress=True`` labels only the first and final state of each changed edge.
+Use ``compress=False`` when debugging the full mechanism-state sequence.
 
 .. container:: figure
 
-   .. image:: ./figures/mtg_mechanism.png
-      :alt: Composite ITS and MTG visualization
+   .. image:: ./figures/mtg_lsg_changed_core.png
+      :alt: Compact LSG MTG changed-core visualization
       :align: center
-      :width: 1000px
+      :width: 760px
 
-   *Figure:* Composite MTG visualization for aldol addition under neutral and acidic conditions.
+   *Figure:* LSG MTG changed-core view for the neutral aldol mechanism.
+   Green edges are net formed, red edges are net broken, and pink dashed edges
+   are transient timelines that change internally but have the same compressed
+   first/final state.
+
+Round-trip helpers
+~~~~~~~~~~~~~~~~~~
+
+MTGs can be projected back to their ordered ITS steps or to a composed
+outer-state ITS:
+
+.. code-block:: python
+   :caption: MTG projections
+   :linenos:
+
+   step_its = mtg.get_its_steps()
+   step_rsmi = mtg.get_rsmi_steps()
+   composed = mtg.get_compose_its()
+
+Use ``get_its_steps()`` when validating temporal history. Use
+``get_compose_its()`` when you need the net start/end reaction encoded as a
+single ITS graph.
+
+Functional Groups
+-----------------
+
+The ``synkit.Graph.FG`` package detects functional groups directly on SynKit
+molecular ``networkx`` graphs. It avoids an external FG representation and
+returns labels in graph/node-index space.
+
+Core APIs:
+
+- :py:class:`~synkit.Graph.FG.detector.FunctionalGroupDetector`
+- :py:func:`~synkit.Graph.FG.api.smiles_to_graph_and_functional_groups`
+- :py:class:`~synkit.Graph.FG.audit.FunctionalGroupAudit`
+
+.. code-block:: python
+   :caption: Functional groups from SMILES
+   :linenos:
+
+   from synkit.Graph.FG import smiles_to_graph_and_functional_groups
+
+   graph, groups = smiles_to_graph_and_functional_groups(
+       "CC(=O)OC1=CC=CC=C1C(=O)O"
+   )
+
+   print(groups)
+
+.. admonition:: Example output
+   :class: note synkit-example-output
+
+   .. code-block:: text
+
+      [('ester', (2, 3, 4)), ('carboxylic_acid', (11, 12, 13))]
+
+Detection is hierarchical: specific labels such as ``carboxylic_acid`` can
+suppress generic nested labels such as ``carbonyl`` when the broader label
+would be less useful. Public labels cover common carbonyl/acyl, oxygen,
+nitrogen/C=N, sulfur, boron, silicon, phosphorus, and heteroaromatic families.
 
 Context graph
 -------------

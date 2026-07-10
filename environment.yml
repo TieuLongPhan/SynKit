@@ -7,3 +7,4 @@ dependencies:
   - pip
   - flake8
   - pytest
+  - scipy>=1.14.0

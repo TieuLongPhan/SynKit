@@ -1,7 +1,8 @@
 from typing import List, Dict, Optional
 from rdkit import Chem
-from fgutils import FGQuery
 from joblib import Parallel, delayed
+
+from synkit.Graph.FG import smiles_to_graph_and_functional_groups
 
 
 class Tautomerize:
@@ -103,17 +104,59 @@ class Tautomerize:
         :returns: Canonical SMILES of the standardized molecule.
         :rtype: str
         """
-        query = FGQuery()
-        fg = query.get(smiles)
-        for item in fg:
-            label, indices = item
+        while True:
+            targets = Tautomerize._tautomer_targets(smiles)
+            if not targets:
+                break
+            label, indices = targets[0]
             if label == "hemiketal":
                 smiles = Tautomerize.standardize_hemiketal(smiles, indices)
-                fg = query.get(smiles)
             elif label == "enol":
                 smiles = Tautomerize.standardize_enol(smiles, indices)
-                fg = query.get(smiles)
         return Chem.CanonSmiles(smiles)
+
+    @staticmethod
+    def _tautomer_targets(smiles: str) -> list[tuple[str, List[int]]]:
+        """Return RDKit-index targets used by the tautomer repair helpers."""
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return []
+        graph, groups = smiles_to_graph_and_functional_groups(smiles)
+        node_to_idx = {
+            (
+                atom.GetAtomMapNum() if atom.GetAtomMapNum() else atom.GetIdx() + 1
+            ): atom.GetIdx()
+            for atom in mol.GetAtoms()
+        }
+
+        targets = [
+            (label, [node_to_idx[node] for node in nodes])
+            for label, nodes in groups
+            if label in {"hemiketal", "enol"}
+        ]
+        targets.extend(
+            ("hemiketal", [node_to_idx[node] for node in nodes])
+            for nodes in Tautomerize._geminal_diol_nodes(graph)
+        )
+        return targets
+
+    @staticmethod
+    def _geminal_diol_nodes(graph) -> list[tuple[int, ...]]:
+        """Legacy tautomerization compatibility for hydrated carbonyls."""
+        targets: list[tuple[int, ...]] = []
+        for carbon, data in graph.nodes(data=True):
+            if data.get("element") != "C":
+                continue
+            hydroxyls = [
+                neighbor
+                for neighbor in graph.neighbors(carbon)
+                if graph.nodes[neighbor].get("element") == "O"
+                and graph.nodes[neighbor].get("hcount", 0) >= 1
+                and graph.edges[carbon, neighbor].get("order") == 1.0
+            ]
+            if len(hydroxyls) >= 2:
+                targets.append((carbon, hydroxyls[0], hydroxyls[1]))
+        return targets
 
     @staticmethod
     def fix_dict(data: Dict[str, str], reaction_column: str) -> Dict[str, str]:
