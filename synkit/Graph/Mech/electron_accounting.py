@@ -53,10 +53,14 @@ def bond_electron_count(graph: nx.Graph, node: Any) -> float:
 def recompute_charge(graph: nx.Graph, node: Any) -> int | float:
     """Recompute formal charge from stored electron-state fields."""
     attrs = graph.nodes[node]
-    charge = float(attrs["valence_electrons"]) - nonbonding_electron_count(
-        graph,
-        node,
-    ) - bond_electron_count(graph, node)
+    charge = (
+        float(attrs["valence_electrons"])
+        - nonbonding_electron_count(
+            graph,
+            node,
+        )
+        - bond_electron_count(graph, node)
+    )
     return int(charge) if charge.is_integer() else charge
 
 

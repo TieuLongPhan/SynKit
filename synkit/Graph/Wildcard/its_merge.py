@@ -252,9 +252,9 @@ class ITSMerge:
         best_score = -1
         best = None
         for m, pat, host, pat_is_G1 in candidates:
-            s = _score(m, pat, host)
-            if s > best_score:
-                best_score = s
+            score = _score(m, pat, host)
+            if score > best_score:
+                best_score = score
                 best = (m, pat, host, pat_is_G1)
 
         if best is None or best_score == 0:
@@ -263,10 +263,10 @@ class ITSMerge:
                 "belong to G1/G2."
             )
 
-        m, pat, host, pat_is_G1 = best
-        self._pattern, self._host = pat, host
+        mapping, pattern, host, pat_is_G1 = best
+        self._pattern, self._host = pattern, host
         self._pat_is_G1 = pat_is_G1
-        self._pat_to_host = dict(m)
+        self._pat_to_host = dict(mapping)
 
     # ------------------------------------------------------------------
     # Internal: wildcard detection helper
