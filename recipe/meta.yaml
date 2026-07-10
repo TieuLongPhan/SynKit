@@ -1,6 +1,6 @@
 package:
   name: synkit
-  version: "1.4.0"
+  version: "1.5.0"
 
 source:
   path: ..
@@ -23,6 +23,7 @@ requirements:
     - pandas >=1.5.3
     - rdkit >=2025.3.1
     - networkx >=3.3
+    - scipy >=1.14.0
     - seaborn >=0.13.2
     - requests >=2.32.3
     - regex >=2024.11.6

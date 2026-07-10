@@ -56,7 +56,7 @@ class RXNVis:
 
     .. code-block:: python
 
-        from synkit.Vis.rxn_vis import RXNVis
+        from synkit.Vis.reaction import RXNVis
 
         vis = RXNVis(
             width=1200,

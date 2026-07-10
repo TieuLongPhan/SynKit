@@ -125,7 +125,7 @@ class ITSConstruction:
     @staticmethod
     def _initialize_its(base: nx.Graph) -> nx.Graph:
         """
-        Deep-copy the base graph and remove all edges.
+        Copy the base graph and remove all edges.
 
         :param base:
             Graph chosen as ITS initialization template.
@@ -135,7 +135,7 @@ class ITSConstruction:
             Edge-free copy of the base graph.
         :rtype: nx.Graph
         """
-        its = deepcopy(base)
+        its = base.copy()
         its.remove_edges_from(list(its.edges()))
         return its
 

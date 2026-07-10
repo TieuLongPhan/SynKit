@@ -1,4 +1,5 @@
 import unittest
+import networkx as nx
 
 from synkit.Graph.Hyrogen._misc import (
     has_XH,
@@ -86,6 +87,15 @@ class TestHydrogenUtilities(unittest.TestCase):
     def test_check_hcount_change_implicit(self):
         delta = check_hcount_change(self.r_implicit, self.p_implicit)
         self.assertEqual(delta, 2, "Expected hydrogen movement in implicit graph.")
+
+    def test_check_hcount_change_product_only_node(self):
+        react = nx.Graph()
+        prod = nx.Graph()
+        prod.add_node(1, element="C", hcount=2)
+
+        delta = check_hcount_change(react, prod)
+
+        self.assertEqual(delta, 2)
 
 
 if __name__ == "__main__":

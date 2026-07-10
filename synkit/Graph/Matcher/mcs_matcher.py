@@ -326,6 +326,77 @@ class MCSMatcher:
 
         return combined
 
+    def _bipartite_assign_components(
+        self,
+        G1: nx.Graph,
+        G2: nx.Graph,
+        *,
+        mcs: bool,
+    ) -> MappingDict:
+        """
+        Hungarian-optimal component pairing followed by per-pair MCS.
+
+        Builds an n₁×n₂ score matrix (MCS size for each component pair),
+        solves the linear assignment problem to maximise total overlap, then
+        runs the actual MCS for the assigned pairs and combines the mappings
+        into a single **G1 → G2** dict.
+
+        Falls back to :py:meth:`_componentwise_mcs` when scipy is not
+        available.
+
+        :param G1: First input graph (after wildcard pruning).
+        :type G1: nx.Graph
+        :param G2: Second input graph (after wildcard pruning).
+        :type G2: nx.Graph
+        :param mcs: If ``True``, restrict to maximum-common-subgraph
+            mappings within each assigned pair.
+        :type mcs: bool
+        :returns: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
+        :rtype: dict[int, int]
+        """
+        try:
+            import numpy as np
+            from scipy.optimize import linear_sum_assignment
+        except ImportError:  # pragma: no cover
+            return self._componentwise_mcs(G1, G2, mcs=mcs)
+
+        comps1 = [G1.subgraph(c).copy() for c in nx.connected_components(G1)]
+        comps2 = [G2.subgraph(c).copy() for c in nx.connected_components(G2)]
+        n1, n2 = len(comps1), len(comps2)
+
+        # Build score matrix and cache maps in one pass to avoid re-running
+        score = np.zeros((n1, n2), dtype=float)
+        cache: Dict[Tuple[int, int], Tuple[List[MappingDict], bool]] = {}
+        for i, sub1 in enumerate(comps1):
+            for j, sub2 in enumerate(comps2):
+                pattern, host, pat_is_g1 = self._prepare_orientation(sub1, sub2)
+                maps = self._search_subgraphs(pattern, host, mcs=True)
+                score[i, j] = len(maps[0]) if maps else 0.0
+                cache[(i, j)] = (maps, pat_is_g1)
+
+        rows, cols = linear_sum_assignment(-score)
+        combined: MappingDict = {}
+        for i, j in zip(rows, cols):
+            if score[i, j] == 0.0:
+                continue
+            maps, pattern_is_g1 = cache[(i, j)]
+            if not maps:
+                continue
+            # Re-run with the caller's mcs flag if it differs from True
+            if not mcs:
+                sub1, sub2 = comps1[i], comps2[j]
+                pattern, host, pattern_is_g1 = self._prepare_orientation(sub1, sub2)
+                maps = self._search_subgraphs(pattern, host, mcs=False)
+                if not maps:
+                    continue
+            best = maps[0]
+            if pattern_is_g1:
+                combined.update(best)
+            else:
+                combined.update(self._invert_mapping(best))
+
+        return combined
+
     # ------------------------------------------------------------------
     # Connected-component (molecule) level matching
     # ------------------------------------------------------------------
@@ -631,7 +702,7 @@ class MCSMatcher:
         if component:
             G1_use = self._prune_graph(G1)
             G2_use = self._prune_graph(G2)
-            combined = self._componentwise_mcs(G1_use, G2_use, mcs=mcs)
+            combined = self._bipartite_assign_components(G1_use, G2_use, mcs=mcs)
             self._mappings = [combined]  # G1 -> G2
             self._last_size = len(combined)
             self._last_pattern_is_G1 = True

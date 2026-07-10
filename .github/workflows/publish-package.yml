@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - beta
+      - beta
   release:
     types:
       - published
@@ -50,11 +51,34 @@ jobs:
 
           if not parsed.is_prerelease:
               raise SystemExit(
-                  f"Beta branch must use a pre-release version, e.g. 0.1.0b1. "
-                  f"Current version is: {version}"
+                  f"Beta branch must use a pre-release version, "
+                  f"e.g. 0.1.0b1. Current version is: {version}"
               )
 
           print(f"Valid beta/pre-release version: {version}")
+          PY
+
+      - name: Validate beta pre-release version on beta branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/beta'
+        run: |
+          python - <<'PY'
+          import tomllib
+          from packaging.version import Version
+
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
+
+          version = data["project"]["version"]
+          parsed = Version(version)
+
+          if not parsed.is_prerelease:
+              raise SystemExit(
+                  f"beta branch must use a PyPI pre-release version, "
+                  f"e.g. 0.1.0b1 or 0.1.0.dev1. "
+                  f"Current version is: {version}"
+              )
+
+          print(f"Valid beta pre-release version: {version}")
           PY
 
       - name: Build source and wheel distributions

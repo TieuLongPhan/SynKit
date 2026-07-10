@@ -115,6 +115,50 @@ only (a compact view that highlights changed bonds and directly participating at
 
    *Figure:* (A) Full ITS graph and (B) reaction-center-only ITS graph for the aldol condensation.
 
+EF-SMIRKS and Electron-Pushing Descriptors
+------------------------------------------
+
+An **EF-SMIRKS** string combines a partially atom-mapped reaction SMILES with
+a hyphen-form electron-flow code after a space.  Each flow step has the form
+``source-target`` and steps are separated with semicolons. SynKit preserves
+the maps referenced by the flow code, completes atom mapping for every other
+atom, and emits both generic EPD and Lewis-wavefunction-aware ``epd_lw``.
+
+.. code-block:: python
+   :caption: Complete AAM and convert EF-SMIRKS to EPD
+   :linenos:
+
+   from synkit.IO import ef_smirks_to_epd, epd_to_ef_smirks
+
+   ef_smirks = (
+       "C[C:10](C)(CO[N+]([O-])=O)[CH2:20][O:21]>>"
+       "C[C:10](CO[N+]([O-])=O)C.[CH2:20]=[O:21] "
+       "21-20,21;10,20-20,21;10,20-10"
+   )
+
+   result = ef_smirks_to_epd(ef_smirks)
+   complete_aam = result["complete_aam"]
+   epd = result["epd"]
+   epd_lw = result["epd_lw"]
+
+   restored = epd_to_ef_smirks(complete_aam, epd)
+   assert restored.endswith("21-20,21;10,20-20,21;10,20-10")
+
+``epd`` uses generic bond labels, while ``epd_lw`` derives ``Sigma`` and
+``Pi`` edits from the local ITS bond-order change. For the example above:
+
+.. code-block:: python
+
+   [
+       ["LP-/Pi+", [21], [20, 21]],
+       ["Sigma-/Pi+", [10, 20], [20, 21]],
+       ["Sigma-/LP+", [10, 20], [10]],
+   ]
+
+The reverse helper accepts either generic EPD or typed ``epd_lw`` records and
+reconstructs the EF-SMIRKS flow code. The helpers are available from both
+``synkit.IO`` and ``synkit.IO.conversion``.
+
 Conversion to DPO Rule (GML)
 ----------------------------
 

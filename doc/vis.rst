@@ -207,6 +207,59 @@ Use ``projection=True`` when you need to inspect how an ITS decomposes back into
 left and right molecular graphs. Use the default ITS-only view for reports and
 notebooks.
 
+Electron-Pushing Diagrams
+-------------------------
+
+``MechanismVisualizer`` draws curved electron-pushing arrows directly from
+generic EPD or typed ``epd_lw`` records. It lays out the reactant, product, and
+ITS panels consistently, highlights changed bonds, and retains typed action
+labels in the step key. The example below starts from EF-SMIRKS, completes and
+normalizes it through SynKit's internal EPD representation, then visualizes
+the resulting ``epd_lw``.
+
+.. code-block:: python
+   :caption: Convert EF-SMIRKS to EPD-LW and draw an SN2 mechanism
+
+   import matplotlib.pyplot as plt
+
+   from synkit.IO import ef_smirks_to_epd, rsmi_to_graph, rsmi_to_its
+   from synkit.Vis.epd import MechanismVisualizer
+
+   ef_smirks = (
+       "[NH3:1].[CH3:2][Cl:3]>>[NH3+:1][CH3:2].[Cl-:3] "
+       "1-1,2;2,3-3"
+   )
+   result = ef_smirks_to_epd(ef_smirks)
+   complete_aam = result["complete_aam"]
+   reactant_graph, product_graph = rsmi_to_graph(complete_aam, drop_non_aam=False)
+   its_graph = rsmi_to_its(complete_aam, core=False, format="tuple")
+
+   fig, ax = MechanismVisualizer().visualize_trajectory(
+       reactant_graph,
+       result["epd_lw"],
+       its_graph,
+       product_graph=product_graph,
+       title="SN2 electron pushing",
+   )
+   fig.savefig("sn2_epd.png", dpi=200, bbox_inches="tight")
+   plt.close(fig)
+
+.. container:: figure
+
+   .. image:: ./figures/epd_sn2.png
+      :alt: EF-SMIRKS-derived electron-pushing diagram for an SN2 reaction
+      :align: center
+      :width: 100%
+
+   *Figure:* EF-SMIRKS is converted to complete AAM and typed ``epd_lw``
+   records before rendering. Green marks bond formation and red marks bond
+   cleavage.
+
+``ef_smirks_to_epd`` produces compatible ``epd_lw`` output, so its result can
+be passed to the visualizer as ``result["epd_lw"]``. Use
+``show_elementary_steps=True`` with a full graph trajectory when each
+elementary arrow group should receive a separate panel.
+
 MTG Timelines
 -------------
 

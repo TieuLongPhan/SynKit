@@ -150,6 +150,40 @@ html[data-theme="dark"] .sk-feature-card {
   border-color: rgba(125, 211, 252, 0.18);
 }
 
+/* Dark-mode contrast: the custom navigation card otherwise inherits a muted
+   foreground from the primary sidebar and becomes nearly invisible. */
+html[data-theme="dark"] {
+  --sk-accent: #38bdf8;
+  --sk-accent-2: #5eead4;
+  --sk-accent-3: #c4b5fd;
+}
+
+html[data-theme="dark"] .sk-globaltoc.card {
+  background: rgba(30, 41, 59, 0.72);
+  border-color: rgba(148, 163, 184, 0.34);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+html[data-theme="dark"] .sk-globaltoc,
+html[data-theme="dark"] .sk-globaltoc__title,
+html[data-theme="dark"] .sk-globaltoc__toggle,
+html[data-theme="dark"] .sk-globaltoc__body a {
+  color: #dbe7f3;
+  opacity: 1;
+}
+
+html[data-theme="dark"] .sk-globaltoc__body a:hover,
+html[data-theme="dark"] .sk-globaltoc__body a:focus {
+  background: rgba(56, 189, 248, 0.17);
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .sk-globaltoc__body .current > a,
+html[data-theme="dark"] .sk-globaltoc__body a.current {
+  background: rgba(56, 189, 248, 0.22);
+  color: #7dd3fc;
+}
+
 .sk-badge-row {
   display: flex;
   flex-wrap: wrap;

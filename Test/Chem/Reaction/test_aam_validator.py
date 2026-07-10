@@ -92,6 +92,28 @@ class TestAMMValidator(unittest.TestCase):
         self.assertEqual(results[0]["accuracy"], 66.67)
         self.assertEqual(results[0]["success_rate"], 100)
 
+    def test_strip_unbalanced_maps(self):
+        ground_truth = (
+            "[CH3:1][C:2](=[O:3])[CH2:4][S:5][CH2:6][CH:7]=[CH2:8]."
+            "[CH3:9][CH:10]([NH2:11])[CH:12]([OH:13])[CH:14]=[CH2:15]"
+            ">>"
+            "[CH3:1][C:2](=[O:3])[CH2:4][S:5][CH2:6][CH:7]=[CH:14]"
+            "[CH:12]([CH:10]([CH3:9])[NH2:11])[OH:13]"
+        )
+        mapped = (
+            "C=[CH:8][CH:9]([OH:10])[CH:11]([CH3:12])[NH2:13]."
+            "C=[CH:7][CH2:6][S:5][CH2:4][C:2]([CH3:1])=[O:3]"
+            ">>"
+            "[CH3:1][C:2](=[O:3])[CH2:4][S:5][CH2:6][CH:7]=[CH:8]"
+            "[CH:9]([OH:10])[CH:11]([CH3:12])[NH2:13]"
+        )
+
+        self.assertFalse(
+            AAMValidator.smiles_check(mapped, ground_truth, strip_unbalanced_maps=False)
+        )
+        self.assertTrue(AAMValidator.smiles_check(mapped, ground_truth))
+        self.assertTrue(AAMValidator().smiles_check(mapped, ground_truth))
+
 
 if __name__ == "__main__":
     unittest.main()

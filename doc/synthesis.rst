@@ -327,6 +327,35 @@ together with a GML rule representation.
         '[CH3:1][CH:2]([H:3])[H:4].[CH:5]([CH:6]=[O:7])=[O:8]>>[CH3:1][CH:2]=[CH:5][CH:6]=[O:7].[H:3][O:8][H:4]'
       ]
 
+Radical-based linking
+---------------------
+
+``RBLEngine`` links forward and backward template applications through a
+wildcard-aware reaction-centre overlap. It is useful when a direct reactor
+application is insufficient and the two sides need to be fused through a
+shared core.
+
+Choose the execution mode according to the required recall and cost:
+
+- ``"fast_track"`` performs only a cheap reactor round-trip.
+- ``"early_stop"`` (the default) also constructs ITS candidates but stops
+  before maximum-common-subgraph (MCS) fusion.
+- ``"full"`` performs wildcard-aware MCS fusion and returns all collected
+  unique candidates; it is the most expensive mode.
+
+.. code-block:: python
+   :caption: Run the RBL engine with its default exact MCS matcher
+
+   from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+
+   engine = RBLEngine(mode="early_stop")
+   result = engine.process(reaction_rsmi, template)
+   candidates = result.fused_rsmis
+
+Use ``mode="full"`` only when the early path does not provide enough
+candidates. ``matcher_cls`` accepts ``ApproxMCSMatcher`` for a faster,
+heuristic alternative on large or highly symmetric ITS graphs.
+
 See Also
 --------
 
