@@ -292,6 +292,13 @@ class ITSReverter:
             isolates = list(nx.isolates(g))
             g.remove_nodes_from(isolates)
 
+        stereo = self.its_graph.graph.get("stereo_descriptors", {})
+        if isinstance(stereo, dict) and ("reactant" in stereo or "product" in stereo):
+            side_name = "reactant" if idx == 0 else "product"
+            g.graph["stereo_descriptors"] = dict(stereo.get(side_name, {}))
+        elif isinstance(stereo, dict):
+            g.graph["stereo_descriptors"] = dict(stereo)
+
         return g
 
     def to_reactant_graph(
@@ -335,3 +342,19 @@ class ITSReverter:
             recompute_neighbors=recompute_neighbors,
             drop_isolated=drop_isolated,
         )
+
+    def to_transition_state_graph(self) -> nx.Graph:
+        """Return an ITS projection carrying only transition-state stereo.
+
+        Structural node and edge attributes remain paired because the ITS is
+        SynKit's transition-state representation. The stereo registry is
+        flattened to the optional ``transition`` descriptors so ordinary
+        registry consumers can inspect fleeting stereo without confusing it
+        with either stable endpoint.
+        """
+        graph = self.its_graph.copy()
+        stereo = self.its_graph.graph.get("stereo_descriptors", {})
+        transition = stereo.get("transition", {}) if isinstance(stereo, dict) else {}
+        graph.graph["stereo_descriptors"] = dict(transition)
+        graph.graph["stereo_projection"] = "transition"
+        return graph

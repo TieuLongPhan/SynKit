@@ -11,7 +11,7 @@ long-description = { file = "CHANGELOG.md" }
 long-description-content-type = "text/markdown"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "LICENSES/*"]
 authors = [
   { name = "Tieu Long Phan", email = "tieu@bioinf.uni-leipzig.de" }
 ]

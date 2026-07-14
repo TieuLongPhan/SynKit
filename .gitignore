@@ -9,6 +9,9 @@
 
 .coverage
 dev/*
+# Local development, audit, and debugging helpers.
+/tools/
+/debug/
 *.rdf
 test_syn_reactor.py
 

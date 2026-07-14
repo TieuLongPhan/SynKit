@@ -480,6 +480,12 @@ class ITSConstruction:
         ITSConstruction._compute_standard_order(
             its, ignore_aromaticity=ignore_aromaticity
         )
+        try:
+            from synkit.Graph.Stereo import annotate_its_stereo
+
+            annotate_its_stereo(its, G, H)
+        except ImportError:
+            pass
 
         return its
 

@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 
+from synkit.Mechanism.symbols import internal_action_label, legacy_action_label
+
 from .constants import transition_family
 
 
@@ -53,7 +55,26 @@ def transition_from_epd_step(step: Any) -> Transition:
     if isinstance(step, Transition):
         return step
 
-    if isinstance(step, Mapping):
+    # Avoid coupling the visual model to a concrete Mechanism class while
+    # accepting ElectronMove-compatible objects directly.
+    if all(hasattr(step, name) for name in ("source", "target", "electron_count")):
+        source_locus = step.source
+        target_locus = step.target
+        raw_kind = legacy_action_label(source_locus.kind, target_locus.kind)
+        src = source_locus.atom_maps
+        dst = target_locus.atom_maps
+        data = {
+            "internal_kind": internal_action_label(
+                source_locus.kind, target_locus.kind
+            ),
+            "typed_kind": raw_kind,
+            "electron_count": int(step.electron_count),
+            "arrow_type": getattr(step, "arrow_type", None),
+            "group_id": getattr(step, "group_id", None),
+            "coupling_id": getattr(step, "coupling_id", None),
+        }
+
+    elif isinstance(step, Mapping):
         raw_kind = step.get("kind")
         src = step.get("src")
         dst = step.get("dst")
@@ -75,6 +96,14 @@ def transition_from_epd_step(step: Any) -> Transition:
     family = transition_family(raw_kind)
     if family != raw_kind:
         data.setdefault("typed_kind", raw_kind)
+    if "internal_kind" not in data:
+        try:
+            source_token, target_token = raw_kind.split("-/", 1)
+            data["internal_kind"] = internal_action_label(
+                source_token, target_token.removesuffix("+")
+            )
+        except (TypeError, ValueError):
+            pass
 
     return Transition(
         kind=family,

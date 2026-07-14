@@ -282,6 +282,44 @@ class MolToGraph:
 
             graph.add_edge(begin, end, **bprops)
 
+        # Relative stereo is registry-based because descriptors depend on
+        # multiple atoms. For ordinary unmapped reactor substrates, graph node
+        # IDs (RDKit index + 1) provide stable internal references; external
+        # atom maps remain reserved for mapped rules and serialized reactions.
+        try:
+            from synkit.Graph.Stereo import descriptors_from_rdkit
+
+            atom_maps = [int(atom.GetAtomMapNum()) for atom in mol.GetAtoms()]
+            mapped = all(value > 0 for value in atom_maps) and len(
+                set(atom_maps)
+            ) == len(atom_maps)
+            descriptors = descriptors_from_rdkit(mol, require_atom_maps=mapped)
+        except (ImportError, ValueError):
+            descriptors = {}
+        graph.graph["stereo_descriptors"] = descriptors
+        node_by_map = {
+            int(attrs.get("atom_map", 0)): node
+            for node, attrs in graph.nodes(data=True)
+            if int(attrs.get("atom_map", 0) or 0) > 0
+        }
+        for descriptor_id, descriptor in descriptors.items():
+            if descriptor_id.startswith("atom:"):
+                node = node_by_map.get(int(descriptor.center))
+                if node is not None:
+                    graph.nodes[node].setdefault("stereo_descriptor_ids", []).append(
+                        descriptor_id
+                    )
+            else:
+                left, right = (int(value) for value in descriptor.atoms[2:4])
+                if (
+                    left in node_by_map
+                    and right in node_by_map
+                    and graph.has_edge(node_by_map[left], node_by_map[right])
+                ):
+                    graph.edges[node_by_map[left], node_by_map[right]].setdefault(
+                        "stereo_descriptor_ids", []
+                    ).append(descriptor_id)
+
         if self.with_topology:
             try:
                 GraphAnnotator(graph, in_place=True).annotate()
@@ -942,6 +980,14 @@ class MolToGraph:
         # Backward-compatible field used by SynEltra.
         new_props["lone_pairs"] = estimated_lone_pairs
         new_props["valence_electrons"] = cls._safe_valence_electrons(atom)
+        # v2 keeps relative stereo identity separate from derived display
+        # labels.  Sprint 5 fills ``stereo_descriptor`` with an ordered,
+        # map-based descriptor; keeping the field now avoids schema churn.
+        new_props["stereo_descriptor"] = None
+        new_props["cip_label"] = (
+            atom.GetProp("_CIPCode") if atom.HasProp("_CIPCode") else None
+        )
+        new_props["chiral_tag"] = cls.get_chiral_tag(atom)
 
         if profile == "full":
             new_props["bond_order_sum"] = round(cls._safe_bond_order_sum(atom), 3)
@@ -1005,6 +1051,11 @@ class MolToGraph:
             "hcount": atom.GetTotalNumHs(),
             "charge": atom.GetFormalCharge(),
             "radical": atom.GetNumRadicalElectrons(),
+            "stereo_descriptor": None,
+            "cip_label": atom.GetProp("_CIPCode") if atom.HasProp("_CIPCode") else None,
+            "chiral_tag": MolToGraph.get_chiral_tag(atom),
+            # Compatibility display field only; do not use as a graph-stereo
+            # identity because it historically mapped RDKit CW/CCW to R/S.
             "isomer": MolToGraph.get_stereochemistry(atom),
             "partial_charge": gcharge,
             "hybridization": str(atom.GetHybridization()),
@@ -1098,6 +1149,8 @@ class MolToGraph:
             "pi_order": pi_order,
             "kekule_bond_type": kekule_bond_type,
             "ez_isomer": ez,
+            "stereo_descriptor": None,
+            "ez_label": ez,
             "conjugated": conjugated,
             "in_ring": in_ring,
         }
@@ -1116,7 +1169,11 @@ class MolToGraph:
 
     @staticmethod
     def get_stereochemistry(atom: Chem.Atom) -> str:
-        """Return ``S``, ``R``, or ``N`` from the RDKit chiral tag.
+        """Return the legacy ``R``/``S`` display projection of a chiral tag.
+
+        This compatibility helper is **not** a CIP assignment and must not be
+        used as stereochemical identity.  New code should use
+        :meth:`get_chiral_tag` until a v2 relative descriptor is available.
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
@@ -1129,6 +1186,20 @@ class MolToGraph:
         if chiral_tag == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
             return "R"
         return "N"
+
+    @staticmethod
+    def get_chiral_tag(atom: Chem.Atom) -> str:
+        """Return RDKit's atom-order-relative tetrahedral tag.
+
+        ``CW`` and ``CCW`` encode parity relative to atom ordering, not an
+        absolute CIP label.  ``NONE`` covers atoms without a tetrahedral tag.
+        """
+        chiral_tag = atom.GetChiralTag()
+        if chiral_tag == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
+            return "CCW"
+        if chiral_tag == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
+            return "CW"
+        return "NONE"
 
     @staticmethod
     def get_bond_stereochemistry(bond: Chem.Bond) -> str:

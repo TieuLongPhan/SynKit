@@ -1,0 +1,10 @@
+"""Frozen public naming and compatibility policy for the v2 transition."""
+
+PUBLIC_LEWIS_GRAPH_NAME = "Lewis-state labelled graph"
+PUBLIC_LEWIS_GRAPH_ACRONYM = "LSG"
+LEGACY_LEWIS_GRAPH_ACRONYM = "LWG"
+LEGACY_LWG_IMPORTS_SUPPORTED_THROUGH = "2.x"
+DEFAULT_NEW_STEREO_MODE = "propagate"
+DEFAULT_LEGACY_STEREO_MODE = "ignore"
+EXPLICIT_H_POLICY = "adapter-local"
+OPEN_SYSTEM_POLICY = "explicit-environment-token"

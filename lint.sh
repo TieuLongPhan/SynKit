@@ -15,10 +15,12 @@ flake8 "${paths[@]}" \
   --per-file-ignores="\
 __init__.py:F401,F403,\
 synkit/CRN/Visualize/crn_vis.py:F401,F821,\
+synkit/Chem/Reaction/explicit_h_audit.py:C901,\
 synkit/Chem/Reaction/Mapper/wl_mapper.py:C901,\
 synkit/Graph/FG/detector.py:C901,\
 synkit/Graph/Feature/Descriptors/topology.py:C901,E501,\
 synkit/Graph/ITS/its_destruction.py:C901,\
+synkit/Graph/Stereo/rdkit_adapter.py:C901,\
 synkit/Graph/Matcher/graph_morphism.py:C901,\
 synkit/Graph/Matcher/sing.py:C901,\
 synkit/Graph/Matcher/subgraph_matcher.py:C901,\
@@ -31,6 +33,7 @@ synkit/IO/chem_converter.py:C901,\
 synkit/IO/combinatorial/gml_to_graph.py:C901,\
 synkit/IO/gml_to_graph.py:C901,\
 synkit/IO/mol_to_graph.py:C901,\
+synkit/Mechanism/stereo_state.py:C901,\
 synkit/Rule/syn_rule.py:C901,\
 synkit/Rule/Apply/retro_reactor.py:C901,\
 synkit/Rule/Apply/syn_reactor.py:C901,\

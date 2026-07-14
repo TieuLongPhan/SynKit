@@ -20,15 +20,17 @@ Quick start
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple
+from typing import Any, Mapping, Optional, Tuple
 
 import networkx as nx
 
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.ITS.its_decompose import its_decompose
+from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Hyrogen._misc import normalize_h_pair_graph
+from synkit.Graph.Stereo import StereoOutcome
 from synkit.IO.chem_converter import (
     ITSFormat,
     detect_its_format,
@@ -57,6 +59,10 @@ class SynRule:
         Convert explicit hydrogens in the **rc/left/right** fragments to an
         integer ``hcount`` attribute and record cross-fragment hydrogen pairs
         in a ``h_pairs`` attribute.
+    stereo_outcomes : mapping, optional
+        Explicit product-branch declarations keyed by descriptor target. A
+        ``RACEMIC`` outcome uses the stored product descriptor as a reference
+        orientation and makes application emit it and its inverse.
 
     Attributes
     ----------
@@ -83,6 +89,9 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
         format: ITSFormat = "typesGH",
+        stereo_outcomes: Optional[
+            Mapping[str, StereoOutcome | str | Mapping[str, Any]]
+        ] = None,
     ) -> "SynRule":
         """Instantiate from a SMARTS string."""
         return cls(
@@ -92,6 +101,7 @@ class SynRule:
             canon=canon,
             implicit_h=implicit_h,
             format=format,
+            stereo_outcomes=stereo_outcomes,
         )
 
     @classmethod
@@ -125,6 +135,9 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
         format: Optional[ITSFormat] = None,
+        stereo_outcomes: Optional[
+            Mapping[str, StereoOutcome | str | Mapping[str, Any]]
+        ] = None,
     ) -> None:
         self._name = name
         self._canon_enabled = canon
@@ -164,10 +177,57 @@ class SynRule:
         elif self._implicit_h and self._format == "tuple":
             self._strip_explicit_h_tuple(rc_graph, left_graph, right_graph)
             left_graph, right_graph = self._decompose(rc_graph, self._format)
+        stereo_sides = rc_graph.graph.get("stereo_descriptors", {})
+        self.stereo_guards = dict(stereo_sides.get("reactant", {}))
+        self.stereo_effects = dict(rc_graph.graph.get("stereo_changes", {}))
+        raw_outcomes = (
+            stereo_outcomes
+            if stereo_outcomes is not None
+            else rc_graph.graph.get("stereo_outcomes", {})
+        )
+        self.stereo_outcomes = {
+            key: StereoOutcome.from_value(value) for key, value in raw_outcomes.items()
+        }
+        self.stereo_query_policies = dict(
+            rc_graph.graph.get("stereo_query_policies", {})
+        )
+        invalid_query_policies = {
+            value
+            for value in self.stereo_query_policies.values()
+            if value not in {"exact", "wildcard", "either"}
+        }
+        if invalid_query_policies:
+            raise ValueError(
+                "Stereo query policies must be 'exact', 'wildcard', or "
+                f"'either'; received {sorted(invalid_query_policies)!r}."
+            )
+        self._reverse_stereo_outcomes = {
+            key: StereoOutcome.from_value(value)
+            for key, value in rc_graph.graph.get("stereo_reverse_outcomes", {}).items()
+        }
+        self._reverse_stereo_query_policies = dict(
+            rc_graph.graph.get("stereo_reverse_query_policies", {})
+        )
+        self._validate_stereo_outcomes()
+        rc_graph.graph["stereo_outcomes"] = {
+            key: outcome.to_dict() for key, outcome in self.stereo_outcomes.items()
+        }
+        rc_graph.graph["stereo_query_policies"] = dict(self.stereo_query_policies)
+        if self._reverse_stereo_outcomes:
+            rc_graph.graph["stereo_reverse_outcomes"] = {
+                key: outcome.to_dict()
+                for key, outcome in self._reverse_stereo_outcomes.items()
+            }
+            rc_graph.graph["stereo_reverse_query_policies"] = dict(
+                self._reverse_stereo_query_policies
+            )
+
         # ---------- wrap graphs ---------------------------------------- #
         self.rc = SynGraph(rc_graph, self._canonicaliser, canon=canon)
         self.left = SynGraph(left_graph, self._canonicaliser, canon=canon)
         self.right = SynGraph(right_graph, self._canonicaliser, canon=canon)
+
+        self.stereo_mode = "ignore"
 
         self.canonical_smiles: Optional[Tuple[str, str]] = (
             (self.left.signature, self.right.signature) if canon else None
@@ -176,6 +236,24 @@ class SynRule:
     # ================================================================== #
     # Private utilities                                                  #
     # ================================================================== #
+    def _validate_stereo_outcomes(self) -> None:
+        """Require explicit branching declarations to match stored effects."""
+        for key, outcome in self.stereo_outcomes.items():
+            if key not in self.stereo_effects:
+                raise ValueError(f"Stereo outcome target {key!r} has no rule effect.")
+            change = self.stereo_effects[key]
+            if outcome.kind == "SINGLE":
+                continue
+            if (
+                change.change != "FORMED"
+                or change.after is None
+                or change.after.parity not in (-1, 1)
+            ):
+                raise ValueError(
+                    f"{outcome.kind} outcome is only valid for a specified, "
+                    "newly formed chiral descriptor."
+                )
+
     @staticmethod
     def _decompose(rc: nx.Graph, format: ITSFormat) -> tuple[nx.Graph, nx.Graph]:
         """Return left/right fragments for either supported ITS representation."""
@@ -348,10 +426,45 @@ class SynRule:
         return (
             isinstance(other, SynRule)
             and self.canonical_smiles == other.canonical_smiles
+            and self._stereo_signature() == other._stereo_signature()
         )
 
     def __hash__(self) -> int:
-        return hash(self.canonical_smiles)
+        return hash((self.canonical_smiles, self._stereo_signature()))
+
+    def _stereo_signature(self) -> tuple:
+        guards = tuple(
+            sorted(
+                (key, descriptor.canonical_form())
+                for key, descriptor in self.stereo_guards.items()
+            )
+        )
+        effects = tuple(
+            sorted(
+                (
+                    key,
+                    change.change,
+                    change.before.canonical_form() if change.before else None,
+                    change.after.canonical_form() if change.after else None,
+                    change.transition.canonical_form() if change.transition else None,
+                )
+                for key, change in self.stereo_effects.items()
+            )
+        )
+        outcomes = tuple(
+            sorted(
+                (key, outcome.signature())
+                for key, outcome in self.stereo_outcomes.items()
+            )
+        )
+        query_policies = tuple(sorted(self.stereo_query_policies.items()))
+        reverse_outcomes = tuple(
+            sorted(
+                (key, outcome.signature())
+                for key, outcome in self._reverse_stereo_outcomes.items()
+            )
+        )
+        return guards, effects, outcomes, query_policies, reverse_outcomes
 
     def __str__(self) -> str:
         if self._canon_enabled and self.canonical_smiles:
@@ -379,6 +492,75 @@ class SynRule:
     # ================================================================== #
     # Public API                                                         #
     # ================================================================== #
+    def reversed(self, *, balance_its: bool = False) -> "SynRule":
+        """Return a rule with reactant/product stereo semantics reversed.
+
+        A forward two-enantiomer product outcome becomes an ``either``
+        reactant guard in reverse, because the reverse rule consumes either
+        enantiomer but does not create two achiral products. Reversing again
+        restores the original product outcome and query policies.
+        """
+        left_graph, right_graph = self._decompose(self.rc.raw, self._format)
+        if self._format == "tuple":
+            reversed_graph = ITSConstruction.construct(
+                right_graph,
+                left_graph,
+                balance_its=balance_its,
+            )
+        else:
+            reversed_graph = ITSConstruction.ITSGraph(
+                right_graph,
+                left_graph,
+                balance_its=balance_its,
+            )
+
+        reversed_graph.graph["stereo_changes"] = {
+            key: change.reverse() for key, change in self.stereo_effects.items()
+        }
+        sides = self.rc.raw.graph.get("stereo_descriptors", {})
+        reversed_graph.graph["stereo_descriptors"] = {
+            "reactant": dict(sides.get("product", {})),
+            "product": dict(sides.get("reactant", {})),
+        }
+        if "transition" in sides:
+            reversed_graph.graph["stereo_descriptors"]["transition"] = dict(
+                sides["transition"]
+            )
+
+        if self._reverse_stereo_outcomes:
+            # This rule is already the reverse view of a branching rule.
+            reversed_graph.graph["stereo_outcomes"] = {
+                key: outcome.to_dict()
+                for key, outcome in self._reverse_stereo_outcomes.items()
+            }
+            reversed_graph.graph["stereo_query_policies"] = dict(
+                self._reverse_stereo_query_policies
+            )
+        else:
+            reversed_graph.graph["stereo_outcomes"] = {}
+            reverse_policies = dict(self.stereo_query_policies)
+            for key, outcome in self.stereo_outcomes.items():
+                if outcome.kind != "SINGLE":
+                    reverse_policies[key] = "either"
+            reversed_graph.graph["stereo_query_policies"] = reverse_policies
+            if self.stereo_outcomes:
+                reversed_graph.graph["stereo_reverse_outcomes"] = {
+                    key: outcome.to_dict()
+                    for key, outcome in self.stereo_outcomes.items()
+                }
+                reversed_graph.graph["stereo_reverse_query_policies"] = dict(
+                    self.stereo_query_policies
+                )
+
+        return SynRule(
+            reversed_graph,
+            name=self._name,
+            canonicaliser=self._canonicaliser,
+            canon=self._canon_enabled,
+            implicit_h=self._implicit_h,
+            format=self._format,
+        )
+
     def help(self) -> None:
         """Pretty-print raw / canonical contents for quick inspection."""
         print(f"SynRule name={self._name!r}")

@@ -126,6 +126,20 @@ class SynReactor:
     :param electron_diagnostics: If True, expose per-result electron-accounting
         diagnostics without changing generated products.
     :type electron_diagnostics: bool
+    :param radical_policy: ``"strict"`` requires equal radical counts,
+        ``"lower_bound"`` permits extra host radical resource for generalized
+        templates, and ``"ignore"`` preserves legacy matching behavior.
+    :type radical_policy: str
+    :param stereo_mode: Left-side stereo guard policy. ``"require"`` checks
+        every rule guard, ``"strict"`` additionally rejects undeclared host
+        descriptors in the mapped dependency scope, and ``"ignore"`` or
+        ``"propagate"`` do not filter structural mappings. Product stereo and
+        branching are controlled by the stored rule effects/outcomes.
+    :type stereo_mode: str
+    :param stereo_query_mode: Meaning of an unknown-parity rule descriptor.
+        ``"exact"`` matches only unknown host stereo; ``"wildcard"`` matches
+        either orientation. Per-descriptor rule policies override this value.
+    :type stereo_query_mode: str
     :ivar _graph: Cached SynGraph for the substrate.
     :vartype _graph: Optional[SynGraph]
     :ivar _rule: Cached SynRule for the template.
@@ -151,6 +165,9 @@ class SynReactor:
     partial: bool = False
     template_format: ITSFormat = "typesGH"
     electron_diagnostics: bool = False
+    radical_policy: str = "strict"
+    stereo_mode: str = "ignore"
+    stereo_query_mode: str = "exact"
     embed_threshold: Optional[int] = None
     embed_pre_filter: bool = False
     automorphism: bool = True
@@ -174,6 +191,16 @@ class SynReactor:
             raise ValueError(
                 "`explicit_h` cannot be True when `implicit_temp` is False."
             )
+        if self.radical_policy not in {"strict", "lower_bound", "ignore"}:
+            raise ValueError(
+                "radical_policy must be 'strict', 'lower_bound', or 'ignore'."
+            )
+        if self.stereo_mode not in {"ignore", "require", "propagate", "strict"}:
+            raise ValueError(
+                "stereo_mode must be 'ignore', 'require', 'propagate', or 'strict'."
+            )
+        if self.stereo_query_mode not in {"exact", "wildcard"}:
+            raise ValueError("stereo_query_mode must be 'exact' or 'wildcard'.")
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -192,6 +219,9 @@ class SynReactor:
         strategy: Strategy | str = Strategy.ALL,
         template_format: ITSFormat = "typesGH",
         electron_diagnostics: bool = False,
+        radical_policy: str = "strict",
+        stereo_mode: str = "ignore",
+        stereo_query_mode: str = "exact",
     ) -> "SynReactor":
         """
         Alternate constructor: build a SynReactor directly from SMILES.
@@ -217,6 +247,15 @@ class SynReactor:
         :param electron_diagnostics: If True, expose per-result electron
             diagnostics without changing products.
         :type electron_diagnostics: bool
+        :param radical_policy: Radical matching policy: ``"strict"``,
+            ``"lower_bound"``, or ``"ignore"``.
+        :type radical_policy: str
+        :param stereo_mode: Left-side stereo guard policy: ``"ignore"``,
+            ``"propagate"``, ``"require"``, or ``"strict"``.
+        :type stereo_mode: str
+        :param stereo_query_mode: Unknown-parity query policy, either
+            ``"exact"`` or ``"wildcard"``.
+        :type stereo_query_mode: str
         :returns: A new `SynReactor` instance.
         :rtype: SynReactor
         """
@@ -231,6 +270,9 @@ class SynReactor:
             automorphism=automorphism,
             template_format=template_format,
             electron_diagnostics=electron_diagnostics,
+            radical_policy=radical_policy,
+            stereo_mode=stereo_mode,
+            stereo_query_mode=stereo_query_mode,
         )
 
     # ------------------------------------------------------------------
@@ -258,6 +300,25 @@ class SynReactor:
             self._rule = self._wrap_template(self.template)
         return self._rule
 
+    @staticmethod
+    def _filter_radical_lower_bound(
+        mappings: List[MappingDict], pattern: nx.Graph, host: nx.Graph
+    ) -> List[MappingDict]:
+        """Keep mappings whose host provides at least pattern radical count.
+
+        Exact radical comparison remains the concrete-mechanism default.  This
+        opt-in policy is for intentionally generalized rule templates only.
+        """
+        return [
+            mapping
+            for mapping in mappings
+            if all(
+                int(host.nodes[host_node].get("radical", 0))
+                >= int(pattern.nodes[pattern_node].get("radical", 0))
+                for pattern_node, host_node in mapping.items()
+            )
+        ]
+
     # ------------------------------------------------------------------
     # Mapping / ITS / SMARTS (computed once, cached) --------------------
     # ------------------------------------------------------------------
@@ -278,6 +339,8 @@ class SynReactor:
             pattern_graph = self._with_aromatic_n_pi_roles(pattern_graph)
             matching_host = self._with_aromatic_n_pi_roles(self._matching_host_graph())
             node_attrs, edge_attrs = resolve_template_match_attrs(pattern_graph)
+            if self.radical_policy in {"lower_bound", "ignore"}:
+                node_attrs = [attr for attr in node_attrs if attr != "radical"]
 
             # --- Choose matcher ------------------------------------------------
             if self.partial:
@@ -307,8 +370,33 @@ class SynReactor:
                     pre_filter=self.embed_pre_filter,
                 )
 
+            if self.radical_policy == "lower_bound":
+                raw_maps = self._filter_radical_lower_bound(
+                    raw_maps, pattern_graph, matching_host
+                )
+            if self.stereo_mode in {"require", "strict"}:
+                from synkit.Graph.Stereo import candidate_mapping_stereo_matches
+
+                raw_maps = [
+                    mapping
+                    for mapping in raw_maps
+                    if candidate_mapping_stereo_matches(
+                        pattern_graph,
+                        matching_host,
+                        mapping,
+                        mode=self.stereo_mode,
+                        unknown_policy=self.stereo_query_mode,
+                        query_policies=self.rule.stereo_query_policies,
+                    )
+                ]
+
             # --- Automorphism pruning ----------------------------------------
-            if self.automorphism and raw_maps:
+            stereo_sensitive = bool(
+                self.rule.stereo_guards
+                or self.rule.stereo_effects
+                or self.rule.stereo_outcomes
+            )
+            if self.automorphism and raw_maps and not stereo_sensitive:
                 automorphism_pattern = self._automorphism_pattern_graph(pattern_graph)
                 auto = Automorphism(
                     automorphism_pattern,
@@ -342,6 +430,34 @@ class SynReactor:
                 )
                 log.debug(
                     "Automorphism pruning: %d → %d unique mapping(s)",
+                    len(raw_maps),
+                    len(self._mappings),
+                )
+            elif stereo_sensitive:
+                # Use pattern-only orbit pruning with descriptor-position
+                # roles. Host orbit pruning is intentionally deferred because
+                # a structural host automorphism may exchange enantiotopic
+                # embeddings. Product deduplication handles identical results.
+                stereo_pattern = self._stereo_automorphism_pattern_graph(pattern_graph)
+                stereo_attrs = self._automorphism_node_attrs(
+                    stereo_pattern,
+                    node_attrs,
+                )
+                if "_stereo_role" not in stereo_attrs:
+                    stereo_attrs.append("_stereo_role")
+                stereo_auto = Automorphism(
+                    stereo_pattern,
+                    node_attr_keys=stereo_attrs,
+                    edge_attr_keys=edge_attrs,
+                )
+                self._mappings = deduplicate_matches_with_anchor(
+                    raw_maps,
+                    pattern_orbits=stereo_auto.orbits,
+                    pattern_anchor=stereo_auto.anchor_component,
+                )
+                log.debug(
+                    "Stereo-sensitive pattern pruning: %d → %d mapping(s); "
+                    "host symmetry deferred until product deduplication",
                     len(raw_maps),
                     len(self._mappings),
                 )
@@ -399,7 +515,12 @@ class SynReactor:
                     embed_threshold=self.embed_threshold,
                     embed_pre_filter=False,
                 )
-                self._its.extend(its_batch)
+                stereo_batch: List[nx.Graph] = []
+                for candidate in its_batch:
+                    stereo_batch.extend(
+                        self._apply_stereo_rule_metadata(candidate, host_raw, m)
+                    )
+                self._its.extend(stereo_batch)
 
             if self.explicit_h:
                 self._its = [self._explicit_h(g) for g in self._its]
@@ -555,6 +676,21 @@ class SynReactor:
 
         # Invert if asked -----------------------------------------------------
         if self.invert:
+            if isinstance(tpl, SynRule):
+                return tpl.reversed(balance_its=self.implicit_temp)
+            if isinstance(tpl, nx.Graph) and any(
+                key in graph.graph
+                for key in (
+                    "stereo_outcomes",
+                    "stereo_query_policies",
+                    "stereo_reverse_outcomes",
+                )
+            ):
+                return SynRule(
+                    graph,
+                    canonicaliser=self.canonicaliser or GraphCanonicaliser(),
+                    format=format,
+                ).reversed(balance_its=self.implicit_temp)
             if self.implicit_temp:
                 graph = self._invert_template(
                     graph,
@@ -598,6 +734,128 @@ class SynReactor:
                 host = self._implicit_heavy_hydrogens(host)
             self._host_for_matching = host
         return self._host_for_matching
+
+    def _apply_stereo_rule_metadata(
+        self,
+        its: nx.Graph,
+        host: nx.Graph,
+        mapping: MappingDict,
+    ) -> List[nx.Graph]:
+        """Relabel rule stereo effects and expand declared product branches."""
+        from synkit.Graph.Stereo import descriptor_id
+        from synkit.Graph.Stereo.changes import StereoChange
+
+        translation: Dict[int, int] = {}
+        pattern = self.rule.left.raw
+        for pattern_node, host_node in mapping.items():
+            pattern_map = pattern.nodes[pattern_node].get("atom_map", pattern_node)
+            if isinstance(pattern_map, tuple) and len(pattern_map) == 2:
+                pattern_map = pattern_map[0]
+            host_map = host.nodes[host_node].get("atom_map") or host_node
+            if isinstance(pattern_map, int) and isinstance(host_map, int):
+                translation[pattern_map] = host_map
+
+        reactant_registry = dict(host.graph.get("stereo_descriptors", {}))
+        transition_registry = {
+            descriptor_id(
+                change.transition.relabel(translation)
+            ): change.transition.relabel(translation)
+            for change in self.rule.stereo_effects.values()
+            if change.transition is not None
+        }
+        states: List[
+            Tuple[
+                Dict[str, Any],
+                Dict[str, StereoChange],
+                Dict[str, Dict[str, Any]],
+                Dict[str, Dict[str, Any]],
+            ]
+        ] = [(dict(reactant_registry), {}, {}, {})]
+
+        for rule_key, change in self.rule.stereo_effects.items():
+            before = change.before.relabel(translation) if change.before else None
+            after = change.after.relabel(translation) if change.after else None
+            transition = (
+                change.transition.relabel(translation) if change.transition else None
+            )
+            outcome = self.rule.stereo_outcomes.get(rule_key)
+            alternatives = (
+                outcome.alternatives(after)
+                if outcome is not None and after is not None
+                else (after,)
+            )
+            branch_weights = (
+                tuple(outcome.weights or ()) if outcome is not None else (1.0,)
+            )
+            next_states = []
+            for (
+                product_registry,
+                relabeled_changes,
+                branch_metadata,
+                outcome_metadata,
+            ) in states:
+                for branch_index, (alternative, weight) in enumerate(
+                    zip(alternatives, branch_weights)
+                ):
+                    branch_registry = dict(product_registry)
+                    branch_changes = dict(relabeled_changes)
+                    branch_info = dict(branch_metadata)
+                    branch_outcomes = dict(outcome_metadata)
+                    if before is not None:
+                        branch_registry.pop(descriptor_id(before), None)
+                    if alternative is not None:
+                        branch_registry[descriptor_id(alternative)] = alternative
+                    key_descriptor = alternative or before or transition
+                    if key_descriptor is not None:
+                        target = descriptor_id(key_descriptor)
+                        branch_changes[target] = StereoChange(
+                            change.change,
+                            before,
+                            alternative,
+                            transition,
+                        )
+                        if outcome is not None:
+                            branch_outcomes[target] = outcome.to_dict()
+                            branch_info[target] = {
+                                "kind": outcome.kind,
+                                "branch_index": branch_index,
+                                "weight": weight,
+                            }
+                    next_states.append(
+                        (
+                            branch_registry,
+                            branch_changes,
+                            branch_info,
+                            branch_outcomes,
+                        )
+                    )
+            states = next_states
+
+        results = []
+        for (
+            product_registry,
+            relabeled_changes,
+            branch_metadata,
+            outcome_metadata,
+        ) in states:
+            branch = deepcopy(its)
+            branch.graph["stereo_descriptors"] = {
+                "reactant": dict(reactant_registry),
+                "product": product_registry,
+            }
+            if transition_registry:
+                branch.graph["stereo_descriptors"]["transition"] = dict(
+                    transition_registry
+                )
+            branch.graph["stereo_changes"] = relabeled_changes
+            branch.graph["stereo_outcomes"] = outcome_metadata
+            branch.graph["stereo_branch"] = branch_metadata
+            total_weight = 1.0
+            for metadata in branch_metadata.values():
+                total_weight *= float(metadata["weight"])
+            branch.graph["stereo_branch_weight"] = total_weight
+            results.append(branch)
+        return results
 
     @staticmethod
     def _implicit_heavy_hydrogens(graph: nx.Graph) -> nx.Graph:
@@ -817,11 +1075,24 @@ class SynReactor:
 
     @staticmethod
     def _is_electron_aware_template(rc: nx.Graph) -> bool:
-        """Return whether an RC carries sigma/pi rewrite state."""
-        return any(
+        """Return whether an RC carries paired Lewis-state rewrite data.
+
+        Explicit hydrogen transfer edges may be folded into ``hcount`` by
+        :class:`SynRule`.  Radical or lone-pair changes on the remaining nodes
+        still require the electron-aware tuple rewrite path in that case.
+        """
+        edge_state = any(
             "sigma_order" in data and "pi_order" in data
             for _, _, data in rc.edges(data=True)
         )
+        node_state = any(
+            isinstance(data.get(key), tuple)
+            and len(data[key]) == 2
+            and data[key][0] != data[key][1]
+            for _, data in rc.nodes(data=True)
+            for key in ("radical", "lone_pairs", "valence_electrons")
+        )
+        return edge_state or node_state
 
     @staticmethod
     def _automorphism_node_attrs(
@@ -851,6 +1122,59 @@ class SynReactor:
             types = rc_attrs.get("typesGH")
             if isinstance(types, tuple) and len(types) == 2:
                 attrs["_rewrite_role"] = self._chemical_rewrite_role(types[1])
+        return decorated
+
+    def _stereo_automorphism_pattern_graph(self, pattern: nx.Graph) -> nx.Graph:
+        """Decorate pattern atoms by their ordered rule-descriptor roles.
+
+        Exact positions are deliberately conservative: an automorphism may
+        still exchange atoms absent from all stereo states (for example H2),
+        but cannot exchange two references whose permutation could invert a
+        stored descriptor.
+        """
+        decorated = self._automorphism_pattern_graph(pattern)
+        by_map: Dict[int, Any] = {}
+        for node, attrs in decorated.nodes(data=True):
+            atom_map = attrs.get("atom_map", node)
+            if isinstance(atom_map, int):
+                by_map[atom_map] = node
+
+        roles: Dict[Any, List[Tuple[str, str, int]]] = defaultdict(list)
+
+        def role_position(descriptor: Any, position: int) -> int:
+            # Planar-bond identity permits reversal of the complete bond and
+            # simultaneous end swaps. Molecular connectivity/atom labels
+            # couple those moves, while a coarse center/reference role lets
+            # the legitimate whole-bond reversal survive automorphism.
+            if getattr(descriptor, "descriptor_class", None) == "planar_bond":
+                return -2 if position in {2, 3} else -1
+            # Tetrahedral odd/even permutation parity requires exact slots.
+            return position
+
+        for key, change in self.rule.stereo_effects.items():
+            for state_name, descriptor in (
+                ("before", change.before),
+                ("after", change.after),
+                ("transition", change.transition),
+            ):
+                if descriptor is None:
+                    continue
+                for position, atom_map in enumerate(descriptor.atoms):
+                    if isinstance(atom_map, int) and atom_map in by_map:
+                        roles[by_map[atom_map]].append(
+                            (key, state_name, role_position(descriptor, position))
+                        )
+        for key, descriptor in self.rule.stereo_guards.items():
+            for position, atom_map in enumerate(descriptor.atoms):
+                if isinstance(atom_map, int) and atom_map in by_map:
+                    roles[by_map[atom_map]].append(
+                        (key, "guard", role_position(descriptor, position))
+                    )
+
+        for node in decorated.nodes:
+            decorated.nodes[node]["_stereo_role"] = tuple(
+                sorted(set(roles.get(node, [])))
+            )
         return decorated
 
     @staticmethod
@@ -904,11 +1228,18 @@ class SynReactor:
             node=ITS_STRUCTURAL_NODE_ATTRS,
             edge="_its_edge_sig",
         )
-        buckets: Dict[str, List[Tuple[int, nx.Graph]]] = defaultdict(list)
+        buckets: Dict[Any, List[Tuple[int, nx.Graph]]] = defaultdict(list)
         for index, its in enumerate(its_graphs):
             prepared = SynReactor._prepare_its_for_structural_cluster(its)
             signature = hasher.weisfeiler_lehman_graph_hash(prepared)
-            buckets[signature].append((index, prepared))
+            product_stereo = its.graph.get("stereo_descriptors", {}).get("product", {})
+            stereo_signature = tuple(
+                sorted(
+                    (key, descriptor.canonical_form())
+                    for key, descriptor in product_stereo.items()
+                )
+            )
+            buckets[(signature, stereo_signature)].append((index, prepared))
 
         cluster = GraphCluster(
             node_label_names=ITS_STRUCTURAL_NODE_ATTRS,

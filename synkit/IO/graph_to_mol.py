@@ -112,6 +112,29 @@ class GraphToMol:
         if sanitize:
             Chem.SanitizeMol(mol)
 
+        descriptors = graph.graph.get("stereo_descriptors", {})
+        if descriptors:
+            from synkit.Graph.Stereo import apply_stereo_to_rdkit
+
+            # Relative descriptors extracted from an ordinary unmapped
+            # molecule use RDKit index + 1 as their internal references.
+            # The public RDKit adapter intentionally requires unique maps,
+            # so provide temporary internal maps only for this projection
+            # and restore the molecule's external mapping state afterward.
+            original_maps = [atom.GetAtomMapNum() for atom in mol.GetAtoms()]
+            has_unique_maps = all(value > 0 for value in original_maps) and len(
+                set(original_maps)
+            ) == len(original_maps)
+            if not has_unique_maps:
+                for atom in mol.GetAtoms():
+                    atom.SetAtomMapNum(atom.GetIdx() + 1)
+            try:
+                apply_stereo_to_rdkit(mol, descriptors.values())
+            finally:
+                if not has_unique_maps:
+                    for atom, atom_map in zip(mol.GetAtoms(), original_maps):
+                        atom.SetAtomMapNum(atom_map)
+
         return mol
 
     @staticmethod

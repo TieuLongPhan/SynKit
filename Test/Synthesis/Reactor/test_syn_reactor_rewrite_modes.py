@@ -1,11 +1,32 @@
 import unittest
 
 import networkx as nx
+from rdkit import Chem
+
 from synkit.IO.chem_converter import detect_its_format, rsmi_to_its
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
+ETHANE_DEHYDROGENATION = "[CH2:1]([H:3])[CH2:2]([H:4])>>" "[CH2:1]=[CH2:2].[H:3][H:4]"
+METHANOL_DEHYDROGENATION = "[O:1]([H:3])[CH2:2]([H:4])>>" "[O+:1]=[CH2:2].[H:3][H:4]"
+
 
 class TestSynReactorRewriteModes(unittest.TestCase):
+    def test_public_templates_conserve_mapped_atoms(self):
+        parser = Chem.SmilesParserParams()
+        parser.removeHs = False
+        for reaction in (ETHANE_DEHYDROGENATION, METHANOL_DEHYDROGENATION):
+            reactants, products = reaction.split(">>", 1)
+            mapped_atoms = []
+            for side in (reactants, products):
+                molecule = Chem.MolFromSmiles(side, parser)
+                self.assertIsNotNone(molecule)
+                mapped_atoms.append(
+                    {atom.GetAtomMapNum() for atom in molecule.GetAtoms()}
+                )
+
+            self.assertEqual(mapped_atoms[0], mapped_atoms[1])
+            self.assertEqual(mapped_atoms[0], {1, 2, 3, 4})
+
     def test_detects_legacy_template(self):
         rc = nx.Graph()
         rc.add_edge(1, 2, order=(1.0, 2.0))
@@ -25,10 +46,9 @@ class TestSynReactorRewriteModes(unittest.TestCase):
         self.assertTrue(SynReactor._is_electron_aware_template(rc))
 
     def test_invert_tuple_template_preserves_tuple_representation(self):
-        template = "[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]"
         reactor = SynReactor(
-            "[CH2:1]=[CH2:2]",
-            template,
+            "C=C.[H][H]",
+            ETHANE_DEHYDROGENATION,
             invert=True,
             explicit_h=False,
             template_format="tuple",
@@ -140,8 +160,8 @@ class TestSynReactorRewriteModes(unittest.TestCase):
 
     def test_public_tuple_template_reaches_electron_aware_rewrite(self):
         reactor = SynReactor(
-            "[CH3:1][CH3:2]",
-            "[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]",
+            "CC",
+            ETHANE_DEHYDROGENATION,
             explicit_h=False,
             template_format="tuple",
         )
@@ -149,19 +169,19 @@ class TestSynReactorRewriteModes(unittest.TestCase):
         self.assertEqual(detect_its_format(reactor.rule.rc.raw), "tuple")
         self.assertTrue(reactor.its_list)
         self.assertTrue(reactor.its_list[0].graph["electron_aware_rewrite"])
-        self.assertEqual(reactor.smarts, ["[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]"])
+        self.assertEqual(len(reactor.smarts), 1)
+        self.assertIn(".[H:", reactor.smarts[0].split(">>", 1)[1])
 
     def test_diagnostics_are_opt_in_and_do_not_change_products(self):
-        template = "[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]"
         baseline = SynReactor(
-            "[CH3:1][CH3:2]",
-            template,
+            "CC",
+            ETHANE_DEHYDROGENATION,
             explicit_h=False,
             template_format="tuple",
         )
         diagnosed = SynReactor(
-            "[CH3:1][CH3:2]",
-            template,
+            "CC",
+            ETHANE_DEHYDROGENATION,
             explicit_h=False,
             template_format="tuple",
             electron_diagnostics=True,
@@ -175,8 +195,10 @@ class TestSynReactorRewriteModes(unittest.TestCase):
 
     def test_diagnostics_report_public_nonzero_mismatch(self):
         template = rsmi_to_its(
-            "[OH:1][CH3:2]>>[O+:1]=[CH2:2]",
+            METHANOL_DEHYDROGENATION,
             format="tuple",
+            drop_non_aam=False,
+            use_index_as_atom_map=True,
         )
         template.nodes[1]["lone_pairs"] = (2, 0)
         reactor = SynReactor(
