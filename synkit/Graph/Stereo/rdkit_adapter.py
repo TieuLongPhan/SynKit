@@ -11,6 +11,7 @@ from .descriptors import (
     SquarePlanarStereo,
     StereoValue,
     TetrahedralStereo,
+    TrigonalBipyramidalStereo,
     descriptor_id,
     virtual_reference,
 )
@@ -27,8 +28,33 @@ _SQUARE_PLANAR_POSITION_MAPS = {
     3: (0, 1, 3, 2),
 }
 
+# A/B are the two axial positions and C/D/E are the cyclic equatorial
+# positions in RDKit's documented TB table.  Each value maps RDKit's current
+# local neighbor order into that positional SynKit representation.
+_TRIGONAL_BIPYRAMIDAL_POSITION_MAPS = {
+    1: (0, 4, 1, 2, 3),
+    2: (0, 4, 1, 3, 2),
+    3: (0, 3, 1, 2, 4),
+    4: (0, 3, 1, 4, 2),
+    5: (0, 2, 1, 3, 4),
+    6: (0, 2, 1, 4, 3),
+    7: (0, 1, 2, 3, 4),
+    8: (0, 1, 2, 4, 3),
+    9: (1, 4, 0, 2, 3),
+    10: (1, 3, 0, 2, 4),
+    11: (1, 4, 0, 3, 2),
+    12: (1, 3, 0, 4, 2),
+    13: (1, 2, 0, 3, 4),
+    14: (1, 2, 0, 4, 3),
+    15: (2, 4, 0, 1, 3),
+    16: (2, 3, 0, 1, 4),
+    17: (3, 4, 0, 1, 2),
+    18: (3, 4, 0, 2, 1),
+    19: (2, 3, 0, 4, 1),
+    20: (2, 4, 0, 3, 1),
+}
+
 _UNSUPPORTED_NON_TETRAHEDRAL_TAGS = {
-    Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL: "trigonal_bipyramidal",
     Chem.ChiralType.CHI_OCTAHEDRAL: "octahedral",
 }
 
@@ -44,26 +70,40 @@ def _square_planar_permutations(mol: Chem.Mol) -> dict[int, int]:
     }
 
 
-def _square_planar_local_references(
+def _trigonal_bipyramidal_permutations(mol: Chem.Mol) -> dict[int, int]:
+    """Return RDKit TBP permutations keyed by center atom index."""
+    return {
+        int(info.centeredOn): int(info.permutation)
+        for info in Chem.FindPotentialStereo(mol)
+        if info.type == Chem.StereoType.Atom_TrigonalBipyramidal
+        and mol.GetAtomWithIdx(int(info.centeredOn)).GetChiralTag()
+        == Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL
+    }
+
+
+def _non_tetrahedral_local_references(
     atom: Chem.Atom,
     ids: dict[int, int],
     center: int,
-) -> tuple[int | str, int | str, int | str, int | str]:
-    """Resolve RDKit's local four-ligand order without inventing vacancies."""
+    coordination: int,
+    descriptor_name: str,
+) -> tuple[int | str, ...]:
+    """Resolve a local ligand order without inventing vacant sites."""
     refs: list[int | str] = [
         ids[neighbor.GetIdx()] for neighbor in atom.GetNeighbors()
     ]
-    if len(refs) == 4:
-        return tuple(refs)  # type: ignore[return-value]
+    if len(refs) == coordination:
+        return tuple(refs)
     hidden_hydrogens = int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
-    if len(refs) + hidden_hydrogens != 4:
+    if len(refs) + hidden_hydrogens != coordination:
         raise ValueError(
-            f"Square-planar center {center} requires exactly four represented "
+            f"{descriptor_name} center {center} requires exactly "
+            f"{coordination} represented "
             "or hydrogen ligands; vacant or otherwise missing coordination "
             "sites cannot be inferred safely."
         )
     refs.extend(virtual_reference("H", center) for _ in range(hidden_hydrogens))
-    return tuple(refs)  # type: ignore[return-value]
+    return tuple(refs)
 
 
 def _atom_ids(mol: Chem.Mol, *, require_maps: bool) -> dict[int, int]:
@@ -105,6 +145,7 @@ def descriptors_from_rdkit(
     ids = _atom_ids(mol, require_maps=require_atom_maps)
     descriptors: dict[str, StereoValue] = {}
     square_planar_permutations = _square_planar_permutations(mol)
+    trigonal_bipyramidal_permutations = _trigonal_bipyramidal_permutations(mol)
     tetra_tags = {
         Chem.ChiralType.CHI_TETRAHEDRAL_CW: 1,
         Chem.ChiralType.CHI_TETRAHEDRAL_CCW: -1,
@@ -120,11 +161,41 @@ def descriptors_from_rdkit(
                     f"Square-planar center {center} has unsupported RDKit "
                     f"permutation {permutation!r}."
                 )
-            local_refs = _square_planar_local_references(atom, ids, center)
+            local_refs = _non_tetrahedral_local_references(
+                atom,
+                ids,
+                center,
+                4,
+                "Square-planar",
+            )
             cyclic_refs = tuple(local_refs[index] for index in positions)
             descriptor = SquarePlanarStereo(
                 (center, *cyclic_refs),
                 0,
+                "rdkit",
+            )
+            descriptors[descriptor_id(descriptor)] = descriptor
+            continue
+        if tag == Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL:
+            center = ids[atom.GetIdx()]
+            permutation = trigonal_bipyramidal_permutations.get(atom.GetIdx())
+            positions = _TRIGONAL_BIPYRAMIDAL_POSITION_MAPS.get(permutation)
+            if positions is None:
+                raise ValueError(
+                    f"Trigonal-bipyramidal center {center} has unsupported "
+                    f"RDKit permutation {permutation!r}."
+                )
+            local_refs = _non_tetrahedral_local_references(
+                atom,
+                ids,
+                center,
+                5,
+                "Trigonal-bipyramidal",
+            )
+            positional_refs = tuple(local_refs[index] for index in positions)
+            descriptor = TrigonalBipyramidalStereo(
+                (center, *positional_refs),
+                1,
                 "rdkit",
             )
             descriptors[descriptor_id(descriptor)] = descriptor
@@ -236,10 +307,12 @@ def apply_stereo_to_rdkit(
                     "and no descriptor."
                 )
             atom = mol.GetAtomWithIdx(by_map[descriptor.center])
-            local_refs = _square_planar_local_references(
+            local_refs = _non_tetrahedral_local_references(
                 atom,
                 ids,
                 descriptor.center,
+                4,
+                "Square-planar",
             )
             matching_permutations = []
             for permutation, positions in _SQUARE_PLANAR_POSITION_MAPS.items():
@@ -264,6 +337,49 @@ def apply_stereo_to_rdkit(
             # RDKit 2026.03 exposes permutation reads through StereoInfo but no
             # Atom setter in Python.  This is RDKit's own integer property; the
             # public FindPotentialStereo() round-trip is exercised by tests.
+            atom.SetIntProp("_chiralPermutation", permutation)
+        elif isinstance(descriptor, TrigonalBipyramidalStereo):
+            if (
+                not isinstance(descriptor.center, int)
+                or descriptor.center not in by_map
+            ):
+                raise ValueError(
+                    "Trigonal-bipyramidal center is absent from RDKit molecule."
+                )
+            if descriptor.parity is None:
+                raise NotImplementedError(
+                    "RDKit projection of an unknown trigonal-bipyramidal "
+                    "orientation would lose the distinction between an "
+                    "unknown descriptor and no descriptor."
+                )
+            atom = mol.GetAtomWithIdx(by_map[descriptor.center])
+            local_refs = _non_tetrahedral_local_references(
+                atom,
+                ids,
+                descriptor.center,
+                5,
+                "Trigonal-bipyramidal",
+            )
+            matching_permutations = []
+            for (
+                permutation,
+                positions,
+            ) in _TRIGONAL_BIPYRAMIDAL_POSITION_MAPS.items():
+                positional_refs = tuple(local_refs[index] for index in positions)
+                candidate = TrigonalBipyramidalStereo(
+                    (descriptor.center, *positional_refs),
+                    1,
+                )
+                if candidate == descriptor:
+                    matching_permutations.append(permutation)
+            if not matching_permutations:
+                raise ValueError(
+                    "Trigonal-bipyramidal descriptor ligands do not match the "
+                    f"RDKit coordination sphere at center {descriptor.center}."
+                )
+
+            permutation = min(matching_permutations)
+            atom.SetChiralTag(Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL)
             atom.SetIntProp("_chiralPermutation", permutation)
         elif isinstance(descriptor, PlanarBondStereo):
             left, right = descriptor.atoms[2:4]

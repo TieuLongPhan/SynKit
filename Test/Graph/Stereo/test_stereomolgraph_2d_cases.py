@@ -13,6 +13,7 @@ from rdkit import Chem
 
 from synkit.Graph.Stereo import (
     SquarePlanarStereo,
+    TrigonalBipyramidalStereo,
     apply_stereo_to_rdkit,
     descriptors_from_rdkit,
 )
@@ -26,6 +27,7 @@ from Test.Graph.Stereo.stereomolgraph_2d_fixtures import (
     NON_TETRAHEDRAL_RDKIT_CASES,
     PINNED_COMMIT,
     SQUARE_PLANAR_CASES,
+    TRIGONAL_BIPYRAMIDAL_CASES,
     InchiCase,
     NonTetrahedralCase,
 )
@@ -39,7 +41,7 @@ EXPECTED_RDKIT_TAGS = {
 DEFERRED_NON_TETRAHEDRAL_CASES = tuple(
     case
     for case in NON_TETRAHEDRAL_RDKIT_CASES
-    if case.stereo_class != "square_planar"
+    if case.stereo_class not in {"square_planar", "trigonal_bipyramidal"}
 )
 
 
@@ -48,11 +50,14 @@ def _assign_index_atom_maps(molecule: Chem.Mol) -> None:
         atom.SetAtomMapNum(atom.GetIdx() + 1)
 
 
-def _clear_square_planar_tag(molecule: Chem.Mol) -> None:
+def _clear_non_tetrahedral_tag(
+    molecule: Chem.Mol,
+    tag: Chem.ChiralType,
+) -> None:
     center = next(
         atom
         for atom in molecule.GetAtoms()
-        if atom.GetChiralTag() == Chem.ChiralType.CHI_SQUAREPLANAR
+        if atom.GetChiralTag() == tag
     )
     center.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
     if center.HasProp("_chiralPermutation"):
@@ -108,7 +113,7 @@ def test_square_planar_fixture_survives_clearing_and_application(
     assert len(before) == 1
     assert isinstance(next(iter(before.values())), SquarePlanarStereo)
 
-    _clear_square_planar_tag(molecule)
+    _clear_non_tetrahedral_tag(molecule, Chem.ChiralType.CHI_SQUAREPLANAR)
     assert descriptors_from_rdkit(molecule) == {}
 
     apply_stereo_to_rdkit(molecule, before.values())
@@ -153,7 +158,7 @@ def test_square_planar_fixture_is_atom_renumbering_invariant(
     renumbered = Chem.RenumberAtoms(molecule, order)
     assert descriptors_from_rdkit(renumbered) == expected
 
-    _clear_square_planar_tag(renumbered)
+    _clear_non_tetrahedral_tag(renumbered, Chem.ChiralType.CHI_SQUAREPLANAR)
     apply_stereo_to_rdkit(renumbered, expected.values())
     assert descriptors_from_rdkit(renumbered) == expected
 
@@ -184,6 +189,108 @@ def test_square_planar_cis_and_trans_fixture_identities_are_distinct() -> None:
 
 @pytest.mark.parametrize(
     "case",
+    TRIGONAL_BIPYRAMIDAL_CASES,
+    ids=lambda case: case.name,
+)
+def test_trigonal_bipyramidal_fixture_survives_clearing_and_application(
+    case: NonTetrahedralCase,
+) -> None:
+    molecule = Chem.MolFromSmiles(case.smiles)
+    assert molecule is not None
+    _assign_index_atom_maps(molecule)
+
+    before = descriptors_from_rdkit(molecule)
+    assert len(before) == 1
+    assert isinstance(next(iter(before.values())), TrigonalBipyramidalStereo)
+
+    _clear_non_tetrahedral_tag(
+        molecule,
+        Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL,
+    )
+    assert descriptors_from_rdkit(molecule) == {}
+
+    apply_stereo_to_rdkit(molecule, before.values())
+    assert descriptors_from_rdkit(molecule) == before
+
+
+@pytest.mark.parametrize(
+    "case",
+    TRIGONAL_BIPYRAMIDAL_CASES,
+    ids=lambda case: case.name,
+)
+def test_trigonal_bipyramidal_fixture_survives_synkit_graph_round_trip(
+    case: NonTetrahedralCase,
+) -> None:
+    molecule = Chem.MolFromSmiles(case.smiles)
+    assert molecule is not None
+
+    graph = MolToGraph().transform(molecule)
+    rebuilt = GraphToMol().graph_to_mol(graph)
+
+    assert len(graph.graph["stereo_descriptors"]) == 1
+    assert descriptors_from_rdkit(
+        rebuilt,
+        require_atom_maps=False,
+    ) == graph.graph["stereo_descriptors"]
+
+
+@pytest.mark.parametrize(
+    "case",
+    TRIGONAL_BIPYRAMIDAL_CASES,
+    ids=lambda case: case.name,
+)
+def test_trigonal_bipyramidal_fixture_is_atom_renumbering_invariant(
+    case: NonTetrahedralCase,
+) -> None:
+    molecule = Chem.MolFromSmiles(case.smiles)
+    assert molecule is not None
+    _assign_index_atom_maps(molecule)
+    expected = descriptors_from_rdkit(molecule)
+
+    order = list(reversed(range(molecule.GetNumAtoms())))
+    renumbered = Chem.RenumberAtoms(molecule, order)
+    assert descriptors_from_rdkit(renumbered) == expected
+
+    _clear_non_tetrahedral_tag(
+        renumbered,
+        Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL,
+    )
+    apply_stereo_to_rdkit(renumbered, expected.values())
+    assert descriptors_from_rdkit(renumbered) == expected
+
+
+def test_all_tbp_raw_permutations_share_one_positional_identity() -> None:
+    descriptors = []
+    element_maps = {"As": 1, "S": 2, "F": 3, "Cl": 4, "Br": 5, "N": 6}
+    for case in TRIGONAL_BIPYRAMIDAL_CASES:
+        molecule = Chem.MolFromSmiles(case.smiles)
+        assert molecule is not None
+        for atom in molecule.GetAtoms():
+            atom.SetAtomMapNum(element_maps[atom.GetSymbol()])
+        descriptors.append(next(iter(descriptors_from_rdkit(molecule).values())))
+
+    assert all(descriptor == descriptors[0] for descriptor in descriptors)
+
+
+def test_tbp_raw_permutations_on_one_local_order_encode_inverses() -> None:
+    element_maps = {"As": 1, "S": 2, "F": 3, "Cl": 4, "Br": 5, "N": 6}
+    descriptors = []
+    for smiles in (
+        "S[As@TB1](F)(Cl)(Br)N",
+        "S[As@TB2](F)(Cl)(Br)N",
+    ):
+        molecule = Chem.MolFromSmiles(smiles)
+        assert molecule is not None
+        for atom in molecule.GetAtoms():
+            atom.SetAtomMapNum(element_maps[atom.GetSymbol()])
+        descriptors.append(next(iter(descriptors_from_rdkit(molecule).values())))
+
+    assert descriptors[0] != descriptors[1]
+    assert descriptors[0].invert() == descriptors[1]
+
+
+@pytest.mark.parametrize(
+    "case",
     DEFERRED_NON_TETRAHEDRAL_CASES,
     ids=lambda case: case.name,
 )
@@ -208,7 +315,7 @@ def test_non_tetrahedral_rdkit_fixture_is_explicitly_deferred(
 
 @pytest.mark.parametrize(
     "case",
-    (DEFERRED_NON_TETRAHEDRAL_CASES[0], DEFERRED_NON_TETRAHEDRAL_CASES[-1]),
+    (DEFERRED_NON_TETRAHEDRAL_CASES[0],),
     ids=lambda case: case.stereo_class,
 )
 def test_graph_conversion_propagates_unsupported_stereo_loss(

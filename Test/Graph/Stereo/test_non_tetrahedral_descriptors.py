@@ -225,9 +225,9 @@ def test_mechanism_envelope_accepts_extended_descriptor_classes():
 
 def test_rdkit_boundary_rejects_unimplemented_non_tetrahedral_projection():
     mol = Chem.MolFromSmiles("[CH4:1]")
-    descriptor = TrigonalBipyramidalStereo((1, 2, 3, 4, 5, 6), 1)
+    descriptor = OctahedralStereo((1, 2, 3, 4, 5, 6, 7), 1)
 
-    with pytest.raises(NotImplementedError, match="trigonal_bipyramidal"):
+    with pytest.raises(NotImplementedError, match="octahedral"):
         apply_stereo_to_rdkit(mol, [descriptor])
 
 
@@ -286,6 +286,61 @@ def test_square_planar_hidden_hydrogen_survives_clearing_and_application():
     assert descriptors_from_rdkit(mol) == expected
 
 
+def test_rdkit_boundary_rejects_unknown_tbp_projection():
+    mol = Chem.MolFromSmiles(
+        "[S:2][As:1]([F:3])([Cl:4])([Br:5])[N:6]",
+    )
+    descriptor = TrigonalBipyramidalStereo((1, 2, 6, 3, 4, 5), None)
+
+    with pytest.raises(NotImplementedError, match="unknown trigonal-bipyramidal"):
+        apply_stereo_to_rdkit(mol, [descriptor])
+
+
+def test_rdkit_boundary_rejects_mismatched_tbp_ligands():
+    mol = Chem.MolFromSmiles(
+        "[S:2][As:1]([F:3])([Cl:4])([Br:5])[N:6]",
+    )
+    descriptor = TrigonalBipyramidalStereo((1, 2, 6, 3, 4, 99), 1)
+
+    with pytest.raises(ValueError, match="ligands do not match"):
+        apply_stereo_to_rdkit(mol, [descriptor])
+
+
+@pytest.mark.parametrize("local_order", permutations((2, 3, 4, 5, 6)))
+def test_tbp_projection_is_invariant_to_every_local_order(local_order):
+    editable = Chem.RWMol()
+    center = Chem.Atom("As")
+    center.SetAtomMapNum(1)
+    center_idx = editable.AddAtom(center)
+    elements = {2: "S", 3: "F", 4: "Cl", 5: "Br", 6: "N"}
+    for atom_map in local_order:
+        ligand = Chem.Atom(elements[atom_map])
+        ligand.SetAtomMapNum(atom_map)
+        ligand_idx = editable.AddAtom(ligand)
+        editable.AddBond(center_idx, ligand_idx, Chem.BondType.SINGLE)
+    mol = editable.GetMol()
+    mol.UpdatePropertyCache(strict=False)
+    descriptor = TrigonalBipyramidalStereo((1, 2, 6, 3, 4, 5), 1)
+
+    apply_stereo_to_rdkit(mol, [descriptor])
+
+    assert descriptors_from_rdkit(mol) == {"atom:1": descriptor}
+
+
+def test_tbp_hidden_hydrogen_survives_clearing_and_application():
+    mol = Chem.MolFromSmiles("[S:1][As@TB1H:2]([F:3])([Cl:4])[Br:5]")
+    expected = descriptors_from_rdkit(mol)
+    descriptor = next(iter(expected.values()))
+    center = mol.GetAtomWithIdx(1)
+
+    assert "@H:2" in descriptor.atoms
+    center.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+    center.ClearProp("_chiralPermutation")
+    apply_stereo_to_rdkit(mol, expected.values())
+
+    assert descriptors_from_rdkit(mol) == expected
+
+
 def test_extended_capability_boundary_is_explicit():
     assert SUPPORTED_STEREO_DESCRIPTOR_CLASSES == {
         "tetrahedral",
@@ -298,6 +353,7 @@ def test_extended_capability_boundary_is_explicit():
     assert RDKIT_STEREO_DESCRIPTOR_CLASSES == {
         "tetrahedral",
         "square_planar",
+        "trigonal_bipyramidal",
         "planar_bond",
     }
     assert "rigid_bond_33" in DEFERRED_STEREO_DESCRIPTOR_CLASSES

@@ -81,7 +81,12 @@ SUPPORTED_STEREO_DESCRIPTOR_CLASSES = frozenset(
     }
 )
 RDKIT_STEREO_DESCRIPTOR_CLASSES = frozenset(
-    {"tetrahedral", "square_planar", "planar_bond"}
+    {
+        "tetrahedral",
+        "square_planar",
+        "trigonal_bipyramidal",
+        "planar_bond",
+    }
 )
 DEFERRED_STEREO_DESCRIPTOR_CLASSES = frozenset(
     {"rigid_bond_33", "rigid_bond_23", "rigid_bond_13", "rigid_bond_12"}
