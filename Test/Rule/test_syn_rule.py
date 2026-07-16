@@ -93,6 +93,120 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         self.assertIn("rc=(|V|=", r)
         self.assertIn("left=(|V|=", r)
         self.assertIn("right=(|V|=", r)
+        self.assertIn("stereo=none", r)
+
+    def test_repr_summarizes_stereo_semantics(self):
+        sn2 = SynRule.from_smart(
+            "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>"
+            "[CH3:1][C@@H:2]([F:3])[OH:5].[Cl-:4]",
+            name="sn2-inversion",
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+        )
+        self.assertIn(
+            "stereo=(guards={atom:1},effects={INVERTED:1})",
+            repr(sn2),
+        )
+        self.assertEqual(
+            sn2.stereo_summary(),
+            {
+                "atom:2": {
+                    "descriptor": "tetrahedral",
+                    "change": "INVERTED",
+                    "reactant": {
+                        "atoms": [2, 1, 3, 4, "@H:2"],
+                        "parity": -1,
+                    },
+                    "product": {
+                        "atoms": [2, 1, 3, 5, "@H:2"],
+                        "parity": 1,
+                    },
+                    "reference_delta": {"removed": [4], "added": [5]},
+                }
+            },
+        )
+
+        racemic = SynRule.from_smart(
+            "[CH3:1][CH+:2][F:3].[OH-:4]>>"
+            "[CH3:1][C@H:2]([F:3])[OH:4]",
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+            stereo_outcomes={"atom:2": "RACEMIC"},
+        )
+        self.assertIn(
+            "stereo=(guards=0,effects={FORMED:1},outcomes={RACEMIC:1})",
+            repr(racemic),
+        )
+        self.assertEqual(
+            racemic.stereo_summary()["atom:2"]["outcome"],
+            {"kind": "RACEMIC", "weights": [0.5, 0.5]},
+        )
+        self.assertIn("queries={either:1}", repr(racemic.reversed()))
+
+    def test_syn_anti_coupling_replaces_encoded_endpoint_stereo(self):
+        semihydrogenation = (
+            "[CH3:1][C:2]#[C:3][CH3:4].[H:5][H:6]>>"
+            "[CH3:1][C:2]([H:5])=[C:3]([H:6])[CH3:4]"
+        )
+
+        def coupling(relation):
+            return {"bond:2-3": relation}
+
+        syn = SynRule.from_smart(
+            semihydrogenation,
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+            stereo_couplings=coupling("syn"),
+        )
+        anti = SynRule.from_smart(
+            semihydrogenation,
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+            stereo_couplings=coupling("anti"),
+        )
+
+        self.assertEqual(
+            syn.stereo_summary()["bond:2-3"]["coupling"],
+            {
+                "kind": "VICINAL_ADDITION",
+                "relation": "SYN",
+                "centers": [2, 3],
+                "ligands": [5, 6],
+            },
+        )
+        self.assertEqual(
+            anti.stereo_summary()["bond:2-3"]["coupling"]["relation"],
+            "ANTI",
+        )
+        self.assertEqual(syn.stereo_effects, {})
+        self.assertEqual(anti.stereo_effects, {})
+        self.assertEqual(
+            anti.rc.raw.graph["stereo_couplings"],
+            {"bond:2-3": "ANTI"},
+        )
+        self.assertNotEqual(syn, anti)
+        self.assertIn("couplings={SYN:1}", repr(syn))
+        self.assertEqual(
+            syn.reversed().stereo_couplings["bond:2-3"].kind,
+            "VICINAL_ELIMINATION",
+        )
+
+        encoded_endpoint = (
+            "[CH3:1][C:2]#[C:3][CH3:4].[H:5][H:6]>>"
+            "[CH3:1]/[C:2]([H:5])=[C:3](/[H:6])[CH3:4]"
+        )
+        with self.assertRaisesRegex(ValueError, "derives endpoint stereo"):
+            SynRule.from_smart(
+                encoded_endpoint,
+                canon=False,
+                implicit_h=False,
+                format="tuple",
+                stereo_couplings=coupling("syn"),
+            )
 
     def test_tuple_rule_preserves_tuple_representation(self):
         smart = "[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]"

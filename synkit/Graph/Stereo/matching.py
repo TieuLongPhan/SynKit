@@ -29,7 +29,11 @@ def _atom_map_translation(
 def _node_by_atom_map(graph: nx.Graph) -> dict[int, Any]:
     values: dict[int, Any] = {}
     for node, attrs in graph.nodes(data=True):
-        atom_map = attrs.get("atom_map", node)
+        # Ordinary unmapped molecules use graph node IDs as internal stereo
+        # references. Treat atom-map zero as absent, matching
+        # ``_atom_map_translation`` above, so explicit H can normalize to the
+        # same virtual-H identity as its implicit representation.
+        atom_map = attrs.get("atom_map") or node
         if isinstance(atom_map, int):
             values[atom_map] = node
     return values
@@ -65,10 +69,15 @@ def normalize_hydrogen_references(
     by_map = _node_by_atom_map(graph)
     if isinstance(descriptor, TetrahedralStereo):
         center = descriptor.center
+        bound_hydrogens = {
+            ref
+            for ref in descriptor.atoms[1:]
+            if _is_bound_explicit_hydrogen(graph, by_map, ref, center)
+        }
         refs = tuple(
             (
                 f"@H:{center}"
-                if _is_bound_explicit_hydrogen(graph, by_map, ref, center)
+                if len(bound_hydrogens) == 1 and ref in bound_hydrogens
                 else ref
             )
             for ref in descriptor.atoms[1:]

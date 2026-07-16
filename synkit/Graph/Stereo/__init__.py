@@ -30,6 +30,7 @@ from .matching import (
     stereo_isomorphism_mapping,
 )
 from .outcomes import StereoOutcome
+from .couplings import StereoCoupling
 
 __all__ = [
     "TetrahedralStereo",
@@ -59,4 +60,5 @@ __all__ = [
     "stereo_isomorphic",
     "stereo_isomorphism_mapping",
     "StereoOutcome",
+    "StereoCoupling",
 ]

@@ -35,6 +35,7 @@ def test_mechanismbench_json_files_are_executable_case_data_only():
     assert json_files == [
         "radical_reviewed.json",
         "small_rewrite_conformance.json",
+        "stereo.json",
     ]
     for filename in json_files:
         payload = json.loads((ROOT / "Data/MechanismBench" / filename).read_text())

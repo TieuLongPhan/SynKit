@@ -1,13 +1,17 @@
 # SynKit mechanism test data
 
-This directory intentionally keeps only JSON files containing executable test
-cases:
+This directory keeps executable, self-contained JSON test cases:
 
 - `radical_reviewed.json` — 80 chemistry-reviewed, macro-balanced radical
   mechanism cases with replay and rule-reapplication evidence embedded in each
   case.
 - `small_rewrite_conformance.json` — nine compact cases for routine inspection
   of hydrogen transfer and rule-level stereochemistry.
+- `stereo.json` — 48-case stereo conformance draft: 33 end-to-end executable
+  transformations, four graph-only transformations, three isotope-deferred
+  transformations, and eight specification-only negative assertions. Its
+  semantics, stable catalog references, and deferred backlog are embedded in
+  the JSON rather than maintained in a parallel catalog.
 
 The radical cases were selected deterministically from
 `Data/Mech/radical.csv`. Four chemistry corrections, the original reactions,

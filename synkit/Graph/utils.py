@@ -1,9 +1,121 @@
 import networkx as nx
-from typing import Any, Dict, List, Tuple
+from pprint import pformat
+from typing import Any, Dict, List, Mapping, Tuple
+
+
+def _stereo_value(value: Any, key: str, default: Any = None) -> Any:
+    """Read one field from a descriptor/change object or serialized mapping."""
+    if isinstance(value, Mapping):
+        return value.get(key, default)
+    return getattr(value, key, default)
+
+
+def _is_stereo_descriptor(value: Any) -> bool:
+    return bool(
+        _stereo_value(value, "descriptor_class")
+        and _stereo_value(value, "atoms") is not None
+    )
+
+
+def _format_stereo_descriptor(value: Any) -> str:
+    """Format one relative descriptor with its ordered local reference frame."""
+    if value is None:
+        return "none"
+    descriptor_class = _stereo_value(value, "descriptor_class", type(value).__name__)
+    atoms = tuple(_stereo_value(value, "atoms", ()))
+    parity = _stereo_value(value, "parity")
+    provenance = _stereo_value(value, "provenance")
+
+    if descriptor_class in {"planar_bond", "atrop_bond"} and len(atoms) >= 6:
+        locus = (
+            f"bond={atoms[2]}-{atoms[3]} "
+            f"left_ordered_refs={atoms[:2]!r} "
+            f"right_ordered_refs={atoms[4:]!r}"
+        )
+    elif atoms:
+        locus = f"center={atoms[0]} ordered_refs={atoms[1:]!r}"
+    else:
+        locus = "atoms=()"
+
+    suffix = f" provenance={provenance}" if provenance is not None else ""
+    return f"{descriptor_class} {locus} parity={parity!r}{suffix}"
+
+
+def _descriptor_atoms(value: Any) -> tuple[Any, ...]:
+    return tuple(_stereo_value(value, "atoms", ())) if value is not None else ()
+
+
+def _reference_delta(before: Any, after: Any) -> dict[str, list[Any]]:
+    remaining_after = list(_descriptor_atoms(after))
+    removed = []
+    for reference in _descriptor_atoms(before):
+        if reference in remaining_after:
+            remaining_after.remove(reference)
+        else:
+            removed.append(reference)
+    return {"removed": removed, "added": remaining_after}
+
+
+def _print_stereo_registry(value: Any, *, indent: str = "    ") -> None:
+    if not isinstance(value, Mapping) or not value:
+        print(f"{indent}(none)")
+        return
+
+    nested = all(
+        isinstance(registry, Mapping) and not _is_stereo_descriptor(registry)
+        for registry in value.values()
+    )
+    if nested:
+        for side, registry in value.items():
+            print(f"{indent}{side}:")
+            _print_stereo_registry(registry, indent=indent + "  ")
+        return
+
+    for target, descriptor in value.items():
+        print(f"{indent}{target}: {_format_stereo_descriptor(descriptor)}")
+
+
+def _print_stereo_changes(value: Any, *, indent: str = "    ") -> None:
+    if not isinstance(value, Mapping) or not value:
+        print(f"{indent}(none)")
+        return
+    for target, change in value.items():
+        label = _stereo_value(change, "change", "UNSPECIFIED")
+        before = _stereo_value(change, "before")
+        after = _stereo_value(change, "after")
+        transition = _stereo_value(change, "transition")
+        print(f"{indent}{target}: {label}")
+        print(f"{indent}  before: {_format_stereo_descriptor(before)}")
+        print(f"{indent}  after: {_format_stereo_descriptor(after)}")
+        if before is not None and after is not None:
+            delta = _reference_delta(before, after)
+            if delta["removed"] or delta["added"]:
+                print(
+                    f"{indent}  reference_delta: "
+                    f"removed={delta['removed']!r} added={delta['added']!r}"
+                )
+        if transition is not None:
+            print(f"{indent}  transition: {_format_stereo_descriptor(transition)}")
+
+
+def _print_graph_mapping(value: Any, *, indent: str = "    ") -> None:
+    if not isinstance(value, Mapping) or not value:
+        print(f"{indent}(none)")
+        return
+    for key, item in value.items():
+        if hasattr(item, "to_dict"):
+            item = item.to_dict()
+        formatted = pformat(item, width=100, sort_dicts=False)
+        continuation = "\n" + indent + "  "
+        print(f"{indent}{key}: {formatted.replace(chr(10), continuation)}")
 
 
 def print_graph_attributes(G: nx.Graph) -> None:
-    """Print all node and edge attributes from a NetworkX graph.
+    """Print node, edge, and graph-level attributes from a NetworkX graph.
+
+    Relative stereo registries and ITS stereo changes receive a structured
+    rendering that exposes ordered local references, parity, provenance,
+    endpoint states, and reference replacements.
 
     Parameters:
         G (nx.Graph): A NetworkX graph (Graph, DiGraph, MultiGraph, etc.).
@@ -19,6 +131,23 @@ def print_graph_attributes(G: nx.Graph) -> None:
     else:
         for u, v, attr in G.edges(data=True):
             print(f"  Edge {u}-{v}: {attr}")
+
+    print("\n🔷 Graph-level attributes:")
+    if not G.graph:
+        print("  (none)")
+        return
+    for key, value in G.graph.items():
+        print(f"  {key}:")
+        if key == "stereo_descriptors":
+            _print_stereo_registry(value)
+        elif key == "stereo_changes":
+            _print_stereo_changes(value)
+        elif key.startswith("stereo_") and isinstance(value, Mapping):
+            _print_graph_mapping(value)
+        else:
+            formatted = pformat(value, width=100, sort_dicts=False)
+            continuation = "\n    "
+            print(f"    {formatted.replace(chr(10), continuation)}")
 
 
 def remove_wildcard_nodes(G: nx.Graph, inplace: bool = True) -> nx.Graph:

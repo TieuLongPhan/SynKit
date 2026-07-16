@@ -121,6 +121,13 @@ def electron_aware_node_match(
     ``node_attrs``.
     """
     for attr in node_attrs:
+        # A compact coupled pi-addition rule may use a deliberately
+        # under-valenced atom (for example ``[C:1]=[C:2]``) to state only the
+        # reaction locus. RDKit represents that notation with placeholder
+        # radical electrons. They are a parser consequence, not a radical
+        # query; the reactor marks only those inferred coupling centers.
+        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+            continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
         )
@@ -147,9 +154,22 @@ def electron_aware_edge_match(
     particular ``sigma_order`` / ``pi_order`` split depends on the chosen
     Kekule form and is not stable across independently parsed graphs.
     """
+    minimum_pi = pattern_data.get("_minimum_pi_order")
+    if minimum_pi is not None:
+        # Relative pi reduction: C=C means "a bond carrying at least one pi
+        # bond" at this explicitly marked reaction locus. Thus the same
+        # chemical edit can consume C=C or C#C without weakening matching
+        # anywhere else in the pattern.
+        if host_data.get("order") == 1.5:
+            return False
+        if float(host_data.get("pi_order", 0.0)) < float(minimum_pi):
+            return False
+
     host_is_aromatic = host_data.get("order") == 1.5
     pattern_is_aromatic = pattern_data.get("order") == 1.5
     for attr in edge_attrs:
+        if minimum_pi is not None and attr in {"order", "pi_order"}:
+            continue
         if (
             attr in {"sigma_order", "pi_order"}
             and host_is_aromatic
@@ -169,6 +189,8 @@ def explain_node_mismatch(
     """Return node-level mismatch reasons using matcher semantics."""
     reasons: list[str] = []
     for attr in node_attrs:
+        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+            continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
         )

@@ -6,6 +6,34 @@ from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 
 class TestSynReactorBugCases(unittest.TestCase):
+    def test_diels_alder_diene_reversal_keeps_two_mappings(self):
+        """Do not over-prune the two valid diene orientations."""
+        smart = (
+            "[CH2:1]=[CH:2][CH:3]=[CH2:4]."
+            "[CH2:5]=[CH:6][CH:7]=[O:8]>>"
+            "[CH2:1]1[CH:2]=[CH:3][CH2:4][CH2:5][CH:6]1[CH:7]=[O:8]"
+        )
+
+        for automorphism in (False, True):
+            with self.subTest(automorphism=automorphism):
+                reactor = SynReactor(
+                    "C=CC=C.C=CC=O",
+                    smart,
+                    template_format="tuple",
+                    explicit_h=False,
+                    automorphism=automorphism,
+                )
+
+                self.assertEqual(reactor.mapping_count, 2)
+                self.assertEqual(
+                    {
+                        tuple(mapping[index] for index in (1, 2, 3, 4))
+                        for mapping in reactor.mappings
+                    },
+                    {(1, 2, 3, 4), (4, 3, 2, 1)},
+                )
+                self.assertEqual(len(reactor.smarts), 1)
+
     def test_tuple_backward_cross_coupling_keeps_aromatic_role_context(self):
         smart = (
             "[CH3:10][CH2:11][O:12][C:13](=[O:14])[c:15]1[cH:16][cH:18][cH:19]"

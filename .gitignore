@@ -12,6 +12,7 @@ dev/*
 # Local development, audit, and debugging helpers.
 /tools/
 /debug/
+/Test/Conformance/
 *.rdf
 test_syn_reactor.py
 
@@ -33,10 +34,13 @@ Data/Study/CRN/case_formose/*
 synkit/Graph/dev/*
 *.ipynb
 *.json
+!Data/MechanismBench/stereo.json
 *.txt
+!LICENSES/*.txt
 *.log
 sprint/
 test_syn.py
 .gitignore
 measure_candidate_stages.py
 run_valid_bug_cases.py
+paper/*

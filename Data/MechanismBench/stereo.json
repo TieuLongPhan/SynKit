@@ -1,0 +1,2637 @@
+{
+  "schema": "SynKit-stereo-conformance-v0.3",
+  "status": "review_draft",
+  "generated": "2026-07-15",
+  "description": "Self-contained stereochemistry conformance cases for SynKit. Transformation cases distinguish end-to-end executable, graph-only and isotope-deferred coverage; negative assertions remain specification-only until an annotation/conformance runner is available. CIP descriptors are assigned after atom maps are cleared so map numbers cannot influence ranking. Stable catalog_refs and the deferred catalog_backlog remain embedded in this file for traceability.",
+  "toolkit": {
+    "python": "3.12.12",
+    "rdkit": "2026.03.1",
+    "synkit": "1.5.0",
+    "platform": "Linux x86_64",
+    "cip_labeller": "rdCIPLabeler.AssignCIPLabels"
+  },
+  "semantics": {
+    "case_kind": [
+      "transformation",
+      "negative_assertion"
+    ],
+    "case_status": [
+      "executable",
+      "graph_only",
+      "deferred_isotope_support",
+      "specification_only"
+    ],
+    "local_geometry": [
+      "retained",
+      "inverted",
+      "created",
+      "destroyed",
+      "erased_then_created",
+      "not_applicable"
+    ],
+    "descriptor_change": [
+      "retained",
+      "flipped",
+      "created",
+      "destroyed",
+      "racemized",
+      "not_applicable"
+    ],
+    "product_population": [
+      "single_stereoisomer",
+      "meso",
+      "racemic",
+      "diastereomer_set",
+      "achiral",
+      "unknown"
+    ],
+    "stereo_determinacy": [
+      "stereospecific",
+      "stereoselective",
+      "non_stereospecific",
+      "underdetermined"
+    ],
+    "step_relationship": [
+      "single",
+      "sequential",
+      "alternative_face_rules",
+      "enantiomeric_substrate_rules",
+      "equivalent_mappings"
+    ],
+    "stereo_change_tokens": [
+      "FORMED",
+      "BROKEN",
+      "INVERTED",
+      "RETAINED"
+    ],
+    "notes": [
+      "local_geometry, descriptor_change and product_population are three independent axes. ST-10 is retained/flipped, ST-03 is inverted/retained, and ST-20 is retained/destroyed; no single verdict per reaction is sufficient.",
+      "Never compare @ against @@ across the arrow. Both symbols depend on SMILES neighbour order. Use the mapped-neighbour permutation parity of Section 10, then recompute CIP independently on each side. ST-22 exists to catch exactly this bug.",
+      "expected_unique_stereoisomer_count counts distinct product stereoisomers after atom maps are cleared. A fully specified template contributes 1; a count of 2 must come from an explicit RACEMIC entry in rule_metadata.stereo_outcomes, never from the SMILES.",
+      "'racemic' asserts a 50:50 composition; 'unknown' asserts that the composition was not determined. They are different claims and must not compare equal. ST-45 and ST-46 test the distinction.",
+      "step_relationship alternative_face_rules means the steps are correlated alternatives whose union is the oracle. Branching each stereocentre independently would additionally generate the meso combinations and is wrong; see ST-04 and ST-07.",
+      "For multi-step cases the oracle describes the composed sequence, not any single step. ST-11's two inversions compose to net retention.",
+      "graph_only means SynKit preserves the declared product descriptor in the ITS/product graph but the current reaction-SMILES export does not preserve it end to end.",
+      "Parsing note, verified against RDKit 2026.03.1: Chem.MolFromSmiles silently discards mapped explicit hydrogens that are bound to a heavy atom, so [C@:2]([H:6])(...) loses map 6 while the free [H:6][H:7] survives. Consumers must parse the mapped_reaction fields with SmilesParserParams(removeHs=False), otherwise map conservation appears to fail for every case that tracks a transferred hydrogen (ST-14 through ST-16, ST-19, ST-20, ST-30 through ST-32, ST-37)."
+    ]
+  },
+  "cases": [
+    {
+      "case_id": "ST-01",
+      "catalog_refs": [
+        "TH-07"
+      ],
+      "name": "SN1 solvolysis of (R)-1-phenylethyl chloride",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "SN1",
+      "conditions": [
+        "idealized nonselective solvolysis"
+      ],
+      "step_relationship": "sequential",
+      "steps": [
+        {
+          "step_id": "ionization",
+          "mapped_reaction": "[cH:1]1[cH:2][cH:3][cH:4][cH:5][c:6]1[C@@H:7]([CH3:8])[Cl:9]>>[cH:1]1[cH:2][cH:3][cH:4][cH:5][c:6]1[CH+:7][CH3:8].[Cl-:9]",
+          "application": {
+            "substrate": "C[C@@H](Cl)c1ccccc1",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@H](Cl)c1ccccc1"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:7": "BROKEN"
+          }
+        },
+        {
+          "step_id": "capture",
+          "mapped_reaction": "[cH:1]1[cH:2][cH:3][cH:4][cH:5][c:6]1[CH+:7][CH3:8].[OH-:10]>>[cH:1]1[cH:2][cH:3][cH:4][cH:5][c:6]1[C@H:7]([CH3:8])[OH:10]",
+          "rule_metadata": {
+            "stereo_outcomes": {
+              "atom:7": {
+                "kind": "RACEMIC",
+                "weights": [
+                  0.5,
+                  0.5
+                ]
+              }
+            }
+          },
+          "application": {
+            "substrate": "C[CH+]c1ccccc1.[OH-]",
+            "expected_unique_stereoisomer_count": 2,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:7": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "7": "R"
+        },
+        "product_cip_sets": [
+          {
+            "7": "R"
+          },
+          {
+            "7": "S"
+          }
+        ],
+        "local_geometry": "erased_then_created",
+        "descriptor_change": "racemized",
+        "relative_stereochemistry": null,
+        "product_population": "racemic",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "Substrate configuration fixed to R to agree with the catalog annotation for ST-01/TH-07. The single capture template serialises one enantiomer; the equal pair comes from rule_metadata, not from the SMILES."
+      }
+    },
+    {
+      "case_id": "ST-02",
+      "catalog_refs": [
+        "TH-04"
+      ],
+      "name": "Ordinary SN2 inversion of (R)-2-bromobutane",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "SN2",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "substitution",
+          "mapped_reaction": "[CH3:1][C@@H:2]([Br:3])[CH2:4][CH3:5].[OH-:6]>>[CH3:1][C@H:2]([OH:6])[CH2:4][CH3:5].[Br-:3]",
+          "application": {
+            "substrate": "C[C@@H](Br)CC.[OH-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@H](Br)CC.[OH-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "INVERTED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "R"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "inverted",
+        "descriptor_change": "flipped",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific"
+      }
+    },
+    {
+      "case_id": "ST-03",
+      "catalog_refs": [
+        "TH-05"
+      ],
+      "name": "SN2 inversion with unchanged R CIP label",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "SN2",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "cyanide_substitution",
+          "mapped_reaction": "[CH3:1][C@@H:2]([Br:3])[Cl:4].[C-:5]#[N:6]>>[CH3:1][C@H:2]([C:5]#[N:6])[Cl:4].[Br-:3]",
+          "application": {
+            "substrate": "C[C@@H](Br)Cl.[C-]#N",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@H](Br)Cl.[C-]#N"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "INVERTED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "R"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R"
+          }
+        ],
+        "local_geometry": "inverted",
+        "descriptor_change": "retained",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Walden inversion and the Br-to-CN priority reordering cancel at the CIP-label level."
+      }
+    },
+    {
+      "case_id": "ST-04",
+      "catalog_refs": [
+        "AD-01"
+      ],
+      "name": "Syn deuteration of E-but-2-ene",
+      "case_kind": "transformation",
+      "status": "deferred_isotope_support",
+      "reaction_class": "catalytic_deuteration",
+      "conditions": [
+        "D2",
+        "Pd"
+      ],
+      "step_relationship": "alternative_face_rules",
+      "rule_set_metadata": {
+        "product_population": "racemic",
+        "weights": [
+          0.5,
+          0.5
+        ]
+      },
+      "steps": [
+        {
+          "step_id": "syn_addition_ss_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[2H:5][2H:6]>>[CH3:1][C@H:2]([2H:5])[C@@H:3]([2H:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C/C.[2H][2H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.[2H][2H]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        },
+        {
+          "step_id": "syn_addition_rr_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[2H:5][2H:6]>>[CH3:1][C@@H:2]([2H:5])[C@H:3]([2H:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C/C.[2H][2H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.[2H][2H]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R",
+            "3": "R"
+          },
+          {
+            "2": "S",
+            "3": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "racemic",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Corrected: the correlated R,R/S,S pair needs two deterministic face rules, exactly as in ST-07. A single fully specified template emits one enantiomer only, and independent per-centre branching would also generate the incorrect meso combinations."
+      },
+      "known_blocker": {
+        "code": "ISOTOPE_LABEL_NOT_PRESERVED",
+        "observed_effect": "Graph/rewrite conversion emits mapped [2H] as [H], removing the isotope-defined product stereocentres."
+      }
+    },
+    {
+      "case_id": "ST-05",
+      "catalog_refs": [
+        "AD-05"
+      ],
+      "name": "Anti bromination of E-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "bromination",
+      "conditions": [
+        "Br2"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "anti_addition",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[Br:5][Br:6]>>[CH3:1][C@H:2]([Br:5])[C@H:3]([Br:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C/C.BrBr",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.BrBr"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S",
+            "3": "R"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "anti",
+        "product_population": "meso",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Single rule suffices: the two face matches give enantiomeric assignments of a meso product, i.e. the same compound."
+      }
+    },
+    {
+      "case_id": "ST-06",
+      "catalog_refs": [
+        "AD-02"
+      ],
+      "name": "Syn deuteration of Z-but-2-ene",
+      "case_kind": "transformation",
+      "status": "deferred_isotope_support",
+      "reaction_class": "catalytic_deuteration",
+      "conditions": [
+        "D2",
+        "Pd"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "syn_addition",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[2H:5][2H:6]>>[CH3:1][C@H:2]([2H:5])[C@H:3]([2H:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C\\C.[2H][2H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C/C.[2H][2H]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S",
+            "3": "R"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "meso",
+        "stereo_determinacy": "stereospecific"
+      },
+      "known_blocker": {
+        "code": "ISOTOPE_LABEL_NOT_PRESERVED",
+        "observed_effect": "Graph/rewrite conversion emits mapped [2H] as [H], removing the isotope-defined product stereocentres."
+      }
+    },
+    {
+      "case_id": "ST-07",
+      "catalog_refs": [
+        "AD-06"
+      ],
+      "name": "Anti bromination of Z-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "bromination",
+      "conditions": [
+        "Br2"
+      ],
+      "step_relationship": "alternative_face_rules",
+      "rule_set_metadata": {
+        "product_population": "racemic",
+        "weights": [
+          0.5,
+          0.5
+        ]
+      },
+      "steps": [
+        {
+          "step_id": "anti_addition_ss_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[Br:5][Br:6]>>[CH3:1][C@H:2]([Br:5])[C@@H:3]([Br:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C\\C.BrBr",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C/C.BrBr"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        },
+        {
+          "step_id": "anti_addition_rr_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[Br:5][Br:6]>>[CH3:1][C@@H:2]([Br:5])[C@H:3]([Br:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C\\C.BrBr",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C/C.BrBr"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R",
+            "3": "R"
+          },
+          {
+            "2": "S",
+            "3": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "anti",
+        "product_population": "racemic",
+        "stereo_determinacy": "stereospecific",
+        "notes": "The correlated R,R/S,S pair is represented by two deterministic face rules; independent per-centre branching would also generate incorrect meso combinations."
+      }
+    },
+    {
+      "case_id": "ST-08",
+      "catalog_refs": [
+        "TH-01"
+      ],
+      "name": "Fischer esterification of (S)-lactic acid at the carboxyl group",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "esterification",
+      "conditions": [
+        "MeOH",
+        "H+"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "esterification",
+          "mapped_reaction": "[CH3:1][C@H:2]([OH:3])[C:4](=[O:5])[OH:6].[CH3:7][OH:8]>>[CH3:1][C@H:2]([OH:3])[C:4](=[O:5])[O:8][CH3:7].[OH2:6]",
+          "application": {
+            "substrate": "C[C@H](O)C(=O)O.CO",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@@H](O)C(=O)O.CO"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "RETAINED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "S"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "retained",
+        "descriptor_change": "retained",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "No bond to the stereocentre is touched; acyl-oxygen cleavage keeps both geometry and label."
+      }
+    },
+    {
+      "case_id": "ST-09",
+      "catalog_refs": [
+        "TH-02"
+      ],
+      "name": "Remote SN2 that does not change CIP priorities at the stereocentre",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "SN2",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "remote_substitution",
+          "mapped_reaction": "[CH3:1][C@H:2]([OH:3])[CH2:4][CH2:5][Br:6].[C-:7]#[N:8]>>[CH3:1][C@H:2]([OH:3])[CH2:4][CH2:5][C:7]#[N:8].[Br-:6]",
+          "application": {
+            "substrate": "C[C@H](O)CCBr.[C-]#N",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@@H](O)CCBr.[C-]#N"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "RETAINED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "S"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "retained",
+        "descriptor_change": "retained",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Reaction is two bonds away; the OH > CH2CH2X > CH3 > H ranking survives Br -> CN."
+      }
+    },
+    {
+      "case_id": "ST-10",
+      "catalog_refs": [
+        "TH-03"
+      ],
+      "name": "Remote substitution that reverses CIP priorities while geometry is retained",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "halide_exchange",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "remote_halex",
+          "mapped_reaction": "[OH:1][C@@H:2]([CH2:3][Br:4])[CH2:5][Cl:6].[F-:7]>>[OH:1][C@@H:2]([CH2:3][F:7])[CH2:5][Cl:6].[Br-:4]",
+          "application": {
+            "substrate": "O[C@@H](CBr)CCl.[F-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "O[C@H](CBr)CCl.[F-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "RETAINED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "R"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "retained",
+        "descriptor_change": "flipped",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "The catalog's formal TH-03 example. CH2Br > CH2Cl becomes CH2Cl > CH2F, so ranks 2 and 3 swap and the label flips although no bond to the centre is broken. A system that infers geometry from the CIP label alone fails here."
+      }
+    },
+    {
+      "case_id": "ST-11",
+      "catalog_refs": [
+        "TH-06"
+      ],
+      "name": "Two consecutive SN2 reactions at the same centre give net retention",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "SN2",
+      "conditions": [],
+      "step_relationship": "sequential",
+      "steps": [
+        {
+          "step_id": "iodide_displaces_bromide",
+          "mapped_reaction": "[CH3:1][C@@H:2]([Br:3])[CH2:4][CH3:5].[I-:6]>>[CH3:1][C@H:2]([I:6])[CH2:4][CH3:5].[Br-:3]",
+          "application": {
+            "substrate": "C[C@@H](Br)CC.[I-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@H](Br)CC.[I-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "INVERTED"
+          }
+        },
+        {
+          "step_id": "bromide_displaces_iodide",
+          "mapped_reaction": "[CH3:1][C@H:2]([I:6])[CH2:4][CH3:5].[Br-:3]>>[CH3:1][C@@H:2]([Br:3])[CH2:4][CH3:5].[I-:6]",
+          "application": {
+            "substrate": "C[C@H](I)CC.[Br-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@@H](I)CC.[Br-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "INVERTED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "R"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R"
+          }
+        ],
+        "local_geometry": "retained",
+        "descriptor_change": "retained",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Oracle is over the composed two-step sequence: inverted then inverted is net retention. Each individual step is inverted; a per-step checker must not collapse the pair into a single retention edit."
+      }
+    },
+    {
+      "case_id": "ST-12",
+      "catalog_refs": [
+        "TH-08"
+      ],
+      "name": "Enolate-mediated racemization of (S)-2-methylbutanal",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "enolization",
+      "conditions": [
+        "catalytic base"
+      ],
+      "step_relationship": "sequential",
+      "steps": [
+        {
+          "step_id": "deprotonation",
+          "mapped_reaction": "[CH3:1][CH2:2][C@H:3]([CH3:4])[CH:5]=[O:6].[OH-:7]>>[CH3:1][CH2:2][C:3]([CH3:4])=[CH:5][O-:6].[OH2:7]",
+          "application": {
+            "substrate": "CC[C@H](C)C=O.[OH-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "CC[C@@H](C)C=O.[OH-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:3": "BROKEN"
+          }
+        },
+        {
+          "step_id": "reprotonation",
+          "mapped_reaction": "[CH3:1][CH2:2][C:3]([CH3:4])=[CH:5][O-:6].[OH2:7]>>[CH3:1][CH2:2][C@H:3]([CH3:4])[CH:5]=[O:6].[OH-:7]",
+          "rule_metadata": {
+            "stereo_outcomes": {
+              "atom:3": {
+                "kind": "RACEMIC",
+                "weights": [
+                  0.5,
+                  0.5
+                ]
+              }
+            }
+          },
+          "application": {
+            "substrate": "CCC(C)=C[O-].O",
+            "expected_unique_stereoisomer_count": 2,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:3": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "3": "S"
+        },
+        "product_cip_sets": [
+          {
+            "3": "R"
+          },
+          {
+            "3": "S"
+          }
+        ],
+        "local_geometry": "erased_then_created",
+        "descriptor_change": "racemized",
+        "relative_stereochemistry": null,
+        "product_population": "racemic",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "Connectivity is unchanged across the pair; only the stereo element is destroyed and rebuilt. Structurally parallel to ST-01 but with no leaving group, so a checker keyed on connectivity change must still see the stereo edit."
+      }
+    },
+    {
+      "case_id": "ST-13",
+      "catalog_refs": [
+        "TH-10"
+      ],
+      "name": "Hypochlorite oxidation of (R)-2-butanol to 2-butanone",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "alcohol_oxidation",
+      "conditions": [
+        "NaOCl"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "oxidation",
+          "mapped_reaction": "[CH3:1][C@@H:2]([OH:3])[CH2:4][CH3:5].[Cl:6][O-:7]>>[CH3:1][C:2](=[O:3])[CH2:4][CH3:5].[Cl-:6].[OH2:7]",
+          "application": {
+            "substrate": "C[C@@H](O)CC.[O-]Cl",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "R"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "destroyed",
+        "descriptor_change": "destroyed",
+        "relative_stereochemistry": null,
+        "product_population": "achiral",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "Both enantiomers are accepted and converge on the same achiral ketone, so rejected_substrates is deliberately empty."
+      }
+    },
+    {
+      "case_id": "ST-14",
+      "catalog_refs": [
+        "TH-11"
+      ],
+      "name": "Achiral reduction of 2-butanone creates a racemic centre",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "ketone_reduction",
+      "conditions": [
+        "H2",
+        "achiral catalyst"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "hydrogenation",
+          "mapped_reaction": "[CH3:1][C:2](=[O:3])[CH2:4][CH3:5].[H:6][H:7]>>[CH3:1][C@:2]([H:6])([O:3][H:7])[CH2:4][CH3:5]",
+          "rule_metadata": {
+            "stereo_outcomes": {
+              "atom:2": {
+                "kind": "RACEMIC",
+                "weights": [
+                  0.5,
+                  0.5
+                ]
+              }
+            }
+          },
+          "application": {
+            "substrate": "CC(=O)CC.[H][H]",
+            "expected_unique_stereoisomer_count": 2,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "R"
+          },
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "racemic",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "Same graph edit as ST-15/ST-16; only the rule metadata differs. The template serialises one enantiomer, which is not the oracle."
+      }
+    },
+    {
+      "case_id": "ST-15",
+      "catalog_refs": [
+        "TH-12"
+      ],
+      "name": "Asymmetric reduction of 2-butanone to (R)-2-butanol",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "ketone_reduction",
+      "conditions": [
+        "H2",
+        "chiral catalyst (R-selective)"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "hydrogenation",
+          "mapped_reaction": "[CH3:1][C:2](=[O:3])[CH2:4][CH3:5].[H:6][H:7]>>[CH3:1][C@@:2]([H:6])([O:3][H:7])[CH2:4][CH3:5]",
+          "application": {
+            "substrate": "CC(=O)CC.[H][H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "R"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereoselective",
+        "notes": "Identical graph edit to ST-14 and ST-16; the facial choice lives in the rule, not in the connectivity."
+      }
+    },
+    {
+      "case_id": "ST-16",
+      "catalog_refs": [
+        "TH-13"
+      ],
+      "name": "Asymmetric reduction of 2-butanone to (S)-2-butanol",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "ketone_reduction",
+      "conditions": [
+        "H2",
+        "chiral catalyst (S-selective)"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "hydrogenation",
+          "mapped_reaction": "[CH3:1][C:2](=[O:3])[CH2:4][CH3:5].[H:6][H:7]>>[CH3:1][C@:2]([H:6])([O:3][H:7])[CH2:4][CH3:5]",
+          "application": {
+            "substrate": "CC(=O)CC.[H][H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereoselective",
+        "notes": "Enantiomeric catalyst to ST-15; the two cases must not be deduplicated to one rule."
+      }
+    },
+    {
+      "case_id": "ST-17",
+      "catalog_refs": [
+        "TH-14"
+      ],
+      "name": "Homolysis at a stereogenic carbon flattens the centre",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "homolysis",
+      "conditions": [
+        "hv"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "homolysis",
+          "mapped_reaction": "[CH3:1][C@@H:2]([Br:3])[CH2:4][CH3:5]>>[CH3:1][CH:2][CH2:4][CH3:5].[Br:3]",
+          "application": {
+            "substrate": "C[C@@H](Br)CC",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "R"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "destroyed",
+        "descriptor_change": "destroyed",
+        "relative_stereochemistry": null,
+        "product_population": "achiral",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "The sec-butyl radical is treated as planar. Pairs with ST-18; see also NG-06 in the catalog for the cage-model caveat."
+      }
+    },
+    {
+      "case_id": "ST-18",
+      "catalog_refs": [
+        "TH-15"
+      ],
+      "name": "Radical recombination in an achiral environment recreates a racemate",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "radical_recombination",
+      "conditions": [
+        "no cage model"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "chlorine_transfer",
+          "mapped_reaction": "[CH3:1][CH:2][CH2:4][CH3:5].[Cl:6][Cl:7]>>[CH3:1][C@H:2]([Cl:6])[CH2:4][CH3:5].[Cl:7]",
+          "rule_metadata": {
+            "stereo_outcomes": {
+              "atom:2": {
+                "kind": "RACEMIC",
+                "weights": [
+                  0.5,
+                  0.5
+                ]
+              }
+            }
+          },
+          "application": {
+            "substrate": "C[CH]CC.ClCl",
+            "expected_unique_stereoisomer_count": 2,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "R"
+          },
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "racemic",
+        "stereo_determinacy": "non_stereospecific"
+      }
+    },
+    {
+      "case_id": "ST-19",
+      "catalog_refs": [
+        "TH-16"
+      ],
+      "name": "Enzymatic deuteride delivery creates an isotope-only stereocentre",
+      "case_kind": "transformation",
+      "status": "deferred_isotope_support",
+      "reaction_class": "enzymatic_reduction",
+      "conditions": [
+        "alcohol dehydrogenase",
+        "NADD"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "deuteride_transfer",
+          "mapped_reaction": "[CH3:1][CH:2]=[O:3].[2H:4][H:5]>>[CH3:1][C@@H:2]([2H:4])[O:3][H:5]",
+          "application": {
+            "substrate": "CC=O.[2H][H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "R"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereoselective",
+        "notes": "(R)-[1-2H]ethanol. C2 carries CH3, OH, H and D, so the centre exists only by virtue of the isotope: the CIP decision falls to Rule 2 (mass number) after Rule 1 ties."
+      },
+      "known_blocker": {
+        "code": "ISOTOPE_LABEL_NOT_PRESERVED",
+        "observed_effect": "Graph/rewrite conversion emits mapped [2H] as [H], removing the isotope-defined product stereocentre."
+      }
+    },
+    {
+      "case_id": "ST-20",
+      "catalog_refs": [
+        "TH-19"
+      ],
+      "name": "Making two substituents identical destroys an intact stereocentre",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "hydrodehalogenation",
+      "conditions": [
+        "LiAlH4"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "reduction",
+          "mapped_reaction": "[CH3:1][C@H:2]([OH:3])[CH2:4][Cl:5].[H-:6]>>[CH3:1][CH:2]([OH:3])[CH2:4][H:6].[Cl-:5]",
+          "application": {
+            "substrate": "C[C@H](O)CCl.[H-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@@H](O)CCl.[H-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "S"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "retained",
+        "descriptor_change": "destroyed",
+        "relative_stereochemistry": null,
+        "product_population": "achiral",
+        "stereo_determinacy": "stereospecific",
+        "notes": "The hard case for the local_geometry/descriptor split: no bond to C2 is touched, so the local geometry is retained, yet the centre stops being stereogenic because CH2Cl becomes a second CH3. Propan-2-ol is achiral. Systems that equate 'centre destroyed' with 'bond to centre broken' fail here."
+      }
+    },
+    {
+      "case_id": "ST-21",
+      "catalog_refs": [
+        "TH-20"
+      ],
+      "name": "Azide displacement at one of two stereocentres",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "SN2",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "azide_substitution",
+          "mapped_reaction": "[CH3:1][C@@H:2]([OH:3])[C@@H:4]([Br:5])[CH3:6].[N-:7]=[N+:8]=[N-:9]>>[CH3:1][C@@H:2]([OH:3])[C@H:4]([N:7]=[N+:8]=[N-:9])[CH3:6].[Br-:5]",
+          "application": {
+            "substrate": "C[C@@H](O)[C@@H](Br)C.[N-]=[N+]=[N-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@@H](O)[C@H](Br)C.[N-]=[N+]=[N-]",
+              "C[C@H](O)[C@@H](Br)C.[N-]=[N+]=[N-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "RETAINED",
+            "atom:4": "INVERTED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "R",
+          "4": "S"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R",
+            "4": "R"
+          }
+        ],
+        "local_geometry": "inverted",
+        "descriptor_change": "flipped",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "local_geometry/descriptor_change in this oracle refer to the reacting centre atom:4. The spectator centre atom:2 is retained at R and must be reported unchanged; per-molecule diffing that flags 'stereochemistry changed' without localising it fails this case."
+      }
+    },
+    {
+      "case_id": "ST-22",
+      "catalog_refs": [
+        "TH-22",
+        "NG-12"
+      ],
+      "name": "Exchanged mapping of two equivalent methyls must not report a false inversion",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "SN2",
+      "conditions": [],
+      "step_relationship": "equivalent_mappings",
+      "steps": [
+        {
+          "step_id": "mapping_variant_a",
+          "mapped_reaction": "[CH3:1][CH:2]([CH3:3])[CH2:4][C@@H:5]([CH3:6])[Br:7].[OH-:8]>>[CH3:1][CH:2]([CH3:3])[CH2:4][C@H:5]([CH3:6])[OH:8].[Br-:7]",
+          "application": {
+            "substrate": "CC(C)C[C@@H](C)Br.[OH-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:5": "INVERTED"
+          }
+        },
+        {
+          "step_id": "mapping_variant_b",
+          "mapped_reaction": "[CH3:1][CH:2]([CH3:3])[CH2:4][C@@H:5]([CH3:6])[Br:7].[OH-:8]>>[CH3:3][CH:2]([CH3:1])[CH2:4][C@H:5]([CH3:6])[OH:8].[Br-:7]",
+          "application": {
+            "substrate": "CC(C)C[C@@H](C)Br.[OH-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:5": "INVERTED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "5": "R"
+        },
+        "product_cip_sets": [
+          {
+            "5": "S"
+          }
+        ],
+        "local_geometry": "inverted",
+        "descriptor_change": "flipped",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "The two variants are the same reaction; maps 1 and 3 (the two isopropyl methyls) are exchanged in the product of variant_b. Both must yield exactly one identical product and report inverted at atom:5 only. Reporting any change at atom:2 is a false positive."
+      }
+    },
+    {
+      "case_id": "ST-23",
+      "catalog_refs": [
+        "AD-03"
+      ],
+      "name": "Syn dihydroxylation of E-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "dihydroxylation",
+      "conditions": [
+        "OsO4 (cat.)",
+        "H2O2"
+      ],
+      "step_relationship": "alternative_face_rules",
+      "rule_set_metadata": {
+        "product_population": "racemic",
+        "weights": [
+          0.5,
+          0.5
+        ]
+      },
+      "steps": [
+        {
+          "step_id": "syn_addition_ss_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[OH:5][OH:6]>>[CH3:1][C@H:2]([OH:5])[C@@H:3]([OH:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C/C.OO",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.OO"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        },
+        {
+          "step_id": "syn_addition_rr_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[OH:5][OH:6]>>[CH3:1][C@@H:2]([OH:5])[C@H:3]([OH:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C/C.OO",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.OO"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R",
+            "3": "R"
+          },
+          {
+            "2": "S",
+            "3": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "racemic",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Isotope-free analogue of ST-04: same geometry, executable today. AD-03 and ST-04 must agree on the E + syn -> chiral pair outcome even though D is CIP rank 3 while OH is rank 1."
+      }
+    },
+    {
+      "case_id": "ST-24",
+      "catalog_refs": [
+        "AD-04"
+      ],
+      "name": "Syn dihydroxylation of Z-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "dihydroxylation",
+      "conditions": [
+        "OsO4 (cat.)",
+        "H2O2"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "syn_addition",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[OH:5][OH:6]>>[CH3:1][C@H:2]([OH:5])[C@H:3]([OH:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C\\C.OO",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C/C.OO"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S",
+            "3": "R"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "meso",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Isotope-free analogue of ST-06."
+      }
+    },
+    {
+      "case_id": "ST-25",
+      "catalog_refs": [
+        "AD-07"
+      ],
+      "name": "Epoxidation of E-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "epoxidation",
+      "conditions": [
+        "mCPBA"
+      ],
+      "step_relationship": "alternative_face_rules",
+      "rule_set_metadata": {
+        "product_population": "racemic",
+        "weights": [
+          0.5,
+          0.5
+        ]
+      },
+      "steps": [
+        {
+          "step_id": "re_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[CH3:5][C:6](=[O:7])[O:8][OH:9]>>[CH3:1][C@H:2]1[O:9][C@@H:3]1[CH3:4].[CH3:5][C:6](=[O:7])[OH:8]",
+          "application": {
+            "substrate": "C/C=C/C.CC(=O)OO",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.CC(=O)OO"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        },
+        {
+          "step_id": "si_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[CH3:5][C:6](=[O:7])[O:8][OH:9]>>[CH3:1][C@@H:2]1[O:9][C@H:3]1[CH3:4].[CH3:5][C:6](=[O:7])[OH:8]",
+          "application": {
+            "substrate": "C/C=C/C.CC(=O)OO",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.CC(=O)OO"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R",
+            "3": "R"
+          },
+          {
+            "2": "S",
+            "3": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "racemic",
+        "stereo_determinacy": "stereospecific",
+        "notes": "trans-2,3-dimethyloxirane is chiral, so the achiral peracid gives a racemate. The oxygen is delivered suprafacially, hence relative_stereochemistry syn even though the catalog table calls the product 'trans'."
+      }
+    },
+    {
+      "case_id": "ST-26",
+      "catalog_refs": [
+        "AD-08"
+      ],
+      "name": "Epoxidation of Z-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "epoxidation",
+      "conditions": [
+        "mCPBA"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "syn_oxygen_delivery",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[CH3:5][C:6](=[O:7])[O:8][OH:9]>>[CH3:1][C@H:2]1[O:9][C@H:3]1[CH3:4].[CH3:5][C:6](=[O:7])[OH:8]",
+          "application": {
+            "substrate": "C/C=C\\C.CC(=O)OO",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C/C.CC(=O)OO"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R",
+            "3": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "meso",
+        "stereo_determinacy": "stereospecific",
+        "notes": "cis-2,3-dimethyloxirane is meso."
+      }
+    },
+    {
+      "case_id": "ST-27",
+      "catalog_refs": [
+        "AD-11"
+      ],
+      "name": "Cyclopropanation of E-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "cyclopropanation",
+      "conditions": [
+        "CH2N2",
+        "hv"
+      ],
+      "step_relationship": "alternative_face_rules",
+      "rule_set_metadata": {
+        "product_population": "racemic",
+        "weights": [
+          0.5,
+          0.5
+        ]
+      },
+      "steps": [
+        {
+          "step_id": "ss_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[CH2:5]=[N+:6]=[N-:7]>>[CH3:1][C@H:2]1[CH2:5][C@@H:3]1[CH3:4].[N:6]#[N:7]",
+          "application": {
+            "substrate": "C/C=C/C.C=[N+]=[N-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.C=[N+]=[N-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        },
+        {
+          "step_id": "rr_face",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[CH2:5]=[N+:6]=[N-:7]>>[CH3:1][C@@H:2]1[CH2:5][C@H:3]1[CH3:4].[N:6]#[N:7]",
+          "application": {
+            "substrate": "C/C=C/C.C=[N+]=[N-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C.C=[N+]=[N-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {
+            "2": "R",
+            "3": "R"
+          },
+          {
+            "2": "S",
+            "3": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "racemic",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Singlet carbene adds suprafacially; trans-1,2-dimethylcyclopropane is chiral."
+      }
+    },
+    {
+      "case_id": "ST-28",
+      "catalog_refs": [
+        "AD-12"
+      ],
+      "name": "Cyclopropanation of Z-but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "cyclopropanation",
+      "conditions": [
+        "CH2N2",
+        "hv"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "syn_carbene_delivery",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[CH2:5]=[N+:6]=[N-:7]>>[CH3:1][C@H:2]1[CH2:5][C@H:3]1[CH3:4].[N:6]#[N:7]",
+          "application": {
+            "substrate": "C/C=C\\C.C=[N+]=[N-]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C/C.C=[N+]=[N-]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED",
+            "atom:3": "FORMED",
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {
+            "2": "S",
+            "3": "R"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "meso",
+        "stereo_determinacy": "stereospecific",
+        "notes": "cis-1,2-dimethylcyclopropane is meso."
+      }
+    },
+    {
+      "case_id": "ST-29",
+      "catalog_refs": [
+        "AD-15"
+      ],
+      "name": "HBr addition to 1-butene via a planar secondary cation",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "electrophilic_addition",
+      "conditions": [
+        "HBr"
+      ],
+      "step_relationship": "sequential",
+      "steps": [
+        {
+          "step_id": "protonation",
+          "mapped_reaction": "[CH2:1]=[CH:2][CH2:3][CH3:4].[H:5][Br:6]>>[CH2:1]([H:5])[CH+:2][CH2:3][CH3:4].[Br-:6]",
+          "application": {
+            "substrate": "C=CCC.[H]Br",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {}
+        },
+        {
+          "step_id": "bromide_capture",
+          "mapped_reaction": "[CH2:1]([H:5])[CH+:2][CH2:3][CH3:4].[Br-:6]>>[CH2:1]([H:5])[C@H:2]([Br:6])[CH2:3][CH3:4]",
+          "rule_metadata": {
+            "stereo_outcomes": {
+              "atom:2": {
+                "kind": "RACEMIC",
+                "weights": [
+                  0.5,
+                  0.5
+                ]
+              }
+            }
+          },
+          "application": {
+            "substrate": "C[CH+]CC.[Br-]",
+            "expected_unique_stereoisomer_count": 2,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "R"
+          },
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "racemic",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "Markovnikov regiochemistry plus a racemic centre. The alkene has no E/Z element to destroy, so this isolates centre creation from descriptor destruction."
+      }
+    },
+    {
+      "case_id": "ST-30",
+      "catalog_refs": [
+        "AD-16"
+      ],
+      "name": "Hydrogenation of 2-phenyl-1-butene with an achiral catalyst",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "hydrogenation",
+      "conditions": [
+        "H2",
+        "Pd/C"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "hydrogenation",
+          "mapped_reaction": "[CH2:1]=[C:2]([CH2:3][CH3:4])[c:5]1[cH:6][cH:7][cH:8][cH:9][cH:10]1.[H:11][H:12]>>[CH2:1]([H:11])[C@:2]([H:12])([CH2:3][CH3:4])[c:5]1[cH:6][cH:7][cH:8][cH:9][cH:10]1",
+          "rule_metadata": {
+            "stereo_outcomes": {
+              "atom:2": {
+                "kind": "RACEMIC",
+                "weights": [
+                  0.5,
+                  0.5
+                ]
+              }
+            }
+          },
+          "application": {
+            "substrate": "C=C(CC)c1ccccc1.[H][H]",
+            "expected_unique_stereoisomer_count": 2,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "R"
+          },
+          {
+            "2": "S"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "racemic",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "Prochiral alkene, achiral catalyst: both enantiotopic faces are used. Same graph edit as ST-31."
+      }
+    },
+    {
+      "case_id": "ST-31",
+      "catalog_refs": [
+        "AD-17"
+      ],
+      "name": "Hydrogenation of 2-phenyl-1-butene with a chiral catalyst",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "hydrogenation",
+      "conditions": [
+        "H2",
+        "chiral Rh catalyst"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "hydrogenation",
+          "mapped_reaction": "[CH2:1]=[C:2]([CH2:3][CH3:4])[c:5]1[cH:6][cH:7][cH:8][cH:9][cH:10]1.[H:11][H:12]>>[CH2:1]([H:11])[C@:2]([H:12])([CH2:3][CH3:4])[c:5]1[cH:6][cH:7][cH:8][cH:9][cH:10]1",
+          "application": {
+            "substrate": "C=C(CC)c1ccccc1.[H][H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [
+          {
+            "2": "R"
+          }
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereoselective",
+        "notes": "Identical connectivity change to ST-30; only the facial selectivity annotation differs."
+      }
+    },
+    {
+      "case_id": "ST-32",
+      "catalog_refs": [
+        "AD-18",
+        "DB-05"
+      ],
+      "name": "Hydrogenation of E-but-2-ene leaves no stereochemical signal",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "hydrogenation",
+      "conditions": [
+        "H2",
+        "Pd/C"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "hydrogenation",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[H:5][H:6]>>[CH3:1][CH:2]([H:5])[CH:3]([H:6])[CH3:4]",
+          "application": {
+            "substrate": "C/C=C/C.[H][H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "destroyed",
+        "descriptor_change": "destroyed",
+        "relative_stereochemistry": null,
+        "product_population": "achiral",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "The E/Z element is destroyed and butane carries no stereo element. Z-but-2-ene is deliberately NOT rejected: it is a legitimate substrate giving the same product, which is what makes this addition non-stereospecific in the observable sense. Contrast ST-04, where the same syn delivery is stereospecific only because the isotope label survives."
+      }
+    },
+    {
+      "case_id": "ST-33",
+      "catalog_refs": [
+        "DB-02"
+      ],
+      "name": "Remote coupling reverses alkene CIP priority while geometry is retained",
+      "case_kind": "transformation",
+      "status": "graph_only",
+      "reaction_class": "cross_coupling",
+      "conditions": [
+        "MeMgBr",
+        "Ni cat."
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "kumada_coupling",
+          "mapped_reaction": "[CH3:1][CH2:2][CH2:3]/[C:4]([CH2:5][Br:6])=[CH:7]\\[CH3:8].[CH3:9][Mg:10][Br:11]>>[CH3:1][CH2:2][CH2:3]/[C:4]([CH2:5][CH3:9])=[CH:7]\\[CH3:8].[Br:6][Mg:10][Br:11]",
+          "application": {
+            "substrate": "CCC/C(=C\\C)CBr.C[Mg]Br",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "CCC/C(=C/C)CBr.C[Mg]Br"
+            ]
+          },
+          "expected_stereo_changes": {
+            "bond:4-7": "RETAINED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:4-7": "E"
+        },
+        "product_descriptor_by_locus": {
+          "bond:4-7": "Z"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "retained",
+        "descriptor_change": "flipped",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Double-bond analogue of ST-10. On C4 the ranking CH2Br > n-propyl becomes n-propyl > ethyl, so the reference substituent moves to the other side of the double bond and the label flips E -> Z with the geometry untouched."
+      },
+      "known_blocker": {
+        "code": "PLANAR_STEREO_NOT_SERIALIZED",
+        "observed_effect": "The product graph retains the planar descriptor, but generated reaction SMILES omits the expected Z descriptor."
+      }
+    },
+    {
+      "case_id": "ST-34",
+      "catalog_refs": [
+        "DB-03"
+      ],
+      "name": "Photochemical E to Z isomerization of but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "alkene_isomerization",
+      "conditions": [
+        "hv"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "isomerization",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4]>>[CH3:1]/[CH:2]=[CH:3]\\[CH3:4]",
+          "application": {
+            "substrate": "C/C=C/C",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C\\C"
+            ]
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "INVERTED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "inverted",
+        "descriptor_change": "flipped",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Connectivity is completely unchanged; the whole edit is the stereo element. A rule engine keyed on bond changes alone produces an empty ITS here."
+      }
+    },
+    {
+      "case_id": "ST-35",
+      "catalog_refs": [
+        "DB-04"
+      ],
+      "name": "Z to E isomerization of but-2-ene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "alkene_isomerization",
+      "conditions": [
+        "I2 (cat.)",
+        "heat"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "isomerization",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4]>>[CH3:1]/[CH:2]=[CH:3]/[CH3:4]",
+          "application": {
+            "substrate": "C/C=C\\C",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C/C=C/C"
+            ]
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "INVERTED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "inverted",
+        "descriptor_change": "flipped",
+        "relative_stereochemistry": null,
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Connectivity is completely unchanged; the whole edit is the stereo element. A rule engine keyed on bond changes alone produces an empty ITS here."
+      }
+    },
+    {
+      "case_id": "ST-36",
+      "catalog_refs": [
+        "DB-06"
+      ],
+      "name": "Reductive ozonolysis of E-but-2-ene destroys the double-bond stereo",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "ozonolysis",
+      "conditions": [
+        "O3",
+        "Me2S"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "oxidative_cleavage",
+          "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[O-:5][O+:6]=[O:7].[CH3:8][S:9][CH3:10]>>[CH3:1][CH:2]=[O:5].[CH3:4][CH:3]=[O:7].[CH3:8][S:9](=[O:6])[CH3:10]",
+          "application": {
+            "substrate": "C/C=C/C.[O-][O+]=O.CSC",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "BROKEN"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "destroyed",
+        "descriptor_change": "destroyed",
+        "relative_stereochemistry": null,
+        "product_population": "achiral",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "Z-but-2-ene gives the identical product; the stereo element is destroyed by C=C cleavage rather than by saturation, unlike ST-32."
+      }
+    },
+    {
+      "case_id": "ST-37",
+      "catalog_refs": [
+        "DB-07"
+      ],
+      "name": "Lindlar semihydrogenation of but-2-yne creates the Z-alkene",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "semihydrogenation",
+      "conditions": [
+        "H2",
+        "Lindlar catalyst"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "syn_semihydrogenation",
+          "mapped_reaction": "[CH3:1][C:2]#[C:3][CH3:4].[H:5][H:6]>>[CH3:1]/[C:2]([H:5])=[C:3](/[H:6])[CH3:4]",
+          "application": {
+            "substrate": "CC#CC.[H][H]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": []
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {},
+        "product_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "syn",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereoselective",
+        "notes": "Syn delivery of both hydrogens on the catalyst surface. Same graph edit as ST-38; the geometry comes only from the condition annotation."
+      }
+    },
+    {
+      "case_id": "ST-38",
+      "catalog_refs": [
+        "DB-08"
+      ],
+      "name": "Dissolving-metal reduction of but-2-yne creates the E-alkene",
+      "case_kind": "transformation",
+      "status": "graph_only",
+      "reaction_class": "dissolving_metal_reduction",
+      "conditions": [
+        "Na",
+        "NH3(l)"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "anti_reduction",
+          "mapped_reaction": "[CH3:1][C:2]#[C:3][CH3:4].[Na:5].[Na:6].[N:7]([H:9])([H:11])[H:12].[N:8]([H:10])([H:13])[H:14]>>[CH3:1]/[C:2]([H:9])=[C:3](\\[H:10])[CH3:4].[Na+:5].[Na+:6].[N-:7]([H:11])[H:12].[N-:8]([H:13])[H:14]",
+          "application": {
+            "substrate": "CC#CC.[Na].[Na].N.N",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [],
+            "reactor_options": {
+              "explicit_h": true
+            }
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_descriptor_by_locus": {},
+        "product_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "created",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "anti",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereoselective",
+        "notes": "Pairs with ST-37: identical connectivity change, opposite geometry, decided by the trans-vinyl-anion intermediate. The two cases must not deduplicate to one rule."
+      },
+      "known_blocker": {
+        "code": "EXPLICIT_H_PLANAR_STEREO_NOT_SERIALIZED",
+        "observed_effect": "explicit_h=true is required to generate the product; the product graph contains E but generated reaction SMILES is stereo-free."
+      }
+    },
+    {
+      "case_id": "ST-39",
+      "catalog_refs": [
+        "DB-09"
+      ],
+      "name": "Zinc debromination of meso-2,3-dibromobutane gives E-but-2-ene",
+      "case_kind": "transformation",
+      "status": "graph_only",
+      "reaction_class": "debromination",
+      "conditions": [
+        "Zn"
+      ],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "anti_periplanar_elimination",
+          "mapped_reaction": "[CH3:1][C@H:2]([Br:5])[C@H:3]([Br:6])[CH3:4].[Zn:7]>>[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[Zn+2:7].[Br-:5].[Br-:6]",
+          "application": {
+            "substrate": "C[C@H](Br)[C@H](Br)C.[Zn]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@H](Br)[C@@H](Br)C.[Zn]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "BROKEN",
+            "atom:3": "BROKEN",
+            "bond:2-3": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {
+          "2": "S",
+          "3": "R"
+        },
+        "product_descriptor_by_locus": {
+          "bond:2-3": "E"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "destroyed",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "anti",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Exact microscopic reverse of ST-05. Two tetrahedral centres are destroyed and one E/Z element is created in a single edit, so local_geometry and descriptor_change refer to different loci: this is the case that breaks any single-valued stereo verdict per reaction."
+      },
+      "known_blocker": {
+        "code": "PLANAR_STEREO_NOT_SERIALIZED",
+        "observed_effect": "The product graph retains E, but generated reaction SMILES contains an unspecified double bond."
+      }
+    },
+    {
+      "case_id": "ST-40",
+      "catalog_refs": [
+        "DB-10"
+      ],
+      "name": "Zinc debromination of RR/SS-2,3-dibromobutane gives Z-but-2-ene",
+      "case_kind": "transformation",
+      "status": "graph_only",
+      "reaction_class": "debromination",
+      "conditions": [
+        "Zn"
+      ],
+      "step_relationship": "enantiomeric_substrate_rules",
+      "rule_set_metadata": {
+        "substrate_population": "racemic",
+        "weights": [
+          0.5,
+          0.5
+        ],
+        "note": "Two enantiomeric substrates converge on one achiral product."
+      },
+      "steps": [
+        {
+          "step_id": "from_SS_dibromide",
+          "mapped_reaction": "[CH3:1][C@H:2]([Br:5])[C@@H:3]([Br:6])[CH3:4].[Zn:7]>>[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[Zn+2:7].[Br-:5].[Br-:6]",
+          "application": {
+            "substrate": "C[C@H](Br)[C@H](C)Br.[Zn]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@H](Br)[C@@H](C)Br.[Zn]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "BROKEN",
+            "atom:3": "BROKEN",
+            "bond:2-3": "FORMED"
+          }
+        },
+        {
+          "step_id": "from_RR_dibromide",
+          "mapped_reaction": "[CH3:1][C@@H:2]([Br:5])[C@H:3]([Br:6])[CH3:4].[Zn:7]>>[CH3:1]/[CH:2]=[CH:3]\\[CH3:4].[Zn+2:7].[Br-:5].[Br-:6]",
+          "application": {
+            "substrate": "C[C@@H](Br)[C@@H](C)Br.[Zn]",
+            "expected_unique_stereoisomer_count": 1,
+            "rejected_substrates": [
+              "C[C@H](Br)[C@@H](C)Br.[Zn]"
+            ]
+          },
+          "expected_stereo_changes": {
+            "atom:2": "BROKEN",
+            "atom:3": "BROKEN",
+            "bond:2-3": "FORMED"
+          }
+        }
+      ],
+      "oracle": {
+        "reactant_cip_sets": [
+          {
+            "2": "S",
+            "3": "S"
+          },
+          {
+            "2": "R",
+            "3": "R"
+          }
+        ],
+        "product_descriptor_by_locus": {
+          "bond:2-3": "Z"
+        },
+        "product_cip_sets": [
+          {}
+        ],
+        "local_geometry": "destroyed",
+        "descriptor_change": "created",
+        "relative_stereochemistry": "anti",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "notes": "Reverse of ST-07 and the mirror-image test of ST-39. Both enantiomers of the substrate are needed and both give Z; a rule set that keeps only one enantiomer silently halves the substrate scope."
+      },
+      "known_blocker": {
+        "code": "PLANAR_STEREO_NOT_SERIALIZED",
+        "observed_effect": "Both product graphs retain Z, but generated reaction SMILES contains an unspecified double bond."
+      }
+    },
+    {
+      "case_id": "ST-41",
+      "catalog_refs": [
+        "NG-01"
+      ],
+      "name": "SN1 product whose stereochemical composition was never measured",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "reaction",
+        "target": "C[C@@H](Cl)c1ccccc1.[OH-]>>CC(O)c1ccccc1.[Cl-]",
+        "must_not_assign": [
+          "product_cip:any_single_enantiomer"
+        ],
+        "required_annotation": {
+          "product_population": "unknown",
+          "stereo_determinacy": "non_stereospecific"
+        },
+        "rationale": "Same transformation as ST-01, but sourced from a record with no measured e.e. ST-01 may assert the idealized racemate because its rule_set_metadata declares the 0.5/0.5 population; this case may not. Emitting either C[C@H](O)c1ccccc1 or C[C@@H](O)c1ccccc1 as the product is a failure, and so is silently promoting the stereo-free SMILES to 'racemic'."
+      }
+    },
+    {
+      "case_id": "ST-42",
+      "catalog_refs": [
+        "NG-05",
+        "DB-12"
+      ],
+      "name": "Flexible E2 elimination without conformational information",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "reaction",
+        "target": "CCC(Br)CC.[OH-]>>CCC=CC.[Br-].O",
+        "must_not_assign": [
+          "bond_descriptor:E",
+          "bond_descriptor:Z"
+        ],
+        "required_annotation": {
+          "product_population": "unknown",
+          "stereo_determinacy": "underdetermined",
+          "relative_stereochemistry": null
+        },
+        "rationale": "3-bromopentane is conformationally free, so anti-periplanar geometry does not fix the alkene descriptor. The E/Z locus must be marked underdetermined rather than defaulted to E on thermodynamic grounds. Contrast with DB-11, which supplies a rigid substrate and is therefore deterministic."
+      }
+    },
+    {
+      "case_id": "ST-43",
+      "catalog_refs": [
+        "DB-13",
+        "NG-09"
+      ],
+      "name": "Terminal alkene carries no E/Z element",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "molecule",
+        "target": "C=CCC",
+        "must_not_assign": [
+          "bond_descriptor:1-2"
+        ],
+        "required_annotation": {
+          "product_population": "achiral"
+        },
+        "rationale": "C1 bears two hydrogens, so no E/Z element exists. Any directional bond written onto this double bond is meaningless and must not be reported as a descriptor."
+      }
+    },
+    {
+      "case_id": "ST-44",
+      "catalog_refs": [
+        "DB-14",
+        "NG-09"
+      ],
+      "name": "Alkene carbon with two identical substituents carries no E/Z element",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "molecule",
+        "target": "CC=C(C)C",
+        "must_not_assign": [
+          "bond_descriptor:2-3"
+        ],
+        "required_annotation": {
+          "product_population": "achiral"
+        },
+        "rationale": "C3 of 2-methylbut-2-ene bears two methyls. CIP ranking cannot distinguish them, so the double bond is not stereogenic. This is the duplicate-substituent case of NG-09; ST-43 is the duplicate-hydrogen case."
+      }
+    },
+    {
+      "case_id": "ST-45",
+      "catalog_refs": [
+        "NG-10"
+      ],
+      "name": "Unreported product stereochemistry must stay unknown, not racemic",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "reaction",
+        "target": "CC(=O)CC.[H][H]>>CCC(C)O",
+        "must_not_assign": [
+          "product_population:racemic",
+          "product_cip:any_single_enantiomer"
+        ],
+        "required_annotation": {
+          "product_population": "unknown",
+          "stereo_determinacy": "underdetermined",
+          "provenance": "source reports no stereochemical outcome"
+        },
+        "rationale": "The graph edit is identical to ST-14/ST-15/ST-16. Those cases may assert racemic or a single enantiomer because their conditions declare the catalyst; this one may not. 'Unknown' and 'racemic' are different claims: the first says the composition was not determined, the second asserts a 50:50 measurement. Collapsing them destroys the distinction the catalog's Section 10 requires."
+      }
+    },
+    {
+      "case_id": "ST-46",
+      "catalog_refs": [
+        "NG-11",
+        "NG-02"
+      ],
+      "name": "Stereo-free SMILES needs external annotation to mean racemic",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "annotation_pair",
+        "target": "CCC(C)O",
+        "must_not_assign": [
+          "population_inferred_from_smiles"
+        ],
+        "required_annotation": {
+          "reading_a": {
+            "product_population": "racemic",
+            "stereo_outcomes": {
+              "atom:2": {
+                "kind": "RACEMIC",
+                "weights": [
+                  0.5,
+                  0.5
+                ]
+              }
+            },
+            "stereo_determinacy": "non_stereospecific"
+          },
+          "reading_b": {
+            "product_population": "unknown",
+            "stereo_outcomes": {},
+            "stereo_determinacy": "underdetermined"
+          }
+        },
+        "rationale": "One and the same product SMILES backs both readings. The two annotations must round-trip to distinct records and must never compare equal. A serializer that writes the ensemble annotation into the SMILES, or a loader that drops it, fails this case. This is the annotation-layer counterpart of ST-45."
+      }
+    },
+    {
+      "case_id": "ST-47",
+      "catalog_refs": [
+        "NG-07"
+      ],
+      "name": "Simple tertiary amine is not a stable nitrogen stereocentre",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "molecule",
+        "target": "CCN(C)C",
+        "must_not_assign": [
+          "atom_cip:nitrogen"
+        ],
+        "required_annotation": {
+          "product_population": "achiral"
+        },
+        "rationale": "N-ethyldimethylamine inverts pyramidally far faster than it can be resolved, so the nitrogen must not be treated as a stereocentre even though it formally carries four different ligands counting the lone pair. Contrast HE-06, where quaternization removes the lone pair and creates a genuinely stable centre."
+      }
+    },
+    {
+      "case_id": "ST-48",
+      "catalog_refs": [
+        "NG-08"
+      ],
+      "name": "Structurally impossible trans-cycloalkene must be rejected or flagged",
+      "case_kind": "negative_assertion",
+      "status": "specification_only",
+      "assertion": {
+        "target_kind": "molecule",
+        "target": "C1/C=C/CCC1",
+        "must_not_assign": [
+          "bond_descriptor:trans_accepted_silently"
+        ],
+        "required_annotation": {
+          "expected_behaviour": "reject_or_flag_invalid"
+        },
+        "rationale": "trans-Cyclohexene is not isolable at ordinary conditions; the SMILES is structurally invalid rather than merely unusual. Verified behaviour of RDKit 2026.03.3: both C1/C=C/CCC1 and C1/C=C\\CCC1 parse without error and canonicalize to C1=CCCCC1, i.e. the directional bonds are silently discarded rather than flagged. A conformance layer must therefore raise its own diagnostic; relying on the toolkit to reject the input is not sufficient."
+      }
+    }
+  ],
+  "catalog_backlog": [
+    {
+      "catalog_ids": [
+        "TH-09"
+      ],
+      "group": "tetrahedral",
+      "reason": "Needs a multi-centre epimerization substrate with an oracle that localises the single inverted centre; ST-21 covers the weaker 'react at one of two centres' claim."
+    },
+    {
+      "catalog_ids": [
+        "TH-17"
+      ],
+      "group": "tetrahedral",
+      "reason": "A literal D-for-H replacement is not a single graph edit; encoding it needs the isotope-aware rewrite that ST-04/ST-06/ST-19 are blocked on."
+    },
+    {
+      "catalog_ids": [
+        "TH-18"
+      ],
+      "group": "tetrahedral",
+      "reason": "Prochiral desymmetrization by mono-protection needs prochirality (pro-R/pro-S) annotation, which the schema does not yet carry."
+    },
+    {
+      "catalog_ids": [
+        "TH-21"
+      ],
+      "group": "tetrahedral",
+      "reason": "Needs a reaction that maps an RR/SS pair onto a meso product while retaining both centres; no clean small-molecule instance chosen yet."
+    },
+    {
+      "catalog_ids": [
+        "AD-09",
+        "AD-10"
+      ],
+      "group": "alkene_addition",
+      "reason": "Net anti dihydroxylation via epoxidation then hydrolysis. Requires composing a face-rule pair (ST-25/ST-26) with an anti ring opening; the composed oracle is the target of a separate rule-composition test."
+    },
+    {
+      "catalog_ids": [
+        "AD-13"
+      ],
+      "group": "alkene_addition",
+      "reason": "Halohydrin formation couples stereochemistry to regiochemistry; needs a regio oracle alongside the stereo oracle."
+    },
+    {
+      "catalog_ids": [
+        "AD-14"
+      ],
+      "group": "alkene_addition",
+      "reason": "Hydroboration-oxidation of 1-methylcyclohexene is a ring case; blocked with the RG group below."
+    },
+    {
+      "catalog_ids": [
+        "DB-01"
+      ],
+      "group": "double_bond",
+      "reason": "Trivially subsumed by ST-33 minus the priority reversal; worth adding as the control once ST-33 passes."
+    },
+    {
+      "catalog_ids": [
+        "DB-11"
+      ],
+      "group": "double_bond",
+      "reason": "Rigid anti-periplanar E2 needs a conformationally locked substrate, i.e. a ring; blocked with RG."
+    },
+    {
+      "catalog_ids": [
+        "DB-15",
+        "DB-16"
+      ],
+      "group": "double_bond",
+      "reason": "C=N stereochemistry. RDKit assigns E/Z across C=N, but oxime/imine geometry needs its own oracle and lone-pair ranking checks."
+    },
+    {
+      "catalog_ids": [
+        "RG-01",
+        "RG-02",
+        "RG-03",
+        "RG-04",
+        "RG-05",
+        "RG-06",
+        "RG-07",
+        "RG-08",
+        "RG-09",
+        "RG-10",
+        "RG-11",
+        "RG-12",
+        "RG-13",
+        "RG-14",
+        "RG-15",
+        "RG-16"
+      ],
+      "group": "rings",
+      "reason": "Ring cases need cis/trans relative-stereochemistry annotation across a ring and, for RG-11..RG-16, carbohydrate and peptide substrates. None are encoded; fabricating them without an executable oracle would violate the catalog's own entry criterion."
+    },
+    {
+      "catalog_ids": [
+        "PC-01",
+        "PC-02",
+        "PC-03",
+        "PC-04",
+        "PC-05",
+        "PC-06",
+        "PC-07",
+        "PC-08",
+        "PC-09",
+        "PC-10",
+        "PC-11",
+        "PC-12",
+        "PC-13",
+        "PC-14"
+      ],
+      "group": "pericyclic",
+      "reason": "Pericyclic selectivity is not a function of connectivity: conrotatory/disrotatory and endo/exo require an explicit thermal-vs-photochemical field and a facial descriptor the schema does not yet define."
+    },
+    {
+      "catalog_ids": [
+        "AX-01",
+        "AX-02",
+        "AX-03",
+        "AX-04",
+        "AX-05",
+        "AX-06",
+        "AX-07",
+        "AX-08"
+      ],
+      "group": "advanced",
+      "reason": "Axial and spiro chirality. RDKit supports allene and atropisomer stereo only partially; needs a decision on representation before an oracle can be trusted."
+    },
+    {
+      "catalog_ids": [
+        "HE-01",
+        "HE-02",
+        "HE-03",
+        "HE-04",
+        "HE-05",
+        "HE-06",
+        "HE-07"
+      ],
+      "group": "advanced",
+      "reason": "Heteroatom stereocentres (S, P, Si, N+). Encodable in principle; deferred until tetrahedral carbon passes end to end, per the catalog's own Section 7 instruction."
+    },
+    {
+      "catalog_ids": [
+        "PS-01"
+      ],
+      "group": "advanced",
+      "reason": "Pseudoasymmetric r/s centres exercise CIP Rules 4b/5; needs a dedicated oracle since a like/unlike ranking bug would silently pass every case above."
+    },
+    {
+      "catalog_ids": [
+        "IS-01"
+      ],
+      "group": "advanced",
+      "reason": "Partially covered by ST-04/ST-06/ST-19 for R/S; the isotope-dependent E/Z half has no case yet."
+    },
+    {
+      "catalog_ids": [
+        "ES-01",
+        "ES-02",
+        "ES-03",
+        "ES-04"
+      ],
+      "group": "advanced",
+      "reason": "Enhanced stereo (ABS/AND/OR) groups. ST-46 encodes the racemic-vs-unknown distinction at the annotation layer, but real AND/OR group round-tripping needs an extended-SMILES or MOL V3000 path."
+    },
+    {
+      "catalog_ids": [
+        "CO-01",
+        "CO-02",
+        "CO-03"
+      ],
+      "group": "advanced",
+      "reason": "Coordination stereo, marked optional in the catalog."
+    },
+    {
+      "catalog_ids": [
+        "NG-03",
+        "NG-04"
+      ],
+      "group": "negative",
+      "reason": "Wittig and HWE default-geometry tests need ylide-stabilisation context fields; the assertion is about a missing input, so the case must carry the context schema first."
+    },
+    {
+      "catalog_ids": [
+        "NG-06"
+      ],
+      "group": "negative",
+      "reason": "Partially covered by ST-18, which declares 'no cage model' in its conditions. A true NG-06 needs a positive cage-model counterpart to contrast against."
+    },
+    {
+      "catalog_ids": [
+        "SER-01..SER-14"
+      ],
+      "group": "serialization",
+      "reason": "Section 11 asks for 14 serialization variants of every chemically distinct gold reaction. These are generated mechanically from the cases above rather than stored, except for variant 14 (equivalent-atom mapping permutation), which is encoded explicitly as ST-22 because it needs a hand-written second mapping."
+    }
+  ]
+}

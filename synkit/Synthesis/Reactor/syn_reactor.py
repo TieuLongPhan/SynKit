@@ -130,11 +130,12 @@ class SynReactor:
         ``"lower_bound"`` permits extra host radical resource for generalized
         templates, and ``"ignore"`` preserves legacy matching behavior.
     :type radical_policy: str
-    :param stereo_mode: Left-side stereo guard policy. ``"require"`` checks
-        every rule guard, ``"strict"`` additionally rejects undeclared host
-        descriptors in the mapped dependency scope, and ``"ignore"`` or
-        ``"propagate"`` do not filter structural mappings. Product stereo and
-        branching are controlled by the stored rule effects/outcomes.
+    :param stereo_mode: Stereo application policy. ``"propagate"`` (default)
+        applies relative rule effects to the orientation actually present in
+        the substrate. ``"require"`` checks every exact rule guard, while
+        ``"strict"`` additionally rejects undeclared host descriptors in the
+        mapped dependency scope. ``"ignore"`` preserves fixed-template legacy
+        behaviour without filtering structural mappings.
     :type stereo_mode: str
     :param stereo_query_mode: Meaning of an unknown-parity rule descriptor.
         ``"exact"`` matches only unknown host stereo; ``"wildcard"`` matches
@@ -166,7 +167,7 @@ class SynReactor:
     template_format: ITSFormat = "typesGH"
     electron_diagnostics: bool = False
     radical_policy: str = "strict"
-    stereo_mode: str = "ignore"
+    stereo_mode: str = "propagate"
     stereo_query_mode: str = "exact"
     embed_threshold: Optional[int] = None
     embed_pre_filter: bool = False
@@ -220,7 +221,7 @@ class SynReactor:
         template_format: ITSFormat = "typesGH",
         electron_diagnostics: bool = False,
         radical_policy: str = "strict",
-        stereo_mode: str = "ignore",
+        stereo_mode: str = "propagate",
         stereo_query_mode: str = "exact",
     ) -> "SynReactor":
         """
@@ -250,8 +251,9 @@ class SynReactor:
         :param radical_policy: Radical matching policy: ``"strict"``,
             ``"lower_bound"``, or ``"ignore"``.
         :type radical_policy: str
-        :param stereo_mode: Left-side stereo guard policy: ``"ignore"``,
-            ``"propagate"``, ``"require"``, or ``"strict"``.
+        :param stereo_mode: Stereo application policy: chemical-relative
+            ``"propagate"`` (default), fixed-template ``"ignore"``, or the
+            stereoisomer-selective ``"require"`` / ``"strict"`` modes.
         :type stereo_mode: str
         :param stereo_query_mode: Unknown-parity query policy, either
             ``"exact"`` or ``"wildcard"``.
@@ -327,14 +329,15 @@ class SynReactor:
         """Return unique sub‑graph mappings, optionally pruned via automorphisms."""
         if self._mappings is None:
             log.debug("Finding sub‑graph mappings (strategy=%s)", self.strategy)
-            pattern_graph = self.rule.left.raw
+            full_pattern_graph = self._relative_pi_pattern_graph(self.rule.left.raw)
             # Handle explicit‑H constraints
-            if has_XH(pattern_graph):
+            if has_XH(full_pattern_graph):
                 self._flag_pattern_has_explicit_H = True
-                pattern_graph = h_to_implicit(pattern_graph)
+                full_pattern_graph = h_to_implicit(full_pattern_graph)
+            pattern_graph = full_pattern_graph
             # Handle wildcard‑node patterns
             if has_wildcard_node(pattern_graph):
-                pattern_graph = remove_wildcard_nodes(pattern_graph)
+                pattern_graph = remove_wildcard_nodes(pattern_graph, inplace=False)
 
             pattern_graph = self._with_aromatic_n_pi_roles(pattern_graph)
             matching_host = self._with_aromatic_n_pi_roles(self._matching_host_graph())
@@ -370,6 +373,12 @@ class SynReactor:
                     pre_filter=self.embed_pre_filter,
                 )
 
+            raw_maps = self._expand_stereo_wildcard_mappings(
+                raw_maps,
+                full_pattern_graph,
+                matching_host,
+            )
+
             if self.radical_policy == "lower_bound":
                 raw_maps = self._filter_radical_lower_bound(
                     raw_maps, pattern_graph, matching_host
@@ -381,7 +390,7 @@ class SynReactor:
                     mapping
                     for mapping in raw_maps
                     if candidate_mapping_stereo_matches(
-                        pattern_graph,
+                        full_pattern_graph,
                         matching_host,
                         mapping,
                         mode=self.stereo_mode,
@@ -389,12 +398,35 @@ class SynReactor:
                         query_policies=self.rule.stereo_query_policies,
                     )
                 ]
+            elif self.stereo_mode == "propagate":
+                exact_targets = self._noncovariant_propagation_targets()
+                if exact_targets:
+                    from synkit.Graph.Stereo import candidate_mapping_stereo_matches
+
+                    selective_pattern = full_pattern_graph.copy()
+                    selective_pattern.graph["stereo_descriptors"] = {
+                        key: self.rule.stereo_guards[key]
+                        for key in exact_targets
+                    }
+                    raw_maps = [
+                        mapping
+                        for mapping in raw_maps
+                        if candidate_mapping_stereo_matches(
+                            selective_pattern,
+                            matching_host,
+                            mapping,
+                            mode="require",
+                            unknown_policy="exact",
+                            query_policies={key: "exact" for key in exact_targets},
+                        )
+                    ]
 
             # --- Automorphism pruning ----------------------------------------
             stereo_sensitive = bool(
                 self.rule.stereo_guards
                 or self.rule.stereo_effects
                 or self.rule.stereo_outcomes
+                or self.rule.stereo_couplings
             )
             if self.automorphism and raw_maps and not stereo_sensitive:
                 automorphism_pattern = self._automorphism_pattern_graph(pattern_graph)
@@ -435,9 +467,9 @@ class SynReactor:
                 )
             elif stereo_sensitive:
                 # Use pattern-only orbit pruning with descriptor-position
-                # roles. Host orbit pruning is intentionally deferred because
-                # a structural host automorphism may exchange enantiotopic
-                # embeddings. Product deduplication handles identical results.
+                # roles. General host-orbit pruning remains deferred because
+                # it may exchange enantiotopic embeddings. Pure coupling rules
+                # receive a narrower reaction-locus canonicalization below.
                 stereo_pattern = self._stereo_automorphism_pattern_graph(pattern_graph)
                 stereo_attrs = self._automorphism_node_attrs(
                     stereo_pattern,
@@ -455,10 +487,17 @@ class SynReactor:
                     pattern_orbits=stereo_auto.orbits,
                     pattern_anchor=stereo_auto.anchor_component,
                 )
+                before_coupling_prune = len(self._mappings)
+                self._mappings = self._deduplicate_pure_coupling_mappings(
+                    self._mappings,
+                    stereo_pattern,
+                    stereo_auto.orbits,
+                )
                 log.debug(
-                    "Stereo-sensitive pattern pruning: %d → %d mapping(s); "
-                    "host symmetry deferred until product deduplication",
+                    "Stereo-sensitive pruning: %d → %d pattern mapping(s) → "
+                    "%d coupling-locus mapping(s)",
                     len(raw_maps),
+                    before_coupling_prune,
                     len(self._mappings),
                 )
             else:
@@ -478,6 +517,79 @@ class SynReactor:
             log.info("%d mapping(s) discovered", len(self._mappings))
         return self._mappings
 
+    def _expand_stereo_wildcard_mappings(
+        self,
+        mappings: List[MappingDict],
+        pattern: nx.Graph,
+        host: nx.Graph,
+    ) -> List[MappingDict]:
+        """Bind wildcard stereo references to actual host neighbors.
+
+        Wildcard ligand nodes are omitted from structural matching, but a
+        tetrahedral descriptor still needs their concrete identities for
+        parity propagation. Only wildcards referenced by stored stereo state
+        are expanded; ordinary wildcard regions retain their legacy behavior.
+        """
+        wildcard_nodes = {
+            node
+            for node, attrs in pattern.nodes(data=True)
+            if attrs.get("element") == "*"
+        }
+        if not mappings or not wildcard_nodes:
+            return mappings
+
+        referenced_maps = {
+            reference
+            for descriptor in self.rule.stereo_guards.values()
+            for reference in descriptor.atoms
+            if isinstance(reference, int)
+        }
+        referenced_maps.update(
+            reference
+            for change in self.rule.stereo_effects.values()
+            for descriptor in (change.before, change.after, change.transition)
+            if descriptor is not None
+            for reference in descriptor.atoms
+            if isinstance(reference, int)
+        )
+        by_map = self._nodes_by_atom_map(pattern)
+        stereo_wildcards = sorted(
+            (
+                by_map[atom_map]
+                for atom_map in referenced_maps
+                if atom_map in by_map and by_map[atom_map] in wildcard_nodes
+            ),
+            key=repr,
+        )
+        if not stereo_wildcards:
+            return mappings
+
+        expanded: List[MappingDict] = []
+        for mapping in mappings:
+            partials = [dict(mapping)]
+            for wildcard in stereo_wildcards:
+                next_partials: List[MappingDict] = []
+                anchors = [
+                    neighbor
+                    for neighbor in pattern.neighbors(wildcard)
+                    if neighbor not in wildcard_nodes
+                ]
+                for partial in partials:
+                    mapped_anchors = [partial[anchor] for anchor in anchors if anchor in partial]
+                    if len(mapped_anchors) != len(anchors) or not mapped_anchors:
+                        continue
+                    candidates = set(host.neighbors(mapped_anchors[0]))
+                    for anchor in mapped_anchors[1:]:
+                        candidates &= set(host.neighbors(anchor))
+                    candidates -= set(partial.values())
+                    for candidate in sorted(candidates, key=repr):
+                        branch = dict(partial)
+                        branch[wildcard] = candidate
+                        next_partials.append(branch)
+                partials = next_partials
+            expanded.extend(partials)
+        return expanded
+
     @staticmethod
     def _with_aromatic_n_pi_roles(graph: nx.Graph) -> nx.Graph:
         """Label aromatic nitrogens by incident aromatic pi-bond count."""
@@ -490,6 +602,70 @@ class SynReactor:
                 for _, _, edge in decorated.edges(node, data=True)
                 if edge.get("order") == 1.5 and edge.get("pi_order") == 1.0
             )
+        return decorated
+
+    @staticmethod
+    def _nodes_by_atom_map(graph: nx.Graph) -> Dict[int, Any]:
+        """Return graph node identifiers keyed by positive atom-map value."""
+        result: Dict[int, Any] = {}
+        for node, attrs in graph.nodes(data=True):
+            atom_map = attrs.get("atom_map", node)
+            if isinstance(atom_map, tuple) and atom_map:
+                atom_map = atom_map[0]
+            if isinstance(atom_map, int) and atom_map > 0:
+                result[atom_map] = node
+        return result
+
+    def _relative_pi_rewrite_edges(self, rc: nx.Graph) -> set[frozenset[Any]]:
+        """Infer coupled bonds whose edit is one relative pi reduction.
+
+        This is intentionally restricted to declared vicinal additions. A
+        normal structural rule continues to match and write absolute bond
+        orders exactly as before.
+        """
+        by_map = self._nodes_by_atom_map(rc)
+        result: set[frozenset[Any]] = set()
+        for coupling in self.rule.stereo_couplings.values():
+            if coupling.kind != "VICINAL_ADDITION":
+                continue
+            try:
+                left, right = (by_map[value] for value in coupling.centers)
+            except KeyError:
+                continue
+            if not rc.has_edge(left, right):
+                continue
+            attrs = rc.edges[left, right]
+            pi_order = attrs.get("pi_order")
+            sigma_order = attrs.get("sigma_order")
+            if not (
+                isinstance(pi_order, tuple)
+                and len(pi_order) == 2
+                and float(pi_order[0]) - float(pi_order[1]) == 1.0
+                and isinstance(sigma_order, tuple)
+                and len(sigma_order) == 2
+                and float(sigma_order[0]) == float(sigma_order[1]) == 1.0
+            ):
+                continue
+            result.add(frozenset((left, right)))
+        return result
+
+    def _relative_pi_pattern_graph(self, pattern: nx.Graph) -> nx.Graph:
+        """Decorate only inferred relative pi-addition query positions."""
+        relative_edges = self._relative_pi_rewrite_edges(self.rule.rc.raw)
+        if not relative_edges:
+            return pattern
+        decorated = pattern.copy()
+        for edge in relative_edges:
+            left, right = tuple(edge)
+            if not decorated.has_edge(left, right):
+                continue
+            attrs = decorated.edges[left, right]
+            minimum_pi = float(attrs.get("pi_order", 0.0))
+            if minimum_pi < 1.0:
+                continue
+            attrs["_minimum_pi_order"] = minimum_pi
+            decorated.nodes[left]["_coupled_pi_center_query"] = True
+            decorated.nodes[right]["_coupled_pi_center_query"] = True
         return decorated
 
     @property
@@ -514,6 +690,7 @@ class SynReactor:
                     Strategy.from_string(self.strategy),
                     embed_threshold=self.embed_threshold,
                     embed_pre_filter=False,
+                    relative_pi_edges=self._relative_pi_rewrite_edges(rc_raw),
                 )
                 stereo_batch: List[nx.Graph] = []
                 for candidate in its_batch:
@@ -525,6 +702,7 @@ class SynReactor:
             if self.explicit_h:
                 self._its = [self._explicit_h(g) for g in self._its]
             self._its = self._deduplicate_structural_its(self._its)
+            self._its = self._deduplicate_coupling_face_products(self._its)
             log.debug("Built %d ITS graph(s)", len(self._its))
         return self._its
 
@@ -682,6 +860,7 @@ class SynReactor:
                 key in graph.graph
                 for key in (
                     "stereo_outcomes",
+                    "stereo_couplings",
                     "stereo_query_policies",
                     "stereo_reverse_outcomes",
                 )
@@ -735,6 +914,292 @@ class SynReactor:
             self._host_for_matching = host
         return self._host_for_matching
 
+    def _noncovariant_propagation_targets(self) -> set[str]:
+        """Return guards whose coupled product stereo cannot be inferred.
+
+        One same-locus endpoint change can be mirrored directly. A destroyed
+        descriptor with no other stereo output is also safe. If other product
+        descriptors are formed, however, their correlation to an inverse
+        input is not encoded by independent ``StereoChange`` objects; such a
+        rule must match its reference geometry or provide a companion rule.
+        """
+        from synkit.Graph.Stereo import descriptor_id
+
+        exact_targets = set()
+        for target, guard in self.rule.stereo_guards.items():
+            effect = self.rule.stereo_effects.get(target)
+            other_outputs = any(
+                key != target and change.after is not None
+                for key, change in self.rule.stereo_effects.items()
+            )
+            same_locus_output = (
+                effect is not None
+                and effect.after is not None
+                and type(guard) is type(effect.after)
+                and descriptor_id(effect.after) == target
+            )
+            safe_destruction = (
+                effect is not None
+                and effect.after is None
+                and not other_outputs
+            )
+            if not same_locus_output and not safe_destruction:
+                exact_targets.add(target)
+            elif other_outputs:
+                exact_targets.add(target)
+        return exact_targets
+
+    @staticmethod
+    def _unknown_stereo_orientation(descriptor: Any) -> Any:
+        """Keep a descriptor locus/reference frame but remove its orientation."""
+        return type(descriptor)(
+            descriptor.atoms,
+            None,
+            descriptor.provenance,
+        )
+
+    def _propagated_stereo_effect(
+        self,
+        before: Any,
+        after: Any,
+        reactant_registry: Mapping[str, Any],
+        host: nx.Graph,
+    ) -> tuple[Any, Any]:
+        """Orient a same-locus rule effect relative to the matched substrate.
+
+        A mapped template orientation is only a reference frame. In chemical
+        ``propagate`` mode, an inverse host descriptor therefore receives the
+        inverse product descriptor. Missing or unknown input orientation stays
+        unknown instead of acquiring arbitrary template chirality.
+        """
+        if self.stereo_mode != "propagate" or before is None:
+            return before, after
+
+        from synkit.Graph.Stereo import descriptor_id, normalize_hydrogen_references
+
+        target = descriptor_id(before)
+        candidate = reactant_registry.get(target)
+        linked_output = (
+            after is not None
+            and type(before) is type(after)
+            and descriptor_id(after) == target
+        )
+
+        if candidate is None:
+            unknown_before = self._unknown_stereo_orientation(before)
+            unknown_after = (
+                self._unknown_stereo_orientation(after) if linked_output else after
+            )
+            return unknown_before, unknown_after
+
+        if candidate.parity is None:
+            unknown_after = (
+                self._unknown_stereo_orientation(after) if linked_output else after
+            )
+            return candidate, unknown_after
+
+        expected = normalize_hydrogen_references(before, host)
+        actual = normalize_hydrogen_references(candidate, host)
+        if expected == actual:
+            return candidate, after
+        if expected.invert() == actual:
+            return candidate, after.invert() if linked_output else after
+
+        unknown_after = (
+            self._unknown_stereo_orientation(after) if linked_output else after
+        )
+        return candidate, unknown_after
+
+    @staticmethod
+    def _node_by_atom_map(graph: nx.Graph) -> Dict[int, Any]:
+        """Return product nodes keyed by the application-local atom map."""
+        result = {}
+        for node, attrs in graph.nodes(data=True):
+            atom_map = attrs.get("atom_map", node)
+            if isinstance(atom_map, int) and atom_map > 0:
+                result[atom_map] = node
+        return result
+
+    @staticmethod
+    def _node_reference(graph: nx.Graph, node: Any) -> int | None:
+        """Return the stable mapped reference for one product node."""
+        atom_map = graph.nodes[node].get("atom_map", node)
+        return atom_map if isinstance(atom_map, int) and atom_map > 0 else None
+
+    def _coupled_planar_product(self, coupling: Any, product: nx.Graph) -> Any:
+        """Construct a formed alkene descriptor from a syn/anti coupling."""
+        by_map = self._node_by_atom_map(product)
+        left_center, right_center = coupling.centers
+        left_ligand, right_ligand = coupling.ligands
+        required = {left_center, right_center, left_ligand, right_ligand}
+        if not required <= set(by_map):
+            return None
+        left_node, right_node = by_map[left_center], by_map[right_center]
+        if not product.has_edge(left_node, right_node):
+            return None
+        edge = product.edges[left_node, right_node]
+        if float(edge.get("pi_order", 0.0)) < 1.0:
+            return None
+
+        references = []
+        for center, other, ligand in (
+            (left_center, right_center, left_ligand),
+            (right_center, left_center, right_ligand),
+        ):
+            center_node = by_map[center]
+            excluded = {by_map[other], by_map[ligand]}
+            peripheral = [
+                self._node_reference(product, neighbor)
+                for neighbor in product.neighbors(center_node)
+                if neighbor not in excluded
+            ]
+            peripheral = [value for value in peripheral if value is not None]
+            if len(peripheral) == 1:
+                references.append(peripheral[0])
+            elif not peripheral and product.nodes[center_node].get("hcount", 0) == 1:
+                references.append(f"@H:{center}")
+            else:
+                return None
+        return coupling.planar_product_descriptor(*references)
+
+    @staticmethod
+    def _potential_tetrahedral_atom_maps(product: nx.Graph) -> set[int] | None:
+        """Return constitutionally stereogenic tetrahedral product centers.
+
+        Coupling geometry must not create a descriptor when two ligands are
+        constitutionally identical, as in ordinary H2 addition to a CH=CH
+        alkene. ``None`` is a conservative reconstruction-failure sentinel:
+        callers then retain the rule-derived descriptors rather than losing a
+        potentially valid stereocenter.
+        """
+        probe = product.copy()
+        probe.graph["stereo_descriptors"] = {}
+        try:
+            molecule = GraphToMol().graph_to_mol(probe)
+        except Exception:
+            return None
+        atom_maps = {
+            atom.GetIdx(): atom.GetAtomMapNum() for atom in molecule.GetAtoms()
+        }
+        return {
+            atom_maps[stereo.centeredOn]
+            for stereo in Chem.FindPotentialStereo(molecule)
+            if stereo.type == Chem.StereoType.Atom_Tetrahedral
+            and atom_maps.get(stereo.centeredOn, 0) > 0
+        }
+
+    def _apply_stereo_couplings(
+        self,
+        states: List[Tuple[Dict, Dict, Dict, Dict, Dict]],
+        couplings: List[Any],
+        reactant_registry: Mapping[str, Any],
+        product_graph: nx.Graph,
+    ) -> List[Tuple[Dict, Dict, Dict, Dict, Dict]]:
+        """Derive coupled endpoint descriptors from chemical rule semantics."""
+        from synkit.Graph.Stereo import PlanarBondStereo, descriptor_id
+        from synkit.Graph.Stereo.changes import StereoChange
+
+        potential_tetrahedral = self._potential_tetrahedral_atom_maps(product_graph)
+        for coupling in couplings:
+            if coupling.kind != "VICINAL_ADDITION":
+                continue
+            planar_product = self._coupled_planar_product(coupling, product_graph)
+            planar_reactant = reactant_registry.get(coupling.target)
+            next_states = []
+            for (
+                product_registry,
+                relabeled_changes,
+                branch_metadata,
+                outcome_metadata,
+                coupling_branch_metadata,
+            ) in states:
+                if planar_product is not None:
+                    registry = dict(product_registry)
+                    changes = dict(relabeled_changes)
+                    registry[coupling.target] = planar_product
+                    changes[coupling.target] = StereoChange(
+                        "FORMED", None, planar_product
+                    )
+                    next_states.append(
+                        (
+                            registry,
+                            changes,
+                            dict(branch_metadata),
+                            dict(outcome_metadata),
+                            dict(coupling_branch_metadata),
+                        )
+                    )
+                    continue
+
+                if not isinstance(planar_reactant, PlanarBondStereo):
+                    next_states.append(
+                        (
+                            product_registry,
+                            relabeled_changes,
+                            branch_metadata,
+                            outcome_metadata,
+                            coupling_branch_metadata,
+                        )
+                    )
+                    continue
+
+                pairs = coupling.tetrahedral_product_pairs(planar_reactant)
+                if potential_tetrahedral is not None:
+                    pairs = tuple(
+                        tuple(
+                            descriptor
+                            for descriptor in pair
+                            if descriptor.center in potential_tetrahedral
+                        )
+                        for pair in pairs
+                    )
+                if not any(pairs):
+                    registry = dict(product_registry)
+                    changes = dict(relabeled_changes)
+                    registry.pop(coupling.target, None)
+                    changes[coupling.target] = StereoChange(
+                        "BROKEN", planar_reactant, None
+                    )
+                    next_states.append(
+                        (
+                            registry,
+                            changes,
+                            dict(branch_metadata),
+                            dict(outcome_metadata),
+                            dict(coupling_branch_metadata),
+                        )
+                    )
+                    continue
+
+                for face_index, pair in enumerate(pairs):
+                    registry = dict(product_registry)
+                    changes = dict(relabeled_changes)
+                    coupling_branches = dict(coupling_branch_metadata)
+                    registry.pop(coupling.target, None)
+                    changes[coupling.target] = StereoChange(
+                        "BROKEN", planar_reactant, None
+                    )
+                    for descriptor in pair:
+                        target = descriptor_id(descriptor)
+                        registry[target] = descriptor
+                        changes[target] = StereoChange("FORMED", None, descriptor)
+                    coupling_branches[coupling.target] = {
+                        "kind": coupling.kind,
+                        "relation": coupling.relation,
+                        "face_branch": face_index,
+                    }
+                    next_states.append(
+                        (
+                            registry,
+                            changes,
+                            dict(branch_metadata),
+                            dict(outcome_metadata),
+                            coupling_branches,
+                        )
+                    )
+            states = next_states
+        return states
+
     def _apply_stereo_rule_metadata(
         self,
         its: nx.Graph,
@@ -763,20 +1228,33 @@ class SynReactor:
             for change in self.rule.stereo_effects.values()
             if change.transition is not None
         }
+        relabeled_coupling_values = []
+        relabeled_couplings = {}
+        for coupling in self.rule.stereo_couplings.values():
+            relabeled = coupling.relabel(translation)
+            relabeled_coupling_values.append(relabeled)
+            relabeled_couplings[relabeled.target] = relabeled.to_dict()
         states: List[
             Tuple[
                 Dict[str, Any],
                 Dict[str, StereoChange],
                 Dict[str, Dict[str, Any]],
                 Dict[str, Dict[str, Any]],
+                Dict[str, Dict[str, Any]],
             ]
-        ] = [(dict(reactant_registry), {}, {}, {})]
+        ] = [(dict(reactant_registry), {}, {}, {}, {})]
 
         for rule_key, change in self.rule.stereo_effects.items():
             before = change.before.relabel(translation) if change.before else None
             after = change.after.relabel(translation) if change.after else None
             transition = (
                 change.transition.relabel(translation) if change.transition else None
+            )
+            before, after = self._propagated_stereo_effect(
+                before,
+                after,
+                reactant_registry,
+                host,
             )
             outcome = self.rule.stereo_outcomes.get(rule_key)
             alternatives = (
@@ -793,6 +1271,7 @@ class SynReactor:
                 relabeled_changes,
                 branch_metadata,
                 outcome_metadata,
+                coupling_branch_metadata,
             ) in states:
                 for branch_index, (alternative, weight) in enumerate(
                     zip(alternatives, branch_weights)
@@ -827,9 +1306,18 @@ class SynReactor:
                             branch_changes,
                             branch_info,
                             branch_outcomes,
+                            dict(coupling_branch_metadata),
                         )
                     )
             states = next_states
+
+        product_graph = ITSReverter(its).to_product_graph()
+        states = self._apply_stereo_couplings(
+            states,
+            relabeled_coupling_values,
+            reactant_registry,
+            product_graph,
+        )
 
         results = []
         for (
@@ -837,6 +1325,7 @@ class SynReactor:
             relabeled_changes,
             branch_metadata,
             outcome_metadata,
+            coupling_branch_metadata,
         ) in states:
             branch = deepcopy(its)
             branch.graph["stereo_descriptors"] = {
@@ -849,6 +1338,8 @@ class SynReactor:
                 )
             branch.graph["stereo_changes"] = relabeled_changes
             branch.graph["stereo_outcomes"] = outcome_metadata
+            branch.graph["stereo_couplings"] = relabeled_couplings
+            branch.graph["stereo_coupling_branch"] = coupling_branch_metadata
             branch.graph["stereo_branch"] = branch_metadata
             total_weight = 1.0
             for metadata in branch_metadata.values():
@@ -911,15 +1402,14 @@ class SynReactor:
         pat_r, pat_p = pat_n[key]
         delta = pat_r[2] - pat_p[2]
         if pat_r[0] == "*":
-            new_r = (pat_r[0],) + host_r[1:2] + (host_r[2],) + host_r[3:]
+            new_r = host_r
         else:
             new_r = host_r[:2] + (host_r[2],) + host_r[3:]
         if pat_p[0] == "*":
             new_p = (
-                (pat_p[0],)
-                + host_p[:2]
+                host_p[:2]
                 + (host_r[2] - delta,)
-                + (pat_p[3],)
+                + (host_p[3],)
                 + host_p[4:]
             )
         else:
@@ -966,6 +1456,7 @@ class SynReactor:
         strategy: Strategy = Strategy.ALL,
         embed_threshold: float = None,
         embed_pre_filter: bool = False,
+        relative_pi_edges: set[frozenset[Any]] | None = None,
     ) -> List[nx.Graph]:
         list_its: List[nx.Graph] = []
         host_g = deepcopy(host)
@@ -1000,6 +1491,10 @@ class SynReactor:
         else:
             mappings = [mapping]
 
+        relative_pi_centers = {
+            node for edge in (relative_pi_edges or set()) for node in edge
+        }
+
         # Iterate over remappings --------------------------------------
         for m in mappings:
 
@@ -1031,9 +1526,18 @@ class SynReactor:
                 if its.has_node(host_n):
                     SynReactor._node_glue(its.nodes[host_n], rc.nodes[rc_n])
                     if electron_aware:
+                        rc_element = rc.nodes[rc_n].get("element")
+                        wildcard_context = (
+                            isinstance(rc_element, tuple)
+                            and len(rc_element) == 2
+                            and rc_element[0] == rc_element[1] == "*"
+                        )
                         SynReactor._pair_electron_aware_node_attrs(
                             its.nodes[host_n],
                             rc.nodes[rc_n],
+                            preserve_unchanged_state=(
+                                rc_n in relative_pi_centers or wildcard_context
+                            ),
                         )
 
             # merge edges (additive order) ---------------------------
@@ -1046,7 +1550,34 @@ class SynReactor:
                 else:
                     host_attr = its[hu][hv]
                     rc_order = rc_attr.get("order", (0, 0))
-                    if rc_order[0] == 0:  # additive only on product side
+                    if relative_pi_edges and frozenset((u, v)) in relative_pi_edges:
+                        # Apply the rule delta to the matched host edge. Thus
+                        # C=C -> C-C naturally becomes C#C -> C=C on an
+                        # alkyne, while both still remove exactly one pi bond.
+                        for key in (
+                            "order",
+                            "kekule_order",
+                            "sigma_order",
+                            "pi_order",
+                        ):
+                            host_value = host_attr.get(key)
+                            rule_value = rc_attr.get(key)
+                            if not (
+                                isinstance(host_value, tuple)
+                                and len(host_value) == 2
+                                and isinstance(rule_value, tuple)
+                                and len(rule_value) == 2
+                            ):
+                                continue
+                            delta = float(rule_value[0]) - float(rule_value[1])
+                            product_value = float(host_value[0]) - delta
+                            if product_value.is_integer():
+                                product_value = int(product_value)
+                            host_attr[key] = (host_value[0], product_value)
+                        host_attr["standard_order"] = rc_attr.get(
+                            "standard_order", 0.0
+                        )
+                    elif rc_order[0] == 0:  # additive only on product side
                         ho = host_attr["order"]
                         host_attr["order"] = (ho[0], round(ho[1] + rc_order[1]))
                         if electron_aware:
@@ -1170,7 +1701,6 @@ class SynReactor:
                     roles[by_map[atom_map]].append(
                         (key, "guard", role_position(descriptor, position))
                     )
-
         for node in decorated.nodes:
             decorated.nodes[node]["_stereo_role"] = tuple(
                 sorted(set(roles.get(node, [])))
@@ -1328,6 +1858,200 @@ class SynReactor:
             unique.append(mapping)
         return unique
 
+    def _deduplicate_pure_coupling_mappings(
+        self,
+        mappings: List[MappingDict],
+        pattern: nx.Graph,
+        pattern_orbits: List[frozenset[NodeId]],
+    ) -> List[MappingDict]:
+        """Prune provenance-only embeddings of a pure stereo coupling rule.
+
+        Coupled addition derives its local frame from the matched host E/Z
+        descriptor. Peripheral context choices therefore do not define new
+        applications. If both centers and incoming ligands are exchangeable
+        under pattern automorphism, whole-event reversal is canonicalized as
+        the same unordered chemical locus.
+        """
+        if (
+            len(mappings) < 2
+            or not self.rule.stereo_couplings
+            or self.rule.stereo_guards
+            or self.rule.stereo_effects
+            or self.rule.stereo_outcomes
+        ):
+            return mappings
+
+        pattern_by_map = {}
+        for node, attrs in pattern.nodes(data=True):
+            atom_map = attrs.get("atom_map", node)
+            if isinstance(atom_map, int):
+                pattern_by_map[atom_map] = node
+
+        dependencies = {
+            atom_map
+            for coupling in self.rule.stereo_couplings.values()
+            for atom_map in coupling.dependencies
+        }
+        changed_maps = set()
+        for left, right, attrs in self.rule.rc.raw.edges(data=True):
+            order = attrs.get("order")
+            if not (
+                isinstance(order, tuple)
+                and len(order) == 2
+                and order[0] != order[1]
+            ):
+                continue
+            for node in (left, right):
+                atom_map = self.rule.rc.raw.nodes[node].get("atom_map", node)
+                if isinstance(atom_map, tuple):
+                    atom_map = atom_map[0]
+                if isinstance(atom_map, int):
+                    changed_maps.add(atom_map)
+        if not changed_maps or not changed_maps <= dependencies:
+            return mappings
+        if not dependencies <= set(pattern_by_map):
+            return mappings
+
+        orbit_by_node = {
+            node: index
+            for index, orbit in enumerate(pattern_orbits)
+            for node in orbit
+        }
+        seen = set()
+        unique = []
+        for mapping in mappings:
+            coupling_signature = []
+            for key, coupling in sorted(self.rule.stereo_couplings.items()):
+                center_nodes = tuple(
+                    pattern_by_map[value] for value in coupling.centers
+                )
+                ligand_nodes = tuple(
+                    pattern_by_map[value] for value in coupling.ligands
+                )
+                host_centers = tuple(mapping[node] for node in center_nodes)
+                host_ligands = tuple(mapping[node] for node in ligand_nodes)
+                centers_exchangeable = (
+                    orbit_by_node.get(center_nodes[0])
+                    == orbit_by_node.get(center_nodes[1])
+                )
+                ligands_exchangeable = (
+                    orbit_by_node.get(ligand_nodes[0])
+                    == orbit_by_node.get(ligand_nodes[1])
+                )
+                if centers_exchangeable and ligands_exchangeable:
+                    mapped_locus = (
+                        tuple(sorted(host_centers, key=repr)),
+                        tuple(sorted(host_ligands, key=repr)),
+                    )
+                else:
+                    mapped_locus = tuple(zip(host_centers, host_ligands))
+                coupling_signature.append(
+                    (key, coupling.kind, coupling.relation, mapped_locus)
+                )
+            signature = tuple(coupling_signature)
+            if signature in seen:
+                continue
+            seen.add(signature)
+            unique.append(mapping)
+        return unique
+
+    @staticmethod
+    def _canonical_2d_stereo_identity(graph: nx.Graph) -> str | None:
+        """Return a map-independent RDKit identity for conservative dedup.
+
+        Descriptor isomorphism alone can mistake an enantiomeric pair for a
+        symmetry exchange when both centers and their environments are
+        exchangeable. RDKit's canonical isomeric SMILES is an independent 2D
+        molecular check. Failure to reconstruct is deliberately non-equal so
+        that deduplication cannot discard a potentially valid product.
+        """
+        try:
+            molecule = GraphToMol().graph_to_mol(graph)
+        except Exception:
+            return None
+        for atom in molecule.GetAtoms():
+            atom.SetAtomMapNum(0)
+        return Chem.MolToSmiles(molecule, canonical=True, isomericSmiles=True)
+
+    @staticmethod
+    def _deduplicate_coupling_face_products(
+        its_graphs: List[nx.Graph],
+    ) -> List[nx.Graph]:
+        """Collapse symmetry-identical coupled faces but keep enantiomers.
+
+        A meso product can be reached through both correlated face branches.
+        Atom-map labels make those ITS registries look different even though
+        a stereo-preserving molecular automorphism relates them. This pass is
+        limited to coupling branches without explicit population outcomes;
+        true enantiomers remain non-isomorphic and are retained.
+        """
+        if len(its_graphs) < 2:
+            return its_graphs
+
+        from synkit.Graph.Stereo import stereo_isomorphic
+
+        representatives: List[Tuple[nx.Graph, nx.Graph, str | None]] = []
+        unique = []
+        for its in its_graphs:
+            if (
+                not its.graph.get("stereo_coupling_branch")
+                or its.graph.get("stereo_outcomes")
+            ):
+                unique.append(its)
+                continue
+            reverter = ITSReverter(its)
+            reactant = reverter.to_reactant_graph()
+            product = reverter.to_product_graph()
+            product_identity = SynReactor._canonical_2d_stereo_identity(product)
+            duplicate = False
+            for (
+                other_its,
+                other_reactant,
+                other_product_identity,
+            ) in representatives:
+                if not nx.is_isomorphic(
+                    SynReactor._prepare_its_for_structural_cluster(its),
+                    SynReactor._prepare_its_for_structural_cluster(other_its),
+                    node_match=categorical_node_match(
+                        ITS_STRUCTURAL_NODE_ATTRS,
+                        ["*", False, 0, 0, 0, 0, 0, ()],
+                    ),
+                    edge_match=categorical_edge_match("_its_edge_sig", ()),
+                ):
+                    continue
+                if (
+                    product_identity is not None
+                    and product_identity == other_product_identity
+                    and stereo_isomorphic(reactant, other_reactant)
+                ):
+                    retained = other_its.graph.get("stereo_coupling_branch", {})
+                    duplicate_metadata = its.graph.get(
+                        "stereo_coupling_branch", {}
+                    )
+                    for target, metadata in duplicate_metadata.items():
+                        retained_metadata = retained.get(target)
+                        if retained_metadata is None:
+                            continue
+                        branches = set(
+                            retained_metadata.get(
+                                "equivalent_face_branches",
+                                [retained_metadata.get("face_branch")],
+                            )
+                        )
+                        branches.add(metadata.get("face_branch"))
+                        branches.discard(None)
+                        retained_metadata["equivalent_face_branches"] = sorted(
+                            branches
+                        )
+                        retained_metadata["symmetry_multiplicity"] = len(branches)
+                    duplicate = True
+                    break
+            if duplicate:
+                continue
+            representatives.append((its, reactant, product_identity))
+            unique.append(its)
+        return unique
+
     @staticmethod
     def _components_are_equivalent(
         pattern: nx.Graph,
@@ -1353,8 +2077,10 @@ class SynReactor:
     def _pair_electron_aware_node_attrs(
         host_n: Dict[str, Any],
         rc_n: Dict[str, Any],
+        *,
+        preserve_unchanged_state: bool = False,
     ) -> None:
-        """Store direct paired node attrs after legacy-compatible node glue."""
+        """Store paired attrs, preserving generic relative-query state locally."""
         _, product_types = host_n["typesGH"]
         rc_present = rc_n.get("present")
         reactant_is_absent = (
@@ -1391,7 +2117,12 @@ class SynReactor:
                 left_value = host_n.get(key)
                 if left_value is None:
                     left_value = rc_value[0]
-                host_n[key] = (left_value, rc_value[1])
+                product_value = (
+                    left_value
+                    if preserve_unchanged_state and rc_value[0] == rc_value[1]
+                    else rc_value[1]
+                )
+                host_n[key] = (left_value, product_value)
 
         host_n["template_charge"] = (host_n.get("charge"), product_types[3])
 

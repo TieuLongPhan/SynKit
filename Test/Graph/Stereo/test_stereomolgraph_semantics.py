@@ -18,7 +18,9 @@ from synkit.Graph.Stereo import (
     TetrahedralStereo,
     apply_stereo_to_rdkit,
     descriptors_from_rdkit,
+    normalize_hydrogen_references,
 )
+from synkit.IO.mol_to_graph import MolToGraph
 
 
 def test_unknown_tetrahedral_parity_is_permutation_invariant():
@@ -56,6 +58,26 @@ def test_virtual_hydrogen_reference_relabels_with_its_center():
         40,
         "@H:20",
     )
+
+
+def test_unmapped_explicit_h_normalizes_to_implicit_h_identity():
+    implicit = Chem.MolFromSmiles("F[C@H](Cl)Br")
+    assert implicit is not None
+    explicit = Chem.AddHs(Chem.Mol(implicit))
+    implicit_graph = MolToGraph().transform(implicit)
+    explicit_graph = MolToGraph().transform(explicit)
+
+    implicit_descriptor = next(
+        iter(implicit_graph.graph["stereo_descriptors"].values())
+    )
+    explicit_descriptor = next(
+        iter(explicit_graph.graph["stereo_descriptors"].values())
+    )
+
+    assert normalize_hydrogen_references(
+        explicit_descriptor,
+        explicit_graph,
+    ) == implicit_descriptor
 
 
 def test_unknown_planar_orientation_clears_rdkit_ez_assignment():
