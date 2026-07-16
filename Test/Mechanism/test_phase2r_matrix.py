@@ -22,19 +22,19 @@ TETRA_BEFORE = StereoDescriptor(
     "tetrahedral",
     (2, 3, 4, 5, "@H:2"),
     1,
-    provenance="phase2r-reviewed",
+    provenance="phase2r-technical-review",
 )
 TETRA_INVERTED_AFTER = StereoDescriptor(
     "tetrahedral",
     (2, 3, 1, 5, "@H:2"),
     -1,
-    provenance="phase2r-reviewed",
+    provenance="phase2r-technical-review",
 )
 PLANAR_PRODUCT = StereoDescriptor(
     "planar_bond",
     (3, 7, 1, 2, 5, 8),
     0,
-    provenance="phase2r-reviewed",
+    provenance="phase2r-technical-review",
 )
 
 
@@ -138,6 +138,10 @@ def _radical_homolysis_break_record():
 def _elimination_planar_form_record():
     moves = (
         _two_electron(
+            ElectronLocus.atom("lp", atom_map=9),
+            ElectronLocus.bond("sigma", atom_maps=(6, 9)),
+        ),
+        _two_electron(
             ElectronLocus.bond("sigma", atom_maps=(1, 6)),
             ElectronLocus.bond("pi", atom_maps=(1, 2)),
         ),
@@ -147,8 +151,10 @@ def _elimination_planar_form_record():
         ),
     )
     return MechanismRecord(
-        "[C:1]([H:6])([F:3])([CH3:7])[C:2]([Cl:4])([Br:5])[CH3:8]>>"
-        "[C:1]([F:3])([CH3:7])=[C:2]([Br:5])[CH3:8].[H+:6].[Cl-:4]",
+        "[OH-:9].[C:1]([H:6])([F:3])([CH3:7])"
+        "[C:2]([Cl:4])([Br:5])[CH3:8]>>"
+        "[OH:9][H:6].[C:1]([F:3])([CH3:7])="
+        "[C:2]([Br:5])[CH3:8].[Cl-:4]",
         (
             MechanisticStep(
                 "s1",
@@ -170,33 +176,35 @@ def _elimination_planar_form_record():
 
 
 def _unspecified_outcome_record():
-    record = _remote_preservation_record()
     unknown = StereoDescriptor(
         "tetrahedral",
-        TETRA_BEFORE.atoms,
+        (2, 1, 3, 4, 5),
         None,
         "unknown",
-        "phase2r-reviewed",
+        "phase2r-technical-review",
     )
-    step = record.steps[0]
+    move = _two_electron(
+        ElectronLocus.atom("lp", atom_map=1),
+        ElectronLocus.bond("sigma", atom_maps=(1, 2)),
+    )
     return MechanismRecord(
-        record.mapped_reaction,
+        "[OH-:1].[C+:2]([F:3])([Cl:4])[CH3:5]>>"
+        "[C:2]([OH:1])([F:3])([Cl:4])[CH3:5]",
         (
             MechanisticStep(
-                step.step_id,
-                step.groups,
+                "s1",
+                (ElectronMoveGroup("g1", (move,)),),
                 (
                     StereoEffect(
                         ("atom", 2),
                         "UNSPECIFIED",
-                        TETRA_BEFORE,
-                        unknown,
+                        after=unknown,
                     ),
                 ),
             ),
         ),
         endpoint_stereo={
-            "reactant": {"atom:2": TETRA_BEFORE},
+            "reactant": {},
             "product": {"atom:2": unknown},
         },
     )
@@ -271,7 +279,7 @@ def test_all_six_radical_macros_preserve_supported_remote_stereo():
         "tetrahedral",
         (900002, 900003, 900004, 900005, "@H:900002"),
         1,
-        provenance="phase2r-reviewed",
+        provenance="phase2r-technical-review",
     )
     for macro, record in representatives.items():
         reactants, products = record.mapped_reaction.split(">>", 1)
