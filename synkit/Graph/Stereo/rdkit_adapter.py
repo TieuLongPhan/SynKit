@@ -7,6 +7,7 @@ from typing import Iterable
 from rdkit import Chem
 
 from .descriptors import (
+    AtropBondStereo,
     OctahedralStereo,
     PlanarBondStereo,
     SquarePlanarStereo,
@@ -150,6 +151,30 @@ def _non_tetrahedral_local_references(
     return tuple(refs)
 
 
+def _atrop_end_references(
+    atom: Chem.Atom,
+    other_index: int,
+    ids: dict[int, int],
+    center: int,
+) -> tuple[int | str, int | str]:
+    """Resolve two local atrop substituents without guessing vacant sites."""
+    refs: list[int | str] = [
+        ids[neighbor.GetIdx()]
+        for neighbor in atom.GetNeighbors()
+        if neighbor.GetIdx() != other_index
+    ]
+    if len(refs) == 2:
+        return tuple(refs)  # type: ignore[return-value]
+    hidden_hydrogens = int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
+    if len(refs) + hidden_hydrogens != 2:
+        raise ValueError(
+            f"Atrop-bond end {center} requires exactly two represented or "
+            "hydrogen substituents."
+        )
+    refs.extend(virtual_reference("H", center) for _ in range(hidden_hydrogens))
+    return tuple(refs)  # type: ignore[return-value]
+
+
 def _atom_ids(mol: Chem.Mol, *, require_maps: bool) -> dict[int, int]:
     values = {}
     for atom in mol.GetAtoms():
@@ -283,9 +308,40 @@ def descriptors_from_rdkit(
         descriptors[descriptor_id(descriptor)] = descriptor
 
     for bond in mol.GetBonds():
+        stereo = bond.GetStereo()
+        if stereo in {
+            Chem.BondStereo.STEREOATROPCW,
+            Chem.BondStereo.STEREOATROPCCW,
+        }:
+            left_index = bond.GetBeginAtomIdx()
+            right_index = bond.GetEndAtomIdx()
+            left = ids[left_index]
+            right = ids[right_index]
+            left_refs = _atrop_end_references(
+                mol.GetAtomWithIdx(left_index),
+                right_index,
+                ids,
+                left,
+            )
+            right_refs = _atrop_end_references(
+                mol.GetAtomWithIdx(right_index),
+                left_index,
+                ids,
+                right,
+            )
+            parity = {
+                Chem.BondStereo.STEREOATROPCW: 1,
+                Chem.BondStereo.STEREOATROPCCW: -1,
+            }[stereo]
+            descriptor = AtropBondStereo(
+                (*left_refs, left, right, *right_refs),
+                parity,
+                "rdkit",
+            )
+            descriptors[descriptor_id(descriptor)] = descriptor
+            continue
         if bond.GetBondType() != Chem.BondType.DOUBLE:
             continue
-        stereo = bond.GetStereo()
         if stereo not in {Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ}:
             continue
         left_idx, right_idx = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
@@ -482,6 +538,58 @@ def apply_stereo_to_rdkit(
             permutation = min(matching_permutations)
             atom.SetChiralTag(Chem.ChiralType.CHI_OCTAHEDRAL)
             atom.SetIntProp("_chiralPermutation", permutation)
+        elif isinstance(descriptor, AtropBondStereo):
+            left, right = descriptor.atoms[2:4]
+            if (
+                not isinstance(left, int)
+                or not isinstance(right, int)
+                or left not in by_map
+                or right not in by_map
+            ):
+                raise ValueError("Atrop-bond centers must be mapped RDKit atoms.")
+            bond = mol.GetBondBetweenAtoms(by_map[left], by_map[right])
+            if bond is None or bond.GetBondType() != Chem.BondType.SINGLE:
+                raise ValueError("Atrop descriptor central single bond is absent.")
+            if descriptor.parity is None:
+                raise NotImplementedError(
+                    "RDKit projection of an unknown atrop-bond orientation "
+                    "would lose the distinction between an unknown descriptor "
+                    "and no descriptor."
+                )
+
+            left_index = bond.GetBeginAtomIdx()
+            right_index = bond.GetEndAtomIdx()
+            local_left = ids[left_index]
+            local_right = ids[right_index]
+            left_refs = _atrop_end_references(
+                mol.GetAtomWithIdx(left_index),
+                right_index,
+                ids,
+                local_left,
+            )
+            right_refs = _atrop_end_references(
+                mol.GetAtomWithIdx(right_index),
+                left_index,
+                ids,
+                local_right,
+            )
+            candidates = {
+                AtropBondStereo(
+                    (*left_refs, local_left, local_right, *right_refs),
+                    parity,
+                ).canonical_form(): stereo
+                for stereo, parity in (
+                    (Chem.BondStereo.STEREOATROPCW, 1),
+                    (Chem.BondStereo.STEREOATROPCCW, -1),
+                )
+            }
+            selected = candidates.get(descriptor.canonical_form())
+            if selected is None:
+                raise ValueError(
+                    "Atrop descriptor substituents do not match the RDKit "
+                    f"bond {left}-{right}."
+                )
+            bond.SetStereo(selected)
         elif isinstance(descriptor, PlanarBondStereo):
             left, right = descriptor.atoms[2:4]
             if not isinstance(left, int) or not isinstance(right, int):

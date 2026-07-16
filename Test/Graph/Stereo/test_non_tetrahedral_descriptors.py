@@ -6,7 +6,7 @@ Maxim Papusha). SynKit independently tests graph metadata, explicit query
 policy, reaction changes, and serialization around those descriptor values.
 """
 
-from itertools import permutations
+from itertools import permutations, product
 
 import networkx as nx
 import pytest
@@ -38,6 +38,7 @@ from synkit.Mechanism import (
     stereo_graph_from_gml,
     stereo_graph_to_gml,
 )
+from synkit.IO.graph_to_mol import GraphToMol
 from synkit.IO.mol_to_graph import MolToGraph
 
 
@@ -223,14 +224,6 @@ def test_mechanism_envelope_accepts_extended_descriptor_classes():
     assert [StereoDescriptor.from_dict(value.to_dict()) for value in values] == values
 
 
-def test_rdkit_boundary_rejects_unimplemented_non_tetrahedral_projection():
-    mol = Chem.MolFromSmiles("[CH4:1]")
-    descriptor = AtropBondStereo((1, 2, 3, 4, 5, 6), 1)
-
-    with pytest.raises(NotImplementedError, match="atrop_bond"):
-        apply_stereo_to_rdkit(mol, [descriptor])
-
-
 def test_rdkit_boundary_rejects_unknown_square_planar_projection():
     mol = Chem.MolFromSmiles(
         "[CH3:1][Pt:2]([F:3])([Cl:4])[Br:5]",
@@ -407,6 +400,146 @@ def test_octahedral_missing_site_fails_instead_of_becoming_hydrogen():
         MolToGraph().transform(mol)
 
 
+ATROP_CXSMILES = (
+    "CC1=CC=CC(I)=C1N1C(C)=CC=C1Br |wU:7.7||",
+    "CC1=CC=CC(I)=C1N1C(C)=CC=C1Br |wD:7.7||",
+)
+
+
+def _mapped_atrop_molecule(cxsmiles):
+    mol = Chem.MolFromSmiles(cxsmiles)
+    assert mol is not None
+    for atom in mol.GetAtoms():
+        atom.SetAtomMapNum(atom.GetIdx() + 1)
+    return mol
+
+
+def test_rdkit_atrop_cw_and_ccw_extract_as_inverse_descriptors():
+    descriptors = [
+        next(iter(descriptors_from_rdkit(_mapped_atrop_molecule(cx)).values()))
+        for cx in ATROP_CXSMILES
+    ]
+
+    assert all(isinstance(value, AtropBondStereo) for value in descriptors)
+    assert descriptors[0] != descriptors[1]
+    assert descriptors[0].invert() == descriptors[1]
+
+
+@pytest.mark.parametrize("cxsmiles", ATROP_CXSMILES)
+def test_rdkit_atrop_survives_clearing_application_and_renumbering(cxsmiles):
+    mol = _mapped_atrop_molecule(cxsmiles)
+    expected = descriptors_from_rdkit(mol)
+    bond = next(
+        value
+        for value in mol.GetBonds()
+        if value.GetStereo()
+        in {Chem.BondStereo.STEREOATROPCW, Chem.BondStereo.STEREOATROPCCW}
+    )
+
+    bond.SetStereo(Chem.BondStereo.STEREONONE)
+    assert descriptors_from_rdkit(mol) == {}
+    apply_stereo_to_rdkit(mol, expected.values())
+    assert descriptors_from_rdkit(mol) == expected
+
+    renumbered = Chem.RenumberAtoms(mol, list(reversed(range(mol.GetNumAtoms()))))
+    assert descriptors_from_rdkit(renumbered) == expected
+
+
+@pytest.mark.parametrize("cxsmiles", ATROP_CXSMILES)
+def test_rdkit_atrop_survives_synkit_graph_round_trip(cxsmiles):
+    mol = _mapped_atrop_molecule(cxsmiles)
+    expected = descriptors_from_rdkit(mol)
+
+    graph = MolToGraph().transform(mol)
+    rebuilt = GraphToMol().graph_to_mol(graph)
+
+    assert descriptors_from_rdkit(rebuilt) == expected
+
+
+def _atrop_local_order_molecule(left_swapped, right_swapped, reversed_axis):
+    editable = Chem.RWMol()
+    indices = {}
+    for atom_map, element in (
+        (3, "C"),
+        (4, "C"),
+        (1, "O"),
+        (2, "F"),
+        (5, "Br"),
+        (6, "N"),
+    ):
+        atom = Chem.Atom(element)
+        atom.SetAtomMapNum(atom_map)
+        indices[atom_map] = editable.AddAtom(atom)
+
+    axis = (4, 3) if reversed_axis else (3, 4)
+    editable.AddBond(indices[axis[0]], indices[axis[1]], Chem.BondType.SINGLE)
+    left = [(1, Chem.BondType.DOUBLE), (2, Chem.BondType.SINGLE)]
+    right = [(5, Chem.BondType.SINGLE), (6, Chem.BondType.DOUBLE)]
+    if left_swapped:
+        left.reverse()
+    if right_swapped:
+        right.reverse()
+    for atom_map, bond_type in left:
+        editable.AddBond(indices[3], indices[atom_map], bond_type)
+    for atom_map, bond_type in right:
+        editable.AddBond(indices[4], indices[atom_map], bond_type)
+
+    mol = editable.GetMol()
+    Chem.SanitizeMol(mol)
+    return mol
+
+
+@pytest.mark.parametrize(
+    ("left_swapped", "right_swapped", "reversed_axis"),
+    product((False, True), repeat=3),
+)
+def test_atrop_projection_is_invariant_to_all_local_orders_and_axis_directions(
+    left_swapped,
+    right_swapped,
+    reversed_axis,
+):
+    mol = _atrop_local_order_molecule(
+        left_swapped,
+        right_swapped,
+        reversed_axis,
+    )
+    descriptor = AtropBondStereo((1, 2, 3, 4, 5, 6), 1)
+
+    apply_stereo_to_rdkit(mol, [descriptor])
+
+    assert descriptors_from_rdkit(mol) == {"bond:3-4": descriptor}
+    checked = Chem.Mol(mol)
+    Chem.CleanupAtropisomers(checked)
+    assert checked.GetBondBetweenAtoms(0, 1).GetStereo() in {
+        Chem.BondStereo.STEREOATROPCW,
+        Chem.BondStereo.STEREOATROPCCW,
+    }
+
+
+def test_rdkit_boundary_rejects_unknown_atrop_projection():
+    mol = _mapped_atrop_molecule(ATROP_CXSMILES[0])
+    specified = next(iter(descriptors_from_rdkit(mol).values()))
+    unknown = AtropBondStereo(specified.atoms, None)
+
+    with pytest.raises(NotImplementedError, match="unknown atrop-bond"):
+        apply_stereo_to_rdkit(mol, [unknown])
+
+
+def test_rdkit_boundary_rejects_mismatched_atrop_substituents():
+    mol = _mapped_atrop_molecule(ATROP_CXSMILES[0])
+    specified = next(iter(descriptors_from_rdkit(mol).values()))
+    atoms = (*specified.atoms[:-1], 999)
+
+    with pytest.raises(ValueError, match="substituents do not match"):
+        apply_stereo_to_rdkit(mol, [AtropBondStereo(atoms, specified.parity)])
+
+
+def test_rdkit_adapter_does_not_infer_atrop_rotational_stability():
+    mol = Chem.MolFromSmiles("CC1=CC=CC(I)=C1N1C(C)=CC=C1Br")
+
+    assert descriptors_from_rdkit(mol, require_atom_maps=False) == {}
+
+
 def test_extended_capability_boundary_is_explicit():
     assert SUPPORTED_STEREO_DESCRIPTOR_CLASSES == {
         "tetrahedral",
@@ -414,6 +547,7 @@ def test_extended_capability_boundary_is_explicit():
         "trigonal_bipyramidal",
         "octahedral",
         "planar_bond",
+        "atrop_bond",
         "atrop_bond",
     }
     assert RDKIT_STEREO_DESCRIPTOR_CLASSES == {

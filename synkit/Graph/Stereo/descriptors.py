@@ -78,6 +78,7 @@ SUPPORTED_STEREO_DESCRIPTOR_CLASSES = frozenset(
         "octahedral",
         "planar_bond",
         "atrop_bond",
+        "atrop_bond",
     }
 )
 RDKIT_STEREO_DESCRIPTOR_CLASSES = frozenset(
