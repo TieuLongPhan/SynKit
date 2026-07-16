@@ -294,7 +294,7 @@ class MolToGraph:
                 set(atom_maps)
             ) == len(atom_maps)
             descriptors = descriptors_from_rdkit(mol, require_atom_maps=mapped)
-        except (ImportError, ValueError):
+        except ImportError:
             descriptors = {}
         graph.graph["stereo_descriptors"] = descriptors
         node_by_map = {

@@ -6,6 +6,8 @@ Maxim Papusha). SynKit independently tests graph metadata, explicit query
 policy, reaction changes, and serialization around those descriptor values.
 """
 
+from itertools import permutations
+
 import networkx as nx
 import pytest
 from rdkit import Chem
@@ -26,6 +28,7 @@ from synkit.Graph.Stereo import (
     classify_stereo_change,
     descriptor_id,
     descriptor_query_matches,
+    descriptors_from_rdkit,
     stereo_from_dict,
     stereo_isomorphic,
     stereo_isomorphism_mapping,
@@ -222,10 +225,65 @@ def test_mechanism_envelope_accepts_extended_descriptor_classes():
 
 def test_rdkit_boundary_rejects_unimplemented_non_tetrahedral_projection():
     mol = Chem.MolFromSmiles("[CH4:1]")
+    descriptor = TrigonalBipyramidalStereo((1, 2, 3, 4, 5, 6), 1)
+
+    with pytest.raises(NotImplementedError, match="trigonal_bipyramidal"):
+        apply_stereo_to_rdkit(mol, [descriptor])
+
+
+def test_rdkit_boundary_rejects_unknown_square_planar_projection():
+    mol = Chem.MolFromSmiles(
+        "[CH3:1][Pt:2]([F:3])([Cl:4])[Br:5]",
+    )
+    descriptor = SquarePlanarStereo((2, 1, 3, 4, 5), None)
+
+    with pytest.raises(NotImplementedError, match="unknown square-planar"):
+        apply_stereo_to_rdkit(mol, [descriptor])
+
+
+def test_rdkit_boundary_rejects_mismatched_square_planar_ligands():
+    mol = Chem.MolFromSmiles(
+        "[CH3:1][Pt:2]([F:3])([Cl:4])[Br:5]",
+    )
+    descriptor = SquarePlanarStereo((2, 1, 3, 4, 99), 0)
+
+    with pytest.raises(ValueError, match="ligands do not match"):
+        apply_stereo_to_rdkit(mol, [descriptor])
+
+
+@pytest.mark.parametrize("local_order", permutations((2, 3, 4, 5)))
+def test_square_planar_projection_is_invariant_to_every_local_order(local_order):
+    editable = Chem.RWMol()
+    center = Chem.Atom("Pt")
+    center.SetAtomMapNum(1)
+    center_idx = editable.AddAtom(center)
+    elements = {2: "H", 3: "F", 4: "Cl", 5: "Br"}
+    for atom_map in local_order:
+        ligand = Chem.Atom(elements[atom_map])
+        ligand.SetAtomMapNum(atom_map)
+        ligand_idx = editable.AddAtom(ligand)
+        editable.AddBond(center_idx, ligand_idx, Chem.BondType.SINGLE)
+    mol = editable.GetMol()
+    mol.UpdatePropertyCache(strict=False)
     descriptor = SquarePlanarStereo((1, 2, 3, 4, 5), 0)
 
-    with pytest.raises(NotImplementedError, match="square_planar"):
-        apply_stereo_to_rdkit(mol, [descriptor])
+    apply_stereo_to_rdkit(mol, [descriptor])
+
+    assert descriptors_from_rdkit(mol) == {"atom:1": descriptor}
+
+
+def test_square_planar_hidden_hydrogen_survives_clearing_and_application():
+    mol = Chem.MolFromSmiles("[CH3:1][Pt@SP1H:2]([Cl:3])[F:4]")
+    expected = descriptors_from_rdkit(mol)
+    descriptor = next(iter(expected.values()))
+    center = mol.GetAtomWithIdx(1)
+
+    assert "@H:2" in descriptor.atoms
+    center.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+    center.ClearProp("_chiralPermutation")
+    apply_stereo_to_rdkit(mol, expected.values())
+
+    assert descriptors_from_rdkit(mol) == expected
 
 
 def test_extended_capability_boundary_is_explicit():
@@ -237,7 +295,11 @@ def test_extended_capability_boundary_is_explicit():
         "planar_bond",
         "atrop_bond",
     }
-    assert RDKIT_STEREO_DESCRIPTOR_CLASSES == {"tetrahedral", "planar_bond"}
+    assert RDKIT_STEREO_DESCRIPTOR_CLASSES == {
+        "tetrahedral",
+        "square_planar",
+        "planar_bond",
+    }
     assert "rigid_bond_33" in DEFERRED_STEREO_DESCRIPTOR_CLASSES
 
 

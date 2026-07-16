@@ -8,11 +8,62 @@ from rdkit import Chem
 
 from .descriptors import (
     PlanarBondStereo,
+    SquarePlanarStereo,
     StereoValue,
     TetrahedralStereo,
     descriptor_id,
     virtual_reference,
 )
+
+
+# RDKit's square-planar permutation numbers describe arrangements relative to
+# the atom's current local neighbor order; they are not global stereo labels.
+# These position maps are the SP1/SP2/SP3 ligand-numbering table from RDKit's
+# non-tetrahedral SMILES documentation.  SynKit stores the resulting cyclic
+# ligand order, whose identity is invariant under D4 rotations/reflections.
+_SQUARE_PLANAR_POSITION_MAPS = {
+    1: (0, 1, 2, 3),
+    2: (0, 2, 1, 3),
+    3: (0, 1, 3, 2),
+}
+
+_UNSUPPORTED_NON_TETRAHEDRAL_TAGS = {
+    Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL: "trigonal_bipyramidal",
+    Chem.ChiralType.CHI_OCTAHEDRAL: "octahedral",
+}
+
+
+def _square_planar_permutations(mol: Chem.Mol) -> dict[int, int]:
+    """Return RDKit square-planar permutations keyed by center atom index."""
+    return {
+        int(info.centeredOn): int(info.permutation)
+        for info in Chem.FindPotentialStereo(mol)
+        if info.type == Chem.StereoType.Atom_SquarePlanar
+        and mol.GetAtomWithIdx(int(info.centeredOn)).GetChiralTag()
+        == Chem.ChiralType.CHI_SQUAREPLANAR
+    }
+
+
+def _square_planar_local_references(
+    atom: Chem.Atom,
+    ids: dict[int, int],
+    center: int,
+) -> tuple[int | str, int | str, int | str, int | str]:
+    """Resolve RDKit's local four-ligand order without inventing vacancies."""
+    refs: list[int | str] = [
+        ids[neighbor.GetIdx()] for neighbor in atom.GetNeighbors()
+    ]
+    if len(refs) == 4:
+        return tuple(refs)  # type: ignore[return-value]
+    hidden_hydrogens = int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
+    if len(refs) + hidden_hydrogens != 4:
+        raise ValueError(
+            f"Square-planar center {center} requires exactly four represented "
+            "or hydrogen ligands; vacant or otherwise missing coordination "
+            "sites cannot be inferred safely."
+        )
+    refs.extend(virtual_reference("H", center) for _ in range(hidden_hydrogens))
+    return tuple(refs)  # type: ignore[return-value]
 
 
 def _atom_ids(mol: Chem.Mol, *, require_maps: bool) -> dict[int, int]:
@@ -49,16 +100,41 @@ def _virtual_ligand(atom: Chem.Atom, center: int) -> str:
 def descriptors_from_rdkit(
     mol: Chem.Mol, *, require_atom_maps: bool = True
 ) -> dict[str, StereoValue]:
-    """Extract SynKit's RDKit-interoperable tetrahedral/planar subset."""
+    """Extract SynKit's RDKit-interoperable stereo descriptor subset."""
     Chem.AssignStereochemistry(mol, cleanIt=False, force=True)
     ids = _atom_ids(mol, require_maps=require_atom_maps)
     descriptors: dict[str, StereoValue] = {}
+    square_planar_permutations = _square_planar_permutations(mol)
     tetra_tags = {
         Chem.ChiralType.CHI_TETRAHEDRAL_CW: 1,
         Chem.ChiralType.CHI_TETRAHEDRAL_CCW: -1,
     }
     for atom in mol.GetAtoms():
         tag = atom.GetChiralTag()
+        if tag == Chem.ChiralType.CHI_SQUAREPLANAR:
+            center = ids[atom.GetIdx()]
+            permutation = square_planar_permutations.get(atom.GetIdx())
+            positions = _SQUARE_PLANAR_POSITION_MAPS.get(permutation)
+            if positions is None:
+                raise ValueError(
+                    f"Square-planar center {center} has unsupported RDKit "
+                    f"permutation {permutation!r}."
+                )
+            local_refs = _square_planar_local_references(atom, ids, center)
+            cyclic_refs = tuple(local_refs[index] for index in positions)
+            descriptor = SquarePlanarStereo(
+                (center, *cyclic_refs),
+                0,
+                "rdkit",
+            )
+            descriptors[descriptor_id(descriptor)] = descriptor
+            continue
+        unsupported_class = _UNSUPPORTED_NON_TETRAHEDRAL_TAGS.get(tag)
+        if unsupported_class is not None:
+            raise NotImplementedError(
+                f"RDKit extraction for {unsupported_class!r} stereo is not "
+                "implemented; the descriptor was not discarded."
+            )
         if tag not in tetra_tags:
             continue
         center = ids[atom.GetIdx()]
@@ -120,7 +196,7 @@ def apply_stereo_to_rdkit(
 ) -> Chem.Mol:
     """Apply the RDKit-interoperable descriptor subset in place.
 
-    Non-tetrahedral descriptors are valid SynKit graph/rule values, but their
+    Unsupported descriptors remain valid SynKit graph/rule values, but their
     RDKit projection is not silently discarded: conversion raises until a
     class-specific, round-trip-tested adapter is available.
     """
@@ -147,6 +223,48 @@ def apply_stereo_to_rdkit(
                 None: Chem.ChiralType.CHI_UNSPECIFIED,
             }[raw_parity]
             atom.SetChiralTag(tag)
+        elif isinstance(descriptor, SquarePlanarStereo):
+            if (
+                not isinstance(descriptor.center, int)
+                or descriptor.center not in by_map
+            ):
+                raise ValueError("Square-planar center is absent from RDKit molecule.")
+            if descriptor.parity is None:
+                raise NotImplementedError(
+                    "RDKit projection of an unknown square-planar orientation "
+                    "would lose the distinction between an unknown descriptor "
+                    "and no descriptor."
+                )
+            atom = mol.GetAtomWithIdx(by_map[descriptor.center])
+            local_refs = _square_planar_local_references(
+                atom,
+                ids,
+                descriptor.center,
+            )
+            matching_permutations = []
+            for permutation, positions in _SQUARE_PLANAR_POSITION_MAPS.items():
+                cyclic_refs = tuple(local_refs[index] for index in positions)
+                candidate = SquarePlanarStereo(
+                    (descriptor.center, *cyclic_refs),
+                    0,
+                )
+                if candidate == descriptor:
+                    matching_permutations.append(permutation)
+            if not matching_permutations:
+                raise ValueError(
+                    "Square-planar descriptor ligands do not match the RDKit "
+                    f"coordination sphere at center {descriptor.center}."
+                )
+
+            # Duplicate ligands can make more than one raw SP permutation encode
+            # the same cyclic identity.  The lowest matching value is a stable
+            # serialization choice; descriptor identity does not depend on it.
+            permutation = min(matching_permutations)
+            atom.SetChiralTag(Chem.ChiralType.CHI_SQUAREPLANAR)
+            # RDKit 2026.03 exposes permutation reads through StereoInfo but no
+            # Atom setter in Python.  This is RDKit's own integer property; the
+            # public FindPotentialStereo() round-trip is exercised by tests.
+            atom.SetIntProp("_chiralPermutation", permutation)
         elif isinstance(descriptor, PlanarBondStereo):
             left, right = descriptor.atoms[2:4]
             if not isinstance(left, int) or not isinstance(right, int):

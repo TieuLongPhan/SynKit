@@ -79,8 +79,10 @@ and relative tetrahedral, square-planar, trigonal-bipyramidal, octahedral,
 planar-bond, and atrop-bond descriptor identity. Non-tetrahedral permutation
 groups are adapted under StereoMolGraph's MIT license. All six classes support
 SynKit graph storage, relabeling, rule matching/rewriting, and JSON/GML
-serialization. RDKit conversion remains limited to tetrahedral and planar-bond
-stereo; rigid-bond variants and 3D coordinate inference remain deferred.
+serialization. RDKit conversion covers tetrahedral, square-planar, and
+planar-bond stereo. Trigonal-bipyramidal and octahedral tags fail explicitly
+until their class-specific permutation gates pass; rigid-bond variants and 3D
+coordinate inference remain deferred.
 
 Run the optional pinned development oracle with
 ``python tools/stereo_conformance.py /path/to/StereoMolGraph``. StereoMolGraph
