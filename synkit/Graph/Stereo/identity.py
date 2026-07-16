@@ -328,8 +328,7 @@ def descriptor_relative_form(
         working = tuple(working[index] for index in inversion)
         parity = 1
     forms = tuple(
-        tuple(working[index] for index in permutation)
-        for permutation in permutations
+        tuple(working[index] for index in permutation) for permutation in permutations
     )
     return (
         descriptor.descriptor_class,
@@ -482,8 +481,7 @@ def _exact_layer_matches(
 ) -> bool:
     """Compare a registry layer as a multiset of exact relative forms."""
     query_forms = Counter(
-        descriptor_relative_form(descriptor, query_resolver)
-        for descriptor in queries
+        descriptor_relative_form(descriptor, query_resolver) for descriptor in queries
     )
     candidate_forms = Counter(
         descriptor_relative_form(descriptor, candidate_resolver)

@@ -78,10 +78,14 @@ def _descriptors_equal(
     left: StereoDescriptor | None,
     right: StereoDescriptor | None,
 ) -> bool:
-    return left is None and right is None or (
-        left is not None
-        and right is not None
-        and _descriptor_identity(left) == _descriptor_identity(right)
+    return (
+        left is None
+        and right is None
+        or (
+            left is not None
+            and right is not None
+            and _descriptor_identity(left) == _descriptor_identity(right)
+        )
     )
 
 
@@ -166,13 +170,12 @@ def apply_stereo_effects(
                 registry[target] = candidate
         elif code == "INVERT":
             candidate = effect.after or _inverted(present)
-            if (
-                _change_kind(present, candidate) != "INVERTED"
-                or not descriptor_is_supported(
-                    result,
-                    candidate,
-                    registry_key=target,
-                )
+            if _change_kind(
+                present, candidate
+            ) != "INVERTED" or not descriptor_is_supported(
+                result,
+                candidate,
+                registry_key=target,
             ):
                 issues.append(
                     VerificationIssue(

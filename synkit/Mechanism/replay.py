@@ -67,7 +67,7 @@ class MechanismReplayer:
         self,
         *,
         validation: str = "strict",
-        aromatic_policy: str = "kekule",
+        aromatic_policy: str = "presentation",
         repair: bool = False,
         verify_stereo: str = "off",
     ) -> None:
@@ -82,9 +82,7 @@ class MechanismReplayer:
             raise ValueError("verify_stereo must be 'off', 'endpoint', or 'stepwise'.")
         self.verify_stereo = verify_stereo
 
-    def replay(  # noqa: C901
-        self, record: MechanismRecord
-    ) -> MechanismReplayResult:
+    def replay(self, record: MechanismRecord) -> MechanismReplayResult:  # noqa: C901
         reactants, products = record.mapped_reaction.split(">>", 1)
         current = self._parse_side(reactants)
         expected = self._parse_side(products)
@@ -393,8 +391,21 @@ class MechanismReplayer:
     def _compare_graphs(
         self, observed: nx.Graph, expected: nx.Graph, *, include_stereo: bool = False
     ) -> dict[str, Any]:
-        observed_sig = self._graph_signature(observed, include_stereo=include_stereo)
-        expected_sig = self._graph_signature(expected, include_stereo=include_stereo)
+        presentation_edges: set[frozenset[int]] | None = None
+        if self.aromatic_policy == "presentation":
+            presentation_edges = self._mapped_aromatic_edges(
+                observed
+            ) | self._mapped_aromatic_edges(expected)
+        observed_sig = self._graph_signature(
+            observed,
+            include_stereo=include_stereo,
+            presentation_edges=presentation_edges,
+        )
+        expected_sig = self._graph_signature(
+            expected,
+            include_stereo=include_stereo,
+            presentation_edges=presentation_edges,
+        )
         return {
             "matches": observed_sig == expected_sig,
             "observed": observed_sig,
@@ -403,8 +414,22 @@ class MechanismReplayer:
         }
 
     def _graph_signature(
-        self, graph: nx.Graph, *, include_stereo: bool = False
+        self,
+        graph: nx.Graph,
+        *,
+        include_stereo: bool = False,
+        presentation_edges: set[frozenset[int]] | None = None,
     ) -> dict[str, Any]:
+        # ``normalize_lwg_graph`` deliberately replaces the stable aromatic
+        # presentation order (1.5) with the editable Kekule sigma/pi order.
+        # Remember which input edges were aromatic before normalization so
+        # presentation comparison remains independent of the arbitrary
+        # alternating Kekule phase selected by RDKit.
+        aromatic_edges = {
+            frozenset((left, right))
+            for left, right, attrs in graph.edges(data=True)
+            if attrs.get("aromatic") is True or attrs.get("order") == 1.5
+        }
         graph = normalize_lwg_graph(graph)
         lookup: dict[int, Any] = {}
         node_keys: dict[Any, Any] = {}
@@ -434,7 +459,22 @@ class MechanismReplayer:
         edges = {}
         for left, right, attrs in graph.edges(data=True):
             key = tuple(sorted((node_keys[left], node_keys[right]), key=repr))
-            if self.aromatic_policy == "presentation" and attrs.get("order") == 1.5:
+            mapped_key = (
+                frozenset((node_keys[left], node_keys[right]))
+                if all(type(node_keys[node]) is int for node in (left, right))
+                else None
+            )
+            if (
+                self.aromatic_policy == "presentation"
+                and (
+                    frozenset((left, right)) in aromatic_edges
+                    or (
+                        mapped_key is not None
+                        and presentation_edges is not None
+                        and mapped_key in presentation_edges
+                    )
+                )
+            ):
                 edges[key] = ("aromatic",)
             else:
                 edges[key] = (
@@ -450,6 +490,21 @@ class MechanismReplayer:
                 )
             }
         return signature
+
+    @staticmethod
+    def _mapped_aromatic_edges(graph: nx.Graph) -> set[frozenset[int]]:
+        """Return mapped bonds rendered aromatically by the input toolkit."""
+        edges: set[frozenset[int]] = set()
+        for left, right, attrs in graph.edges(data=True):
+            if not (attrs.get("aromatic") is True or attrs.get("order") == 1.5):
+                continue
+            atom_maps = (
+                graph.nodes[left].get("atom_map"),
+                graph.nodes[right].get("atom_map"),
+            )
+            if all(type(atom_map) is int and atom_map > 0 for atom_map in atom_maps):
+                edges.add(frozenset(atom_maps))
+        return edges
 
     @staticmethod
     def _stereo_descriptor_signature(descriptor: StereoDescriptor) -> tuple[Any, ...]:

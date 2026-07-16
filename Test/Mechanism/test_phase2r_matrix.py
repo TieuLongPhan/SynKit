@@ -16,8 +16,23 @@ from synkit.Mechanism import (
 )
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
-
 ROOT = Path(__file__).parents[2]
+STEREO_MANIFEST = json.loads(
+    (ROOT / "Data/Mech/stereo.json").read_text(encoding="utf-8")
+)
+PHASE2R_CASES = tuple(
+    case
+    for case in STEREO_MANIFEST["cases"]
+    if case.get("representation") == "mechanism_replay"
+)
+
+
+def _promoted_record(case_id):
+    return MechanismRecord.from_dict(
+        next(case["record"] for case in PHASE2R_CASES if case["case_id"] == case_id)
+    )
+
+
 TETRA_BEFORE = StereoDescriptor(
     "tetrahedral",
     (2, 3, 4, 5, "@H:2"),
@@ -83,8 +98,7 @@ def _sn2_inversion_record():
         ),
     )
     return MechanismRecord(
-        "[OH-:1].[CH:2]([F:3])([Cl:4])[CH3:5]>>"
-        "[CH:2]([F:3])([OH:1])[CH3:5].[Cl-:4]",
+        "[OH-:1].[CH:2]([F:3])([Cl:4])[CH3:5]>>" "[CH:2]([F:3])([OH:1])[CH3:5].[Cl-:4]",
         (
             MechanisticStep(
                 "s1",
@@ -188,8 +202,7 @@ def _unspecified_outcome_record():
         ElectronLocus.bond("sigma", atom_maps=(1, 2)),
     )
     return MechanismRecord(
-        "[OH-:1].[C+:2]([F:3])([Cl:4])[CH3:5]>>"
-        "[C:2]([OH:1])([F:3])([Cl:4])[CH3:5]",
+        "[OH-:1].[C+:2]([F:3])([Cl:4])[CH3:5]>>" "[C:2]([OH:1])([F:3])([Cl:4])[CH3:5]",
         (
             MechanisticStep(
                 "s1",
@@ -213,13 +226,8 @@ def _unspecified_outcome_record():
 @pytest.mark.parametrize(
     ("label", "record"),
     [
-        ("polar-preserve", _remote_preservation_record()),
-        ("polar-invert", _sn2_inversion_record()),
-        ("radical-break", _radical_homolysis_break_record()),
-        ("radical-form", _radical_homolysis_break_record().reversed()),
-        ("planar-form", _elimination_planar_form_record()),
-        ("planar-break", _elimination_planar_form_record().reversed()),
-        ("unknown", _unspecified_outcome_record()),
+        (case["case_id"], MechanismRecord.from_dict(case["record"]))
+        for case in PHASE2R_CASES
     ],
 )
 def test_compact_electron_stereo_matrix_is_strictly_valid(label, record):
@@ -266,9 +274,7 @@ def test_wrong_stereo_guard_rolls_back_valid_sn2_electron_moves():
 
 
 def test_all_six_radical_macros_preserve_supported_remote_stereo():
-    payload = json.loads(
-        (ROOT / "Data/MechanismBench/radical_reviewed.json").read_text()
-    )
+    payload = json.loads((ROOT / "Data/Mech/radical.json").read_text())
     representatives = {}
     for case in payload["cases"]:
         record = MechanismRecord.from_dict(case["record"])
@@ -342,17 +348,13 @@ def _assert_rule_replay_direction(record, rule):
         reaction = reactor._to_smarts(its)
         candidate = MechanismReplayer._parse_side(reaction.split(">>", 1)[1])
         MechanismReplayer._seed_mechanism_stereo(candidate)
-        product_registry = its.graph.get("stereo_descriptors", {}).get(
-            "product", {}
-        )
+        product_registry = its.graph.get("stereo_descriptors", {}).get("product", {})
         candidate.graph["mechanism_stereo_descriptors"] = {
             key: StereoDescriptor.from_dict(
                 {
                     **descriptor.to_dict(),
                     "state": (
-                        "specified"
-                        if descriptor.parity is not None
-                        else "unknown"
+                        "specified" if descriptor.parity is not None else "unknown"
                     ),
                 }
             )
@@ -371,9 +373,7 @@ def _assert_rule_replay_direction(record, rule):
 
 
 def test_rule_and_typed_replay_agree_forward_reverse_and_double_reverse():
-    payload = json.loads(
-        (ROOT / "Data/MechanismBench/radical_reviewed.json").read_text()
-    )
+    payload = json.loads((ROOT / "Data/Mech/radical.json").read_text())
     radical_representatives = {}
     for case in payload["cases"]:
         record = MechanismRecord.from_dict(case["record"])
@@ -382,9 +382,9 @@ def test_rule_and_typed_replay_agree_forward_reverse_and_double_reverse():
             record,
         )
     records = [
-        _sn2_inversion_record(),
-        _radical_homolysis_break_record(),
-        _elimination_planar_form_record(),
+        _promoted_record("p2r-polar-invert"),
+        _promoted_record("p2r-radical-break"),
+        _promoted_record("p2r-planar-form"),
         *radical_representatives.values(),
     ]
 

@@ -18,7 +18,6 @@ from .descriptors import (
     virtual_reference,
 )
 
-
 # RDKit's square-planar permutation numbers describe arrangements relative to
 # the atom's current local neighbor order; they are not global stereo labels.
 # These position maps are the SP1/SP2/SP3 ligand-numbering table from RDKit's
@@ -134,9 +133,7 @@ def _non_tetrahedral_local_references(
     descriptor_name: str,
 ) -> tuple[int | str, ...]:
     """Resolve a local ligand order without inventing vacant sites."""
-    refs: list[int | str] = [
-        ids[neighbor.GetIdx()] for neighbor in atom.GetNeighbors()
-    ]
+    refs: list[int | str] = [ids[neighbor.GetIdx()] for neighbor in atom.GetNeighbors()]
     if len(refs) == coordination:
         return tuple(refs)
     hidden_hydrogens = int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
@@ -363,13 +360,9 @@ def descriptors_from_rdkit(
             if neighbor.GetIdx() not in {left_idx, selected_right}
         )
         if len(left_refs) == 1:
-            left_refs.append(
-                _virtual_ligand(mol.GetAtomWithIdx(left_idx), left)
-            )
+            left_refs.append(_virtual_ligand(mol.GetAtomWithIdx(left_idx), left))
         if len(right_refs) == 1:
-            right_refs.append(
-                _virtual_ligand(mol.GetAtomWithIdx(right_idx), right)
-            )
+            right_refs.append(_virtual_ligand(mol.GetAtomWithIdx(right_idx), right))
         if len(left_refs) != 2 or len(right_refs) != 2:
             continue
         if stereo == Chem.BondStereo.STEREOE:

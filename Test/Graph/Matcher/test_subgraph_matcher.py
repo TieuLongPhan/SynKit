@@ -11,14 +11,6 @@ from synkit.Graph.Matcher.subgraph_matcher import (
     resolve_template_match_attrs,
 )
 
-# Determine if the rule backend is available
-try:
-    from mod import ruleGMLString  # noqa: F401
-
-    RULE_AVAILABLE = True
-except ImportError:
-    RULE_AVAILABLE = False
-
 
 class TestSubgraphMatch(unittest.TestCase):
 
@@ -35,34 +27,6 @@ class TestSubgraphMatch(unittest.TestCase):
         self.rc = get_rc(self.its)
 
         self.gm = SubgraphMatch()
-        self.small = """rule [
-            ruleID "Small"
-            left [
-                node [ id 1 label "H" ]
-                node [ id 2 label "O" ]
-                edge [ source 1 target 2 label "-" ]
-            ]
-            right [
-                node [ id 1 label "H+" ]
-                node [ id 2 label "O-" ]
-            ]
-        ]"""
-        self.large = """rule [
-            ruleID "Large"
-            left [
-                node [ id 1 label "H" ]
-                node [ id 2 label "O" ]
-                edge [ source 1 target 2 label "-" ]
-            ]
-            context [
-                node [ id 3 label "C" ]
-                edge [ source 2 target 3 label "-" ]
-            ]
-            right [
-                node [ id 1 label "H+" ]
-                node [ id 2 label "O-" ]
-            ]
-        ]"""
 
     def test_graph_subgraph_morphism_true(self):
         is_sub = self.gm.is_subgraph(
@@ -103,13 +67,6 @@ class TestSubgraphMatch(unittest.TestCase):
             check_type="induced",
         )
         self.assertFalse(result)
-
-    @unittest.skipUnless(RULE_AVAILABLE, "requires ruleGMLString")
-    def test_rule_isomorphism_monomorphism(self):
-        # small is a subgraph of large
-        self.assertTrue(self.gm.rule_subgraph_morphism(self.small, self.large))
-        # large is not a subgraph of small
-        self.assertFalse(self.gm.rule_subgraph_morphism(self.large, self.small))
 
 
 class TestSubGraphSearchEngine(unittest.TestCase):

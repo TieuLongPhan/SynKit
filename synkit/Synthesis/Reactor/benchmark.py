@@ -15,8 +15,6 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
     :type data: list of dict
     :param reaction_key: Key for reaction-SMILES strings (format 'reactants>>products').
     :type reaction_key: str
-    :param react_engine: Reactor engine: 'syn' or 'mod'.
-    :type react_engine: str
     :param pre_filter_engine: Pre-filtering engine for rules (None to skip).
     :type pre_filter_engine: str or None
     :param explicit_h: Use explicit hydrogens in SynReactor.
@@ -49,7 +47,6 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
         data: List[Dict[str, Any]],
         reaction_key: str = "reactions",
         *,
-        react_engine: str = "syn",
         pre_filter_engine: Optional[str] = None,
         explicit_h: bool = True,
         implicit_temp: bool = False,
@@ -74,7 +71,6 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
         super().__init__(
             data_prepped,
             host_key="r",
-            react_engine=react_engine,
             pre_filter_engine=pre_filter_engine,
             explicit_h=explicit_h,
             implicit_temp=implicit_temp,

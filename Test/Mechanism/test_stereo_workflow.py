@@ -85,13 +85,11 @@ def test_equivalence_uses_graph_correspondence_not_rdkit_rank_or_atom_order(
 
 def test_net_equivalence_requires_one_atom_mapping_across_both_sides():
     left = MechanismRecord(
-        "[OH-:1].[CH3:2][O:3][CH2:4][F:5]>>"
-        "[CH3:2][OH:1].[O-:3][CH2:4][F:5]",
+        "[OH-:1].[CH3:2][O:3][CH2:4][F:5]>>" "[CH3:2][OH:1].[O-:3][CH2:4][F:5]",
         (),
     )
     oxygen_origins_exchanged = MechanismRecord(
-        "[OH-:1].[CH3:2][O:3][CH2:4][F:5]>>"
-        "[CH3:2][OH:3].[O-:1][CH2:4][F:5]",
+        "[OH-:1].[CH3:2][O:3][CH2:4][F:5]>>" "[CH3:2][OH:3].[O-:1][CH2:4][F:5]",
         (),
     )
 
@@ -185,8 +183,7 @@ def test_illegal_stereo_transition_is_stepwise_error():
     descriptor = StereoDescriptor("tetrahedral", (99, 1, 3, 4, "@H:99"), 1)
     effect = StereoEffect(("atom", 99), "INVERT", before=descriptor)
     record = MechanismRecord(
-        "[CH3:1][C@:2]([F:3])([Cl:4])[H:5]>>"
-        "[CH3:1][C@:2]([F:3])([Cl:4])[H:5]",
+        "[CH3:1][C@:2]([F:3])([Cl:4])[H:5]>>" "[CH3:1][C@:2]([F:3])([Cl:4])[H:5]",
         (MechanisticStep("s1", (), (effect,)),),
     )
 
@@ -222,20 +219,18 @@ def test_stereo_effects_validate_before_relation_and_apply_atomically():
         graph,
         (
             StereoEffect(("atom", 2), "BREAK", before),
-            StereoEffect(("atom", 99), "INVERT", StereoDescriptor(
-                "tetrahedral", (99, 1, 3, 4, "@H:99"), 1
-            )),
+            StereoEffect(
+                ("atom", 99),
+                "INVERT",
+                StereoDescriptor("tetrahedral", (99, 1, 3, 4, "@H:99"), 1),
+            ),
         ),
         step_id="s1",
     )
 
-    assert {issue.code for issue in preserve_issues} == {
-        "INVALID_STEREO_PRESERVATION"
-    }
+    assert {issue.code for issue in preserve_issues} == {"INVALID_STEREO_PRESERVATION"}
     assert preserved.graph["mechanism_stereo_descriptors"] == {"atom:2": before}
-    assert "STEREO_TRANSITION_FROM_ABSENT" in {
-        issue.code for issue in atomic_issues
-    }
+    assert "STEREO_TRANSITION_FROM_ABSENT" in {issue.code for issue in atomic_issues}
     assert atomic.graph["mechanism_stereo_descriptors"] == {"atom:2": before}
 
 
@@ -281,10 +276,7 @@ def test_event_equivalence_commutes_only_disjoint_adjacent_groups():
             ),
         )
 
-    reaction = (
-        "[O-:1].[S-:2].[Cl-:3].[Br-:4]>>"
-        "[O-:1].[S-:2].[Cl-:3].[Br-:4]"
-    )
+    reaction = "[O-:1].[S-:2].[Cl-:3].[Br-:4]>>" "[O-:1].[S-:2].[Cl-:3].[Br-:4]"
     first, second = group("a", 1, 2), group("b", 3, 4)
     left = MechanismRecord(
         reaction, (MechanisticStep("s1", (first,)), MechanisticStep("s2", (second,)))

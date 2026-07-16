@@ -88,9 +88,7 @@ def test_hydrogen_and_lone_pair_do_not_collapse_at_transport_boundary():
     assert sidecar_h != sidecar_lp
     assert stereomolgraph_descriptor_to_synkit(
         external_h, virtual_references=sidecar_h
-    ) != stereomolgraph_descriptor_to_synkit(
-        external_lp, virtual_references=sidecar_lp
-    )
+    ) != stereomolgraph_descriptor_to_synkit(external_lp, virtual_references=sidecar_lp)
     with pytest.raises(StereoInterchangeError, match="Unresolved virtual reference"):
         stereomolgraph_descriptor_to_synkit(external_h)
 
@@ -100,9 +98,10 @@ def test_virtual_reference_schema_is_strict_owner_typed_and_relabelable():
     assert str(parse_virtual_reference("@LP:7")) == "@LP:7"
     assert parse_virtual_reference("@X:7") is None
     assert virtual_reference("LP", 7) == "@LP:7"
-    assert TetrahedralStereo((7, 1, 2, 3, "@LP:7"), -1).relabel(
-        {7: 70}
-    ).atoms[-1] == "@LP:70"
+    assert (
+        TetrahedralStereo((7, 1, 2, 3, "@LP:7"), -1).relabel({7: 70}).atoms[-1]
+        == "@LP:70"
+    )
 
     with pytest.raises(ValueError, match="canonical"):
         TetrahedralStereo((7, 1, 2, 3, "@X:7"), 1)

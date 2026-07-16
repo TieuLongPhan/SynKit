@@ -44,18 +44,6 @@ Install
          docker run --rm tieulongphan/synkit:latest \
            python -c "import importlib.metadata as m; print(m.version('synkit'))"
 
-Optional: MØD backend
----------------------
-
-Some legacy workflows (e.g., MØD-backed CRN construction) require the external package **mod**.
-
-.. note::
-   On Linux, you can install **mod** via Conda:
-
-   .. code-block:: bash
-
-      conda install -c jakobandersen -c conda-forge "mod>=0.17" -y
-
 Verify your install
 -------------------
 

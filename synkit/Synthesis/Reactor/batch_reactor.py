@@ -5,7 +5,6 @@ import networkx as nx
 from joblib import Parallel, delayed
 
 from synkit.IO import smiles_to_graph, rsmi_to_its
-from synkit.Synthesis.Reactor.mod_reactor import MODReactor
 from synkit.Synthesis.Reactor.rule_filter import RuleFilter
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
@@ -20,14 +19,13 @@ def _apply_rule_raw(
     substrate: nx.Graph,
     rule: nx.Graph,
     invert: bool,
-    engine: str,
     *,
     strategy: str,
     explicit_h: bool,
     implicit_temp: bool,
 ) -> List[str]:
     """
-    Apply **one** rule graph to a substrate graph using the specified reactor engine.
+    Apply one rule graph to a substrate graph using SynReactor.
 
     :param substrate: Graph representing the substrate molecule.
     :type substrate: networkx.Graph
@@ -35,8 +33,6 @@ def _apply_rule_raw(
     :type rule: networkx.Graph
     :param invert: Whether to apply the rule in reverse.
     :type invert: bool
-    :param engine: Which reactor engine to use (`"syn"` or `"mod"`).
-    :type engine: str
     :param strategy: Matching strategy passed to SynReactor.
     :type strategy: str
     :param explicit_h: Use explicit hydrogens in SynReactor.
@@ -47,28 +43,19 @@ def _apply_rule_raw(
     :rtype: list of str
     """
     try:
-        if engine == "syn":
-            reactor = SynReactor(
-                substrate=substrate,
-                template=rule,
-                invert=invert,
-                strategy=strategy,
-                explicit_h=explicit_h,
-                implicit_temp=implicit_temp,
-            )
-            return list(getattr(reactor, "smarts_list", getattr(reactor, "smarts", [])))
-
-        reactor = MODReactor(
+        reactor = SynReactor(
             substrate=substrate,
-            rule=rule,
+            template=rule,
             invert=invert,
             strategy=strategy,
+            explicit_h=explicit_h,
+            implicit_temp=implicit_temp,
         )
-        return [reactor.run().get_reaction_smiles()]
+        return list(getattr(reactor, "smarts_list", getattr(reactor, "smarts", [])))
 
     except Exception as exc:  # pragma: no cover
         logging.getLogger(__name__).debug(
-            "%s reactor failed (invert=%s): %s", engine, invert, exc
+            "SynReactor failed (invert=%s): %s", invert, exc
         )
         return []
 
@@ -86,7 +73,6 @@ class _RuleApplier:
     """
 
     __slots__ = (
-        "_engine",
         "_strategy",
         "_explicit_h",
         "_implicit_temp",
@@ -96,7 +82,6 @@ class _RuleApplier:
 
     def __init__(
         self,
-        engine: str,
         *,
         strategy: str,
         explicit_h: bool,
@@ -107,14 +92,12 @@ class _RuleApplier:
         """
         Initialize the rule applier.
 
-        :param engine: Reactor engine, 'syn' or 'mod'.
         :param strategy: Matching strategy for SynReactor.
         :param explicit_h: Pass explicit hydrogens to SynReactor.
         :param implicit_temp: Pass implicit template flag to SynReactor.
         :param cache_enabled: Whether to enable in-process caching.
         :param cache_maxsize: Maximum cache entries before eviction.
         """
-        self._engine = engine
         self._strategy = strategy
         self._explicit_h = explicit_h
         self._implicit_temp = implicit_temp
@@ -132,7 +115,6 @@ class _RuleApplier:
             substrate,
             rule,
             inv,
-            self._engine,
             strategy=self._strategy,
             explicit_h=self._explicit_h,
             implicit_temp=self._implicit_temp,
@@ -195,8 +177,6 @@ class BatchReactor:
     :type data: list of str or dict
     :param host_key: Key to extract SMILES from dict entries (optional).
     :type host_key: str or None
-    :param react_engine: Reactor engine: 'syn' or 'mod'.
-    :type react_engine: str
     :param pre_filter_engine: Pre-filtering engine for rules (None to skip).
     :type pre_filter_engine: str or None
     :param explicit_h: Use explicit hydrogens in SynReactor.
@@ -222,7 +202,7 @@ class BatchReactor:
     :param logger: Optional custom logger.
     :type logger: logging.Logger or None
 
-    :raises ValueError: If react_engine is invalid or SMILES/rule conversion fails.
+    :raises ValueError: If SMILES/rule conversion fails.
     """
 
     def __init__(
@@ -230,7 +210,6 @@ class BatchReactor:
         data: List[Union[str, Dict[str, Any]]],
         host_key: Optional[str] = None,
         *,
-        react_engine: str = "syn",
         pre_filter_engine: Optional[str] = None,
         explicit_h: bool = True,
         implicit_temp: bool = False,
@@ -250,12 +229,9 @@ class BatchReactor:
 
         See class docstring for parameter details.
         """
-        if react_engine.lower() not in {"syn", "mod"}:
-            raise ValueError("react_engine must be 'syn' or 'mod'")
-
         self._data = list(data)
         self._host_key = host_key
-        self._engine = react_engine.lower()
+        self._engine = "syn"
         self._pre_filter = pre_filter_engine.lower() if pre_filter_engine else None
         self._explicit_h = explicit_h
         self._implicit_temp = implicit_temp
@@ -270,7 +246,6 @@ class BatchReactor:
             logging.disable(logging.CRITICAL)
 
         self._apply_rule = _RuleApplier(
-            self._engine,
             strategy=strategy,
             explicit_h=explicit_h,
             implicit_temp=implicit_temp,
@@ -286,7 +261,7 @@ class BatchReactor:
         :rtype: str
         """
         return (
-            "BatchReactor(data, host_key=None, react_engine='syn', pre_filter_engine=None, "
+            "BatchReactor(data, host_key=None, pre_filter_engine=None, "
             "explicit_h=True, implicit_temp=False, strategy='bt', dedupe=True, "
             "entry_n_jobs=1, rule_n_jobs=1, parallel_rules=False, allow_nested=False, "
             "cache_enabled=True, cache_maxsize=32768, logger=None)" + "\n"
@@ -363,7 +338,7 @@ class BatchReactor:
             g = self._to_graph(entry)
             filtered = (
                 RuleFilter(g, rule_graphs, invert=invert, engine=self._pre_filter).new_rules  # type: ignore[arg-type]
-                if self._pre_filter and self._engine == "syn"
+                if self._pre_filter
                 else rule_graphs
             )
             out = self._apply_bulk(g, filtered, invert)

@@ -98,6 +98,28 @@ def test_unmapped_molecular_graph_round_trip_preserves_supported_stereo():
         assert all(atom.GetAtomMapNum() == 0 for atom in rebuilt.GetAtoms())
 
 
+def test_symmetric_stereo_identity_does_not_depend_on_canonical_smiles_text():
+    molecule = Chem.MolFromSmiles("C[C@H]1CC[C@@H]([C@H]2CC[C@@H](C)CC2)CC1")
+    expected = descriptors_from_rdkit(molecule, require_atom_maps=False)
+    rebuilt = GraphToMol().graph_to_mol(MolToGraph().transform(molecule))
+
+    assert descriptors_from_rdkit(rebuilt, require_atom_maps=False) == expected
+
+    expected_constitution = Chem.Mol(molecule)
+    observed_constitution = Chem.Mol(rebuilt)
+    Chem.RemoveStereochemistry(expected_constitution)
+    Chem.RemoveStereochemistry(observed_constitution)
+    assert Chem.MolToSmiles(
+        observed_constitution,
+        canonical=True,
+        isomericSmiles=True,
+    ) == Chem.MolToSmiles(
+        expected_constitution,
+        canonical=True,
+        isomericSmiles=True,
+    )
+
+
 def test_stereo_only_its_change_expands_reaction_center_dependencies():
     before = MolToGraph().transform(Chem.MolFromSmiles("[CH3:1][C@H:2]([OH:3])[F:4]"))
     after = MolToGraph().transform(Chem.MolFromSmiles("[CH3:1][C@@H:2]([OH:3])[F:4]"))

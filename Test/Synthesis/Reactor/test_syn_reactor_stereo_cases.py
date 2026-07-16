@@ -103,10 +103,7 @@ def test_unmapped_radical_substrate_preserves_explicit_product_state():
 
 
 def test_propagate_mode_drops_descriptor_after_a_ligand_disconnects():
-    rule = (
-        "[CH3:1][CH:2]([F:3])[Cl:4]>>"
-        "[CH3:1][CH:2][F:3].[Cl:4]"
-    )
+    rule = "[CH3:1][CH:2]([F:3])[Cl:4]>>" "[CH3:1][CH:2][F:3].[Cl:4]"
     reactor = SynReactor(
         "C[C@H](F)Cl",
         rule,

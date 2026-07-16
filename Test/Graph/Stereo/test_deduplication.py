@@ -22,12 +22,10 @@ from synkit.Mechanism import (
     StereoEffect,
     mechanism_equivalent,
 )
-from synkit.Rule.Compose.compose_rule import ComposeRule
-from synkit.Rule.Compose.rule_compose import RuleCompose
+from synkit.Rule.Compose._identity import cluster_rule_objects
 from synkit.Rule.syn_rule import SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 from synkit.Synthesis.reactor_utils import _get_unique_aam
-
 
 ATOM_DESCRIPTORS = (
     TetrahedralStereo((1, 2, 3, 4, 5), 1),
@@ -152,18 +150,9 @@ def test_graph_cluster_keeps_unknown_specified_and_absent_separate():
 
 
 def test_serialized_aam_dedup_collapses_relabels_but_preserves_enantiomers():
-    original = (
-        "[CH3:1][C@H:2]([F:3])[OH:4]>>"
-        "[CH3:1][C@H:2]([F:3])[OH:4]"
-    )
-    relabeled = (
-        "[CH3:11][C@H:12]([F:13])[OH:14]>>"
-        "[CH3:11][C@H:12]([F:13])[OH:14]"
-    )
-    enantiomer = (
-        "[CH3:1][C@@H:2]([F:3])[OH:4]>>"
-        "[CH3:1][C@@H:2]([F:3])[OH:4]"
-    )
+    original = "[CH3:1][C@H:2]([F:3])[OH:4]>>" "[CH3:1][C@H:2]([F:3])[OH:4]"
+    relabeled = "[CH3:11][C@H:12]([F:13])[OH:14]>>" "[CH3:11][C@H:12]([F:13])[OH:14]"
+    enantiomer = "[CH3:1][C@@H:2]([F:3])[OH:4]>>" "[CH3:1][C@@H:2]([F:3])[OH:4]"
 
     assert _get_unique_aam([original, relabeled, enantiomer]) == [
         original,
@@ -177,9 +166,7 @@ def test_reactor_its_dedup_collapses_only_stereo_equivalent_relabels(descriptor)
     relabeled = _relabel_graph(original, descriptor, its=True)
     changed = _descriptor_graph(_different_orientation(descriptor), its=True)
 
-    unique = SynReactor._deduplicate_structural_its(
-        [original, relabeled, changed]
-    )
+    unique = SynReactor._deduplicate_structural_its([original, relabeled, changed])
 
     assert unique == [original, changed]
 
@@ -212,8 +199,7 @@ def test_rule_identity_and_composition_clustering_are_map_invariant():
     assert original == relabeled
     assert hash(original) == hash(relabeled)
     assert original != different_weights
-    assert len(ComposeRule.rule_cluster([original, relabeled, different_weights])) == 2
-    assert len(RuleCompose.rule_cluster([original, relabeled, different_weights])) == 2
+    assert len(cluster_rule_objects([original, relabeled, different_weights])) == 2
 
 
 def _mechanism_record(descriptor, *, equivalent=False):

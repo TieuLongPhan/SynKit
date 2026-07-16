@@ -85,9 +85,10 @@ def _stereo_reference_owners(
     errors = []
     if not graph.has_edge(by_map[left], by_map[right]):
         errors.append("central stereo bond is absent")
-    elif descriptor.descriptor_class == "planar_bond" and float(
-        graph.edges[by_map[left], by_map[right]].get("pi_order", 0.0)
-    ) < 1.0:
+    elif (
+        descriptor.descriptor_class == "planar_bond"
+        and float(graph.edges[by_map[left], by_map[right]].get("pi_order", 0.0)) < 1.0
+    ):
         errors.append("planar-bond stereo requires a pi bond")
     owners = (
         (left, tuple(descriptor.atoms[:2])),
@@ -149,9 +150,7 @@ def descriptor_graph_support_errors(
     owners, topology_errors = _stereo_reference_owners(graph, descriptor, by_map)
     errors.extend(topology_errors)
     for owner, references in owners:
-        errors.extend(
-            _owner_reference_support_errors(graph, owner, references, by_map)
-        )
+        errors.extend(_owner_reference_support_errors(graph, owner, references, by_map))
     return tuple(errors)
 
 
@@ -207,15 +206,19 @@ def normalize_hydrogen_references(
 
     left, right = descriptor.atoms[2:4]
     left_refs = tuple(
-        virtual_reference("H", left)
-        if _is_bound_explicit_hydrogen(graph, by_map, ref, left)
-        else ref
+        (
+            virtual_reference("H", left)
+            if _is_bound_explicit_hydrogen(graph, by_map, ref, left)
+            else ref
+        )
         for ref in descriptor.atoms[:2]
     )
     right_refs = tuple(
-        virtual_reference("H", right)
-        if _is_bound_explicit_hydrogen(graph, by_map, ref, right)
-        else ref
+        (
+            virtual_reference("H", right)
+            if _is_bound_explicit_hydrogen(graph, by_map, ref, right)
+            else ref
+        )
         for ref in descriptor.atoms[4:]
     )
     return PlanarBondStereo(
@@ -263,7 +266,17 @@ def _default_node_match(left: Mapping[str, Any], right: Mapping[str, Any]) -> bo
 
 
 def _default_edge_match(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
-    """Compare stable molecular/Lewis bond attributes."""
+    """Compare stable molecular/Lewis bond attributes.
+
+    The alternating sigma/pi assignment of an aromatic presentation is not
+    identity: independently reconstructed graphs, and different supported
+    RDKit releases, may choose opposite Kekule phases. ``order == 1.5`` is
+    SynKit's stable aromatic marker, so ignore only that phase-local split.
+    """
+    left_aromatic = left.get("aromatic") is True or left.get("order") == 1.5
+    right_aromatic = right.get("aromatic") is True or right.get("order") == 1.5
+    if left_aromatic or right_aromatic:
+        return left_aromatic and right_aromatic
     keys = ("order", "sigma_order", "pi_order", "aromatic")
     return all(left.get(key) == right.get(key) for key in keys)
 
@@ -412,9 +425,12 @@ def propagate_unaffected_stereo(
     for descriptor in stereo_registry(source).values():
         if descriptor.dependencies & changed_atom_maps:
             continue
-        if descriptor.dependencies <= target_maps and not descriptor_graph_support_errors(
-            target,
-            descriptor,
+        if (
+            descriptor.dependencies <= target_maps
+            and not descriptor_graph_support_errors(
+                target,
+                descriptor,
+            )
         ):
             registry[descriptor_id(descriptor)] = descriptor
     target.graph["stereo_descriptors"] = registry

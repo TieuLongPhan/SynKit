@@ -11,7 +11,7 @@ from synkit.Rule import SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
-DATA_PATH = ROOT / "Data/MechanismBench/small_rewrite_conformance.json"
+DATA_PATH = ROOT / "Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json"
 PAYLOAD = json.loads(DATA_PATH.read_text(encoding="utf-8"))
 CASES = PAYLOAD["cases"]
 HYDROGEN_ABSENCE_ERRORS = {

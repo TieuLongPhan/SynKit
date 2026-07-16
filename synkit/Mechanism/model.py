@@ -312,9 +312,7 @@ class ElectronMoveGroup:
                 and next(iter(sources)).kind == SIGMA
                 and len(targets) == 2
                 and all(target.kind == RADICAL for target in targets)
-                and {
-                    target.atom_maps[0] for target in targets
-                }
+                and {target.atom_maps[0] for target in targets}
                 == set(next(iter(sources)).atom_maps)
             )
             if not valid:
@@ -333,9 +331,7 @@ class ElectronMoveGroup:
                 and all(source.kind == RADICAL for source in sources)
                 and len(targets) == 1
                 and next(iter(targets)).kind == SIGMA
-                and {
-                    source.atom_maps[0] for source in sources
-                }
+                and {source.atom_maps[0] for source in sources}
                 == set(next(iter(targets)).atom_maps)
             )
             if not valid:
@@ -394,17 +390,16 @@ class ElectronMoveGroup:
                 }
             )
             reverse_h_abstraction = Counter(
-                {(target, source): count for (source, target), count in expected_h_abstraction.items()}
+                {
+                    (target, source): count
+                    for (source, target), count in expected_h_abstraction.items()
+                }
             )
-            valid = (
-                pairs
-                in (
-                    simple_h_abstraction,
-                    expected_h_abstraction,
-                    reverse_h_abstraction,
-                )
-                and self._h_abstraction_incidence_is_valid(fishhooks)
-            )
+            valid = pairs in (
+                simple_h_abstraction,
+                expected_h_abstraction,
+                reverse_h_abstraction,
+            ) and self._h_abstraction_incidence_is_valid(fishhooks)
             if not valid:
                 return [
                     VerificationIssue(
@@ -456,9 +451,7 @@ class ElectronMoveGroup:
         )
 
     @classmethod
-    def _h_abstraction_incidence_is_valid(
-        cls, moves: Sequence[ElectronMove]
-    ) -> bool:
+    def _h_abstraction_incidence_is_valid(cls, moves: Sequence[ElectronMove]) -> bool:
         pairs = Counter((move.source.kind, move.target.kind) for move in moves)
         reverse_conjugated = Counter(
             {
@@ -504,9 +497,10 @@ class ElectronMoveGroup:
         ):
             return False
         new_pi = set(old_to_new_pi.target.atom_maps)
-        return donor <= new_pi and {
-            radical_to_new_pi.source.atom_maps[0]
-        } == new_pi - donor
+        return (
+            donor <= new_pi
+            and {radical_to_new_pi.source.atom_maps[0]} == new_pi - donor
+        )
 
     def canonical_signature(self) -> tuple[Any, ...]:
         """Return an order-invariant signature for simultaneous events."""
@@ -821,9 +815,11 @@ class StereoEffect:
         return {
             "descriptor_target": [
                 target_kind,
-                list(target_reference)
-                if isinstance(target_reference, tuple)
-                else target_reference,
+                (
+                    list(target_reference)
+                    if isinstance(target_reference, tuple)
+                    else target_reference
+                ),
             ],
             "effect": self.effect,
             "before": self.before.to_dict() if self.before else None,
@@ -1190,8 +1186,7 @@ class MechanismRecord:
             "metadata": dict(self.metadata),
             "endpoint_stereo": {
                 side: {
-                    key: descriptor.to_dict()
-                    for key, descriptor in registry.items()
+                    key: descriptor.to_dict() for key, descriptor in registry.items()
                 }
                 for side, registry in self.endpoint_stereo.items()
             },

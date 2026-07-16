@@ -1,24 +1,35 @@
 import json
-import platform
 from collections import Counter
 from pathlib import Path
 
 import pytest
-from rdkit import Chem, rdBase
+from rdkit import Chem
 from rdkit.Chem import rdCIPLabeler
 
-import synkit
 from synkit.Chem.Reaction import audit_explicit_h_reaction
 from synkit.Graph.Stereo import PlanarBondStereo, StereoOutcome
 from synkit.IO.chem_converter import rsmi_to_its
+from synkit.Mechanism import MechanismRecord, MechanismReplayer
 from synkit.Rule import SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
-DATA_PATH = ROOT / "Data/MechanismBench/stereo.json"
+DATA_PATH = ROOT / "Data/Mech/stereo.json"
 PAYLOAD = json.loads(DATA_PATH.read_text(encoding="utf-8"))
 CASES = PAYLOAD["cases"]
-TRANSFORMATIONS = [case for case in CASES if case["case_kind"] == "transformation"]
+POSITIVE_TRANSFORMATIONS = [
+    case for case in CASES if case["case_kind"] == "transformation"
+]
+TRANSFORMATIONS = [
+    case
+    for case in POSITIVE_TRANSFORMATIONS
+    if case["representation"] == "reaction_smiles"
+]
+MECHANISM_REPLAY_CASES = [
+    case
+    for case in POSITIVE_TRANSFORMATIONS
+    if case["representation"] == "mechanism_replay"
+]
 NEGATIVE_ASSERTIONS = [
     case for case in CASES if case["case_kind"] == "negative_assertion"
 ]
@@ -129,21 +140,25 @@ def _generated_products(case):
 
 
 def test_dataset_matches_the_local_validation_environment():
-    assert PAYLOAD["schema"] == "SynKit-stereo-conformance-v0.3"
-    assert PAYLOAD["toolkit"] == {
-        "python": platform.python_version(),
-        "rdkit": rdBase.rdkitVersion,
-        "synkit": synkit.__version__,
-        "platform": f"{platform.system()} {platform.machine()}",
-        "cip_labeller": "rdCIPLabeler.AssignCIPLabels",
-    }
-    assert len(CASES) == 48
+    assert PAYLOAD["schema"] == "MechanismBench-stereo-v1"
+    assert PAYLOAD["toolkit"]["cip_labeller"] == "rdCIPLabeler.AssignCIPLabels"
+    assert all(
+        PAYLOAD["toolkit"][key]
+        for key in ("python", "rdkit", "synkit", "platform")
+    )
+    assert len(CASES) == 80
     assert len({case["case_id"] for case in CASES}) == len(CASES)
-    assert Counter(case["status"] for case in CASES) == {
-        "executable": 33,
-        "graph_only": 4,
-        "deferred_isotope_support": 3,
-        "specification_only": 8,
+    assert PAYLOAD["positive_case_count"] == 72
+    assert len(POSITIVE_TRANSFORMATIONS) == 72
+    assert len(NEGATIVE_ASSERTIONS) == PAYLOAD["negative_fixture_count"] == 8
+    assert [case["case_id"] for case in CASES[:72]] == [
+        case["case_id"] for case in POSITIVE_TRANSFORMATIONS
+    ]
+    assert Counter(case["representation"] for case in POSITIVE_TRANSFORMATIONS) == {
+        "reaction_smiles": 40,
+        "non_tetrahedral_rewrite": 4,
+        "mechanism_replay": 7,
+        "native_stereo_rewrite": 21,
     }
 
 
@@ -260,3 +275,12 @@ def test_deferred_cases_declare_the_isotope_blocker():
         case["known_blocker"]["code"] == "ISOTOPE_LABEL_NOT_PRESERVED"
         for case in deferred
     )
+
+
+@pytest.mark.parametrize("case", MECHANISM_REPLAY_CASES, ids=_id)
+def test_promoted_phase2r_case_replays_strictly(case):
+    result = MechanismReplayer(verify_stereo="stepwise").replay(
+        MechanismRecord.from_dict(case["record"])
+    )
+
+    assert result.certificate.status == "VALID", result.certificate.issues

@@ -37,8 +37,10 @@ Data/Study/CRN/case_formose/*
 synkit/Graph/dev/*
 *.ipynb
 *.json
-!Data/MechanismBench/stereo.json
-!Data/MechanismBench/non_tetrahedral_rewrite_conformance.json
+!Data/Mech/polar.json
+!Data/Mech/radical.json
+!Data/Mech/stereo.json
+!Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
 !Data/Conformance/stereomolgraph_graph_conformance.json
 *.txt
 !LICENSES/*.txt

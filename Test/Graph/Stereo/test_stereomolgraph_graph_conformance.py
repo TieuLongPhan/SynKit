@@ -31,9 +31,7 @@ REPORT = json.loads(REPORT_PATH.read_text())
 DESCRIPTORS = {
     "tetrahedral": TetrahedralStereo((0, 1, 2, 3, 4), 1),
     "square_planar": SquarePlanarStereo((0, 1, 2, 3, 4), 0),
-    "trigonal_bipyramidal": TrigonalBipyramidalStereo(
-        (0, 1, 2, 3, 4, 5), 1
-    ),
+    "trigonal_bipyramidal": TrigonalBipyramidalStereo((0, 1, 2, 3, 4, 5), 1),
     "octahedral": OctahedralStereo((0, 1, 2, 3, 4, 5, 6), 1),
     "planar_bond": PlanarBondStereo((0, 1, 2, 3, 4, 5), 0),
     "atrop_bond": AtropBondStereo((0, 1, 2, 3, 4, 5), 1),
@@ -74,16 +72,12 @@ def _graph(descriptor):
         left, right = descriptor.atoms[2:4]
         graph.add_edge(left, right, order=1)
         graph.add_edges_from(
-            (left, reference, {"order": 1})
-            for reference in descriptor.atoms[:2]
+            (left, reference, {"order": 1}) for reference in descriptor.atoms[:2]
         )
         graph.add_edges_from(
-            (right, reference, {"order": 1})
-            for reference in descriptor.atoms[4:]
+            (right, reference, {"order": 1}) for reference in descriptor.atoms[4:]
         )
-    graph.graph["stereo_descriptors"] = {
-        descriptor_id(descriptor): descriptor
-    }
+    graph.graph["stereo_descriptors"] = {descriptor_id(descriptor): descriptor}
     return graph
 
 
@@ -115,9 +109,7 @@ def test_pinned_graph_isomorphism_result_replays_without_upstream_runtime(name):
 
 
 def test_graph_conformance_report_is_pinned_and_scope_bounded():
-    assert REPORT["expected_commit"] == (
-        "2189f610f23eaaf992e2e01a12ea4d0532496601"
-    )
+    assert REPORT["expected_commit"] == ("2189f610f23eaaf992e2e01a12ea4d0532496601")
     assert REPORT["observed_commit"] == REPORT["expected_commit"]
     assert REPORT["commit_status"] == REPORT["descriptor_matrix_status"] == "PASS"
     assert set(REPORT["checks"]) == set(DESCRIPTORS)

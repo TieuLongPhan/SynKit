@@ -46,8 +46,9 @@ trigonal-bipyramidal, octahedral, and atrop-bond descriptors. Unknown
 non-tetrahedral or atrop orientation fails explicitly instead of disappearing.
 Coordinate inference, rigid-bond descriptor variants, enhanced stereo groups,
 face-selectivity prediction, and physical inference of configurational
-stability remain outside the current claims. The schema remains
-`2.0.0-draft1` pending project-owner release review.
+stability remain outside the current claims. The prerelease package version is
+`2.0.0.dev1`; its mechanism schema remains `2.0.0-draft1` while that schema is
+still under prerelease review.
 
 Stereo-bearing reaction rules keep three concerns separate:
 `stereo_guards` constrain reactant mappings, `stereo_effects` store stable

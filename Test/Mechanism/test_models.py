@@ -1,7 +1,6 @@
 import networkx as nx
 import pytest
 from rdkit import Chem
-import csv
 import json
 from pathlib import Path
 
@@ -301,9 +300,9 @@ def test_bond_stereo_effect_target_round_trips_and_is_schema_legal():
 
     assert effect.descriptor_target == ("bond", (2, 3))
     assert StereoEffect.from_dict(effect.to_dict()) == effect
-    target_schema = mechanism_record_schema()["$defs"]["stereoEffect"][
-        "properties"
-    ]["descriptor_target"]
+    target_schema = mechanism_record_schema()["$defs"]["stereoEffect"]["properties"][
+        "descriptor_target"
+    ]
     assert target_schema["prefixItems"][1]["oneOf"][1]["minItems"] == 2
 
 
@@ -341,12 +340,73 @@ def test_unspecified_stereo_reversal_fails_explicitly():
         effect.reversed()
 
 
-@pytest.mark.parametrize("logical_row", [1, 2, 3, 4, 34, 37])
-def test_radical_dataset_adapter_normalizes_representative_macros(logical_row):
-    path = Path(__file__).parents[2] / "Data/Mech/radical.csv"
-    with path.open(newline="", encoding="utf-8-sig") as handle:
-        row = list(csv.reader(handle))[logical_row - 1]
-
+@pytest.mark.parametrize(
+    ("logical_row", "row"),
+    [
+        (
+            1,
+            [
+                "CC(C)(C[O:11][N+:10]([O-])=O)C.[Ar]>>CC(C)(C[O:11])C."
+                "[O-][N+:10]=O.[Ar] 10,11-10;10,11-11",
+                "Heat",
+                "Initiation",
+                "homolyze",
+            ],
+        ),
+        (
+            2,
+            [
+                "C[C:21](C)(C)[CH2:20][O:10]>>C[C:21](C)C.[CH2:20]=[O:10] "
+                "10-10,20;20,21-10,20;20,21-21",
+                "Room Temperature",
+                "Propagation",
+                "retroaddition",
+            ],
+        ),
+        (
+            3,
+            [
+                "C[C:10](C)C.[N+:20](=O)[O-]>>C[C:10](C)(C)[N+:20](=O)[O-] "
+                "10-10,20;20-10,20",
+                "Room Temperature",
+                "Termination",
+                "recombine",
+            ],
+        ),
+        (
+            4,
+            [
+                "CC(C)(C[O:20])C.CC(C)([CH:11]([H:10])[O:12])C>>"
+                "CC(C)(C[O:20][H:10])C.CC(C)([C:11]([H])=[O:12])C "
+                "20-20,10;10,11-20,10;10,11-11,12;12-11,12",
+                "Room Temperature",
+                "Termination",
+                "abstraction",
+            ],
+        ),
+        (
+            34,
+            [
+                "C=[C:10]=[CH2:11].[Br:20]>>[CH2:11][C:10]([Br:20])=C "
+                "20-10,20;10,11-10,20;10,11-11",
+                "Room Temperature",
+                "Propagation",
+                "addition",
+            ],
+        ),
+        (
+            37,
+            [
+                "C[CH:10][C:20](=[CH2:21])Br>>C[CH:10]=[C:20]([CH2:21])Br "
+                "10-10,20;20,21-10,20;20,21-21",
+                "Room Temperature",
+                "Propagation",
+                "resonance",
+            ],
+        ),
+    ],
+)
+def test_radical_dataset_adapter_normalizes_representative_macros(logical_row, row):
     normalized = normalize_radical_row(row, row_number=logical_row)
 
     assert normalized.accepted, normalized.report.issues

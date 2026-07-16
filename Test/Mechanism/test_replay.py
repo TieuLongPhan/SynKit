@@ -153,6 +153,42 @@ def test_endpoint_signature_includes_hydrogen_and_lone_pair_resources():
     assert not comparison["matches"]
 
 
+def test_default_endpoint_comparison_ignores_aromatic_kekule_phase():
+    first = nx.Graph()
+    second = nx.Graph()
+    for graph in (first, second):
+        graph.add_node(
+            1,
+            atom_map=1,
+            element="C",
+            isotope=0,
+            charge=0,
+            radical=0,
+            hcount=1,
+            lone_pairs=0,
+            valence_electrons=4,
+        )
+        graph.add_node(
+            2,
+            atom_map=2,
+            element="C",
+            isotope=0,
+            charge=0,
+            radical=0,
+            hcount=1,
+            lone_pairs=0,
+            valence_electrons=4,
+        )
+    first.add_edge(1, 2, order=1.5, sigma_order=1.0, pi_order=1.0)
+    second.add_edge(1, 2, order=1.5, sigma_order=1.0, pi_order=0.0)
+
+    assert MechanismReplayer()._compare_graphs(first, second)["matches"]
+    assert not MechanismReplayer(aromatic_policy="kekule")._compare_graphs(
+        first,
+        second,
+    )["matches"]
+
+
 def test_unmapped_and_duplicate_endpoint_atoms_are_structured_errors():
     unmapped = MechanismRecord("[CH4:1]>>[CH4:1].O", ())
     duplicate = MechanismRecord("[OH-:1].[OH-:1]>>[OH-:1].[OH-:1]", ())

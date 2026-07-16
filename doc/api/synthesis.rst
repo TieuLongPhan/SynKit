@@ -18,14 +18,6 @@ Reactor
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.mod_aam
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.Synthesis.Reactor.mod_reactor
-   :members:
-   :show-inheritance:
-
 .. automodule:: synkit.Synthesis.Reactor.partial_engine
    :members:
    :show-inheritance:
@@ -42,10 +34,6 @@ Reactor
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.single_predictor
-   :members:
-   :show-inheritance:
-
 .. automodule:: synkit.Synthesis.Reactor.strategy
    :members:
    :show-inheritance:
@@ -56,10 +44,6 @@ Reactor
 
 Multi-step search
 -----------------
-
-.. automodule:: synkit.Synthesis.MSR.multi_steps
-   :members:
-   :show-inheritance:
 
 .. automodule:: synkit.Synthesis.MSR.path_finder
    :members:

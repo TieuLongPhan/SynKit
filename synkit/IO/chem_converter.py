@@ -34,7 +34,13 @@ DEFAULT_NODE_ATTRS = (
     "atom_map",
 )
 
-DEFAULT_EDGE_ATTRS = ("order", "kekule_order", "sigma_order", "pi_order")
+DEFAULT_EDGE_ATTRS = (
+    "order",
+    "kekule_order",
+    "sigma_order",
+    "pi_order",
+    "aromatic",
+)
 
 logger = setup_logging()
 
@@ -434,6 +440,7 @@ def graph_to_smi(
     graph: nx.Graph,
     sanitize: bool = True,
     preserve_atom_maps: Optional[Sequence[int]] = None,
+    prefer_kekule_order: bool = True,
 ) -> Optional[str]:
     """
     Convert a molecular graph to a SMILES string.
@@ -445,6 +452,9 @@ def graph_to_smi(
     :param preserve_atom_maps: Atom-map numbers whose hydrogens should
         remain explicit.
     :type preserve_atom_maps: Optional[Sequence[int]]
+    :param prefer_kekule_order: Whether retained Kekule/sigma-pi edge fields
+        should take precedence over aromatic presentation order.
+    :type prefer_kekule_order: bool
     :return: SMILES string or ``None`` on failure.
     :rtype: Optional[str]
     """
@@ -455,6 +465,7 @@ def graph_to_smi(
                 graph,
                 sanitize=sanitize,
                 use_h_count=True,
+                prefer_kekule_order=prefer_kekule_order,
             )
         else:
             from synkit.Graph.Hyrogen._misc import implicit_hydrogen
@@ -464,6 +475,7 @@ def graph_to_smi(
                 graph_imp,
                 sanitize=sanitize,
                 use_h_count=True,
+                prefer_kekule_order=prefer_kekule_order,
             )
 
         if mol is None:

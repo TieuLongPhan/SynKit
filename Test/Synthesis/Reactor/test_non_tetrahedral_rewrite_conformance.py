@@ -24,14 +24,14 @@ from synkit.Mechanism.audit import audit_local_electron_state
 from synkit.Rule import SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
-DATA_PATH = (
-    Path(__file__).parents[3]
-    / "Data"
-    / "MechanismBench"
-    / "non_tetrahedral_rewrite_conformance.json"
+DATA_PATH = Path(__file__).parents[3] / "Data" / "Mech" / "stereo.json"
+PAYLOAD = json.loads(DATA_PATH.read_text())
+MANIFEST = PAYLOAD["non_tetrahedral_fixture_metadata"]
+CASES = tuple(
+    case
+    for case in PAYLOAD["cases"]
+    if case.get("representation") == "non_tetrahedral_rewrite"
 )
-MANIFEST = json.loads(DATA_PATH.read_text())
-CASES = tuple(MANIFEST["cases"])
 
 
 def _descriptor(value: dict[str, Any] | None) -> Any:
@@ -67,9 +67,7 @@ def _rule_and_endpoints(
         format="tuple",
         implicit_h=False,
         stereo_outcomes=(
-            {target: StereoOutcome.from_value(outcome)}
-            if outcome is not None
-            else None
+            {target: StereoOutcome.from_value(outcome)} if outcome is not None else None
         ),
     )
     return (
@@ -101,10 +99,10 @@ def test_compact_fixture_applies_forward_and_reverse(case):
 
     assert forward.mapping_count >= 1
     assert len(forward.its_list) == case["expected_forward_products"]
-    forward_products = [
-        ITSReverter(its).to_product_graph() for its in forward.its_list
-    ]
-    assert all(audit_local_electron_state(product).valid for product in forward_products)
+    forward_products = [ITSReverter(its).to_product_graph() for its in forward.its_list]
+    assert all(
+        audit_local_electron_state(product).valid for product in forward_products
+    )
 
     expected = _descriptor(case["after"])
     expected_orientations = (
@@ -113,8 +111,7 @@ def test_compact_fixture_applies_forward_and_reverse(case):
         else {expected}
     )
     assert {
-        product.graph["stereo_descriptors"].get(target)
-        for product in forward_products
+        product.graph["stereo_descriptors"].get(target) for product in forward_products
     } == expected_orientations
 
     for product in forward_products:
@@ -138,9 +135,7 @@ def test_compact_fixture_applies_forward_and_reverse(case):
 )
 def test_wrong_orientation_is_rejected_by_the_exact_guard(case):
     rule, reactant, _ = _rule_and_endpoints(case)
-    reactant.graph["stereo_descriptors"] = {
-        case["target"]: _descriptor(case["after"])
-    }
+    reactant.graph["stereo_descriptors"] = {case["target"]: _descriptor(case["after"])}
 
     assert _reactor(reactant, rule).mapping_count == 0
 
@@ -180,9 +175,7 @@ def test_racemic_atrop_branches_cannot_accidentally_merge():
 
     assert len(forward.its_list) == 2
     assert len(SynReactor._deduplicate_structural_its(forward.its_list)) == 2
-    first, second = (
-        ITSReverter(its).to_product_graph() for its in forward.its_list
-    )
+    first, second = (ITSReverter(its).to_product_graph() for its in forward.its_list)
     assert not stereo_isomorphic(first, second)
     assert {
         product.graph["stereo_descriptors"][case["target"]]

@@ -12,7 +12,8 @@ from typing import Any, Iterable, Mapping
 
 from rdkit import Chem
 
-from .model import MechanismModelError, MechanismRecord
+from .adapters import mechanism_from_legacy_epd
+from .model import ElectronMoveGroup, MechanismModelError, MechanismRecord
 from .radical_data import iter_radical_csv
 
 
@@ -91,7 +92,7 @@ def radical_candidates(
                     partition="radical",
                     record=normalized.mechanism,
                     provenance={
-                        "dataset": "Data/Mech/radical.csv",
+                        "dataset": "legacy radical CSV source pool (not vendored)",
                         "source_row": normalized.report.row_number,
                         "normalization": normalized.report.to_dict(),
                     },
@@ -101,9 +102,7 @@ def radical_candidates(
                 break
     source_path = Path(path)
     if review_path is None:
-        reviewed_file = (
-            source_path.parent.parent / "MechanismBench" / "radical_reviewed.json"
-        )
+        reviewed_file = source_path.parent / "radical.json"
         return (
             _load_reviewed_manifest(selected, reviewed_file)
             if reviewed_file.exists()
@@ -263,6 +262,133 @@ def _audit_rule_reapplication(record: MechanismRecord) -> dict[str, Any]:
         }
 
 
+def materialize_polar_manifest(
+    source_path: str | Path,
+    output_path: str | Path,
+    *,
+    cases_per_stratum: int = 10,
+) -> None:
+    """Write the reviewed, replayable polar MechanismBench selection.
+
+    The source dataset is deliberately much larger than the public benchmark.
+    Select the first source-ID-ordered record from every top-level POLAR class
+    that passes strict replay and rule reapplication, continuing until each
+    class has ``cases_per_stratum`` records.  The materialized manifest keeps
+    the complete typed record and both audit results, so it remains executable
+    even when the source pool is not checked out beside SynKit.
+    """
+    source = Path(source_path)
+    raw_text = source.read_text(encoding="utf-8")
+    payload = json.loads(raw_text)
+    if payload.get("schema") != "synepd.clean.polar.v1":
+        raise ValueError("Unexpected polar source schema.")
+    source_records = payload.get("records", [])
+    if payload.get("count") != len(source_records):
+        raise ValueError("Polar source count does not match its records.")
+
+    from .replay import MechanismReplayer
+
+    reviewed: list[BenchmarkCase] = []
+    selected_by_stratum: dict[str, list[int]] = {}
+    replay = MechanismReplayer()
+    for stratum in sorted(
+        {".".join(item["tax_code"].split(".")[:2]) for item in source_records}
+    ):
+        selected: list[int] = []
+        for item in sorted(source_records, key=lambda item: item["id"]):
+            if not item["tax_code"].startswith(f"{stratum}."):
+                continue
+            record = mechanism_from_legacy_epd(
+                item["rsmi"],
+                item["epd"],
+                provenance={
+                    "format": "synepd.clean.polar.v1",
+                    "source_id": item["id"],
+                    "tax_code": item["tax_code"],
+                },
+            )
+            replay_result = replay.replay(record)
+            if replay_result.certificate.status != "VALID":
+                continue
+            reapplication = _audit_rule_reapplication(record)
+            if reapplication["status"] != "PASS":
+                continue
+            selected.append(item["id"])
+            reviewed.append(
+                BenchmarkCase(
+                    case_id=f"polar-{item['id']:05d}",
+                    partition="polar",
+                    record=record,
+                    provenance={
+                        "source_record": {
+                            key: item[key]
+                            for key in (
+                                "id",
+                                "tax_code",
+                                "entry_code",
+                                "reaction_name",
+                                "source_reaction_id",
+                                "mechanism_id",
+                                "mechanism_variant",
+                            )
+                        },
+                        "selection_stratum": stratum,
+                        "chemistry_review": {
+                            "decision": "reviewed_replayable_selection",
+                            "automated_replay": {
+                                "status": replay_result.certificate.status,
+                                "final_matches": replay_result.certificate.final_match.get(
+                                    "matches"
+                                ),
+                                "issue_codes": [
+                                    issue.code
+                                    for issue in replay_result.certificate.issues
+                                ],
+                            },
+                            "rule_reapplication": reapplication,
+                        },
+                    },
+                    chemistry_reviewed=True,
+                )
+            )
+            if len(selected) == cases_per_stratum:
+                break
+        if len(selected) != cases_per_stratum:
+            raise ValueError(
+                f"Could not select {cases_per_stratum} reviewed records for {stratum}."
+            )
+        selected_by_stratum[stratum] = selected
+
+    source_checksum = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
+    manifest = {
+        "schema": "MechanismBench-polar-reviewed-v1",
+        "description": (
+            "Deterministic reviewed subset of the SynEPD polar source pool; "
+            "the complete 1,915-record pool is intentionally not vendored."
+        ),
+        "source": {
+            "path": "../SynEPD/data/polar.json",
+            "schema": payload["schema"],
+            "record_count": payload["count"],
+            "sha256": source_checksum,
+            "license": "CC BY 4.0",
+        },
+        "selection": {
+            "algorithm": (
+                "For each top-level POLAR class in lexical order, take the first "
+                "source-ID-ordered records that pass strict replay and exact rule "
+                "reapplication."
+            ),
+            "cases_per_stratum": cases_per_stratum,
+            "strata": selected_by_stratum,
+        },
+        "cases": [case.to_dict() for case in reviewed],
+    }
+    Path(output_path).write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+
 def benchmark_release_issues(cases: Iterable[BenchmarkCase]) -> tuple[str, ...]:
     """Return release-blocking benchmark findings without guessing review status."""
     cases = list(cases)
@@ -289,7 +415,9 @@ def benchmark_release_issues(cases: Iterable[BenchmarkCase]) -> tuple[str, ...]:
     return tuple(issues)
 
 
-def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
+def corrupt_record(  # noqa: C901
+    record: MechanismRecord,
+) -> tuple[CorruptedAnnotation, ...]:
     """Generate ten traceable negative JSON variants without bypassing model validation."""
     original = record.to_dict()
     variants = []
@@ -324,6 +452,42 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
             )
         return payload, moves[0]
 
+    def is_fishhook_group(payload: dict[str, Any]) -> bool:
+        return any(
+            move["electron_count"] == 1
+            for move in payload["steps"][0]["groups"][0]["moves"]
+        )
+
+    def remap_complete_group(payload: dict[str, Any]) -> None:
+        """Keep a fishhook macro balanced while moving every locus off-graph."""
+        moves = payload["steps"][0]["groups"][0]["moves"]
+        atom_maps = sorted(
+            {
+                atom_map
+                for move in moves
+                for side in ("source", "target")
+                for atom_map in move[side]["atom_maps"]
+            }
+        )
+        remapping = {
+            atom_map: 999000 + index
+            for index, atom_map in enumerate(atom_maps, start=1)
+        }
+        for move in moves:
+            for side in ("source", "target"):
+                move[side]["atom_maps"] = [
+                    remapping[atom_map] for atom_map in move[side]["atom_maps"]
+                ]
+
+    def reverse_complete_group(payload: dict[str, Any]) -> None:
+        """Put a complete fishhook event in its product-side direction."""
+        group = payload["steps"][0]["groups"][0]
+        for move in group["moves"]:
+            move["source"], move["target"] = move["target"], move["source"]
+        macro = group.get("macro")
+        if macro:
+            group["macro"] = ElectronMoveGroup.REVERSE_MACRO[macro]
+
     payload, move = first_move()
     move["electron_count"] = 3
     add("wrong_electron_count", payload, "INVALID_ELECTRON_COUNT")
@@ -333,34 +497,46 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
     move["coupling_id"] = "orphan"
     add("missing_fishhook_partner", payload, "MISSING_COUPLED_FISHHOOK")
     payload, move = first_move()
-    move["source"] = {"locus": "lp", "atom_maps": [999999]}
+    if is_fishhook_group(payload):
+        remap_complete_group(payload)
+    else:
+        move["source"] = {"locus": "lp", "atom_maps": [999999]}
     add("wrong_source_or_target_locus", payload, "SOURCE_LOCUS_ABSENT")
     payload, move = first_move()
-    atom_maps = sorted(
-        {
-            atom_map
-            for locus in (move["source"], move["target"])
-            for atom_map in locus["atom_maps"]
-        }
-    )
-    source = {"locus": "σ", "atom_maps": atom_maps[:2]}
-    group_id = move["group_id"]
-    payload["steps"][0]["groups"][0]["moves"] = [
-        {
-            **deepcopy(move),
-            "event_id": f"overconsumed-{index + 1}",
-            "source": source,
-            "target": {"locus": "lp", "atom_maps": [atom_map]},
-            "electron_count": 2,
-            "arrow_type": "curved",
-            "group_id": group_id,
-            "coupling_id": None,
-        }
-        for index, atom_map in enumerate(atom_maps[:2])
-    ]
+    if is_fishhook_group(payload):
+        reverse_complete_group(payload)
+    else:
+        atom_maps = sorted(
+            {
+                atom_map
+                for locus in (move["source"], move["target"])
+                for atom_map in locus["atom_maps"]
+            }
+        )
+        source = {"locus": "σ", "atom_maps": atom_maps[:2]}
+        group_id = move["group_id"]
+        payload["steps"][0]["groups"][0]["moves"] = [
+            {
+                **deepcopy(move),
+                "event_id": f"overconsumed-{index + 1}",
+                "source": source,
+                "target": {"locus": "lp", "atom_maps": [atom_map]},
+                "electron_count": 2,
+                "arrow_type": "curved",
+                "group_id": group_id,
+                "coupling_id": None,
+            }
+            for index, atom_map in enumerate(atom_maps[:2])
+        ]
     add("overconsumed_locus", payload, "LOCUS_OVERCONSUMED")
     payload, move = first_move()
-    move["source"], move["target"] = move["target"], move["source"]
+    if is_fishhook_group(payload):
+        reverse_complete_group(payload)
+    else:
+        # One-step curved-arrow records have no earlier committed state to
+        # reorder.  Requesting a product-side resource from that pre-state is
+        # therefore represented by an absent source locus.
+        move["source"] = {"locus": "lp", "atom_maps": [999999]}
     add("wrong_step_order", payload, "SOURCE_LOCUS_ABSENT")
     payload = deepcopy(original)
     reactants, products = payload["mapped_reaction"].split(">>", 1)
@@ -369,12 +545,12 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
     payload = deepcopy(original)
     payload["steps"][0].setdefault("stereo_effects", []).append(
         {
-            "descriptor_target": ["atom", 2],
+            "descriptor_target": ["atom", 999999],
             "effect": "FORM",
             "before": None,
             "after": {
                 "descriptor_class": "tetrahedral",
-                "atoms": [2, 1, 999997, 999998, "@H:2"],
+                "atoms": [999999, 1, 999997, 999998, "@H:999999"],
                 "parity": -1,
                 "state": "specified",
                 "provenance": "corrupted",
@@ -386,12 +562,12 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
     payload = deepcopy(original)
     payload["steps"][0].setdefault("stereo_effects", []).append(
         {
-            "descriptor_target": ["bond", [1, 2]],
+            "descriptor_target": ["bond", [999999, 999998]],
             "effect": "FORM",
             "before": None,
             "after": {
                 "descriptor_class": "planar_bond",
-                "atoms": [999997, "@H:1", 1, 2, "@H:2", 999998],
+                "atoms": [999997, "@H:999999", 999999, 999998, "@H:999998", 999996],
                 "parity": 0,
                 "state": "specified",
                 "provenance": "corrupted",
@@ -415,9 +591,8 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
     )
     add("illegal_stereo_preservation", payload, "STEREO_TRANSITION_FROM_ABSENT")
     payload = deepcopy(original)
-    payload["mapped_reaction"] = (
-        original["mapped_reaction"].split(">>", 1)[0] + ">>[CH4:999999]"
-    )
+    reactants, products = original["mapped_reaction"].split(">>", 1)
+    payload["mapped_reaction"] = f"{reactants}>>{products}.[CH4:999999]"
     add("mismatched_final_product", payload, "FINAL_PRODUCT_MISMATCH")
     return tuple(variants)
 

@@ -40,7 +40,6 @@ from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Graph.Matcher.subgraph_matcher import resolve_template_match_attrs
-from synkit.Graph.Feature.wl_hash import WLHash
 from synkit.Graph.Mech.electron_accounting import (
     graph_to_sanitized_kekule_mol,
     refresh_electron_fields,
@@ -145,6 +144,11 @@ class SynReactor:
         through implicit matching. This is intended for mapped mechanism/rule
         agreement; the default keeps legacy implicit-output projection.
     :type preserve_mapped_hydrogens: bool
+    :param dedup_its: If True, consolidate equivalent post-rewrite ITS graphs.
+        If False, retain deterministic mapping and stereo-branch multiplicity
+        while still finalizing electron fields and validating stereo state.
+        This policy is independent of mapping-level ``automorphism`` pruning.
+    :type dedup_its: bool
     :ivar _graph: Cached SynGraph for the substrate.
     :vartype _graph: Optional[SynGraph]
     :ivar _rule: Cached SynRule for the template.
@@ -177,6 +181,7 @@ class SynReactor:
     embed_pre_filter: bool = False
     automorphism: bool = True
     preserve_mapped_hydrogens: bool = False
+    dedup_its: bool = True
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -207,6 +212,8 @@ class SynReactor:
             )
         if self.stereo_query_mode not in {"exact", "wildcard"}:
             raise ValueError("stereo_query_mode must be 'exact' or 'wildcard'.")
+        if not isinstance(self.dedup_its, bool):
+            raise TypeError("dedup_its must be a bool.")
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -229,6 +236,7 @@ class SynReactor:
         stereo_mode: str = "propagate",
         stereo_query_mode: str = "exact",
         preserve_mapped_hydrogens: bool = False,
+        dedup_its: bool = True,
     ) -> "SynReactor":
         """
         Alternate constructor: build a SynReactor directly from SMILES.
@@ -264,6 +272,9 @@ class SynReactor:
         :param stereo_query_mode: Unknown-parity query policy, either
             ``"exact"`` or ``"wildcard"``.
         :type stereo_query_mode: str
+        :param dedup_its: Consolidate equivalent post-rewrite ITS graphs while
+            preserving all correctness finalization and validation steps.
+        :type dedup_its: bool
         :returns: A new `SynReactor` instance.
         :rtype: SynReactor
         """
@@ -282,6 +293,7 @@ class SynReactor:
             stereo_mode=stereo_mode,
             stereo_query_mode=stereo_query_mode,
             preserve_mapped_hydrogens=preserve_mapped_hydrogens,
+            dedup_its=dedup_its,
         )
 
     # ------------------------------------------------------------------
@@ -443,7 +455,9 @@ class SynReactor:
                 or self.rule.stereo_outcomes
                 or self.rule.stereo_couplings
             )
-            if self.automorphism and raw_maps and not stereo_sensitive:
+            if len(raw_maps) < 2:
+                self._mappings = raw_maps
+            elif self.automorphism and not stereo_sensitive:
                 automorphism_pattern = self._automorphism_pattern_graph(pattern_graph)
                 auto = Automorphism(
                     automorphism_pattern,
@@ -698,25 +712,46 @@ class SynReactor:
             # Build ITS for each mapping -------------------------------
             host_raw = self._matching_host_graph()
             rc_raw = self.rule.rc.raw
+            pattern_explicit = self.rule.left.raw
+            strategy = Strategy.from_string(self.strategy)
+            relative_pi_edges = self._relative_pi_rewrite_edges(rc_raw)
+            electron_aware = self._is_electron_aware_template(rc_raw)
             self._its = []
-            for m in self.mappings:
+            raw_application_index = 0
+            for mapping_index, m in enumerate(self.mappings):
                 its_batch = self._glue_graph(
                     host_raw,
                     rc_raw,
                     m,
                     self._flag_pattern_has_explicit_H,
-                    self.rule.left.raw,
-                    Strategy.from_string(self.strategy),
+                    pattern_explicit,
+                    strategy,
                     embed_threshold=self.embed_threshold,
                     embed_pre_filter=False,
-                    relative_pi_edges=self._relative_pi_rewrite_edges(rc_raw),
+                    relative_pi_edges=relative_pi_edges,
                     restore_unmatched_explicit_h=not self.explicit_h,
+                    refresh_electrons=False,
+                    electron_aware=electron_aware,
                 )
                 stereo_batch: List[nx.Graph] = []
-                for candidate in its_batch:
-                    stereo_batch.extend(
-                        self._apply_stereo_rule_metadata(candidate, host_raw, m)
-                    )
+                for rewrite_index, candidate in enumerate(its_batch):
+                    branches = self._apply_stereo_rule_metadata(candidate, host_raw, m)
+                    if not self.dedup_its:
+                        mapping_provenance = self._mapping_provenance(
+                            m,
+                            pattern_explicit,
+                            host_raw,
+                        )
+                        for stereo_branch_index, branch in enumerate(branches):
+                            branch.graph["application_provenance"] = {
+                                "application_index": raw_application_index,
+                                "mapping_index": mapping_index,
+                                "rewrite_index": rewrite_index,
+                                "stereo_branch_index": stereo_branch_index,
+                                "mapping": mapping_provenance,
+                            }
+                            raw_application_index += 1
+                    stereo_batch.extend(branches)
                 self._its.extend(stereo_batch)
 
             if self.explicit_h:
@@ -724,8 +759,11 @@ class SynReactor:
             self._its = [
                 its for its in self._its if self._validate_product_stereo_registry(its)
             ]
-            self._its = self._deduplicate_coupling_face_products(self._its)
-            self._its = self._deduplicate_structural_its(self._its)
+            if self.dedup_its:
+                self._its = self._deduplicate_coupling_face_products(self._its)
+                self._its = self._deduplicate_structural_its(self._its)
+            else:
+                self._its = self._finalize_product_electron_fields(self._its)
             log.debug("Built %d ITS graph(s)", len(self._its))
         return self._its
 
@@ -738,10 +776,19 @@ class SynReactor:
         """
         if self._smarts is None:
             self._smarts = [self._to_smarts(g) for g in self.its_list]
+            if not self.dedup_its and any(value is None for value in self._smarts):
+                failed = [
+                    index for index, value in enumerate(self._smarts) if value is None
+                ]
+                raise ValueError(
+                    "Could not serialize raw ITS application(s): "
+                    + ", ".join(map(str, failed))
+                )
             self._smarts = [value for value in self._smarts if value]
             if self.invert:
                 self._smarts = [reverse_reaction(rsmi) for rsmi in self._smarts]
-            self._smarts = list(dict.fromkeys(self._smarts))
+            if self.dedup_its:
+                self._smarts = list(dict.fromkeys(self._smarts))
         return self._smarts
 
     @property
@@ -1120,6 +1167,9 @@ class SynReactor:
         product_graph: nx.Graph,
     ) -> List[Tuple[Dict, Dict, Dict, Dict, Dict]]:
         """Derive coupled endpoint descriptors from chemical rule semantics."""
+        if not couplings:
+            return states
+
         from synkit.Graph.Stereo import PlanarBondStereo, descriptor_id
         from synkit.Graph.Stereo.changes import StereoChange
 
@@ -1231,6 +1281,20 @@ class SynReactor:
         mapping: MappingDict,
     ) -> List[nx.Graph]:
         """Relabel rule stereo effects and expand declared product branches."""
+        if not self.rule.stereo_effects and not self.rule.stereo_couplings:
+            reactant_registry = dict(host.graph.get("stereo_descriptors", {}))
+            its.graph["stereo_descriptors"] = {
+                "reactant": dict(reactant_registry),
+                "product": dict(reactant_registry),
+            }
+            its.graph["stereo_changes"] = {}
+            its.graph["stereo_outcomes"] = {}
+            its.graph["stereo_couplings"] = {}
+            its.graph["stereo_coupling_branch"] = {}
+            its.graph["stereo_branch"] = {}
+            its.graph["stereo_branch_weight"] = 1.0
+            return [its]
+
         from synkit.Graph.Stereo import descriptor_id
         from synkit.Graph.Stereo.changes import StereoChange
 
@@ -1335,23 +1399,26 @@ class SynReactor:
                     )
             states = next_states
 
-        product_graph = ITSReverter(its).to_product_graph()
-        states = self._apply_stereo_couplings(
-            states,
-            relabeled_coupling_values,
-            reactant_registry,
-            product_graph,
-        )
+        if relabeled_coupling_values:
+            product_graph = ITSReverter(its).to_product_graph()
+            states = self._apply_stereo_couplings(
+                states,
+                relabeled_coupling_values,
+                reactant_registry,
+                product_graph,
+            )
 
         results = []
-        for (
+        for state_index, (
             product_registry,
             relabeled_changes,
             branch_metadata,
             outcome_metadata,
             coupling_branch_metadata,
-        ) in states:
-            branch = deepcopy(its)
+        ) in enumerate(states):
+            # The candidate is no longer needed after metadata application.
+            # Reuse it for the final branch and copy only genuine alternatives.
+            branch = its if state_index == len(states) - 1 else deepcopy(its)
             branch.graph["stereo_descriptors"] = {
                 "reactant": dict(reactant_registry),
                 "product": product_registry,
@@ -1379,6 +1446,9 @@ class SynReactor:
 
         layers = its.graph.get("stereo_descriptors", {})
         product_registry = dict(layers.get("product", {}))
+        if not product_registry:
+            return True
+
         changes = its.graph.get("stereo_changes", {})
         product = ITSReverter(its).to_product_graph()
         invalid = {
@@ -1590,10 +1660,16 @@ class SynReactor:
         embed_pre_filter: bool = False,
         relative_pi_edges: set[frozenset[Any]] | None = None,
         restore_unmatched_explicit_h: bool = True,
+        refresh_electrons: bool = True,
+        electron_aware: bool | None = None,
     ) -> List[nx.Graph]:
         list_its: List[nx.Graph] = []
-        host_g = deepcopy(host)
-        electron_aware = SynReactor._is_electron_aware_template(rc)
+        # NetworkX copies node/edge attribute dictionaries.  Rewrite values
+        # are replaced rather than mutated in place, so recursively copying
+        # every tuple and stereo descriptor only adds mapping-sized overhead.
+        host_g = host.copy()
+        if electron_aware is None:
+            electron_aware = SynReactor._is_electron_aware_template(rc)
 
         def _default_tg(a: Dict[str, Any]) -> Tuple[Tuple[Any, ...], Tuple[Any, ...]]:
             tpl = (
@@ -1629,9 +1705,10 @@ class SynReactor:
         }
 
         # Iterate over remappings --------------------------------------
+        reuse_prepared_host = len(mappings) == 1
         for m in mappings:
 
-            its = deepcopy(host_g)
+            its = host_g if reuse_prepared_host else host_g.copy()
             if pattern_has_explicit_H and restore_unmatched_explicit_h:
                 SynReactor._restore_unmatched_pattern_hydrogens(its, m)
             # This should only work for implict cases
@@ -1640,6 +1717,7 @@ class SynReactor:
                     its,
                     rc,
                     m,
+                    inplace=True,
                     tuple_mode=electron_aware,
                 )
 
@@ -1731,9 +1809,14 @@ class SynReactor:
                         )
                     else:
                         host_attr.update(rc_attr)
-            if electron_aware:
-                SynReactor._refresh_product_electron_fields(its)
             its.graph["electron_aware_rewrite"] = electron_aware
+            if electron_aware:
+                its.graph["_product_electron_fields_current"] = False
+                its.graph["_product_kekule_phase_dirty"] = (
+                    SynReactor._product_kekule_phase_is_dirty(its)
+                )
+                if refresh_electrons:
+                    SynReactor._refresh_product_electron_fields(its)
             list_its.append(its)
         return list_its
 
@@ -1841,6 +1924,24 @@ class SynReactor:
         return decorated
 
     @staticmethod
+    def _mapping_provenance(
+        mapping: MappingDict,
+        pattern: nx.Graph,
+        host: nx.Graph,
+    ) -> Tuple[Tuple[Any, Any], ...]:
+        """Return a deterministic template-map to substrate-map application trace."""
+        pairs = []
+        for pattern_node, host_node in mapping.items():
+            pattern_ref = pattern.nodes[pattern_node].get("atom_map", pattern_node)
+            host_ref = host.nodes[host_node].get("atom_map", host_node)
+            if not isinstance(pattern_ref, int) or pattern_ref <= 0:
+                pattern_ref = pattern_node
+            if not isinstance(host_ref, int) or host_ref <= 0:
+                host_ref = host_node
+            pairs.append((pattern_ref, host_ref))
+        return tuple(sorted(pairs, key=lambda pair: (repr(pair[0]), repr(pair[1]))))
+
+    @staticmethod
     def _chemical_rewrite_role(role: Any) -> Any:
         """Drop provenance-only atom-map identity from tuple rewrite roles."""
         if isinstance(role, tuple) and len(role) >= 9:
@@ -1851,10 +1952,18 @@ class SynReactor:
         return role
 
     @staticmethod
-    def _prepare_its_for_structural_cluster(its: nx.Graph) -> nx.Graph:
+    def _prepare_its_for_structural_cluster(
+        its: nx.Graph,
+        *,
+        refresh_electrons: bool = True,
+    ) -> nx.Graph:
         """Attach one combined edge signature for exact ITS clustering."""
-        prepared = deepcopy(its)
-        if prepared.graph.get("electron_aware_rewrite", False):
+        prepared = its.copy()
+        if (
+            refresh_electrons
+            and prepared.graph.get("electron_aware_rewrite", False)
+            and not prepared.graph.get("_product_electron_fields_current", False)
+        ):
             SynReactor._refresh_product_electron_fields(prepared)
         aromatic_nodes = {
             node
@@ -1866,6 +1975,10 @@ class SynReactor:
             template_charge = prepared.nodes[node].get("template_charge")
             if isinstance(template_charge, tuple) and len(template_charge) == 2:
                 prepared.nodes[node]["charge"] = template_charge
+        for _, attrs in prepared.nodes(data=True):
+            attrs["_its_node_sig"] = "|".join(
+                str(attrs.get(name, "")) for name in ITS_STRUCTURAL_NODE_ATTRS
+            )
         for _, _, attrs in prepared.edges(data=True):
             edge_values = []
             aromatic_unchanged = attrs.get("order") == (1.5, 1.5)
@@ -1882,21 +1995,31 @@ class SynReactor:
         return prepared
 
     @staticmethod
-    def _deduplicate_structural_its(its_graphs: List[nx.Graph]) -> List[nx.Graph]:
-        """Keep one representative per exact structural/stereo ITS identity."""
+    def _cluster_structural_its(
+        its_graphs: List[nx.Graph],
+        *,
+        refresh_electrons: bool,
+        hash_iterations: int = 5,
+    ) -> List[nx.Graph]:
+        """Run one exact structural/stereo clustering pass."""
         if len(its_graphs) < 2:
             return its_graphs
 
         from synkit.Graph.Stereo import stereo_identity_signature
 
-        hasher = WLHash(
-            node=ITS_STRUCTURAL_NODE_ATTRS,
-            edge="_its_edge_sig",
-        )
         buckets: Dict[Any, List[Tuple[int, nx.Graph]]] = defaultdict(list)
         for index, its in enumerate(its_graphs):
-            prepared = SynReactor._prepare_its_for_structural_cluster(its)
-            signature = hasher.weisfeiler_lehman_graph_hash(prepared)
+            prepared = SynReactor._prepare_its_for_structural_cluster(
+                its,
+                refresh_electrons=refresh_electrons,
+            )
+            signature = nx.weisfeiler_lehman_graph_hash(
+                prepared,
+                node_attr="_its_node_sig",
+                edge_attr="_its_edge_sig",
+                iterations=hash_iterations,
+                digest_size=16,
+            )
             stereo_signature = stereo_identity_signature(prepared)
             buckets[(signature, stereo_signature)].append((index, prepared))
 
@@ -1917,6 +2040,69 @@ class SynReactor:
 
         representative_indices.sort()
         return [its_graphs[index] for index in representative_indices]
+
+    @staticmethod
+    def _finalize_product_electron_fields(
+        its_graphs: List[nx.Graph],
+    ) -> List[nx.Graph]:
+        """Finalize every deferred tuple product without changing multiplicity."""
+        for its in its_graphs:
+            if its.graph.get("electron_aware_rewrite", False) and not its.graph.get(
+                "_product_electron_fields_current", False
+            ):
+                SynReactor._refresh_product_electron_fields(its)
+        return its_graphs
+
+    @staticmethod
+    def _deduplicate_structural_its(its_graphs: List[nx.Graph]) -> List[nx.Graph]:
+        """Keep one representative per exact structural/stereo ITS identity.
+
+        Stable-Kekule tuple candidates use cheap direct electron reconstruction
+        followed by one authoritative clustering pass.  Rewrites needing full
+        aromatic re-perception retain a pre-refresh pass so only structural
+        representatives pay that chemistry cost, then a final refreshed pass.
+        """
+        if not its_graphs:
+            return its_graphs
+
+        has_deferred_electrons = any(
+            its.graph.get("electron_aware_rewrite", False)
+            and not its.graph.get("_product_electron_fields_current", False)
+            for its in its_graphs
+        )
+        if not has_deferred_electrons:
+            return SynReactor._cluster_structural_its(
+                its_graphs,
+                refresh_electrons=False,
+            )
+
+        # Most tuple rewrites retain a valid Kekule phase. Their derived
+        # product fields can be refreshed directly on the ITS, making one
+        # post-refresh clustering pass cheaper than hashing every candidate
+        # and then hashing all representatives again.
+        if all(
+            not its.graph.get("_product_kekule_phase_dirty", True)
+            for its in its_graphs
+            if its.graph.get("electron_aware_rewrite", False)
+            and not its.graph.get("_product_electron_fields_current", False)
+        ):
+            SynReactor._finalize_product_electron_fields(its_graphs)
+            return SynReactor._cluster_structural_its(
+                its_graphs,
+                refresh_electrons=False,
+            )
+
+        representatives = SynReactor._cluster_structural_its(
+            its_graphs,
+            refresh_electrons=False,
+        )
+        SynReactor._finalize_product_electron_fields(representatives)
+
+        return SynReactor._cluster_structural_its(
+            representatives,
+            refresh_electrons=False,
+            hash_iterations=3,
+        )
 
     def _deduplicate_equivalent_free_components(
         self,
@@ -2095,7 +2281,7 @@ class SynReactor:
 
         from synkit.Graph.Stereo import stereo_isomorphic
 
-        representatives: List[Tuple[nx.Graph, nx.Graph, nx.Graph]] = []
+        representatives: List[Tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph]] = []
         unique = []
         for its in its_graphs:
             if not its.graph.get("stereo_coupling_branch") or its.graph.get(
@@ -2106,15 +2292,17 @@ class SynReactor:
             reverter = ITSReverter(its)
             reactant = reverter.to_reactant_graph()
             product = reverter.to_product_graph()
+            prepared = SynReactor._prepare_its_for_structural_cluster(its)
             duplicate = False
             for (
                 other_its,
                 other_reactant,
                 other_product,
+                other_prepared,
             ) in representatives:
                 if not nx.is_isomorphic(
-                    SynReactor._prepare_its_for_structural_cluster(its),
-                    SynReactor._prepare_its_for_structural_cluster(other_its),
+                    prepared,
+                    other_prepared,
                     node_match=categorical_node_match(
                         ITS_STRUCTURAL_NODE_ATTRS,
                         ["*", False, 0, 0, 0, 0, 0, ()],
@@ -2122,9 +2310,8 @@ class SynReactor:
                     edge_match=categorical_edge_match("_its_edge_sig", ()),
                 ):
                     continue
-                if (
-                    stereo_isomorphic(reactant, other_reactant)
-                    and stereo_isomorphic(product, other_product)
+                if stereo_isomorphic(reactant, other_reactant) and stereo_isomorphic(
+                    product, other_product
                 ):
                     retained = other_its.graph.get("stereo_coupling_branch", {})
                     duplicate_metadata = its.graph.get("stereo_coupling_branch", {})
@@ -2146,7 +2333,7 @@ class SynReactor:
                     break
             if duplicate:
                 continue
-            representatives.append((its, reactant, product))
+            representatives.append((its, reactant, product, prepared))
             unique.append(its)
         return unique
 
@@ -2261,6 +2448,15 @@ class SynReactor:
         its: nx.Graph,
     ) -> None:
         """Refresh product-side electron fields from the scalar product graph."""
+        # In the common case the product Kekule phase is already valid.  The
+        # scalar projection previously built here only supplied values that
+        # are directly derivable from the product half of the ITS tuples.
+        # Computing them in place avoids two graph copies, one ITS traversal,
+        # and explicit-H collapse for every candidate.
+        if not its.graph.get("_product_kekule_phase_dirty", True):
+            SynReactor._refresh_product_electron_fields_direct(its)
+            return
+
         product = SynReactor._prepared_electron_product_graph(its)
         refreshed = refresh_electron_fields(product)
         for node, attrs in refreshed.nodes(data=True):
@@ -2300,6 +2496,175 @@ class SynReactor:
                     else current
                 )
                 its.edges[u, v][key] = (left_value, attrs[key])
+        its.graph["_product_electron_fields_current"] = True
+
+    @staticmethod
+    def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
+        """Refresh derived product fields without materialising a side graph.
+
+        This path is exact while the aromatic Kekule phase is unchanged.
+        Explicit hydrogen collapse preserves the heavy atom's electron count:
+        a removed H--X sigma bond becomes one unit of ``hcount``.
+        """
+
+        def product_value(value: Any) -> Any:
+            if isinstance(value, tuple) and len(value) == 2:
+                return value[1]
+            return value
+
+        def product_node_exists(attrs: Mapping[str, Any]) -> bool:
+            present = attrs.get("present")
+            if isinstance(present, tuple) and len(present) == 2:
+                return bool(present[1])
+            return product_value(attrs.get("element")) not in (None, "")
+
+        def product_edge_exists(attrs: Mapping[str, Any]) -> bool:
+            for name in ("order", "kekule_order", "bond_type"):
+                value = product_value(attrs.get(name))
+                if value not in (None, "", 0, 0.0):
+                    return True
+            return False
+
+        product_nodes = {
+            node for node, attrs in its.nodes(data=True) if product_node_exists(attrs)
+        }
+        product_edges = [
+            (left, right, attrs)
+            for left, right, attrs in its.edges(data=True)
+            if left in product_nodes
+            and right in product_nodes
+            and product_edge_exists(attrs)
+        ]
+
+        bond_sums: Dict[Any, float] = defaultdict(float)
+        for left, right, attrs in product_edges:
+            sigma = float(product_value(attrs.get("sigma_order", 0.0)) or 0.0)
+            pi = float(product_value(attrs.get("pi_order", 0.0)) or 0.0)
+            bond_order = sigma + pi
+            bond_sums[left] += bond_order
+            bond_sums[right] += bond_order
+
+            current = attrs.get("kekule_order")
+            left_value = (
+                current[0]
+                if isinstance(current, tuple) and len(current) == 2
+                else current
+            )
+            attrs["kekule_order"] = (left_value, bond_order)
+
+        for node in product_nodes:
+            attrs = its.nodes[node]
+            bond_sum = bond_sums[node]
+            current_bond_sum = attrs.get("bond_order_sum")
+            left_bond_sum = (
+                current_bond_sum[0]
+                if isinstance(current_bond_sum, tuple) and len(current_bond_sum) == 2
+                else current_bond_sum
+            )
+            attrs["bond_order_sum"] = (left_bond_sum, bond_sum)
+
+            valence_electrons = product_value(attrs.get("valence_electrons"))
+            if valence_electrons is None:
+                continue
+            lone_pairs = float(product_value(attrs.get("lone_pairs", 0)) or 0)
+            radical = float(product_value(attrs.get("radical", 0)) or 0)
+            hcount = float(product_value(attrs.get("hcount", 0)) or 0)
+            recomputed_charge = (
+                float(valence_electrons)
+                - 2.0 * lone_pairs
+                - radical
+                - hcount
+                - bond_sum
+            )
+            if recomputed_charge.is_integer():
+                recomputed_charge = int(recomputed_charge)
+
+            current_recomputed = attrs.get("recomputed_charge")
+            left_recomputed = (
+                current_recomputed[0]
+                if isinstance(current_recomputed, tuple)
+                and len(current_recomputed) == 2
+                else current_recomputed
+            )
+            attrs["recomputed_charge"] = (left_recomputed, recomputed_charge)
+
+            template_charge = attrs.get("template_charge")
+            represented_charge = product_value(attrs.get("charge", 0))
+            mismatch = float(represented_charge or 0) != recomputed_charge
+            if isinstance(template_charge, tuple) and len(template_charge) == 2:
+                mismatch = template_charge[1] != recomputed_charge
+            current_mismatch = attrs.get("charge_mismatch")
+            left_mismatch = (
+                current_mismatch[0]
+                if isinstance(current_mismatch, tuple) and len(current_mismatch) == 2
+                else current_mismatch
+            )
+            attrs["charge_mismatch"] = (left_mismatch, mismatch)
+
+            current_charge = attrs.get("charge")
+            left_charge = (
+                current_charge[0]
+                if isinstance(current_charge, tuple) and len(current_charge) == 2
+                else current_charge
+            )
+            aromatic = bool(product_value(attrs.get("aromatic", False)))
+            product_charge = (
+                template_charge[1]
+                if aromatic
+                and isinstance(template_charge, tuple)
+                and len(template_charge) == 2
+                else recomputed_charge
+            )
+            attrs["charge"] = (left_charge, product_charge)
+
+        its.graph["_product_electron_fields_current"] = True
+
+    @staticmethod
+    def _product_kekule_phase_is_dirty(its: nx.Graph) -> bool:
+        """Return whether a rewrite can invalidate an aromatic Kekule phase.
+
+        Substituent and hydrogen-count edits do not alter the alternating phase
+        inside an aromatic system.  Electronic changes on aromatic atoms and
+        edits to bonds within that system do, and therefore still require full
+        RDKit re-perception.
+        """
+
+        def side_values(value: Any) -> Tuple[Any, Any]:
+            if isinstance(value, tuple) and len(value) == 2:
+                return value
+            return value, value
+
+        aromatic_nodes = {
+            node
+            for node, attrs in its.nodes(data=True)
+            if any(bool(value) for value in side_values(attrs.get("aromatic", False)))
+        }
+        if not aromatic_nodes:
+            return False
+
+        for node in aromatic_nodes:
+            attrs = its.nodes[node]
+            for name in (
+                "element",
+                "aromatic",
+                "radical",
+                "lone_pairs",
+                "valence_electrons",
+                "present",
+                "template_charge",
+            ):
+                left, right = side_values(attrs.get(name))
+                if left != right:
+                    return True
+
+        for left, right, attrs in its.edges(data=True):
+            if left not in aromatic_nodes or right not in aromatic_nodes:
+                continue
+            for name in ITS_STRUCTURAL_EDGE_ATTRS:
+                before, after = side_values(attrs.get(name))
+                if before != after:
+                    return True
+        return False
 
     @staticmethod
     def _prepared_electron_product_graph(its: nx.Graph) -> nx.Graph:
@@ -2338,6 +2703,8 @@ class SynReactor:
     def _reperceive_product_kekule_phase(product: nx.Graph, its: nx.Graph) -> nx.Graph:
         """Refresh aromatic sigma/pi phase from full product presentation bonds."""
         if not any(data.get("order") == 1.5 for _, _, data in product.edges(data=True)):
+            return product
+        if not its.graph.get("_product_kekule_phase_dirty", True):
             return product
 
         probe = product.copy()
@@ -2455,6 +2822,8 @@ class SynReactor:
                 pair_right[pair_id] = n
 
         explicit_pairs = sorted(set(pair_left) & set(pair_right))
+        if explicit_pairs:
+            rc.graph["_product_electron_fields_current"] = False
         used_maps = {
             value
             for _, data in rc.nodes(data=True)
@@ -2551,7 +2920,9 @@ class SynReactor:
         for node, attrs in graph.nodes(data=True):
             atom_map = attrs.get("atom_map")
             values = atom_map if isinstance(atom_map, tuple) else (atom_map,)
-            for value in {item for item in values if isinstance(item, int) and item > 0}:
+            for value in {
+                item for item in values if isinstance(item, int) and item > 0
+            }:
                 if value in used:
                     raise ValueError(f"Duplicate atom map {value} in tuple graph.")
                 used.add(value)
@@ -2567,13 +2938,135 @@ class SynReactor:
 
     # --------------------- SMARTS serialisation -----------------------
     @staticmethod
+    def _tuple_preserved_hydrogen_maps(its: nx.Graph) -> List[int]:
+        """Collect reaction-centre H maps without extracting an RC subgraph."""
+
+        def pair_changed(value: Any) -> bool:
+            return (
+                isinstance(value, (tuple, list))
+                and len(value) == 2
+                and value[0] != value[1]
+            )
+
+        reaction_center_nodes = set()
+        for node, attrs in its.nodes(data=True):
+            lone_pairs = attrs.get("lone_pairs", attrs.get("lp"))
+            if any(
+                pair_changed(value)
+                for value in (
+                    attrs.get("element"),
+                    attrs.get("hcount"),
+                    attrs.get("charge"),
+                    lone_pairs,
+                    attrs.get("radical"),
+                    attrs.get("valence_electrons"),
+                )
+            ):
+                reaction_center_nodes.add(node)
+        for left, right, attrs in its.edges(data=True):
+            standard_order = attrs.get("standard_order", 0.0)
+            if standard_order != 0 and standard_order != 0.0:
+                reaction_center_nodes.update((left, right))
+
+        if its.graph.get("stereo_changes"):
+            from synkit.Graph.Stereo import stereo_complete_reaction_center_nodes
+
+            reaction_center_nodes.update(stereo_complete_reaction_center_nodes(its))
+
+        atom_maps = set()
+        for node in reaction_center_nodes:
+            attrs = its.nodes[node]
+            element = attrs.get("element")
+            elements = (
+                element
+                if isinstance(element, (tuple, list)) and len(element) == 2
+                else (element,)
+            )
+            if "H" not in elements:
+                continue
+            atom_map = attrs.get("atom_map")
+            if isinstance(atom_map, (tuple, list)) and len(atom_map) == 2:
+                atom_map = atom_map[0]
+            try:
+                atom_maps.add(int(atom_map))
+            except (TypeError, ValueError):
+                continue
+        return sorted(atom_maps)
+
+    @staticmethod
+    def _tuple_endpoint_graphs(its: nx.Graph) -> Tuple[nx.Graph, nx.Graph]:
+        """Project both tuple endpoints in one ITS traversal.
+
+        ``ITSReverter`` exposes one side at a time.  Serialization always needs
+        both, so projecting them together avoids scanning and decoding every
+        tuple attribute twice while preserving the same endpoint schema.
+        """
+        endpoints = (nx.Graph(), nx.Graph())
+        node_keys = ITSReverter.DEFAULT_NODE_ATTRS
+        edge_keys = ITSReverter.DEFAULT_EDGE_ATTRS
+
+        def side_values(value: Any) -> Tuple[Any, Any]:
+            if isinstance(value, tuple) and len(value) == 2:
+                return value
+            return value, value
+
+        for node, attrs in its.nodes(data=True):
+            present = attrs.get("present")
+            if isinstance(present, tuple) and len(present) == 2:
+                exists = bool(present[0]), bool(present[1])
+            else:
+                elements = side_values(attrs.get("element"))
+                exists = tuple(value not in (None, "") for value in elements)
+            projected = ({}, {})
+            for key in node_keys:
+                if key not in attrs:
+                    continue
+                left_value, right_value = side_values(attrs[key])
+                projected[0][key] = left_value
+                projected[1][key] = right_value
+            for side in (0, 1):
+                if exists[side]:
+                    endpoints[side].add_node(node, **projected[side])
+
+        for left, right, attrs in its.edges(data=True):
+            orders = side_values(attrs.get("order"))
+            kekule_orders = side_values(attrs.get("kekule_order"))
+            bond_types = side_values(attrs.get("bond_type"))
+            exists = tuple(
+                orders[side] not in (None, "", 0, 0.0)
+                or kekule_orders[side] not in (None, "", 0, 0.0)
+                or bond_types[side] not in (None, "")
+                for side in (0, 1)
+            )
+            projected = ({}, {})
+            for key in edge_keys:
+                if key not in attrs:
+                    continue
+                left_value, right_value = side_values(attrs[key])
+                projected[0][key] = left_value
+                projected[1][key] = right_value
+            for side in (0, 1):
+                endpoint = endpoints[side]
+                if left not in endpoint or right not in endpoint or not exists[side]:
+                    continue
+                endpoint.add_edge(left, right, **projected[side])
+
+        stereo = its.graph.get("stereo_descriptors", {})
+        if isinstance(stereo, dict) and ("reactant" in stereo or "product" in stereo):
+            for side_name, endpoint in zip(("reactant", "product"), endpoints):
+                endpoint.graph["stereo_descriptors"] = dict(stereo.get(side_name, {}))
+                endpoint.graph["stereo_projection"] = side_name
+        elif isinstance(stereo, dict):
+            for endpoint in endpoints:
+                endpoint.graph["stereo_descriptors"] = dict(stereo)
+        return endpoints
+
+    @staticmethod
     def _to_smarts(its: nx.Graph) -> str:
         electron_aware = bool(its.graph.get("electron_aware_rewrite", False))
         if electron_aware:
-            reverter = ITSReverter(its)
-            left = reverter.to_reactant_graph()
-            right = reverter.to_product_graph()
-            preserved_hydrogens = _get_preserved_hydrogen_maps(its, "tuple")
+            left, right = SynReactor._tuple_endpoint_graphs(its)
+            preserved_hydrogens = SynReactor._tuple_preserved_hydrogen_maps(its)
         else:
             left, right = its_decompose(its)
             preserved_hydrogens = []
@@ -2581,13 +3074,17 @@ class SynReactor:
         right = remove_wildcard_nodes(right)
         r_smi = graph_to_smi(left, preserve_atom_maps=preserved_hydrogens)
         if electron_aware:
-            product_candidates = [
-                right,
-                SynReactor._prepared_electron_product_graph(its),
-            ]
             p_smi = None
-            for product in product_candidates:
-                product = refresh_electron_fields(product)
+            for candidate_index in range(2):
+                product = (
+                    right
+                    if candidate_index == 0
+                    else SynReactor._prepared_electron_product_graph(its)
+                )
+                if candidate_index or not its.graph.get(
+                    "_product_electron_fields_current", False
+                ):
+                    product = refresh_electron_fields(product)
                 for node, attrs in product.nodes(data=True):
                     product_charge = SynReactor._electron_product_charge(
                         its,
@@ -2600,7 +3097,10 @@ class SynReactor:
                     attrs.get("order") == 1.5
                     for _, _, attrs in product.edges(data=True)
                 ):
-                    p_smi = graph_to_smi(product)
+                    # Product connectivity may have changed while its retained
+                    # Kekule phase still reflects the substrate. Re-perceive
+                    # from the authoritative aromatic presentation here.
+                    p_smi = graph_to_smi(product, prefer_kekule_order=False)
                     if p_smi is not None:
                         break
                 try:

@@ -16,7 +16,6 @@ from synkit.Graph.Stereo.identity import (
     stereo_identity_node_match,
 )
 
-
 ReferenceResolver = Callable[[Any], Any]
 
 

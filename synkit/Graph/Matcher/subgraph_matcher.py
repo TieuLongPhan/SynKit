@@ -85,14 +85,6 @@ from networkx.algorithms.isomorphism import generic_node_match, generic_edge_mat
 
 from synkit.Synthesis.Reactor.strategy import Strategy
 
-try:
-    from mod import ruleGMLString
-
-    _RULE_AVAILABLE = True
-except ImportError:
-    ruleGMLString = None  # type: ignore[assignment]
-    _RULE_AVAILABLE = False
-
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------
@@ -254,70 +246,8 @@ class SubgraphMatch:
     """Boolean-only checks for graph isomorphism and subgraph (induced or
     monomorphic) matching.
 
-    Provides static methods for NetworkX-based checks and optional GML
-    "rule" backend.
+    Provides static methods for NetworkX-based checks.
     """
-
-    @staticmethod
-    def _get_edge_labels(graph: Any) -> list:
-        """Extracts the bond types (edge labels) from a given graph.
-
-        Parameters:
-        - graph: The graph object containing the edges.
-
-        Returns:
-        - list: List of edge labels as strings.
-        """
-        return [str(e.bondType) for e in graph.edges]
-
-    @staticmethod
-    def _get_node_labels(graph: Any) -> list:
-        """Extracts the atom IDs (node labels) from a given graph.
-
-        Parameters:
-        - graph: The graph object containing the vertices.
-
-        Returns:
-        - list: List of node labels as strings.
-        """
-        return [str(v.atomId) for v in graph.vertices]
-
-    @staticmethod
-    def rule_subgraph_morphism(
-        rule_1: str, rule_2: str, use_filter: bool = False
-    ) -> bool:
-        """Evaluates if two GML-formatted rule representations are isomorphic
-        or one is a subgraph of the other (monomorphic).
-
-        Parameters:
-        - rule_1 (str): GML string of the first rule.
-        - rule_2 (str): GML string of the second rule.
-        - use_filter (bool, optional): Whether to filter by node/edge labels and vertex counts.
-
-        Returns:
-        - bool: True if the monomorphism condition is met, False otherwise.
-        """
-        try:
-            rule_obj_1 = ruleGMLString(rule_1, add=False)
-            rule_obj_2 = ruleGMLString(rule_2, add=False)
-        except Exception as e:
-            raise Exception(f"Error parsing GML strings: {e}")
-
-        if use_filter:
-            if rule_obj_1.context.numVertices > rule_obj_2.context.numVertices:
-                return False
-
-            node_1_left = SubgraphMatch._get_node_labels(rule_obj_1.left)
-            node_2_left = SubgraphMatch._get_node_labels(rule_obj_2.left)
-            edge_1_left = SubgraphMatch._get_edge_labels(rule_obj_1.left)
-            edge_2_left = SubgraphMatch._get_edge_labels(rule_obj_2.left)
-
-            if not all(node in node_2_left for node in node_1_left):
-                return False
-            if not all(edge in edge_2_left for edge in edge_1_left):
-                return False
-
-        return rule_obj_1.monomorphism(rule_obj_2) == 1
 
     @staticmethod
     def subgraph_isomorphism(
@@ -401,25 +331,20 @@ class SubgraphMatch:
         check_type: str = "induced",
         backend: str = "nx",
     ) -> bool:
-        """Unified API for subgraph/isomorphism either via NX or GML
-        backend."""
-        if backend == "nx":
-            return SubgraphMatch.subgraph_isomorphism(
-                pattern,
-                host,
-                node_label_names,
-                node_label_default,
-                edge_attribute,
-                use_filter,
-                check_type,
-            )
-        if backend == "mod":
-            if not _RULE_AVAILABLE:
-                raise ImportError("GML rule backend not installed – pip install mod.")
-            return SubgraphMatch.rule_subgraph_morphism(
-                pattern, host, use_filter=use_filter
-            )
-        raise ValueError(f"Unknown backend: {backend}")
+        """Run a native NetworkX subgraph or isomorphism check."""
+        if backend != "nx":
+            raise ValueError(f"Unknown backend: {backend}")
+        if not isinstance(pattern, nx.Graph) or not isinstance(host, nx.Graph):
+            raise TypeError("NetworkX backend expects graph inputs.")
+        return SubgraphMatch.subgraph_isomorphism(
+            pattern,
+            host,
+            node_label_names,
+            node_label_default,
+            edge_attribute,
+            use_filter,
+            check_type,
+        )
 
 
 # -----------------------------------------------------------------------------

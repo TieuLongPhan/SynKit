@@ -2,6 +2,7 @@ import unittest
 from rdkit import Chem
 import networkx as nx
 from synkit.IO.graph_to_mol import GraphToMol
+from synkit.IO.mol_to_graph import MolToGraph
 
 
 class TestGraphToMol(unittest.TestCase):
@@ -72,6 +73,46 @@ class TestGraphToMol(unittest.TestCase):
 
         self.assertEqual(Chem.MolToSmiles(mol), "c1ccccc1")
         self.assertTrue(all(bond.GetIsAromatic() for bond in mol.GetBonds()))
+
+    def test_retained_kekule_order_rebuilds_charged_heteroaromatic_system(self):
+        smiles = "C[N+]1=NOC(=C1SCC(=O)NC2=CC3=C(C=C2)NC=C3)[O-]"
+        source = Chem.MolFromSmiles(smiles)
+        self.assertIsNotNone(source)
+
+        graph = MolToGraph().transform(source)
+        rebuilt = GraphToMol().graph_to_mol(graph)
+
+        self.assertEqual(
+            Chem.MolToSmiles(rebuilt, canonical=True),
+            Chem.MolToSmiles(source, canonical=True),
+        )
+
+    def test_sigma_pi_order_is_fallback_for_aromatic_presentation_order(self):
+        graph = nx.cycle_graph(6)
+        nx.set_node_attributes(graph, "C", "element")
+        nx.set_node_attributes(graph, 0, "charge")
+        double_edges = {frozenset((0, 1)), frozenset((2, 3)), frozenset((4, 5))}
+        for left, right, data in graph.edges(data=True):
+            data["order"] = 1.5
+            data["sigma_order"] = 1.0
+            data["pi_order"] = float(frozenset((left, right)) in double_edges)
+
+        mol = self.converter.graph_to_mol(graph)
+
+        self.assertEqual(Chem.MolToSmiles(mol), "c1ccccc1")
+
+    def test_empty_electron_fields_do_not_erase_aromatic_bonds(self):
+        graph = nx.cycle_graph(6)
+        nx.set_node_attributes(graph, "C", "element")
+        nx.set_node_attributes(graph, 0, "charge")
+        nx.set_edge_attributes(graph, 1.5, "order")
+        nx.set_edge_attributes(graph, 0.0, "kekule_order")
+        nx.set_edge_attributes(graph, 0.0, "sigma_order")
+        nx.set_edge_attributes(graph, 0.0, "pi_order")
+
+        mol = self.converter.graph_to_mol(graph)
+
+        self.assertEqual(Chem.MolToSmiles(mol), "c1ccccc1")
 
 
 if __name__ == "__main__":

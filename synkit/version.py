@@ -1,7 +1,16 @@
-# pepkit/version.py
-from importlib.metadata import version, PackageNotFoundError
+"""Installed and source-checkout version discovery."""
+
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
+import tomllib
 
 try:
     __version__ = version("synkit")
 except PackageNotFoundError:
-    __version__ = "0.0.0-dev"
+    try:
+        pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        __version__ = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"][
+            "version"
+        ]
+    except (KeyError, OSError, tomllib.TOMLDecodeError):
+        __version__ = "2.0.0.dev1"

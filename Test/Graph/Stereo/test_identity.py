@@ -18,7 +18,6 @@ from synkit.Graph.Stereo import (
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.syn_graph import SynGraph
 
-
 ATOM_CENTERED = (
     TetrahedralStereo,
     SquarePlanarStereo,
@@ -80,6 +79,37 @@ def _relabel_descriptor_graph(graph, descriptor, mapping):
         descriptor_id(mapped_descriptor): mapped_descriptor
     }
     return relabeled, mapped_descriptor
+
+
+def test_stereo_isomorphism_ignores_aromatic_kekule_phase():
+    first = nx.Graph()
+    second = nx.Graph()
+    for graph in (first, second):
+        graph.add_node(
+            1,
+            element="C",
+            charge=0,
+            lone_pairs=0,
+            radical=0,
+            aromatic=True,
+            hcount=1,
+        )
+        graph.add_node(
+            2,
+            element="C",
+            charge=0,
+            lone_pairs=0,
+            radical=0,
+            aromatic=True,
+            hcount=1,
+        )
+    first.add_edge(1, 2, order=1.5, sigma_order=1.0, pi_order=1.0)
+    second.add_edge(1, 2, order=1.5, sigma_order=1.0, pi_order=0.0)
+
+    assert stereo_isomorphic(first, second)
+
+    second.edges[1, 2]["order"] = 1.0
+    assert not stereo_isomorphic(first, second)
 
 
 SIX_CLASS_DESCRIPTORS = (
@@ -180,7 +210,9 @@ def test_symmetric_square_planar_cis_trans_pattern_is_not_merged():
 
     assert SynGraph(cis_graph) == SynGraph(relabeled_cis)
     assert stereo_isomorphic(cis_graph, relabeled_cis)
-    assert SynGraph(cis_graph).stereo_signature != SynGraph(trans_graph).stereo_signature
+    assert (
+        SynGraph(cis_graph).stereo_signature != SynGraph(trans_graph).stereo_signature
+    )
     assert SynGraph(cis_graph) != SynGraph(trans_graph)
     assert not stereo_isomorphic(cis_graph, trans_graph)
 

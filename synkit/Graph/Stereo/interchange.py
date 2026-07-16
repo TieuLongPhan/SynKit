@@ -80,7 +80,9 @@ class VirtualReferenceSidecar:
             )
         slots = [slot for slot, _reference in self.references]
         if len(slots) != len(set(slots)):
-            raise StereoInterchangeError("Virtual-reference sidecar slots must be unique.")
+            raise StereoInterchangeError(
+                "Virtual-reference sidecar slots must be unique."
+            )
         for slot, reference in self.references:
             if slot < 0 or parse_virtual_reference(reference) is None:
                 raise StereoInterchangeError(
@@ -109,7 +111,9 @@ class StereoInterchangeReport:
     losses: tuple[StereoInterchangeIssue, ...] = ()
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "descriptors", MappingProxyType(dict(self.descriptors)))
+        object.__setattr__(
+            self, "descriptors", MappingProxyType(dict(self.descriptors))
+        )
 
     @property
     def lossless(self) -> bool:

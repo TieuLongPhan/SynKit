@@ -38,33 +38,6 @@ def _get_unique_aam(list_aam: list) -> list:
     return unique
 
 
-def _deduplicateGraphs(initial) -> list:
-    """Deduplicates a list of molecular graphs by checking for isomorphisms.
-
-    This method checks each graph in the `initial` list against the others for isomorphism,
-    and removes duplicates by keeping only one representative for each unique graph.
-
-    Parameters:
-    - initial (list): A list of molecular graphs to be deduplicated.
-
-    Returns:
-    - list: A list of unique molecular graphs, with duplicates removed.
-
-    Raises:
-    - None: No exceptions are raised by this method.
-    """
-    res = []
-    for cand in initial:
-        for a in res:
-            if cand.isomorphism(a) != 0:
-                res.append(a)  # the one we had already
-                break
-        else:
-            # didn't find any isomorphic, use the new one
-            res.append(cand)
-    return res
-
-
 def _get_connected_subgraphs(gml: str, invert: bool = False):
     """Given a GML string, this function returns the number of connected
     subgraphs based on the 'smart' representation split or a list of subgraphs,

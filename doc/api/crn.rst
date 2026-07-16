@@ -51,14 +51,6 @@ Construct
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.CRN.Construct.DAG.crn
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.CRN.Construct.DAG.mod_crn
-   :members:
-   :show-inheritance:
-
 .. automodule:: synkit.CRN.Construct.DAG.syncrn
    :members:
    :show-inheritance:

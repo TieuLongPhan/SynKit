@@ -185,7 +185,10 @@ def audit_local_electron_state(  # noqa: C901
                 )
             )
             continue
-        if float(valence) < 0 or abs(float(valence) - round(float(valence))) > tolerance:
+        if (
+            float(valence) < 0
+            or abs(float(valence) - round(float(valence))) > tolerance
+        ):
             node_resources_are_valid = False
             global_values_are_scalar = False
             issues.append(
@@ -304,8 +307,7 @@ def audit_local_electron_state(  # noqa: C901
             + 2 * float(attrs.get("hcount", 0))
             for _, attrs in graph.nodes(data=True)
         ) + 2 * sum(
-            float(attrs.get("sigma_order", 0.0))
-            + float(attrs.get("pi_order", 0.0))
+            float(attrs.get("sigma_order", 0.0)) + float(attrs.get("pi_order", 0.0))
             for _, _, attrs in graph.edges(data=True)
         )
         if abs(expected_total - represented_total) > tolerance:

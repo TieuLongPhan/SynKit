@@ -32,7 +32,6 @@ from synkit.Graph.Stereo import (  # noqa: E402
     stereo_isomorphic,
 )
 
-
 PINNED_COMMIT = "2189f610f23eaaf992e2e01a12ea4d0532496601"
 
 
@@ -242,8 +241,7 @@ def run_conformance(repository: Path) -> dict[str, Any]:  # noqa: C901
         )
         if isinstance(descriptor, atom_centered_synkit):
             graph.add_edges_from(
-                (descriptor.atoms[0], reference)
-                for reference in descriptor.atoms[1:]
+                (descriptor.atoms[0], reference) for reference in descriptor.atoms[1:]
             )
         else:
             left, right = descriptor.atoms[2:4]
@@ -254,9 +252,7 @@ def run_conformance(repository: Path) -> dict[str, Any]:  # noqa: C901
             graph.add_edges_from(
                 (right, reference) for reference in descriptor.atoms[4:]
             )
-        graph.graph["stereo_descriptors"] = {
-            descriptor_id(descriptor): descriptor
-        }
+        graph.graph["stereo_descriptors"] = {descriptor_id(descriptor): descriptor}
         return graph
 
     atom_centered_upstream = (
@@ -360,9 +356,7 @@ def run_conformance(repository: Path) -> dict[str, Any]:  # noqa: C901
         ]
         checks[f"{name}_graph_isomorphism"] = {
             "status": (
-                "PASS"
-                if synkit_graph_results == upstream_graph_results
-                else "FAIL"
+                "PASS" if synkit_graph_results == upstream_graph_results else "FAIL"
             ),
             "synkit": synkit_graph_results,
             "stereomolgraph": upstream_graph_results,

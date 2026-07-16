@@ -595,9 +595,14 @@ class SynRule:
     def _stereo_signature(self) -> tuple:
         """Return a coarse map-invariant prefilter for exact rule equality."""
         guards = tuple(
-            sorted(descriptor.descriptor_class for descriptor in self.stereo_guards.values())
+            sorted(
+                descriptor.descriptor_class
+                for descriptor in self.stereo_guards.values()
+            )
         )
-        effects = tuple(sorted(change.change for change in self.stereo_effects.values()))
+        effects = tuple(
+            sorted(change.change for change in self.stereo_effects.values())
+        )
         outcomes = tuple(
             sorted(outcome.signature() for outcome in self.stereo_outcomes.values())
         )

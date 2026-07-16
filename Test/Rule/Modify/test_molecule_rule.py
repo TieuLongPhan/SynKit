@@ -1,9 +1,7 @@
 import unittest
 from synkit.Rule.Modify.molecule_rule import MoleculeRule
-from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
-import importlib
-
-MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
+from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
+from synkit.IO.chem_converter import gml_to_its
 
 
 class TestMoleculeRule(unittest.TestCase):
@@ -51,7 +49,6 @@ class TestMoleculeRule(unittest.TestCase):
         result = self.molecule_rule.generate_molecule_smart(smiles)
         self.assertIsNone(result)
 
-    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_generate_molecule_rule_valid(self):
         """
         Test the generate_molecule_rule method with a valid SMILES string.
@@ -86,7 +83,7 @@ class TestMoleculeRule(unittest.TestCase):
 
         result = self.molecule_rule.generate_molecule_rule(smiles)
         self.assertTrue(
-            GraphMatcherEngine(backend="mod")._isomorphic_rule(result, expected_output)
+            graph_isomorphism(gml_to_its(result), gml_to_its(expected_output))
         )
 
     def test_generate_molecule_rule_invalid(self):
@@ -107,7 +104,6 @@ class TestMoleculeRule(unittest.TestCase):
         )
         self.assertIsNotNone(result)
 
-    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_remove_edges_from_left_right(self):
         rule = (
             "rule [\n"
@@ -139,9 +135,7 @@ class TestMoleculeRule(unittest.TestCase):
             "]"
         )
         gml = self.molecule_rule.remove_edges_from_left_right(rule)
-        self.assertTrue(
-            GraphMatcherEngine(backend="mod")._isomorphic_rule(gml, expected)
-        )
+        self.assertTrue(graph_isomorphism(gml_to_its(gml), gml_to_its(expected)))
 
 
 if __name__ == "__main__":

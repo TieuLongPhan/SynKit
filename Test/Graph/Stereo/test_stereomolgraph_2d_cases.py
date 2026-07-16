@@ -44,11 +44,7 @@ def _clear_non_tetrahedral_tag(
     molecule: Chem.Mol,
     tag: Chem.ChiralType,
 ) -> None:
-    center = next(
-        atom
-        for atom in molecule.GetAtoms()
-        if atom.GetChiralTag() == tag
-    )
+    center = next(atom for atom in molecule.GetAtoms() if atom.GetChiralTag() == tag)
     center.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
     if center.HasProp("_chiralPermutation"):
         center.ClearProp("_chiralPermutation")
@@ -125,10 +121,13 @@ def test_square_planar_fixture_survives_synkit_graph_round_trip(
     rebuilt = GraphToMol().graph_to_mol(graph)
 
     assert len(graph.graph["stereo_descriptors"]) == 1
-    assert descriptors_from_rdkit(
-        rebuilt,
-        require_atom_maps=False,
-    ) == graph.graph["stereo_descriptors"]
+    assert (
+        descriptors_from_rdkit(
+            rebuilt,
+            require_atom_maps=False,
+        )
+        == graph.graph["stereo_descriptors"]
+    )
 
 
 @pytest.mark.parametrize(
@@ -218,10 +217,13 @@ def test_trigonal_bipyramidal_fixture_survives_synkit_graph_round_trip(
     rebuilt = GraphToMol().graph_to_mol(graph)
 
     assert len(graph.graph["stereo_descriptors"]) == 1
-    assert descriptors_from_rdkit(
-        rebuilt,
-        require_atom_maps=False,
-    ) == graph.graph["stereo_descriptors"]
+    assert (
+        descriptors_from_rdkit(
+            rebuilt,
+            require_atom_maps=False,
+        )
+        == graph.graph["stereo_descriptors"]
+    )
 
 
 @pytest.mark.parametrize(
@@ -317,10 +319,13 @@ def test_octahedral_fixture_survives_synkit_graph_round_trip(
     rebuilt = GraphToMol().graph_to_mol(graph)
 
     assert len(graph.graph["stereo_descriptors"]) == 1
-    assert descriptors_from_rdkit(
-        rebuilt,
-        require_atom_maps=False,
-    ) == graph.graph["stereo_descriptors"]
+    assert (
+        descriptors_from_rdkit(
+            rebuilt,
+            require_atom_maps=False,
+        )
+        == graph.graph["stereo_descriptors"]
+    )
 
 
 @pytest.mark.parametrize(

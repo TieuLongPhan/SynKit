@@ -47,9 +47,11 @@ def _reaction_graphs(record: MechanismRecord) -> tuple[nx.Graph, nx.Graph]:
     return tuple(
         _side_graph(
             text,
-            record.endpoint_stereo.get(side)
-            if side in record.endpoint_stereo
-            else None,
+            (
+                record.endpoint_stereo.get(side)
+                if side in record.endpoint_stereo
+                else None
+            ),
         )
         for side, text in zip(("reactant", "product"), sides)
     )
@@ -166,9 +168,7 @@ def _reaction_correspondences(
     right_sides: tuple[nx.Graph, nx.Graph],
 ) -> Iterator[dict[int, int]]:
     """Yield map bijections induced by exact mappings of both endpoints."""
-    for reactant_mapping in _stereo_structural_mappings(
-        left_sides[0], right_sides[0]
-    ):
+    for reactant_mapping in _stereo_structural_mappings(left_sides[0], right_sides[0]):
         reactant = _atom_map_correspondence(
             left_sides[0], right_sides[0], reactant_mapping
         )
@@ -255,17 +255,15 @@ def _endpoint_stereo_signature(
                     "specified" if descriptor.parity is not None else "unknown",
                     references,
                 )
-                for descriptor in side_graphs[index].graph.get(
-                    "stereo_descriptors", {}
-                ).values()
+                for descriptor in side_graphs[index]
+                .graph.get("stereo_descriptors", {})
+                .values()
             )
         result.append((side, tuple(sorted(signatures, key=repr))))
     return tuple(result)
 
 
-def _stereo_effect_signature(
-    effect: Any, references: ReferenceMap
-) -> tuple[Any, ...]:
+def _stereo_effect_signature(effect: Any, references: ReferenceMap) -> tuple[Any, ...]:
     target_kind, target_reference = effect.descriptor_target
     if isinstance(target_reference, tuple):
         ranked_reference: Any = tuple(
@@ -310,8 +308,7 @@ def _group_signature(group: Any, references: ReferenceMap) -> tuple[Any, ...]:
             move.source.kind,
             tuple(
                 sorted(
-                    _resolve_atom(value, references)
-                    for value in move.source.atom_maps
+                    _resolve_atom(value, references) for value in move.source.atom_maps
                 )
             ),
         )
@@ -319,8 +316,7 @@ def _group_signature(group: Any, references: ReferenceMap) -> tuple[Any, ...]:
             move.target.kind,
             tuple(
                 sorted(
-                    _resolve_atom(value, references)
-                    for value in move.target.atom_maps
+                    _resolve_atom(value, references) for value in move.target.atom_maps
                 )
             ),
         )
@@ -330,9 +326,7 @@ def _group_signature(group: Any, references: ReferenceMap) -> tuple[Any, ...]:
     return (group.macro, tuple(sorted(moves, key=repr)))
 
 
-def _group_dependencies(
-    group: Any, references: ReferenceMap
-) -> frozenset[Hashable]:
+def _group_dependencies(group: Any, references: ReferenceMap) -> frozenset[Hashable]:
     return frozenset(
         _resolve_atom(atom_map, references)
         for move in group.moves
@@ -371,10 +365,7 @@ def _event_signature(
         else:
             for group, original in sorted(
                 zip(
-                    (
-                        _group_signature(value, references)
-                        for value in step.groups
-                    ),
+                    (_group_signature(value, references) for value in step.groups),
                     step.groups,
                 ),
                 key=lambda item: repr(item[0]),

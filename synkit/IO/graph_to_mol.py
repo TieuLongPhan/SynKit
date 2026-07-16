@@ -50,6 +50,7 @@ class GraphToMol:
         ignore_bond_order: bool = False,
         sanitize: bool = True,
         use_h_count: bool = False,
+        prefer_kekule_order: bool = True,
     ) -> Chem.Mol:
         """Converts a NetworkX graph into an RDKit molecule.
 
@@ -66,6 +67,11 @@ class GraphToMol:
             will be used to set explicit hydrogen counts on atoms.
             Defaults to False.
         :type use_h_count: bool
+        :param prefer_kekule_order: If True, aromatic presentation edges use
+            a retained positive ``kekule_order`` or sigma/pi sum when present.
+            Set False when aromatic connectivity has been edited and its old
+            Kekule phase may be stale. Defaults to True.
+        :type prefer_kekule_order: bool
         :returns: An RDKit molecule constructed from the graph's nodes
             and edges.
         :rtype: Chem.Mol
@@ -103,10 +109,10 @@ class GraphToMol:
             node_to_idx[node] = idx
 
         for u, v, data in graph.edges(data=True):
-            bond_order = (
-                1
-                if ignore_bond_order
-                else abs(data.get(self.edge_attributes["order"], 1))
+            bond_order = self._resolve_bond_order(
+                data,
+                ignore_bond_order,
+                prefer_kekule_order,
             )
             bond_type = self.get_bond_type_from_order(bond_order)
             mol.AddBond(node_to_idx[u], node_to_idx[v], bond_type)
@@ -138,6 +144,40 @@ class GraphToMol:
                         atom.SetAtomMapNum(atom_map)
 
         return mol
+
+    def _resolve_bond_order(
+        self,
+        data: Dict[str, object],
+        ignore_bond_order: bool,
+        prefer_kekule_order: bool,
+    ) -> float:
+        """Return the explicit order used to construct an RDKit bond.
+
+        Molecular graphs produced by :class:`MolToGraph` retain both the
+        aromatic presentation order (``1.5``) and a concrete Kekule phase.
+        Constructing fresh aromatic RDKit bonds from only ``1.5`` can require
+        RDKit to solve that phase again and fails for some valid charged or
+        fused heteroaromatic systems.  Use the retained Kekule order for those
+        aromatic edges, while keeping ordinary and explicitly edited orders
+        authoritative.
+        """
+        if ignore_bond_order:
+            return 1.0
+
+        order_key = self.edge_attributes["order"]
+        order = abs(float(data.get(order_key, 1)))
+        if prefer_kekule_order and order_key == "order" and order == 1.5:
+            if "kekule_order" in data:
+                kekule_order = abs(float(data["kekule_order"]))
+                if kekule_order > 0:
+                    return kekule_order
+            if "sigma_order" in data and "pi_order" in data:
+                electron_order = abs(
+                    float(data["sigma_order"]) + float(data["pi_order"])
+                )
+                if electron_order > 0:
+                    return electron_order
+        return order
 
     @staticmethod
     def get_bond_type_from_order(order: float) -> Chem.BondType:

@@ -4,11 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.5.0"
+version = "2.0.0.dev1"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
-long-description = { file = "CHANGELOG.md" }
-long-description-content-type = "text/markdown"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 license-files = ["LICENSE", "LICENSES/*"]
@@ -63,11 +61,25 @@ source        = "https://github.com/TieuLongPhan/SynKit"
 issues        = "https://github.com/TieuLongPhan/SynKit/issues"
 documentation = "https://tieulongphan.github.io/SynKit/"
 
-[tool.hatch.build]
+[tool.hatch.build.targets.wheel]
 packages = ["synkit"]
 
-[tool.hatch.build.targets.wheel]
-include = ["synkit/Data/**"]
+[tool.hatch.build.targets.wheel.force-include]
+"synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
+"synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
+"Data/Mech" = "synkit/Data/Mech"
 
 [tool.hatch.build.targets.sdist]
-include = ["synkit/Data/**"]
+include = [
+  "/synkit",
+  "/Data/Mech",
+  "/LICENSE",
+  "/LICENSES",
+  "/README.md",
+  "/pyproject.toml",
+]
+
+[tool.hatch.build.targets.sdist.force-include]
+"synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
+"synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
+"Data/Mech" = "Data/Mech"
