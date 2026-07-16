@@ -33,6 +33,15 @@ from .interchange import (
     stereomolgraph_registry_to_synkit,
     synkit_descriptor_to_stereomolgraph,
 )
+from .identity import (
+    StereoIdentityError,
+    descriptor_relative_form,
+    mapped_stereo_registries_match,
+    stereo_identity_form,
+    stereo_identity_signature,
+    stereo_registry_layers,
+    structural_node_colours,
+)
 from .rdkit_adapter import apply_stereo_to_rdkit, descriptors_from_rdkit
 from .matching import (
     candidate_mapping_stereo_matches,
@@ -69,6 +78,13 @@ __all__ = [
     "synkit_descriptor_to_stereomolgraph",
     "stereomolgraph_descriptor_to_synkit",
     "stereomolgraph_registry_to_synkit",
+    "StereoIdentityError",
+    "descriptor_relative_form",
+    "mapped_stereo_registries_match",
+    "stereo_identity_form",
+    "stereo_identity_signature",
+    "stereo_registry_layers",
+    "structural_node_colours",
     "descriptors_from_rdkit",
     "apply_stereo_to_rdkit",
     "StereoChange",

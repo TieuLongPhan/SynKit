@@ -59,6 +59,10 @@ class ITSReverter:
         "lone_pairs",
         "radical",
         "valence_electrons",
+        "h_pairs",
+        "h_pairs_left",
+        "h_pairs_right",
+        "h_pair_atom_maps",
     )
 
     #: edge attributes commonly stored in ITS and worth restoring
@@ -296,6 +300,7 @@ class ITSReverter:
         if isinstance(stereo, dict) and ("reactant" in stereo or "product" in stereo):
             side_name = "reactant" if idx == 0 else "product"
             g.graph["stereo_descriptors"] = dict(stereo.get(side_name, {}))
+            g.graph["stereo_projection"] = side_name
         elif isinstance(stereo, dict):
             g.graph["stereo_descriptors"] = dict(stereo)
 

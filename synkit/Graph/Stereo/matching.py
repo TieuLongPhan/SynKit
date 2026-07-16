@@ -14,6 +14,7 @@ from .descriptors import (
     descriptor_id,
     virtual_reference,
 )
+from .identity import mapped_stereo_registries_match
 
 
 def _atom_map_translation(
@@ -160,28 +161,12 @@ def _mapped_registry_matches(
     *,
     unknown_policy: str,
 ) -> bool:
-    translation = _atom_map_translation(left, right, mapping)
-    left_values = tuple(stereo_registry(left).values())
-    right_values = tuple(stereo_registry(right).values())
-    if len(left_values) != len(right_values):
-        return False
-
-    right_by_locus = {
-        (descriptor.descriptor_class, descriptor_id(descriptor)): descriptor
-        for descriptor in right_values
-    }
-    if len(right_by_locus) != len(right_values):
-        return False
-    for descriptor in left_values:
-        mapped = descriptor.relabel(translation)
-        candidate = right_by_locus.get((mapped.descriptor_class, descriptor_id(mapped)))
-        if candidate is None or not descriptor_query_matches(
-            mapped,
-            candidate,
-            unknown_policy=unknown_policy,
-        ):
-            return False
-    return True
+    return mapped_stereo_registries_match(
+        left,
+        right,
+        mapping,
+        unknown_policy=unknown_policy,
+    )
 
 
 def stereo_isomorphism_mapping(
