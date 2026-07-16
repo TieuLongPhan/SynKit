@@ -475,7 +475,7 @@ class StereoDescriptor:
         "atrop_bond",
         "unknown",
     ]
-    atoms: tuple[int | str | None, ...]
+    atoms: tuple[int | str, ...]
     parity: int | None = None
     state: Literal["specified", "unknown", "unspecified", "absent"] = "specified"
     provenance: str | None = None
@@ -505,6 +505,23 @@ class StereoDescriptor:
             )
         if self.state == "specified" and self.parity is None:
             raise MechanismModelError("Specified stereo descriptors require a parity.")
+        if self.descriptor_class != "unknown":
+            # Reuse the executable descriptor contract so mechanism envelopes
+            # cannot reintroduce StereoMolGraph's untyped ``None`` or attach a
+            # virtual ligand to the wrong stereochemical owner.
+            from synkit.Graph.Stereo.descriptors import stereo_from_dict
+
+            try:
+                stereo_from_dict(
+                    {
+                        "descriptor_class": self.descriptor_class,
+                        "atoms": self.atoms,
+                        "parity": self.parity,
+                        "provenance": self.provenance,
+                    }
+                )
+            except (TypeError, ValueError) as error:
+                raise MechanismModelError(str(error)) from error
 
     def to_dict(self) -> dict[str, Any]:
         return {

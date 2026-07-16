@@ -13,10 +13,59 @@ reaction rules and retain Lewis/electron state in the surrounding graph.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any, Literal, Mapping, Sequence
 
-Reference = int | str | None
+VirtualReferenceKind = Literal["H", "LP"]
+Reference = int | str
+
+_VIRTUAL_REFERENCE_PATTERN = re.compile(r"^@(H|LP):(-?\d+)$")
+
+
+@dataclass(frozen=True)
+class VirtualStereoReference:
+    """Parsed identity of a ligand not represented by a graph atom.
+
+    The serialized form remains a compact string so descriptors retain their
+    existing JSON/GML representation.  ``kind`` is deliberately part of the
+    identity: a hydrogen and a lone pair at the same center are not
+    interchangeable stereochemical references.
+    """
+
+    kind: VirtualReferenceKind
+    center: int
+
+    def __post_init__(self) -> None:
+        if self.kind not in {"H", "LP"}:
+            raise ValueError("Virtual stereo reference kind must be 'H' or 'LP'.")
+        if type(self.center) is not int:
+            raise TypeError("Virtual stereo reference centers must be integers.")
+
+    def __str__(self) -> str:
+        return f"@{self.kind}:{self.center}"
+
+
+def virtual_reference(kind: VirtualReferenceKind, center: int) -> str:
+    """Return the canonical serialized identity for a virtual ligand."""
+    if kind not in {"H", "LP"}:
+        raise ValueError("Virtual stereo reference kind must be 'H' or 'LP'.")
+    if type(center) is not int:
+        raise TypeError("Virtual stereo reference centers must be integers.")
+    return str(VirtualStereoReference(kind, center))
+
+
+def parse_virtual_reference(value: object) -> VirtualStereoReference | None:
+    """Parse a canonical ``@H:<center>`` or ``@LP:<center>`` reference."""
+    if not isinstance(value, str):
+        return None
+    match = _VIRTUAL_REFERENCE_PATTERN.fullmatch(value)
+    if match is None:
+        return None
+    kind, center = match.groups()
+    parsed_kind: VirtualReferenceKind = "H" if kind == "H" else "LP"
+    return VirtualStereoReference(parsed_kind, int(center))
+
 
 # Public capability boundaries. ``SUPPORTED`` means graph storage, relative
 # identity, relabeling, rule matching/rewriting, and JSON/GML serialization.
@@ -38,12 +87,50 @@ DEFERRED_STEREO_DESCRIPTOR_CLASSES = frozenset(
 
 
 def _relabel_reference(value: Reference, mapping: Mapping[int, int]) -> Reference:
-    if isinstance(value, int):
+    if type(value) is int:
         return mapping.get(value, value)
-    if isinstance(value, str) and value.startswith("@H:"):
-        center = int(value.split(":", 1)[1])
-        return f"@H:{mapping.get(center, center)}"
+    virtual = parse_virtual_reference(value)
+    if virtual is not None:
+        return virtual_reference(
+            virtual.kind,
+            mapping.get(virtual.center, virtual.center),
+        )
     return value
+
+
+def _validate_reference(value: object, *, owner: int, position: int) -> None:
+    if type(value) is int:
+        return
+    virtual = parse_virtual_reference(value)
+    if virtual is None:
+        raise ValueError(
+            "Stereo references must be integer atom IDs or canonical "
+            "'@H:<center>'/'@LP:<center>' virtual references; "
+            f"invalid value at position {position}: {value!r}."
+        )
+    if virtual.center != owner:
+        raise ValueError(
+            f"Virtual stereo reference {value!r} belongs to center "
+            f"{virtual.center}, not ligand owner {owner}."
+        )
+
+
+def _validate_atom_references(atoms: Sequence[Reference]) -> None:
+    center = atoms[0]
+    if type(center) is not int:
+        raise ValueError("Atom-centered stereo requires an integer center ID.")
+    for position, value in enumerate(atoms[1:], start=1):
+        _validate_reference(value, owner=center, position=position)
+
+
+def _validate_bond_references(atoms: Sequence[Reference]) -> None:
+    left, right = atoms[2:4]
+    if type(left) is not int or type(right) is not int:
+        raise ValueError("Bond-centered stereo requires integer central atom IDs.")
+    for position, value in enumerate(atoms[:2]):
+        _validate_reference(value, owner=left, position=position)
+    for position, value in enumerate(atoms[4:], start=4):
+        _validate_reference(value, owner=right, position=position)
 
 
 def _reference_sort_key(value: Reference) -> tuple[str, str]:
@@ -137,6 +224,7 @@ class TetrahedralStereo:
     def __post_init__(self) -> None:
         if len(self.atoms) != 5:
             raise ValueError("Tetrahedral stereo requires center plus four references.")
+        _validate_atom_references(self.atoms)
         if self.parity not in (-1, 1, None):
             raise ValueError("Tetrahedral parity must be -1, 1, or None.")
         if len(set(self.atoms[1:])) != 4:
@@ -212,6 +300,7 @@ class SquarePlanarStereo:
             raise ValueError(
                 "Square-planar stereo requires center plus four references."
             )
+        _validate_atom_references(self.atoms)
         if self.parity not in (0, None):
             raise ValueError("Square-planar parity must be 0 or None.")
 
@@ -287,6 +376,7 @@ class TrigonalBipyramidalStereo:
             raise ValueError(
                 "Trigonal-bipyramidal stereo requires center plus five references."
             )
+        _validate_atom_references(self.atoms)
         if self.parity not in (-1, 1, None):
             raise ValueError("Trigonal-bipyramidal parity must be -1, 1, or None.")
 
@@ -384,6 +474,7 @@ class OctahedralStereo:
     def __post_init__(self) -> None:
         if len(self.atoms) != 7:
             raise ValueError("Octahedral stereo requires center plus six references.")
+        _validate_atom_references(self.atoms)
         if self.parity not in (-1, 1, None):
             raise ValueError("Octahedral parity must be -1, 1, or None.")
 
@@ -450,6 +541,7 @@ class PlanarBondStereo:
     def __post_init__(self) -> None:
         if len(self.atoms) != 6:
             raise ValueError("Planar-bond stereo requires six references.")
+        _validate_bond_references(self.atoms)
         if self.parity not in (0, None):
             raise ValueError("Planar-bond parity must be 0 or None.")
         if self.atoms[2] == self.atoms[3]:
@@ -532,6 +624,7 @@ class AtropBondStereo:
     def __post_init__(self) -> None:
         if len(self.atoms) != 6:
             raise ValueError("Atrop-bond stereo requires six references.")
+        _validate_bond_references(self.atoms)
         if self.parity not in (-1, 1, None):
             raise ValueError("Atrop-bond parity must be -1, 1, or None.")
         if self.atoms[2] == self.atoms[3]:

@@ -12,6 +12,7 @@ from .descriptors import (
     StereoValue,
     TetrahedralStereo,
     descriptor_id,
+    virtual_reference,
 )
 
 
@@ -76,7 +77,7 @@ def normalize_hydrogen_references(
         }
         refs = tuple(
             (
-                f"@H:{center}"
+                virtual_reference("H", center)
                 if len(bound_hydrogens) == 1 and ref in bound_hydrogens
                 else ref
             )
@@ -91,11 +92,15 @@ def normalize_hydrogen_references(
 
     left, right = descriptor.atoms[2:4]
     left_refs = tuple(
-        f"@H:{left}" if _is_bound_explicit_hydrogen(graph, by_map, ref, left) else ref
+        virtual_reference("H", left)
+        if _is_bound_explicit_hydrogen(graph, by_map, ref, left)
+        else ref
         for ref in descriptor.atoms[:2]
     )
     right_refs = tuple(
-        f"@H:{right}" if _is_bound_explicit_hydrogen(graph, by_map, ref, right) else ref
+        virtual_reference("H", right)
+        if _is_bound_explicit_hydrogen(graph, by_map, ref, right)
+        else ref
         for ref in descriptor.atoms[4:]
     )
     return PlanarBondStereo(

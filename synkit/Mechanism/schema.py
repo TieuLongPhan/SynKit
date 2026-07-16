@@ -116,7 +116,15 @@ def mechanism_record_schema() -> dict[str, Any]:
                     },
                     "atoms": {
                         "type": "array",
-                        "items": {"type": ["integer", "string", "null"]},
+                        "items": {
+                            "anyOf": [
+                                {"type": "integer"},
+                                {
+                                    "type": "string",
+                                    "pattern": "^@(H|LP):-?[0-9]+$",
+                                },
+                            ]
+                        },
                     },
                     "parity": {"type": ["integer", "null"], "enum": [-1, 0, 1, None]},
                     "state": {

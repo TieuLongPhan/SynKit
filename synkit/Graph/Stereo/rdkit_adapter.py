@@ -11,6 +11,7 @@ from .descriptors import (
     StereoValue,
     TetrahedralStereo,
     descriptor_id,
+    virtual_reference,
 )
 
 
@@ -26,8 +27,23 @@ def _atom_ids(mol: Chem.Mol, *, require_maps: bool) -> dict[int, int]:
     return values
 
 
-def _virtual_h(center: int) -> str:
-    return f"@H:{center}"
+def _virtual_ligand(atom: Chem.Atom, center: int) -> str:
+    """Resolve RDKit's unrepresented ligand without guessing its identity."""
+    hidden_hydrogens = int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
+    if hidden_hydrogens > 0:
+        return virtual_reference("H", center)
+
+    # Keep this import local: MolToGraph calls this adapter while constructing
+    # its registry. Its Lewis estimate supplies the electronic distinction
+    # that RDKit's absent-neighbor representation itself does not encode.
+    from synkit.IO.mol_to_graph import MolToGraph
+
+    if MolToGraph.estimate_lone_pairs(atom) > 0:
+        return virtual_reference("LP", center)
+    raise ValueError(
+        f"Missing stereo ligand at atom {center} is neither an unrepresented "
+        "hydrogen nor a Lewis lone pair."
+    )
 
 
 def descriptors_from_rdkit(
@@ -50,7 +66,7 @@ def descriptors_from_rdkit(
             ids[neighbor.GetIdx()] for neighbor in atom.GetNeighbors()
         ]
         if len(refs) == 3:
-            refs.append(_virtual_h(center))
+            refs.append(_virtual_ligand(atom, center))
         if len(refs) != 4:
             continue
         descriptor = TetrahedralStereo((center, *refs), tetra_tags[tag], "rdkit")
@@ -81,9 +97,13 @@ def descriptors_from_rdkit(
             if neighbor.GetIdx() not in {left_idx, selected_right}
         )
         if len(left_refs) == 1:
-            left_refs.append(_virtual_h(left))
+            left_refs.append(
+                _virtual_ligand(mol.GetAtomWithIdx(left_idx), left)
+            )
         if len(right_refs) == 1:
-            right_refs.append(_virtual_h(right))
+            right_refs.append(
+                _virtual_ligand(mol.GetAtomWithIdx(right_idx), right)
+            )
         if len(left_refs) != 2 or len(right_refs) != 2:
             continue
         if stereo == Chem.BondStereo.STEREOE:
@@ -116,7 +136,7 @@ def apply_stereo_to_rdkit(
             atom = mol.GetAtomWithIdx(by_map[descriptor.center])
             refs = tuple(ids[neighbor.GetIdx()] for neighbor in atom.GetNeighbors())
             if len(refs) == 3:
-                refs = (*refs, _virtual_h(descriptor.center))
+                refs = (*refs, _virtual_ligand(atom, descriptor.center))
             probe = TetrahedralStereo((descriptor.center, *refs), 1)
             desired = descriptor.canonical_form()[-1]
             probe_parity = probe.canonical_form()[-1]
