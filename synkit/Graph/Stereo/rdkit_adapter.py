@@ -7,6 +7,7 @@ from typing import Iterable
 from rdkit import Chem
 
 from .descriptors import (
+    OctahedralStereo,
     PlanarBondStereo,
     SquarePlanarStereo,
     StereoValue,
@@ -54,8 +55,40 @@ _TRIGONAL_BIPYRAMIDAL_POSITION_MAPS = {
     20: (2, 4, 0, 3, 1),
 }
 
-_UNSUPPORTED_NON_TETRAHEDRAL_TAGS = {
-    Chem.ChiralType.CHI_OCTAHEDRAL: "octahedral",
+# A/B are an opposite pair and C/D/E/F are the cyclic square in RDKit's
+# documented OH table.  As for SP/TBP, these are local-order transforms, not
+# global labels and not SynKit descriptor identity.
+_OCTAHEDRAL_POSITION_MAPS = {
+    1: (0, 5, 1, 2, 3, 4),
+    2: (0, 5, 1, 4, 3, 2),
+    3: (0, 4, 1, 2, 3, 5),
+    4: (0, 5, 1, 2, 4, 3),
+    5: (0, 4, 1, 2, 5, 3),
+    6: (0, 3, 1, 2, 4, 5),
+    7: (0, 3, 1, 2, 5, 4),
+    8: (0, 5, 1, 3, 2, 4),
+    9: (0, 4, 1, 3, 2, 5),
+    10: (0, 5, 1, 4, 2, 3),
+    11: (0, 4, 1, 5, 2, 3),
+    12: (0, 3, 1, 4, 2, 5),
+    13: (0, 3, 1, 5, 2, 4),
+    14: (0, 5, 1, 3, 4, 2),
+    15: (0, 4, 1, 3, 5, 2),
+    16: (0, 4, 1, 5, 3, 2),
+    17: (0, 3, 1, 4, 5, 2),
+    18: (0, 3, 1, 5, 4, 2),
+    19: (0, 2, 1, 3, 4, 5),
+    20: (0, 2, 1, 3, 5, 4),
+    21: (0, 2, 1, 4, 3, 5),
+    22: (0, 2, 1, 5, 3, 4),
+    23: (0, 2, 1, 4, 5, 3),
+    24: (0, 2, 1, 5, 4, 3),
+    25: (0, 1, 2, 3, 4, 5),
+    26: (0, 1, 2, 3, 5, 4),
+    27: (0, 1, 2, 4, 3, 5),
+    28: (0, 1, 2, 5, 3, 4),
+    29: (0, 1, 2, 4, 5, 3),
+    30: (0, 1, 2, 5, 4, 3),
 }
 
 
@@ -78,6 +111,17 @@ def _trigonal_bipyramidal_permutations(mol: Chem.Mol) -> dict[int, int]:
         if info.type == Chem.StereoType.Atom_TrigonalBipyramidal
         and mol.GetAtomWithIdx(int(info.centeredOn)).GetChiralTag()
         == Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL
+    }
+
+
+def _octahedral_permutations(mol: Chem.Mol) -> dict[int, int]:
+    """Return RDKit octahedral permutations keyed by center atom index."""
+    return {
+        int(info.centeredOn): int(info.permutation)
+        for info in Chem.FindPotentialStereo(mol)
+        if info.type == Chem.StereoType.Atom_Octahedral
+        and mol.GetAtomWithIdx(int(info.centeredOn)).GetChiralTag()
+        == Chem.ChiralType.CHI_OCTAHEDRAL
     }
 
 
@@ -146,6 +190,7 @@ def descriptors_from_rdkit(
     descriptors: dict[str, StereoValue] = {}
     square_planar_permutations = _square_planar_permutations(mol)
     trigonal_bipyramidal_permutations = _trigonal_bipyramidal_permutations(mol)
+    octahedral_permutations = _octahedral_permutations(mol)
     tetra_tags = {
         Chem.ChiralType.CHI_TETRAHEDRAL_CW: 1,
         Chem.ChiralType.CHI_TETRAHEDRAL_CCW: -1,
@@ -200,12 +245,30 @@ def descriptors_from_rdkit(
             )
             descriptors[descriptor_id(descriptor)] = descriptor
             continue
-        unsupported_class = _UNSUPPORTED_NON_TETRAHEDRAL_TAGS.get(tag)
-        if unsupported_class is not None:
-            raise NotImplementedError(
-                f"RDKit extraction for {unsupported_class!r} stereo is not "
-                "implemented; the descriptor was not discarded."
+        if tag == Chem.ChiralType.CHI_OCTAHEDRAL:
+            center = ids[atom.GetIdx()]
+            permutation = octahedral_permutations.get(atom.GetIdx())
+            positions = _OCTAHEDRAL_POSITION_MAPS.get(permutation)
+            if positions is None:
+                raise ValueError(
+                    f"Octahedral center {center} has unsupported RDKit "
+                    f"permutation {permutation!r}."
+                )
+            local_refs = _non_tetrahedral_local_references(
+                atom,
+                ids,
+                center,
+                6,
+                "Octahedral",
             )
+            positional_refs = tuple(local_refs[index] for index in positions)
+            descriptor = OctahedralStereo(
+                (center, *positional_refs),
+                1,
+                "rdkit",
+            )
+            descriptors[descriptor_id(descriptor)] = descriptor
+            continue
         if tag not in tetra_tags:
             continue
         center = ids[atom.GetIdx()]
@@ -380,6 +443,44 @@ def apply_stereo_to_rdkit(
 
             permutation = min(matching_permutations)
             atom.SetChiralTag(Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL)
+            atom.SetIntProp("_chiralPermutation", permutation)
+        elif isinstance(descriptor, OctahedralStereo):
+            if (
+                not isinstance(descriptor.center, int)
+                or descriptor.center not in by_map
+            ):
+                raise ValueError("Octahedral center is absent from RDKit molecule.")
+            if descriptor.parity is None:
+                raise NotImplementedError(
+                    "RDKit projection of an unknown octahedral orientation "
+                    "would lose the distinction between an unknown descriptor "
+                    "and no descriptor."
+                )
+            atom = mol.GetAtomWithIdx(by_map[descriptor.center])
+            local_refs = _non_tetrahedral_local_references(
+                atom,
+                ids,
+                descriptor.center,
+                6,
+                "Octahedral",
+            )
+            matching_permutations = []
+            for permutation, positions in _OCTAHEDRAL_POSITION_MAPS.items():
+                positional_refs = tuple(local_refs[index] for index in positions)
+                candidate = OctahedralStereo(
+                    (descriptor.center, *positional_refs),
+                    1,
+                )
+                if candidate == descriptor:
+                    matching_permutations.append(permutation)
+            if not matching_permutations:
+                raise ValueError(
+                    "Octahedral descriptor ligands do not match the RDKit "
+                    f"coordination sphere at center {descriptor.center}."
+                )
+
+            permutation = min(matching_permutations)
+            atom.SetChiralTag(Chem.ChiralType.CHI_OCTAHEDRAL)
             atom.SetIntProp("_chiralPermutation", permutation)
         elif isinstance(descriptor, PlanarBondStereo):
             left, right = descriptor.atoms[2:4]

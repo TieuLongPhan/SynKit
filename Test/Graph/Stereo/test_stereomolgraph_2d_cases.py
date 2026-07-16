@@ -12,6 +12,7 @@ import pytest
 from rdkit import Chem
 
 from synkit.Graph.Stereo import (
+    OctahedralStereo,
     SquarePlanarStereo,
     TrigonalBipyramidalStereo,
     apply_stereo_to_rdkit,
@@ -25,23 +26,12 @@ from Test.Graph.Stereo.stereomolgraph_2d_fixtures import (
     MAPPED_CONNECTIVITY_ATOMS,
     MAPPED_CONNECTIVITY_SMILES,
     NON_TETRAHEDRAL_RDKIT_CASES,
+    OCTAHEDRAL_CASES,
     PINNED_COMMIT,
     SQUARE_PLANAR_CASES,
     TRIGONAL_BIPYRAMIDAL_CASES,
     InchiCase,
     NonTetrahedralCase,
-)
-
-EXPECTED_RDKIT_TAGS = {
-    "square_planar": Chem.ChiralType.CHI_SQUAREPLANAR,
-    "trigonal_bipyramidal": Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL,
-    "octahedral": Chem.ChiralType.CHI_OCTAHEDRAL,
-}
-
-DEFERRED_NON_TETRAHEDRAL_CASES = tuple(
-    case
-    for case in NON_TETRAHEDRAL_RDKIT_CASES
-    if case.stereo_class not in {"square_planar", "trigonal_bipyramidal"}
 )
 
 
@@ -291,41 +281,106 @@ def test_tbp_raw_permutations_on_one_local_order_encode_inverses() -> None:
 
 @pytest.mark.parametrize(
     "case",
-    DEFERRED_NON_TETRAHEDRAL_CASES,
+    OCTAHEDRAL_CASES,
     ids=lambda case: case.name,
 )
-def test_non_tetrahedral_rdkit_fixture_is_explicitly_deferred(
+def test_octahedral_fixture_survives_clearing_and_application(
     case: NonTetrahedralCase,
 ) -> None:
-    """Account for every portable upstream fixture without silent loss.
-
-    SynKit stores these descriptor classes in graph metadata, but its RDKit
-    adapter has not yet promoted TBP or octahedral projection. This test will
-    fail when that capability changes, forcing the fixture to move from the
-    deferred population into a true round-trip assertion.
-    """
     molecule = Chem.MolFromSmiles(case.smiles)
     assert molecule is not None
+    _assign_index_atom_maps(molecule)
 
-    expected_tag = EXPECTED_RDKIT_TAGS[case.stereo_class]
-    assert any(atom.GetChiralTag() == expected_tag for atom in molecule.GetAtoms())
-    with pytest.raises(NotImplementedError, match=case.stereo_class):
-        descriptors_from_rdkit(molecule, require_atom_maps=False)
+    before = descriptors_from_rdkit(molecule)
+    assert len(before) == 1
+    assert isinstance(next(iter(before.values())), OctahedralStereo)
+
+    _clear_non_tetrahedral_tag(molecule, Chem.ChiralType.CHI_OCTAHEDRAL)
+    assert descriptors_from_rdkit(molecule) == {}
+
+    apply_stereo_to_rdkit(molecule, before.values())
+    assert descriptors_from_rdkit(molecule) == before
 
 
 @pytest.mark.parametrize(
     "case",
-    (DEFERRED_NON_TETRAHEDRAL_CASES[0],),
-    ids=lambda case: case.stereo_class,
+    OCTAHEDRAL_CASES,
+    ids=lambda case: case.name,
 )
-def test_graph_conversion_propagates_unsupported_stereo_loss(
+def test_octahedral_fixture_survives_synkit_graph_round_trip(
     case: NonTetrahedralCase,
 ) -> None:
     molecule = Chem.MolFromSmiles(case.smiles)
     assert molecule is not None
 
-    with pytest.raises(NotImplementedError, match=case.stereo_class):
-        MolToGraph().transform(molecule)
+    graph = MolToGraph().transform(molecule)
+    rebuilt = GraphToMol().graph_to_mol(graph)
+
+    assert len(graph.graph["stereo_descriptors"]) == 1
+    assert descriptors_from_rdkit(
+        rebuilt,
+        require_atom_maps=False,
+    ) == graph.graph["stereo_descriptors"]
+
+
+@pytest.mark.parametrize(
+    "case",
+    OCTAHEDRAL_CASES,
+    ids=lambda case: case.name,
+)
+def test_octahedral_fixture_is_atom_renumbering_invariant(
+    case: NonTetrahedralCase,
+) -> None:
+    molecule = Chem.MolFromSmiles(case.smiles)
+    assert molecule is not None
+    _assign_index_atom_maps(molecule)
+    expected = descriptors_from_rdkit(molecule)
+
+    order = list(reversed(range(molecule.GetNumAtoms())))
+    renumbered = Chem.RenumberAtoms(molecule, order)
+    assert descriptors_from_rdkit(renumbered) == expected
+
+    _clear_non_tetrahedral_tag(renumbered, Chem.ChiralType.CHI_OCTAHEDRAL)
+    apply_stereo_to_rdkit(renumbered, expected.values())
+    assert descriptors_from_rdkit(renumbered) == expected
+
+
+def test_all_distinct_ligand_oh_permutations_share_one_identity() -> None:
+    descriptors = []
+    element_maps = {
+        "Co": 1,
+        "O": 2,
+        "P": 3,
+        "Cl": 4,
+        "C": 5,
+        "N": 6,
+        "F": 7,
+    }
+    for case in OCTAHEDRAL_CASES[:30]:
+        molecule = Chem.MolFromSmiles(case.smiles)
+        assert molecule is not None
+        for atom in molecule.GetAtoms():
+            atom.SetAtomMapNum(element_maps[atom.GetSymbol()])
+        descriptors.append(next(iter(descriptors_from_rdkit(molecule).values())))
+
+    assert all(descriptor == descriptors[0] for descriptor in descriptors)
+
+
+def test_oh_raw_permutations_on_one_local_order_encode_inverses() -> None:
+    element_maps = {"Co": 1, "O": 2, "Cl": 3, "C": 4, "N": 5, "F": 6, "P": 7}
+    descriptors = []
+    for smiles in (
+        "O[Co@OH1](Cl)(C)(N)(F)P",
+        "O[Co@OH2](Cl)(C)(N)(F)P",
+    ):
+        molecule = Chem.MolFromSmiles(smiles)
+        assert molecule is not None
+        for atom in molecule.GetAtoms():
+            atom.SetAtomMapNum(element_maps[atom.GetSymbol()])
+        descriptors.append(next(iter(descriptors_from_rdkit(molecule).values())))
+
+    assert descriptors[0] != descriptors[1]
+    assert descriptors[0].invert() == descriptors[1]
 
 
 def test_unsubstituted_ethene_difference_is_recorded() -> None:

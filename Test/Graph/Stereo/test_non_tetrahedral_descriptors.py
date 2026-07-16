@@ -225,9 +225,9 @@ def test_mechanism_envelope_accepts_extended_descriptor_classes():
 
 def test_rdkit_boundary_rejects_unimplemented_non_tetrahedral_projection():
     mol = Chem.MolFromSmiles("[CH4:1]")
-    descriptor = OctahedralStereo((1, 2, 3, 4, 5, 6, 7), 1)
+    descriptor = AtropBondStereo((1, 2, 3, 4, 5, 6), 1)
 
-    with pytest.raises(NotImplementedError, match="octahedral"):
+    with pytest.raises(NotImplementedError, match="atrop_bond"):
         apply_stereo_to_rdkit(mol, [descriptor])
 
 
@@ -341,6 +341,72 @@ def test_tbp_hidden_hydrogen_survives_clearing_and_application():
     assert descriptors_from_rdkit(mol) == expected
 
 
+def test_rdkit_boundary_rejects_unknown_octahedral_projection():
+    mol = Chem.MolFromSmiles(
+        "[O:2][Co:1]([Cl:3])([C:4])([N:5])([F:6])[P:7]",
+    )
+    descriptor = OctahedralStereo((1, 2, 7, 3, 4, 5, 6), None)
+
+    with pytest.raises(NotImplementedError, match="unknown octahedral"):
+        apply_stereo_to_rdkit(mol, [descriptor])
+
+
+def test_rdkit_boundary_rejects_mismatched_octahedral_ligands():
+    mol = Chem.MolFromSmiles(
+        "[O:2][Co:1]([Cl:3])([C:4])([N:5])([F:6])[P:7]",
+    )
+    descriptor = OctahedralStereo((1, 2, 7, 3, 4, 5, 99), 1)
+
+    with pytest.raises(ValueError, match="ligands do not match"):
+        apply_stereo_to_rdkit(mol, [descriptor])
+
+
+@pytest.mark.parametrize("local_order", permutations((2, 3, 4, 5, 6, 7)))
+def test_octahedral_projection_is_invariant_to_every_local_order(local_order):
+    editable = Chem.RWMol()
+    center = Chem.Atom("Co")
+    center.SetAtomMapNum(1)
+    center_idx = editable.AddAtom(center)
+    elements = {2: "O", 3: "Cl", 4: "C", 5: "N", 6: "F", 7: "P"}
+    for atom_map in local_order:
+        ligand = Chem.Atom(elements[atom_map])
+        ligand.SetAtomMapNum(atom_map)
+        ligand_idx = editable.AddAtom(ligand)
+        editable.AddBond(center_idx, ligand_idx, Chem.BondType.SINGLE)
+    mol = editable.GetMol()
+    mol.UpdatePropertyCache(strict=False)
+    descriptor = OctahedralStereo((1, 2, 7, 3, 4, 5, 6), 1)
+
+    apply_stereo_to_rdkit(mol, [descriptor])
+
+    assert descriptors_from_rdkit(mol) == {"atom:1": descriptor}
+
+
+def test_octahedral_hidden_hydrogen_survives_clearing_and_application():
+    mol = Chem.MolFromSmiles(
+        "[O:1][Co@OH1H:2]([Cl:3])([C:4])([N:5])[F:6]",
+    )
+    expected = descriptors_from_rdkit(mol)
+    descriptor = next(iter(expected.values()))
+    center = mol.GetAtomWithIdx(1)
+
+    assert "@H:2" in descriptor.atoms
+    center.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
+    center.ClearProp("_chiralPermutation")
+    apply_stereo_to_rdkit(mol, expected.values())
+
+    assert descriptors_from_rdkit(mol) == expected
+
+
+def test_octahedral_missing_site_fails_instead_of_becoming_hydrogen():
+    mol = Chem.MolFromSmiles("O[Mn@OH28](Cl)(C)(N)F")
+
+    with pytest.raises(ValueError, match="missing coordination sites"):
+        descriptors_from_rdkit(mol, require_atom_maps=False)
+    with pytest.raises(ValueError, match="missing coordination sites"):
+        MolToGraph().transform(mol)
+
+
 def test_extended_capability_boundary_is_explicit():
     assert SUPPORTED_STEREO_DESCRIPTOR_CLASSES == {
         "tetrahedral",
@@ -354,6 +420,7 @@ def test_extended_capability_boundary_is_explicit():
         "tetrahedral",
         "square_planar",
         "trigonal_bipyramidal",
+        "octahedral",
         "planar_bond",
     }
     assert "rigid_bond_33" in DEFERRED_STEREO_DESCRIPTOR_CLASSES

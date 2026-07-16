@@ -85,6 +85,7 @@ RDKIT_STEREO_DESCRIPTOR_CLASSES = frozenset(
         "tetrahedral",
         "square_planar",
         "trigonal_bipyramidal",
+        "octahedral",
         "planar_bond",
     }
 )
