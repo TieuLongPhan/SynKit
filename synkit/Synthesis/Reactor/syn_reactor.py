@@ -2079,24 +2079,6 @@ class SynReactor:
         return unique
 
     @staticmethod
-    def _canonical_2d_stereo_identity(graph: nx.Graph) -> str | None:
-        """Return a map-independent RDKit identity for conservative dedup.
-
-        Descriptor isomorphism alone can mistake an enantiomeric pair for a
-        symmetry exchange when both centers and their environments are
-        exchangeable. RDKit's canonical isomeric SMILES is an independent 2D
-        molecular check. Failure to reconstruct is deliberately non-equal so
-        that deduplication cannot discard a potentially valid product.
-        """
-        try:
-            molecule = GraphToMol().graph_to_mol(graph)
-        except Exception:
-            return None
-        for atom in molecule.GetAtoms():
-            atom.SetAtomMapNum(0)
-        return Chem.MolToSmiles(molecule, canonical=True, isomericSmiles=True)
-
-    @staticmethod
     def _deduplicate_coupling_face_products(
         its_graphs: List[nx.Graph],
     ) -> List[nx.Graph]:
@@ -2113,7 +2095,7 @@ class SynReactor:
 
         from synkit.Graph.Stereo import stereo_isomorphic
 
-        representatives: List[Tuple[nx.Graph, nx.Graph, str | None]] = []
+        representatives: List[Tuple[nx.Graph, nx.Graph, nx.Graph]] = []
         unique = []
         for its in its_graphs:
             if not its.graph.get("stereo_coupling_branch") or its.graph.get(
@@ -2124,12 +2106,11 @@ class SynReactor:
             reverter = ITSReverter(its)
             reactant = reverter.to_reactant_graph()
             product = reverter.to_product_graph()
-            product_identity = SynReactor._canonical_2d_stereo_identity(product)
             duplicate = False
             for (
                 other_its,
                 other_reactant,
-                other_product_identity,
+                other_product,
             ) in representatives:
                 if not nx.is_isomorphic(
                     SynReactor._prepare_its_for_structural_cluster(its),
@@ -2142,9 +2123,8 @@ class SynReactor:
                 ):
                     continue
                 if (
-                    product_identity is not None
-                    and product_identity == other_product_identity
-                    and stereo_isomorphic(reactant, other_reactant)
+                    stereo_isomorphic(reactant, other_reactant)
+                    and stereo_isomorphic(product, other_product)
                 ):
                     retained = other_its.graph.get("stereo_coupling_branch", {})
                     duplicate_metadata = its.graph.get("stereo_coupling_branch", {})
@@ -2166,7 +2146,7 @@ class SynReactor:
                     break
             if duplicate:
                 continue
-            representatives.append((its, reactant, product_identity))
+            representatives.append((its, reactant, product))
             unique.append(its)
         return unique
 

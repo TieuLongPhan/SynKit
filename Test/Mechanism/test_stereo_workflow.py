@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import networkx as nx
+from rdkit import Chem
 
 from synkit.Graph.Stereo import TetrahedralStereo
 
@@ -62,6 +63,114 @@ def test_equivalence_is_invariant_to_atom_map_permutation():
     assert mechanism_equivalent(
         _polar_record((1, 2)), _polar_record((20, 10)), level="trajectory"
     )
+
+
+def test_equivalence_uses_graph_correspondence_not_rdkit_rank_or_atom_order(
+    monkeypatch,
+):
+    right = _polar_record((20, 10))
+    reordered = MechanismRecord(
+        "[CH3+:10].[OH-:20]>>[OH:20][CH3:10]",
+        right.steps,
+    )
+
+    def fail_if_ranked(*args, **kwargs):
+        raise AssertionError("RDKit canonical ranks are not an identity authority")
+
+    monkeypatch.setattr(Chem, "CanonicalRankAtoms", fail_if_ranked)
+
+    assert mechanism_equivalent(_polar_record(), reordered, level="events")
+    assert mechanism_equivalent(_polar_record(), reordered, level="trajectory")
+
+
+def test_net_equivalence_requires_one_atom_mapping_across_both_sides():
+    left = MechanismRecord(
+        "[OH-:1].[CH3:2][O:3][CH2:4][F:5]>>"
+        "[CH3:2][OH:1].[O-:3][CH2:4][F:5]",
+        (),
+    )
+    oxygen_origins_exchanged = MechanismRecord(
+        "[OH-:1].[CH3:2][O:3][CH2:4][F:5]>>"
+        "[CH3:2][OH:3].[O-:1][CH2:4][F:5]",
+        (),
+    )
+
+    assert not mechanism_equivalent(left, oxygen_origins_exchanged, level="net")
+
+
+def test_net_equivalence_translates_atom_order_tags_to_relative_stereo():
+    side = "[CH3:1][C@:2]([F:3])([Cl:4])[Br:5]"
+    molecule = Chem.MolFromSmiles(side)
+    reordered = Chem.RenumberAtoms(molecule, [4, 2, 1, 3, 0])
+    for atom in reordered.GetAtoms():
+        atom.SetAtomMapNum(atom.GetAtomMapNum() + 10)
+    reordered_side = Chem.MolToSmiles(
+        reordered,
+        canonical=False,
+        isomericSmiles=True,
+    )
+    original = MechanismRecord(f"{side}>>{side}", ())
+    relabeled = MechanismRecord(f"{reordered_side}>>{reordered_side}", ())
+    enantiomer = MechanismRecord(
+        f"{side.replace('C@:', 'C@@:')}>>{side.replace('C@:', 'C@@:')}",
+        (),
+    )
+
+    assert mechanism_equivalent(original, relabeled, level="net")
+    assert not mechanism_equivalent(original, enantiomer, level="net")
+
+
+def test_net_equivalence_preserves_endpoint_sidecar_state_semantics():
+    side = "[CH:2]([F:1])([Cl:3])[CH3:4]"
+    relabeled_side = "[Cl:30][CH:20]([CH3:40])[F:10]"
+    unknown = StereoDescriptor(
+        "tetrahedral",
+        (2, 1, 3, 4, "@H:2"),
+        None,
+        "unknown",
+    )
+    relabeled_unknown = StereoDescriptor(
+        "tetrahedral",
+        (20, 10, 30, 40, "@H:20"),
+        None,
+        "unknown",
+    )
+    unspecified = StereoDescriptor(
+        "tetrahedral",
+        unknown.atoms,
+        None,
+        "unspecified",
+    )
+    original = MechanismRecord(
+        f"{side}>>{side}",
+        (),
+        endpoint_stereo={"product": {"atom:2": unknown}},
+    )
+    relabeled = MechanismRecord(
+        f"{relabeled_side}>>{relabeled_side}",
+        (),
+        endpoint_stereo={"product": {"atom:20": relabeled_unknown}},
+    )
+    different_state = MechanismRecord(
+        f"{side}>>{side}",
+        (),
+        endpoint_stereo={"product": {"atom:2": unspecified}},
+    )
+
+    assert mechanism_equivalent(original, relabeled, level="net")
+    assert not mechanism_equivalent(original, different_state, level="net")
+    assert not mechanism_equivalent(
+        original,
+        MechanismRecord(f"{side}>>{side}", ()),
+        level="net",
+    )
+
+
+def test_net_equivalence_preserves_isotope_identity():
+    labeled = MechanismRecord("[13CH3:1]>>[13CH3:1]", ())
+    unlabeled = MechanismRecord("[CH3:1]>>[CH3:1]", ())
+
+    assert not mechanism_equivalent(labeled, unlabeled, level="net")
 
 
 def test_conversion_reports_grouping_loss():
@@ -172,7 +281,10 @@ def test_event_equivalence_commutes_only_disjoint_adjacent_groups():
             ),
         )
 
-    reaction = "[O-:1].[O-:2].[O-:3].[O-:4]>>[O-:1].[O-:2].[O-:3].[O-:4]"
+    reaction = (
+        "[O-:1].[S-:2].[Cl-:3].[Br-:4]>>"
+        "[O-:1].[S-:2].[Cl-:3].[Br-:4]"
+    )
     first, second = group("a", 1, 2), group("b", 3, 4)
     left = MechanismRecord(
         reaction, (MechanisticStep("s1", (first,)), MechanisticStep("s2", (second,)))

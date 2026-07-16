@@ -2,76 +2,277 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Iterator, Mapping
+from typing import Any, Hashable
 
+import networkx as nx
 from rdkit import Chem
 
 from synkit.Graph.Stereo import (
     descriptor_relative_form,
+    mapped_stereo_registries_match,
     parse_virtual_reference,
     stereo_from_dict,
 )
+from synkit.Graph.Stereo.identity import (
+    stereo_identity_edge_match,
+    stereo_identity_node_match,
+)
+from synkit.IO.mol_to_graph import MolToGraph
 
 from .model import MechanismRecord
 
+ReferenceMap = Mapping[int, Hashable]
 
-def _canonical_side(text: str) -> str:
+
+def _side_graph(
+    text: str,
+    endpoint_registry: Mapping[str, Any] | None = None,
+) -> nx.Graph:
+    """Parse one reaction side into SynKit's relative-stereo graph model."""
     mol = Chem.MolFromSmiles(text)
     if mol is None:
         raise ValueError(f"Cannot parse reaction side {text!r}.")
-    for atom in mol.GetAtoms():
-        atom.SetAtomMapNum(0)
-    return Chem.MolToSmiles(mol, canonical=True, isomericSmiles=True)
+    graph = MolToGraph().transform(mol)
+    if endpoint_registry is not None:
+        graph.graph["stereo_descriptors"] = {
+            key: stereo_from_dict(descriptor.to_dict())
+            for key, descriptor in endpoint_registry.items()
+        }
+    return graph
 
 
-def _map_ranks(record: MechanismRecord) -> dict[int, int]:
-    reactants = record.mapped_reaction.split(">>", 1)[0]
-    mol = Chem.MolFromSmiles(reactants)
-    if mol is None:
-        raise ValueError("Cannot canonicalize mapped reactants.")
-    atom_maps = [atom.GetAtomMapNum() for atom in mol.GetAtoms()]
-    for atom in mol.GetAtoms():
-        atom.SetAtomMapNum(0)
-    ranks = Chem.CanonicalRankAtoms(mol, breakTies=True, includeChirality=True)
-    return {
-        atom_map: int(ranks[index]) + 1
-        for index, atom_map in enumerate(atom_maps)
-        if atom_map > 0
-    }
+def _reaction_graphs(record: MechanismRecord) -> tuple[nx.Graph, nx.Graph]:
+    sides = record.mapped_reaction.split(">>", 1)
+    return tuple(
+        _side_graph(
+            text,
+            record.endpoint_stereo.get(side)
+            if side in record.endpoint_stereo
+            else None,
+        )
+        for side, text in zip(("reactant", "product"), sides)
+    )
 
 
-def _descriptor_signature(
-    descriptor: Any, ranks: dict[int, int]
-) -> tuple[Any, ...] | None:
-    if descriptor is None:
-        return None
-    if descriptor.descriptor_class == "unknown":
-        return ("unknown", descriptor.state)
-    native = stereo_from_dict(descriptor.to_dict())
+def _matcher_type(graph: nx.Graph) -> type:
+    if graph.is_directed():
+        return (
+            nx.algorithms.isomorphism.MultiDiGraphMatcher
+            if graph.is_multigraph()
+            else nx.algorithms.isomorphism.DiGraphMatcher
+        )
+    return (
+        nx.algorithms.isomorphism.MultiGraphMatcher
+        if graph.is_multigraph()
+        else nx.algorithms.isomorphism.GraphMatcher
+    )
 
-    def resolve(reference: Any) -> tuple[Any, ...]:
+
+def _stereo_structural_mappings(
+    left: nx.Graph,
+    right: nx.Graph,
+    *,
+    required_atom_maps: Mapping[int, int] | None = None,
+) -> Iterator[dict[Any, Any]]:
+    """Yield exact structural mappings that preserve relative stereo."""
+    if (
+        left.is_directed() != right.is_directed()
+        or left.is_multigraph() != right.is_multigraph()
+    ):
+        return
+
+    def node_match(
+        left_attributes: Mapping[str, Any],
+        right_attributes: Mapping[str, Any],
+    ) -> bool:
+        if not _mechanism_node_match(left_attributes, right_attributes):
+            return False
+        if required_atom_maps is None:
+            return True
+        left_map = _positive_atom_map(left_attributes)
+        if left_map not in required_atom_maps:
+            return True
+        return _positive_atom_map(right_attributes) == required_atom_maps[left_map]
+
+    matcher = _matcher_type(left)(
+        left,
+        right,
+        node_match=node_match,
+        edge_match=stereo_identity_edge_match,
+    )
+    for mapping in matcher.isomorphisms_iter():
+        if mapped_stereo_registries_match(left, right, mapping):
+            yield dict(mapping)
+
+
+def _positive_atom_map(attributes: Mapping[str, Any]) -> int | None:
+    value = attributes.get("atom_map", 0)
+    return value if type(value) is int and value > 0 else None
+
+
+def _mechanism_node_match(
+    left_attributes: Mapping[str, Any],
+    right_attributes: Mapping[str, Any],
+) -> bool:
+    """Compare molecular identity, including isotope but excluding AAM."""
+    return stereo_identity_node_match(left_attributes, right_attributes) and (
+        left_attributes.get("isotope", 0) == right_attributes.get("isotope", 0)
+    )
+
+
+def _atom_map_correspondence(
+    left: nx.Graph,
+    right: nx.Graph,
+    node_mapping: Mapping[Any, Any],
+) -> dict[int, int] | None:
+    """Project one node isomorphism onto a bijection of positive atom maps."""
+    correspondence: dict[int, int] = {}
+    reverse: dict[int, int] = {}
+    for left_node, right_node in node_mapping.items():
+        left_map = _positive_atom_map(left.nodes[left_node])
+        right_map = _positive_atom_map(right.nodes[right_node])
+        if (left_map is None) != (right_map is None):
+            return None
+        if left_map is None or right_map is None:
+            continue
+        if left_map in correspondence or right_map in reverse:
+            # Mapped mechanism sides require unique positive AAM values.
+            return None
+        correspondence[left_map] = right_map
+        reverse[right_map] = left_map
+    return correspondence
+
+
+def _merge_correspondences(
+    reactant: Mapping[int, int],
+    product: Mapping[int, int],
+) -> dict[int, int] | None:
+    """Require one atom identity translation across both reaction sides."""
+    merged = dict(reactant)
+    reverse = {right: left for left, right in merged.items()}
+    for left, right in product.items():
+        if left in merged and merged[left] != right:
+            return None
+        if right in reverse and reverse[right] != left:
+            return None
+        merged[left] = right
+        reverse[right] = left
+    return merged
+
+
+def _reaction_correspondences(
+    left_sides: tuple[nx.Graph, nx.Graph],
+    right_sides: tuple[nx.Graph, nx.Graph],
+) -> Iterator[dict[int, int]]:
+    """Yield map bijections induced by exact mappings of both endpoints."""
+    for reactant_mapping in _stereo_structural_mappings(
+        left_sides[0], right_sides[0]
+    ):
+        reactant = _atom_map_correspondence(
+            left_sides[0], right_sides[0], reactant_mapping
+        )
+        if reactant is None:
+            continue
+        for product_mapping in _stereo_structural_mappings(
+            left_sides[1],
+            right_sides[1],
+            required_atom_maps=reactant,
+        ):
+            product = _atom_map_correspondence(
+                left_sides[1], right_sides[1], product_mapping
+            )
+            if product is None:
+                continue
+            merged = _merge_correspondences(reactant, product)
+            if merged is not None:
+                yield merged
+
+
+def _reference_map(correspondence: Mapping[int, int]) -> dict[int, Hashable]:
+    """Give mapped atoms comparable typed tokens independent of AAM values."""
+    return {left: ("atom", right) for left, right in correspondence.items()}
+
+
+def _right_reference_map(correspondence: Mapping[int, int]) -> dict[int, Hashable]:
+    return {right: ("atom", right) for right in correspondence.values()}
+
+
+def _resolve_atom(atom_map: int, references: ReferenceMap) -> Hashable:
+    return references.get(atom_map, ("missing", atom_map))
+
+
+def _relative_descriptor_signature(
+    descriptor: Any,
+    state: str,
+    references: ReferenceMap,
+) -> tuple[Any, ...]:
+    """Resolve one native relative descriptor through an atom correspondence."""
+
+    def resolve(reference: Any) -> Hashable:
         if isinstance(reference, int):
-            return ("atom", ranks.get(reference, reference))
+            return _resolve_atom(reference, references)
         virtual = parse_virtual_reference(reference)
         if virtual is None:
             return ("invalid", repr(reference))
         return (
             "virtual",
             virtual.kind,
-            ("atom", ranks.get(virtual.center, virtual.center)),
+            _resolve_atom(virtual.center, references),
         )
 
-    return descriptor.state, descriptor_relative_form(native, resolve)
+    return state, descriptor_relative_form(descriptor, resolve)
 
 
-def _stereo_effect_signature(effect: Any, ranks: dict[int, int]) -> tuple[Any, ...]:
+def _descriptor_signature(
+    descriptor: Any, references: ReferenceMap
+) -> tuple[Any, ...] | None:
+    if descriptor is None:
+        return None
+    if descriptor.descriptor_class == "unknown":
+        return ("unknown", descriptor.state)
+    native = stereo_from_dict(descriptor.to_dict())
+    return _relative_descriptor_signature(native, descriptor.state, references)
+
+
+def _endpoint_stereo_signature(
+    record: MechanismRecord,
+    side_graphs: tuple[nx.Graph, nx.Graph],
+    references: ReferenceMap,
+) -> tuple[Any, ...]:
+    """Return effective endpoint stereo, preserving sidecar state semantics."""
+    result = []
+    for index, side in enumerate(("reactant", "product")):
+        if side in record.endpoint_stereo:
+            signatures = (
+                _descriptor_signature(descriptor, references)
+                for descriptor in record.endpoint_stereo[side].values()
+            )
+        else:
+            signatures = (
+                _relative_descriptor_signature(
+                    descriptor,
+                    "specified" if descriptor.parity is not None else "unknown",
+                    references,
+                )
+                for descriptor in side_graphs[index].graph.get(
+                    "stereo_descriptors", {}
+                ).values()
+            )
+        result.append((side, tuple(sorted(signatures, key=repr))))
+    return tuple(result)
+
+
+def _stereo_effect_signature(
+    effect: Any, references: ReferenceMap
+) -> tuple[Any, ...]:
     target_kind, target_reference = effect.descriptor_target
     if isinstance(target_reference, tuple):
         ranked_reference: Any = tuple(
-            sorted(ranks.get(value, value) for value in target_reference)
+            sorted(_resolve_atom(value, references) for value in target_reference)
         )
     else:
-        ranked_reference = ranks.get(target_reference, target_reference)
+        ranked_reference = _resolve_atom(target_reference, references)
     target = (
         target_kind,
         ranked_reference,
@@ -79,12 +280,14 @@ def _stereo_effect_signature(effect: Any, ranks: dict[int, int]) -> tuple[Any, .
     return (
         effect.effect,
         target,
-        _descriptor_signature(effect.before, ranks),
-        _descriptor_signature(effect.after, ranks),
+        _descriptor_signature(effect.before, references),
+        _descriptor_signature(effect.after, references),
     )
 
 
-def _stereo_effect_dependencies(effect: Any, ranks: dict[int, int]) -> frozenset[int]:
+def _stereo_effect_dependencies(
+    effect: Any, references: ReferenceMap
+) -> frozenset[Hashable]:
     dependencies = {
         value
         for descriptor in (effect.before, effect.after)
@@ -97,19 +300,29 @@ def _stereo_effect_dependencies(effect: Any, ranks: dict[int, int]) -> frozenset
         dependencies.add(target)
     else:
         dependencies.update(target)
-    return frozenset(ranks.get(value, value) for value in dependencies)
+    return frozenset(_resolve_atom(value, references) for value in dependencies)
 
 
-def _group_signature(group: Any, ranks: dict[int, int]) -> tuple[Any, ...]:
+def _group_signature(group: Any, references: ReferenceMap) -> tuple[Any, ...]:
     moves = []
     for move in group.moves:
         source = (
             move.source.kind,
-            tuple(sorted(ranks.get(x, x) for x in move.source.atom_maps)),
+            tuple(
+                sorted(
+                    _resolve_atom(value, references)
+                    for value in move.source.atom_maps
+                )
+            ),
         )
         target = (
             move.target.kind,
-            tuple(sorted(ranks.get(x, x) for x in move.target.atom_maps)),
+            tuple(
+                sorted(
+                    _resolve_atom(value, references)
+                    for value in move.target.atom_maps
+                )
+            ),
         )
         moves.append(
             (source, target, move.electron_count, move.arrow_type, move.coupling_id)
@@ -117,27 +330,36 @@ def _group_signature(group: Any, ranks: dict[int, int]) -> tuple[Any, ...]:
     return (group.macro, tuple(sorted(moves, key=repr)))
 
 
-def _group_dependencies(group: Any, ranks: dict[int, int]) -> frozenset[int]:
+def _group_dependencies(
+    group: Any, references: ReferenceMap
+) -> frozenset[Hashable]:
     return frozenset(
-        ranks.get(atom_map, atom_map)
+        _resolve_atom(atom_map, references)
         for move in group.moves
         for locus in (move.source, move.target)
         for atom_map in locus.atom_maps
     )
 
 
-def _event_signature(record: MechanismRecord, *, trajectory: bool) -> tuple[Any, ...]:
-    ranks = _map_ranks(record)
+def _event_signature(
+    record: MechanismRecord,
+    references: ReferenceMap,
+    *,
+    trajectory: bool,
+) -> tuple[Any, ...]:
     steps = []
-    event_entries: list[tuple[tuple[Any, ...], frozenset[int]]] = []
+    event_entries: list[tuple[tuple[Any, ...], frozenset[Hashable]]] = []
     for step in record.steps:
         groups = tuple(
-            sorted((_group_signature(group, ranks) for group in step.groups), key=repr)
+            sorted(
+                (_group_signature(group, references) for group in step.groups),
+                key=repr,
+            )
         )
         stereo = tuple(
             sorted(
                 (
-                    _stereo_effect_signature(effect, ranks)
+                    _stereo_effect_signature(effect, references)
                     for effect in step.stereo_effects
                 ),
                 key=repr,
@@ -149,7 +371,10 @@ def _event_signature(record: MechanismRecord, *, trajectory: bool) -> tuple[Any,
         else:
             for group, original in sorted(
                 zip(
-                    (_group_signature(value, ranks) for value in step.groups),
+                    (
+                        _group_signature(value, references)
+                        for value in step.groups
+                    ),
                     step.groups,
                 ),
                 key=lambda item: repr(item[0]),
@@ -157,14 +382,14 @@ def _event_signature(record: MechanismRecord, *, trajectory: bool) -> tuple[Any,
                 event_entries.append(
                     (
                         ("group", group),
-                        _group_dependencies(original, ranks),
+                        _group_dependencies(original, references),
                     )
                 )
             for effect in step.stereo_effects:
                 event_entries.append(
                     (
-                        ("stereo", _stereo_effect_signature(effect, ranks)),
-                        _stereo_effect_dependencies(effect, ranks),
+                        ("stereo", _stereo_effect_signature(effect, references)),
+                        _stereo_effect_dependencies(effect, references),
                     )
                 )
     if trajectory:
@@ -188,17 +413,40 @@ def mechanism_equivalent(
     *,
     level: str = "net",
 ) -> bool:
-    """Compare net products, supplied events, or ordered trajectory states."""
+    """Compare net products, supplied events, or ordered trajectory states.
+
+    Equality is witnessed by one exact, relative-stereo-preserving graph
+    correspondence that is consistent across reactant and product sides.
+    Backend canonical ranks and canonical SMILES are not identity inputs.
+    """
     if level not in {"net", "events", "trajectory"}:
         raise ValueError("level must be 'net', 'events', or 'trajectory'.")
-    left_sides = left.mapped_reaction.split(">>", 1)
-    right_sides = right.mapped_reaction.split(">>", 1)
-    if tuple(map(_canonical_side, left_sides)) != tuple(
-        map(_canonical_side, right_sides)
-    ):
-        return False
-    if level == "net":
-        return True
-    return _event_signature(left, trajectory=level == "trajectory") == _event_signature(
-        right, trajectory=level == "trajectory"
-    )
+    trajectory = level == "trajectory"
+    left_sides = _reaction_graphs(left)
+    right_sides = _reaction_graphs(right)
+    for correspondence in _reaction_correspondences(left_sides, right_sides):
+        left_references = _reference_map(correspondence)
+        right_references = _right_reference_map(correspondence)
+        if _endpoint_stereo_signature(
+            left,
+            left_sides,
+            left_references,
+        ) != _endpoint_stereo_signature(
+            right,
+            right_sides,
+            right_references,
+        ):
+            continue
+        if level == "net":
+            return True
+        if _event_signature(
+            left,
+            left_references,
+            trajectory=trajectory,
+        ) == _event_signature(
+            right,
+            right_references,
+            trajectory=trajectory,
+        ):
+            return True
+    return False

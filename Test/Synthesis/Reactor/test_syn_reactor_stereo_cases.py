@@ -444,7 +444,9 @@ def test_relative_hcount_coupling_collapses_fully_substituted_meso_faces():
     )
 
 
-def test_coupling_face_dedup_keeps_the_enantiomer_pair():
+def test_coupling_face_dedup_keeps_the_enantiomer_pair_without_smiles_authority(
+    monkeypatch,
+):
     rule = SynRule.from_smart(
         GENERIC_SYN_PI_HYDROGENATION_RULE,
         format="tuple",
@@ -469,6 +471,64 @@ def test_coupling_face_dedup_keeps_the_enantiomer_pair():
         )
         for smarts in reactor.smarts
     } == {("R", "R"), ("S", "S")}
+
+    def fail_if_serialized(*args, **kwargs):
+        raise AssertionError("canonical SMILES is not a deduplication key")
+
+    candidates = list(reactor.its_list)
+    monkeypatch.setattr(Chem, "MolToSmiles", fail_if_serialized)
+    deduplicated = SynReactor._deduplicate_coupling_face_products(candidates)
+
+    assert deduplicated == candidates
+
+
+def test_potential_stereo_reconstruction_failure_has_explicit_sentinel(
+    monkeypatch,
+):
+    product = MolToGraph().transform(Chem.MolFromSmiles("[CH3:1][CH3:2]"))
+
+    def fail_reconstruction(*args, **kwargs):
+        raise RuntimeError("backend unavailable")
+
+    monkeypatch.setattr(GraphToMol, "graph_to_mol", fail_reconstruction)
+
+    assert SynReactor._potential_tetrahedral_atom_maps(product) is None
+
+
+def test_potential_stereo_failure_retains_rule_derived_candidates(monkeypatch):
+    rule = SynRule.from_smart(
+        GENERIC_SYN_PI_HYDROGENATION_RULE,
+        format="tuple",
+        implicit_h=True,
+        stereo_couplings={"bond:1-2": "SYN"},
+    )
+    baseline = SynReactor(
+        "C/C=C/C.[H][H]",
+        rule,
+        template_format="tuple",
+        explicit_h=False,
+    )
+
+    assert len(baseline.its_list) == 1
+    assert baseline.its_list[0].graph["stereo_descriptors"]["product"] == {}
+
+    monkeypatch.setattr(
+        SynReactor,
+        "_potential_tetrahedral_atom_maps",
+        staticmethod(lambda product: None),
+    )
+    conservative = SynReactor(
+        "C/C=C/C.[H][H]",
+        rule,
+        template_format="tuple",
+        explicit_h=False,
+    )
+
+    assert len(conservative.its_list) == 2
+    assert all(
+        len(its.graph["stereo_descriptors"]["product"]) == 2
+        for its in conservative.its_list
+    )
 
 
 @pytest.mark.parametrize(
