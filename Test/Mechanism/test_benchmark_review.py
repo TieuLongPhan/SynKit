@@ -77,6 +77,7 @@ def test_mechanismbench_json_files_are_executable_case_data_only():
     )
 
     assert json_files == [
+        "non_tetrahedral_rewrite_conformance.json",
         "radical_reviewed.json",
         "small_rewrite_conformance.json",
         "stereo.json",

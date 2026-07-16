@@ -11,6 +11,9 @@
 dev/*
 # Local development, audit, and debugging helpers.
 /tools/
+!/tools/
+/tools/*
+!/tools/stereo_conformance.py
 /debug/
 /Test/Conformance/
 *.rdf
@@ -35,6 +38,8 @@ synkit/Graph/dev/*
 *.ipynb
 *.json
 !Data/MechanismBench/stereo.json
+!Data/MechanismBench/non_tetrahedral_rewrite_conformance.json
+!Data/Conformance/stereomolgraph_graph_conformance.json
 *.txt
 !LICENSES/*.txt
 *.log

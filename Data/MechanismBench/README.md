@@ -7,6 +7,10 @@ This directory keeps executable, self-contained JSON test cases:
   case.
 - `small_rewrite_conformance.json` — nine compact cases for routine inspection
   of hydrogen transfer and rule-level stereochemistry.
+- `non_tetrahedral_rewrite_conformance.json` — four project-owned, balanced
+  SP/TBP/OH/assigned-atrop fixtures with forward/reverse application,
+  Lewis-state endpoint audits, explicit claim boundaries, and the required
+  corruption controls.
 - `stereo.json` — 48-case stereo conformance draft: 33 end-to-end executable
   transformations, four graph-only transformations, three isotope-deferred
   transformations, and eight specification-only negative assertions. Its
@@ -27,3 +31,7 @@ destruction, strict wrong-isomer rejection, and racemic SN1 capture.
 Raw candidate pools, audit summaries, and release-owner checklists do not
 belong in this directory. They should be regenerated from their source data or
 kept as project documentation rather than presented as test cases.
+
+The compact pinned six-class graph-isomorphism result is therefore stored at
+`Data/Conformance/stereomolgraph_graph_conformance.json`, outside this
+executable mechanism-case directory.
