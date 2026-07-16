@@ -307,6 +307,40 @@ def test_bond_stereo_effect_target_round_trips_and_is_schema_legal():
     assert target_schema["prefixItems"][1]["oneOf"][1]["minItems"] == 2
 
 
+def test_endpoint_stereo_sidecar_round_trips_and_is_schema_legal():
+    descriptor = StereoDescriptor(
+        "tetrahedral",
+        (2, 1, 3, 4, "@H:2"),
+        None,
+        "unknown",
+        "reviewed",
+    )
+    record = MechanismRecord(
+        "[CH:2]([F:1])([Cl:3])[CH3:4]>>[CH:2]([F:1])([Cl:3])[CH3:4]",
+        (),
+        endpoint_stereo={"product": {"atom:2": descriptor}},
+    )
+
+    assert MechanismRecord.from_dict(record.to_dict()) == record
+    endpoint_schema = mechanism_record_schema()["properties"]["endpoint_stereo"]
+    assert endpoint_schema["properties"]["product"] == {
+        "$ref": "#/$defs/stereoRegistry"
+    }
+
+
+def test_unspecified_stereo_reversal_fails_explicitly():
+    unknown = StereoDescriptor(
+        "tetrahedral",
+        (2, 1, 3, 4, "@H:2"),
+        None,
+        "unknown",
+    )
+    effect = StereoEffect(("atom", 2), "UNSPECIFIED", after=unknown)
+
+    with pytest.raises(MechanismModelError, match="NONREVERSIBLE_STEREO_EFFECT"):
+        effect.reversed()
+
+
 @pytest.mark.parametrize("logical_row", [1, 2, 3, 4, 34, 37])
 def test_radical_dataset_adapter_normalizes_representative_macros(logical_row):
     path = Path(__file__).parents[2] / "Data/Mech/radical.csv"

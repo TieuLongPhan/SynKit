@@ -140,20 +140,26 @@ def h_to_explicit(G: nx.Graph, nodes: List[int] = None, its: bool = False) -> nx
         if count <= 0:
             continue
 
+        restored_maps = list(H2.nodes[heavy].pop("_implicit_h_atom_maps", ()))
+
         for _ in range(count):
             max_node += 1
+            atom_map = restored_maps.pop(0) if restored_maps else 0
             H2.add_node(
                 max_node,
                 element="H",
                 aromatic=False,
                 hcount=0,
                 charge=0,
-                atom_map=0,
+                atom_map=atom_map,
+                _restored_mapped_h=bool(atom_map),
                 typesGH=(("H", False, 0, 0, []), ("H", False, 0, 0, [])),
             )
             H2.add_edge(heavy, max_node, order=1.0)
 
         H2.nodes[heavy]["hcount"] -= count
+        if restored_maps:
+            H2.nodes[heavy]["_implicit_h_atom_maps"] = tuple(restored_maps)
 
         # Optionally adjust the typesGH field if it exists
         if "typesGH" in H2.nodes[heavy]:

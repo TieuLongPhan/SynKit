@@ -141,6 +141,10 @@ class SynReactor:
         ``"exact"`` matches only unknown host stereo; ``"wildcard"`` matches
         either orientation. Per-descriptor rule policies override this value.
     :type stereo_query_mode: str
+    :param preserve_mapped_hydrogens: Preserve positive explicit-H atom maps
+        through implicit matching. This is intended for mapped mechanism/rule
+        agreement; the default keeps legacy implicit-output projection.
+    :type preserve_mapped_hydrogens: bool
     :ivar _graph: Cached SynGraph for the substrate.
     :vartype _graph: Optional[SynGraph]
     :ivar _rule: Cached SynRule for the template.
@@ -172,6 +176,7 @@ class SynReactor:
     embed_threshold: Optional[int] = None
     embed_pre_filter: bool = False
     automorphism: bool = True
+    preserve_mapped_hydrogens: bool = False
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -223,6 +228,7 @@ class SynReactor:
         radical_policy: str = "strict",
         stereo_mode: str = "propagate",
         stereo_query_mode: str = "exact",
+        preserve_mapped_hydrogens: bool = False,
     ) -> "SynReactor":
         """
         Alternate constructor: build a SynReactor directly from SMILES.
@@ -275,6 +281,7 @@ class SynReactor:
             radical_policy=radical_policy,
             stereo_mode=stereo_mode,
             stereo_query_mode=stereo_query_mode,
+            preserve_mapped_hydrogens=preserve_mapped_hydrogens,
         )
 
     # ------------------------------------------------------------------
@@ -372,6 +379,15 @@ class SynReactor:
                     threshold=self.embed_threshold,
                     pre_filter=self.embed_pre_filter,
                 )
+
+            raw_maps.sort(
+                key=lambda candidate: self._mapping_atom_map_alignment(
+                    pattern_graph,
+                    matching_host,
+                    candidate,
+                ),
+                reverse=True,
+            )
 
             raw_maps = self._expand_stereo_wildcard_mappings(
                 raw_maps,
@@ -917,7 +933,10 @@ class SynReactor:
         if self._host_for_matching is None:
             host = self.graph.raw
             if getattr(self.rule, "_format", None) == "tuple":
-                host = self._implicit_heavy_hydrogens(host)
+                host = self._implicit_heavy_hydrogens(
+                    host,
+                    preserve_mapped_hydrogens=self.preserve_mapped_hydrogens,
+                )
             self._host_for_matching = host
         return self._host_for_matching
 
@@ -1384,7 +1403,11 @@ class SynReactor:
         return True
 
     @staticmethod
-    def _implicit_heavy_hydrogens(graph: nx.Graph) -> nx.Graph:
+    def _implicit_heavy_hydrogens(
+        graph: nx.Graph,
+        *,
+        preserve_mapped_hydrogens: bool = False,
+    ) -> nx.Graph:
         """Convert ordinary heavy-atom-bound explicit H nodes into hcount."""
         normalized = graph.copy()
         removable = []
@@ -1402,6 +1425,17 @@ class SynReactor:
             if not normalized.has_node(h):
                 continue
             for heavy in heavy_neighbors:
+                atom_map = normalized.nodes[h].get("atom_map")
+                if (
+                    preserve_mapped_hydrogens
+                    and isinstance(atom_map, int)
+                    and atom_map > 0
+                ):
+                    stored = list(
+                        normalized.nodes[heavy].get("_implicit_h_atom_maps", ())
+                    )
+                    stored.append(atom_map)
+                    normalized.nodes[heavy]["_implicit_h_atom_maps"] = tuple(stored)
                 normalized.nodes[heavy]["hcount"] = (
                     normalized.nodes[heavy].get("hcount", 0) + 1
                 )
@@ -1467,7 +1501,8 @@ class SynReactor:
         original_nodes = set(host)
         host_explicit = h_to_explicit(host, expand_nodes)
         for node in set(host_explicit) - original_nodes:
-            host_explicit.nodes[node]["_pattern_expanded_h"] = True
+            if not host_explicit.nodes[node].get("_restored_mapped_h"):
+                host_explicit.nodes[node]["_pattern_expanded_h"] = True
         mappings = SubgraphSearchEngine.find_subgraph_mappings(
             host=host_explicit,
             pattern=pattern_explicit or nx.Graph(),
@@ -1477,7 +1512,40 @@ class SynReactor:
             threshold=embed_threshold,
             pre_filter=embed_pre_filter,
         )
+
+        # Atom maps are not chemical matching constraints, but when applying a
+        # reviewed mapped rule back to its mapped host they are the deterministic
+        # tie-breaker between symmetry-equivalent explicit hydrogens.
+        mappings.sort(
+            key=lambda candidate: SynReactor._mapping_atom_map_alignment(
+                pattern_explicit,
+                host_explicit,
+                candidate,
+            ),
+            reverse=True,
+        )
         return mappings, host_explicit
+
+    @staticmethod
+    def _mapping_atom_map_alignment(
+        pattern: nx.Graph,
+        host: nx.Graph,
+        mapping: MappingDict,
+    ) -> int:
+        """Count positive reactant-side AAM identities in one candidate map."""
+
+        def reactant_map(value: Any) -> Any:
+            if isinstance(value, tuple) and len(value) == 2:
+                return value[0]
+            return value
+
+        score = 0
+        for pattern_node, host_node in mapping.items():
+            pattern_map = reactant_map(pattern.nodes[pattern_node].get("atom_map"))
+            host_map = reactant_map(host.nodes[host_node].get("atom_map"))
+            if isinstance(pattern_map, int) and pattern_map > 0:
+                score += pattern_map == host_map
+        return score
 
     @staticmethod
     def _restore_unmatched_pattern_hydrogens(

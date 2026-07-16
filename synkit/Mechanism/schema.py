@@ -23,6 +23,14 @@ def mechanism_record_schema() -> dict[str, Any]:
             },
             "provenance": {"type": "object"},
             "metadata": {"type": "object"},
+            "endpoint_stereo": {
+                "type": "object",
+                "properties": {
+                    "reactant": {"$ref": "#/$defs/stereoRegistry"},
+                    "product": {"$ref": "#/$defs/stereoRegistry"},
+                },
+                "additionalProperties": False,
+            },
         },
         "additionalProperties": False,
         "$defs": {
@@ -189,6 +197,10 @@ def mechanism_record_schema() -> dict[str, Any]:
                     "provenance": {"type": "string"},
                 },
                 "additionalProperties": False,
+            },
+            "stereoRegistry": {
+                "type": "object",
+                "additionalProperties": {"$ref": "#/$defs/stereoDescriptor"},
             },
         },
     }

@@ -140,6 +140,19 @@ class ElectronMove:
             "metadata": dict(self.metadata),
         }
 
+    def reversed(self) -> "ElectronMove":
+        """Return the same electron transfer in the opposite direction."""
+        return ElectronMove(
+            source=self.target,
+            target=self.source,
+            electron_count=self.electron_count,
+            arrow_type=self.arrow_type,
+            group_id=self.group_id,
+            event_id=self.event_id,
+            coupling_id=self.coupling_id,
+            metadata=self.metadata,
+        )
+
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "ElectronMove":
         return cls(
@@ -212,6 +225,14 @@ class ElectronMoveGroup:
             "RADICAL_RESONANCE",
         }
     )
+    REVERSE_MACRO: ClassVar[Mapping[str, str]] = {
+        "HOMOLYSIS": "RECOMBINATION",
+        "RECOMBINATION": "HOMOLYSIS",
+        "RADICAL_ADDITION": "BETA_SCISSION",
+        "BETA_SCISSION": "RADICAL_ADDITION",
+        "H_ABSTRACTION": "H_ABSTRACTION",
+        "RADICAL_RESONANCE": "RADICAL_RESONANCE",
+    }
 
     def __post_init__(self) -> None:
         if not self.moves:
@@ -372,8 +393,16 @@ class ElectronMoveGroup:
                     (RADICAL, PI): 1,
                 }
             )
+            reverse_h_abstraction = Counter(
+                {(target, source): count for (source, target), count in expected_h_abstraction.items()}
+            )
             valid = (
-                pairs in (simple_h_abstraction, expected_h_abstraction)
+                pairs
+                in (
+                    simple_h_abstraction,
+                    expected_h_abstraction,
+                    reverse_h_abstraction,
+                )
                 and self._h_abstraction_incidence_is_valid(fishhooks)
             )
             if not valid:
@@ -430,6 +459,20 @@ class ElectronMoveGroup:
     def _h_abstraction_incidence_is_valid(
         cls, moves: Sequence[ElectronMove]
     ) -> bool:
+        pairs = Counter((move.source.kind, move.target.kind) for move in moves)
+        reverse_conjugated = Counter(
+            {
+                (SIGMA, RADICAL): 1,
+                (SIGMA, SIGMA): 1,
+                (PI, SIGMA): 1,
+                (PI, RADICAL): 1,
+            }
+        )
+        if pairs == reverse_conjugated:
+            return cls._h_abstraction_incidence_is_valid(
+                tuple(move.reversed() for move in moves)
+            )
+
         radical_to_new_sigma = cls._single_move(moves, RADICAL, SIGMA)
         old_to_new_sigma = cls._single_move(moves, SIGMA, SIGMA)
 
@@ -446,7 +489,6 @@ class ElectronMoveGroup:
         if {radical_to_new_sigma.source.atom_maps[0]} != acceptor:
             return False
 
-        pairs = Counter((move.source.kind, move.target.kind) for move in moves)
         if pairs[(SIGMA, RADICAL)] == 1:
             old_to_radical = cls._single_move(moves, SIGMA, RADICAL)
             return (
@@ -483,6 +525,15 @@ class ElectronMoveGroup:
             )
         )
         return (self.macro or "", moves)
+
+    def reversed(self) -> "ElectronMoveGroup":
+        """Reverse every move and select the inverse radical macro."""
+        return ElectronMoveGroup(
+            group_id=self.group_id,
+            moves=tuple(move.reversed() for move in self.moves),
+            macro=self.REVERSE_MACRO[self.macro] if self.macro else None,
+            metadata=self.metadata,
+        )
 
     @property
     def read_loci(self) -> frozenset[ElectronLocus]:
@@ -658,6 +709,34 @@ class StereoDescriptor:
             "provenance": self.provenance,
         }
 
+    def inverted(self) -> "StereoDescriptor":
+        """Return the opposite relative orientation of specified stereo."""
+        if self.descriptor_class == "unknown" or self.state != "specified":
+            raise MechanismModelError(
+                "Only specified executable stereo descriptors can be inverted."
+            )
+        from synkit.Graph.Stereo import stereo_from_dict
+
+        value = stereo_from_dict(self.to_dict()).invert().to_dict()
+        value["state"] = self.state
+        return StereoDescriptor.from_dict(value)
+
+    @property
+    def target_key(self) -> str:
+        """Return the canonical registry key owned by this descriptor."""
+        if self.descriptor_class in {
+            "tetrahedral",
+            "square_planar",
+            "trigonal_bipyramidal",
+            "octahedral",
+        }:
+            return f"atom:{self.atoms[0]}"
+        if self.descriptor_class in {"planar_bond", "atrop_bond"}:
+            return f"bond:{min(self.atoms[2:4])}-{max(self.atoms[2:4])}"
+        raise MechanismModelError(
+            "Unknown descriptor classes do not own an executable endpoint locus."
+        )
+
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "StereoDescriptor":
         return cls(
@@ -752,6 +831,55 @@ class StereoEffect:
             "provenance": self.provenance,
         }
 
+    def reversed(self) -> "StereoEffect":
+        """Return the inverse endpoint transition when it is well-defined.
+
+        ``UNSPECIFIED`` is deliberately non-invertible: discarding an
+        orientation does not contain enough information to reconstruct it.
+        """
+        if self.effect == "UNSPECIFIED":
+            raise MechanismModelError(
+                "NONREVERSIBLE_STEREO_EFFECT: UNSPECIFIED stereo cannot be "
+                "reversed without a supplied recovery descriptor."
+            )
+        if self.effect == "FORM":
+            return StereoEffect(
+                self.descriptor_target,
+                "BREAK",
+                before=self.after,
+                provenance=self.provenance,
+            )
+        if self.effect == "BREAK":
+            return StereoEffect(
+                self.descriptor_target,
+                "FORM",
+                after=self.before,
+                provenance=self.provenance,
+            )
+        if self.effect == "INVERT":
+            if self.before is None:
+                raise MechanismModelError(
+                    "NONREVERSIBLE_STEREO_EFFECT: INVERT requires a before "
+                    "descriptor."
+                )
+            reverse_before = self.after or self.before.inverted()
+            return StereoEffect(
+                self.descriptor_target,
+                "INVERT",
+                before=reverse_before,
+                after=self.before,
+                provenance=self.provenance,
+            )
+        if self.effect == "PRESERVE" and self.after is None:
+            return self
+        return StereoEffect(
+            self.descriptor_target,
+            self.effect,
+            before=self.after,
+            after=self.before,
+            provenance=self.provenance,
+        )
+
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "StereoEffect":
         before = value.get("before")
@@ -784,6 +912,17 @@ class MechanisticStep:
             "stereo_effects": [effect.to_dict() for effect in self.stereo_effects],
             "metadata": dict(self.metadata),
         }
+
+    def reversed(self) -> "MechanisticStep":
+        """Reverse group order, electron flow, and stereo transitions."""
+        return MechanisticStep(
+            step_id=self.step_id,
+            groups=tuple(group.reversed() for group in reversed(self.groups)),
+            stereo_effects=tuple(
+                effect.reversed() for effect in reversed(self.stereo_effects)
+            ),
+            metadata=self.metadata,
+        )
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "MechanisticStep":
@@ -842,6 +981,9 @@ class MechanismRecord:
     schema_version: str = SCHEMA_VERSION
     provenance: Mapping[str, Any] = field(default_factory=dict)
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    endpoint_stereo: Mapping[str, Mapping[str, StereoDescriptor]] = field(
+        default_factory=dict
+    )
 
     def __post_init__(self) -> None:
         if self.mapped_reaction.count(">>") != 1:
@@ -850,6 +992,25 @@ class MechanismRecord:
             raise MechanismModelError("Mechanistic step IDs must be unique.")
         object.__setattr__(self, "provenance", dict(self.provenance))
         object.__setattr__(self, "metadata", dict(self.metadata))
+        endpoint_stereo: dict[str, dict[str, StereoDescriptor]] = {}
+        for side, registry in self.endpoint_stereo.items():
+            if side not in {"reactant", "product"}:
+                raise MechanismModelError(
+                    "Endpoint stereo side must be 'reactant' or 'product'."
+                )
+            endpoint_stereo[side] = {}
+            for key, descriptor in registry.items():
+                if not isinstance(descriptor, StereoDescriptor):
+                    raise MechanismModelError(
+                        "Endpoint stereo registries require StereoDescriptor values."
+                    )
+                if descriptor.target_key != key:
+                    raise MechanismModelError(
+                        f"Endpoint descriptor belongs to {descriptor.target_key}, "
+                        f"not {key}."
+                    )
+                endpoint_stereo[side][key] = descriptor
+        object.__setattr__(self, "endpoint_stereo", endpoint_stereo)
 
     @classmethod
     def from_ef_smirks(cls, text: str, **kwargs: Any) -> "MechanismRecord":
@@ -863,6 +1024,25 @@ class MechanismRecord:
             for step in self.steps
             for group in step.groups
             for issue in group.issues()
+        )
+
+    def reversed(self) -> "MechanismRecord":
+        """Return the typed mechanism operating from product to reactant."""
+        reactants, products = self.mapped_reaction.split(">>", 1)
+        return MechanismRecord(
+            mapped_reaction=f"{products}>>{reactants}",
+            steps=tuple(step.reversed() for step in reversed(self.steps)),
+            schema_version=self.schema_version,
+            provenance=self.provenance,
+            metadata=self.metadata,
+            endpoint_stereo={
+                side: self.endpoint_stereo[other]
+                for side, other in (
+                    ("reactant", "product"),
+                    ("product", "reactant"),
+                )
+                if other in self.endpoint_stereo
+            },
         )
 
     def verify(
@@ -898,6 +1078,66 @@ class MechanismRecord:
             MechanismReplayer(validation=electron, verify_stereo=stereo)
             .replay(self)
             .mtg
+        )
+
+    def to_rule(
+        self,
+        *,
+        core: bool = False,
+        implicit_h: bool = False,
+        name: str | None = None,
+    ) -> Any:
+        """Build a tuple :class:`SynRule` from the same mapped endpoints.
+
+        Explicit endpoint stereo sidecars replace the corresponding SMILES
+        registry, which keeps unknown stereo and backend-independent relative
+        descriptors available at the rule boundary.  ``core=False`` is the
+        conservative default because it preserves the complete reviewed
+        endpoint context used for rule/replay agreement checks.
+        """
+        from synkit.Graph.Stereo import (
+            StereoChange,
+            classify_stereo_change,
+            stereo_from_dict,
+        )
+        from synkit.IO.chem_converter import rsmi_to_its
+        from synkit.Rule import SynRule
+
+        its = rsmi_to_its(
+            self.mapped_reaction,
+            core=core,
+            format="tuple",
+            drop_non_aam=False,
+            use_index_as_atom_map=True,
+        )
+        registries = {
+            side: dict(registry)
+            for side, registry in its.graph.get("stereo_descriptors", {}).items()
+        }
+        for side, registry in self.endpoint_stereo.items():
+            registries[side] = {
+                key: stereo_from_dict(descriptor.to_dict())
+                for key, descriptor in registry.items()
+            }
+        registries.setdefault("reactant", {})
+        registries.setdefault("product", {})
+        its.graph["stereo_descriptors"] = registries
+        its.graph["stereo_changes"] = {
+            key: StereoChange(
+                classify_stereo_change(
+                    registries["reactant"].get(key),
+                    registries["product"].get(key),
+                ),
+                registries["reactant"].get(key),
+                registries["product"].get(key),
+            )
+            for key in set(registries["reactant"]) | set(registries["product"])
+        }
+        return SynRule(
+            its,
+            name=name,
+            format="tuple",
+            implicit_h=implicit_h,
         )
 
     def draw(
@@ -948,6 +1188,13 @@ class MechanismRecord:
             "steps": [step.to_dict() for step in self.steps],
             "provenance": dict(self.provenance),
             "metadata": dict(self.metadata),
+            "endpoint_stereo": {
+                side: {
+                    key: descriptor.to_dict()
+                    for key, descriptor in registry.items()
+                }
+                for side, registry in self.endpoint_stereo.items()
+            },
         }
 
     @classmethod
@@ -958,6 +1205,13 @@ class MechanismRecord:
             schema_version=value.get("schema_version", SCHEMA_VERSION),
             provenance=value.get("provenance", {}),
             metadata=value.get("metadata", {}),
+            endpoint_stereo={
+                side: {
+                    key: StereoDescriptor.from_dict(descriptor)
+                    for key, descriptor in registry.items()
+                }
+                for side, registry in value.get("endpoint_stereo", {}).items()
+            },
         )
 
 

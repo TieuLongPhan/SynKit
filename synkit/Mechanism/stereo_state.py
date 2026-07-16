@@ -7,7 +7,11 @@ from typing import Iterable
 
 import networkx as nx
 
-from synkit.Graph.Stereo import descriptor_graph_support_errors, stereo_from_dict
+from synkit.Graph.Stereo import (
+    classify_stereo_change,
+    descriptor_graph_support_errors,
+    stereo_from_dict,
+)
 
 from .model import StereoDescriptor, StereoEffect, VerificationIssue
 
@@ -82,10 +86,18 @@ def _descriptors_equal(
 
 
 def _inverted(descriptor: StereoDescriptor) -> StereoDescriptor:
-    native = stereo_from_dict(descriptor.to_dict()).invert()
-    value = native.to_dict()
-    value["state"] = descriptor.state
-    return StereoDescriptor.from_dict(value)
+    return descriptor.inverted()
+
+
+def _change_kind(
+    before: StereoDescriptor,
+    after: StereoDescriptor,
+) -> str:
+    """Classify relative stereo, including one mapped ligand replacement."""
+    return classify_stereo_change(
+        stereo_from_dict(before.to_dict()),
+        stereo_from_dict(after.to_dict()),
+    )
 
 
 def apply_stereo_effects(
@@ -136,7 +148,7 @@ def apply_stereo_effects(
             candidate = effect.after or present
             if (
                 candidate is None
-                or not _descriptors_equal(candidate, present)
+                or _change_kind(present, candidate) != "RETAINED"
                 or not descriptor_is_supported(
                     result,
                     candidate,
@@ -153,12 +165,14 @@ def apply_stereo_effects(
             else:
                 registry[target] = candidate
         elif code == "INVERT":
-            expected = _inverted(present)
-            candidate = effect.after or expected
-            if not _descriptors_equal(candidate, expected) or not descriptor_is_supported(
-                result,
-                candidate,
-                registry_key=target,
+            candidate = effect.after or _inverted(present)
+            if (
+                _change_kind(present, candidate) != "INVERTED"
+                or not descriptor_is_supported(
+                    result,
+                    candidate,
+                    registry_key=target,
+                )
             ):
                 issues.append(
                     VerificationIssue(
@@ -213,7 +227,56 @@ def apply_stereo_effects(
                 registry[target] = effect.after
         elif code == "UNSPECIFIED":
             unknown = effect.after or effect.before
-            if unknown is not None:
+            if effect.before is not None and not _descriptors_equal(
+                effect.before,
+                present,
+            ):
+                issues.append(
+                    VerificationIssue(
+                        "STEREO_BEFORE_MISMATCH",
+                        f"Declared stereo pre-state does not match {target}.",
+                        step_id=step_id,
+                        expected=present.to_dict() if present else None,
+                        observed=effect.before.to_dict(),
+                    )
+                )
+            elif effect.before is None and present is not None:
+                issues.append(
+                    VerificationIssue(
+                        "MISSING_STEREO_BEFORE",
+                        f"UNSPECIFIED requires the present descriptor at {target}.",
+                        step_id=step_id,
+                    )
+                )
+            elif unknown is None:
+                issues.append(
+                    VerificationIssue(
+                        "INCOMPLETE_STEREO_FORMATION",
+                        f"UNSPECIFIED requires descriptor topology at {target}.",
+                        step_id=step_id,
+                    )
+                )
+            else:
+                candidate = StereoDescriptor(
+                    unknown.descriptor_class,
+                    unknown.atoms,
+                    None,
+                    "unknown",
+                    unknown.provenance,
+                )
+                if not descriptor_is_supported(
+                    result,
+                    candidate,
+                    registry_key=target,
+                ):
+                    issues.append(
+                        VerificationIssue(
+                            "INVALID_STEREO_FORMATION",
+                            f"Unknown descriptor references are invalid at {target}.",
+                            step_id=step_id,
+                        )
+                    )
+                    continue
                 registry[target] = StereoDescriptor(
                     unknown.descriptor_class,
                     unknown.atoms,

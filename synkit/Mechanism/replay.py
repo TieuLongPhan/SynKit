@@ -26,7 +26,11 @@ from .model import (
     VerificationIssue,
     StereoDescriptor,
 )
-from .stereo_state import apply_stereo_effects, stereo_timeline
+from .stereo_state import (
+    apply_stereo_effects,
+    descriptor_support_errors,
+    stereo_timeline,
+)
 from .symbols import LONE_PAIR, PI, RADICAL, SIGMA
 
 
@@ -86,6 +90,8 @@ class MechanismReplayer:
         expected = self._parse_side(products)
         self._seed_mechanism_stereo(current)
         self._seed_mechanism_stereo(expected)
+        self._select_endpoint_stereo(current, record, side="reactant")
+        self._select_endpoint_stereo(expected, record, side="product")
         intermediates: list[nx.Graph] = []
         reports: list[GroupReplayReport] = []
         issues: list[VerificationIssue] = list(record.grammar_issues())
@@ -93,6 +99,8 @@ class MechanismReplayer:
         issues.extend(self._graph_mapping_issues(expected, side="product"))
         issues.extend(audit_local_electron_state(current).issues)
         issues.extend(audit_local_electron_state(expected).issues)
+        issues.extend(self._endpoint_stereo_issues(current, side="reactant"))
+        issues.extend(self._endpoint_stereo_issues(expected, side="product"))
         mtg = nx.DiGraph(schema="synkit-mtg-2.0-draft1")
         mtg.add_node(0, graph=deepcopy(current), status="INITIAL")
 
@@ -460,6 +468,42 @@ class MechanismReplayer:
             )
             registry[key] = StereoDescriptor.from_dict(value)
         graph.graph["mechanism_stereo_descriptors"] = registry
+
+    @staticmethod
+    def _select_endpoint_stereo(
+        graph: nx.Graph,
+        record: MechanismRecord,
+        *,
+        side: str,
+    ) -> None:
+        """Use an explicit endpoint sidecar when SMILES cannot encode state."""
+        if side in record.endpoint_stereo:
+            graph.graph["mechanism_stereo_descriptors"] = dict(
+                record.endpoint_stereo[side]
+            )
+
+    @staticmethod
+    def _endpoint_stereo_issues(
+        graph: nx.Graph,
+        *,
+        side: str,
+    ) -> tuple[VerificationIssue, ...]:
+        issues = []
+        for key, descriptor in graph.graph.get(
+            "mechanism_stereo_descriptors", {}
+        ).items():
+            for reason in descriptor_support_errors(
+                graph,
+                descriptor,
+                registry_key=key,
+            ):
+                issues.append(
+                    VerificationIssue(
+                        "INVALID_ENDPOINT_STEREO",
+                        f"Invalid {side} descriptor {key}: {reason}.",
+                    )
+                )
+        return tuple(issues)
 
     @staticmethod
     def _parse_side(smiles: str) -> nx.Graph:

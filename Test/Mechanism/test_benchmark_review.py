@@ -1,3 +1,5 @@
+from collections import Counter
+from copy import deepcopy
 import json
 from pathlib import Path
 
@@ -9,7 +11,7 @@ from synkit.Mechanism.benchmark import _audit_rule_reapplication
 ROOT = Path(__file__).parents[2]
 
 
-def test_reviewed_radical_manifest_has_80_replay_valid_records():
+def test_reviewed_radical_manifest_replays_forward_reverse_and_double_reverse():
     manifest = json.loads(
         (ROOT / "Data/MechanismBench/radical_reviewed.json").read_text()
     )
@@ -25,11 +27,48 @@ def test_reviewed_radical_manifest_has_80_replay_valid_records():
         "PARTITION_COUNT:polar:0/80",
         "PARTITION_COUNT:stereo:0/80",
     ]
+    macro_counts = Counter()
     for case in manifest["cases"]:
-        result = MechanismReplayer().replay(
-            MechanismRecord.from_dict(case["record"])
-        )
-        assert result.certificate.status == "VALID", case["case_id"]
+        record = MechanismRecord.from_dict(case["record"])
+        macro_counts[record.steps[0].groups[0].macro] += 1
+        forward = MechanismReplayer().replay(record)
+        reverse = MechanismReplayer().replay(record.reversed())
+
+        assert forward.certificate.status == "VALID", case["case_id"]
+        assert reverse.certificate.status == "VALID", case["case_id"]
+        assert record.reversed().reversed() == record
+
+    assert set(macro_counts) == {
+        "HOMOLYSIS",
+        "RECOMBINATION",
+        "RADICAL_ADDITION",
+        "BETA_SCISSION",
+        "H_ABSTRACTION",
+        "RADICAL_RESONANCE",
+    }
+    assert max(macro_counts.values()) - min(macro_counts.values()) == 1
+
+
+def test_each_radical_macro_has_an_executable_grammar_corruption():
+    manifest = json.loads(
+        (ROOT / "Data/MechanismBench/radical_reviewed.json").read_text()
+    )
+    representatives = {}
+    for case in manifest["cases"]:
+        macro = case["record"]["steps"][0]["groups"][0]["macro"]
+        representatives.setdefault(macro, case)
+
+    assert len(representatives) == 6
+    for macro, case in representatives.items():
+        payload = deepcopy(case["record"])
+        payload["steps"][0]["groups"][0]["moves"].pop()
+        corrupted = MechanismRecord.from_dict(payload)
+        result = MechanismReplayer().replay(corrupted)
+
+        assert result.certificate.status == "INVALID", macro
+        assert "UNBALANCED_EVENT_GROUP" in {
+            issue.code for issue in result.certificate.issues
+        }, macro
 
 
 def test_mechanismbench_json_files_are_executable_case_data_only():
