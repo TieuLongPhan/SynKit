@@ -18,9 +18,7 @@ def test_print_graph_attributes_includes_its_stereo_metadata(capsys):
         "reactant": {"atom:2": before},
         "product": {"atom:2": after},
     }
-    graph.graph["stereo_changes"] = {
-        "atom:2": StereoChange("INVERTED", before, after)
-    }
+    graph.graph["stereo_changes"] = {"atom:2": StereoChange("INVERTED", before, after)}
     graph.graph["stereo_outcomes"] = {}
     graph.graph["stereo_branch_weight"] = 1.0
 

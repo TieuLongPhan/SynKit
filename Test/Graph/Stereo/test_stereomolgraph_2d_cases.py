@@ -25,7 +25,6 @@ from Test.Graph.Stereo.stereomolgraph_2d_fixtures import (
     NonTetrahedralCase,
 )
 
-
 EXPECTED_RDKIT_TAGS = {
     "square_planar": Chem.ChiralType.CHI_SQUAREPLANAR,
     "trigonal_bipyramidal": Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL,
@@ -62,9 +61,7 @@ def test_inchi_survives_synkit_2d_graph_round_trip(case: InchiCase) -> None:
     graph = MolToGraph().transform(molecule)
     rebuilt = GraphToMol().graph_to_mol(graph)
 
-    assert len(graph.graph["stereo_descriptors"]) == (
-        case.expected_stereo_descriptors
-    )
+    assert len(graph.graph["stereo_descriptors"]) == (case.expected_stereo_descriptors)
     assert Chem.MolToInchi(rebuilt) == case.inchi
 
 
@@ -87,9 +84,7 @@ def test_non_tetrahedral_rdkit_fixture_is_explicitly_deferred(
     assert molecule is not None
 
     expected_tag = EXPECTED_RDKIT_TAGS[case.stereo_class]
-    assert any(
-        atom.GetChiralTag() == expected_tag for atom in molecule.GetAtoms()
-    )
+    assert any(atom.GetChiralTag() == expected_tag for atom in molecule.GetAtoms())
     assert descriptors_from_rdkit(molecule, require_atom_maps=False) == {}
 
 

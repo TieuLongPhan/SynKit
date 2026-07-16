@@ -19,24 +19,18 @@ SN2_RULE = (
 )
 
 GENERIC_SYN_PI_HYDROGENATION_RULE = (
-    "[C:1]=[C:2].[H:3][H:4]>>"
-    "[C:1]([H:3])[C:2]([H:4])"
+    "[C:1]=[C:2].[H:3][H:4]>>" "[C:1]([H:3])[C:2]([H:4])"
 )
 
 GENERIC_ANTI_PI_BROMINATION_RULE = (
-    "[C:1]=[C:2].[Br:3][Br:4]>>"
-    "[C:1]([Br:3])[C:2]([Br:4])"
+    "[C:1]=[C:2].[Br:3][Br:4]>>" "[C:1]([Br:3])[C:2]([Br:4])"
 )
 
 GENERIC_SN2_RULE = (
-    "[*:1][C@H:2]([*:3])[Cl:4].[OH-:5]>>"
-    "[*:1][C@@H:2]([*:3])[OH:5].[Cl-:4]"
+    "[*:1][C@H:2]([*:3])[Cl:4].[OH-:5]>>" "[*:1][C@@H:2]([*:3])[OH:5].[Cl-:4]"
 )
 
-GENERIC_SN1_CAPTURE_RULE = (
-    "[*:1][CH+:2][*:3].[OH-:4]>>"
-    "[*:1][C@H:2]([*:3])[OH:4]"
-)
+GENERIC_SN1_CAPTURE_RULE = "[*:1][CH+:2][*:3].[OH-:4]>>" "[*:1][C@H:2]([*:3])[OH:4]"
 
 
 def _vicinal_addition(relation):
@@ -46,9 +40,7 @@ def _vicinal_addition(relation):
 def _cip_codes_by_atom_map(smiles):
     molecule = Chem.MolFromSmiles(smiles)
     assert molecule is not None
-    atom_maps = {
-        atom.GetIdx(): atom.GetAtomMapNum() for atom in molecule.GetAtoms()
-    }
+    atom_maps = {atom.GetIdx(): atom.GetAtomMapNum() for atom in molecule.GetAtoms()}
     for atom in molecule.GetAtoms():
         atom.SetAtomMapNum(0)
     Chem.AssignStereochemistry(molecule, cleanIt=True, force=True)
@@ -153,12 +145,8 @@ def test_sn2_default_propagation_inverts_either_enantiomer():
         explicit_h=False,
     )
 
-    first_product = first.its_list[0].graph["stereo_descriptors"]["product"][
-        "atom:2"
-    ]
-    mirror_product = mirror.its_list[0].graph["stereo_descriptors"]["product"][
-        "atom:2"
-    ]
+    first_product = first.its_list[0].graph["stereo_descriptors"]["product"]["atom:2"]
+    mirror_product = mirror.its_list[0].graph["stereo_descriptors"]["product"]["atom:2"]
 
     assert first.stereo_mode == mirror.stereo_mode == "propagate"
     assert first.mapping_count == mirror.mapping_count == 1
@@ -431,9 +419,7 @@ def test_relative_hcount_coupling_collapses_fully_substituted_meso_faces():
     assert symmetry["symmetry_multiplicity"] == 2
     assert all(
         len(its.graph["stereo_descriptors"]["product"]) == 2
-        and {
-            change.change for change in its.graph["stereo_changes"].values()
-        }
+        and {change.change for change in its.graph["stereo_changes"].values()}
         == {"BROKEN", "FORMED"}
         and its.graph["stereo_couplings"]
         for its in relative.its_list
@@ -670,10 +656,7 @@ def test_syn_anti_coupling_infers_correlated_tetrahedral_products(
         for smarts in reactor.smarts
     } == expected_cip_sets
     assert all(
-        {
-            key: change.change
-            for key, change in its.graph["stereo_changes"].items()
-        }
+        {key: change.change for key, change in its.graph["stereo_changes"].items()}
         == {
             "atom:2": "FORMED",
             "atom:3": "FORMED",

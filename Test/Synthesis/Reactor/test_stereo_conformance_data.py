@@ -22,11 +22,7 @@ TRANSFORMATIONS = [case for case in CASES if case["case_kind"] == "transformatio
 NEGATIVE_ASSERTIONS = [
     case for case in CASES if case["case_kind"] == "negative_assertion"
 ]
-STEPS = [
-    (case, step)
-    for case in TRANSFORMATIONS
-    for step in case["steps"]
-]
+STEPS = [(case, step) for case in TRANSFORMATIONS for step in case["steps"]]
 RUNNABLE_STEPS = [
     (case, step)
     for case, step in STEPS
@@ -179,9 +175,7 @@ def test_transformation_step_parses_balances_and_stores_declared_stereo(case, st
 @pytest.mark.parametrize(
     ("case", "step"),
     RUNNABLE_STEPS,
-    ids=[
-        f"{case['case_id']}-{step['step_id']}" for case, step in RUNNABLE_STEPS
-    ],
+    ids=[f"{case['case_id']}-{step['step_id']}" for case, step in RUNNABLE_STEPS],
 )
 def test_runnable_step_applies_and_rejects_wrong_stereoisomers(case, step):
     reactor = _reactor(step)
@@ -191,9 +185,10 @@ def test_runnable_step_applies_and_rejects_wrong_stereoisomers(case, step):
     }
 
     assert reactor.mapping_count > 0
-    assert len(unique_products) == step["application"][
-        "expected_unique_stereoisomer_count"
-    ]
+    assert (
+        len(unique_products)
+        == step["application"]["expected_unique_stereoisomer_count"]
+    )
     for rejected_substrate in step["application"]["rejected_substrates"]:
         rejected = _reactor(step, rejected_substrate)
         assert rejected.mapping_count == 0
@@ -213,9 +208,7 @@ def test_executable_case_emits_declared_product_stereo(case):
 
     assert {_cip_signature(product) for product in products} == expected_cip
 
-    expected_bonds = set(
-        case["oracle"].get("product_descriptor_by_locus", {}).values()
-    )
+    expected_bonds = set(case["oracle"].get("product_descriptor_by_locus", {}).values())
     if expected_bonds:
         assert set().union(*(_double_bond_cip(product) for product in products)) == (
             expected_bonds
@@ -259,9 +252,7 @@ def test_negative_assertion_is_well_formed_specification(case):
 
 def test_deferred_cases_declare_the_isotope_blocker():
     deferred = [
-        case
-        for case in TRANSFORMATIONS
-        if case["status"] == "deferred_isotope_support"
+        case for case in TRANSFORMATIONS if case["status"] == "deferred_isotope_support"
     ]
 
     assert {case["case_id"] for case in deferred} == {"ST-04", "ST-06", "ST-19"}

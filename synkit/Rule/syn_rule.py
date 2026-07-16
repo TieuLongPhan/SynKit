@@ -240,8 +240,7 @@ class SynRule:
         }
         rc_graph.graph["stereo_query_policies"] = dict(self.stereo_query_policies)
         rc_graph.graph["stereo_couplings"] = {
-            key: coupling.relation
-            for key, coupling in self.stereo_couplings.items()
+            key: coupling.relation for key, coupling in self.stereo_couplings.items()
         }
         if self._reverse_stereo_outcomes:
             rc_graph.graph["stereo_reverse_outcomes"] = {
@@ -382,9 +381,7 @@ class SynRule:
             atom_map = attrs.get("atom_map", node)
             if isinstance(atom_map, tuple):
                 atom_maps.update(
-                    value
-                    for value in atom_map
-                    if isinstance(value, int) and value > 0
+                    value for value in atom_map if isinstance(value, int) and value > 0
                 )
             elif isinstance(atom_map, int) and atom_map > 0:
                 atom_maps.add(atom_map)
@@ -723,9 +720,9 @@ class SynRule:
         counts: dict[str, int] = {}
         for value in values:
             counts[value] = counts.get(value, 0) + 1
-        return "{" + ",".join(
-            f"{value}:{counts[value]}" for value in sorted(counts)
-        ) + "}"
+        return (
+            "{" + ",".join(f"{value}:{counts[value]}" for value in sorted(counts)) + "}"
+        )
 
     def _stereo_repr(self) -> str:
         """Summarize active rule-level stereochemical semantics for ``repr``."""
@@ -756,8 +753,7 @@ class SynRule:
                 "couplings="
                 + self._repr_counts(
                     tuple(
-                        coupling.relation
-                        for coupling in self.stereo_couplings.values()
+                        coupling.relation for coupling in self.stereo_couplings.values()
                     )
                 )
             )
@@ -815,8 +811,7 @@ class SynRule:
             key: change.reverse() for key, change in self.stereo_effects.items()
         }
         reversed_graph.graph["stereo_couplings"] = {
-            key: coupling.relation
-            for key, coupling in self.stereo_couplings.items()
+            key: coupling.relation for key, coupling in self.stereo_couplings.items()
         }
         sides = self.rc.raw.graph.get("stereo_descriptors", {})
         reversed_graph.graph["stereo_descriptors"] = {

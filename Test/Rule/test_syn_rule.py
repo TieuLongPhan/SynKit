@@ -128,8 +128,7 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         )
 
         racemic = SynRule.from_smart(
-            "[CH3:1][CH+:2][F:3].[OH-:4]>>"
-            "[CH3:1][C@H:2]([F:3])[OH:4]",
+            "[CH3:1][CH+:2][F:3].[OH-:4]>>" "[CH3:1][C@H:2]([F:3])[OH:4]",
             canon=False,
             implicit_h=False,
             format="tuple",

@@ -13,16 +13,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 PINNED_COMMIT = "2189f610f23eaaf992e2e01a12ea4d0532496601"
 
 MAPPED_CONNECTIVITY_SMILES = (
     "[C:1]([O:2][C:33]([C:4]([O:5][H:13])([H:111])[H:12])"
     "([H:9])[H:10])([H:6])([H:77])[H:8]"
 )
-MAPPED_CONNECTIVITY_ATOMS = frozenset(
-    {1, 2, 33, 4, 5, 6, 77, 8, 9, 10, 111, 12, 13}
-)
+MAPPED_CONNECTIVITY_ATOMS = frozenset({1, 2, 33, 4, 5, 6, 77, 8, 9, 10, 111, 12, 13})
 
 
 @dataclass(frozen=True)
@@ -51,8 +48,7 @@ INCHI_ROUND_TRIP_CASES = (
     ),
     InchiCase(
         "caffeine",
-        "InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/"
-        "h4H,1-3H3",
+        "InChI=1S/C8H10N4O2/c1-10-4-9-6-5(10)7(13)12(3)8(14)11(6)2/" "h4H,1-3H3",
         0,
     ),
     InchiCase(

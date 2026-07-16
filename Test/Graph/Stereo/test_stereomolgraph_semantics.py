@@ -74,10 +74,13 @@ def test_unmapped_explicit_h_normalizes_to_implicit_h_identity():
         iter(explicit_graph.graph["stereo_descriptors"].values())
     )
 
-    assert normalize_hydrogen_references(
-        explicit_descriptor,
-        explicit_graph,
-    ) == implicit_descriptor
+    assert (
+        normalize_hydrogen_references(
+            explicit_descriptor,
+            explicit_graph,
+        )
+        == implicit_descriptor
+    )
 
 
 def test_unknown_planar_orientation_clears_rdkit_ez_assignment():

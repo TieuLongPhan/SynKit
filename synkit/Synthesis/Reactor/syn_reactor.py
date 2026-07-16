@@ -405,8 +405,7 @@ class SynReactor:
 
                     selective_pattern = full_pattern_graph.copy()
                     selective_pattern.graph["stereo_descriptors"] = {
-                        key: self.rule.stereo_guards[key]
-                        for key in exact_targets
+                        key: self.rule.stereo_guards[key] for key in exact_targets
                     }
                     raw_maps = [
                         mapping
@@ -575,7 +574,9 @@ class SynReactor:
                     if neighbor not in wildcard_nodes
                 ]
                 for partial in partials:
-                    mapped_anchors = [partial[anchor] for anchor in anchors if anchor in partial]
+                    mapped_anchors = [
+                        partial[anchor] for anchor in anchors if anchor in partial
+                    ]
                     if len(mapped_anchors) != len(anchors) or not mapped_anchors:
                         continue
                     candidates = set(host.neighbors(mapped_anchors[0]))
@@ -939,9 +940,7 @@ class SynReactor:
                 and descriptor_id(effect.after) == target
             )
             safe_destruction = (
-                effect is not None
-                and effect.after is None
-                and not other_outputs
+                effect is not None and effect.after is None and not other_outputs
             )
             if not same_locus_output and not safe_destruction:
                 exact_targets.add(target)
@@ -1406,12 +1405,7 @@ class SynReactor:
         else:
             new_r = host_r[:2] + (host_r[2],) + host_r[3:]
         if pat_p[0] == "*":
-            new_p = (
-                host_p[:2]
-                + (host_r[2] - delta,)
-                + (host_p[3],)
-                + host_p[4:]
-            )
+            new_p = host_p[:2] + (host_r[2] - delta,) + (host_p[3],) + host_p[4:]
         else:
             new_p = host_p[:2] + (host_r[2] - delta,) + (pat_p[3],) + host_p[4:]
         # if pat_r[0] == '*':
@@ -1574,9 +1568,7 @@ class SynReactor:
                             if product_value.is_integer():
                                 product_value = int(product_value)
                             host_attr[key] = (host_value[0], product_value)
-                        host_attr["standard_order"] = rc_attr.get(
-                            "standard_order", 0.0
-                        )
+                        host_attr["standard_order"] = rc_attr.get("standard_order", 0.0)
                     elif rc_order[0] == 0:  # additive only on product side
                         ho = host_attr["order"]
                         host_attr["order"] = (ho[0], round(ho[1] + rc_order[1]))
@@ -1896,9 +1888,7 @@ class SynReactor:
         for left, right, attrs in self.rule.rc.raw.edges(data=True):
             order = attrs.get("order")
             if not (
-                isinstance(order, tuple)
-                and len(order) == 2
-                and order[0] != order[1]
+                isinstance(order, tuple) and len(order) == 2 and order[0] != order[1]
             ):
                 continue
             for node in (left, right):
@@ -1913,9 +1903,7 @@ class SynReactor:
             return mappings
 
         orbit_by_node = {
-            node: index
-            for index, orbit in enumerate(pattern_orbits)
-            for node in orbit
+            node: index for index, orbit in enumerate(pattern_orbits) for node in orbit
         }
         seen = set()
         unique = []
@@ -1930,14 +1918,12 @@ class SynReactor:
                 )
                 host_centers = tuple(mapping[node] for node in center_nodes)
                 host_ligands = tuple(mapping[node] for node in ligand_nodes)
-                centers_exchangeable = (
-                    orbit_by_node.get(center_nodes[0])
-                    == orbit_by_node.get(center_nodes[1])
-                )
-                ligands_exchangeable = (
-                    orbit_by_node.get(ligand_nodes[0])
-                    == orbit_by_node.get(ligand_nodes[1])
-                )
+                centers_exchangeable = orbit_by_node.get(
+                    center_nodes[0]
+                ) == orbit_by_node.get(center_nodes[1])
+                ligands_exchangeable = orbit_by_node.get(
+                    ligand_nodes[0]
+                ) == orbit_by_node.get(ligand_nodes[1])
                 if centers_exchangeable and ligands_exchangeable:
                     mapped_locus = (
                         tuple(sorted(host_centers, key=repr)),
@@ -1993,9 +1979,8 @@ class SynReactor:
         representatives: List[Tuple[nx.Graph, nx.Graph, str | None]] = []
         unique = []
         for its in its_graphs:
-            if (
-                not its.graph.get("stereo_coupling_branch")
-                or its.graph.get("stereo_outcomes")
+            if not its.graph.get("stereo_coupling_branch") or its.graph.get(
+                "stereo_outcomes"
             ):
                 unique.append(its)
                 continue
@@ -2025,9 +2010,7 @@ class SynReactor:
                     and stereo_isomorphic(reactant, other_reactant)
                 ):
                     retained = other_its.graph.get("stereo_coupling_branch", {})
-                    duplicate_metadata = its.graph.get(
-                        "stereo_coupling_branch", {}
-                    )
+                    duplicate_metadata = its.graph.get("stereo_coupling_branch", {})
                     for target, metadata in duplicate_metadata.items():
                         retained_metadata = retained.get(target)
                         if retained_metadata is None:
@@ -2040,9 +2023,7 @@ class SynReactor:
                         )
                         branches.add(metadata.get("face_branch"))
                         branches.discard(None)
-                        retained_metadata["equivalent_face_branches"] = sorted(
-                            branches
-                        )
+                        retained_metadata["equivalent_face_branches"] = sorted(branches)
                         retained_metadata["symmetry_multiplicity"] = len(branches)
                     duplicate = True
                     break
