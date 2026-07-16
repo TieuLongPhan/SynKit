@@ -548,7 +548,6 @@ def test_extended_capability_boundary_is_explicit():
         "octahedral",
         "planar_bond",
         "atrop_bond",
-        "atrop_bond",
     }
     assert RDKIT_STEREO_DESCRIPTOR_CLASSES == {
         "tetrahedral",
@@ -556,6 +555,7 @@ def test_extended_capability_boundary_is_explicit():
         "trigonal_bipyramidal",
         "octahedral",
         "planar_bond",
+        "atrop_bond",
     }
     assert "rigid_bond_33" in DEFERRED_STEREO_DESCRIPTOR_CLASSES
 

@@ -40,8 +40,11 @@ fishhooks carry one electron. Coupled radical events commit atomically.
 
 SynKit graph/rule metadata supports relative tetrahedral, square-planar,
 trigonal-bipyramidal, octahedral, planar double-bond, and atrop-bond stereo.
-The RDKit round-trip adapter remains intentionally narrower: tetrahedral and
-planar double-bond only. Coordinate inference, rigid-bond descriptor variants,
+The RDKit adapter round-trips all six families when the state is representable:
+tetrahedral and planar-bond stereo plus assigned square-planar,
+trigonal-bipyramidal, octahedral, and atrop-bond descriptors. Unknown
+non-tetrahedral or atrop orientation fails explicitly instead of disappearing.
+Coordinate inference, rigid-bond descriptor variants, enhanced stereo groups,
 face-selectivity prediction, and physical inference of configurational
 stability remain outside the current claims. The schema remains
 `2.0.0-draft1` pending project-owner release review.
