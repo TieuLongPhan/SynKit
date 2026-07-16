@@ -66,9 +66,15 @@ def _descriptor_signature(
 
 def _stereo_effect_signature(effect: Any, ranks: dict[int, int]) -> tuple[Any, ...]:
     target_kind, target_reference = effect.descriptor_target
+    if isinstance(target_reference, tuple):
+        ranked_reference: Any = tuple(
+            sorted(ranks.get(value, value) for value in target_reference)
+        )
+    else:
+        ranked_reference = ranks.get(target_reference, target_reference)
     target = (
         target_kind,
-        ranks.get(target_reference, target_reference),
+        ranked_reference,
     )
     return (
         effect.effect,
@@ -89,6 +95,8 @@ def _stereo_effect_dependencies(effect: Any, ranks: dict[int, int]) -> frozenset
     target = effect.descriptor_target[1]
     if isinstance(target, int):
         dependencies.add(target)
+    else:
+        dependencies.update(target)
     return frozenset(ranks.get(value, value) for value in dependencies)
 
 

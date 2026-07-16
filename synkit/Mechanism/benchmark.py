@@ -12,7 +12,7 @@ from typing import Any, Iterable, Mapping
 
 from rdkit import Chem
 
-from .model import MechanismRecord
+from .model import MechanismModelError, MechanismRecord
 from .radical_data import iter_radical_csv
 
 
@@ -40,6 +40,19 @@ class CorruptedAnnotation:
     payload: Mapping[str, Any]
     expected_issue_code: str
     provenance: Mapping[str, Any]
+
+    def observed_issue_codes(self) -> tuple[str, ...]:
+        """Execute this corruption through model parsing and strict replay."""
+        try:
+            record = MechanismRecord.from_dict(self.payload)
+        except MechanismModelError as error:
+            prefix = str(error).split(":", 1)[0]
+            return (prefix if prefix.isupper() else "MODEL_ERROR",)
+
+        from .replay import MechanismReplayer
+
+        result = MechanismReplayer(verify_stereo="stepwise").replay(record)
+        return tuple(issue.code for issue in result.certificate.issues)
 
 
 def radical_candidates(
@@ -300,7 +313,7 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
             moves.append(
                 {
                     "source": {"locus": "∙", "atom_maps": [1]},
-                    "target": {"locus": "∙", "atom_maps": [1]},
+                    "target": {"locus": "∙", "atom_maps": [2]},
                     "electron_count": 1,
                     "arrow_type": "fishhook",
                     "group_id": groups[0]["group_id"],
@@ -315,26 +328,78 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
     move["electron_count"] = 3
     add("wrong_electron_count", payload, "INVALID_ELECTRON_COUNT")
     payload, move = first_move()
+    move["electron_count"] = 1
+    move["arrow_type"] = "fishhook"
     move["coupling_id"] = "orphan"
     add("missing_fishhook_partner", payload, "MISSING_COUPLED_FISHHOOK")
     payload, move = first_move()
     move["source"] = {"locus": "lp", "atom_maps": [999999]}
-    add("wrong_source_or_target_locus", payload, "MISSING_ATOM_MAP")
+    add("wrong_source_or_target_locus", payload, "SOURCE_LOCUS_ABSENT")
     payload, move = first_move()
-    payload["steps"][0]["groups"][0]["moves"].append(deepcopy(move))
+    atom_maps = sorted(
+        {
+            atom_map
+            for locus in (move["source"], move["target"])
+            for atom_map in locus["atom_maps"]
+        }
+    )
+    source = {"locus": "σ", "atom_maps": atom_maps[:2]}
+    group_id = move["group_id"]
+    payload["steps"][0]["groups"][0]["moves"] = [
+        {
+            **deepcopy(move),
+            "event_id": f"overconsumed-{index + 1}",
+            "source": source,
+            "target": {"locus": "lp", "atom_maps": [atom_map]},
+            "electron_count": 2,
+            "arrow_type": "curved",
+            "group_id": group_id,
+            "coupling_id": None,
+        }
+        for index, atom_map in enumerate(atom_maps[:2])
+    ]
     add("overconsumed_locus", payload, "LOCUS_OVERCONSUMED")
+    payload, move = first_move()
+    move["source"], move["target"] = move["target"], move["source"]
+    add("wrong_step_order", payload, "SOURCE_LOCUS_ABSENT")
     payload = deepcopy(original)
-    payload["steps"] = list(reversed(payload.get("steps", [])))
-    add("wrong_step_order", payload, "FINAL_PRODUCT_MISMATCH")
+    reactants, products = payload["mapped_reaction"].split(">>", 1)
+    payload["mapped_reaction"] = f"{reactants}>>{products}.[CH3:999999]"
+    add("incorrect_radical_count", payload, "FINAL_PRODUCT_MISMATCH")
     payload = deepcopy(original)
-    payload.setdefault("metadata", {})["expected_radical_delta"] = 999
-    add("incorrect_radical_count", payload, "RADICAL_STATE_MISMATCH")
+    payload["steps"][0].setdefault("stereo_effects", []).append(
+        {
+            "descriptor_target": ["atom", 2],
+            "effect": "FORM",
+            "before": None,
+            "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [2, 1, 999997, 999998, "@H:2"],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "corrupted",
+            },
+            "provenance": "corrupted",
+        }
+    )
+    add("wrong_tetrahedral_parity", payload, "INVALID_STEREO_FORMATION")
     payload = deepcopy(original)
-    payload.setdefault("metadata", {})["corrupt_tetrahedral_parity"] = -1
-    add("wrong_tetrahedral_parity", payload, "STEREO_ENDPOINT_MISMATCH")
-    payload = deepcopy(original)
-    payload.setdefault("metadata", {})["corrupt_planar_references"] = True
-    add("wrong_alkene_references", payload, "STEREO_ENDPOINT_MISMATCH")
+    payload["steps"][0].setdefault("stereo_effects", []).append(
+        {
+            "descriptor_target": ["bond", [1, 2]],
+            "effect": "FORM",
+            "before": None,
+            "after": {
+                "descriptor_class": "planar_bond",
+                "atoms": [999997, "@H:1", 1, 2, "@H:2", 999998],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "corrupted",
+            },
+            "provenance": "corrupted",
+        }
+    )
+    add("wrong_alkene_references", payload, "INVALID_STEREO_FORMATION")
     payload = deepcopy(original)
     steps = payload.setdefault("steps", [])
     if not steps:
@@ -350,7 +415,9 @@ def corrupt_record(record: MechanismRecord) -> tuple[CorruptedAnnotation, ...]:
     )
     add("illegal_stereo_preservation", payload, "STEREO_TRANSITION_FROM_ABSENT")
     payload = deepcopy(original)
-    payload["mapped_reaction"] = original["mapped_reaction"].split(">>", 1)[0] + ">>C"
+    payload["mapped_reaction"] = (
+        original["mapped_reaction"].split(">>", 1)[0] + ">>[CH4:999999]"
+    )
     add("mismatched_final_product", payload, "FINAL_PRODUCT_MISMATCH")
     return tuple(variants)
 

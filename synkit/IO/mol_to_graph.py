@@ -1047,6 +1047,7 @@ class MolToGraph:
 
         props: Dict[str, Any] = {
             "element": atom.GetSymbol(),
+            "isotope": atom.GetIsotope(),
             "aromatic": atom.GetIsAromatic(),
             "hcount": atom.GetTotalNumHs(),
             "charge": atom.GetFormalCharge(),

@@ -23,6 +23,8 @@ from synkit.Mechanism import (
     mechanism_from_legacy_epd,
     mechanism_record_schema,
     radical_match,
+    StereoDescriptor,
+    StereoEffect,
     normalize_locus_symbol,
     normalize_radical_row,
 )
@@ -74,6 +76,16 @@ def test_arrow_type_and_electron_count_must_agree():
         )
 
 
+def test_electron_moves_reject_noops_and_two_electron_radical_loci():
+    radical = ElectronLocus.atom("rad", atom_map=1)
+    sigma = ElectronLocus.bond("sigma", atom_maps=(1, 2))
+
+    with pytest.raises(MechanismModelError, match="source and target are identical"):
+        ElectronMove(radical, radical, 1, "fishhook", "g1")
+    with pytest.raises(MechanismModelError, match="RADICAL_LOCUS_REQUIRES_FISHHOOK"):
+        ElectronMove(sigma, radical, 2, "curved", "g1")
+
+
 def test_homolysis_requires_two_coupled_fishhooks_and_accepts_valid_group():
     source = ElectronLocus.bond("sigma", atom_maps=(1, 2))
     one = ElectronMove(
@@ -101,6 +113,25 @@ def test_homolysis_requires_two_coupled_fishhooks_and_accepts_valid_group():
     assert group.issues() == ()
 
 
+def test_homolysis_requires_radicals_on_the_broken_bond_endpoints():
+    source = ElectronLocus.bond("sigma", atom_maps=(1, 2))
+    moves = tuple(
+        ElectronMove(
+            source,
+            ElectronLocus.atom("rad", atom_map=atom_map),
+            1,
+            "fishhook",
+            "g1",
+            coupling_id="c1",
+        )
+        for atom_map in (3, 4)
+    )
+
+    issues = ElectronMoveGroup("g1", moves, macro="HOMOLYSIS").issues()
+
+    assert issues[0].code == "UNBALANCED_EVENT_GROUP"
+
+
 def test_group_rejects_simultaneous_overconsumption_before_replay():
     graph = nx.Graph()
     graph.add_node(1, atom_map=1, radical=1)
@@ -108,8 +139,8 @@ def test_group_rejects_simultaneous_overconsumption_before_replay():
     graph.add_edge(1, 2, sigma_order=1.0, pi_order=0.0)
     source = ElectronLocus.bond("sigma", atom_maps=(1, 2))
     moves = (
-        ElectronMove(source, ElectronLocus.atom("rad", atom_map=1), 2, "curved", "g1"),
-        ElectronMove(source, ElectronLocus.atom("rad", atom_map=2), 2, "curved", "g1"),
+        ElectronMove(source, ElectronLocus.atom("lp", atom_map=1), 2, "curved", "g1"),
+        ElectronMove(source, ElectronLocus.atom("lp", atom_map=2), 2, "curved", "g1"),
     )
 
     assert "LOCUS_OVERCONSUMED" in {
@@ -230,6 +261,50 @@ def test_local_electron_state_audit_reports_and_repairs_charge():
     assert audit.issues[0].code == "LOCAL_ELECTRON_MISMATCH"
     assert repaired.repaired_atom_maps == (1,)
     assert graph.nodes[1]["charge"] == 0
+
+
+def test_local_electron_state_audit_rejects_negative_and_pure_pi_resources():
+    graph = nx.Graph()
+    graph.add_node(
+        1,
+        atom_map=1,
+        valence_electrons=4,
+        lone_pairs=0,
+        radical=0,
+        hcount=-1,
+        charge=0,
+    )
+    graph.add_node(
+        2,
+        atom_map=2,
+        valence_electrons=4,
+        lone_pairs=0,
+        radical=0,
+        hcount=2,
+        charge=0,
+    )
+    graph.add_edge(1, 2, sigma_order=0.0, pi_order=1.0)
+
+    codes = {issue.code for issue in audit_local_electron_state(graph).issues}
+
+    assert "INVALID_ELECTRON_RESOURCE" in codes
+    assert "PI_WITHOUT_SIGMA" in codes
+
+
+def test_bond_stereo_effect_target_round_trips_and_is_schema_legal():
+    descriptor = StereoDescriptor(
+        "planar_bond",
+        (1, "@H:2", 2, 3, "@H:3", 4),
+        0,
+    )
+    effect = StereoEffect(("bond", (3, 2)), "FORM", after=descriptor)
+
+    assert effect.descriptor_target == ("bond", (2, 3))
+    assert StereoEffect.from_dict(effect.to_dict()) == effect
+    target_schema = mechanism_record_schema()["$defs"]["stereoEffect"][
+        "properties"
+    ]["descriptor_target"]
+    assert target_schema["prefixItems"][1]["oneOf"][1]["minItems"] == 2
 
 
 @pytest.mark.parametrize("logical_row", [1, 2, 3, 4, 34, 37])

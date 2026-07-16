@@ -11,6 +11,7 @@ from synkit.Mechanism import (
     MechanisticStep,
     StereoDescriptor,
     StereoEffect,
+    apply_stereo_effects,
     mechanism_equivalent,
     project_record,
     corrupt_record,
@@ -72,10 +73,11 @@ def test_conversion_reports_grouping_loss():
 
 
 def test_illegal_stereo_transition_is_stepwise_error():
-    descriptor = StereoDescriptor("tetrahedral", (2, 1, 3, 4, "@H:2"), 1)
+    descriptor = StereoDescriptor("tetrahedral", (99, 1, 3, 4, "@H:99"), 1)
     effect = StereoEffect(("atom", 99), "INVERT", before=descriptor)
     record = MechanismRecord(
-        "[CH3:1][C@:2]([F:3])([Cl:4])[H]>>[CH3:1][C@:2]([F:3])([Cl:4])[H]",
+        "[CH3:1][C@:2]([F:3])([Cl:4])[H:5]>>"
+        "[CH3:1][C@:2]([F:3])([Cl:4])[H:5]",
         (MechanisticStep("s1", (), (effect,)),),
     )
 
@@ -85,6 +87,47 @@ def test_illegal_stereo_transition_is_stepwise_error():
     assert "STEREO_TRANSITION_FROM_ABSENT" in {
         issue.code for issue in certificate.issues
     }
+
+
+def test_stereo_effects_validate_before_relation_and_apply_atomically():
+    graph = nx.Graph()
+    for atom_map, element in ((1, "C"), (2, "C"), (3, "F"), (4, "Cl")):
+        graph.add_node(
+            atom_map,
+            atom_map=atom_map,
+            element=element,
+            hcount=1 if atom_map == 2 else 0,
+            lone_pairs=0,
+        )
+    graph.add_edges_from((2, ligand) for ligand in (1, 3, 4))
+    before = StereoDescriptor("tetrahedral", (2, 1, 3, 4, "@H:2"), 1)
+    inverted = StereoDescriptor("tetrahedral", before.atoms, -1)
+    graph.graph["mechanism_stereo_descriptors"] = {"atom:2": before}
+
+    preserved, preserve_issues = apply_stereo_effects(
+        graph,
+        (StereoEffect(("atom", 2), "PRESERVE", before, inverted),),
+        step_id="s1",
+    )
+    atomic, atomic_issues = apply_stereo_effects(
+        graph,
+        (
+            StereoEffect(("atom", 2), "BREAK", before),
+            StereoEffect(("atom", 99), "INVERT", StereoDescriptor(
+                "tetrahedral", (99, 1, 3, 4, "@H:99"), 1
+            )),
+        ),
+        step_id="s1",
+    )
+
+    assert {issue.code for issue in preserve_issues} == {
+        "INVALID_STEREO_PRESERVATION"
+    }
+    assert preserved.graph["mechanism_stereo_descriptors"] == {"atom:2": before}
+    assert "STEREO_TRANSITION_FROM_ABSENT" in {
+        issue.code for issue in atomic_issues
+    }
+    assert atomic.graph["mechanism_stereo_descriptors"] == {"atom:2": before}
 
 
 def test_gml_stereo_registry_round_trip():
@@ -108,6 +151,8 @@ def test_benchmark_corruptions_and_release_gate_are_explicit():
 
     assert len(corruptions) == 10
     assert len({item.corruption for item in corruptions}) == 10
+    for item in corruptions:
+        assert item.expected_issue_code in item.observed_issue_codes(), item.corruption
     assert "PARTITION_COUNT:polar:1/80" in benchmark_release_issues([candidate])
     assert "CHEMISTRY_REVIEW_REQUIRED:1" in benchmark_release_issues([candidate])
 

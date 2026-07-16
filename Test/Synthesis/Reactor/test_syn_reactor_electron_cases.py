@@ -367,9 +367,9 @@ class TestSynReactorElectronCases(unittest.TestCase):
         )
         self.assertTrue(backward.its_list)
         product_graph = ITSReverter(backward.its_list[0]).to_product_graph()
-        self.assertTrue(
+        self.assertFalse(
             any(
-                attrs.get("element") == "O" and attrs.get("hcount") == -1
+                attrs.get("hcount", 0) < 0
                 for _, attrs in product_graph.nodes(data=True)
             )
         )

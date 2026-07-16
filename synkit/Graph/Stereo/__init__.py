@@ -46,6 +46,7 @@ from .identity import (
 from .rdkit_adapter import apply_stereo_to_rdkit, descriptors_from_rdkit
 from .matching import (
     candidate_mapping_stereo_matches,
+    descriptor_graph_support_errors,
     descriptor_query_matches,
     normalize_hydrogen_references,
     propagate_unaffected_stereo,
@@ -96,6 +97,7 @@ __all__ = [
     "annotate_its_stereo",
     "stereo_complete_reaction_center_nodes",
     "candidate_mapping_stereo_matches",
+    "descriptor_graph_support_errors",
     "descriptor_query_matches",
     "normalize_hydrogen_references",
     "propagate_unaffected_stereo",

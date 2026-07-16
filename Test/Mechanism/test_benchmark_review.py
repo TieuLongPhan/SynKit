@@ -25,6 +25,11 @@ def test_reviewed_radical_manifest_has_80_replay_valid_records():
         "PARTITION_COUNT:polar:0/80",
         "PARTITION_COUNT:stereo:0/80",
     ]
+    for case in manifest["cases"]:
+        result = MechanismReplayer().replay(
+            MechanismRecord.from_dict(case["record"])
+        )
+        assert result.certificate.status == "VALID", case["case_id"]
 
 
 def test_mechanismbench_json_files_are_executable_case_data_only():

@@ -102,6 +102,24 @@ def test_unmapped_radical_substrate_preserves_explicit_product_state():
     assert product.number_of_edges() == 1
 
 
+def test_propagate_mode_drops_descriptor_after_a_ligand_disconnects():
+    rule = (
+        "[CH3:1][CH:2]([F:3])[Cl:4]>>"
+        "[CH3:1][CH:2][F:3].[Cl:4]"
+    )
+    reactor = SynReactor(
+        "C[C@H](F)Cl",
+        rule,
+        template_format="tuple",
+        explicit_h=False,
+        stereo_mode="propagate",
+    )
+
+    product_registry = reactor.its_list[0].graph["stereo_descriptors"]["product"]
+
+    assert "atom:2" not in product_registry
+
+
 def test_sn2_stereo_rule_has_complete_rc_and_inverted_effect():
     rc = rsmi_to_its(
         SN2_RULE,

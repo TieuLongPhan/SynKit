@@ -614,6 +614,8 @@ class SynReactor:
             if isinstance(atom_map, tuple) and atom_map:
                 atom_map = atom_map[0]
             if isinstance(atom_map, int) and atom_map > 0:
+                if atom_map in result and result[atom_map] != node:
+                    raise ValueError(f"Duplicate atom map {atom_map} in graph.")
                 result[atom_map] = node
         return result
 
@@ -692,6 +694,7 @@ class SynReactor:
                     embed_threshold=self.embed_threshold,
                     embed_pre_filter=False,
                     relative_pi_edges=self._relative_pi_rewrite_edges(rc_raw),
+                    restore_unmatched_explicit_h=not self.explicit_h,
                 )
                 stereo_batch: List[nx.Graph] = []
                 for candidate in its_batch:
@@ -702,6 +705,9 @@ class SynReactor:
 
             if self.explicit_h:
                 self._its = [self._explicit_h(g) for g in self._its]
+            self._its = [
+                its for its in self._its if self._validate_product_stereo_registry(its)
+            ]
             self._its = self._deduplicate_coupling_face_products(self._its)
             self._its = self._deduplicate_structural_its(self._its)
             log.debug("Built %d ITS graph(s)", len(self._its))
@@ -1348,6 +1354,36 @@ class SynReactor:
         return results
 
     @staticmethod
+    def _validate_product_stereo_registry(its: nx.Graph) -> bool:
+        """Validate product descriptors after the requested H representation."""
+        from synkit.Graph.Stereo import descriptor_graph_support_errors
+
+        layers = its.graph.get("stereo_descriptors", {})
+        product_registry = dict(layers.get("product", {}))
+        changes = its.graph.get("stereo_changes", {})
+        product = ITSReverter(its).to_product_graph()
+        invalid = {
+            key: descriptor_graph_support_errors(
+                product,
+                descriptor,
+                registry_key=key,
+            )
+            for key, descriptor in product_registry.items()
+        }
+        invalid = {key: errors for key, errors in invalid.items() if errors}
+        if any(key in changes for key in invalid):
+            return False
+        if invalid:
+            layers = dict(layers)
+            layers["product"] = {
+                key: descriptor
+                for key, descriptor in product_registry.items()
+                if key not in invalid
+            }
+            its.graph["stereo_descriptors"] = layers
+        return True
+
+    @staticmethod
     def _implicit_heavy_hydrogens(graph: nx.Graph) -> nx.Graph:
         """Convert ordinary heavy-atom-bound explicit H nodes into hcount."""
         normalized = graph.copy()
@@ -1428,7 +1464,10 @@ class SynReactor:
         embed_pre_filter: bool = False,
     ):
         expand_nodes = [v for _, v in mapping.items()]
+        original_nodes = set(host)
         host_explicit = h_to_explicit(host, expand_nodes)
+        for node in set(host_explicit) - original_nodes:
+            host_explicit.nodes[node]["_pattern_expanded_h"] = True
         mappings = SubgraphSearchEngine.find_subgraph_mappings(
             host=host_explicit,
             pattern=pattern_explicit or nx.Graph(),
@@ -1441,6 +1480,37 @@ class SynReactor:
         return mappings, host_explicit
 
     @staticmethod
+    def _restore_unmatched_pattern_hydrogens(
+        graph: nx.Graph,
+        mapping: MappingDict,
+    ) -> None:
+        """Fold unmatched temporary H expansions back into heavy-atom hcount."""
+        matched_nodes = set(mapping.values())
+        removable = [
+            node
+            for node, attrs in graph.nodes(data=True)
+            if attrs.get("_pattern_expanded_h") and node not in matched_nodes
+        ]
+        for hydrogen in removable:
+            neighbors = list(graph.neighbors(hydrogen))
+            if len(neighbors) != 1:
+                continue
+            heavy = neighbors[0]
+            graph.nodes[heavy]["hcount"] = graph.nodes[heavy].get("hcount", 0) + 1
+            types = graph.nodes[heavy].get("typesGH")
+            if (
+                isinstance(types, tuple)
+                and len(types) == 2
+                and isinstance(types[0], tuple)
+                and len(types[0]) >= 3
+            ):
+                graph.nodes[heavy]["typesGH"] = (
+                    types[0][:2] + (types[0][2] + 1,) + types[0][3:],
+                    types[1],
+                )
+            graph.remove_node(hydrogen)
+
+    @staticmethod
     def _glue_graph(
         host: nx.Graph,
         rc: nx.Graph,
@@ -1451,6 +1521,7 @@ class SynReactor:
         embed_threshold: float = None,
         embed_pre_filter: bool = False,
         relative_pi_edges: set[frozenset[Any]] | None = None,
+        restore_unmatched_explicit_h: bool = True,
     ) -> List[nx.Graph]:
         list_its: List[nx.Graph] = []
         host_g = deepcopy(host)
@@ -1493,6 +1564,8 @@ class SynReactor:
         for m in mappings:
 
             its = deepcopy(host_g)
+            if pattern_has_explicit_H and restore_unmatched_explicit_h:
+                SynReactor._restore_unmatched_pattern_hydrogens(its, m)
             # This should only work for implict cases
             if len(m.keys()) < rc.number_of_nodes():
                 its, m = add_wildcard_subgraph_for_unmapped(
@@ -2118,9 +2191,22 @@ class SynReactor:
     @staticmethod
     def _ensure_host_atom_maps(host: nx.Graph) -> None:
         """Assign stable fresh atom maps to unmapped host atoms."""
+        used: set[int] = set()
         for node, attrs in host.nodes(data=True):
-            if attrs.get("atom_map") in (None, 0):
-                attrs["atom_map"] = node
+            atom_map = attrs.get("atom_map")
+            if not isinstance(atom_map, int) or atom_map <= 0:
+                continue
+            if atom_map in used:
+                raise ValueError(f"Duplicate atom map {atom_map} on host graph.")
+            used.add(atom_map)
+        fresh = max(used, default=0) + 1
+        for node, attrs in host.nodes(data=True):
+            if not isinstance(attrs.get("atom_map"), int) or attrs["atom_map"] <= 0:
+                while fresh in used:
+                    fresh += 1
+                attrs["atom_map"] = fresh
+                used.add(fresh)
+                fresh += 1
 
     @staticmethod
     def _refresh_product_electron_fields(
@@ -2413,10 +2499,23 @@ class SynReactor:
     @staticmethod
     def _ensure_tuple_atom_maps(graph: nx.Graph) -> None:
         """Assign stable paired atom maps to tuple nodes lacking visible maps."""
+        used: set[int] = set()
+        for node, attrs in graph.nodes(data=True):
+            atom_map = attrs.get("atom_map")
+            values = atom_map if isinstance(atom_map, tuple) else (atom_map,)
+            for value in {item for item in values if isinstance(item, int) and item > 0}:
+                if value in used:
+                    raise ValueError(f"Duplicate atom map {value} in tuple graph.")
+                used.add(value)
+        fresh = max(used, default=0) + 1
         for node, attrs in graph.nodes(data=True):
             atom_map = attrs.get("atom_map")
             if atom_map in (None, 0) or atom_map == (0, 0):
-                attrs["atom_map"] = (node, node)
+                while fresh in used:
+                    fresh += 1
+                attrs["atom_map"] = (fresh, fresh)
+                used.add(fresh)
+                fresh += 1
 
     # --------------------- SMARTS serialisation -----------------------
     @staticmethod

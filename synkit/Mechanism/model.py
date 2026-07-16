@@ -103,7 +103,9 @@ class ElectronMove:
 
     def __post_init__(self) -> None:
         if self.electron_count not in (1, 2):
-            raise MechanismModelError("electron_count must be 1 or 2.")
+            raise MechanismModelError(
+                "INVALID_ELECTRON_COUNT: electron_count must be 1 or 2."
+            )
         expected = "fishhook" if self.electron_count == 1 else "curved"
         if self.arrow_type != expected:
             raise MechanismModelError(
@@ -112,6 +114,18 @@ class ElectronMove:
             )
         if not str(self.group_id).strip():
             raise MechanismModelError("Electron moves require a non-empty group_id.")
+        if self.source == self.target:
+            raise MechanismModelError(
+                "Electron moves must change locus; source and target are identical."
+            )
+        if self.electron_count == 2 and RADICAL in {
+            self.source.kind,
+            self.target.kind,
+        }:
+            raise MechanismModelError(
+                "RADICAL_LOCUS_REQUIRES_FISHHOOK: radical loci carry "
+                "one-electron moves."
+            )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     def to_dict(self) -> dict[str, Any]:
@@ -277,6 +291,10 @@ class ElectronMoveGroup:
                 and next(iter(sources)).kind == SIGMA
                 and len(targets) == 2
                 and all(target.kind == RADICAL for target in targets)
+                and {
+                    target.atom_maps[0] for target in targets
+                }
+                == set(next(iter(sources)).atom_maps)
             )
             if not valid:
                 return [
@@ -294,6 +312,10 @@ class ElectronMoveGroup:
                 and all(source.kind == RADICAL for source in sources)
                 and len(targets) == 1
                 and next(iter(targets)).kind == SIGMA
+                and {
+                    source.atom_maps[0] for source in sources
+                }
+                == set(next(iter(targets)).atom_maps)
             )
             if not valid:
                 return [
@@ -326,19 +348,33 @@ class ElectronMoveGroup:
                     observed={f"{a}->{b}": count for (a, b), count in pairs.items()},
                 )
             ]
+        if expected is not None and not self._macro_incidence_is_valid(fishhooks):
+            return [
+                VerificationIssue(
+                    "MACRO_INCIDENCE_MISMATCH",
+                    f"{self.macro} loci do not share the required reacting atoms.",
+                    group_id=self.group_id,
+                )
+            ]
         if self.macro == "H_ABSTRACTION":
-            bond_sources = Counter(
-                move.source for move in fishhooks if move.source.kind in {SIGMA, PI}
+            simple_h_abstraction = Counter(
+                {
+                    (RADICAL, SIGMA): 1,
+                    (SIGMA, SIGMA): 1,
+                    (SIGMA, RADICAL): 1,
+                }
             )
-            bond_targets = Counter(
-                move.target for move in fishhooks if move.target.kind in {SIGMA, PI}
+            expected_h_abstraction = Counter(
+                {
+                    (RADICAL, SIGMA): 1,
+                    (SIGMA, SIGMA): 1,
+                    (SIGMA, PI): 1,
+                    (RADICAL, PI): 1,
+                }
             )
-            has_radical_source = any(move.source.kind == RADICAL for move in fishhooks)
             valid = (
-                len(fishhooks) >= 3
-                and has_radical_source
-                and any(count >= 2 for count in bond_sources.values())
-                and any(count >= 2 for count in bond_targets.values())
+                pairs in (simple_h_abstraction, expected_h_abstraction)
+                and self._h_abstraction_incidence_is_valid(fishhooks)
             )
             if not valid:
                 return [
@@ -349,6 +385,86 @@ class ElectronMoveGroup:
                     )
                 ]
         return []
+
+    @staticmethod
+    def _single_move(
+        moves: Sequence[ElectronMove], source: str, target: str
+    ) -> ElectronMove:
+        return next(
+            move
+            for move in moves
+            if move.source.kind == source and move.target.kind == target
+        )
+
+    def _macro_incidence_is_valid(self, moves: Sequence[ElectronMove]) -> bool:
+        """Check atom incidence for the three allylic radical macros."""
+        if self.macro == "RADICAL_ADDITION":
+            radical_to_new = self._single_move(moves, RADICAL, SIGMA)
+            old_to_new = self._single_move(moves, PI, SIGMA)
+            old_to_radical = self._single_move(moves, PI, RADICAL)
+        elif self.macro == "BETA_SCISSION":
+            radical_to_new = self._single_move(moves, RADICAL, PI)
+            old_to_new = self._single_move(moves, SIGMA, PI)
+            old_to_radical = self._single_move(moves, SIGMA, RADICAL)
+        elif self.macro == "RADICAL_RESONANCE":
+            radical_to_new = self._single_move(moves, RADICAL, PI)
+            old_to_new = self._single_move(moves, PI, PI)
+            old_to_radical = self._single_move(moves, PI, RADICAL)
+        else:
+            return True
+
+        if radical_to_new.target != old_to_new.target:
+            return False
+        if old_to_new.source != old_to_radical.source:
+            return False
+        old_atoms = set(old_to_new.source.atom_maps)
+        new_atoms = set(old_to_new.target.atom_maps)
+        shared = old_atoms & new_atoms
+        return (
+            len(shared) == 1
+            and {radical_to_new.source.atom_maps[0]} == new_atoms - shared
+            and {old_to_radical.target.atom_maps[0]} == old_atoms - shared
+        )
+
+    @classmethod
+    def _h_abstraction_incidence_is_valid(
+        cls, moves: Sequence[ElectronMove]
+    ) -> bool:
+        radical_to_new_sigma = cls._single_move(moves, RADICAL, SIGMA)
+        old_to_new_sigma = cls._single_move(moves, SIGMA, SIGMA)
+
+        if radical_to_new_sigma.target != old_to_new_sigma.target:
+            return False
+
+        old_sigma = set(old_to_new_sigma.source.atom_maps)
+        new_sigma = set(old_to_new_sigma.target.atom_maps)
+        hydrogen = old_sigma & new_sigma
+        if len(hydrogen) != 1:
+            return False
+        donor = old_sigma - hydrogen
+        acceptor = new_sigma - hydrogen
+        if {radical_to_new_sigma.source.atom_maps[0]} != acceptor:
+            return False
+
+        pairs = Counter((move.source.kind, move.target.kind) for move in moves)
+        if pairs[(SIGMA, RADICAL)] == 1:
+            old_to_radical = cls._single_move(moves, SIGMA, RADICAL)
+            return (
+                old_to_radical.source == old_to_new_sigma.source
+                and {old_to_radical.target.atom_maps[0]} == donor
+            )
+
+        old_to_new_pi = cls._single_move(moves, SIGMA, PI)
+        radical_to_new_pi = cls._single_move(moves, RADICAL, PI)
+        if (
+            old_to_new_sigma.source != old_to_new_pi.source
+            or old_to_new_pi.target != radical_to_new_pi.target
+        ):
+            return False
+        new_pi = set(old_to_new_pi.target.atom_maps)
+        return donor <= new_pi and {
+            radical_to_new_pi.source.atom_maps[0]
+        } == new_pi - donor
 
     def canonical_signature(self) -> tuple[Any, ...]:
         """Return an order-invariant signature for simultaneous events."""
@@ -416,6 +532,8 @@ class ElectronMoveGroup:
                         )
                     )
         for locus, count in requested.items():
+            if any(atom_map not in by_map for atom_map in locus.atom_maps):
+                continue
             available = self._available_electrons(graph, by_map, locus)
             if count > available:
                 issues.append(
@@ -505,6 +623,14 @@ class StereoDescriptor:
             )
         if self.state == "specified" and self.parity is None:
             raise MechanismModelError("Specified stereo descriptors require a parity.")
+        if self.state != "specified" and self.parity is not None:
+            raise MechanismModelError(
+                "Unknown, unspecified, and absent stereo states cannot carry parity."
+            )
+        if self.descriptor_class == "unknown" and self.state == "specified":
+            raise MechanismModelError(
+                "Unknown descriptor classes cannot declare specified stereo."
+            )
         if self.descriptor_class != "unknown":
             # Reuse the executable descriptor contract so mechanism envelopes
             # cannot reintroduce StereoMolGraph's untyped ``None`` or attach a
@@ -545,15 +671,81 @@ class StereoDescriptor:
 
 @dataclass(frozen=True)
 class StereoEffect:
-    descriptor_target: tuple[str, int]
+    descriptor_target: tuple[str, int | tuple[int, int]]
     effect: StereoEffectKind
     before: StereoDescriptor | None = None
     after: StereoDescriptor | None = None
     provenance: str = "annotated"
 
+    def __post_init__(self) -> None:
+        if len(self.descriptor_target) != 2:
+            raise MechanismModelError(
+                "Stereo descriptor targets require a kind and mapped locus."
+            )
+        kind, reference = self.descriptor_target
+        if kind == "atom":
+            if type(reference) is not int or reference <= 0:
+                raise MechanismModelError(
+                    "Atom stereo targets require one positive atom map."
+                )
+            normalized_reference: int | tuple[int, int] = reference
+        elif kind == "bond":
+            if (
+                not isinstance(reference, (tuple, list))
+                or len(reference) != 2
+                or any(type(value) is not int or value <= 0 for value in reference)
+                or reference[0] == reference[1]
+            ):
+                raise MechanismModelError(
+                    "Bond stereo targets require two distinct positive atom maps."
+                )
+            normalized_reference = tuple(sorted(reference))
+        else:
+            raise MechanismModelError("Stereo target kind must be 'atom' or 'bond'.")
+        if self.effect not in {
+            "PRESERVE",
+            "INVERT",
+            "BREAK",
+            "FORM",
+            "FLEETING",
+            "UNSPECIFIED",
+        }:
+            raise MechanismModelError(f"Unsupported stereo effect: {self.effect!r}.")
+        object.__setattr__(self, "descriptor_target", (kind, normalized_reference))
+
+        target_key = (
+            f"atom:{normalized_reference}"
+            if kind == "atom"
+            else f"bond:{normalized_reference[0]}-{normalized_reference[1]}"
+        )
+        for descriptor in (self.before, self.after):
+            if descriptor is None or descriptor.descriptor_class == "unknown":
+                continue
+            descriptor_key = (
+                f"atom:{descriptor.atoms[0]}"
+                if descriptor.descriptor_class
+                in {
+                    "tetrahedral",
+                    "square_planar",
+                    "trigonal_bipyramidal",
+                    "octahedral",
+                }
+                else f"bond:{min(descriptor.atoms[2:4])}-{max(descriptor.atoms[2:4])}"
+            )
+            if descriptor_key != target_key:
+                raise MechanismModelError(
+                    f"Stereo descriptor belongs to {descriptor_key}, not {target_key}."
+                )
+
     def to_dict(self) -> dict[str, Any]:
+        target_kind, target_reference = self.descriptor_target
         return {
-            "descriptor_target": list(self.descriptor_target),
+            "descriptor_target": [
+                target_kind,
+                list(target_reference)
+                if isinstance(target_reference, tuple)
+                else target_reference,
+            ],
             "effect": self.effect,
             "before": self.before.to_dict() if self.before else None,
             "after": self.after.to_dict() if self.after else None,

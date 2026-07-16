@@ -77,6 +77,7 @@ class GraphToMol:
             element = data.get(self.node_attributes["element"], "*")
             charge = data.get(self.node_attributes["charge"], 0)
             radical = data.get(self.node_attributes.get("radical", "radical"), 0)
+            isotope = data.get("isotope", 0)
             atom_map = (
                 data.get(self.node_attributes["atom_map"], 0)
                 if "atom_map" in data.keys()
@@ -89,6 +90,7 @@ class GraphToMol:
             )
 
             atom = Chem.Atom(element)
+            atom.SetIsotope(int(isotope))
             atom.SetFormalCharge(charge)
             atom.SetNumRadicalElectrons(int(radical))
             if atom_map is not None:

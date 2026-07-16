@@ -7,6 +7,8 @@ from typing import Iterable
 
 import networkx as nx
 
+from synkit.Graph.Stereo import descriptor_graph_support_errors, stereo_from_dict
+
 from .model import StereoDescriptor, StereoEffect, VerificationIssue
 
 
@@ -23,33 +25,67 @@ def descriptor_key(descriptor: StereoDescriptor) -> str:
     return "unknown"
 
 
-def _maps(graph: nx.Graph) -> set[int]:
-    return {
-        int(data["atom_map"])
-        for _, data in graph.nodes(data=True)
-        if isinstance(data.get("atom_map"), int) and data["atom_map"] > 0
-    }
+def stereo_effect_target_key(effect: StereoEffect) -> str:
+    """Return the registry key addressed by one validated stereo effect."""
+    kind, reference = effect.descriptor_target
+    if kind == "atom":
+        return f"atom:{reference}"
+    left, right = reference
+    return f"bond:{left}-{right}"
 
 
-def _descriptor_is_supported(graph: nx.Graph, descriptor: StereoDescriptor) -> bool:
-    integer_refs = {value for value in descriptor.atoms if isinstance(value, int)}
-    if not integer_refs <= _maps(graph):
-        return False
-    if descriptor.descriptor_class not in {"planar_bond", "atrop_bond"}:
-        return True
-    left, right = descriptor.atoms[2:4]
-    lookup = {
-        int(data["atom_map"]): node
-        for node, data in graph.nodes(data=True)
-        if isinstance(data.get("atom_map"), int)
-    }
-    if not isinstance(left, int) or not isinstance(right, int):
-        return False
-    if not graph.has_edge(lookup[left], lookup[right]):
-        return False
-    if descriptor.descriptor_class == "atrop_bond":
-        return True
-    return float(graph.edges[lookup[left], lookup[right]].get("pi_order", 0.0)) >= 1.0
+def descriptor_support_errors(
+    graph: nx.Graph,
+    descriptor: StereoDescriptor,
+    *,
+    registry_key: str | None = None,
+) -> tuple[str, ...]:
+    """Return topology/resource reasons a descriptor is unsupported."""
+    if descriptor.descriptor_class == "unknown":
+        return ("unknown descriptor class has no executable locus",)
+    return descriptor_graph_support_errors(
+        graph,
+        stereo_from_dict(descriptor.to_dict()),
+        registry_key=registry_key,
+    )
+
+
+def descriptor_is_supported(
+    graph: nx.Graph,
+    descriptor: StereoDescriptor,
+    *,
+    registry_key: str | None = None,
+) -> bool:
+    return not descriptor_support_errors(
+        graph,
+        descriptor,
+        registry_key=registry_key,
+    )
+
+
+def _descriptor_identity(descriptor: StereoDescriptor) -> tuple[object, ...]:
+    if descriptor.descriptor_class == "unknown":
+        return ("unknown", descriptor.state)
+    native = stereo_from_dict(descriptor.to_dict())
+    return (descriptor.state, *native.canonical_form())
+
+
+def _descriptors_equal(
+    left: StereoDescriptor | None,
+    right: StereoDescriptor | None,
+) -> bool:
+    return left is None and right is None or (
+        left is not None
+        and right is not None
+        and _descriptor_identity(left) == _descriptor_identity(right)
+    )
+
+
+def _inverted(descriptor: StereoDescriptor) -> StereoDescriptor:
+    native = stereo_from_dict(descriptor.to_dict()).invert()
+    value = native.to_dict()
+    value["state"] = descriptor.state
+    return StereoDescriptor.from_dict(value)
 
 
 def apply_stereo_effects(
@@ -63,7 +99,7 @@ def apply_stereo_effects(
     registry = dict(result.graph.get("mechanism_stereo_descriptors", {}))
     issues: list[VerificationIssue] = []
     for effect in effects:
-        target = f"{effect.descriptor_target[0]}:{effect.descriptor_target[1]}"
+        target = stereo_effect_target_key(effect)
         present = registry.get(target)
         code = effect.effect
         if code in {"PRESERVE", "INVERT", "BREAK"} and present is None:
@@ -75,9 +111,38 @@ def apply_stereo_effects(
                 )
             )
             continue
+        if code in {"PRESERVE", "INVERT", "BREAK"}:
+            if effect.before is None:
+                issues.append(
+                    VerificationIssue(
+                        "MISSING_STEREO_BEFORE",
+                        f"{code} requires the declared pre-step descriptor at {target}.",
+                        step_id=step_id,
+                    )
+                )
+                continue
+            if not _descriptors_equal(effect.before, present):
+                issues.append(
+                    VerificationIssue(
+                        "STEREO_BEFORE_MISMATCH",
+                        f"Declared stereo pre-state does not match {target}.",
+                        step_id=step_id,
+                        expected=present.to_dict() if present else None,
+                        observed=effect.before.to_dict(),
+                    )
+                )
+                continue
         if code == "PRESERVE":
             candidate = effect.after or present
-            if candidate is None or not _descriptor_is_supported(result, candidate):
+            if (
+                candidate is None
+                or not _descriptors_equal(candidate, present)
+                or not descriptor_is_supported(
+                    result,
+                    candidate,
+                    registry_key=target,
+                )
+            ):
                 issues.append(
                     VerificationIssue(
                         "INVALID_STEREO_PRESERVATION",
@@ -88,16 +153,13 @@ def apply_stereo_effects(
             else:
                 registry[target] = candidate
         elif code == "INVERT":
-            candidate = effect.after
-            if candidate is None and present is not None:
-                candidate = StereoDescriptor(
-                    present.descriptor_class,
-                    present.atoms,
-                    -present.parity if present.parity else present.parity,
-                    present.state,
-                    present.provenance,
-                )
-            if candidate is None or not _descriptor_is_supported(result, candidate):
+            expected = _inverted(present)
+            candidate = effect.after or expected
+            if not _descriptors_equal(candidate, expected) or not descriptor_is_supported(
+                result,
+                candidate,
+                registry_key=target,
+            ):
                 issues.append(
                     VerificationIssue(
                         "INVALID_STEREO_INVERSION",
@@ -108,9 +170,26 @@ def apply_stereo_effects(
             else:
                 registry[target] = candidate
         elif code == "BREAK":
+            if effect.after is not None and effect.after.state != "absent":
+                issues.append(
+                    VerificationIssue(
+                        "INVALID_STEREO_BREAK",
+                        f"BREAK cannot retain an endpoint descriptor at {target}.",
+                        step_id=step_id,
+                    )
+                )
+                continue
             registry.pop(target, None)
         elif code == "FORM":
-            if effect.after is None or effect.after.state != "specified":
+            if present is not None:
+                issues.append(
+                    VerificationIssue(
+                        "STEREO_TRANSITION_FROM_PRESENT",
+                        f"FORM requires an absent descriptor at {target}.",
+                        step_id=step_id,
+                    )
+                )
+            elif effect.after is None or effect.after.state != "specified":
                 issues.append(
                     VerificationIssue(
                         "INCOMPLETE_STEREO_FORMATION",
@@ -118,7 +197,11 @@ def apply_stereo_effects(
                         step_id=step_id,
                     )
                 )
-            elif not _descriptor_is_supported(result, effect.after):
+            elif not descriptor_is_supported(
+                result,
+                effect.after,
+                registry_key=target,
+            ):
                 issues.append(
                     VerificationIssue(
                         "INVALID_STEREO_FORMATION",
@@ -139,8 +222,17 @@ def apply_stereo_effects(
                     unknown.provenance,
                 )
         elif code == "FLEETING":
-            if effect.after is not None:
-                registry[target] = effect.after
+            if effect.before is not None and not _descriptors_equal(
+                effect.before,
+                present,
+            ):
+                issues.append(
+                    VerificationIssue(
+                        "STEREO_BEFORE_MISMATCH",
+                        f"Declared fleeting pre-state does not match {target}.",
+                        step_id=step_id,
+                    )
+                )
         else:
             issues.append(
                 VerificationIssue(
@@ -150,7 +242,7 @@ def apply_stereo_effects(
                 )
             )
     for key, descriptor in tuple(registry.items()):
-        if not _descriptor_is_supported(result, descriptor):
+        if not descriptor_is_supported(result, descriptor, registry_key=key):
             registry.pop(key)
             issues.append(
                 VerificationIssue(
@@ -159,8 +251,10 @@ def apply_stereo_effects(
                     step_id=step_id,
                 )
             )
+    if issues:
+        return deepcopy(graph), tuple(issues)
     result.graph["mechanism_stereo_descriptors"] = registry
-    return result, tuple(issues)
+    return result, ()
 
 
 def stereo_timeline(states: Iterable[nx.Graph]) -> dict[str, list[dict | None]]:

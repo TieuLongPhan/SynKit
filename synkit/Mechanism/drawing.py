@@ -10,6 +10,14 @@ import matplotlib.pyplot as plt
 from .model import MechanismRecord, VerificationCertificate
 
 
+def _stereo_target_label(effect: Any) -> str:
+    kind, reference = effect.descriptor_target
+    rendered = (
+        "-".join(map(str, reference)) if isinstance(reference, tuple) else reference
+    )
+    return f"{kind}:{rendered}"
+
+
 def draw_mechanism_record(
     record: MechanismRecord,
     *,
@@ -56,7 +64,7 @@ def draw_mechanism_record(
                 0.5, y + 0.055, f"{arrow} · {move.group_id}", ha="center", fontsize=8
             )
         badges = "  ".join(
-            f"[{effect.effect.lower()} {effect.descriptor_target[0]}:{effect.descriptor_target[1]}]"
+            f"[{effect.effect.lower()} {_stereo_target_label(effect)}]"
             for effect in step.stereo_effects
         )
         if badges:

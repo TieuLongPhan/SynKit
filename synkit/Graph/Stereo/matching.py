@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any, Callable, Mapping
 
 import networkx as nx
@@ -12,6 +13,7 @@ from .descriptors import (
     StereoValue,
     TetrahedralStereo,
     descriptor_id,
+    parse_virtual_reference,
     virtual_reference,
 )
 from .identity import mapped_stereo_registries_match
@@ -39,6 +41,118 @@ def _node_by_atom_map(graph: nx.Graph) -> dict[int, Any]:
         if isinstance(atom_map, int):
             values[atom_map] = node
     return values
+
+
+def _unique_stereo_map_lookup(
+    graph: nx.Graph,
+) -> tuple[dict[int, Any], str | None]:
+    by_map: dict[int, Any] = {}
+    for node, attrs in graph.nodes(data=True):
+        atom_map = attrs.get("atom_map") or node
+        if type(atom_map) is not int:
+            continue
+        if atom_map in by_map:
+            return by_map, f"duplicate atom map {atom_map}"
+        by_map[atom_map] = node
+    return by_map, None
+
+
+def _stereo_reference_owners(
+    graph: nx.Graph,
+    descriptor: StereoValue,
+    by_map: Mapping[int, Any],
+) -> tuple[tuple[tuple[int, tuple[Any, ...]], ...], tuple[str, ...]]:
+    atom_centered = descriptor.descriptor_class in {
+        "tetrahedral",
+        "square_planar",
+        "trigonal_bipyramidal",
+        "octahedral",
+    }
+    if atom_centered:
+        center = descriptor.atoms[0]
+        if type(center) is not int or center not in by_map:
+            return (), ("atom stereocenter is absent",)
+        return ((center, tuple(descriptor.atoms[1:])),), ()
+
+    left, right = descriptor.atoms[2:4]
+    if (
+        type(left) is not int
+        or type(right) is not int
+        or left not in by_map
+        or right not in by_map
+    ):
+        return (), ("central stereo bond atoms are absent",)
+    errors = []
+    if not graph.has_edge(by_map[left], by_map[right]):
+        errors.append("central stereo bond is absent")
+    elif descriptor.descriptor_class == "planar_bond" and float(
+        graph.edges[by_map[left], by_map[right]].get("pi_order", 0.0)
+    ) < 1.0:
+        errors.append("planar-bond stereo requires a pi bond")
+    owners = (
+        (left, tuple(descriptor.atoms[:2])),
+        (right, tuple(descriptor.atoms[4:])),
+    )
+    return owners, tuple(errors)
+
+
+def _owner_reference_support_errors(
+    graph: nx.Graph,
+    owner: int,
+    references: tuple[Any, ...],
+    by_map: Mapping[int, Any],
+) -> tuple[str, ...]:
+    errors: list[str] = []
+    virtual_counts: Counter[str] = Counter()
+    owner_node = by_map[owner]
+    for reference in references:
+        if type(reference) is int:
+            if reference not in by_map:
+                errors.append(f"ligand atom map {reference} is absent")
+            elif not graph.has_edge(owner_node, by_map[reference]):
+                errors.append(
+                    f"ligand atom map {reference} is not adjacent to owner {owner}"
+                )
+            continue
+        virtual = parse_virtual_reference(reference)
+        if virtual is None or virtual.center != owner:
+            errors.append(f"invalid virtual ligand {reference!r}")
+            continue
+        virtual_counts[virtual.kind] += 1
+
+    for kind, count in virtual_counts.items():
+        field = "hcount" if kind == "H" else "lone_pairs"
+        available = graph.nodes[owner_node].get(field, 0)
+        if not isinstance(available, (int, float)) or available < count:
+            errors.append(
+                f"virtual {kind} ligand requires {count} {field} resource at {owner}"
+            )
+    return tuple(errors)
+
+
+def descriptor_graph_support_errors(
+    graph: nx.Graph,
+    descriptor: StereoValue,
+    *,
+    registry_key: str | None = None,
+) -> tuple[str, ...]:
+    """Return exact topology/resource reasons a descriptor cannot exist."""
+    errors: list[str] = []
+    by_map, map_error = _unique_stereo_map_lookup(graph)
+    if map_error is not None:
+        return (map_error,)
+
+    expected_key = descriptor_id(descriptor)
+    if registry_key is not None and registry_key != expected_key:
+        errors.append(f"registry key {registry_key} does not match {expected_key}")
+
+    owners, topology_errors = _stereo_reference_owners(graph, descriptor, by_map)
+    errors.extend(topology_errors)
+    for owner, references in owners:
+        errors.extend(
+            _owner_reference_support_errors(graph, owner, references, by_map)
+        )
+    return tuple(errors)
 
 
 def _is_bound_explicit_hydrogen(
@@ -298,6 +412,9 @@ def propagate_unaffected_stereo(
     for descriptor in stereo_registry(source).values():
         if descriptor.dependencies & changed_atom_maps:
             continue
-        if descriptor.dependencies <= target_maps:
+        if descriptor.dependencies <= target_maps and not descriptor_graph_support_errors(
+            target,
+            descriptor,
+        ):
             registry[descriptor_id(descriptor)] = descriptor
     target.graph["stereo_descriptors"] = registry

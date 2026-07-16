@@ -9,12 +9,13 @@ from typing import Any
 
 import networkx as nx
 
+from synkit.Graph.Stereo import stereo_from_dict
 from synkit.Graph.Mech.electron_accounting import (
     recompute_charge,
     refresh_electron_fields,
 )
 from synkit.Graph.Mech.lwg_ops import normalize_lwg_graph
-from synkit.IO.chem_converter import smiles_to_graph
+from synkit.IO.chem_converter import DEFAULT_NODE_ATTRS, smiles_to_graph
 
 from .audit import audit_local_electron_state
 from .model import (
@@ -77,7 +78,9 @@ class MechanismReplayer:
             raise ValueError("verify_stereo must be 'off', 'endpoint', or 'stepwise'.")
         self.verify_stereo = verify_stereo
 
-    def replay(self, record: MechanismRecord) -> MechanismReplayResult:
+    def replay(  # noqa: C901
+        self, record: MechanismRecord
+    ) -> MechanismReplayResult:
         reactants, products = record.mapped_reaction.split(">>", 1)
         current = self._parse_side(reactants)
         expected = self._parse_side(products)
@@ -86,13 +89,20 @@ class MechanismReplayer:
         intermediates: list[nx.Graph] = []
         reports: list[GroupReplayReport] = []
         issues: list[VerificationIssue] = list(record.grammar_issues())
+        issues.extend(self._graph_mapping_issues(current, side="reactant"))
+        issues.extend(self._graph_mapping_issues(expected, side="product"))
+        issues.extend(audit_local_electron_state(current).issues)
+        issues.extend(audit_local_electron_state(expected).issues)
         mtg = nx.DiGraph(schema="synkit-mtg-2.0-draft1")
         mtg.add_node(0, graph=deepcopy(current), status="INITIAL")
 
         if not issues:
             state_index = 0
             for step in record.steps:
+                step_start = deepcopy(current)
                 step_state_index = state_index
+                step_intermediate_count = len(intermediates)
+                step_failed = False
                 for group in step.groups:
                     next_graph, group_report = self._apply_group(
                         current, group, step_id=step.step_id
@@ -101,6 +111,7 @@ class MechanismReplayer:
                     issues.extend(group_report.issues)
                     if group_report.status != "VALID":
                         if self.validation == "strict":
+                            step_failed = True
                             break
                         continue
                     current = next_graph
@@ -115,7 +126,7 @@ class MechanismReplayer:
                         macro=group.macro,
                         event_signature=group.canonical_signature(),
                     )
-                if not (issues and self.validation == "strict"):
+                if not step_failed:
                     before_stereo = dict(
                         current.graph.get("mechanism_stereo_descriptors", {})
                     )
@@ -126,15 +137,19 @@ class MechanismReplayer:
                     )
                     if self.verify_stereo == "stepwise":
                         issues.extend(stereo_issues)
+                        if stereo_issues and self.validation == "strict":
+                            step_failed = True
                     after_stereo = current.graph.get("mechanism_stereo_descriptors", {})
-                    if state_index > step_state_index:
+                    if not step_failed and state_index > step_state_index:
                         intermediates[-1] = deepcopy(current)
                         mtg.nodes[state_index]["graph"] = deepcopy(current)
                         if step.stereo_effects:
                             mtg.edges[state_index - 1, state_index][
                                 "stereo_effects"
                             ] = [effect.to_dict() for effect in step.stereo_effects]
-                    elif step.stereo_effects or before_stereo != after_stereo:
+                    elif not step_failed and (
+                        step.stereo_effects or before_stereo != after_stereo
+                    ):
                         intermediates.append(deepcopy(current))
                         state_index += 1
                         mtg.add_node(
@@ -151,7 +166,13 @@ class MechanismReplayer:
                                 effect.to_dict() for effect in step.stereo_effects
                             ],
                         )
-                if issues and self.validation == "strict":
+                if step_failed and self.validation == "strict":
+                    current = step_start
+                    del intermediates[step_intermediate_count:]
+                    mtg.remove_nodes_from(
+                        node for node in tuple(mtg.nodes) if node > step_state_index
+                    )
+                    state_index = step_state_index
                     break
 
         final_match = self._compare_graphs(
@@ -218,13 +239,13 @@ class MechanismReplayer:
             )
 
         graph = deepcopy(pre_state)
-        lookup = self._atom_map_lookup(graph)
         deltas: Counter[ElectronLocus] = Counter()
         for move in group.moves:
             deltas[move.source] -= move.electron_count
             deltas[move.target] += move.electron_count
 
         try:
+            lookup = self._atom_map_lookup(graph)
             self._commit_bond_deltas(graph, lookup, deltas)
             self._commit_atom_deltas(graph, lookup, deltas)
             refresh_electron_fields(graph, in_place=True)
@@ -263,6 +284,39 @@ class MechanismReplayer:
                 raise ValueError(f"Duplicate atom map {atom_map}.")
             lookup[atom_map] = node
         return lookup
+
+    @staticmethod
+    def _graph_mapping_issues(
+        graph: nx.Graph,
+        *,
+        side: str,
+    ) -> tuple[VerificationIssue, ...]:
+        """Require complete, unique AAM for formal mapped endpoint replay."""
+        issues: list[VerificationIssue] = []
+        seen: dict[int, Any] = {}
+        for node, attrs in graph.nodes(data=True):
+            atom_map = attrs.get("atom_map", 0)
+            if type(atom_map) is not int or atom_map <= 0:
+                issues.append(
+                    VerificationIssue(
+                        "MISSING_ATOM_MAP",
+                        f"Every {side} atom requires a positive atom map.",
+                        observed={"node": node, "atom_map": atom_map},
+                    )
+                )
+                continue
+            if atom_map in seen:
+                issues.append(
+                    VerificationIssue(
+                        "DUPLICATE_ATOM_MAP",
+                        f"The {side} graph contains duplicate atom map {atom_map}.",
+                        atom_maps=(atom_map,),
+                        observed=(seen[atom_map], node),
+                    )
+                )
+            else:
+                seen[atom_map] = node
+        return tuple(issues)
 
     @staticmethod
     def _commit_bond_deltas(
@@ -344,21 +398,34 @@ class MechanismReplayer:
         self, graph: nx.Graph, *, include_stereo: bool = False
     ) -> dict[str, Any]:
         graph = normalize_lwg_graph(graph)
-        lookup = self._atom_map_lookup(graph)
+        lookup: dict[int, Any] = {}
+        node_keys: dict[Any, Any] = {}
+        duplicate_counts: Counter[int] = Counter()
+        for node, attrs in graph.nodes(data=True):
+            atom_map = attrs.get("atom_map", 0)
+            if type(atom_map) is int and atom_map > 0 and atom_map not in lookup:
+                lookup[atom_map] = node
+                node_keys[node] = atom_map
+            elif type(atom_map) is int and atom_map > 0:
+                duplicate_counts[atom_map] += 1
+                node_keys[node] = f"duplicate:{atom_map}:{duplicate_counts[atom_map]}"
+            else:
+                node_keys[node] = f"unmapped:{node}"
         nodes = {
-            atom_map: (
+            node_keys[node]: (
                 str(graph.nodes[node].get("element", "*")),
+                int(graph.nodes[node].get("isotope", 0) or 0),
                 int(graph.nodes[node].get("charge", 0)),
                 int(graph.nodes[node].get("radical", 0)),
+                int(graph.nodes[node].get("hcount", 0)),
+                int(graph.nodes[node].get("lone_pairs", 0)),
+                int(graph.nodes[node].get("valence_electrons", 0)),
             )
-            for atom_map, node in lookup.items()
+            for node in graph.nodes
         }
-        reverse = {node: atom_map for atom_map, node in lookup.items()}
         edges = {}
         for left, right, attrs in graph.edges(data=True):
-            if left not in reverse or right not in reverse:
-                continue
-            key = tuple(sorted((reverse[left], reverse[right])))
+            key = tuple(sorted((node_keys[left], node_keys[right]), key=repr))
             if self.aromatic_policy == "presentation" and attrs.get("order") == 1.5:
                 edges[key] = ("aromatic",)
             else:
@@ -369,12 +436,19 @@ class MechanismReplayer:
         signature = {"nodes": nodes, "edges": edges}
         if include_stereo:
             signature["stereo"] = {
-                key: descriptor.to_dict()
+                key: self._stereo_descriptor_signature(descriptor)
                 for key, descriptor in sorted(
                     graph.graph.get("mechanism_stereo_descriptors", {}).items()
                 )
             }
         return signature
+
+    @staticmethod
+    def _stereo_descriptor_signature(descriptor: StereoDescriptor) -> tuple[Any, ...]:
+        if descriptor.descriptor_class == "unknown":
+            return ("unknown", descriptor.state)
+        native = stereo_from_dict(descriptor.to_dict())
+        return (descriptor.state, *native.canonical_form())
 
     @staticmethod
     def _seed_mechanism_stereo(graph: nx.Graph) -> None:
@@ -394,6 +468,7 @@ class MechanismReplayer:
             drop_non_aam=False,
             sanitize=True,
             use_index_as_atom_map=False,
+            node_attrs=(*DEFAULT_NODE_ATTRS, "isotope"),
         )
         if graph is None:
             raise ValueError(f"Could not parse mapped mechanism side: {smiles!r}")

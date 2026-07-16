@@ -146,7 +146,21 @@ def mechanism_record_schema() -> dict[str, Any]:
                 "properties": {
                     "descriptor_target": {
                         "type": "array",
-                        "prefixItems": [{"type": "string"}, {"type": "integer"}],
+                        "prefixItems": [
+                            {"enum": ["atom", "bond"]},
+                            {
+                                "oneOf": [
+                                    {"type": "integer", "minimum": 1},
+                                    {
+                                        "type": "array",
+                                        "items": {"type": "integer", "minimum": 1},
+                                        "minItems": 2,
+                                        "maxItems": 2,
+                                        "uniqueItems": True,
+                                    },
+                                ]
+                            },
+                        ],
                         "minItems": 2,
                         "maxItems": 2,
                     },
