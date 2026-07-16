@@ -31,6 +31,7 @@ from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Hyrogen._misc import normalize_h_pair_graph
 from synkit.Graph.Stereo import StereoCoupling, StereoOutcome
+from synkit.Rule.stereo_identity import stereo_rule_isomorphic
 from synkit.IO.chem_converter import (
     ITSFormat,
     detect_its_format,
@@ -585,49 +586,35 @@ class SynRule:
             isinstance(other, SynRule)
             and self.canonical_smiles == other.canonical_smiles
             and self._stereo_signature() == other._stereo_signature()
+            and stereo_rule_isomorphic(self, other)
         )
 
     def __hash__(self) -> int:
         return hash((self.canonical_smiles, self._stereo_signature()))
 
     def _stereo_signature(self) -> tuple:
+        """Return a coarse map-invariant prefilter for exact rule equality."""
         guards = tuple(
-            sorted(
-                (key, descriptor.canonical_form())
-                for key, descriptor in self.stereo_guards.items()
-            )
+            sorted(descriptor.descriptor_class for descriptor in self.stereo_guards.values())
         )
-        effects = tuple(
-            sorted(
-                (
-                    key,
-                    change.change,
-                    change.before.canonical_form() if change.before else None,
-                    change.after.canonical_form() if change.after else None,
-                    change.transition.canonical_form() if change.transition else None,
-                )
-                for key, change in self.stereo_effects.items()
-            )
-        )
+        effects = tuple(sorted(change.change for change in self.stereo_effects.values()))
         outcomes = tuple(
-            sorted(
-                (key, outcome.signature())
-                for key, outcome in self.stereo_outcomes.items()
-            )
+            sorted(outcome.signature() for outcome in self.stereo_outcomes.values())
         )
         couplings = tuple(
             sorted(
-                (key, coupling.signature())
-                for key, coupling in self.stereo_couplings.items()
+                (coupling.kind, coupling.relation)
+                for coupling in self.stereo_couplings.values()
             )
         )
-        query_policies = tuple(sorted(self.stereo_query_policies.items()))
+        query_policies = tuple(sorted(self.stereo_query_policies.values()))
         reverse_outcomes = tuple(
             sorted(
-                (key, outcome.signature())
-                for key, outcome in self._reverse_stereo_outcomes.items()
+                outcome.signature()
+                for outcome in self._reverse_stereo_outcomes.values()
             )
         )
+        reverse_queries = tuple(sorted(self._reverse_stereo_query_policies.values()))
         return (
             guards,
             effects,
@@ -635,6 +622,7 @@ class SynRule:
             couplings,
             query_policies,
             reverse_outcomes,
+            reverse_queries,
         )
 
     def __str__(self) -> str:

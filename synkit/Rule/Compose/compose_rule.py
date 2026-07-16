@@ -6,6 +6,7 @@ from synkit.Rule.Modify.rule_utils import _increment_gml_ids
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.cleaning import Cleaning
 from synkit.Chem.utils import find_longest_fragment
+from synkit.Rule.Compose._identity import rule_objects_isomorphic
 
 logger = setup_logging()
 
@@ -68,8 +69,7 @@ class ComposeRule:
             for j, graph_j in enumerate(graphs):
                 if j in visited or j <= i:
                     continue
-                # Assuming isomorphism() returns 1 for isomorphic graphs.
-                if graph_i.isomorphism(graph_j) == 1:
+                if rule_objects_isomorphic(graph_i, graph_j):
                     cluster.add(j)
                     visited.add(j)
             clusters.append(cluster)

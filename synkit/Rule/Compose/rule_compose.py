@@ -5,6 +5,7 @@ import importlib.util
 from typing import List, Set
 from synkit.Rule.Compose.valence_constrain import ValenceConstrain
 from synkit.IO.data_io import load_gml_as_text
+from synkit.Rule.Compose._identity import rule_objects_isomorphic
 
 if importlib.util.find_spec("mod"):
     from mod import ruleGMLString, RCMatch
@@ -75,7 +76,7 @@ class RuleCompose:
                 if j in visited or j <= i:
                     continue
 
-                if graph_i.isomorphism(graph_j) == 1:
+                if rule_objects_isomorphic(graph_i, graph_j):
                     cluster.add(j)
                     visited.add(j)
 

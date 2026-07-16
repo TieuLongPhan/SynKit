@@ -2,15 +2,20 @@ import importlib.util
 import networkx as nx
 from operator import eq
 from collections import OrderedDict
-from typing import List, Set, Dict, Any, Tuple, Optional, Callable
+from typing import List, Set, Dict, Any, Tuple, Optional, Callable, Mapping
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
 from synkit.Rule.Modify.rule_utils import strip_context
-from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
 from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
+from synkit.Graph.Stereo.matching import stereo_isomorphic
 
 if importlib.util.find_spec("mod") is not None:
     gm = GraphMatcherEngine(backend="mod")
+
+
+def _match_all(_left: Mapping[str, Any], _right: Mapping[str, Any]) -> bool:
+    """Implement NetworkX's no-attribute-matcher semantics explicitly."""
+    return True
 
 
 class GraphCluster:
@@ -106,8 +111,8 @@ class GraphCluster:
                 False  # rule_isomorphism does not use nodeMatch or edgeMatch
             )
         elif isinstance(rules[0], nx.Graph):
-            iso_function = graph_isomorphism
-            apply_match_args = True  # graph_isomorphism uses nodeMatch and edgeMatch
+            iso_function = stereo_isomorphic
+            apply_match_args = True
 
         if attributes is None:
             attributes_sorted = [1] * len(rules)
@@ -137,8 +142,16 @@ class GraphCluster:
                 if attributes_sorted[i] == attributes_sorted[j] and j not in visited:
                     # Conditionally use matching functions
                     if apply_match_args:
+                        # ``stereo_isomorphic`` has chemistry-aware defaults,
+                        # whereas this legacy API defines ``None`` as matching
+                        # every node or edge attribute. Preserve that contract
+                        # while layering exact stereo-registry comparison over
+                        # each structural candidate mapping.
                         is_isomorphic = iso_function(
-                            rule_i, rule_j, nodeMatch, edgeMatch
+                            rule_i,
+                            rule_j,
+                            node_match=nodeMatch or _match_all,
+                            edge_match=edgeMatch or _match_all,
                         )
                     else:
                         is_isomorphic = iso_function(rule_i, rule_j)

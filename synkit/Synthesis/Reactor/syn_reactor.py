@@ -702,8 +702,8 @@ class SynReactor:
 
             if self.explicit_h:
                 self._its = [self._explicit_h(g) for g in self._its]
-            self._its = self._deduplicate_structural_its(self._its)
             self._its = self._deduplicate_coupling_face_products(self._its)
+            self._its = self._deduplicate_structural_its(self._its)
             log.debug("Built %d ITS graph(s)", len(self._its))
         return self._its
 
@@ -1742,9 +1742,11 @@ class SynReactor:
 
     @staticmethod
     def _deduplicate_structural_its(its_graphs: List[nx.Graph]) -> List[nx.Graph]:
-        """Keep one representative for each structurally unique ITS graph."""
+        """Keep one representative per exact structural/stereo ITS identity."""
         if len(its_graphs) < 2:
             return its_graphs
+
+        from synkit.Graph.Stereo import stereo_identity_signature
 
         hasher = WLHash(
             node=ITS_STRUCTURAL_NODE_ATTRS,
@@ -1754,13 +1756,7 @@ class SynReactor:
         for index, its in enumerate(its_graphs):
             prepared = SynReactor._prepare_its_for_structural_cluster(its)
             signature = hasher.weisfeiler_lehman_graph_hash(prepared)
-            product_stereo = its.graph.get("stereo_descriptors", {}).get("product", {})
-            stereo_signature = tuple(
-                sorted(
-                    (key, descriptor.canonical_form())
-                    for key, descriptor in product_stereo.items()
-                )
-            )
+            stereo_signature = stereo_identity_signature(prepared)
             buckets[(signature, stereo_signature)].append((index, prepared))
 
         cluster = GraphCluster(

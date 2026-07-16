@@ -275,6 +275,13 @@ def _reference_nodes(
                 continue
             target = (node, "H")
             previous = references.get(reference)
+            # Generated ITS graphs can retain a virtual-H bookkeeping map
+            # that collides with a real mapped atom introduced by another
+            # component. Integer descriptor references denote the real atom;
+            # virtual hydrogens have their explicit ``@H:center`` form, so the
+            # structural atom is the unambiguous identity authority here.
+            if previous is not None and previous[1] == "atom":
+                continue
             if previous is not None and previous != target:
                 raise StereoIdentityError(
                     f"Hydrogen reference {reference} is ambiguous in layer {layer!r}."
@@ -423,6 +430,20 @@ def _mapped_reference_resolver(
         return ("virtual", virtual.kind, ("node", mapped_owner))
 
     return resolve
+
+
+def mapped_reference_resolver(
+    graph: nx.Graph,
+    layer: str,
+    node_mapping: Mapping[Hashable, Hashable] | None = None,
+) -> StereoReferenceResolver:
+    """Resolve descriptor references to node identities under one mapping.
+
+    This is the exact counterpart of the colour-based signature resolver. It
+    is public so rule and mechanism consumers can compare associated metadata
+    under the same structural mapping as the descriptor registry.
+    """
+    return _mapped_reference_resolver(graph, layer, node_mapping)
 
 
 def _descriptor_matches_policy(

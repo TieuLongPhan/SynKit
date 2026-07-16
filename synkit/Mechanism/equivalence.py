@@ -6,6 +6,12 @@ from typing import Any
 
 from rdkit import Chem
 
+from synkit.Graph.Stereo import (
+    descriptor_relative_form,
+    parse_virtual_reference,
+    stereo_from_dict,
+)
+
 from .model import MechanismRecord
 
 
@@ -39,11 +45,51 @@ def _descriptor_signature(
 ) -> tuple[Any, ...] | None:
     if descriptor is None:
         return None
-    atoms = tuple(
-        ranks.get(value, value) if isinstance(value, int) else value
-        for value in descriptor.atoms
+    if descriptor.descriptor_class == "unknown":
+        return ("unknown", descriptor.state)
+    native = stereo_from_dict(descriptor.to_dict())
+
+    def resolve(reference: Any) -> tuple[Any, ...]:
+        if isinstance(reference, int):
+            return ("atom", ranks.get(reference, reference))
+        virtual = parse_virtual_reference(reference)
+        if virtual is None:
+            return ("invalid", repr(reference))
+        return (
+            "virtual",
+            virtual.kind,
+            ("atom", ranks.get(virtual.center, virtual.center)),
+        )
+
+    return descriptor.state, descriptor_relative_form(native, resolve)
+
+
+def _stereo_effect_signature(effect: Any, ranks: dict[int, int]) -> tuple[Any, ...]:
+    target_kind, target_reference = effect.descriptor_target
+    target = (
+        target_kind,
+        ranks.get(target_reference, target_reference),
     )
-    return (descriptor.descriptor_class, atoms, descriptor.parity, descriptor.state)
+    return (
+        effect.effect,
+        target,
+        _descriptor_signature(effect.before, ranks),
+        _descriptor_signature(effect.after, ranks),
+    )
+
+
+def _stereo_effect_dependencies(effect: Any, ranks: dict[int, int]) -> frozenset[int]:
+    dependencies = {
+        value
+        for descriptor in (effect.before, effect.after)
+        if descriptor is not None
+        for value in descriptor.atoms
+        if isinstance(value, int)
+    }
+    target = effect.descriptor_target[1]
+    if isinstance(target, int):
+        dependencies.add(target)
+    return frozenset(ranks.get(value, value) for value in dependencies)
 
 
 def _group_signature(group: Any, ranks: dict[int, int]) -> tuple[Any, ...]:
@@ -83,17 +129,7 @@ def _event_signature(record: MechanismRecord, *, trajectory: bool) -> tuple[Any,
         stereo = tuple(
             sorted(
                 (
-                    (
-                        effect.effect,
-                        (
-                            effect.descriptor_target[0],
-                            ranks.get(
-                                effect.descriptor_target[1], effect.descriptor_target[1]
-                            ),
-                        ),
-                        _descriptor_signature(effect.before, ranks),
-                        _descriptor_signature(effect.after, ranks),
-                    )
+                    _stereo_effect_signature(effect, ranks)
                     for effect in step.stereo_effects
                 ),
                 key=repr,
@@ -103,7 +139,6 @@ def _event_signature(record: MechanismRecord, *, trajectory: bool) -> tuple[Any,
         if trajectory:
             steps.append(entry)
         else:
-            stereo_dependencies = frozenset(target[1] for _, target, _, _ in stereo)
             for group, original in sorted(
                 zip(
                     (_group_signature(value, ranks) for value in step.groups),
@@ -113,8 +148,15 @@ def _event_signature(record: MechanismRecord, *, trajectory: bool) -> tuple[Any,
             ):
                 event_entries.append(
                     (
-                        (group, stereo),
-                        _group_dependencies(original, ranks) | stereo_dependencies,
+                        ("group", group),
+                        _group_dependencies(original, ranks),
+                    )
+                )
+            for effect in step.stereo_effects:
+                event_entries.append(
+                    (
+                        ("stereo", _stereo_effect_signature(effect, ranks)),
+                        _stereo_effect_dependencies(effect, ranks),
                     )
                 )
     if trajectory:

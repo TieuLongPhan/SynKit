@@ -36,6 +36,7 @@ from .interchange import (
 from .identity import (
     StereoIdentityError,
     descriptor_relative_form,
+    mapped_reference_resolver,
     mapped_stereo_registries_match,
     stereo_identity_form,
     stereo_identity_signature,
@@ -80,6 +81,7 @@ __all__ = [
     "stereomolgraph_registry_to_synkit",
     "StereoIdentityError",
     "descriptor_relative_form",
+    "mapped_reference_resolver",
     "mapped_stereo_registries_match",
     "stereo_identity_form",
     "stereo_identity_signature",
