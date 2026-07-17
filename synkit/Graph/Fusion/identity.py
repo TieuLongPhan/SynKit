@@ -10,7 +10,6 @@ import networkx as nx
 
 from synkit.Graph.Stereo import stereo_identity_signature, stereo_isomorphic
 
-
 FUSION_NODE_IDENTITY_KEYS = (
     "element",
     "aromatic",
@@ -67,8 +66,7 @@ def _effective_hcount(hcount: Any, neighbors: Any) -> Any:
     if isinstance(hcount, (tuple, list)) and len(hcount) == 2:
         if isinstance(neighbors, (tuple, list)) and len(neighbors) == 2:
             return tuple(
-                hcount[index]
-                + sum(item == "H" for item in (neighbors[index] or ()))
+                hcount[index] + sum(item == "H" for item in (neighbors[index] or ()))
                 for index in range(2)
             )
         return tuple(hcount)
@@ -77,9 +75,7 @@ def _effective_hcount(hcount: Any, neighbors: Any) -> Any:
     return hcount
 
 
-def _edge_attribute_token(
-    attributes: Mapping[str, Any], keys: Sequence[str]
-) -> str:
+def _edge_attribute_token(attributes: Mapping[str, Any], keys: Sequence[str]) -> str:
     aromatic_unchanged = attributes.get("order") == (1.5, 1.5)
     payload = []
     for key in keys:
@@ -150,8 +146,12 @@ def graphs_exactly_equivalent(
         graph_identity_digest(right, node_keys=node_keys, edge_keys=edge_keys)
     ):
         return False
-    prepared_left = prepare_identity_graph(left, node_keys=node_keys, edge_keys=edge_keys)
-    prepared_right = prepare_identity_graph(right, node_keys=node_keys, edge_keys=edge_keys)
+    prepared_left = prepare_identity_graph(
+        left, node_keys=node_keys, edge_keys=edge_keys
+    )
+    prepared_right = prepare_identity_graph(
+        right, node_keys=node_keys, edge_keys=edge_keys
+    )
     node_match = nx.algorithms.isomorphism.categorical_node_match(
         "_fusion_node_identity", ""
     )

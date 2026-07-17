@@ -307,8 +307,7 @@ class _OrbitDescriptorMixin:
         """Classify and witness the geometric relation to another descriptor."""
         configuration = (
             other.configuration
-            if type(self) is type(other)
-            and isinstance(other, _OrbitDescriptorMixin)
+            if type(self) is type(other) and isinstance(other, _OrbitDescriptorMixin)
             else other
         )
         return self.configuration.relation_to(configuration)

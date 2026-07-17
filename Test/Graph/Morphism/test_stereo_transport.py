@@ -21,7 +21,6 @@ from synkit.Graph.Stereo import (
     virtual_reference,
 )
 
-
 DESCRIPTORS = (
     TetrahedralStereo((1, 2, 3, 4, "@H:1"), 1),
     SquarePlanarStereo((1, 2, 3, 4, "@LP:1"), 0),
@@ -113,7 +112,5 @@ def test_missing_and_noninjective_material_maps_fail() -> None:
 
 def test_registry_keys_follow_transported_descriptor_owners() -> None:
     source = TetrahedralStereo((1, 2, 3, 4, "@H:1"), 1)
-    result = transport_stereo_registry(
-        {"atom:1": source}, {1: 10, 2: 20, 3: 30, 4: 40}
-    )
+    result = transport_stereo_registry({"atom:1": source}, {1: 10, 2: 20, 3: 30, 4: 40})
     assert set(result) == {"atom:10"}

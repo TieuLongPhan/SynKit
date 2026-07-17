@@ -41,7 +41,9 @@ class FusionProposal:
         return cls(
             forward_graph,
             backward_graph,
-            tuple(sorted(mapping.items(), key=lambda item: (repr(item[0]), repr(item[1])))),
+            tuple(
+                sorted(mapping.items(), key=lambda item: (repr(item[0]), repr(item[1])))
+            ),
             rsmi,
         )
 
@@ -118,7 +120,9 @@ class VerifiedFusionSearch:
     def run(self) -> FusionSearchResult:
         total_start = perf_counter()
         discovery_start = perf_counter()
-        ordered = tuple(sorted(self.proposals, key=lambda item: item.deterministic_key()))
+        ordered = tuple(
+            sorted(self.proposals, key=lambda item: item.deterministic_key())
+        )
         discovery_time = perf_counter() - discovery_start
         limit = len(ordered) if self.cap is None else min(self.cap, len(ordered))
         selected = ordered[:limit]

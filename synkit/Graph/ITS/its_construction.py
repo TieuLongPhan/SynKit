@@ -369,6 +369,7 @@ class ITSConstruction:
         node_attrs: Optional[List[str]] = None,
         edge_attrs: Optional[List[str]] = None,
         attributes_defaults: Optional[Dict[str, Any]] = None,
+        stereo_reference_mappings: Optional[Dict[str, Dict[Any, Any]]] = None,
     ) -> nx.Graph:
         """
         Construct an ITS graph from two input graphs.
@@ -404,6 +405,11 @@ class ITSConstruction:
         :param attributes_defaults:
             Optional overrides for node attribute defaults.
         :type attributes_defaults: Optional[Dict[str, Any]]
+        :param stereo_reference_mappings:
+            Explicit leaving-to-entering ligand maps keyed by stereo target.
+            A unique single replacement is inferred when omitted; multiple
+            replacements require this mapping.
+        :type stereo_reference_mappings: Optional[Dict[str, Dict[Any, Any]]]
 
         :returns:
             ITS graph with merged nodes, paired node/edge annotations, and
@@ -483,7 +489,12 @@ class ITSConstruction:
         try:
             from synkit.Graph.Stereo import annotate_its_stereo
 
-            annotate_its_stereo(its, G, H)
+            annotate_its_stereo(
+                its,
+                G,
+                H,
+                reference_mappings=stereo_reference_mappings,
+            )
         except ImportError:
             pass
 

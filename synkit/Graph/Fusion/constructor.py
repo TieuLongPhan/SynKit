@@ -63,9 +63,7 @@ class FusionConstructionError(ValueError):
 class FusionProvenance:
     """Origin records for every node, edge, and wildcard substitution."""
 
-    node_sources: tuple[
-        tuple[int, tuple[tuple[str, Hashable], ...]], ...
-    ]
+    node_sources: tuple[tuple[int, tuple[tuple[str, Hashable], ...]], ...]
     edge_sources: tuple[
         tuple[tuple[int, int], tuple[tuple[str, Hashable, Hashable], ...]], ...
     ]
@@ -142,12 +140,20 @@ class FusionConstruction:
     endpoint_certificate: EndpointCertificate
 
 
-def _attribute_signature(attributes: Mapping[str, Any], keys: Sequence[str]) -> tuple[Any, ...]:
+def _attribute_signature(
+    attributes: Mapping[str, Any], keys: Sequence[str]
+) -> tuple[Any, ...]:
     return tuple((key, stable_value(attributes.get(key))) for key in keys)
 
 
-def _is_wildcard(attributes: Mapping[str, Any], element_key: str, wildcard_element: Any) -> bool:
-    scalar = wildcard_element[0] if isinstance(wildcard_element, (tuple, list)) else wildcard_element
+def _is_wildcard(
+    attributes: Mapping[str, Any], element_key: str, wildcard_element: Any
+) -> bool:
+    scalar = (
+        wildcard_element[0]
+        if isinstance(wildcard_element, (tuple, list))
+        else wildcard_element
+    )
     return attributes.get(element_key) in (wildcard_element, scalar)
 
 
@@ -162,7 +168,9 @@ def _merge_node_attributes(
     forward_wc = _is_wildcard(forward, element_key, wildcard_element)
     backward_wc = _is_wildcard(backward, element_key, wildcard_element)
     if not forward_wc and not backward_wc:
-        if _attribute_signature(forward, node_keys) != _attribute_signature(backward, node_keys):
+        if _attribute_signature(forward, node_keys) != _attribute_signature(
+            backward, node_keys
+        ):
             raise FusionConstructionError(
                 FusionConstructionIssue(
                     FusionConstructionIssueCode.NODE_CONFLICT,
@@ -205,9 +213,11 @@ def _merge_graph_stereo(
                 graph, fused, inclusion, layer
             )
             deltas = {
-                descriptor_key: StereoReferenceDelta(effect=effects.get(
-                    (side, layer, descriptor_key), StereoEffect.RETAIN
-                ))
+                descriptor_key: StereoReferenceDelta(
+                    effect=effects.get(
+                        (side, layer, descriptor_key), StereoEffect.RETAIN
+                    )
+                )
                 for descriptor_key in registry
             }
             try:
@@ -358,7 +368,10 @@ def construct_pushout(
         fused.add_node(next_node, **attributes)
         forward_inclusion[forward_node] = next_node
         backward_inclusion[backward_node] = next_node
-        node_sources[next_node] = [("forward", forward_node), ("backward", backward_node)]
+        node_sources[next_node] = [
+            ("forward", forward_node),
+            ("backward", backward_node),
+        ]
         next_node += 1
 
     for side, graph, inclusion in (
@@ -383,7 +396,9 @@ def construct_pushout(
             edge = tuple(sorted((fused_left, fused_right)))
             if fused.has_edge(*edge):
                 existing = fused.edges[edge]
-                if _attribute_signature(existing, edge_keys) != _attribute_signature(attributes, edge_keys):
+                if _attribute_signature(existing, edge_keys) != _attribute_signature(
+                    attributes, edge_keys
+                ):
                     raise FusionConstructionError(
                         FusionConstructionIssue(
                             FusionConstructionIssueCode.EDGE_CONFLICT,
@@ -407,9 +422,9 @@ def construct_pushout(
     )
     forward_counts = _verify_endpoint(forward_graph, fused, forward_inclusion)
     backward_counts = _verify_endpoint(backward_graph, fused, backward_inclusion)
-    if not nx.utils.graphs_equal(forward_graph, forward_snapshot) or not nx.utils.graphs_equal(
-        backward_graph, backward_snapshot
-    ):
+    if not nx.utils.graphs_equal(
+        forward_graph, forward_snapshot
+    ) or not nx.utils.graphs_equal(backward_graph, backward_snapshot):
         raise FusionConstructionError(
             FusionConstructionIssue(
                 FusionConstructionIssueCode.SOURCE_MUTATED,
@@ -427,14 +442,8 @@ def construct_pushout(
         )
     )
     provenance = FusionProvenance(
-        tuple(
-            (node, tuple(sources))
-            for node, sources in sorted(node_sources.items())
-        ),
-        tuple(
-            (edge, tuple(sources))
-            for edge, sources in sorted(edge_sources.items())
-        ),
+        tuple((node, tuple(sources)) for node, sources in sorted(node_sources.items())),
+        tuple((edge, tuple(sources)) for edge, sources in sorted(edge_sources.items())),
         substitutions,
     )
     certificate = EndpointCertificate(

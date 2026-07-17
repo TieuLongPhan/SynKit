@@ -32,7 +32,6 @@ from synkit.Graph.Stereo import (
 )
 from synkit.Graph.Stereo import matching as stereo_matching
 
-
 DESCRIPTORS = (
     TetrahedralStereo((1, 2, 3, 4, 5), 1),
     SquarePlanarStereo((1, 2, 3, 4, 5), 0),
@@ -202,9 +201,7 @@ def test_exact_wildcard_and_either_information_policies_are_distinct() -> None:
     source_fixed, target_inverse, fixed_mapping, target_descriptor = _mapped_pair(
         specified
     )
-    target_inverse.graph["stereo_descriptors"] = {
-        "atom:11": target_descriptor.invert()
-    }
+    target_inverse.graph["stereo_descriptors"] = {"atom:11": target_descriptor.invert()}
     with pytest.raises(StereoMorphismError):
         StereoMorphism.from_graphs(
             fixed_mapping,

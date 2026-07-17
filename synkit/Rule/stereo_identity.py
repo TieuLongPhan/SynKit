@@ -51,6 +51,37 @@ def _coupling_form(coupling: Any, resolver: ReferenceResolver) -> tuple[Any, ...
     return coupling.kind, coupling.relation, pairs
 
 
+def _reaction_relation_form(
+    change: Any,
+    reactant: ReferenceResolver,
+    product: ReferenceResolver,
+) -> tuple[Any, ...]:
+    alignment = change.alignment
+    mapping = tuple(
+        sorted(
+            (
+                (reactant(source), product(target))
+                for source, target in change.reference_mapping
+            ),
+            key=repr,
+        )
+    )
+    relation = change.relation
+    return (
+        alignment.status,
+        alignment.issue_code,
+        mapping,
+        None if relation is None else relation.kind.value,
+        None if relation is None else relation.shape,
+        None if relation is None else relation.class_id,
+        (
+            None
+            if relation is None or relation.witness is None
+            else relation.witness.permutation.image
+        ),
+    )
+
+
 def _rule_metadata_form(
     rule: Any,
     node_mapping: Mapping[Any, Any] | None = None,
@@ -86,6 +117,7 @@ def _rule_metadata_form(
                 _descriptor_form(change.before, reactant),
                 _descriptor_form(change.after, product),
                 _descriptor_form(change.transition, transition),
+                _reaction_relation_form(change, reactant, product),
             )
         )
     outcomes = tuple(

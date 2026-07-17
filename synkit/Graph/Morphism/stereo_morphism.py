@@ -104,8 +104,10 @@ class LocalStereoCertificate:
             )
         matched = self.status is StereoCertificateStatus.MATCHED
         evidence = (self.target_configuration, self.relation, self.witness)
-        invalid = any(value is None for value in evidence) if matched else any(
-            value is not None for value in evidence
+        invalid = (
+            any(value is None for value in evidence)
+            if matched
+            else any(value is not None for value in evidence)
         )
         if invalid:
             raise StereoMorphismError(
@@ -346,11 +348,7 @@ def _transport_token(
                 )
             )
         return "node", node_mapping[node]
-    if (
-        isinstance(token, tuple)
-        and len(token) == 3
-        and token[0] == "virtual"
-    ):
+    if isinstance(token, tuple) and len(token) == 3 and token[0] == "virtual":
         return token[0], token[1], _transport_token(token[2], node_mapping)
     raise StereoMorphismError(
         StereoMorphismIssue(
@@ -757,10 +755,13 @@ class StereoMorphism:
         information_policy: StereoInformationPolicy | str = (
             StereoInformationPolicy.EXACT
         ),
-        information_policies: Mapping[
-            str,
-            StereoInformationPolicy | str,
-        ] | None = None,
+        information_policies: (
+            Mapping[
+                str,
+                StereoInformationPolicy | str,
+            ]
+            | None
+        ) = None,
     ) -> "StereoMorphism":
         """Construct and validate stereo evidence without retaining either graph."""
         mode = StereoPresenceMode(presence_mode)
@@ -802,10 +803,13 @@ class StereoMorphism:
         information_policy: StereoInformationPolicy | str = (
             StereoInformationPolicy.EXACT
         ),
-        information_policies: Mapping[
-            str,
-            StereoInformationPolicy | str,
-        ] | None = None,
+        information_policies: (
+            Mapping[
+                str,
+                StereoInformationPolicy | str,
+            ]
+            | None
+        ) = None,
     ) -> "StereoMorphism":
         graph_morphism = GraphMorphism.identity(object_id, frozenset(graph.nodes))
         return cls.from_graphs(
@@ -834,7 +838,9 @@ class StereoMorphism:
         for first in self.certificates:
             if first.status is not StereoCertificateStatus.MATCHED:
                 composed_certificates.append(
-                    replace(first, target_configuration=None, relation=None, witness=None)
+                    replace(
+                        first, target_configuration=None, relation=None, witness=None
+                    )
                 )
                 continue
             intermediate = first.target_configuration

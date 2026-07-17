@@ -529,14 +529,10 @@ def validate_wildcard_mapping_roles(
                     graph1_node=node1,
                     graph2_node=node2,
                     graph1_role=(
-                        constraint1.role.value
-                        if constraint1 is not None
-                        else raw_role1
+                        constraint1.role.value if constraint1 is not None else raw_role1
                     ),
                     graph2_role=(
-                        constraint2.role.value
-                        if constraint2 is not None
-                        else raw_role2
+                        constraint2.role.value if constraint2 is not None else raw_role2
                     ),
                     constraint_issues=(
                         [item.to_dict() for item in compatibility.issues]

@@ -243,7 +243,9 @@ class ShapeDefinition:
             raise ValueError("The unspecified group must contain the preserving group.")
         if self.opposite_permutation is not None:
             if self.opposite_permutation not in unspecified:
-                raise ValueError("An opposite witness must be admissible for the shape.")
+                raise ValueError(
+                    "An opposite witness must be admissible for the shape."
+                )
             if self.opposite_permutation in preserving:
                 raise ValueError("An opposite witness cannot preserve configuration.")
 
@@ -390,10 +392,11 @@ class StereoConfiguration:
     ) -> "StereoConfiguration":
         unknown = set(replacements) - set(self.frame)
         if unknown:
-            raise ValueError(f"Replacement sources are absent: {sorted(map(repr, unknown))}.")
+            raise ValueError(
+                f"Replacement sources are absent: {sorted(map(repr, unknown))}."
+            )
         protected = {
-            self.frame[position]
-            for position in self.definition.locus_positions
+            self.frame[position] for position in self.definition.locus_positions
         }
         replaced_loci = protected & set(replacements)
         if replaced_loci:

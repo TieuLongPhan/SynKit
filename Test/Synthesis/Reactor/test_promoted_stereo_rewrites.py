@@ -180,9 +180,20 @@ def test_promoted_case_applies_forward_reverse_and_guards_orientation(case):
     for step in case["steps"]:
         rule, reactant, expected_product = _rule_and_endpoints(step)
         reactor_options = step["application"].get("reactor_options", {})
-        forward = _reactor(reactant, rule, reactor_options=reactor_options)
+        comparison_options = {
+            **reactor_options,
+            "stereo_semantics": "compare",
+        }
+        forward = _reactor(
+            reactant,
+            rule,
+            reactor_options=comparison_options,
+        )
 
         assert forward.mapping_count >= 1
+        assert all(
+            comparison.registered for comparison in forward.stereo_semantic_diagnostics
+        )
         assert (
             len(forward.its_list)
             == step["application"]["expected_unique_stereoisomer_count"]
@@ -244,10 +255,48 @@ def test_promoted_case_applies_forward_reverse_and_guards_orientation(case):
                 _reactor(
                     wrong,
                     rule,
-                    reactor_options=reactor_options,
+                    reactor_options=comparison_options,
                 ).mapping_count
                 == 0
             )
+
+
+def test_promoted_effects_dual_run_relation_application_and_reversal():
+    diagnostics = []
+    for case in CASES:
+        for step in case["steps"]:
+            rule, _, _ = _rule_and_endpoints(step)
+            for change in rule.stereo_effects.values():
+                classify_stereo_change(
+                    change.before,
+                    change.after,
+                    change.transition,
+                    semantics="compare",
+                    diagnostics=diagnostics,
+                )
+                if (
+                    change.before is not None
+                    and change.after is not None
+                    and change.alignment.accepted
+                ):
+                    change.apply_to(
+                        change.before,
+                        semantics="compare",
+                        diagnostics=diagnostics,
+                    )
+                if not change.non_invertible:
+                    change.reverse(
+                        semantics="compare",
+                        diagnostics=diagnostics,
+                    )
+
+    assert diagnostics
+    assert all(comparison.registered for comparison in diagnostics)
+    assert {
+        comparison.expected_divergence
+        for comparison in diagnostics
+        if not comparison.agreement
+    } <= {"nonbinary_orbit_reconfiguration"}
 
 
 def test_promoted_mixture_cases_keep_two_weighted_inverse_branches():

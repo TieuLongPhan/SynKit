@@ -1530,9 +1530,7 @@ class RBLEngine:
                     validation=(proof_validation.to_dict(),),
                     graph=final_graph,
                 )
-                bucket = candidate_buckets.setdefault(
-                    candidate.canonical_signature, []
-                )
+                bucket = candidate_buckets.setdefault(candidate.canonical_signature, [])
                 if any(
                     fusion_candidates_exactly_equivalent(candidate, previous)
                     for previous in bucket
@@ -1593,9 +1591,7 @@ class RBLEngine:
         self._fusion_candidates = [record[0] for record in ranked]
         self._fused_its = [record[1] for record in ranked]
         self._fused_rsmis = [record[2] for record in ranked]
-        search_complete = (
-            n_mappings_truncated == 0 and not self.prune_automorphisms
-        )
+        search_complete = n_mappings_truncated == 0 and not self.prune_automorphisms
         self._fusion_search_stats = {
             "complete": search_complete,
             "termination": "exhaustive" if search_complete else "bounded",

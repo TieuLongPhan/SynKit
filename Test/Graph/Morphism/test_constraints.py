@@ -24,12 +24,15 @@ def test_public_domains_normalize_deterministically() -> None:
 
     assert constraint.elements == frozenset({"C", "N"})
     assert constraint.side is EndpointSide.REACTANT
-    assert constraint.normalized() == WildcardConstraint(
-        WildcardRole.QUERY_ATOM,
-        elements=("C", "N"),
-        charges=(0, 1),
-        side=EndpointSide.REACTANT,
-    ).normalized()
+    assert (
+        constraint.normalized()
+        == WildcardConstraint(
+            WildcardRole.QUERY_ATOM,
+            elements=("C", "N"),
+            charges=(0, 1),
+            side=EndpointSide.REACTANT,
+        ).normalized()
+    )
 
 
 def test_satisfaction_checks_chemical_owner_and_resource_contract() -> None:
@@ -131,13 +134,9 @@ def test_role_specific_invalid_states_fail_at_construction() -> None:
 
 def test_legacy_adapters_preserve_disjoint_state_kinds() -> None:
     concrete = adapt_legacy_wildcard("C", attributes={"charge": 0})
-    wildcard = adapt_legacy_wildcard(
-        ("*", "*"), role=WildcardRole.RADICAL_COMPLETION
-    )
+    wildcard = adapt_legacy_wildcard(("*", "*"), role=WildcardRole.RADICAL_COMPLETION)
     absent = TypedNodeState(NodeStateKind.ABSENT)
-    virtual = TypedNodeState(
-        NodeStateKind.VIRTUAL_REFERENCE, virtual_reference="@H:7"
-    )
+    virtual = TypedNodeState(NodeStateKind.VIRTUAL_REFERENCE, virtual_reference="@H:7")
 
     assert {concrete.kind, wildcard.kind, absent.kind, virtual.kind} == set(
         NodeStateKind

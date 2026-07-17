@@ -6,6 +6,7 @@ from synkit.Graph.Stereo import (
     AtropBondStereo,
     StereoChange,
     StereoOutcome,
+    StereoRelationKind,
     TetrahedralStereo,
 )
 from synkit.IO.chem_converter import rsmi_to_its
@@ -170,6 +171,62 @@ def test_sn2_default_propagation_inverts_either_enantiomer():
     assert "@H" in mirror.smarts[0].split(">>", 1)[1]
 
 
+def test_reactor_compare_mode_audits_application_without_changing_products():
+    rule = SynRule.from_smart(SN2_RULE, format="tuple", implicit_h=False)
+    orbit = SynReactor(
+        "C[C@@H](F)Cl.[OH-]",
+        rule,
+        template_format="tuple",
+        explicit_h=False,
+    )
+    compared = SynReactor(
+        "C[C@@H](F)Cl.[OH-]",
+        rule,
+        template_format="tuple",
+        explicit_h=False,
+        stereo_semantics="compare",
+    )
+
+    assert compared.smarts == orbit.smarts
+    assert [record.stage for record in compared.stereo_semantic_diagnostics] == [
+        "reaction_stereo_application"
+    ]
+    assert all(record.registered for record in compared.stereo_semantic_diagnostics)
+
+
+def test_reactor_compare_mode_audits_mapping_population_and_reverse_rule():
+    forward = _reactor(
+        "C[C@H](F)Cl.[OH-]",
+        SN2_RULE,
+        stereo_semantics="compare",
+    )
+    reverse = _reactor(
+        "C[C@@H](F)O.[Cl-]",
+        SN2_RULE,
+        invert=True,
+        stereo_semantics="compare",
+    )
+
+    assert forward.mapping_count == reverse.mapping_count == 1
+    assert {record.stage for record in forward.stereo_semantic_diagnostics} == {
+        "candidate_mapping"
+    }
+    assert {record.stage for record in reverse.stereo_semantic_diagnostics} == {
+        "candidate_mapping",
+        "reaction_stereo_reverse",
+    }
+    assert all(
+        record.registered
+        for reactor in (forward, reverse)
+        for record in reactor.stereo_semantic_diagnostics
+    )
+
+
+def test_reactor_rejects_unknown_stereo_semantics_mode():
+    with pytest.raises(ValueError, match="stereo_semantics"):
+        SynReactor("CC", "[C:1]>>[C:1]", stereo_semantics="fallback")
+
+
 def test_sn2_default_propagation_keeps_unspecified_orientation_unknown():
     reactor = SynReactor(
         "CC(F)Cl.[OH-]",
@@ -249,6 +306,10 @@ def test_sn2_inversion_can_keep_the_same_cip_label():
     product_cip = _cip_codes_by_atom_map(reactor.smarts[0].split(">>", 1)[1])
 
     assert reactor.rule.stereo_effects["atom:2"].change == "INVERTED"
+    assert reactor.rule.stereo_effects["atom:2"].reference_mapping == ((4, 5),)
+    assert reactor.rule.stereo_effects["atom:2"].relation.kind is (
+        StereoRelationKind.OPPOSITE
+    )
     assert reactant_cip[2] == product_cip[2] == "R"
 
 

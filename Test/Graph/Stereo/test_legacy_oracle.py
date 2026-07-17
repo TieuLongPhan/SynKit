@@ -23,7 +23,6 @@ from synkit.Graph.Stereo.legacy import (
 )
 from synkit.Graph.Stereo.matching import descriptor_query_matches
 
-
 ATOM_CASES = (
     (TetrahedralStereo, 4, (-1, 1, None)),
     (SquarePlanarStereo, 4, (0, None)),

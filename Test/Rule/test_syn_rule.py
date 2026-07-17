@@ -116,6 +116,21 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
                 "atom:2": {
                     "descriptor": "tetrahedral",
                     "change": "INVERTED",
+                    "relation": {
+                        "kind": "opposite",
+                        "alignment": {
+                            "status": "inferred",
+                            "mapping": [[4, 5]],
+                            "removed": [4],
+                            "added": [5],
+                        },
+                        "relation": {
+                            "kind": "opposite",
+                            "shape": "tetrahedral",
+                            "class_id": [0, 1, 2, 4, 3],
+                            "witness": [0, 2, 1, 3, 4],
+                        },
+                    },
                     "reactant": {
                         "atoms": [2, 1, 3, 4, "@H:2"],
                         "parity": -1,

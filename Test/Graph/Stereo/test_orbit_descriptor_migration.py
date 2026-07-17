@@ -21,7 +21,6 @@ from synkit.Graph.Stereo.legacy import (
 )
 from synkit.Graph.Stereo.matching import descriptor_query_matches
 
-
 ATOM_CASES = (
     (TetrahedralStereo, 4, (-1, 1, None)),
     (SquarePlanarStereo, 4, (0, None)),
@@ -210,10 +209,15 @@ def test_descriptor_relations_are_geometry_specific(
     ),
 )
 def test_unspecified_is_stored_information_not_absence(descriptor: object) -> None:
-    fixed_parity = 0 if descriptor.descriptor_class in {
-        "square_planar",
-        "planar_bond",
-    } else 1
+    fixed_parity = (
+        0
+        if descriptor.descriptor_class
+        in {
+            "square_planar",
+            "planar_bond",
+        }
+        else 1
+    )
     fixed = type(descriptor)(descriptor.atoms, fixed_parity)
 
     assert descriptor.specification is StereoSpecification.UNSPECIFIED

@@ -139,11 +139,7 @@ def test_owner_incidence_cannot_escape_source_or_composed_image() -> None:
             {1},
             {10},
             {1: 10},
-            {
-                1: WildcardConstraint(
-                    WildcardRole.ATTACHMENT_PORT, owner=999
-                )
-            },
+            {1: WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=999)},
         )
     assert outside_source.value.issues[0].code is (
         MorphismIssueCode.OWNER_OUTSIDE_SOURCE
@@ -156,17 +152,11 @@ def test_owner_incidence_cannot_escape_source_or_composed_image() -> None:
         {10, 20},
         {100, 200},
         {10: 100, 20: 200},
-        {
-            10: WildcardConstraint(
-                WildcardRole.ATTACHMENT_PORT, owner=20
-            )
-        },
+        {10: WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=20)},
     )
     with pytest.raises(GraphMorphismError) as outside_image:
         first.then(second)
-    assert outside_image.value.issues[0].code is (
-        MorphismIssueCode.OWNER_OUTSIDE_IMAGE
-    )
+    assert outside_image.value.issues[0].code is (MorphismIssueCode.OWNER_OUTSIDE_IMAGE)
 
 
 def test_consistent_relabeling_preserves_canonical_signature() -> None:

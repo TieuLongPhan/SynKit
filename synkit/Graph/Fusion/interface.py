@@ -18,7 +18,6 @@ from synkit.Graph.Morphism import StereoEffect
 
 from .identity import FUSION_WL_ITERATIONS
 
-
 DEFAULT_INTERFACE_NODE_KEYS = (
     "element",
     "aromatic",
@@ -72,11 +71,17 @@ def _stable_value(value: Any) -> Any:
         )
     if isinstance(value, (list, tuple, set, frozenset)):
         items = tuple(_stable_value(item) for item in value)
-        return tuple(sorted(items, key=repr)) if isinstance(value, (set, frozenset)) else items
+        return (
+            tuple(sorted(items, key=repr))
+            if isinstance(value, (set, frozenset))
+            else items
+        )
     return value
 
 
-def _attribute_signature(attributes: Mapping[str, Any], keys: Sequence[str]) -> tuple[Any, ...]:
+def _attribute_signature(
+    attributes: Mapping[str, Any], keys: Sequence[str]
+) -> tuple[Any, ...]:
     return tuple((key, _stable_value(attributes.get(key))) for key in keys)
 
 
@@ -203,11 +208,17 @@ def _constraint_accepts_concrete(
         "charge": _endpoint_scalar(attributes.get("charge", 0)),
         "radical": _endpoint_scalar(attributes.get("radical", 0)),
     }
-    if constraint.elements is not None and concrete["element"] not in constraint.elements:
+    if (
+        constraint.elements is not None
+        and concrete["element"] not in constraint.elements
+    ):
         return False
     if constraint.charges is not None and concrete["charge"] not in constraint.charges:
         return False
-    if constraint.radicals is not None and concrete["radical"] not in constraint.radicals:
+    if (
+        constraint.radicals is not None
+        and concrete["radical"] not in constraint.radicals
+    ):
         return False
     return constraint.virtual_kind is None
 
@@ -228,12 +239,8 @@ def _common_interface_edges(
         b_left, b_right = backward_arm[left], backward_arm[right]
         if not backward_graph.has_edge(b_left, b_right):
             continue
-        f_label = _attribute_signature(
-            forward_graph.edges[f_left, f_right], edge_keys
-        )
-        b_label = _attribute_signature(
-            backward_graph.edges[b_left, b_right], edge_keys
-        )
+        f_label = _attribute_signature(forward_graph.edges[f_left, f_right], edge_keys)
+        b_label = _attribute_signature(backward_graph.edges[b_left, b_right], edge_keys)
         if f_label != b_label:
             raise FusionInterfaceError(
                 FusionInterfaceIssue(
@@ -259,7 +266,10 @@ class FusionInterface:
     def __post_init__(self) -> None:
         forward = self.forward_morphism
         backward = self.backward_morphism
-        if forward.source != backward.source or forward.source_nodes != backward.source_nodes:
+        if (
+            forward.source != backward.source
+            or forward.source_nodes != backward.source_nodes
+        ):
             raise FusionInterfaceError(
                 FusionInterfaceIssue(
                     FusionInterfaceIssueCode.SOURCE_MISMATCH,
@@ -277,9 +287,11 @@ class FusionInterface:
         normalized_edges = tuple(
             sorted(
                 (
-                    (left, right, label)
-                    if repr(left) <= repr(right)
-                    else (right, left, label)
+                    (
+                        (left, right, label)
+                        if repr(left) <= repr(right)
+                        else (right, left, label)
+                    )
                     for left, right, label in self.edges
                 ),
                 key=repr,
@@ -304,9 +316,11 @@ class FusionInterface:
                         side,
                         layer,
                         descriptor_id,
-                        effect
-                        if isinstance(effect, StereoEffect)
-                        else StereoEffect(effect),
+                        (
+                            effect
+                            if isinstance(effect, StereoEffect)
+                            else StereoEffect(effect)
+                        ),
                     )
                     for side, layer, descriptor_id, effect in self.stereo_effects
                 ),
@@ -322,7 +336,11 @@ class FusionInterface:
         for node in forward.source_nodes:
             left = f_theta.get(node)
             right = b_theta.get(node)
-            if left is not None and right is not None and not left.intersect(right).valid:
+            if (
+                left is not None
+                and right is not None
+                and not left.intersect(right).valid
+            ):
                 raise FusionInterfaceError(
                     FusionInterfaceIssue(
                         FusionInterfaceIssueCode.WILDCARD_CONFLICT,
@@ -331,13 +349,12 @@ class FusionInterface:
                     )
                 )
 
-        edge_pairs = {
-            frozenset((left, right)) for left, right, _ in normalized_edges
-        }
+        edge_pairs = {frozenset((left, right)) for left, right, _ in normalized_edges}
         for node, constraint in self.substitutions.items():
-            if constraint.owner is not None and frozenset(
-                (node, constraint.owner)
-            ) not in edge_pairs:
+            if (
+                constraint.owner is not None
+                and frozenset((node, constraint.owner)) not in edge_pairs
+            ):
                 raise FusionInterfaceError(
                     FusionInterfaceIssue(
                         FusionInterfaceIssueCode.OWNER_OUTSIDE_INTERFACE,
@@ -376,13 +393,12 @@ class FusionInterface:
 
     def to_dict(self) -> dict[str, Any]:
         """Return the interface and both morphism arms as proof data."""
+
         def morphism_payload(morphism: GraphMorphism) -> dict[str, Any]:
             return {
                 "source": repr(morphism.source),
                 "target": repr(morphism.target),
-                "mapping": [
-                    (repr(left), repr(right)) for left, right in morphism.f
-                ],
+                "mapping": [(repr(left), repr(right)) for left, right in morphism.f],
                 "theta": [
                     {
                         "node": repr(node),
@@ -395,9 +411,7 @@ class FusionInterface:
 
         return {
             "nodes": [repr(node) for node in sorted(self.interface_nodes, key=repr)],
-            "node_labels": [
-                (repr(node), label) for node, label in self.node_labels
-            ],
+            "node_labels": [(repr(node), label) for node, label in self.node_labels],
             "edges": [
                 (repr(left), repr(right), label) for left, right, label in self.edges
             ],

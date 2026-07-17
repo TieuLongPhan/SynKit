@@ -174,7 +174,9 @@ def transport_stereo_descriptor(
         )
     owner_positions = _owner_positions(descriptor)
     replaced_owners = tuple(
-        atoms[position] for position in owner_positions if atoms[position] in replacements
+        atoms[position]
+        for position in owner_positions
+        if atoms[position] in replacements
     )
     if replaced_owners:
         raise StereoTransportError(
@@ -186,9 +188,11 @@ def transport_stereo_descriptor(
         )
 
     transported = tuple(
-        replacements[reference]
-        if reference in replacements
-        else _transport_reference(reference, mapping)
+        (
+            replacements[reference]
+            if reference in replacements
+            else _transport_reference(reference, mapping)
+        )
         for reference in atoms
     )
     try:

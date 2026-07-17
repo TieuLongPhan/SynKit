@@ -13,7 +13,6 @@ from .constructor import EndpointCertificate, FusionConstruction, FusionProvenan
 from .identity import graph_identity_digest, graphs_exactly_equivalent, stable_value
 from .interface import FusionInterface
 
-
 FUSION_PROOF_SCHEMA = "synkit.fusion-proof/1"
 
 

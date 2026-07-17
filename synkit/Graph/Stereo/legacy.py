@@ -12,7 +12,6 @@ from enum import Enum
 from types import SimpleNamespace
 from typing import Any, Hashable, Sequence
 
-
 _SQUARE_PERMUTATIONS = (
     (0, 1, 2, 3, 4),
     (0, 2, 3, 4, 1),
@@ -154,9 +153,7 @@ def legacy_canonical_state(
         references = atoms[1:]
         ordered = tuple(sorted(references, key=_reference_sort_key))
         orientation = (
-            None
-            if parity is None
-            else parity * _permutation_sign(references, ordered)
+            None if parity is None else parity * _permutation_sign(references, ordered)
         )
         return descriptor_class, atoms[0], *ordered, orientation
     if parity is None:
@@ -193,9 +190,13 @@ def legacy_canonical_state(
             tuple(atoms[index] for index in permutation)
             for permutation in _BOND_PERMUTATIONS
         )
-        return descriptor_class, 0, min(
-            forms,
-            key=lambda values: tuple(map(str, values)),
+        return (
+            descriptor_class,
+            0,
+            min(
+                forms,
+                key=lambda values: tuple(map(str, values)),
+            ),
         )
     if descriptor_class == "atrop_bond":
         return _permuted_form(
@@ -303,6 +304,35 @@ def legacy_classify_stereo_change(
     return "UNSPECIFIED"
 
 
+def legacy_apply_stereo_change(change: Any, descriptor: Any) -> Any | None:
+    """Reproduce Beta-2 same-locus reaction stereo propagation.
+
+    This deliberately retains the former universal descriptor-inversion
+    behavior as a comparison oracle. It does not call the orbit relation or
+    reaction application methods.
+    """
+    before, after = change.before, change.after
+    if before is None:
+        return after
+    if after is None:
+        return None
+    if descriptor.parity is None:
+        return type(after)(after.atoms, None, after.provenance)
+    descriptor_form = legacy_canonical_form(descriptor)
+    if descriptor_form == legacy_canonical_form(before):
+        return after
+    if descriptor_form == legacy_inverted_form(before):
+        if after.parity is None:
+            return after
+        if after.descriptor_class == "square_planar":
+            return after
+        if after.descriptor_class == "planar_bond":
+            atoms = (after.atoms[1], after.atoms[0], *after.atoms[2:])
+            return type(after)(atoms, 0, after.provenance)
+        return type(after)(after.atoms, -after.parity, after.provenance)
+    return type(after)(after.atoms, None, after.provenance)
+
+
 def legacy_descriptor_query_matches(
     query: Any,
     candidate: Any,
@@ -382,6 +412,7 @@ __all__ = [
     "legacy_canonical_form",
     "legacy_canonical_state",
     "legacy_classify_stereo_change",
+    "legacy_apply_stereo_change",
     "legacy_descriptor_query_matches",
     "legacy_inverted_form",
     "legacy_same_configuration",

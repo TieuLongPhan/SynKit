@@ -692,6 +692,7 @@ class SynRule:
                 item["query"] = self.stereo_query_policies[target]
             if effect is not None:
                 item["change"] = effect.change
+                item["relation"] = effect.relation_evidence()
             if before is not None:
                 item["reactant"] = self._summary_descriptor(before)
             if after is not None:
@@ -797,7 +798,13 @@ class SynRule:
         """Whether reverse construction can preserve stereo semantics."""
         return not self.non_invertible_stereo_targets()
 
-    def reversed(self, *, balance_its: bool = False) -> "SynRule":
+    def reversed(
+        self,
+        *,
+        balance_its: bool = False,
+        semantics: str = "orbit",
+        diagnostics: list[Any] | None = None,
+    ) -> "SynRule":
         """Return a rule with reactant/product stereo semantics reversed.
 
         A forward two-enantiomer product outcome becomes an ``either``
@@ -824,7 +831,11 @@ class SynRule:
             )
 
         reversed_graph.graph["stereo_changes"] = {
-            key: change.reverse() for key, change in self.stereo_effects.items()
+            key: change.reverse(
+                semantics=semantics,
+                diagnostics=diagnostics,
+            )
+            for key, change in self.stereo_effects.items()
         }
         reversed_graph.graph["stereo_couplings"] = {
             key: coupling.relation for key, coupling in self.stereo_couplings.items()

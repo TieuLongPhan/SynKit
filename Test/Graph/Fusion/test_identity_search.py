@@ -136,12 +136,8 @@ def test_stable_aromatic_kekule_phase_has_one_identity() -> None:
 
 
 def test_implicit_and_unmaterialized_explicit_h_presentations_share_identity() -> None:
-    implicit = rsmi_to_its(
-        "[CH3:1][OH:2]>>[CH3:1][OH:2]", format="tuple"
-    )
-    explicit = rsmi_to_its(
-        "[CH3:1][O:2][H]>>[CH3:1][O:2][H]", format="tuple"
-    )
+    implicit = rsmi_to_its("[CH3:1][OH:2]>>[CH3:1][OH:2]", format="tuple")
+    explicit = rsmi_to_its("[CH3:1][O:2][H]>>[CH3:1][O:2][H]", format="tuple")
 
     assert graph_identity_digest(implicit) == graph_identity_digest(explicit)
     assert graphs_exactly_equivalent(implicit, explicit)

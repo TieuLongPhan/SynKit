@@ -248,9 +248,7 @@ def test_stereo_ligand_port_requires_mapped_owner_and_ordered_slot() -> None:
     )
     candidate.add_node(4, element="C")
 
-    assert validate_wildcard_mapping_roles(
-        query, candidate, {1: 2, 3: 4}
-    ).valid
+    assert validate_wildcard_mapping_roles(query, candidate, {1: 2, 3: 4}).valid
     candidate.nodes[2]["stereo_slot"] = 2
     invalid = validate_wildcard_mapping_roles(query, candidate, {1: 2, 3: 4})
     assert not invalid.valid

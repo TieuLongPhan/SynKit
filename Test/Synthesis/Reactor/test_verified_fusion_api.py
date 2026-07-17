@@ -21,7 +21,9 @@ def test_full_rbl_outputs_are_projections_of_proof_bearing_candidates(
     engine = RBLEngine(mode="full").process(reaction, template)
 
     assert engine.fusion_candidates
-    assert all(isinstance(candidate, FusionCandidate) for candidate in engine.fusion_candidates)
+    assert all(
+        isinstance(candidate, FusionCandidate) for candidate in engine.fusion_candidates
+    )
     assert engine.fused_rsmis == [
         candidate.rsmi for candidate in engine.fusion_candidates
     ]
@@ -121,8 +123,7 @@ def test_candidate_proof_reuses_postprocess_endpoint_validation(
     )
     engine = RBLEngine(mode="full").process(reaction, template)
     postprocess_validations = sum(
-        item.get("source") == "postprocess"
-        for item in engine.diagnostics["fusion"]
+        item.get("source") == "postprocess" for item in engine.diagnostics["fusion"]
     )
 
     assert engine.fusion_candidates

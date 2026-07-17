@@ -13,7 +13,6 @@ from synkit.Graph.Stereo import (
     StereoSpecification,
 )
 
-
 EXPECTED_GROUP_ORDERS = {
     "tetrahedral": (12, 24),
     "square_planar": (8, 24),
@@ -215,7 +214,9 @@ def test_witness_composition_replays_direct_transport(shape: str) -> None:
     definition = SHAPE_DEFINITIONS[shape]
     frame_a = tuple(range(definition.frame_arity))
     first = definition.unspecified_group.elements[-1]
-    second = definition.unspecified_group.elements[len(definition.unspecified_group.elements) // 2]
+    second = definition.unspecified_group.elements[
+        len(definition.unspecified_group.elements) // 2
+    ]
     frame_b = first.apply(frame_a)
     frame_c = second.apply(frame_b)
     relation_ab = StereoConfiguration(shape, frame_a).relation_to(

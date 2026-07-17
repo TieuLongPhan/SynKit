@@ -296,7 +296,9 @@ class WildcardConstraint:
             "mapped_identity",
             "materialization",
         ):
-            value, compatible = _specific_value(getattr(self, name), getattr(other, name))
+            value, compatible = _specific_value(
+                getattr(self, name), getattr(other, name)
+            )
             metadata[name] = value
             if not compatible:
                 issues.append(
@@ -322,9 +324,11 @@ class WildcardConstraint:
                 resource_budget=(
                     other.resource_budget
                     if self.resource_budget is None
-                    else self.resource_budget
-                    if other.resource_budget is None
-                    else min(self.resource_budget, other.resource_budget)
+                    else (
+                        self.resource_budget
+                        if other.resource_budget is None
+                        else min(self.resource_budget, other.resource_budget)
+                    )
                 ),
                 **metadata,
             ),

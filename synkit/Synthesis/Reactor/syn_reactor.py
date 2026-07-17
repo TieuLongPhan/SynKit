@@ -140,6 +140,10 @@ class SynReactor:
         ``"exact"`` matches only unknown host stereo; ``"wildcard"`` matches
         either orientation. Per-descriptor rule policies override this value.
     :type stereo_query_mode: str
+    :param stereo_semantics: Reaction stereo execution mode: authoritative
+        ``"orbit"`` (default), frozen ``"legacy"``, or orbit-authoritative
+        ``"compare"`` with structured diagnostics.
+    :type stereo_semantics: str
     :param preserve_mapped_hydrogens: Preserve positive explicit-H atom maps
         through implicit matching. This is intended for mapped mechanism/rule
         agreement; the default keeps legacy implicit-output projection.
@@ -177,6 +181,7 @@ class SynReactor:
     radical_policy: str = "strict"
     stereo_mode: str = "propagate"
     stereo_query_mode: str = "exact"
+    stereo_semantics: str = "orbit"
     embed_threshold: Optional[int] = None
     embed_pre_filter: bool = False
     automorphism: bool = True
@@ -190,6 +195,11 @@ class SynReactor:
     _its: List[nx.Graph] | None = field(init=False, default=None, repr=False)
     _smarts: List[str] | None = field(init=False, default=None, repr=False)
     _host_for_matching: nx.Graph | None = field(init=False, default=None, repr=False)
+    _stereo_semantic_diagnostics: List[Any] = field(
+        init=False,
+        default_factory=list,
+        repr=False,
+    )
     _flag_pattern_has_explicit_H: bool = field(init=False, default=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -212,6 +222,10 @@ class SynReactor:
             )
         if self.stereo_query_mode not in {"exact", "wildcard"}:
             raise ValueError("stereo_query_mode must be 'exact' or 'wildcard'.")
+        if self.stereo_semantics not in {"orbit", "legacy", "compare"}:
+            raise ValueError(
+                "stereo_semantics must be 'orbit', 'legacy', or 'compare'."
+            )
         if not isinstance(self.dedup_its, bool):
             raise TypeError("dedup_its must be a bool.")
 
@@ -235,6 +249,7 @@ class SynReactor:
         radical_policy: str = "strict",
         stereo_mode: str = "propagate",
         stereo_query_mode: str = "exact",
+        stereo_semantics: str = "orbit",
         preserve_mapped_hydrogens: bool = False,
         dedup_its: bool = True,
     ) -> "SynReactor":
@@ -272,6 +287,9 @@ class SynReactor:
         :param stereo_query_mode: Unknown-parity query policy, either
             ``"exact"`` or ``"wildcard"``.
         :type stereo_query_mode: str
+        :param stereo_semantics: ``"orbit"``, ``"legacy"``, or ``"compare"``
+            reaction-stereo execution.
+        :type stereo_semantics: str
         :param dedup_its: Consolidate equivalent post-rewrite ITS graphs while
             preserving all correctness finalization and validation steps.
         :type dedup_its: bool
@@ -292,6 +310,7 @@ class SynReactor:
             radical_policy=radical_policy,
             stereo_mode=stereo_mode,
             stereo_query_mode=stereo_query_mode,
+            stereo_semantics=stereo_semantics,
             preserve_mapped_hydrogens=preserve_mapped_hydrogens,
             dedup_its=dedup_its,
         )
@@ -299,6 +318,11 @@ class SynReactor:
     # ------------------------------------------------------------------
     # Public read‑only properties (lazily computed) ----------------------
     # ------------------------------------------------------------------
+    @property
+    def stereo_semantic_diagnostics(self) -> tuple[Any, ...]:
+        """Return accumulated orbit/legacy mapping and application audits."""
+        return tuple(self._stereo_semantic_diagnostics)
+
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
         """Lazily wrap the substrate into a SynGraph.
@@ -424,6 +448,8 @@ class SynReactor:
                         mode=self.stereo_mode,
                         unknown_policy=self.stereo_query_mode,
                         query_policies=self.rule.stereo_query_policies,
+                        semantics=self.stereo_semantics,
+                        diagnostics=self._stereo_semantic_diagnostics,
                     )
                 ]
             elif self.stereo_mode == "propagate":
@@ -445,6 +471,8 @@ class SynReactor:
                             mode="require",
                             unknown_policy="exact",
                             query_policies={key: "exact" for key in exact_targets},
+                            semantics=self.stereo_semantics,
+                            diagnostics=self._stereo_semantic_diagnostics,
                         )
                     ]
 
@@ -925,8 +953,12 @@ class SynReactor:
         # Invert if asked -----------------------------------------------------
         if self.invert:
             if isinstance(tpl, SynRule):
-                return tpl.reversed(balance_its=self.implicit_temp)
-            if isinstance(tpl, nx.Graph) and any(
+                return tpl.reversed(
+                    balance_its=self.implicit_temp,
+                    semantics=self.stereo_semantics,
+                    diagnostics=self._stereo_semantic_diagnostics,
+                )
+            rich_reverse = isinstance(tpl, nx.Graph) and any(
                 key in graph.graph
                 for key in (
                     "stereo_outcomes",
@@ -934,12 +966,20 @@ class SynReactor:
                     "stereo_query_policies",
                     "stereo_reverse_outcomes",
                 )
-            ):
+            )
+            audited_reverse = self.stereo_semantics != "orbit" and bool(
+                graph.graph.get("stereo_changes")
+            )
+            if rich_reverse or audited_reverse:
                 return SynRule(
                     graph,
                     canonicaliser=self.canonicaliser or GraphCanonicaliser(),
                     format=format,
-                ).reversed(balance_its=self.implicit_temp)
+                ).reversed(
+                    balance_its=self.implicit_temp,
+                    semantics=self.stereo_semantics,
+                    diagnostics=self._stereo_semantic_diagnostics,
+                )
             if self.implicit_temp:
                 graph = self._invert_template(
                     graph,
@@ -1031,22 +1071,27 @@ class SynReactor:
 
     def _propagated_stereo_effect(
         self,
-        before: Any,
-        after: Any,
+        change: Any,
         reactant_registry: Mapping[str, Any],
         host: nx.Graph,
     ) -> tuple[Any, Any]:
-        """Orient a same-locus rule effect relative to the matched substrate.
+        """Apply an aligned reaction relation to the matched substrate frame.
 
-        A mapped template orientation is only a reference frame. In chemical
-        ``propagate`` mode, an inverse host descriptor therefore receives the
-        inverse product descriptor. Missing or unknown input orientation stays
-        unknown instead of acquiring arbitrary template chirality.
+        The rule endpoint is only a reference frame. In chemical ``propagate``
+        mode the stored permutation witness acts on the concrete substrate
+        configuration after ligand replacement. Missing, unknown, or refused
+        alignment evidence never acquires arbitrary template orientation.
         """
+        before, after = change.before, change.after
         if self.stereo_mode != "propagate" or before is None:
             return before, after
 
-        from synkit.Graph.Stereo import descriptor_id, normalize_hydrogen_references
+        from synkit.Graph.Stereo import (
+            StereoAlignmentError,
+            StereoRelationKind,
+            descriptor_id,
+            normalize_hydrogen_references,
+        )
 
         target = descriptor_id(before)
         candidate = reactant_registry.get(target)
@@ -1064,17 +1109,41 @@ class SynReactor:
             return unknown_before, unknown_after
 
         if candidate.parity is None:
-            unknown_after = (
-                self._unknown_stereo_orientation(after) if linked_output else after
-            )
-            return candidate, unknown_after
+            try:
+                propagated = (
+                    change.apply_to(
+                        candidate,
+                        semantics=self.stereo_semantics,
+                        diagnostics=self._stereo_semantic_diagnostics,
+                    )
+                    if linked_output
+                    else after
+                )
+            except StereoAlignmentError:
+                propagated = (
+                    self._unknown_stereo_orientation(after) if linked_output else after
+                )
+            return candidate, propagated
 
         expected = normalize_hydrogen_references(before, host)
         actual = normalize_hydrogen_references(candidate, host)
-        if expected == actual:
-            return candidate, after
-        if expected.invert() == actual:
-            return candidate, after.invert() if linked_output else after
+        relation = expected.relation_to(actual)
+        if relation.kind not in {
+            StereoRelationKind.UNRELATED,
+            StereoRelationKind.UNSPECIFIED,
+        }:
+            try:
+                return candidate, (
+                    change.apply_to(
+                        actual,
+                        semantics=self.stereo_semantics,
+                        diagnostics=self._stereo_semantic_diagnostics,
+                    )
+                    if linked_output
+                    else after
+                )
+            except StereoAlignmentError:
+                pass
 
         unknown_after = (
             self._unknown_stereo_orientation(after) if linked_output else after
@@ -1333,14 +1402,12 @@ class SynReactor:
         ] = [(dict(reactant_registry), {}, {}, {}, {})]
 
         for rule_key, change in self.rule.stereo_effects.items():
-            before = change.before.relabel(translation) if change.before else None
-            after = change.after.relabel(translation) if change.after else None
-            transition = (
-                change.transition.relabel(translation) if change.transition else None
-            )
+            applied_effect = change.relabel(translation)
+            before = applied_effect.before
+            after = applied_effect.after
+            transition = applied_effect.transition
             before, after = self._propagated_stereo_effect(
-                before,
-                after,
+                applied_effect,
                 reactant_registry,
                 host,
             )
@@ -1375,11 +1442,16 @@ class SynReactor:
                     key_descriptor = alternative or before or transition
                     if key_descriptor is not None:
                         target = descriptor_id(key_descriptor)
-                        branch_changes[target] = StereoChange(
-                            change.change,
+                        reference_mapping = (
+                            dict(applied_effect.reference_mapping)
+                            if applied_effect.alignment.status == "explicit"
+                            else None
+                        )
+                        branch_changes[target] = StereoChange.from_endpoints(
                             before,
                             alternative,
                             transition,
+                            reference_mapping=reference_mapping,
                         )
                         if outcome is not None:
                             branch_outcomes[target] = outcome.to_dict()
