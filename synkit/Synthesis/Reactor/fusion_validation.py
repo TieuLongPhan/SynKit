@@ -15,7 +15,6 @@ from typing import Any, Mapping, Sequence
 import networkx as nx
 from rdkit import Chem
 
-from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.Graph.Morphism.constraints import (
     NodeStateKind,
     WildcardRole,
@@ -293,6 +292,10 @@ def _endpoint_embedding_proof(
     chirality enabled; atom-map numbers are representation labels and are
     therefore excluded from the match relation.
     """
+    # Keep this import local: ``subgraph_matcher`` imports Reactor.strategy,
+    # while Reactor's public package imports this validation module.
+    from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
+
     original = _parse_unmapped_endpoint_graph(original_side)
     candidate = _parse_unmapped_endpoint_graph(candidate_side)
     if original is None or candidate is None:

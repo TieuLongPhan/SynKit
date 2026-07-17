@@ -180,6 +180,7 @@ Funded by the European Union Horizon Europe Doctoral Network
    getting_started
    mechanism
    stereo_orbits
+   stereo_morphisms
    io
    chem
    graph

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import cached_property
+from functools import cached_property, lru_cache
 from itertools import permutations
 from typing import Any, Hashable, Mapping, Sequence
 
@@ -296,6 +296,24 @@ class StereoRelation:
         return self.witness is not None
 
 
+@lru_cache(maxsize=None)
+def _cached_double_coset_id(
+    shape: str,
+    witness_image: tuple[int, ...],
+) -> tuple[int, ...]:
+    """Return ``min(G pi G)`` by direct tuple action, cached per witness."""
+    group = SHAPE_DEFINITIONS[shape].preserving_group.elements
+    images = {
+        tuple(
+            left.image[witness_image[right.image[position]]]
+            for position in range(len(witness_image))
+        )
+        for left in group
+        for right in group
+    }
+    return min(images)
+
+
 @dataclass(frozen=True, eq=False)
 class StereoConfiguration:
     """One local frame modulo the fixed or unspecified group of its shape."""
@@ -393,13 +411,7 @@ class StereoConfiguration:
         return None
 
     def _double_coset_id(self, witness: Permutation) -> tuple[int, ...]:
-        group = self.definition.preserving_group.elements
-        images = {
-            left.then(witness).then(right).image
-            for left in group
-            for right in group
-        }
-        return min(images)
+        return _cached_double_coset_id(self.shape, witness.image)
 
     def _opposite_class_id(self) -> tuple[int, ...] | None:
         opposite = self.definition.opposite_permutation

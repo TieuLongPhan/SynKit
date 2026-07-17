@@ -3,9 +3,17 @@
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, Callable, Mapping
+from collections.abc import Iterator
+from typing import Any, Callable, Hashable, Mapping
 
 import networkx as nx
+
+from synkit.Graph.Morphism.morphism import GraphMorphism, GraphMorphismError
+from synkit.Graph.Morphism.constraints import WildcardConstraint
+from synkit.Graph.Morphism.stereo_morphism import (
+    StereoMorphism,
+    StereoMorphismError,
+)
 
 from .changes import stereo_registry
 from .descriptors import (
@@ -347,28 +355,18 @@ def _mapped_registry_matches(
     )
 
 
-def stereo_isomorphism_mapping(
+def _structural_isomorphisms_iter(
     left: nx.Graph,
     right: nx.Graph,
     *,
     node_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
     edge_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
-    unknown_policy: str = "exact",
-) -> dict[Any, Any] | None:
-    """Return one structural isomorphism that also preserves relative stereo.
-
-    Structural mappings are enumerated before descriptor comparison, so a
-    symmetry-equivalent mapping rejected by stereo does not hide a later valid
-    mapping. Atom-map values identify descriptor references but are not
-    themselves required to be equal between the two graphs.
-    """
-    if unknown_policy not in {"exact", "wildcard", "either"}:
-        raise ValueError("unknown_policy must be 'exact', 'wildcard', or 'either'.")
+) -> Iterator[dict[Any, Any]]:
     if (
         left.is_multigraph() != right.is_multigraph()
         or left.is_directed() != right.is_directed()
     ):
-        return None
+        return
     if left.is_directed():
         matcher_type = (
             nx.algorithms.isomorphism.MultiDiGraphMatcher
@@ -388,13 +386,219 @@ def stereo_isomorphism_mapping(
         edge_match=edge_match or _default_edge_match,
     )
     for mapping in matcher.isomorphisms_iter():
-        if _mapped_registry_matches(
+        yield dict(mapping)
+
+
+def _structural_isomorphism_mappings(
+    left: nx.Graph,
+    right: nx.Graph,
+    *,
+    node_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+    edge_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+) -> tuple[dict[Any, Any], ...]:
+    return tuple(
+        _structural_isomorphisms_iter(
             left,
             right,
+            node_match=node_match,
+            edge_match=edge_match,
+        )
+    )
+
+
+def _mapping_set_form(
+    mappings: tuple[Mapping[Any, Any], ...],
+) -> tuple[tuple[tuple[str, str], ...], ...]:
+    return tuple(
+        sorted(
+            (
+                tuple(
+                    sorted(
+                        ((repr(left), repr(right)) for left, right in mapping.items())
+                    )
+                )
+                for mapping in mappings
+            ),
+            key=repr,
+        )
+    )
+
+
+def _stereo_morphisms_for_mappings(
+    left: nx.Graph,
+    right: nx.Graph,
+    mappings: tuple[dict[Any, Any], ...],
+    unknown_policy: str,
+) -> tuple[StereoMorphism, ...]:
+    results = []
+    for mapping in mappings:
+        graph_morphism = GraphMorphism(
+            "left",
+            "right",
+            frozenset(left.nodes),
+            frozenset(right.nodes),
             mapping,
+        )
+        try:
+            results.append(
+                StereoMorphism.from_graphs(
+                    graph_morphism,
+                    left,
+                    right,
+                    presence_mode="strict",
+                    information_policy=unknown_policy,
+                )
+            )
+        except StereoMorphismError:
+            continue
+    return tuple(results)
+
+
+def stereo_isomorphism_morphisms(
+    left: nx.Graph,
+    right: nx.Graph,
+    *,
+    node_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+    edge_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+    unknown_policy: str = "exact",
+) -> tuple[StereoMorphism, ...]:
+    """Return every accepted isomorphism with complete local certificates."""
+    if unknown_policy not in {"exact", "wildcard", "either"}:
+        raise ValueError("unknown_policy must be 'exact', 'wildcard', or 'either'.")
+    structural = _structural_isomorphism_mappings(
+        left,
+        right,
+        node_match=node_match,
+        edge_match=edge_match,
+    )
+    return _stereo_morphisms_for_mappings(
+        left,
+        right,
+        structural,
+        unknown_policy,
+    )
+
+
+def stereo_isomorphism_mappings(
+    left: nx.Graph,
+    right: nx.Graph,
+    *,
+    node_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+    edge_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+    unknown_policy: str = "exact",
+    semantics: StereoSemanticsMode | str = StereoSemanticsMode.ORBIT,
+    diagnostics: list[StereoSemanticComparison] | None = None,
+) -> tuple[dict[Any, Any], ...]:
+    """Return the complete accepted mapping set under selected semantics."""
+    if unknown_policy not in {"exact", "wildcard", "either"}:
+        raise ValueError("unknown_policy must be 'exact', 'wildcard', or 'either'.")
+    mode = StereoSemanticsMode(semantics)
+    structural = _structural_isomorphism_mappings(
+        left,
+        right,
+        node_match=node_match,
+        edge_match=edge_match,
+    )
+    if mode is StereoSemanticsMode.LEGACY:
+        return tuple(
+            mapping
+            for mapping in structural
+            if _mapped_registry_matches(
+                left,
+                right,
+                mapping,
+                unknown_policy=unknown_policy,
+            )
+        )
+    orbit = tuple(
+        morphism.graph_morphism.mapping
+        for morphism in _stereo_morphisms_for_mappings(
+            left,
+            right,
+            structural,
+            unknown_policy,
+        )
+    )
+    if mode is StereoSemanticsMode.COMPARE:
+        legacy = tuple(
+            mapping
+            for mapping in structural
+            if _mapped_registry_matches(
+                left,
+                right,
+                mapping,
+                unknown_policy=unknown_policy,
+            )
+        )
+        if diagnostics is not None:
+            diagnostics.append(
+                StereoSemanticComparison.create(
+                    "stereo_isomorphism_mapping_set",
+                    _mapping_set_form(orbit),
+                    _mapping_set_form(legacy),
+                )
+            )
+    return orbit
+
+
+def stereo_isomorphism_mapping(
+    left: nx.Graph,
+    right: nx.Graph,
+    *,
+    node_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+    edge_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
+    unknown_policy: str = "exact",
+    semantics: StereoSemanticsMode | str = StereoSemanticsMode.ORBIT,
+    diagnostics: list[StereoSemanticComparison] | None = None,
+) -> dict[Any, Any] | None:
+    """Return the first accepted mapping; compare mode audits the full set."""
+    if unknown_policy not in {"exact", "wildcard", "either"}:
+        raise ValueError("unknown_policy must be 'exact', 'wildcard', or 'either'.")
+    mode = StereoSemanticsMode(semantics)
+    if mode is StereoSemanticsMode.COMPARE:
+        mappings = stereo_isomorphism_mappings(
+            left,
+            right,
+            node_match=node_match,
+            edge_match=edge_match,
             unknown_policy=unknown_policy,
-        ):
-            return dict(mapping)
+            semantics=mode,
+            diagnostics=diagnostics,
+        )
+        return None if not mappings else mappings[0]
+    for mapping in _structural_isomorphisms_iter(
+        left,
+        right,
+        node_match=node_match,
+        edge_match=edge_match,
+    ):
+        if mode is StereoSemanticsMode.LEGACY:
+            if _mapped_registry_matches(
+                left,
+                right,
+                mapping,
+                unknown_policy=unknown_policy,
+            ):
+                return mapping
+            continue
+        graph_morphism = GraphMorphism(
+            "left",
+            "right",
+            frozenset(left.nodes),
+            frozenset(right.nodes),
+            mapping,
+        )
+        try:
+            StereoMorphism.from_graphs(
+                graph_morphism,
+                left,
+                right,
+                presence_mode="strict",
+                information_policy=unknown_policy,
+            )
+        except StereoMorphismError:
+            continue
+        return mapping
     return None
 
 
@@ -405,6 +609,8 @@ def stereo_isomorphic(
     node_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
     edge_match: Callable[[Mapping[str, Any], Mapping[str, Any]], bool] | None = None,
     unknown_policy: str = "exact",
+    semantics: StereoSemanticsMode | str = StereoSemanticsMode.ORBIT,
+    diagnostics: list[StereoSemanticComparison] | None = None,
 ) -> bool:
     """Return whether two graphs are structurally and stereochemically equal."""
     return (
@@ -414,12 +620,47 @@ def stereo_isomorphic(
             node_match=node_match,
             edge_match=edge_match,
             unknown_policy=unknown_policy,
+            semantics=semantics,
+            diagnostics=diagnostics,
         )
         is not None
     )
 
 
-def candidate_mapping_stereo_matches(
+def candidate_mapping_stereo_morphism(
+    pattern: nx.Graph,
+    host: nx.Graph,
+    mapping: Mapping[Any, Any],
+    *,
+    mode: str = "require",
+    unknown_policy: str = "exact",
+    query_policies: Mapping[str, str] | None = None,
+    source_id: Hashable = "pattern",
+    target_id: Hashable = "host",
+    substitutions: Mapping[Hashable, WildcardConstraint] | None = None,
+) -> StereoMorphism:
+    """Return a proof-bearing refinement of one structural candidate mapping."""
+    if mode not in {"require", "strict", "ignore", "propagate"}:
+        raise ValueError(f"Unsupported stereo matching mode: {mode!r}")
+    graph_morphism = GraphMorphism(
+        source_id,
+        target_id,
+        frozenset(pattern.nodes),
+        frozenset(host.nodes),
+        mapping,
+        substitutions or {},
+    )
+    return StereoMorphism.from_graphs(
+        graph_morphism,
+        pattern,
+        host,
+        presence_mode=mode,
+        information_policy=unknown_policy,
+        information_policies=query_policies,
+    )
+
+
+def _legacy_candidate_mapping_stereo_matches(
     pattern: nx.Graph,
     host: nx.Graph,
     mapping: Mapping[Any, Any],
@@ -428,13 +669,6 @@ def candidate_mapping_stereo_matches(
     unknown_policy: str = "exact",
     query_policies: Mapping[str, str] | None = None,
 ) -> bool:
-    """Check descriptor guards after a structural candidate mapping.
-
-    A descriptor with ``parity=None`` is unknown by default and therefore
-    matches only another unknown descriptor.  ``unknown_policy="wildcard"``
-    makes such a query accept either concrete orientation. Per-descriptor rule
-    policies take precedence over the call-wide default.
-    """
     if mode in {"ignore", "propagate"}:
         return True
     if mode not in {"require", "strict"}:
@@ -463,6 +697,61 @@ def candidate_mapping_stereo_matches(
         )
         return pattern_count == host_count
     return True
+
+
+def candidate_mapping_stereo_matches(
+    pattern: nx.Graph,
+    host: nx.Graph,
+    mapping: Mapping[Any, Any],
+    *,
+    mode: str = "require",
+    unknown_policy: str = "exact",
+    query_policies: Mapping[str, str] | None = None,
+    semantics: StereoSemanticsMode | str = StereoSemanticsMode.ORBIT,
+    diagnostics: list[StereoSemanticComparison] | None = None,
+) -> bool:
+    """Check one candidate mapping and optionally audit frozen behavior."""
+    semantics_mode = StereoSemanticsMode(semantics)
+    if semantics_mode is StereoSemanticsMode.LEGACY:
+        return _legacy_candidate_mapping_stereo_matches(
+            pattern,
+            host,
+            mapping,
+            mode=mode,
+            unknown_policy=unknown_policy,
+            query_policies=query_policies,
+        )
+    try:
+        candidate_mapping_stereo_morphism(
+            pattern,
+            host,
+            mapping,
+            mode=mode,
+            unknown_policy=unknown_policy,
+            query_policies=query_policies,
+        )
+        orbit_result = True
+    except (GraphMorphismError, StereoMorphismError):
+        orbit_result = False
+    if semantics_mode is StereoSemanticsMode.ORBIT:
+        return orbit_result
+    legacy_result = _legacy_candidate_mapping_stereo_matches(
+        pattern,
+        host,
+        mapping,
+        mode=mode,
+        unknown_policy=unknown_policy,
+        query_policies=query_policies,
+    )
+    if diagnostics is not None:
+        diagnostics.append(
+            StereoSemanticComparison.create(
+                "candidate_mapping",
+                orbit_result,
+                legacy_result,
+            )
+        )
+    return orbit_result
 
 
 def propagate_unaffected_stereo(

@@ -28,6 +28,16 @@ from .stereo import (
     transport_stereo_descriptor,
     transport_stereo_registry,
 )
+from .stereo_morphism import (
+    LocalStereoCertificate,
+    StereoCertificateStatus,
+    StereoInformationPolicy,
+    StereoMorphism,
+    StereoMorphismError,
+    StereoMorphismIssue,
+    StereoMorphismIssueCode,
+    StereoPresenceMode,
+)
 
 __all__ = [
     "AmbiguousWildcardRoleError",
@@ -40,7 +50,15 @@ __all__ = [
     "MorphismIssue",
     "MorphismIssueCode",
     "NodeStateKind",
+    "LocalStereoCertificate",
+    "StereoCertificateStatus",
     "StereoEffect",
+    "StereoInformationPolicy",
+    "StereoMorphism",
+    "StereoMorphismError",
+    "StereoMorphismIssue",
+    "StereoMorphismIssueCode",
+    "StereoPresenceMode",
     "StereoReferenceDelta",
     "StereoTransportError",
     "StereoTransportIssue",

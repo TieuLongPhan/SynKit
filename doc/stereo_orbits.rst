@@ -9,8 +9,9 @@ finite geometry-preserving permutation group.  This follows the ordered-list
 model described by Andersen, Flamm, Merkle, and Stadler in *Chemical Graph
 Transformation with Stereo-Information* (ICGT 2017).  Sprint 16 implements
 the finite algebra.  Sprint 17 makes it authoritative for descriptor identity
-and descriptor-query matching.  Rules, reactors, and fusion remain on the
-Beta-2 semantics until their later migration sprints.
+and descriptor-query matching.  Sprint 18 builds proof-bearing match morphisms
+from those configurations.  Rules, reactors, and fusion remain on the Beta-2
+semantics until their later migration sprints.
 
 This is a MØD-compatible local-configuration model, not a claim that SynKit's
 operational NetworkX rewriting is a complete implementation of MØD's

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import networkx as nx
 import pytest
 
@@ -47,6 +50,22 @@ CASES = (
         ),
     ),
 )
+
+
+def test_subgraph_matcher_has_a_clean_cold_import() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from synkit.Graph.Matcher.subgraph_matcher import "
+            "SubgraphSearchEngine; print(SubgraphSearchEngine.__name__)",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip() == "SubgraphSearchEngine"
 
 
 @pytest.mark.parametrize("name,reaction,template,expected", CASES)

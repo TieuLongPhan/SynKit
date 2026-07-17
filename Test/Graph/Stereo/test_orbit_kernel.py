@@ -191,6 +191,26 @@ def test_relation_class_is_independent_of_fixed_representatives(shape: str) -> N
 
 
 @pytest.mark.parametrize("shape", EXPECTED_GROUP_ORDERS)
+def test_cached_tuple_double_coset_matches_explicit_group_composition(
+    shape: str,
+) -> None:
+    definition = SHAPE_DEFINITIONS[shape]
+    frame = tuple(range(definition.frame_arity))
+    witnesses = definition.unspecified_group.elements
+    for witness in (witnesses[0], witnesses[len(witnesses) // 2], witnesses[-1]):
+        target = witness.apply(frame)
+        relation = StereoConfiguration(shape, frame).relation_to(
+            StereoConfiguration(shape, target)
+        )
+        expected = min(
+            left.then(witness).then(right).image
+            for left in definition.preserving_group.elements
+            for right in definition.preserving_group.elements
+        )
+        assert relation.class_id == expected
+
+
+@pytest.mark.parametrize("shape", EXPECTED_GROUP_ORDERS)
 def test_witness_composition_replays_direct_transport(shape: str) -> None:
     definition = SHAPE_DEFINITIONS[shape]
     frame_a = tuple(range(definition.frame_arity))

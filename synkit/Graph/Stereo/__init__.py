@@ -48,12 +48,15 @@ from .identity import (
 from .rdkit_adapter import apply_stereo_to_rdkit, descriptors_from_rdkit
 from .matching import (
     candidate_mapping_stereo_matches,
+    candidate_mapping_stereo_morphism,
     descriptor_graph_support_errors,
     descriptor_query_matches,
     normalize_hydrogen_references,
     propagate_unaffected_stereo,
     stereo_isomorphic,
     stereo_isomorphism_mapping,
+    stereo_isomorphism_mappings,
+    stereo_isomorphism_morphisms,
 )
 from .outcomes import StereoOutcome
 from .couplings import StereoCoupling
@@ -113,12 +116,15 @@ __all__ = [
     "annotate_its_stereo",
     "stereo_complete_reaction_center_nodes",
     "candidate_mapping_stereo_matches",
+    "candidate_mapping_stereo_morphism",
     "descriptor_graph_support_errors",
     "descriptor_query_matches",
     "normalize_hydrogen_references",
     "propagate_unaffected_stereo",
     "stereo_isomorphic",
     "stereo_isomorphism_mapping",
+    "stereo_isomorphism_mappings",
+    "stereo_isomorphism_morphisms",
     "StereoOutcome",
     "StereoCoupling",
     "Permutation",
