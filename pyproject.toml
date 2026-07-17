@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "2.0.0b1"
+version = "2.0.0b2"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 requires-python = ">=3.11"

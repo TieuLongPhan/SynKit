@@ -54,6 +54,10 @@ class RBLSearchPolicy:
                 SearchScope.FUSION,
                 TerminationPolicy.EXHAUSTIVE,
             ),
+            "verified": cls(
+                SearchScope.FUSION,
+                TerminationPolicy.EXHAUSTIVE,
+            ),
         }
         try:
             return policies[mode]

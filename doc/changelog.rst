@@ -4,6 +4,15 @@ Changelog
 Version 2.0.0
 -------------
 
+**Beta 2 release checkpoint**
+
+- Prepared the ``2.0.0b2`` prerelease with typed wildcard-aware graph
+  morphisms and verified, proof-bearing graph fusion.
+- Added deterministic exhaustive fusion search, exact structural/stereo
+  deduplication, endpoint certificates, and explicit completeness reporting.
+- Optimized interface discovery and proof reuse while retaining the Beta 1
+  compatibility projections.
+
 **Beta 1 release checkpoint**
 
 - Prepared the ``2.0.0b1`` prerelease after completing the native-only

@@ -47,7 +47,7 @@ non-tetrahedral or atrop orientation fails explicitly instead of disappearing.
 Coordinate inference, rigid-bond descriptor variants, enhanced stereo groups,
 face-selectivity prediction, and physical inference of configurational
 stability remain outside the current claims. The prerelease package version is
-`2.0.0b1`; its mechanism schema remains `2.0.0-draft1` while that schema is
+`2.0.0b2`; its mechanism schema remains `2.0.0-draft1` while that schema is
 still under prerelease review.
 
 Stereo-bearing reaction rules keep three concerns separate:

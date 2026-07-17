@@ -162,25 +162,38 @@ def test_rbl_can_request_conservative_preservation_of_both_sides() -> None:
 
 
 def test_wildcard_role_inventory_is_explicit() -> None:
-    assert len(set(WildcardRole)) == 5
+    assert len(set(WildcardRole)) == 6
     assert WildcardRole.QUERY_ATOM != WildcardRole.HYDROGEN_COMPLETION
+    assert WildcardRole.STEREO_LIGAND_PORT != WildcardRole.ATTACHMENT_PORT
 
 
 @pytest.mark.parametrize("role", tuple(WildcardRole))
 def test_each_wildcard_role_rejects_conflation(role: WildcardRole) -> None:
     roles = tuple(WildcardRole)
     incompatible = roles[(roles.index(role) + 1) % len(roles)]
+    query_contract = (
+        {"owner": 1, "stereo_slot": 0}
+        if role is WildcardRole.STEREO_LIGAND_PORT
+        else {}
+    )
+    completion_contract = (
+        {"owner": 2, "stereo_slot": 0}
+        if incompatible is WildcardRole.STEREO_LIGAND_PORT
+        else {}
+    )
     query = nx.Graph()
     query.add_node(
         1,
         element=("*", "*"),
         wildcard_role=role.value,
+        **query_contract,
     )
     completion = nx.Graph()
     completion.add_node(
         2,
         element=("*", "*"),
         wildcard_role=incompatible.value,
+        **completion_contract,
     )
 
     validation = validate_wildcard_mapping_roles(query, completion, {1: 2})
@@ -188,7 +201,57 @@ def test_each_wildcard_role_rejects_conflation(role: WildcardRole) -> None:
     assert validation.issues[0].code == FusionIssueCode.WILDCARD_ROLE_CONFLICT
 
     completion.nodes[2]["wildcard_role"] = role.value
+    if role is WildcardRole.STEREO_LIGAND_PORT:
+        completion.nodes[2].update(owner=2, stereo_slot=0)
+    else:
+        completion.nodes[2].pop("owner", None)
+        completion.nodes[2].pop("stereo_slot", None)
     assert validate_wildcard_mapping_roles(query, completion, {1: 2}).valid
+
+
+def test_stereo_ligand_port_requires_mapped_owner_and_ordered_slot() -> None:
+    query = nx.Graph()
+    query.add_node(
+        1,
+        element="*",
+        wildcard_role=WildcardRole.STEREO_LIGAND_PORT.value,
+        owner=3,
+        stereo_slot=1,
+    )
+    query.add_node(3, element="C")
+    candidate = nx.Graph()
+    candidate.add_node(
+        2,
+        element="*",
+        wildcard_role=WildcardRole.STEREO_LIGAND_PORT.value,
+        owner=4,
+        stereo_slot=1,
+    )
+    candidate.add_node(4, element="C")
+
+    assert validate_wildcard_mapping_roles(
+        query, candidate, {1: 2, 3: 4}
+    ).valid
+    candidate.nodes[2]["stereo_slot"] = 2
+    invalid = validate_wildcard_mapping_roles(query, candidate, {1: 2, 3: 4})
+    assert not invalid.valid
+    assert invalid.issues[0].context["constraint_issues"][0]["code"] == (
+        "MORPHISM_METADATA_CONFLICT"
+    )
+
+
+def test_custom_legacy_wildcard_sentinel_still_adapts() -> None:
+    query = nx.Graph()
+    query.add_node(1, element="R", wildcard_role=WildcardRole.QUERY_ATOM.value)
+    candidate = nx.Graph()
+    candidate.add_node(2, element="R", wildcard_role=WildcardRole.QUERY_ATOM.value)
+
+    assert validate_wildcard_mapping_roles(
+        query,
+        candidate,
+        {1: 2},
+        wildcard_element="R",
+    ).valid
 
 
 @pytest.mark.parametrize(

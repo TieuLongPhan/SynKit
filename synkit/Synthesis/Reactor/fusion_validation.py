@@ -16,6 +16,11 @@ import networkx as nx
 from rdkit import Chem
 
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
+from synkit.Graph.Morphism.constraints import (
+    NodeStateKind,
+    WildcardRole,
+    adapt_legacy_node_state,
+)
 from synkit.Graph.Stereo import (
     mapped_stereo_subgraph_registries_match,
     stereo_registry_layers,
@@ -35,20 +40,6 @@ _ENDPOINT_NODE_ATTRS = (
 _ENDPOINT_EDGE_ATTRS = ("order", "sigma_order", "pi_order", "aromatic")
 
 
-class WildcardRole(str, Enum):
-    """Semantic roles currently represented by ``*`` in reaction graphs.
-
-    The roles are intentionally non-interchangeable.  Sprint 13 establishes
-    the boundary; later typed morphism work can attach them to graph nodes.
-    """
-
-    QUERY_ATOM = "query_atom"
-    ATTACHMENT_PORT = "attachment_port"
-    RADICAL_COMPLETION = "radical_completion"
-    HYDROGEN_COMPLETION = "hydrogen_completion"
-    SIDE_PRESENCE_PLACEHOLDER = "side_presence_placeholder"
-
-
 class FusionIssueCode(str, Enum):
     """Stable machine-readable issue codes emitted by fusion validation."""
 
@@ -60,6 +51,9 @@ class FusionIssueCode(str, Enum):
     ELEMENT_MAP_CONFLICT = "FUSION_ELEMENT_MAP_CONFLICT"
     HYDROGEN_MAP_IMBALANCE = "FUSION_HYDROGEN_MAP_IMBALANCE"
     WILDCARD_ROLE_CONFLICT = "FUSION_WILDCARD_ROLE_CONFLICT"
+    INTERFACE_INVALID = "FUSION_INTERFACE_INVALID"
+    CONSTRUCTION_INVALID = "FUSION_CONSTRUCTION_INVALID"
+    PROOF_FAILED = "FUSION_PROOF_FAILED"
     OPERATION_FAILED = "FUSION_OPERATION_FAILED"
     SERIALIZATION_FAILED = "FUSION_SERIALIZATION_FAILED"
     POSTPROCESS_FAILED = "FUSION_POSTPROCESS_FAILED"
@@ -491,23 +485,61 @@ def validate_wildcard_mapping_roles(
         raw_role1 = attrs1.get(role_key)
         raw_role2 = attrs2.get(role_key)
         try:
-            role1 = WildcardRole(raw_role1) if wildcard1 else None
+            state1 = adapt_legacy_node_state(
+                attrs1,
+                element_key=element_key,
+                role_key=role_key,
+                wildcard_values=wildcard_values,
+            )
+            constraint1 = (
+                state1.constraint if state1.kind is NodeStateKind.WILDCARD else None
+            )
         except (TypeError, ValueError):
-            role1 = None
+            constraint1 = None
         try:
-            role2 = WildcardRole(raw_role2) if wildcard2 else None
+            state2 = adapt_legacy_node_state(
+                attrs2,
+                element_key=element_key,
+                role_key=role_key,
+                wildcard_values=wildcard_values,
+            )
+            constraint2 = (
+                state2.constraint if state2.kind is NodeStateKind.WILDCARD else None
+            )
         except (TypeError, ValueError):
-            role2 = None
+            constraint2 = None
 
-        if not wildcard1 or not wildcard2 or role1 is None or role1 != role2:
+        compatibility = None
+        if constraint1 is not None and constraint2 is not None:
+            compatibility = constraint1.relabel_owner(mapping).intersect(constraint2)
+
+        if (
+            not wildcard1
+            or not wildcard2
+            or compatibility is None
+            or not compatibility.valid
+        ):
             issues.append(
                 _issue(
                     FusionIssueCode.WILDCARD_ROLE_CONFLICT,
                     "Mapped wildcard nodes require identical declared roles.",
                     graph1_node=node1,
                     graph2_node=node2,
-                    graph1_role=role1.value if role1 is not None else raw_role1,
-                    graph2_role=role2.value if role2 is not None else raw_role2,
+                    graph1_role=(
+                        constraint1.role.value
+                        if constraint1 is not None
+                        else raw_role1
+                    ),
+                    graph2_role=(
+                        constraint2.role.value
+                        if constraint2 is not None
+                        else raw_role2
+                    ),
+                    constraint_issues=(
+                        [item.to_dict() for item in compatibility.issues]
+                        if compatibility is not None
+                        else []
+                    ),
                 )
             )
 

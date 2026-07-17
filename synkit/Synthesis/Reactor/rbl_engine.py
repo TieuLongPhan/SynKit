@@ -12,6 +12,16 @@ from synkit.IO import its_to_rsmi, rsmi_to_its
 from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 from synkit.Graph.Wildcard.its_merge import fuse_its_graphs
+from synkit.Graph.Fusion import (
+    FUSION_PROOF_SCHEMA,
+    FusionCandidate,
+    FusionConstructionError,
+    FusionInterface,
+    FusionInterfaceError,
+    construct_pushout,
+    fusion_candidate_from_construction,
+    fusion_candidates_exactly_equivalent,
+)
 from synkit.Graph.Matcher.mcs_matcher import MCSMatcher
 from synkit.Graph.Matcher.wl_sel import WLSel
 
@@ -355,12 +365,17 @@ class RBLEngine:
         self.edge_attrs: List[str] = (
             list(edge_attrs) if edge_attrs is not None else ["order"]
         )
+        verified_mode = mode == "verified"
+        if verified_mode:
+            prune_automorphisms = False
+            max_mappings_per_pair = 0
         self.prune_wc: bool = prune_wc
         self.prune_automorphisms: bool = prune_automorphisms
         self.mcs_side: str = mcs_side
         if mode is not None and search_policy is not None:
             raise ValueError("Specify either mode or search_policy, not both.")
         self.mode = mode
+        self.verified_mode = verified_mode
         if search_policy is not None:
             if not isinstance(search_policy, RBLSearchPolicy):
                 raise TypeError("search_policy must be an RBLSearchPolicy.")
@@ -377,7 +392,7 @@ class RBLEngine:
             self.search_policy.termination is TerminationPolicy.FIRST_VALID
         )
         self.fast_paths_only = self.search_policy.scope is SearchScope.FAST_PATHS_ONLY
-        self.max_mappings_per_pair: int = max(1, int(max_mappings_per_pair))
+        self.max_mappings_per_pair: int = max(0, int(max_mappings_per_pair))
 
         # Reactor behaviour flags
         self.implicit_temp: bool = bool(implicit_temp)
@@ -424,6 +439,10 @@ class RBLEngine:
         self._backward_its: List[ITSLike] = []
         self._fused_its: List[ITSLike] = []
         self._fused_rsmis: List[str] = []
+        self._fusion_candidates: List[FusionCandidate] = []
+        self._fusion_search_stats: Dict[str, Any] = {}
+        self._latest_postprocessed_its: Optional[ITSLike] = None
+        self._latest_output_validation: Optional[FusionValidation] = None
         self._diagnostics: Dict[str, List[Dict[str, Any]]] = {
             "forward": [],
             "backward": [],
@@ -482,6 +501,10 @@ class RBLEngine:
         self._backward_its = []
         self._fused_its = []
         self._fused_rsmis = []
+        self._fusion_candidates = []
+        self._fusion_search_stats = {}
+        self._latest_postprocessed_its = None
+        self._latest_output_validation = None
         self._diagnostics = {
             "forward": [],
             "backward": [],
@@ -572,6 +595,11 @@ class RBLEngine:
         return list(self._fused_rsmis)
 
     @property
+    def fusion_candidates(self) -> List[FusionCandidate]:
+        """Return proof-bearing Sprint 15 candidates from the fusion stage."""
+        return list(self._fusion_candidates)
+
+    @property
     def last_reaction(self) -> Optional[str]:
         """
         Last processed reaction RSMI string.
@@ -609,6 +637,12 @@ class RBLEngine:
             "n_forward_its": len(self._forward_its),
             "n_backward_its": len(self._backward_its),
             "n_fused_its": len(self._fused_its),
+            "fusion_proof_schema": FUSION_PROOF_SCHEMA,
+            "fusion_candidates": [
+                candidate.to_dict() for candidate in self._fusion_candidates
+            ],
+            "fusion_search": dict(self._fusion_search_stats),
+            "verified_fusion_mode": self.verified_mode,
             "search_policy": self._active_search_policy.to_dict(),
             "acceptance_policy": {
                 "preserve_original_sides": list(self.preserve_original_sides),
@@ -771,6 +805,7 @@ class RBLEngine:
         payload["source"] = source
         payload.update(context or {})
         self._diagnostics["fusion"].append(payload)
+        self._latest_output_validation = validation
         return validation
 
     def _record_fusion_failure(
@@ -1322,6 +1357,10 @@ class RBLEngine:
 
         n_pairs = 0
         n_mappings_total = 0
+        n_mappings_rejected = 0
+        n_candidates_deduplicated = 0
+        n_mappings_truncated = 0
+        candidate_buckets: Dict[str, List[FusionCandidate]] = {}
 
         for i_fw, i_bw in pairs:
             fw = fw_its[i_fw]
@@ -1342,8 +1381,10 @@ class RBLEngine:
             if not mappings:
                 continue
 
+            mapping_count = len(mappings)
             if self.max_mappings_per_pair > 0:
                 mappings = mappings[: self.max_mappings_per_pair]
+                n_mappings_truncated += mapping_count - len(mappings)
 
             for i_map, mapping in enumerate(mappings):
                 n_mappings_total += 1
@@ -1355,6 +1396,7 @@ class RBLEngine:
                     wildcard_element=self.wildcard_element,
                 )
                 if not role_validation.valid:
+                    n_mappings_rejected += 1
                     payload = role_validation.to_dict()
                     payload.update(
                         {
@@ -1370,6 +1412,49 @@ class RBLEngine:
                     "mapping_index": i_map,
                 }
                 try:
+                    interface = FusionInterface.from_mapping(
+                        fw,
+                        bw,
+                        mapping,
+                        node_keys=self.node_attrs,
+                        edge_keys=self.edge_attrs,
+                        element_key=self.element_key,
+                        wildcard_element=self.wildcard_element,
+                    )
+                    proof_construction = construct_pushout(
+                        fw,
+                        bw,
+                        interface,
+                        node_keys=self.node_attrs,
+                        edge_keys=self.edge_attrs,
+                        element_key=self.element_key,
+                        wildcard_element=self.wildcard_element,
+                    )
+                except FusionInterfaceError as exc:
+                    n_mappings_rejected += 1
+                    self._record_fusion_failure(
+                        FusionIssueCode.INTERFACE_INVALID,
+                        "The proposed Sprint 15 fusion interface is incompatible.",
+                        source="verified_interface",
+                        context={
+                            **diagnostic_context,
+                            "issues": [issue.to_dict() for issue in exc.issues],
+                        },
+                    )
+                    continue
+                except FusionConstructionError as exc:
+                    n_mappings_rejected += 1
+                    self._record_fusion_failure(
+                        FusionIssueCode.CONSTRUCTION_INVALID,
+                        "The Sprint 15 pushout audit rejected the mapping.",
+                        source="verified_construction",
+                        context={
+                            **diagnostic_context,
+                            "issues": [issue.to_dict() for issue in exc.issues],
+                        },
+                    )
+                    continue
+                try:
                     try:
                         fused_graph = self.fuse_fn(
                             fw,
@@ -1384,6 +1469,7 @@ class RBLEngine:
                             mapping,
                         )
                 except Exception as exc:  # pragma: no cover - defensive
+                    n_mappings_rejected += 1
                     self.logger.debug("Fusion failed for mapping %s: %s", mapping, exc)
                     self._record_fusion_failure(
                         FusionIssueCode.OPERATION_FAILED,
@@ -1396,8 +1482,12 @@ class RBLEngine:
                     )
                     continue
 
-                fused_graphs.append(fused_graph)
-
+                # The base implementation populates these caches, while a
+                # subclass override safely falls back to reparsing/revalidating.
+                # Clear them here so an override can never inherit evidence
+                # from the preceding mapping.
+                self._latest_postprocessed_its = None
+                self._latest_output_validation = None
                 rsmi_final = self._postprocess_single(
                     fused_graph,
                     replace_wc=replace_wc,
@@ -1405,8 +1495,54 @@ class RBLEngine:
                     diagnostic_context=diagnostic_context,
                 )
                 if rsmi_final is None:
+                    n_mappings_rejected += 1
+                    continue
+                final_graph = self._latest_postprocessed_its
+                if not isinstance(final_graph, nx.Graph):
+                    final_graph = self._safe_rsmi_to_its(rsmi_final)
+                if not isinstance(final_graph, nx.Graph):
+                    n_mappings_rejected += 1
+                    self._record_fusion_failure(
+                        FusionIssueCode.PROOF_FAILED,
+                        "The accepted serialization could not be restored as an ITS graph.",
+                        source="verified_proof",
+                        context=diagnostic_context,
+                    )
+                    continue
+                proof_validation = self._latest_output_validation
+                if proof_validation is None:
+                    proof_validation = (
+                        validate_rbl_candidate(
+                            self._last_reaction,
+                            rsmi_final,
+                            allow_wildcards=not replace_wc,
+                            preserve_sides=self.preserve_original_sides,
+                        )
+                        if self._last_reaction is not None
+                        else validate_fusion_rsmi(
+                            rsmi_final,
+                            allow_wildcards=not replace_wc,
+                        )
+                    )
+                candidate = fusion_candidate_from_construction(
+                    proof_construction,
+                    rsmi=rsmi_final,
+                    validation=(proof_validation.to_dict(),),
+                    graph=final_graph,
+                )
+                bucket = candidate_buckets.setdefault(
+                    candidate.canonical_signature, []
+                )
+                if any(
+                    fusion_candidates_exactly_equivalent(candidate, previous)
+                    for previous in bucket
+                ):
+                    n_candidates_deduplicated += 1
                     continue
 
+                self._fusion_candidates.append(candidate)
+                bucket.append(candidate)
+                fused_graphs.append(fused_graph)
                 fused_rsmis.append(rsmi_final)
                 if early_stop:
                     self.logger.debug(
@@ -1418,6 +1554,16 @@ class RBLEngine:
                     )
                     self._fused_its = fused_graphs
                     self._fused_rsmis = fused_rsmis
+                    self._fusion_search_stats = {
+                        "complete": False,
+                        "termination": "first_valid",
+                        "pairs_explored": n_pairs,
+                        "mappings_explored": n_mappings_total,
+                        "mappings_rejected": n_mappings_rejected,
+                        "candidates_valid": len(self._fusion_candidates),
+                        "candidates_deduplicated": n_candidates_deduplicated,
+                        "mappings_truncated": n_mappings_truncated,
+                    }
                     self._record_stop(
                         mode="early_stop",
                         reason="early_stop_first_valid",
@@ -1436,8 +1582,31 @@ class RBLEngine:
                     return
 
         # No early-stop taken: finalise results
-        self._fused_its = fused_graphs
-        self._fused_rsmis = fused_rsmis
+        ranked = sorted(
+            zip(self._fusion_candidates, fused_graphs, fused_rsmis, strict=True),
+            key=lambda record: (
+                record[0].score,
+                record[0].canonical_signature,
+                record[0].proof_digest,
+            ),
+        )
+        self._fusion_candidates = [record[0] for record in ranked]
+        self._fused_its = [record[1] for record in ranked]
+        self._fused_rsmis = [record[2] for record in ranked]
+        search_complete = (
+            n_mappings_truncated == 0 and not self.prune_automorphisms
+        )
+        self._fusion_search_stats = {
+            "complete": search_complete,
+            "termination": "exhaustive" if search_complete else "bounded",
+            "pairs_explored": n_pairs,
+            "mappings_explored": n_mappings_total,
+            "mappings_rejected": n_mappings_rejected,
+            "candidates_valid": len(self._fusion_candidates),
+            "candidates_deduplicated": n_candidates_deduplicated,
+            "mappings_truncated": n_mappings_truncated,
+            "automorphism_pruned": self.prune_automorphisms,
+        }
 
         if not fused_graphs:
             self._record_stop(
@@ -1514,6 +1683,8 @@ class RBLEngine:
         :returns: Final fused reaction SMILES or ``None`` if any step fails.
         :rtype: Optional[str]
         """
+        self._latest_postprocessed_its = None
+        self._latest_output_validation = None
         if rw_adder is None:
             rw_adder = self.wildcard_adder_cls()
 
@@ -1577,7 +1748,10 @@ class RBLEngine:
             source="postprocess",
             context=diagnostic_context,
         )
-        return rsmi_final if validation.valid else None
+        if not validation.valid:
+            return None
+        self._latest_postprocessed_its = its_back
+        return rsmi_final
 
     # ------------------------------------------------------------------
     # Full RBL pipeline: forward + backward + fusion
