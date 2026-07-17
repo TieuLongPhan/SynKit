@@ -57,6 +57,18 @@ from .matching import (
 )
 from .outcomes import StereoOutcome
 from .couplings import StereoCoupling
+from .legacy import StereoSemanticComparison, StereoSemanticsMode
+from .orbits import (
+    Permutation,
+    PermutationGroup,
+    PermutationWitness,
+    SHAPE_DEFINITIONS,
+    ShapeDefinition,
+    StereoConfiguration,
+    StereoRelation,
+    StereoRelationKind,
+    StereoSpecification,
+)
 
 __all__ = [
     "TetrahedralStereo",
@@ -109,4 +121,15 @@ __all__ = [
     "stereo_isomorphism_mapping",
     "StereoOutcome",
     "StereoCoupling",
+    "Permutation",
+    "PermutationGroup",
+    "PermutationWitness",
+    "SHAPE_DEFINITIONS",
+    "ShapeDefinition",
+    "StereoConfiguration",
+    "StereoRelation",
+    "StereoRelationKind",
+    "StereoSpecification",
+    "StereoSemanticComparison",
+    "StereoSemanticsMode",
 ]
