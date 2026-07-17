@@ -45,6 +45,7 @@ synkit/Graph/dev/*
 *.txt
 !LICENSES/*.txt
 *.log
+/dist/
 sprint/
 test_syn.py
 .gitignore

@@ -563,3 +563,49 @@ def mapped_stereo_registries_match(
     except StereoIdentityError:
         return False
     return True
+
+
+def mapped_stereo_subgraph_registries_match(
+    query: nx.Graph,
+    candidate: nx.Graph,
+    node_mapping: Mapping[Hashable, Hashable],
+    *,
+    unknown_policy: str = "exact",
+) -> bool:
+    """Check query stereo constraints under a structural subgraph mapping.
+
+    Unlike :func:`mapped_stereo_registries_match`, candidate-only descriptors
+    are permitted. Every query descriptor must match one distinct candidate
+    descriptor after its references are transported through ``node_mapping``.
+    This is the stereo predicate required by injective graph morphisms where
+    the host may contain additional atoms, components, or stereo centers.
+    """
+    if unknown_policy not in {"exact", "wildcard", "either"}:
+        raise ValueError("unknown_policy must be 'exact', 'wildcard', or 'either'.")
+
+    try:
+        query_layers = stereo_registry_layers(query)
+        candidate_layers = stereo_registry_layers(candidate)
+        for layer, query_registry in query_layers.items():
+            candidate_registry = candidate_layers.get(layer)
+            if candidate_registry is None or len(candidate_registry) < len(
+                query_registry
+            ):
+                return False
+            query_resolver = _mapped_reference_resolver(
+                query,
+                layer,
+                node_mapping,
+            )
+            candidate_resolver = _mapped_reference_resolver(candidate, layer)
+            if not _query_layer_matches(
+                list(query_registry.values()),
+                list(candidate_registry.values()),
+                query_resolver,
+                candidate_resolver,
+                unknown_policy,
+            ):
+                return False
+    except StereoIdentityError:
+        return False
+    return True

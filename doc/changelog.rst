@@ -4,6 +4,17 @@ Changelog
 Version 2.0.0
 -------------
 
+**Beta 1 release checkpoint**
+
+- Prepared the ``2.0.0b1`` prerelease after completing the native-only
+  migration, the 80/80/80 MechanismBench data boundary, and stereo rule
+  soundness for intentionally non-invertible outcomes.
+- Restored RBL explicit-hydrogen/AAM compatibility and made every accepted
+  result pass one structured fusion-validation contract.
+- Added proof-gated product preservation through SynKit's component-aware
+  subgraph matcher and relative-stereo registry, with explicit search scope,
+  termination policies, and typed wildcard-role conflicts.
+
 **Native graph stack**
 
 - Removed the external legacy graph-grammar backend and its reactor,

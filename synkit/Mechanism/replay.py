@@ -464,15 +464,12 @@ class MechanismReplayer:
                 if all(type(node_keys[node]) is int for node in (left, right))
                 else None
             )
-            if (
-                self.aromatic_policy == "presentation"
-                and (
-                    frozenset((left, right)) in aromatic_edges
-                    or (
-                        mapped_key is not None
-                        and presentation_edges is not None
-                        and mapped_key in presentation_edges
-                    )
+            if self.aromatic_policy == "presentation" and (
+                frozenset((left, right)) in aromatic_edges
+                or (
+                    mapped_key is not None
+                    and presentation_edges is not None
+                    and mapped_key in presentation_edges
                 )
             ):
                 edges[key] = ("aromatic",)

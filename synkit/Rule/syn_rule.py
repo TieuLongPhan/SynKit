@@ -30,7 +30,11 @@ from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Hyrogen._misc import normalize_h_pair_graph
-from synkit.Graph.Stereo import StereoCoupling, StereoOutcome
+from synkit.Graph.Stereo import (
+    NonInvertibleStereoEffectError,
+    StereoCoupling,
+    StereoOutcome,
+)
 from synkit.Rule.stereo_identity import stereo_rule_isomorphic
 from synkit.IO.chem_converter import (
     ITSFormat,
@@ -39,7 +43,7 @@ from synkit.IO.chem_converter import (
     gml_to_its,
 )
 
-__all__ = ["SynRule"]
+__all__ = ["NonInvertibleStereoEffectError", "SynRule"]
 
 
 class SynRule:
@@ -778,6 +782,21 @@ class SynRule:
     # ================================================================== #
     # Public API                                                         #
     # ================================================================== #
+    def non_invertible_stereo_targets(self) -> tuple[str, ...]:
+        """Return targets whose stereo relation has no unique inverse."""
+        return tuple(
+            sorted(
+                target
+                for target, change in self.stereo_effects.items()
+                if change.non_invertible
+            )
+        )
+
+    @property
+    def is_stereo_reversible(self) -> bool:
+        """Whether reverse construction can preserve stereo semantics."""
+        return not self.non_invertible_stereo_targets()
+
     def reversed(self, *, balance_its: bool = False) -> "SynRule":
         """Return a rule with reactant/product stereo semantics reversed.
 
@@ -786,6 +805,10 @@ class SynRule:
         enantiomer but does not create two achiral products. Reversing again
         restores the original product outcome and query policies.
         """
+        non_invertible = self.non_invertible_stereo_targets()
+        if non_invertible:
+            raise NonInvertibleStereoEffectError(non_invertible)
+
         left_graph, right_graph = self._decompose(self.rc.raw, self._format)
         if self._format == "tuple":
             reversed_graph = ITSConstruction.construct(

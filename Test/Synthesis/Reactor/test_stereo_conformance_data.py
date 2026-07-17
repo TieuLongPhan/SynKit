@@ -143,22 +143,21 @@ def test_dataset_matches_the_local_validation_environment():
     assert PAYLOAD["schema"] == "MechanismBench-stereo-v1"
     assert PAYLOAD["toolkit"]["cip_labeller"] == "rdCIPLabeler.AssignCIPLabels"
     assert all(
-        PAYLOAD["toolkit"][key]
-        for key in ("python", "rdkit", "synkit", "platform")
+        PAYLOAD["toolkit"][key] for key in ("python", "rdkit", "synkit", "platform")
     )
-    assert len(CASES) == 80
+    assert len(CASES) == 88
     assert len({case["case_id"] for case in CASES}) == len(CASES)
-    assert PAYLOAD["positive_case_count"] == 72
-    assert len(POSITIVE_TRANSFORMATIONS) == 72
+    assert PAYLOAD["positive_case_count"] == 80
+    assert len(POSITIVE_TRANSFORMATIONS) == 80
     assert len(NEGATIVE_ASSERTIONS) == PAYLOAD["negative_fixture_count"] == 8
-    assert [case["case_id"] for case in CASES[:72]] == [
+    assert [case["case_id"] for case in CASES[:80]] == [
         case["case_id"] for case in POSITIVE_TRANSFORMATIONS
     ]
     assert Counter(case["representation"] for case in POSITIVE_TRANSFORMATIONS) == {
         "reaction_smiles": 40,
         "non_tetrahedral_rewrite": 4,
         "mechanism_replay": 7,
-        "native_stereo_rewrite": 21,
+        "native_stereo_rewrite": 29,
     }
 
 

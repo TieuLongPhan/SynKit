@@ -1,9 +1,9 @@
 {
   "schema": "MechanismBench-stereo-v1",
   "canonical_path": "Data/Mech/stereo.json",
-  "status": "reviewed_72_positive_baseline",
-  "generated": "2026-07-16",
-  "description": "Self-contained stereochemistry benchmark with 72 positive transformation cases: 40 original reaction-SMILES cases, four reviewed non-tetrahedral/atrop rewrite fixtures, seven reviewed Phase 2R electron-flow × stereo fixtures, and 21 reviewed native descriptor rewrites promoted from the July 2026 candidate pool. Eight negative assertions remain corruption/specification fixtures and do not count toward the positive baseline.",
+  "status": "reviewed_80_positive_baseline",
+  "generated": "2026-07-17",
+  "description": "Self-contained stereochemistry benchmark with 80 positive transformation cases: 40 original reaction-SMILES cases, four reviewed non-tetrahedral/atrop rewrite fixtures, seven reviewed Phase 2R electron-flow × stereo fixtures, 21 reviewed native descriptor rewrites promoted from the July 2026 candidate pool, and eight reviewed final-eight native descriptor rewrites. Eight negative assertions remain corruption/specification fixtures and do not count toward the positive baseline.",
   "toolkit": {
     "python": "3.12.12",
     "rdkit": "2026.03.1",
@@ -4140,10 +4140,10 @@
         "product_cip_sets": [],
         "local_geometry": "created",
         "descriptor_change": "created",
-      "relative_stereochemistry": null,
-      "product_population": "enantiomeric_mixture",
-      "stereo_determinacy": "non_stereospecific",
-      "notes": "The constitutional edit matches ST-14 through ST-16, but the declared 0.7/0.3 ENANTIOMERIC_MIXTURE is a fourth, intentionally distinct rule outcome: it is neither racemic nor a single stereoisomer."
+        "relative_stereochemistry": null,
+        "product_population": "enantiomeric_mixture",
+        "stereo_determinacy": "non_stereospecific",
+        "notes": "The constitutional edit matches ST-14 through ST-16, but the declared 0.7/0.3 ENANTIOMERIC_MIXTURE is a fourth, intentionally distinct rule outcome: it is neither racemic nor a single stereoisomer."
       },
       "provenance": {
         "origin": "synthetic software-conformance fixture authored for SynKit",
@@ -5813,6 +5813,1543 @@
       "coverage_family": "localized_multicentre"
     },
     {
+      "case_id": "ST-70",
+      "catalog_refs": [],
+      "name": "2-methylpyrrolidine N-acylation, ring centre retained",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "ring_nitrogen_acylation",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[N:1]1([H:11])[C:2]([CH3:6])([H:12])[CH2:3][CH2:4][CH2:5]1.[C:7](=[O:8])([CH3:9])[Cl:10]>>[N:1]1([C:7](=[O:8])[CH3:9])[C:2]([CH3:6])([H:12])[CH2:3][CH2:4][CH2:5]1.[Cl:10][H:11]",
+          "application": {
+            "substrate": "[N:1]1([H:11])[C:2]([CH3:6])([H:12])[CH2:3][CH2:4][CH2:5]1.[C:7](=[O:8])([CH3:9])[Cl:10]",
+            "substrate_stereo": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  6,
+                  3,
+                  12
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[N:1]1([C:7](=[O:8])[CH3:9])[C:2]([CH3:6])([H:12])[CH2:3][CH2:4][CH2:5]1.[Cl:10][H:11]",
+            "reverse_substrate_stereo": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  6,
+                  3,
+                  12
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1,
+            "reactor_options": {
+              "preserve_mapped_hydrogens": true
+            }
+          },
+          "expected_stereo_changes": {
+            "atom:2": "RETAINED"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  6,
+                  3,
+                  12
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  6,
+                  3,
+                  12
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "atom",
+                2
+              ],
+              "effect": "PRESERVE",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  6,
+                  3,
+                  12
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  6,
+                  3,
+                  12
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "retained",
+        "descriptor_change": "retained",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific"
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-001",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "reverse_native_rule_application",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership: the registry key is derived from the descriptor's own centre (or central bond) and matches every endpoint key and every effect key. Permutation correctness: the four references at map 2 (ring nitrogen 1, methyl 6, ring carbon 3, explicit hydrogen 12) are all immediate neighbours of the owner and none is permuted, replaced or removed by the rewrite, so the parity is necessarily preserved and classify_stereo_change(before, after) must return RETAINED. Reversibility: the reverse rule restores both the graph and the descriptor exactly.",
+      "chemical_rationale": "The ring bears exactly one stereocentre. C2 carries the ring nitrogen, a methyl, ring carbon C3 and one hydrogen; the two ring paths leaving C2 are constitutionally different (one reaches N directly, the other three CH2 groups), so C2 is genuinely stereogenic. Acylation forms the N-C bond and transfers the N-H proton (map 11) to chloride; no bond to C2 is made or broken. Every map on the left appears on the right with the same element.",
+      "claim_boundary": "Supplied endpoint descriptors are the oracle. The record asserts descriptor retention under a remote N-acylation only. It does not assert a rate, an acylation mechanism, a ring conformation, a preferred pucker, or any 3D geometry, and it does not claim the record is executable: SynKit must replay it.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "ring_cyclic_retention"
+    },
+    {
+      "case_id": "ST-71",
+      "catalog_refs": [],
+      "name": "3,3-dimethylcyclohexyl bromide thiolate substitution, inversion",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "ring_backside_substitution",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[CH:1]1([Br:7])[CH2:2][C:3]([CH3:9])([CH3:10])[CH2:4][CH2:5][CH2:6]1.[SH-:8]>>[CH:1]1([SH:8])[CH2:2][C:3]([CH3:9])([CH3:10])[CH2:4][CH2:5][CH2:6]1.[Br-:7]",
+          "application": {
+            "substrate": "[CH:1]1([Br:7])[CH2:2][C:3]([CH3:9])([CH3:10])[CH2:4][CH2:5][CH2:6]1.[SH-:8]",
+            "substrate_stereo": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  "@H:1"
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[CH:1]1([SH:8])[CH2:2][C:3]([CH3:9])([CH3:10])[CH2:4][CH2:5][CH2:6]1.[Br-:7]",
+            "reverse_substrate_stereo": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  6,
+                  "@H:1"
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1
+          },
+          "expected_stereo_changes": {
+            "atom:1": "INVERTED"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  "@H:1"
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  6,
+                  "@H:1"
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "atom",
+                1
+              ],
+              "effect": "INVERT",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  "@H:1"
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  6,
+                  "@H:1"
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "inverted",
+        "descriptor_change": "flipped",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific"
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-002",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "reverse_native_rule_application",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership: the registry key is derived from the descriptor's own centre (or central bond) and matches every endpoint key and every effect key. Typed virtual reference: @H:1 names its owning centre explicitly, so it survives any consistent relabeling of the heavy-atom maps together with its owner, and it is never confusable with a hydrogen owned by another centre. The owner is written [CH:1], which supplies exactly one implicit-hydrogen resource and carries no explicit hydrogen atom, so the reference resolves. Permutation correctness: the leaving ligand (map 7) and the incoming ligand (map 8) occupy the same descriptor slot while maps 2, 6 and @H:1 are retained unpermuted, so the parity flip encodes a genuine inversion rather than a relabeling artifact and classify_stereo_change must return INVERTED. Reversible: the reverse rule restores the graph and the original parity.",
+      "chemical_rationale": "The ring has exactly one stereocentre. C1 carries Br, one hydrogen and the two ring paths, which are constitutionally distinct because the gem-dimethyl quaternary carbon sits two bonds away on the C2 side and four bonds away on the C6 side; C3 itself is not stereogenic because it bears two identical methyls. Thiolate replaces bromide at a secondary ring carbon and bromide leaves as a mapped anion, so the map inventory and the -1 charge are identical on both sides.",
+      "claim_boundary": "The supplied before/after descriptors are the oracle. Inversion is a declared descriptor relationship, not a mechanistic claim: no backside-attack trajectory, transition state, ring conformation, anti-periplanar arrangement, rate or stereoselectivity is asserted. Not executable until SynKit replays it.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "ring_cyclic_inversion"
+    },
+    {
+      "case_id": "ST-72",
+      "catalog_refs": [],
+      "name": "2-methylcyclohexan-1-ol O-acylation, two ring centres retained",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "ring_oxygen_acylation_two_centre",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[C:1]1([O:7][H:13])([H:11])[C:2]([CH3:8])([H:12])[CH2:3][CH2:4][CH2:5][CH2:6]1.[C:9](=[O:10])([CH3:14])[Cl:15]>>[C:1]1([O:7][C:9](=[O:10])[CH3:14])([H:11])[C:2]([CH3:8])([H:12])[CH2:3][CH2:4][CH2:5][CH2:6]1.[Cl:15][H:13]",
+          "application": {
+            "substrate": "[C:1]1([O:7][H:13])([H:11])[C:2]([CH3:8])([H:12])[CH2:3][CH2:4][CH2:5][CH2:6]1.[C:9](=[O:10])([CH3:14])[Cl:15]",
+            "substrate_stereo": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  11
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  8,
+                  1,
+                  3,
+                  12
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]1([O:7][C:9](=[O:10])[CH3:14])([H:11])[C:2]([CH3:8])([H:12])[CH2:3][CH2:4][CH2:5][CH2:6]1.[Cl:15][H:13]",
+            "reverse_substrate_stereo": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  11
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  8,
+                  1,
+                  3,
+                  12
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1,
+            "reactor_options": {
+              "preserve_mapped_hydrogens": true
+            }
+          },
+          "expected_stereo_changes": {
+            "atom:1": "RETAINED",
+            "atom:2": "RETAINED"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  11
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  8,
+                  1,
+                  3,
+                  12
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {
+              "atom:1": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  11
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  8,
+                  1,
+                  3,
+                  12
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "atom",
+                1
+              ],
+              "effect": "PRESERVE",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  11
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  1,
+                  7,
+                  2,
+                  6,
+                  11
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            },
+            {
+              "descriptor_target": [
+                "atom",
+                2
+              ],
+              "effect": "PRESERVE",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  8,
+                  1,
+                  3,
+                  12
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  8,
+                  1,
+                  3,
+                  12
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "retained",
+        "descriptor_change": "retained",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "relative_stereochemistry": "two_centre_relative_relationship_preserved"
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-003",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "reverse_native_rule_application",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership: the two centres own independent registry keys (atom:1, atom:2), each descriptor referencing only immediate neighbours of its own owner, and each effect touches only its own key; the two centres are therefore checked independently rather than as one joint object. Permutation correctness: neither centre has a reference permuted or replaced, so both parities are preserved, and because the relative relationship is a function of the two parities it is preserved as well. Both centres must be validated separately: a rule that preserved only one of them would not satisfy this record. Reversible.",
+      "chemical_rationale": "The two ring stereocentres are non-equivalent: C1 carries the oxygen substituent, C2 carries a methyl, and their ligand paths differ, so no ring symmetry maps one onto the other. Acylation converts the O-H at map 7 into an O-acyl group and transfers the hydroxyl proton (map 13) to chloride; no bond to C1 or C2 is made or broken. The map inventory is identical on both sides and every map keeps its element.",
+      "claim_boundary": "The relative relationship between the two centres is a SUPPLIED endpoint oracle carried by the two relative descriptors. It does not encode a cis/trans label, does not prove a 3D conformation or an anti-periplanar geometry, and asserts nothing about diastereoselectivity or rate. Not executable until SynKit replays it.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "ring_cyclic_multicentre"
+    },
+    {
+      "case_id": "ST-73",
+      "catalog_refs": [],
+      "name": "fleeting atom stereocentre in hex-2-ene to hex-1-ene isomerization",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "addition_then_elimination",
+      "conditions": [],
+      "step_relationship": "sequential",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[C:1]([H:7])([H:8])([H:9])[C:2]([H:10])=[C:3]([H:11])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18].[Cl:19][H:20]>>[C:1]([H:7])([H:8])([H:9])[C:2]([H:10])([Cl:19])[C:3]([H:11])([H:20])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18]",
+          "application": {
+            "substrate": "[C:1]([H:7])([H:8])([H:9])[C:2]([H:10])=[C:3]([H:11])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18].[Cl:19][H:20]",
+            "substrate_stereo": {},
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]([H:7])([H:8])([H:9])[C:2]([H:10])([Cl:19])[C:3]([H:11])([H:20])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18]",
+            "reverse_substrate_stereo": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  19,
+                  3,
+                  10
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1,
+            "reactor_options": {
+              "preserve_mapped_hydrogens": true
+            }
+          },
+          "expected_stereo_changes": {
+            "atom:2": "FORMED"
+          },
+          "endpoint_stereo": {
+            "reactant": {},
+            "product": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  19,
+                  3,
+                  10
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "atom",
+                2
+              ],
+              "effect": "FORM",
+              "before": null,
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  19,
+                  3,
+                  10
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        },
+        {
+          "step_id": "s2",
+          "mapped_reaction": "[C:1]([H:7])([H:8])([H:9])[C:2]([H:10])([Cl:19])[C:3]([H:11])([H:20])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18]>>[C:1]([H:8])([H:9])=[C:2]([H:10])[C:3]([H:11])([H:20])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18].[Cl:19][H:7]",
+          "application": {
+            "substrate": "[C:1]([H:7])([H:8])([H:9])[C:2]([H:10])([Cl:19])[C:3]([H:11])([H:20])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18]",
+            "substrate_stereo": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  19,
+                  3,
+                  10
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]([H:8])([H:9])=[C:2]([H:10])[C:3]([H:11])([H:20])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[C:6]([H:16])([H:17])[H:18].[Cl:19][H:7]",
+            "reverse_substrate_stereo": {},
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1,
+            "reactor_options": {
+              "preserve_mapped_hydrogens": true
+            }
+          },
+          "expected_stereo_changes": {
+            "atom:2": "BROKEN"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  19,
+                  3,
+                  10
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {}
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "atom",
+                2
+              ],
+              "effect": "BREAK",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  19,
+                  3,
+                  10
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": null,
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "not_applicable",
+        "descriptor_change": "fleeting",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "composed_stereo_changes": {
+          "atom:2": "FLEETING"
+        }
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-004",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "reverse_native_rule_application",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership: the registry key is derived from the descriptor's own centre (or central bond) and matches every endpoint key and every effect key. Lifecycle correctness: step 1 FORMs the map-2 descriptor (before null, no reactant endpoint) and step 2 BREAKs the SAME relative descriptor (after null, no product endpoint); the after value of FORM and the before value of BREAK are the identical descriptor object, which is what makes the two steps compose. Because neither composed endpoint owns a map-2 descriptor, the composed change is FLEETING and is asserted ONLY in oracle.composed_stereo_changes; each elementary step declares the ordinary FORMED/BROKEN tokens, never FLEETING. Step chaining: the full product graph of step 1 is character-for-character the full reactant graph of step 2, including every explicit hydrogen. Reversibility applies to the elementary rules, reversing the sequence, not to a composed rule.",
+      "chemical_rationale": "Hydrogen chloride adds across hex-2-ene to give 2-chlorohexane, whose C2 carries four constitutionally distinct ligands (methyl, chlorine, the butyl-terminated chain and one hydrogen) and is therefore genuinely stereogenic. Elimination toward the terminal carbon then gives hex-1-ene. Both composed endpoints are alkenes in which map 2 is sp2 and owns no tetrahedral descriptor, so the net change is a constitutional alkene isomerization and the stereocentre exists only in the intermediate. Each step is element-, charge- and hydrogen-balanced, the transferred protons (maps 20 then 7) are explicit and mapped on both sides, and the map inventory is identical across each arrow.",
+      "claim_boundary": "This record asserts descriptor lifecycle only. It does not assert Markovnikov regiochemistry, an addition or elimination mechanism, a carbocation intermediate, thermodynamic preference between hex-1-ene and hex-2-ene, a rate, or reaction conditions. Not executable until SynKit replays both steps and their composition.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "fleeting_atom"
+    },
+    {
+      "case_id": "ST-74",
+      "catalog_refs": [],
+      "name": "fleeting planar bond in vicinal dehalogenation then dihalogenation",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "dehalogenation_then_dihalogenation",
+      "conditions": [],
+      "step_relationship": "sequential",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[C:1]([H:12])([H:13])([H:14])[C:2]([Br:5])([Cl:6])[C:3]([Br:7])([Cl:8])[C:4]([H:15])([H:16])[H:17].[Zn:9].[I:10][I:11]>>[C:1]([H:12])([H:13])([H:14])[C:2]([Cl:6])=[C:3]([Cl:8])[C:4]([H:15])([H:16])[H:17].[Zn:9]([Br:5])[Br:7].[I:10][I:11]",
+          "application": {
+            "substrate": "[C:1]([H:12])([H:13])([H:14])[C:2]([Br:5])([Cl:6])[C:3]([Br:7])([Cl:8])[C:4]([H:15])([H:16])[H:17].[Zn:9].[I:10][I:11]",
+            "substrate_stereo": {},
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]([H:12])([H:13])([H:14])[C:2]([Cl:6])=[C:3]([Cl:8])[C:4]([H:15])([H:16])[H:17].[Zn:9]([Br:5])[Br:7].[I:10][I:11]",
+            "reverse_substrate_stereo": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  6,
+                  2,
+                  3,
+                  8,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "FORMED"
+          },
+          "endpoint_stereo": {
+            "reactant": {},
+            "product": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  6,
+                  2,
+                  3,
+                  8,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "bond",
+                2,
+                3
+              ],
+              "effect": "FORM",
+              "before": null,
+              "after": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  6,
+                  2,
+                  3,
+                  8,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        },
+        {
+          "step_id": "s2",
+          "mapped_reaction": "[C:1]([H:12])([H:13])([H:14])[C:2]([Cl:6])=[C:3]([Cl:8])[C:4]([H:15])([H:16])[H:17].[Zn:9]([Br:5])[Br:7].[I:10][I:11]>>[C:1]([H:12])([H:13])([H:14])[C:2]([Cl:6])([I:10])[C:3]([Cl:8])([I:11])[C:4]([H:15])([H:16])[H:17].[Zn:9]([Br:5])[Br:7]",
+          "application": {
+            "substrate": "[C:1]([H:12])([H:13])([H:14])[C:2]([Cl:6])=[C:3]([Cl:8])[C:4]([H:15])([H:16])[H:17].[Zn:9]([Br:5])[Br:7].[I:10][I:11]",
+            "substrate_stereo": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  6,
+                  2,
+                  3,
+                  8,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]([H:12])([H:13])([H:14])[C:2]([Cl:6])([I:10])[C:3]([Cl:8])([I:11])[C:4]([H:15])([H:16])[H:17].[Zn:9]([Br:5])[Br:7]",
+            "reverse_substrate_stereo": {},
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "BROKEN"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  6,
+                  2,
+                  3,
+                  8,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {}
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "bond",
+                2,
+                3
+              ],
+              "effect": "BREAK",
+              "before": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  6,
+                  2,
+                  3,
+                  8,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": null,
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "not_applicable",
+        "descriptor_change": "fleeting",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "composed_stereo_changes": {
+          "bond:2-3": "FLEETING"
+        }
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-005",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "reverse_native_rule_application",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership: the registry key is derived from the descriptor's own centre (or central bond) and matches every endpoint key and every effect key. Target ownership uses the smaller-larger bond key convention (bond:2-3). Lifecycle correctness: step 1 FORMs the 2-3 planar-bond descriptor (before null) and step 2 BREAKs the identical relative descriptor (after null), so neither composed endpoint owns a descriptor at that locus and the composed change is FLEETING, asserted only at the case-level oracle. ALL FOUR side references are heavy atoms: maps 1 (methyl carbon) and 6 (chlorine) are immediate neighbours of map 2, and maps 8 (chlorine) and 4 (methyl carbon) are immediate neighbours of map 3. No explicit hydrogen is referenced by any descriptor in this record, so no hydrogen reference can become stale or absent in a reverse reactant graph. Step chaining: the full product graph of step 1 is character-for-character the full reactant graph of step 2, which is why the zinc bromide and the iodine are carried explicitly through both steps as mapped spectators. Reversal is of the elementary sequence.",
+      "chemical_rationale": "Zinc-mediated vicinal dehalogenation of 2,3-dibromo-2,3-dichlorobutane gives 2,3-dichlorobut-2-ene, whose C2=C3 bond is genuinely stereogenic because each alkene carbon carries two different heavy substituents (a methyl and a chlorine). Addition of iodine across that alkene then gives 2,3-dichloro-2,3-diiodobutane. Both composed endpoints are sp3 vicinal dihalides that own no planar-bond descriptor at maps 2-3, so the locus exists only in the intermediate and the net change is a halogen exchange. Every step is element-, charge- and hydrogen-balanced, the map inventory is identical across each arrow, and every map keeps its element (5 and 7 are bromine throughout, 9 is zinc, 10 and 11 are iodine).",
+      "claim_boundary": "This record asserts descriptor lifecycle only. It does not assert an anti-periplanar elimination geometry, an E2 or E1cb pathway, anti addition of iodine, an iodonium intermediate, an E or Z preference for the intermediate, a rate, or reaction conditions. The intermediate's parity is 0 by class definition and encodes no geometry claim. Not executable until SynKit replays it.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "fleeting_planar_bond"
+    },
+    {
+      "case_id": "ST-75",
+      "catalog_refs": [],
+      "name": "localized C2 epimerization of 3-aminobutan-2-ol, C3 retained",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "epimerization",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[C:1]([H:9])([H:10])([H:11])[C:2]([O:5][H:12])([H:13])[C:3]([N:6]([H:14])[H:15])([H:16])[C:4]([H:17])([H:18])[H:19]>>[C:1]([H:9])([H:10])([H:11])[C:2]([O:5][H:12])([H:13])[C:3]([N:6]([H:14])[H:15])([H:16])[C:4]([H:17])([H:18])[H:19]",
+          "application": {
+            "substrate": "[C:1]([H:9])([H:10])([H:11])[C:2]([O:5][H:12])([H:13])[C:3]([N:6]([H:14])[H:15])([H:16])[C:4]([H:17])([H:18])[H:19]",
+            "substrate_stereo": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  5,
+                  3,
+                  13
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  6,
+                  2,
+                  4,
+                  16
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]([H:9])([H:10])([H:11])[C:2]([O:5][H:12])([H:13])[C:3]([N:6]([H:14])[H:15])([H:16])[C:4]([H:17])([H:18])[H:19]",
+            "reverse_substrate_stereo": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  5,
+                  3,
+                  13
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  6,
+                  2,
+                  4,
+                  16
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 1,
+            "reactor_options": {
+              "preserve_mapped_hydrogens": true
+            }
+          },
+          "expected_stereo_changes": {
+            "atom:2": "INVERTED",
+            "atom:3": "RETAINED"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  5,
+                  3,
+                  13
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  6,
+                  2,
+                  4,
+                  16
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {
+              "atom:2": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  5,
+                  3,
+                  13
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  6,
+                  2,
+                  4,
+                  16
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "atom",
+                2
+              ],
+              "effect": "INVERT",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  5,
+                  3,
+                  13
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  2,
+                  1,
+                  5,
+                  3,
+                  13
+                ],
+                "parity": -1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            },
+            {
+              "descriptor_target": [
+                "atom",
+                3
+              ],
+              "effect": "PRESERVE",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  6,
+                  2,
+                  4,
+                  16
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  6,
+                  2,
+                  4,
+                  16
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "inverted",
+        "descriptor_change": "flipped",
+        "product_population": "single_stereoisomer",
+        "stereo_determinacy": "stereospecific",
+        "relative_stereochemistry": "localized_epimerization_neighbour_centre_retained"
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-008",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "reverse_native_rule_application",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership and LOCALIZATION: atom:2 and atom:3 are independent registry keys, each descriptor referencing only immediate neighbours of its own owner, and each effect touches exactly one key; this is what makes the behaviour localized rather than global. Strict matching gives ONE application: the substrate is asymmetric and the two centres are constitutionally distinguishable (map 2 carries oxygen, map 3 carries nitrogen), so no automorphism of the graph exchanges them and the descriptor guards select the map-2 locus deterministically; the rule cannot also fire at map 3. The rewrite is a connectivity identity, which is admissible here precisely because the strict descriptor guards make the forward product unique and the reverse product restores the original graph and stereo registry exactly: applying the rule twice returns the starting descriptor set. Permutation correctness: within each centre the four references are pairwise distinct, so the parity flip at map 2 is well defined and is not a relabeling artifact.",
+      "chemical_rationale": "3-Aminobutan-2-ol has exactly two stereocentres and they are not equivalent: C2 carries a hydroxyl, a methyl, C3 and one hydrogen, while C3 carries an amino group, a methyl, C2 and one hydrogen. Because one centre bears oxygen and the other nitrogen, their ligand paths are constitutionally distinguishable and a change at one is unambiguously attributable. Epimerization inverts configuration at C2 alone while leaving C3 untouched; since epimerization changes no bond, the connectivity is identical on both sides and the entire change is carried by the descriptor registry. Explicit hydrogens throughout; the map inventory, element per map and charge are trivially identical.",
+      "claim_boundary": "The epimerization is a SUPPLIED descriptor-level oracle. No mechanism is asserted: no enolization, no deprotonation, no planar intermediate, no base, no conditions, no rate, and no thermodynamic preference between the two epimers. The record tests only that one locus inverts while its neighbour is independently verified as retained. Not executable until SynKit replays it, including the identity-rewrite determinism and reverse checks.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "localized_epimerization"
+    },
+    {
+      "case_id": "ST-76",
+      "catalog_refs": [],
+      "name": "3-bromohexane hydrolysis with unspecified product orientation",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "substitution_orientation_unspecified",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[C:1]([H:12])([H:13])([H:14])[C:2]([H:10])([H:11])[C:3]([H:9])([Br:7])[C:4]([H:15])([H:16])[C:5]([H:17])([H:18])[C:6]([H:19])([H:20])[H:21].[O-:8][H:22]>>[C:1]([H:12])([H:13])([H:14])[C:2]([H:10])([H:11])[C:3]([H:9])([O:8][H:22])[C:4]([H:15])([H:16])[C:5]([H:17])([H:18])[C:6]([H:19])([H:20])[H:21].[Br-:7]",
+          "application": {
+            "substrate": "[C:1]([H:12])([H:13])([H:14])[C:2]([H:10])([H:11])[C:3]([H:9])([Br:7])[C:4]([H:15])([H:16])[C:5]([H:17])([H:18])[C:6]([H:19])([H:20])[H:21].[O-:8][H:22]",
+            "substrate_stereo": {
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  7,
+                  2,
+                  4,
+                  9
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]([H:12])([H:13])([H:14])[C:2]([H:10])([H:11])[C:3]([H:9])([O:8][H:22])[C:4]([H:15])([H:16])[C:5]([H:17])([H:18])[C:6]([H:19])([H:20])[H:21].[Br-:7]",
+            "reverse_substrate_stereo": {
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  8,
+                  2,
+                  4,
+                  9
+                ],
+                "parity": null,
+                "state": "unknown",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 0,
+            "reverse_expected_failure": "non_reversible_unspecified_descriptor",
+            "reactor_options": {
+              "preserve_mapped_hydrogens": true
+            }
+          },
+          "expected_stereo_changes": {
+            "atom:3": "UNSPECIFIED"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  7,
+                  2,
+                  4,
+                  9
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {
+              "atom:3": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  8,
+                  2,
+                  4,
+                  9
+                ],
+                "parity": null,
+                "state": "unknown",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "atom",
+                3
+              ],
+              "effect": "UNSPECIFIED",
+              "before": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  7,
+                  2,
+                  4,
+                  9
+                ],
+                "parity": 1,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "tetrahedral",
+                "atoms": [
+                  3,
+                  8,
+                  2,
+                  4,
+                  9
+                ],
+                "parity": null,
+                "state": "unknown",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "unknown",
+        "descriptor_change": "unspecified",
+        "product_population": "unknown",
+        "stereo_determinacy": "underdetermined"
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-006",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "deterministic_noninvertible_reverse_refusal",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership: the registry key is derived from the descriptor's own centre (or central bond) and matches every endpoint key and every effect key. Outcome separation: the rule declares INFORMATION LOSS, not a population. The product descriptor keeps the tetrahedral class and a full complement of four references that are immediate neighbours of the owner, but its parity is null and its state is unknown, so classify_stereo_change(before, after) must return UNSPECIFIED. No rule_metadata.stereo_outcomes entry exists anywhere in this record, no branches are enumerated and no weights are given, so UNSPECIFIED can never collapse into RACEMIC or ENANTIOMERIC_MIXTURE. INTENTIONALLY NON-INVERTIBLE: reversal must FAIL with the documented non-reversible effect, because a null parity carries no information from which the original orientation could be reconstructed; a reverse application that returned a specified parity would be a bug this record is designed to catch.",
+      "chemical_rationale": "C3 of 3-bromohexane carries bromine, one hydrogen and two constitutionally different chains (ethyl on the map-2 side, propyl on the map-4 side), so it is genuinely stereogenic. Hydroxide replaces bromide, which leaves as a mapped anion, so the map inventory and the -1 charge are identical on both sides and every map keeps its element: map 7 is bromine throughout and map 8 is oxygen throughout.",
+      "claim_boundary": "The product orientation is UNSPECIFIED because the supplied rule does not determine it. This is an absence of information in the oracle, NOT a claim that the product is racemic, NOT a claim of any enantiomer ratio, and NOT a mechanistic claim about ionization, a planar carbocation, solvolysis or competing pathways. No rate, no selectivity. Executable after SynKit replay confirmed the forward result and deterministic reversal refusal.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "unknown_tetrahedral"
+    },
+    {
+      "case_id": "ST-77",
+      "catalog_refs": [],
+      "name": "allylic chloride hydrolysis with unspecified alkene geometry",
+      "case_kind": "transformation",
+      "status": "executable",
+      "reaction_class": "allylic_substitution_geometry_unspecified",
+      "conditions": [],
+      "step_relationship": "single",
+      "steps": [
+        {
+          "step_id": "s1",
+          "mapped_reaction": "[C:1]([H:10])([H:11])([Cl:7])[C:2]([CH3:8])=[C:3]([CH3:9])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[H:16].[O-:17][H:18]>>[C:1]([H:10])([H:11])([O:17][H:18])[C:2]([CH3:8])=[C:3]([CH3:9])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[H:16].[Cl-:7]",
+          "application": {
+            "substrate": "[C:1]([H:10])([H:11])([Cl:7])[C:2]([CH3:8])=[C:3]([CH3:9])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[H:16].[O-:17][H:18]",
+            "substrate_stereo": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  3,
+                  9,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "expected_unique_stereoisomer_count": 1,
+            "reverse_substrate": "[C:1]([H:10])([H:11])([O:17][H:18])[C:2]([CH3:8])=[C:3]([CH3:9])[C:4]([H:12])([H:13])[C:5]([H:14])([H:15])[H:16].[Cl-:7]",
+            "reverse_substrate_stereo": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  3,
+                  9,
+                  4
+                ],
+                "parity": null,
+                "state": "unknown",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "rejected_substrates": [],
+            "expected_reverse_unique_product_count": 0,
+            "reverse_expected_failure": "non_reversible_unspecified_descriptor"
+          },
+          "expected_stereo_changes": {
+            "bond:2-3": "UNSPECIFIED"
+          },
+          "endpoint_stereo": {
+            "reactant": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  3,
+                  9,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              }
+            },
+            "product": {
+              "bond:2-3": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  3,
+                  9,
+                  4
+                ],
+                "parity": null,
+                "state": "unknown",
+                "provenance": "supplied benchmark oracle"
+              }
+            }
+          },
+          "stereo_effects": [
+            {
+              "descriptor_target": [
+                "bond",
+                2,
+                3
+              ],
+              "effect": "UNSPECIFIED",
+              "before": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  3,
+                  9,
+                  4
+                ],
+                "parity": 0,
+                "state": "specified",
+                "provenance": "supplied benchmark oracle"
+              },
+              "after": {
+                "descriptor_class": "planar_bond",
+                "atoms": [
+                  1,
+                  8,
+                  2,
+                  3,
+                  9,
+                  4
+                ],
+                "parity": null,
+                "state": "unknown",
+                "provenance": "supplied benchmark oracle"
+              },
+              "provenance": "supplied benchmark oracle"
+            }
+          ]
+        }
+      ],
+      "oracle": {
+        "reactant_cip_by_map": {},
+        "product_cip_sets": [],
+        "local_geometry": "unknown",
+        "descriptor_change": "unspecified",
+        "product_population": "unknown",
+        "stereo_determinacy": "underdetermined"
+      },
+      "provenance": {
+        "origin": "synthetic software-conformance fixture authored for SynKit",
+        "evidence_type": "supplied benchmark oracle",
+        "license": "SynKit project license",
+        "source": null,
+        "generator": "Claude (Anthropic) SynKit stereo final-8 candidate generator, v1",
+        "candidate_review": {
+          "source_candidate_id": "ST-FINAL-CAND-007",
+          "reviewed": "2026-07-17",
+          "decision": "accepted_executable",
+          "gates": [
+            "schema_and_descriptor_deserialization",
+            "mapped_graph_and_electron_audit",
+            "forward_native_rule_application",
+            "deterministic_noninvertible_reverse_refusal",
+            "wrong_orientation_guard",
+            "map_invariant_deduplication"
+          ]
+        }
+      },
+      "mathematical_rationale": "Relabeling invariance: the descriptor is defined by relative references to immediate neighbours of its owner, so any consistent map relabeling leaves it equivalent and leaves the rule result unchanged. Target ownership: the registry key is derived from the descriptor's own centre (or central bond) and matches every endpoint key and every effect key. Lifecycle correctness: the after descriptor has IDENTICAL class and all six IDENTICAL references to the before descriptor, differing only in parity (null) and state (unknown), which is the strictest reading of the unspecified contract and isolates the parity channel as the only thing under test; classify_stereo_change must return UNSPECIFIED. All four side references are heavy atoms: maps 1 and 8 are immediate neighbours of map 2, maps 9 and 4 are immediate neighbours of map 3, so no hydrogen reference exists to go stale. Outcome separation: no rule_metadata.stereo_outcomes entry exists, so the record cannot be read as an E/Z population; an unknown geometry and a mixture of geometries are different assertions and only the former is made. INTENTIONALLY NON-INVERTIBLE: reverse replay must FAIL with the documented non-reversible effect, and the fixture declares that expectation.",
+      "chemical_rationale": "The C2=C3 bond of 1-chloro-2,3-dimethylpent-2-ene is genuinely stereogenic because each alkene carbon carries two different heavy substituents: a chloromethyl group and a methyl on C2, a methyl and an ethyl on C3. The reacting bond is the allylic C1-Cl, one bond away from the alkene, so the four side references of the double bond are untouched by the substitution and only the orientation information is dropped. Chloride leaves as a mapped anion, so the map inventory, the element of every map and the -1 charge are identical on both sides.",
+      "claim_boundary": "The retained alkene geometry is UNSPECIFIED because the supplied rule does not determine it. This is information loss, NOT a claim of an E/Z mixture, NOT a ratio, and NOT a mechanistic claim about an allylic cation, SN1' or SN2' competition, or double-bond transposition. Not executable until SynKit replays it and confirms the reverse failure.",
+      "representation": "native_stereo_rewrite",
+      "coverage_family": "unknown_planar_bond"
+    },
+    {
       "case_id": "ST-41",
       "catalog_refs": [
         "NG-01"
@@ -6233,7 +7770,7 @@
       }
     ]
   },
-  "positive_case_count": 72,
+  "positive_case_count": 80,
   "negative_fixture_count": 8,
   "candidate_promotion_metadata": {
     "reviewed": "2026-07-16",
@@ -6301,6 +7838,38 @@
       "fleeting",
       "unknown_unspecified",
       "localized_epimerization"
+    ]
+  },
+  "final_eight_promotion_metadata": {
+    "reviewed": "2026-07-17",
+    "source_schema": "SynKit-stereo-final-candidates-v1",
+    "source_case_count": 8,
+    "accepted_case_count": 8,
+    "accepted_source_ids": [
+      "ST-FINAL-CAND-001",
+      "ST-FINAL-CAND-002",
+      "ST-FINAL-CAND-003",
+      "ST-FINAL-CAND-004",
+      "ST-FINAL-CAND-005",
+      "ST-FINAL-CAND-008",
+      "ST-FINAL-CAND-006",
+      "ST-FINAL-CAND-007"
+    ],
+    "permanent_case_ids": [
+      "ST-70",
+      "ST-71",
+      "ST-72",
+      "ST-73",
+      "ST-74",
+      "ST-75",
+      "ST-76",
+      "ST-77"
+    ],
+    "engine_blocked_source_ids": [],
+    "selection_boundary": "This promotion raises the public stereo partition to 80 positive cases. The two unknown/unspecified records are forward-executable and intentionally non-invertible; SynRule.reversed() refuses them deterministically instead of fabricating specified stereo.",
+    "resolved_engine_blocker_source_ids": [
+      "ST-FINAL-CAND-006",
+      "ST-FINAL-CAND-007"
     ]
   }
 }

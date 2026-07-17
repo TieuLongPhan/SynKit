@@ -1,9 +1,12 @@
 import networkx as nx
+import pytest
 from rdkit import Chem
 
 from synkit.Graph.Stereo import (
     DEFERRED_STEREO_DESCRIPTOR_CLASSES,
+    NonInvertibleStereoEffectError,
     PlanarBondStereo,
+    SquarePlanarStereo,
     SUPPORTED_STEREO_DESCRIPTOR_CLASSES,
     StereoChange,
     TetrahedralStereo,
@@ -212,6 +215,60 @@ def test_fleeting_transition_stereo_is_first_class_and_reversible():
     assert change.fleeting == descriptor
     assert change.reverse() == change
     assert change.dependencies == frozenset({1, 2, 3, 4, 5})
+
+
+def test_unspecified_stereo_change_has_no_unique_reverse():
+    specified = TetrahedralStereo((2, 1, 3, 4, 5), 1)
+    unknown = TetrahedralStereo((2, 1, 3, 4, 5), None)
+    change = StereoChange("UNSPECIFIED", specified, unknown)
+
+    with pytest.raises(NonInvertibleStereoEffectError) as excinfo:
+        change.reverse()
+
+    assert excinfo.value.reason == "non_reversible_unspecified_descriptor"
+    assert excinfo.value.targets == ()
+
+
+def test_specified_geometric_stereomutation_remains_reversible():
+    before = SquarePlanarStereo((1, 2, 3, 4, 5), 0)
+    after = SquarePlanarStereo((1, 2, 4, 3, 5), 0)
+    change = StereoChange("UNSPECIFIED", before, after)
+
+    assert change.non_invertible is False
+    assert change.reverse() == StereoChange("UNSPECIFIED", after, before)
+
+
+@pytest.mark.parametrize(
+    ("change", "expected"),
+    [
+        (
+            StereoChange(
+                "RETAINED",
+                TetrahedralStereo((2, 1, 3, 4, 5), 1),
+                TetrahedralStereo((2, 1, 3, 4, 5), 1),
+            ),
+            "RETAINED",
+        ),
+        (
+            StereoChange(
+                "INVERTED",
+                TetrahedralStereo((2, 1, 3, 4, 5), 1),
+                TetrahedralStereo((2, 1, 3, 4, 5), -1),
+            ),
+            "INVERTED",
+        ),
+        (
+            StereoChange("FORMED", None, TetrahedralStereo((2, 1, 3, 4, 5), 1)),
+            "BROKEN",
+        ),
+        (
+            StereoChange("BROKEN", TetrahedralStereo((2, 1, 3, 4, 5), 1), None),
+            "FORMED",
+        ),
+    ],
+)
+def test_invertible_stereo_changes_still_reverse(change, expected):
+    assert change.reverse().change == expected
 
 
 def test_descriptor_capability_boundary_is_explicit():

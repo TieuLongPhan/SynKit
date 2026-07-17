@@ -21,7 +21,7 @@ from synkit.Graph.Stereo import (
 )
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Mechanism.audit import audit_local_electron_state
-from synkit.Rule import SynRule
+from synkit.Rule import NonInvertibleStereoEffectError, SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
@@ -98,30 +98,50 @@ def _rule_and_endpoints(step: dict[str, Any]) -> tuple[SynRule, Any, Any]:
     return rule, reactant, product
 
 
-def _reactor(host: Any, rule: SynRule) -> SynReactor:
+def _reactor(
+    host: Any,
+    rule: SynRule,
+    *,
+    reactor_options: dict[str, Any] | None = None,
+) -> SynReactor:
+    options = reactor_options or {}
     return SynReactor(
         host,
         rule,
         template_format="tuple",
         explicit_h=False,
         stereo_mode="strict",
+        **options,
     )
 
 
-def test_promotion_manifest_has_the_reviewed_21_case_boundary():
-    metadata = PAYLOAD["candidate_promotion_metadata"]
+def test_promotion_manifest_has_the_reviewed_80_positive_boundary():
+    legacy_metadata = PAYLOAD["candidate_promotion_metadata"]
+    final_metadata = PAYLOAD["final_eight_promotion_metadata"]
+    legacy_cases = [case for case in CASES if case["case_id"] <= "ST-69"]
+    final_cases = [case for case in CASES if case["case_id"] >= "ST-70"]
 
-    assert len(CASES) == metadata["accepted_case_count"] == 21
-    assert [case["case_id"] for case in CASES] == [
+    assert len(CASES) == 29
+    assert len(legacy_cases) == legacy_metadata["accepted_case_count"] == 21
+    assert [case["case_id"] for case in legacy_cases] == [
         f"ST-{number}" for number in range(49, 70)
+    ]
+    assert len(final_cases) == final_metadata["accepted_case_count"] == 8
+    assert [case["case_id"] for case in final_cases] == [
+        f"ST-{number}" for number in range(70, 78)
     ]
     assert all(
         case["status"] == "executable"
         and case["provenance"]["candidate_review"]["decision"] == "accepted_executable"
         for case in CASES
     )
-    assert metadata["not_promoted_case_count"] == 45
-    assert sum(metadata["decision_summary"].values()) == 45
+    assert legacy_metadata["not_promoted_case_count"] == 45
+    assert sum(legacy_metadata["decision_summary"].values()) == 45
+    assert final_metadata["engine_blocked_source_ids"] == []
+    assert final_metadata["resolved_engine_blocker_source_ids"] == [
+        "ST-FINAL-CAND-006",
+        "ST-FINAL-CAND-007",
+    ]
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case["case_id"])
@@ -159,7 +179,8 @@ def test_promoted_case_parses_balances_and_deserializes(case):
 def test_promoted_case_applies_forward_reverse_and_guards_orientation(case):
     for step in case["steps"]:
         rule, reactant, expected_product = _rule_and_endpoints(step)
-        forward = _reactor(reactant, rule)
+        reactor_options = step["application"].get("reactor_options", {})
+        forward = _reactor(reactant, rule, reactor_options=reactor_options)
 
         assert forward.mapping_count >= 1
         assert (
@@ -175,16 +196,42 @@ def test_promoted_case_applies_forward_reverse_and_guards_orientation(case):
             for key, expected in expected_registry.items():
                 assert actual_registry[key] in {expected, expected.invert()}
 
-            reverse = _reactor(product, rule.reversed())
-            assert reverse.mapping_count >= 1
-            assert reverse.its_list
-            assert all(
-                stereo_isomorphic(
-                    ITSReverter(reverse_result).to_product_graph(),
-                    reactant,
-                )
-                for reverse_result in reverse.its_list
+            expected_reverse_count = step["application"].get(
+                "expected_reverse_unique_product_count", 1
             )
+            if expected_reverse_count == 0:
+                assert rule.is_stereo_reversible is False
+                expected_targets = tuple(
+                    sorted(
+                        key
+                        for key, value in step["expected_stereo_changes"].items()
+                        if value == "UNSPECIFIED"
+                    )
+                )
+                assert rule.non_invertible_stereo_targets() == expected_targets
+                with pytest.raises(NonInvertibleStereoEffectError) as excinfo:
+                    rule.reversed()
+                assert (
+                    excinfo.value.reason
+                    == step["application"]["reverse_expected_failure"]
+                )
+                assert excinfo.value.targets == expected_targets
+            else:
+                assert rule.is_stereo_reversible is True
+                reverse = _reactor(
+                    product,
+                    rule.reversed(),
+                    reactor_options=reactor_options,
+                )
+                assert reverse.mapping_count >= 1
+                assert len(reverse.its_list) == expected_reverse_count
+                assert all(
+                    stereo_isomorphic(
+                        ITSReverter(reverse_result).to_product_graph(),
+                        reactant,
+                    )
+                    for reverse_result in reverse.its_list
+                )
 
         original_registry = reactant.graph.get("stereo_descriptors", {})
         if original_registry:
@@ -193,7 +240,14 @@ def test_promoted_case_applies_forward_reverse_and_guards_orientation(case):
                 key: descriptor.invert()
                 for key, descriptor in original_registry.items()
             }
-            assert _reactor(wrong, rule).mapping_count == 0
+            assert (
+                _reactor(
+                    wrong,
+                    rule,
+                    reactor_options=reactor_options,
+                ).mapping_count
+                == 0
+            )
 
 
 def test_promoted_mixture_cases_keep_two_weighted_inverse_branches():

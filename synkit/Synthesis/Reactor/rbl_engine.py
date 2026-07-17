@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 import logging
 
@@ -17,6 +18,20 @@ from synkit.Graph.Matcher.wl_sel import WLSel
 # from synkit.Graph.Matcher.approx_mcs import ApproxMCSMatcher
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Graph.Wildcard.graph_wc import GraphCollectionSelector
+from synkit.Synthesis.Reactor.fusion_validation import (
+    FusionIssue,
+    FusionIssueCode,
+    FusionValidation,
+    WildcardRole,
+    validate_fusion_rsmi,
+    validate_rbl_candidate,
+    validate_wildcard_mapping_roles,
+)
+from synkit.Synthesis.Reactor.rbl_policy import (
+    RBLSearchPolicy,
+    SearchScope,
+    TerminationPolicy,
+)
 
 ITSLike = Any
 
@@ -179,6 +194,9 @@ class RBLEngine:
         stage is skipped entirely, even if :attr:`early_stop` is
         ``True``. This can be overridden per-call in :meth:`process`.
     :type fast_paths_only: bool, optional
+    :param search_policy: Explicit search scope and termination policy. This
+        is mutually exclusive with the compatibility ``mode`` presets.
+    :type search_policy: RBLSearchPolicy or None, optional
     :param max_mappings_per_pair: Hard cap on the number of mappings to
         consider for each (forward ITS, backward ITS) pair. Default is
         ``1``.
@@ -191,6 +209,11 @@ class RBLEngine:
         (``explicit_h`` argument). Controls whether explicit hydrogens
         are kept during reaction application.
     :type explicit_h: bool, optional
+    :param preserve_original_sides: Original endpoints that every accepted
+        candidate must preserve through a component-injective exact subgraph
+        embedding. RBL defaults to ``("products",)`` because it may
+        reconstruct the reactant set while preserving the observed target.
+    :type preserve_original_sides: Sequence[str], optional
     :param embed_threshold: Hard cap forwarded to :class:`SynReactor`
         (``embed_threshold`` argument), typically controlling the
         maximum number of embeddings before the reactor aborts.
@@ -300,10 +323,12 @@ class RBLEngine:
         early_stop: bool = True,
         fast_paths_only: bool = False,
         mode: str | None = None,
+        search_policy: RBLSearchPolicy | None = None,
         max_mappings_per_pair: int = 1,
         implicit_temp: bool = True,
         explicit_h: bool = False,
         electron_diagnostics: bool = False,
+        preserve_original_sides: Sequence[str] = ("products",),
         embed_threshold: int = 10_000,
         reactor_cls: type = SynReactor,
         wildcard_adder_cls: type = RadicalWildcardAdder,
@@ -333,28 +358,41 @@ class RBLEngine:
         self.prune_wc: bool = prune_wc
         self.prune_automorphisms: bool = prune_automorphisms
         self.mcs_side: str = mcs_side
-        valid_modes = ("fast_track", "early_stop", "full")
-        if mode is not None and mode not in valid_modes:
-            raise ValueError(f"Invalid mode {mode!r}. Choose from {valid_modes}.")
+        if mode is not None and search_policy is not None:
+            raise ValueError("Specify either mode or search_policy, not both.")
         self.mode = mode
-        if mode == "fast_track":
-            self.early_stop = True
-            self.fast_paths_only = True
-        elif mode == "early_stop":
-            self.early_stop = True
-            self.fast_paths_only = False
-        elif mode == "full":
-            self.early_stop = False
-            self.fast_paths_only = False
+        if search_policy is not None:
+            if not isinstance(search_policy, RBLSearchPolicy):
+                raise TypeError("search_policy must be an RBLSearchPolicy.")
+            self.search_policy = search_policy
+        elif mode is not None:
+            self.search_policy = RBLSearchPolicy.from_mode(mode)
+        elif fast_paths_only:
+            self.search_policy = RBLSearchPolicy.from_mode("fast_track")
+        elif early_stop:
+            self.search_policy = RBLSearchPolicy.from_mode("early_stop")
         else:
-            self.early_stop = bool(early_stop)
-            self.fast_paths_only = bool(fast_paths_only)
+            self.search_policy = RBLSearchPolicy.from_mode("full")
+        self.early_stop = (
+            self.search_policy.termination is TerminationPolicy.FIRST_VALID
+        )
+        self.fast_paths_only = self.search_policy.scope is SearchScope.FAST_PATHS_ONLY
         self.max_mappings_per_pair: int = max(1, int(max_mappings_per_pair))
 
         # Reactor behaviour flags
         self.implicit_temp: bool = bool(implicit_temp)
         self.explicit_h: bool = bool(explicit_h)
         self.electron_diagnostics: bool = bool(electron_diagnostics)
+        unknown_preservation_sides = set(preserve_original_sides) - {
+            "reactants",
+            "products",
+        }
+        if unknown_preservation_sides:
+            raise ValueError(
+                "Unknown preserve_original_sides values: "
+                f"{sorted(unknown_preservation_sides)!r}."
+            )
+        self.preserve_original_sides = tuple(dict.fromkeys(preserve_original_sides))
         self.embed_threshold: int = int(embed_threshold)
 
         # Dependencies (DI)
@@ -390,12 +428,14 @@ class RBLEngine:
             "forward": [],
             "backward": [],
             "quick_check": [],
+            "fusion": [],
         }
 
         # Result / termination bookkeeping
         self._last_stop_mode: str = "not_run"
         self._last_stop_reason: str = "not_run"
         self._last_stop_metadata: Dict[str, Any] = {}
+        self._active_search_policy = self.search_policy
 
     # ------------------------------------------------------------------
     # Small helpers
@@ -431,27 +471,6 @@ class RBLEngine:
             return None
         return reactants, products
 
-    @staticmethod
-    def _pick_main_component(side_str: str) -> str:
-        """
-        Pick the main component from a multi-fragment side.
-
-        Strategy
-        --------
-        * Split ``side_str`` by ``"."``.
-        * Discard empty fragments.
-        * Return the **longest** fragment by string length.
-
-        :param side_str: Reactant or product side string.
-        :type side_str: str
-        :returns: Longest non-empty fragment, or ``""`` if none.
-        :rtype: str
-        """
-        parts = [p for p in side_str.split(".") if p]
-        if not parts:
-            return ""
-        return max(parts, key=len)
-
     def _reset_run_state(self) -> None:
         """
         Reset per-run state before a new :meth:`process` call.
@@ -463,10 +482,16 @@ class RBLEngine:
         self._backward_its = []
         self._fused_its = []
         self._fused_rsmis = []
-        self._diagnostics = {"forward": [], "backward": [], "quick_check": []}
+        self._diagnostics = {
+            "forward": [],
+            "backward": [],
+            "quick_check": [],
+            "fusion": [],
+        }
         self._last_stop_mode = "not_run"
         self._last_stop_reason = "not_run"
         self._last_stop_metadata = {}
+        self._active_search_policy = self.search_policy
 
     def _record_stop(
         self,
@@ -584,6 +609,12 @@ class RBLEngine:
             "n_forward_its": len(self._forward_its),
             "n_backward_its": len(self._backward_its),
             "n_fused_its": len(self._fused_its),
+            "search_policy": self._active_search_policy.to_dict(),
+            "acceptance_policy": {
+                "preserve_original_sides": list(self.preserve_original_sides),
+                "relation": "component_injective_subgraph",
+                "use_chirality": True,
+            },
             "diagnostics": self.diagnostics,
         }
 
@@ -651,6 +682,7 @@ class RBLEngine:
         its_graph: ITSLike,
         *,
         fmt: str = "tuple",
+        explicit_hydrogen: bool = False,
     ) -> Optional[str]:
         """
         Safely convert ITS to RSMI, returning ``None`` on failure.
@@ -661,10 +693,105 @@ class RBLEngine:
         :rtype: Optional[str]
         """
         try:
-            return self.its_to_rsmi_fn(its_graph, format=fmt)
+            kwargs: Dict[str, Any] = {"format": fmt}
+            if explicit_hydrogen:
+                kwargs["explicit_hydrogen"] = True
+            return self.its_to_rsmi_fn(its_graph, **kwargs)
         except Exception as exc:  # pragma: no cover - defensive
             self.logger.debug("ITS→RSMI conversion failed: %s", exc)
             return None
+
+    @staticmethod
+    def _strip_balanced_isolated_wildcards(rsmi: str) -> str:
+        """Remove identical isolated wildcard spectators from both endpoints.
+
+        Only complete dot-separated fragments of the forms ``*``, ``[*]`` or
+        ``[*:n]`` are eligible.  The multiset intersection is removed, so an
+        unmatched wildcard is preserved for later validation instead of being
+        silently discarded.
+        """
+        if rsmi.count(">>") != 1:
+            return rsmi
+
+        reactants, products = rsmi.split(">>", 1)
+        reactant_parts = [part for part in reactants.split(".") if part]
+        product_parts = [part for part in products.split(".") if part]
+
+        def is_isolated_wildcard(fragment: str) -> bool:
+            if fragment in {"*", "[*]"}:
+                return True
+            return (
+                fragment.startswith("[*:")
+                and fragment.endswith("]")
+                and fragment[3:-1].isdigit()
+            )
+
+        common = Counter(
+            part for part in reactant_parts if is_isolated_wildcard(part)
+        ) & Counter(part for part in product_parts if is_isolated_wildcard(part))
+
+        def remove_common(parts: List[str]) -> List[str]:
+            remaining = common.copy()
+            kept: List[str] = []
+            for part in parts:
+                if remaining[part] > 0:
+                    remaining[part] -= 1
+                else:
+                    kept.append(part)
+            return kept
+
+        return (
+            ".".join(remove_common(reactant_parts))
+            + ">>"
+            + ".".join(remove_common(product_parts))
+        )
+
+    def _validate_fusion_output(
+        self,
+        rsmi: str,
+        *,
+        allow_wildcards: bool,
+        source: str,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> FusionValidation:
+        """Apply and record the common endpoint contract for an RBL result."""
+        if self._last_reaction is None:
+            validation = validate_fusion_rsmi(
+                rsmi,
+                allow_wildcards=allow_wildcards,
+            )
+        else:
+            validation = validate_rbl_candidate(
+                self._last_reaction,
+                rsmi,
+                allow_wildcards=allow_wildcards,
+                preserve_sides=self.preserve_original_sides,
+            )
+        payload = validation.to_dict()
+        payload["source"] = source
+        payload.update(context or {})
+        self._diagnostics["fusion"].append(payload)
+        return validation
+
+    def _record_fusion_failure(
+        self,
+        code: FusionIssueCode,
+        message: str,
+        *,
+        source: str,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Record a contained construction or serialization failure."""
+        issue = FusionIssue(
+            code=code,
+            stage="fusion",
+            message=message,
+            context=context or {},
+        )
+        payload = FusionValidation(valid=False, issues=(issue,)).to_dict()
+        payload["source"] = source
+        payload.update(context or {})
+        self._diagnostics["fusion"].append(payload)
 
     def _safe_rsmi_to_its(self, rsmi: str) -> Optional[ITSLike]:
         """
@@ -766,6 +893,10 @@ class RBLEngine:
 
             its_back = self._safe_rsmi_to_its(rsmi_decorated)
             if its_back is not None:
+                its_back = self._annotate_wildcard_roles(
+                    its_back,
+                    WildcardRole.RADICAL_COMPLETION,
+                )
                 out.append(its_back)
 
         self.logger.debug("Reaction produced %d ITS graphs", len(out))
@@ -839,6 +970,27 @@ class RBLEngine:
             if data.get(element_key) in (wildcard, scalar_wildcard):
                 return True
         return False
+
+    def _annotate_wildcard_roles(
+        self,
+        graph: ITSLike,
+        role: WildcardRole,
+    ) -> ITSLike:
+        """Declare the role of otherwise-untyped wildcards at an RBL boundary."""
+        if not isinstance(graph, nx.Graph):
+            return graph
+        scalar_wildcard = (
+            self.wildcard_element[0]
+            if isinstance(self.wildcard_element, tuple)
+            else self.wildcard_element
+        )
+        for _, data in graph.nodes(data=True):
+            if data.get(self.element_key) in (
+                self.wildcard_element,
+                scalar_wildcard,
+            ):
+                data.setdefault("wildcard_role", role.value)
+        return graph
 
     def replace_wildcard_with_H(self, G: nx.Graph) -> nx.Graph:
         """
@@ -1009,70 +1161,13 @@ class RBLEngine:
                     reason="quick_check_match",
                     metadata={"solution_index": idx, "n_solutions": len(sols)},
                 )
-                return sols
+                return sols[idx]
 
         return None
 
     # ------------------------------------------------------------------
     # Early-stop pruning on wildcard-free ITS
     # ------------------------------------------------------------------
-
-    def _validate_candidate_rsmi(
-        self,
-        *,
-        side: str,
-        rsmi_candidate: str,
-        canon_r: str,
-        canon_p: str,
-    ) -> bool:
-        """
-        Validate a candidate fused reaction against the original reaction.
-
-        * For forward candidates (``side == "fw"``), compare the **main
-          product fragment** (longest component after splitting by
-          ``"."``) between the original reaction and the candidate.
-        * For backward candidates (``side == "bw"``), compare the **main
-          reactant fragment** analogously.
-
-        This avoids fragile substring checks like ``cand_p in canon_p``
-        and instead focuses on the dominant component (likely the main
-        product/reactant) being identical.
-
-        :param side: Either ``"fw"`` or ``"bw"``.
-        :type side: str
-        :param rsmi_candidate: Candidate fused reaction SMILES.
-        :type rsmi_candidate: str
-        :param canon_r: Canonical reactant side of the original reaction.
-        :type canon_r: str
-        :param canon_p: Canonical product side of the original reaction.
-        :type canon_p: str
-        :returns: ``True`` if the candidate passes the verification, else
-            ``False``.
-        :rtype: bool
-        """
-        split = self._canonical_split(rsmi_candidate)
-        if split is None:
-            return False
-
-        cand_r, cand_p = split
-
-        if side == "fw":
-            if not canon_p:
-                return False
-            main_orig = self._pick_main_component(canon_p)
-            main_cand = self._pick_main_component(cand_p)
-            if not main_orig or not main_cand:
-                return False
-            return main_orig == main_cand
-
-        # backward
-        if not canon_r:
-            return False
-        main_orig = self._pick_main_component(canon_r)
-        main_cand = self._pick_main_component(cand_r)
-        if not main_orig or not main_cand:
-            return False
-        return main_orig == main_cand
 
     def _early_stop_on_nonwildcard(
         self,
@@ -1083,7 +1178,7 @@ class RBLEngine:
     ) -> bool:
         """
         Try an early-stop path based on ITS graphs that contain no wildcard
-        atoms at all, with canonical reactant/product verification.
+        atoms, using the same endpoint-preservation proof as every other mode.
 
         Rationale
         ---------
@@ -1096,23 +1191,15 @@ class RBLEngine:
 
         Strategy
         --------
-        1. Compute canonical reactant/product sides for the original
-           reaction via :meth:`_canonical_split`.
-        2. Collect all forward ITS without wildcard atoms.
-        3. Collect all backward ITS without wildcard atoms.
-        4. Iterate through these candidates (forward first, then backward),
+        1. Collect all forward ITS without wildcard atoms.
+        2. Collect all backward ITS without wildcard atoms.
+        3. Iterate through these candidates (forward first, then backward),
            and for each:
            a. Post-process via :meth:`_postprocess_single`.
-           b. Canonicalize the resulting reaction and verify the **main
-              component**:
-
-              * forward: main original product must equal the main
-                candidate product;
-              * backward: main original reactant must equal the main
-                candidate reactant.
-
-           c. On first success, record an early-stop and return ``True``.
-        5. If no candidate yields a valid fused RSMI, return ``False`` and
+           b. Require chemical validation and component-injective embeddings
+              of both original endpoints in the candidate endpoints.
+           c. On the first proven candidate, record an early-stop and return.
+        4. If no candidate yields a valid fused RSMI, return ``False`` and
            fall back to full fusion (unless fast-path-only mode is active).
 
         :param fw_its: Forward ITS graphs.
@@ -1128,11 +1215,6 @@ class RBLEngine:
         """
         if (not fw_its and not bw_its) or self._last_reaction is None:
             return False
-
-        split = self._canonical_split(self._last_reaction)
-        if split is None:
-            return False
-        canon_r, canon_p = split
 
         candidates: List[tuple[str, ITSLike]] = []
         for g in fw_its:
@@ -1154,16 +1236,9 @@ class RBLEngine:
                 graph,
                 replace_wc=replace_wc,
                 rw_adder=rw_adder,
+                diagnostic_context={"candidate_source": side},
             )
             if rsmi_final is None:
-                continue
-
-            if not self._validate_candidate_rsmi(
-                side=side,
-                rsmi_candidate=rsmi_final,
-                canon_r=canon_r,
-                canon_p=canon_p,
-            ):
                 continue
 
             fused_graphs.append(graph)
@@ -1272,21 +1347,53 @@ class RBLEngine:
 
             for i_map, mapping in enumerate(mappings):
                 n_mappings_total += 1
+                role_validation = validate_wildcard_mapping_roles(
+                    fw,
+                    bw,
+                    mapping,
+                    element_key=self.element_key,
+                    wildcard_element=self.wildcard_element,
+                )
+                if not role_validation.valid:
+                    payload = role_validation.to_dict()
+                    payload.update(
+                        {
+                            "source": "wildcard_mapping",
+                            "pair_index": (i_fw, i_bw),
+                            "mapping_index": i_map,
+                        }
+                    )
+                    self._diagnostics["fusion"].append(payload)
+                    continue
+                diagnostic_context = {
+                    "pair_index": (i_fw, i_bw),
+                    "mapping_index": i_map,
+                }
                 try:
-                    fused_graph = self.fuse_fn(
-                        fw,
-                        bw,
-                        mapping,
-                        remove_wildcards=True,
-                    )
-                except TypeError:
-                    fused_graph = self.fuse_fn(  # type: ignore[arg-type]
-                        fw,
-                        bw,
-                        mapping,
-                    )
+                    try:
+                        fused_graph = self.fuse_fn(
+                            fw,
+                            bw,
+                            mapping,
+                            remove_wildcards=True,
+                        )
+                    except TypeError:
+                        fused_graph = self.fuse_fn(  # type: ignore[arg-type]
+                            fw,
+                            bw,
+                            mapping,
+                        )
                 except Exception as exc:  # pragma: no cover - defensive
                     self.logger.debug("Fusion failed for mapping %s: %s", mapping, exc)
+                    self._record_fusion_failure(
+                        FusionIssueCode.OPERATION_FAILED,
+                        "ITS graph fusion failed for the selected mapping.",
+                        source="construction",
+                        context={
+                            **diagnostic_context,
+                            "error": type(exc).__name__,
+                        },
+                    )
                     continue
 
                 fused_graphs.append(fused_graph)
@@ -1295,6 +1402,7 @@ class RBLEngine:
                     fused_graph,
                     replace_wc=replace_wc,
                     rw_adder=rw_adder,
+                    diagnostic_context=diagnostic_context,
                 )
                 if rsmi_final is None:
                     continue
@@ -1382,6 +1490,7 @@ class RBLEngine:
         *,
         replace_wc: bool,
         rw_adder: Optional[RadicalWildcardAdder] = None,
+        diagnostic_context: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """
         Post-process a single fused ITS graph to a fused RSMI string.
@@ -1410,23 +1519,65 @@ class RBLEngine:
 
         rsmi1 = self._safe_its_to_rsmi(graph, fmt="tuple")
         if rsmi1 is None:
+            self._record_fusion_failure(
+                FusionIssueCode.SERIALIZATION_FAILED,
+                "Could not serialize the fused ITS before post-processing.",
+                source="postprocess",
+                context=diagnostic_context,
+            )
             return None
+
+        # Radical completion can create the same isolated wildcard spectator
+        # on both endpoints.  Remove only that side-symmetric multiset before
+        # materialising the remaining wildcards as hydrogen.
+        rsmi1 = self._strip_balanced_isolated_wildcards(rsmi1)
 
         try:
             rsmi2 = rw_adder.transform(rsmi1)
         except Exception as exc:  # pragma: no cover - defensive
             self.logger.debug("Radical wildcard decoration (single) failed: %s", exc)
+            self._record_fusion_failure(
+                FusionIssueCode.POSTPROCESS_FAILED,
+                "Radical wildcard decoration failed during post-processing.",
+                source="postprocess",
+                context={**(diagnostic_context or {}), "error": type(exc).__name__},
+            )
             return None
 
         its_back = self._safe_rsmi_to_its(rsmi2)
         if its_back is None:
+            self._record_fusion_failure(
+                FusionIssueCode.POSTPROCESS_FAILED,
+                "Could not parse the wildcard-decorated reaction.",
+                source="postprocess",
+                context=diagnostic_context,
+            )
             return None
 
         if isinstance(its_back, nx.Graph) and replace_wc:
             its_back = self.replace_wildcard_with_H(its_back)
 
-        rsmi_final = self._safe_its_to_rsmi(its_back, fmt="tuple")
-        return rsmi_final
+        rsmi_final = self._safe_its_to_rsmi(
+            its_back,
+            fmt="tuple",
+            explicit_hydrogen=replace_wc,
+        )
+        if rsmi_final is None:
+            self._record_fusion_failure(
+                FusionIssueCode.SERIALIZATION_FAILED,
+                "Could not serialize the materialized fusion endpoint.",
+                source="postprocess",
+                context=diagnostic_context,
+            )
+            return None
+
+        validation = self._validate_fusion_output(
+            rsmi_final,
+            allow_wildcards=not replace_wc,
+            source="postprocess",
+            context=diagnostic_context,
+        )
+        return rsmi_final if validation.valid else None
 
     # ------------------------------------------------------------------
     # Full RBL pipeline: forward + backward + fusion
@@ -1489,17 +1640,26 @@ class RBLEngine:
         self._last_reactants = reactants
         self._last_products = products
 
-        # Resolve per-call fast-path-only flag
-        fast_only = (
-            self.fast_paths_only if fast_paths_only is None else bool(fast_paths_only)
-        )
-        run_fast_paths = self.early_stop or fast_only
+        # Resolve the compatibility override into the same explicit policy.
+        if fast_paths_only is None:
+            policy = self.search_policy
+        elif fast_paths_only:
+            policy = RBLSearchPolicy.from_mode("fast_track")
+        else:
+            policy = RBLSearchPolicy(
+                SearchScope.FUSION,
+                self.search_policy.termination,
+            )
+        self._active_search_policy = policy
+        fast_only = policy.scope is SearchScope.FAST_PATHS_ONLY
+        stop_first = policy.termination is TerminationPolicy.FIRST_VALID
+        run_fast_paths = stop_first
 
         self.logger.debug(
             "Processing reaction: %s (early_stop=%s, fast_paths_only=%s, "
             "implicit_temp=%s, explicit_h=%s, embed_threshold=%d)",
             rsmi,
-            self.early_stop,
+            stop_first,
             fast_only,
             self.implicit_temp,
             self.explicit_h,
@@ -1512,13 +1672,24 @@ class RBLEngine:
             quick_solution = self._quick_check(rsmi, template)
 
         if quick_solution is not None:
-            self.logger.debug("Quick-check path taken; skipping full RBL pipeline.")
-            self._forward_its = []
-            self._backward_its = []
-            self._fused_its = []
-            self._fused_rsmis = [quick_solution]
-            # _record_stop has already been called in _quick_check
-            return self
+            validation = self._validate_fusion_output(
+                quick_solution,
+                allow_wildcards=not replace_wc,
+                source="quick_check",
+            )
+            if validation.valid:
+                self.logger.debug("Quick-check path taken; skipping full RBL pipeline.")
+                self._forward_its = []
+                self._backward_its = []
+                self._fused_its = []
+                self._fused_rsmis = [quick_solution]
+                # _record_stop has already been called in _quick_check
+                return self
+
+            self.logger.debug(
+                "Quick-check candidate failed the shared fusion contract; "
+                "continuing with the RBL pipeline."
+            )
 
         # Full RBL pipeline setup (up to ITS generation)
         self.prepare_template(template)
@@ -1552,7 +1723,7 @@ class RBLEngine:
                         "n_fw": len(fw_its),
                         "n_bw": len(bw_its),
                         "fast_paths_only": fast_only,
-                        "early_stop": self.early_stop,
+                        "early_stop": stop_first,
                     },
                 )
                 self.logger.debug(
@@ -1581,7 +1752,7 @@ class RBLEngine:
             self._forward_its,
             self._backward_its,
             replace_wc=replace_wc,
-            early_stop=self.early_stop,
+            early_stop=stop_first,
         )
 
         return self
@@ -1611,9 +1782,11 @@ class RBLEngine:
             f"  mcs_side           : {self.mcs_side!r}\n"
             f"  early_stop         : {self.early_stop}\n"
             f"  fast_paths_only    : {self.fast_paths_only}\n"
+            f"  search_policy      : {self.search_policy.to_dict()!r}\n"
             f"  max_maps/pair      : {self.max_mappings_per_pair}\n"
             f"  implicit_temp      : {self.implicit_temp}\n"
             f"  explicit_h         : {self.explicit_h}\n"
+            f"  preserve_sides     : {self.preserve_original_sides!r}\n"
             f"  embed_threshold    : {self.embed_threshold}\n"
             f"  reactor_cls        : {self.reactor_cls.__name__}\n"
             f"  matcher_cls        : {self.matcher_cls.__name__}\n"
@@ -1642,9 +1815,11 @@ class RBLEngine:
             f"mcs_side={self.mcs_side!r} "
             f"early_stop={self.early_stop} "
             f"fast_paths_only={self.fast_paths_only} "
+            f"search_policy={self.search_policy.to_dict()!r} "
             f"max_mappings_per_pair={self.max_mappings_per_pair} "
             f"implicit_temp={self.implicit_temp} "
             f"explicit_h={self.explicit_h} "
+            f"preserve_original_sides={self.preserve_original_sides!r} "
             f"embed_threshold={self.embed_threshold} "
             f"reactor_cls={self.reactor_cls.__name__}>"
         )

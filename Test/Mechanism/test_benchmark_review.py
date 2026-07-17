@@ -105,7 +105,7 @@ def test_polar_manifest_is_a_reviewed_stratified_subset_with_replay_evidence():
     )
 
 
-def test_public_partitions_state_the_current_72_positive_stereo_boundary():
+def test_public_partitions_state_the_current_80_positive_stereo_boundary():
     polar = json.loads((ROOT / "Data/Mech/polar.json").read_text())
     radical = json.loads((ROOT / "Data/Mech/radical.json").read_text())
     stereo = json.loads((ROOT / "Data/Mech/stereo.json").read_text())
@@ -114,10 +114,10 @@ def test_public_partitions_state_the_current_72_positive_stereo_boundary():
     assert polar["canonical_path"] == "Data/Mech/polar.json"
     assert radical["canonical_path"] == "Data/Mech/radical.json"
     assert stereo["canonical_path"] == "Data/Mech/stereo.json"
-    assert stereo["positive_case_count"] == 72
+    assert stereo["positive_case_count"] == 80
     assert (
         len([case for case in stereo["cases"] if case["case_kind"] == "transformation"])
-        == 72
+        == 80
     )
     assert (
         len(

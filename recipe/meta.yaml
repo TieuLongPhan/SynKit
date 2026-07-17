@@ -1,6 +1,6 @@
 package:
   name: synkit
-  version: "2.0.0.dev1"
+  version: "2.0.0b1"
 
 source:
   path: ..

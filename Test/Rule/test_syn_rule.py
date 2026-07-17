@@ -1,7 +1,9 @@
 import unittest
 import networkx as nx
+import pytest
 from synkit.IO.chem_converter import rsmi_to_its
-from synkit.Rule.syn_rule import SynRule
+from synkit.Graph.Stereo import StereoChange, TetrahedralStereo
+from synkit.Rule import NonInvertibleStereoEffectError, SynRule
 from synkit.Graph.canon_graph import GraphCanonicaliser
 
 
@@ -243,6 +245,28 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         self.assertEqual(rule.rc.raw.nodes[3]["hcount"], (2, 1))
         self.assertTrue(rule.rc.raw.nodes[2]["h_pairs"])
         self.assertTrue(rule.rc.raw.nodes[3]["h_pairs"])
+
+
+def test_unspecified_rule_refuses_reverse_before_mutation():
+    its = rsmi_to_its("[CH3:1][Cl:2]>>[CH3:1][Cl:2]", format="tuple")
+    before = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    after = TetrahedralStereo((1, 2, 3, 4, 5), None)
+    its.graph["stereo_descriptors"] = {
+        "reactant": {"atom:1": before},
+        "product": {"atom:1": after},
+    }
+    its.graph["stereo_changes"] = {"atom:1": StereoChange("UNSPECIFIED", before, after)}
+    rule = SynRule(its, canon=False, implicit_h=False, format="tuple")
+    original_summary = rule.stereo_summary()
+
+    assert rule.is_stereo_reversible is False
+    assert rule.non_invertible_stereo_targets() == ("atom:1",)
+    for _ in range(2):
+        with pytest.raises(NonInvertibleStereoEffectError) as excinfo:
+            rule.reversed()
+        assert excinfo.value.reason == "non_reversible_unspecified_descriptor"
+        assert excinfo.value.targets == ("atom:1",)
+    assert rule.stereo_summary() == original_summary
 
 
 if __name__ == "__main__":

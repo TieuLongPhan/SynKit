@@ -51,7 +51,7 @@ jobs:
           if not parsed.is_prerelease:
               raise SystemExit(
                   f"stereo branch must use a pre-release version, "
-                  f"e.g. 2.0.0.dev1. Current version is: {version}"
+                  f"e.g. 2.0.0b1. Current version is: {version}"
               )
 
           print(f"Valid beta/pre-release version: {version}")

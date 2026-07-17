@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
 import networkx as nx
 
@@ -22,6 +22,22 @@ _ATOM_STEREO_TYPES = (
     TrigonalBipyramidalStereo,
     OctahedralStereo,
 )
+
+
+class NonInvertibleStereoEffectError(ValueError):
+    """Raised when reverse-rule construction would invent stereochemistry.
+
+    A known-to-unknown ``UNSPECIFIED`` endpoint relation is not one-to-one: a
+    specified reactant descriptor can map to an unknown product descriptor,
+    but that unknown state cannot identify which descriptor to recreate.
+    """
+
+    reason = "non_reversible_unspecified_descriptor"
+
+    def __init__(self, targets: Iterable[str] = ()) -> None:
+        self.targets = tuple(sorted(set(targets)))
+        detail = f"; targets={list(self.targets)!r}" if self.targets else ""
+        super().__init__(f"{self.reason}{detail}")
 
 
 def _peripheral_references(descriptor: StereoValue) -> tuple[Any, ...]:
@@ -79,8 +95,21 @@ class StereoChange:
         """Compatibility term for stereo present only at the transition state."""
         return self.transition
 
+    @property
+    def non_invertible(self) -> bool:
+        """Whether reversing this change would fabricate endpoint parity."""
+        return (
+            self.change == "UNSPECIFIED"
+            and self.before is not None
+            and self.after is not None
+            and self.before.parity is not None
+            and self.after.parity is None
+        )
+
     def reverse(self) -> "StereoChange":
         """Return the same state transition in the opposite direction."""
+        if self.non_invertible:
+            raise NonInvertibleStereoEffectError()
         return StereoChange(
             classify_stereo_change(self.after, self.before, self.transition),
             self.after,
