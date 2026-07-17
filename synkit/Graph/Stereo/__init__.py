@@ -63,7 +63,11 @@ from .matching import (
 )
 from .outcomes import StereoOutcome
 from .couplings import StereoCoupling
-from .legacy import StereoSemanticComparison, StereoSemanticsMode
+from .legacy import (
+    StereoSemanticComparison,
+    StereoSemanticsMode,
+    summarize_stereo_comparisons,
+)
 from .orbits import (
     Permutation,
     PermutationGroup,
@@ -144,4 +148,5 @@ __all__ = [
     "StereoSpecification",
     "StereoSemanticComparison",
     "StereoSemanticsMode",
+    "summarize_stereo_comparisons",
 ]

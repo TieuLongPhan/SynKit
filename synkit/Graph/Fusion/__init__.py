@@ -2,11 +2,16 @@
 
 from .candidate import (
     FUSION_PROOF_SCHEMA,
+    LEGACY_FUSION_PROOF_SCHEMA,
+    SUPPORTED_FUSION_PROOF_SCHEMAS,
     FusionCandidate,
+    FusionProofDocument,
+    FusionProofError,
     FusionScore,
     default_fusion_score,
     fusion_candidate_from_construction,
     fusion_candidates_exactly_equivalent,
+    read_fusion_proof,
 )
 from .constructor import (
     EndpointCertificate,
@@ -15,6 +20,8 @@ from .constructor import (
     FusionConstructionIssue,
     FusionConstructionIssueCode,
     FusionProvenance,
+    FusionStereoEvidence,
+    FusionStereoReplay,
     construct_pushout,
 )
 from .identity import (
@@ -47,6 +54,8 @@ __all__ = [
     "FUSION_NODE_IDENTITY_KEYS",
     "FUSION_WL_ITERATIONS",
     "FUSION_PROOF_SCHEMA",
+    "LEGACY_FUSION_PROOF_SCHEMA",
+    "SUPPORTED_FUSION_PROOF_SCHEMAS",
     "FusionCandidate",
     "FusionConstruction",
     "FusionConstructionError",
@@ -57,7 +66,11 @@ __all__ = [
     "FusionInterfaceIssue",
     "FusionInterfaceIssueCode",
     "FusionProposal",
+    "FusionProofDocument",
+    "FusionProofError",
     "FusionProvenance",
+    "FusionStereoEvidence",
+    "FusionStereoReplay",
     "FusionScore",
     "FusionSearchCounts",
     "FusionSearchResult",
@@ -66,6 +79,7 @@ __all__ = [
     "default_fusion_score",
     "fusion_candidate_from_construction",
     "fusion_candidates_exactly_equivalent",
+    "read_fusion_proof",
     "graph_identity_digest",
     "graphs_exactly_equivalent",
 ]

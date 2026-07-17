@@ -9,11 +9,26 @@ from typing import Any, Hashable, Mapping, Sequence
 
 import networkx as nx
 
-from synkit.Graph.Stereo import stereo_registry_layers
+from synkit.Graph.Stereo import (
+    PermutationWitness,
+    StereoConfiguration,
+    StereoRelation,
+    descriptor_id,
+    parse_virtual_reference,
+    stereo_registry_layers,
+    virtual_reference,
+)
+from synkit.Graph.Stereo.legacy import (
+    StereoSemanticComparison,
+    StereoSemanticsMode,
+    legacy_canonical_form,
+    legacy_classify_stereo_change,
+)
 from synkit.Graph.Morphism import (
     StereoEffect,
     StereoReferenceDelta,
     StereoTransportError,
+    transport_stereo_descriptor,
     transport_stereo_registry,
 )
 
@@ -60,6 +75,239 @@ class FusionConstructionError(ValueError):
 
 
 @dataclass(frozen=True)
+class FusionStereoReplay:
+    """Result of replaying one local proof-v2 stereo transport."""
+
+    valid: bool
+    issues: tuple[str, ...] = ()
+
+
+def _configuration_mapping(
+    configuration: StereoConfiguration,
+    reference_mapping: Mapping[int, int],
+) -> dict[Any, Any]:
+    mapping: dict[Any, Any] = dict(reference_mapping)
+    for reference in configuration.frame:
+        virtual = parse_virtual_reference(reference)
+        if virtual is not None and virtual.center in reference_mapping:
+            mapping[reference] = virtual_reference(
+                virtual.kind,
+                reference_mapping[virtual.center],
+            )
+    return mapping
+
+
+def _configuration_payload(configuration: StereoConfiguration) -> dict[str, Any]:
+    return {
+        "shape": configuration.shape,
+        "frame": stable_value(configuration.frame),
+        "specification": configuration.specification.value,
+        "canonical_frame": stable_value(configuration.canonical_frame),
+    }
+
+
+def _relation_payload(relation: StereoRelation) -> dict[str, Any]:
+    return {
+        "kind": relation.kind.value,
+        "shape": relation.shape,
+        "class_id": (
+            list(relation.class_id) if relation.class_id is not None else None
+        ),
+        "witness": (
+            list(relation.witness.permutation.image)
+            if relation.witness is not None
+            else None
+        ),
+        "source_canonical": stable_value(relation.source_canonical),
+        "target_canonical": stable_value(relation.target_canonical),
+    }
+
+
+@dataclass(frozen=True)
+class FusionStereoEvidence:
+    """Replayable local orbit evidence for one transported descriptor."""
+
+    side: str
+    layer: str
+    source_descriptor_id: str
+    target_descriptor_id: str
+    effect: StereoEffect
+    source_configuration: StereoConfiguration
+    interface_configuration: StereoConfiguration
+    target_configuration: StereoConfiguration
+    reference_mapping: tuple[tuple[int, int], ...]
+    source_to_interface: StereoRelation
+    interface_to_candidate: StereoRelation
+    direct_relation: StereoRelation
+    composed_witness: PermutationWitness | None
+    endpoint_orbit: tuple[Any, ...]
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        side: str,
+        layer: str,
+        source_descriptor_id: str,
+        target_descriptor_id: str,
+        effect: StereoEffect,
+        source_configuration: StereoConfiguration,
+        interface_configuration: StereoConfiguration,
+        target_configuration: StereoConfiguration,
+        reference_mapping: Mapping[int, int],
+    ) -> "FusionStereoEvidence":
+        rebased = source_configuration.relabel(
+            _configuration_mapping(source_configuration, reference_mapping)
+        )
+        source_relation = rebased.relation_to(interface_configuration)
+        target_relation = interface_configuration.relation_to(target_configuration)
+        direct_relation = rebased.relation_to(target_configuration)
+        composed = (
+            source_relation.witness.then(target_relation.witness)
+            if source_relation.witness is not None
+            and target_relation.witness is not None
+            else None
+        )
+        evidence = cls(
+            side,
+            layer,
+            source_descriptor_id,
+            target_descriptor_id,
+            StereoEffect(effect),
+            source_configuration,
+            interface_configuration,
+            target_configuration,
+            tuple(sorted(reference_mapping.items())),
+            source_relation,
+            target_relation,
+            direct_relation,
+            composed,
+            target_configuration.canonical_frame,
+        )
+        replay = evidence.replay()
+        if not replay.valid:
+            raise FusionConstructionError(
+                FusionConstructionIssue(
+                    FusionConstructionIssueCode.STEREO_CONFLICT,
+                    "Fusion stereo evidence is not replayable.",
+                    {
+                        "side": side,
+                        "layer": layer,
+                        "descriptor_id": source_descriptor_id,
+                        "issues": replay.issues,
+                    },
+                )
+            )
+        return evidence
+
+    def replay(self) -> FusionStereoReplay:
+        issues: list[str] = []
+        relations = (
+            ("source_to_interface", self.source_to_interface),
+            ("interface_to_candidate", self.interface_to_candidate),
+            ("direct_relation", self.direct_relation),
+        )
+        for name, relation in relations:
+            if relation.witness is None:
+                issues.append(f"{name}:missing_witness")
+        rebased = self.source_configuration.relabel(
+            _configuration_mapping(
+                self.source_configuration,
+                dict(self.reference_mapping),
+            )
+        )
+        if self.source_to_interface.witness is not None and (
+            self.source_to_interface.witness.apply(rebased.frame)
+            != self.interface_configuration.frame
+        ):
+            issues.append("source_to_interface:witness_replay")
+        if self.interface_to_candidate.witness is not None and (
+            self.interface_to_candidate.witness.apply(
+                self.interface_configuration.frame
+            )
+            != self.target_configuration.frame
+        ):
+            issues.append("interface_to_candidate:witness_replay")
+        if self.composed_witness is None:
+            issues.append("composition:missing_witness")
+        elif self.composed_witness.apply(rebased.frame) != (
+            self.target_configuration.frame
+        ):
+            issues.append("composition:witness_replay")
+        classified = rebased.relation_to(self.target_configuration)
+        if (
+            classified.kind is not self.direct_relation.kind
+            or classified.class_id != self.direct_relation.class_id
+        ):
+            issues.append("direct_relation:classification")
+        if self.endpoint_orbit != self.target_configuration.canonical_frame:
+            issues.append("endpoint:orbit")
+        return FusionStereoReplay(not issues, tuple(issues))
+
+    def canonical_signature(self) -> tuple[Any, ...]:
+        """Return numbering- and operand-independent local proof identity."""
+        relation_signature = lambda relation: (  # noqa: E731
+            relation.kind.value,
+            relation.shape,
+            relation.class_id,
+            (
+                relation.witness.permutation.image
+                if relation.witness is not None
+                else None
+            ),
+        )
+        return (
+            self.layer,
+            self.effect.value,
+            self.source_configuration.shape,
+            self.source_configuration.specification.value,
+            self.interface_configuration.specification.value,
+            self.target_configuration.specification.value,
+            len(self.reference_mapping),
+            relation_signature(self.source_to_interface),
+            relation_signature(self.interface_to_candidate),
+            relation_signature(self.direct_relation),
+            (
+                self.composed_witness.permutation.image
+                if self.composed_witness is not None
+                else None
+            ),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "side": self.side,
+            "layer": self.layer,
+            "source_descriptor_id": self.source_descriptor_id,
+            "target_descriptor_id": self.target_descriptor_id,
+            "effect": self.effect.value,
+            "source_configuration": _configuration_payload(
+                self.source_configuration
+            ),
+            "reference_mapping": [list(pair) for pair in self.reference_mapping],
+            "interface_configuration": _configuration_payload(
+                self.interface_configuration
+            ),
+            "source_to_interface": _relation_payload(
+                self.source_to_interface
+            ),
+            "interface_to_candidate": _relation_payload(
+                self.interface_to_candidate
+            ),
+            "target_configuration": _configuration_payload(
+                self.target_configuration
+            ),
+            "direct_relation": _relation_payload(self.direct_relation),
+            "composed_witness": (
+                list(self.composed_witness.permutation.image)
+                if self.composed_witness is not None
+                else None
+            ),
+            "endpoint_orbit": stable_value(self.endpoint_orbit),
+        }
+
+
+@dataclass(frozen=True)
 class FusionProvenance:
     """Origin records for every node, edge, and wildcard substitution."""
 
@@ -68,6 +316,8 @@ class FusionProvenance:
         tuple[tuple[int, int], tuple[tuple[str, Hashable, Hashable], ...]], ...
     ]
     wildcard_substitutions: tuple[tuple[Hashable, tuple[Any, ...]], ...] = ()
+    stereo_evidence: tuple[FusionStereoEvidence, ...] = ()
+    stereo_comparisons: tuple[StereoSemanticComparison, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -93,6 +343,13 @@ class FusionProvenance:
             "wildcard_substitutions": [
                 {"interface_node": repr(node), "constraint": stable_value(value)}
                 for node, value in self.wildcard_substitutions
+            ],
+            "stereo_evidence": [
+                evidence.to_dict() for evidence in self.stereo_evidence
+            ],
+            "stereo_comparisons": [
+                comparison.to_dict()
+                for comparison in self.stereo_comparisons
             ],
         }
 
@@ -138,6 +395,29 @@ class FusionConstruction:
     interface: FusionInterface
     provenance: FusionProvenance
     endpoint_certificate: EndpointCertificate
+
+
+def _legacy_transport_stereo_descriptor(
+    descriptor: Any,
+    mapping: Mapping[int, int],
+    effect: StereoEffect,
+) -> Any:
+    """Reproduce proof-v1 descriptor transport without orbit operations."""
+    aligned = transport_stereo_descriptor(
+        descriptor,
+        mapping,
+        StereoReferenceDelta(effect=StereoEffect.RETAIN),
+    )
+    if effect is StereoEffect.RETAIN:
+        return aligned
+    if effect is StereoEffect.UNSPECIFIED:
+        return type(aligned)(aligned.atoms, None, aligned.provenance)
+    if aligned.parity is None or aligned.descriptor_class == "square_planar":
+        return aligned
+    if aligned.descriptor_class == "planar_bond":
+        atoms = (aligned.atoms[1], aligned.atoms[0], *aligned.atoms[2:])
+        return type(aligned)(atoms, 0, aligned.provenance)
+    return type(aligned)(aligned.atoms, -aligned.parity, aligned.provenance)
 
 
 def _attribute_signature(
@@ -197,9 +477,18 @@ def _merge_graph_stereo(
     interface: FusionInterface,
     forward_inclusion: Mapping[Hashable, int],
     backward_inclusion: Mapping[Hashable, int],
-) -> None:
+    *,
+    semantics: str = "orbit",
+) -> tuple[
+    tuple[FusionStereoEvidence, ...],
+    tuple[StereoSemanticComparison, ...],
+]:
     """Merge already map-stable descriptor registries without inference."""
     combined: dict[str, dict[str, Any]] = {}
+    proof: list[FusionStereoEvidence] = []
+    consumed_effects: set[tuple[str, str, str]] = set()
+    comparisons: list[StereoSemanticComparison] = []
+    semantics_mode = StereoSemanticsMode(semantics)
     effects = {
         (side, layer, descriptor_id): effect
         for side, layer, descriptor_id, effect in interface.stereo_effects
@@ -221,7 +510,7 @@ def _merge_graph_stereo(
                 for descriptor_key in registry
             }
             try:
-                transported = transport_stereo_registry(
+                transport_stereo_registry(
                     registry, reference_mapping, deltas
                 )
             except StereoTransportError as exc:
@@ -233,7 +522,32 @@ def _merge_graph_stereo(
                     )
                 ) from exc
             target = combined.setdefault(layer, {})
-            for descriptor_key, descriptor in transported.items():
+            for source_key in sorted(registry):
+                source_descriptor = registry[source_key]
+                delta = deltas[source_key]
+                interface_descriptor = transport_stereo_descriptor(
+                    source_descriptor,
+                    reference_mapping,
+                    StereoReferenceDelta(effect=StereoEffect.RETAIN),
+                )
+                orbit_descriptor = transport_stereo_descriptor(
+                    source_descriptor,
+                    reference_mapping,
+                    delta,
+                )
+                legacy_descriptor = _legacy_transport_stereo_descriptor(
+                    source_descriptor,
+                    reference_mapping,
+                    delta.effect,
+                )
+                descriptor = (
+                    legacy_descriptor
+                    if semantics_mode is StereoSemanticsMode.LEGACY
+                    else orbit_descriptor
+                )
+                descriptor_key = descriptor_id(descriptor)
+                if (side, layer, source_key) in effects:
+                    consumed_effects.add((side, layer, source_key))
                 previous = target.get(descriptor_key)
                 if previous is not None and previous != descriptor:
                     raise FusionConstructionError(
@@ -244,8 +558,76 @@ def _merge_graph_stereo(
                         )
                     )
                 target[descriptor_key] = descriptor
+                evidence = FusionStereoEvidence.create(
+                    side=side,
+                    layer=layer,
+                    source_descriptor_id=source_key,
+                    target_descriptor_id=descriptor_key,
+                    effect=delta.effect,
+                    source_configuration=source_descriptor.configuration,
+                    interface_configuration=interface_descriptor.configuration,
+                    target_configuration=descriptor.configuration,
+                    reference_mapping=reference_mapping,
+                )
+                proof.append(evidence)
+                if semantics_mode is StereoSemanticsMode.COMPARE:
+                    comparisons.append(
+                        StereoSemanticComparison.create(
+                            "fusion_stereo_transport",
+                            legacy_canonical_form(orbit_descriptor),
+                            legacy_canonical_form(legacy_descriptor),
+                        )
+                    )
+                    legacy_projection = legacy_classify_stereo_change(
+                        interface_descriptor,
+                        legacy_descriptor,
+                    )
+                    legacy_relation = {
+                        "RETAINED": "equivalent",
+                        "INVERTED": "opposite",
+                    }.get(legacy_projection, "unspecified")
+                    expected_divergence = None
+                    if (
+                        evidence.interface_to_candidate.kind.value
+                        == "reconfigured"
+                        and evidence.interface_to_candidate.shape
+                        in {"trigonal_bipyramidal", "octahedral"}
+                        and delta.effect is StereoEffect.INVERT
+                    ):
+                        expected_divergence = "nonbinary_orbit_reconfiguration"
+                    comparisons.append(
+                        StereoSemanticComparison.create(
+                            "fusion_stereo_relation",
+                            evidence.interface_to_candidate.kind.value,
+                            legacy_relation,
+                            expected_divergence=expected_divergence,
+                        )
+                    )
     if combined:
         fused.graph["stereo_descriptors"] = combined
+    unknown_effects = set(effects) - consumed_effects
+    if unknown_effects:
+        raise FusionConstructionError(
+            FusionConstructionIssue(
+                FusionConstructionIssueCode.STEREO_CONFLICT,
+                "A declared fusion stereo effect has no source descriptor.",
+                {"effects": tuple(sorted(unknown_effects))},
+            )
+        )
+    return (
+        tuple(
+            sorted(
+                proof,
+                key=lambda evidence: (
+                    evidence.canonical_signature(),
+                    evidence.side,
+                    evidence.layer,
+                    evidence.source_descriptor_id,
+                ),
+            )
+        ),
+        tuple(comparisons),
+    )
 
 
 def _layer_reference(
@@ -312,6 +694,14 @@ def _verify_endpoint(
     return source.number_of_nodes(), source.number_of_edges()
 
 
+def _publish_stereo_diagnostics(
+    target: list[StereoSemanticComparison] | None,
+    values: tuple[StereoSemanticComparison, ...],
+) -> None:
+    if target is not None:
+        target.extend(values)
+
+
 def construct_pushout(
     forward_graph: nx.Graph,
     backward_graph: nx.Graph,
@@ -323,6 +713,8 @@ def construct_pushout(
     wildcard_element: Any = "*",
     replay_status: str = "not_requested",
     replay_reason: str | None = None,
+    stereo_semantics: str = "orbit",
+    stereo_diagnostics: list[StereoSemanticComparison] | None = None,
 ) -> FusionConstruction:
     """Construct a pushout-like quotient after all interface checks pass."""
     if any(
@@ -412,14 +804,16 @@ def construct_pushout(
                 fused.add_edge(*edge, **copy.deepcopy(attributes))
             edge_sources.setdefault(edge, []).append((side, left, right))
 
-    _merge_graph_stereo(
+    stereo_evidence, stereo_comparisons = _merge_graph_stereo(
         fused,
         forward_graph,
         backward_graph,
         interface,
         forward_inclusion,
         backward_inclusion,
+        semantics=stereo_semantics,
     )
+    _publish_stereo_diagnostics(stereo_diagnostics, stereo_comparisons)
     forward_counts = _verify_endpoint(forward_graph, fused, forward_inclusion)
     backward_counts = _verify_endpoint(backward_graph, fused, backward_inclusion)
     if not nx.utils.graphs_equal(
@@ -445,6 +839,8 @@ def construct_pushout(
         tuple((node, tuple(sources)) for node, sources in sorted(node_sources.items())),
         tuple((edge, tuple(sources)) for edge, sources in sorted(edge_sources.items())),
         substitutions,
+        stereo_evidence,
+        stereo_comparisons,
     )
     certificate = EndpointCertificate(
         tuple(sorted(forward_inclusion.items(), key=lambda item: repr(item[0]))),
@@ -466,5 +862,7 @@ __all__ = [
     "FusionConstructionIssue",
     "FusionConstructionIssueCode",
     "FusionProvenance",
+    "FusionStereoEvidence",
+    "FusionStereoReplay",
     "construct_pushout",
 ]

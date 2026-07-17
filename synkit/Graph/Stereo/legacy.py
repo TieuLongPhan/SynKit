@@ -406,6 +406,46 @@ class StereoSemanticComparison:
         }
 
 
+def summarize_stereo_comparisons(
+    records: Sequence[StereoSemanticComparison],
+) -> dict[str, Any]:
+    """Aggregate migration comparisons by stage and divergence status."""
+    stages: dict[str, dict[str, Any]] = {}
+    for record in records:
+        stage = stages.setdefault(
+            record.stage,
+            {
+                "total": 0,
+                "agreements": 0,
+                "expected_divergences": 0,
+                "unexpected_divergences": 0,
+                "expected_reasons": {},
+            },
+        )
+        stage["total"] += 1
+        if record.agreement:
+            stage["agreements"] += 1
+        elif record.expected_divergence is not None:
+            stage["expected_divergences"] += 1
+            reasons = stage["expected_reasons"]
+            reason = record.expected_divergence
+            reasons[reason] = reasons.get(reason, 0) + 1
+        else:
+            stage["unexpected_divergences"] += 1
+    ordered = {key: stages[key] for key in sorted(stages)}
+    return {
+        "stages": ordered,
+        "total": sum(item["total"] for item in ordered.values()),
+        "agreements": sum(item["agreements"] for item in ordered.values()),
+        "expected_divergences": sum(
+            item["expected_divergences"] for item in ordered.values()
+        ),
+        "unexpected_divergences": sum(
+            item["unexpected_divergences"] for item in ordered.values()
+        ),
+    }
+
+
 __all__ = [
     "StereoSemanticComparison",
     "StereoSemanticsMode",
@@ -416,4 +456,5 @@ __all__ = [
     "legacy_descriptor_query_matches",
     "legacy_inverted_form",
     "legacy_same_configuration",
+    "summarize_stereo_comparisons",
 ]
