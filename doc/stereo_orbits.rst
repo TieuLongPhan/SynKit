@@ -8,8 +8,9 @@ SynKit represents local stereochemical identity as an ordered frame modulo a
 finite geometry-preserving permutation group.  This follows the ordered-list
 model described by Andersen, Flamm, Merkle, and Stadler in *Chemical Graph
 Transformation with Stereo-Information* (ICGT 2017).  Sprint 16 implements
-only the finite algebra.  Existing descriptors, matchers, rules, reactors, and
-fusion remain on the Beta-2 semantics until their later migration sprints.
+the finite algebra.  Sprint 17 makes it authoritative for descriptor identity
+and descriptor-query matching.  Rules, reactors, and fusion remain on the
+Beta-2 semantics until their later migration sprints.
 
 This is a MØD-compatible local-configuration model, not a claim that SynKit's
 operational NetworkX rewriting is a complete implementation of MØD's
@@ -66,6 +67,28 @@ Only tetrahedral, planar-bond, and atrop-bond definitions currently declare a
 binary opposite operation.  Square-planar, trigonal-bipyramidal, and
 octahedral nonidentity relations are general reconfigurations.
 
+Descriptor compatibility boundary
+---------------------------------
+
+All six public descriptors expose ``configuration``, ``specification``,
+``same_configuration()``, ``relation_to()``, ``replace_reference()``, and
+``replace_references()``.  Equality and hashing use the orbit configuration.
+The existing ``atoms``, ``parity``, and ``provenance`` constructor fields are
+unchanged: parity decodes a compatibility representation into a concrete
+frame and is not the mathematical identity.
+
+``canonical_form()`` remains the exact Beta-2 compatibility encoding because
+existing RDKit and interchange adapters consume it.  Likewise, ``to_dict()``
+and JSON/GML payloads add no field.  Thus old data round-trips byte-for-byte at
+the descriptor payload level while new code can use the formal configuration
+and replayable relation witness directly.
+
+Stored unspecified orientation is distinct from both fixed orientation and
+descriptor absence.  Query wildcard behavior remains an explicit matching
+policy and does not mutate stored information.  Query and identity boundaries
+accept ``orbit``, ``legacy``, and ``compare`` semantics; compare mode always
+returns the orbit decision and records the independent legacy decision.
+
 Executable obligations
 ----------------------
 
@@ -81,6 +104,15 @@ Sprint 16 tests establish by finite enumeration:
   transport;
 * relabeling and reference replacement commute with the group action;
 * the binary opposite operation is an involution where it is declared.
+
+Sprint 17 additionally proves exhaustively that every supported legacy
+``atoms/parity`` encoding induces exactly the same identity partition under
+the orbit adapter, including unspecified atom and bond frames.  It also checks
+unchanged serialization, reference-locus protection, geometry-specific
+relations, and zero unregistered identity/query divergences.  Full symmetric
+unspecified groups use the equivalent sorted-position canonical form instead
+of enumerating every group element; an executable law checks that shortcut
+against the exact orbit minimum.
 
 Legacy comparison
 -----------------

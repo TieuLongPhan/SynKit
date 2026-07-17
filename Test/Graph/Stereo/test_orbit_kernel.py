@@ -79,6 +79,19 @@ def test_all_atom_frame_permutations_partition_into_expected_fixed_orbits(
     assert len(forms) == expected_orbits
 
 
+@pytest.mark.parametrize(
+    "shape",
+    ("tetrahedral", "square_planar", "trigonal_bipyramidal", "octahedral"),
+)
+def test_symmetric_group_canonical_shortcut_equals_exact_orbit_minimum(
+    shape: str,
+) -> None:
+    group = SHAPE_DEFINITIONS[shape].unspecified_group
+    frame = (0, *reversed(range(1, group.degree)))
+
+    assert group.canonical(frame) == group.orbit(frame)[0]
+
+
 @pytest.mark.parametrize("shape", ("planar_bond", "atrop_bond"))
 def test_bond_frame_fixed_and_unspecified_orbit_sizes(shape: str) -> None:
     fixed = StereoConfiguration(shape, (1, 2, 3, 4, 5, 6))

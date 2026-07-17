@@ -15,7 +15,15 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Any, Literal, Mapping, Sequence
+
+from .orbits import (
+    Permutation,
+    StereoConfiguration,
+    StereoRelation,
+    StereoSpecification,
+)
 
 VirtualReferenceKind = Literal["H", "LP"]
 Reference = int | str
@@ -222,8 +230,113 @@ def _permutation_sign(values: Sequence[Reference], ordered: Sequence[Reference])
     return -1 if inversions % 2 else 1
 
 
+_NEGATIVE_ORBIT_IMAGES = {
+    "tetrahedral": (0, 2, 1, 3, 4),
+    "trigonal_bipyramidal": (0, 1, 2, 3, 5, 4),
+    "octahedral": (0, 2, 1, 3, 4, 5, 6),
+    "atrop_bond": (1, 0, 2, 3, 4, 5),
+}
+
+
+class _OrbitDescriptorMixin:
+    """Adapt the stable descriptor wire model to finite-orbit semantics."""
+
+    descriptor_class: str
+    atoms: tuple[Reference, ...]
+    parity: int | None
+    provenance: str | None
+
+    @property
+    def specification(self) -> StereoSpecification:
+        """Return whether orientation is fixed or intentionally unspecified."""
+        return (
+            StereoSpecification.UNSPECIFIED
+            if self.parity is None
+            else StereoSpecification.FIXED
+        )
+
+    @cached_property
+    def configuration(self) -> StereoConfiguration:
+        """Return the authoritative permutation-orbit configuration."""
+        frame = tuple(self.atoms)
+        if self.parity == -1:
+            image = _NEGATIVE_ORBIT_IMAGES[self.descriptor_class]
+            frame = Permutation(image).apply(frame)
+        return StereoConfiguration(
+            self.descriptor_class,
+            frame,
+            self.specification,
+        )
+
+    def same_configuration(
+        self,
+        other: object,
+        *,
+        semantics: str = "orbit",
+        diagnostics: list[Any] | None = None,
+    ) -> bool:
+        """Test relative stereo identity, optionally auditing Beta-2."""
+        from .legacy import (  # Independent oracle; kept lazy at this boundary.
+            StereoSemanticComparison,
+            StereoSemanticsMode,
+            legacy_same_configuration,
+        )
+
+        mode = StereoSemanticsMode(semantics)
+        if mode is StereoSemanticsMode.LEGACY:
+            return legacy_same_configuration(self, other)
+        orbit_result = (
+            type(self) is type(other)
+            and isinstance(other, _OrbitDescriptorMixin)
+            and self.configuration.same_configuration(other.configuration)
+        )
+        if mode is StereoSemanticsMode.ORBIT:
+            return orbit_result
+        legacy_result = legacy_same_configuration(self, other)
+        if diagnostics is not None:
+            diagnostics.append(
+                StereoSemanticComparison.create(
+                    "descriptor_identity",
+                    orbit_result,
+                    legacy_result,
+                )
+            )
+        return orbit_result
+
+    def relation_to(self, other: object) -> StereoRelation:
+        """Classify and witness the geometric relation to another descriptor."""
+        configuration = (
+            other.configuration
+            if type(self) is type(other)
+            and isinstance(other, _OrbitDescriptorMixin)
+            else other
+        )
+        return self.configuration.relation_to(configuration)
+
+    def replace_reference(self, old: Reference, new: Reference) -> Any:
+        """Replace one peripheral reference without changing orientation."""
+        return self.replace_references({old: new})
+
+    def replace_references(
+        self,
+        replacements: Mapping[Reference, Reference],
+    ) -> Any:
+        """Replace peripheral references after formal locus validation."""
+        self.configuration.replace_references(replacements)
+        atoms = tuple(replacements.get(value, value) for value in self.atoms)
+        return type(self)(atoms, self.parity, self.provenance)
+
+    def opposite(self) -> Any:
+        """Return the binary opposite when the geometry defines one."""
+        opposite = self.configuration.opposite()
+        if self.specification is StereoSpecification.UNSPECIFIED:
+            return self
+        parity = 0 if self.descriptor_class == "planar_bond" else 1
+        return type(self)(opposite.frame, parity, self.provenance)
+
+
 @dataclass(frozen=True, eq=False)
-class TetrahedralStereo:
+class TetrahedralStereo(_OrbitDescriptorMixin):
     atoms: tuple[Reference, Reference, Reference, Reference, Reference]
     parity: int | None
     provenance: str | None = None
@@ -272,20 +385,17 @@ class TetrahedralStereo:
         )
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, TetrahedralStereo)
-            and self.canonical_form() == other.canonical_form()
-        )
+        return self.same_configuration(other)
 
     def __hash__(self) -> int:
-        return hash(self.canonical_form())
+        return hash(self.configuration)
 
     def to_dict(self) -> dict[str, Any]:
         return _descriptor_dict(self)
 
 
 @dataclass(frozen=True, eq=False)
-class SquarePlanarStereo:
+class SquarePlanarStereo(_OrbitDescriptorMixin):
     """Relative square-planar atom stereo (center plus four cyclic ligands)."""
 
     atoms: tuple[Reference, Reference, Reference, Reference, Reference]
@@ -342,20 +452,17 @@ class SquarePlanarStereo:
         )
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, SquarePlanarStereo)
-            and self.canonical_form() == other.canonical_form()
-        )
+        return self.same_configuration(other)
 
     def __hash__(self) -> int:
-        return hash(self.canonical_form())
+        return hash(self.configuration)
 
     def to_dict(self) -> dict[str, Any]:
         return _descriptor_dict(self)
 
 
 @dataclass(frozen=True, eq=False)
-class TrigonalBipyramidalStereo:
+class TrigonalBipyramidalStereo(_OrbitDescriptorMixin):
     """Relative trigonal-bipyramidal atom stereo."""
 
     atoms: tuple[
@@ -423,20 +530,17 @@ class TrigonalBipyramidalStereo:
         )
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, TrigonalBipyramidalStereo)
-            and self.canonical_form() == other.canonical_form()
-        )
+        return self.same_configuration(other)
 
     def __hash__(self) -> int:
-        return hash(self.canonical_form())
+        return hash(self.configuration)
 
     def to_dict(self) -> dict[str, Any]:
         return _descriptor_dict(self)
 
 
 @dataclass(frozen=True, eq=False)
-class OctahedralStereo:
+class OctahedralStereo(_OrbitDescriptorMixin):
     """Relative octahedral atom stereo."""
 
     atoms: tuple[
@@ -521,20 +625,17 @@ class OctahedralStereo:
         )
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, OctahedralStereo)
-            and self.canonical_form() == other.canonical_form()
-        )
+        return self.same_configuration(other)
 
     def __hash__(self) -> int:
-        return hash(self.canonical_form())
+        return hash(self.configuration)
 
     def to_dict(self) -> dict[str, Any]:
         return _descriptor_dict(self)
 
 
 @dataclass(frozen=True, eq=False)
-class PlanarBondStereo:
+class PlanarBondStereo(_OrbitDescriptorMixin):
     atoms: tuple[Reference, Reference, Reference, Reference, Reference, Reference]
     parity: int | None = 0
     provenance: str | None = None
@@ -594,20 +695,17 @@ class PlanarBondStereo:
         )
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, PlanarBondStereo)
-            and self.canonical_form() == other.canonical_form()
-        )
+        return self.same_configuration(other)
 
     def __hash__(self) -> int:
-        return hash(self.canonical_form())
+        return hash(self.configuration)
 
     def to_dict(self) -> dict[str, Any]:
         return _descriptor_dict(self)
 
 
 @dataclass(frozen=True, eq=False)
-class AtropBondStereo:
+class AtropBondStereo(_OrbitDescriptorMixin):
     """Relative axial orientation around an atropisomeric bond."""
 
     atoms: tuple[
@@ -673,13 +771,10 @@ class AtropBondStereo:
         )
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, AtropBondStereo)
-            and self.canonical_form() == other.canonical_form()
-        )
+        return self.same_configuration(other)
 
     def __hash__(self) -> int:
-        return hash(self.canonical_form())
+        return hash(self.configuration)
 
     def to_dict(self) -> dict[str, Any]:
         return _descriptor_dict(self)

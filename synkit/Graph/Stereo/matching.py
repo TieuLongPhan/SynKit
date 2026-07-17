@@ -17,6 +17,11 @@ from .descriptors import (
     virtual_reference,
 )
 from .identity import mapped_stereo_registries_match
+from .legacy import (
+    StereoSemanticComparison,
+    StereoSemanticsMode,
+    legacy_descriptor_query_matches,
+)
 
 
 def _atom_map_translation(
@@ -228,27 +233,73 @@ def normalize_hydrogen_references(
     )
 
 
-def descriptor_query_matches(
+def _orbit_descriptor_query_matches(
     query: StereoValue,
     candidate: StereoValue,
     *,
     unknown_policy: str = "exact",
 ) -> bool:
-    """Match one descriptor while keeping unknown and wildcard distinct."""
+    """Match one descriptor through orbit identity and information policy."""
     if unknown_policy not in {"exact", "wildcard", "either"}:
         raise ValueError("unknown_policy must be 'exact', 'wildcard', or 'either'.")
     if type(query) is not type(candidate):
         return False
     if unknown_policy == "either" and query.parity is not None:
-        return query == candidate or query.invert() == candidate
+        return query.same_configuration(candidate) or query.invert().same_configuration(
+            candidate
+        )
     if query.parity is not None or unknown_policy == "exact":
-        return query == candidate
+        return query.same_configuration(candidate)
     unknown_candidate = type(candidate)(
         candidate.atoms,
         None,
         candidate.provenance,
     )
-    return query == unknown_candidate
+    return query.same_configuration(unknown_candidate)
+
+
+def descriptor_query_matches(
+    query: StereoValue,
+    candidate: StereoValue,
+    *,
+    unknown_policy: str = "exact",
+    semantics: StereoSemanticsMode | str = StereoSemanticsMode.ORBIT,
+    diagnostics: list[StereoSemanticComparison] | None = None,
+) -> bool:
+    """Match one descriptor using orbit, frozen legacy, or dual-run semantics.
+
+    Compare mode always returns the orbit decision.  If a diagnostics sink is
+    supplied it also records agreement with the independent Beta-2 oracle;
+    legacy is never used as a fallback.
+    """
+    mode = StereoSemanticsMode(semantics)
+    if mode is StereoSemanticsMode.LEGACY:
+        return legacy_descriptor_query_matches(
+            query,
+            candidate,
+            unknown_policy=unknown_policy,
+        )
+    orbit_result = _orbit_descriptor_query_matches(
+        query,
+        candidate,
+        unknown_policy=unknown_policy,
+    )
+    if mode is StereoSemanticsMode.ORBIT:
+        return orbit_result
+    legacy_result = legacy_descriptor_query_matches(
+        query,
+        candidate,
+        unknown_policy=unknown_policy,
+    )
+    if diagnostics is not None:
+        diagnostics.append(
+            StereoSemanticComparison.create(
+                "descriptor_query",
+                orbit_result,
+                legacy_result,
+            )
+        )
+    return orbit_result
 
 
 def _default_node_match(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:

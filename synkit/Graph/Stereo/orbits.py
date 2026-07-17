@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import cached_property
 from itertools import permutations
 from typing import Any, Hashable, Mapping, Sequence
 
@@ -69,6 +70,11 @@ class PermutationGroup:
         repr=False,
         compare=False,
     )
+    _symmetric_positions: tuple[int, ...] | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
     def __post_init__(self) -> None:
         elements = tuple(sorted(set(self.elements)))
@@ -100,6 +106,17 @@ class PermutationGroup:
         return tuple(sorted(forms, key=_stable_key))
 
     def canonical(self, frame: Sequence[Hashable]) -> tuple[Hashable, ...]:
+        if self._symmetric_positions is not None:
+            if len(frame) != self.degree:
+                raise ValueError("Group and frame arities differ.")
+            canonical = list(frame)
+            ordered = sorted(
+                (frame[position] for position in self._symmetric_positions),
+                key=lambda value: (type(value).__name__, repr(value)),
+            )
+            for position, value in zip(self._symmetric_positions, ordered):
+                canonical[position] = value
+            return tuple(canonical)
         return self.orbit(frame)[0]
 
 
@@ -124,7 +141,13 @@ def _symmetric_group(
         for local_image in permutations(range(len(positions)))
     )
     # All bijections of a finite position set are closed under composition.
-    return PermutationGroup(name, degree, elements, _closed_by_construction=True)
+    return PermutationGroup(
+        name,
+        degree,
+        elements,
+        _closed_by_construction=True,
+        _symmetric_positions=tuple(positions),
+    )
 
 
 def _permutation_sign(image: Sequence[int]) -> int:
@@ -308,7 +331,7 @@ class StereoConfiguration:
         except KeyError as exc:
             raise ValueError(f"Unknown stereo shape {self.shape!r}.") from exc
 
-    @property
+    @cached_property
     def canonical_frame(self) -> tuple[Hashable, ...]:
         return self.definition.group_for(self.specification).canonical(self.frame)
 
