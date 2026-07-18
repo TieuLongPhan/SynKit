@@ -10,6 +10,13 @@ Core
    :members:
    :show-inheritance:
 
+Generic stereo extraction
+-------------------------
+
+.. automodule:: synkit.Rule.generic_stereo
+   :members:
+   :show-inheritance:
+
 Identity
 --------
 

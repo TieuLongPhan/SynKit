@@ -281,22 +281,14 @@ class FusionStereoEvidence:
             "source_descriptor_id": self.source_descriptor_id,
             "target_descriptor_id": self.target_descriptor_id,
             "effect": self.effect.value,
-            "source_configuration": _configuration_payload(
-                self.source_configuration
-            ),
+            "source_configuration": _configuration_payload(self.source_configuration),
             "reference_mapping": [list(pair) for pair in self.reference_mapping],
             "interface_configuration": _configuration_payload(
                 self.interface_configuration
             ),
-            "source_to_interface": _relation_payload(
-                self.source_to_interface
-            ),
-            "interface_to_candidate": _relation_payload(
-                self.interface_to_candidate
-            ),
-            "target_configuration": _configuration_payload(
-                self.target_configuration
-            ),
+            "source_to_interface": _relation_payload(self.source_to_interface),
+            "interface_to_candidate": _relation_payload(self.interface_to_candidate),
+            "target_configuration": _configuration_payload(self.target_configuration),
             "direct_relation": _relation_payload(self.direct_relation),
             "composed_witness": (
                 list(self.composed_witness.permutation.image)
@@ -348,8 +340,7 @@ class FusionProvenance:
                 evidence.to_dict() for evidence in self.stereo_evidence
             ],
             "stereo_comparisons": [
-                comparison.to_dict()
-                for comparison in self.stereo_comparisons
+                comparison.to_dict() for comparison in self.stereo_comparisons
             ],
         }
 
@@ -510,9 +501,7 @@ def _merge_graph_stereo(
                 for descriptor_key in registry
             }
             try:
-                transport_stereo_registry(
-                    registry, reference_mapping, deltas
-                )
+                transport_stereo_registry(registry, reference_mapping, deltas)
             except StereoTransportError as exc:
                 raise FusionConstructionError(
                     FusionConstructionIssue(
@@ -588,8 +577,7 @@ def _merge_graph_stereo(
                     }.get(legacy_projection, "unspecified")
                     expected_divergence = None
                     if (
-                        evidence.interface_to_candidate.kind.value
-                        == "reconfigured"
+                        evidence.interface_to_candidate.kind.value == "reconfigured"
                         and evidence.interface_to_candidate.shape
                         in {"trigonal_bipyramidal", "octahedral"}
                         and delta.effect is StereoEffect.INVERT

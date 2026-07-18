@@ -6,6 +6,7 @@ import networkx as nx
 import pytest
 
 from synkit.Graph.Morphism import (
+    EndpointSide,
     GraphMorphism,
     LocalStereoCertificate,
     StereoCertificateStatus,
@@ -76,6 +77,28 @@ def _mapped_pair(descriptor, offset=10):
     return source, target, morphism, target_descriptor
 
 
+def _mapped_topology_pair(descriptor, offset=10):
+    source = _topology_graph(descriptor)
+    labels = {node: node + offset for node in source}
+    target_descriptor = descriptor.relabel(labels)
+    target = nx.relabel_nodes(source, labels, copy=True)
+    for old, new in labels.items():
+        target.nodes[new]["atom_map"] = new
+    target.graph["stereo_descriptors"] = {
+        descriptor_id(target_descriptor): target_descriptor
+    }
+    port, _owner, _slot = _first_owner_local_port(descriptor)
+    source.nodes[port]["element"] = "*"
+    morphism = GraphMorphism(
+        "source",
+        "target",
+        frozenset(source),
+        frozenset(target),
+        labels,
+    )
+    return source, target, morphism, target_descriptor
+
+
 def _topology_graph(descriptor) -> nx.Graph:
     graph = _graph((descriptor,))
     if descriptor.descriptor_class in {
@@ -105,6 +128,17 @@ def _topology_graph(descriptor) -> nx.Graph:
     return graph
 
 
+def _first_owner_local_port(descriptor):
+    if descriptor.descriptor_class in {
+        "tetrahedral",
+        "square_planar",
+        "trigonal_bipyramidal",
+        "octahedral",
+    }:
+        return descriptor.atoms[1], descriptor.atoms[0], 0
+    return descriptor.atoms[0], descriptor.atoms[2], 0
+
+
 @pytest.mark.parametrize("descriptor", DESCRIPTORS)
 def test_every_geometry_returns_a_replayable_local_certificate(descriptor) -> None:
     source, target, graph_morphism, _target_descriptor = _mapped_pair(descriptor)
@@ -125,6 +159,383 @@ def test_every_geometry_returns_a_replayable_local_certificate(descriptor) -> No
     assert certificate.witness.apply(transported.frame) == (
         certificate.target_configuration.frame
     )
+
+
+@pytest.mark.parametrize("descriptor", DESCRIPTORS)
+def test_every_geometry_enforces_a_typed_owner_local_stereo_port(descriptor) -> None:
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    port, owner, slot = _first_owner_local_port(descriptor)
+    constraint = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        elements={"C"},
+        owner=owner,
+        stereo_slot=slot,
+    )
+
+    proof = candidate_mapping_stereo_morphism(
+        source,
+        target,
+        mapping.mapping,
+        substitutions={port: constraint},
+    )
+
+    assert proof.graph_morphism.substitutions == {port: constraint}
+    assert proof.certificates[0].witness is not None
+
+
+@pytest.mark.parametrize(
+    ("constraint", "issue_code"),
+    (
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                elements={"Xe"},
+                owner=1,
+                stereo_slot=0,
+            ),
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                charges={1},
+                owner=1,
+                stereo_slot=0,
+            ),
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                radicals={1},
+                owner=1,
+                stereo_slot=0,
+            ),
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                bond_orders={2.0},
+                owner=1,
+                stereo_slot=0,
+            ),
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                side=EndpointSide.REACTANT,
+                owner=1,
+                stereo_slot=0,
+            ),
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=0,
+                mapped_identity=999,
+            ),
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=0,
+                materialization="virtual",
+            ),
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=0,
+                virtual_kind="H",
+            ),
+            StereoMorphismIssueCode.PORT_VIRTUAL_KIND_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=3,
+                stereo_slot=0,
+            ),
+            StereoMorphismIssueCode.PORT_OWNER_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=99,
+            ),
+            StereoMorphismIssueCode.PORT_SLOT_MISMATCH,
+        ),
+        (
+            WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=0,
+                capacity=0,
+            ),
+            StereoMorphismIssueCode.PORT_CAPACITY_MISMATCH,
+        ),
+        (
+            WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=1),
+            StereoMorphismIssueCode.PORT_ROLE_MISMATCH,
+        ),
+    ),
+)
+def test_invalid_typed_stereo_ports_fail_closed(constraint, issue_code) -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+
+    with pytest.raises(StereoMorphismError) as error:
+        candidate_mapping_stereo_morphism(
+            source,
+            target,
+            mapping.mapping,
+            substitutions={2: constraint},
+        )
+
+    assert error.value.issues[0].code is issue_code
+
+
+def test_boolean_candidate_gate_forwards_typed_stereo_substitutions() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    impossible = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        elements={"Xe"},
+        owner=1,
+        stereo_slot=0,
+    )
+
+    assert not candidate_mapping_stereo_matches(
+        source,
+        target,
+        mapping.mapping,
+        substitutions={2: impossible},
+    )
+
+
+def test_typed_stereo_port_enforces_complete_concrete_domain() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    target.nodes[12].update(
+        element="N",
+        charge=-1,
+        radical=1,
+        materialization="concrete",
+    )
+    target.edges[11, 12]["order"] = 1.0
+    constraint = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        elements={"N"},
+        charges={-1},
+        radicals={1},
+        bond_orders={1.0},
+        owner=1,
+        stereo_slot=0,
+        mapped_identity=12,
+        materialization="concrete",
+        resource_budget=1,
+    )
+
+    proof = candidate_mapping_stereo_morphism(
+        source,
+        target,
+        mapping.mapping,
+        substitutions={2: constraint},
+    )
+
+    assert proof.certificates[0].witness is not None
+
+
+def test_typed_stereo_port_enforces_declared_endpoint_side() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, target_descriptor = _mapped_topology_pair(descriptor)
+    source.graph["stereo_descriptors"] = {"reactant": {"atom:1": descriptor}}
+    target.graph["stereo_descriptors"] = {"reactant": {"atom:11": target_descriptor}}
+    constraint = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        side=EndpointSide.REACTANT,
+        owner=1,
+        stereo_slot=0,
+    )
+
+    proof = candidate_mapping_stereo_morphism(
+        source,
+        target,
+        mapping.mapping,
+        substitutions={2: constraint},
+    )
+
+    assert proof.certificates[0].layer == "reactant"
+
+
+def test_typed_stereo_port_requires_source_and_target_incidence() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    target.remove_edge(11, 12)
+    constraint = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        owner=1,
+        stereo_slot=0,
+    )
+
+    with pytest.raises(StereoMorphismError) as error:
+        candidate_mapping_stereo_morphism(
+            source,
+            target,
+            mapping.mapping,
+            substitutions={2: constraint},
+        )
+
+    assert error.value.issues[0].code is (
+        StereoMorphismIssueCode.PORT_INCIDENCE_MISMATCH
+    )
+
+
+def test_typed_stereo_port_rejects_a_concrete_source_node() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    source.nodes[2]["element"] = "C"
+
+    with pytest.raises(StereoMorphismError) as error:
+        candidate_mapping_stereo_morphism(
+            source,
+            target,
+            mapping.mapping,
+            substitutions={
+                2: WildcardConstraint(
+                    WildcardRole.STEREO_LIGAND_PORT,
+                    owner=1,
+                    stereo_slot=0,
+                )
+            },
+        )
+
+    assert error.value.issues[0].code is (
+        StereoMorphismIssueCode.PORT_SOURCE_NOT_WILDCARD
+    )
+
+
+def test_typed_stereo_port_must_occur_in_exactly_one_local_frame() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    constraint = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        owner=1,
+        stereo_slot=0,
+    )
+
+    with pytest.raises(StereoMorphismError) as error:
+        candidate_mapping_stereo_morphism(
+            source,
+            target,
+            mapping.mapping,
+            substitutions={1: constraint},
+        )
+
+    assert error.value.issues[0].code is (StereoMorphismIssueCode.PORT_BINDING_MISSING)
+
+
+def test_immutable_morphism_rejects_forged_stereo_port_slot() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    valid = candidate_mapping_stereo_morphism(
+        source,
+        target,
+        mapping.mapping,
+        substitutions={
+            2: WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=0,
+            )
+        },
+    )
+    forged_graph = GraphMorphism(
+        mapping.source,
+        mapping.target,
+        mapping.source_nodes,
+        mapping.target_nodes,
+        mapping.f,
+        {
+            2: WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=1,
+            )
+        },
+    )
+
+    with pytest.raises(StereoMorphismError) as error:
+        StereoMorphism(
+            forged_graph,
+            valid.presence_mode,
+            valid.information_policy,
+            valid.certificates,
+        )
+
+    assert error.value.issues[0].code is StereoMorphismIssueCode.PORT_SLOT_MISMATCH
+
+
+def test_typed_stereo_port_binding_is_relabeling_invariant() -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    proof = candidate_mapping_stereo_morphism(
+        source,
+        target,
+        mapping.mapping,
+        substitutions={
+            2: WildcardConstraint(
+                WildcardRole.STEREO_LIGAND_PORT,
+                owner=1,
+                stereo_slot=0,
+            )
+        },
+    )
+    source_labels = {node: node + 1000 for node in source}
+    target_labels = {node: node + 2000 for node in target}
+
+    relabeled = proof.relabel(source_labels, target_labels)
+
+    assert relabeled.canonical_signature() == proof.canonical_signature()
+
+
+@pytest.mark.parametrize("virtual_kind", ("H", "LP"))
+def test_typed_stereo_port_materializes_owner_scoped_virtual_reference(
+    virtual_kind,
+) -> None:
+    descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    source, target, mapping, _target_descriptor = _mapped_topology_pair(descriptor)
+    target.nodes[12]["element"] = virtual_kind
+    if virtual_kind == "LP":
+        target.graph["stereo_descriptors"] = {
+            "atom:11": TetrahedralStereo((11, "@LP:11", 13, 14, 15), 1)
+        }
+    constraint = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        elements={virtual_kind},
+        owner=1,
+        stereo_slot=0,
+        virtual_kind=virtual_kind,
+    )
+
+    proof = candidate_mapping_stereo_morphism(
+        source,
+        target,
+        mapping.mapping,
+        substitutions={2: constraint},
+    )
+
+    target_frame = proof.certificates[0].target_configuration.frame
+    assert ("virtual", virtual_kind, ("node", 11)) in target_frame
 
 
 def test_identity_is_neutral_and_has_identity_witnesses() -> None:
@@ -349,7 +760,9 @@ def test_existing_virtual_h_keeps_an_explicit_h_ligand_material() -> None:
 
 def test_wildcard_port_position_is_part_of_numbering_independent_signature() -> None:
     descriptor = TetrahedralStereo((1, 2, 3, 4, 5), 1)
-    source, target, graph_morphism, _target_descriptor = _mapped_pair(descriptor)
+    source, target, graph_morphism, _target_descriptor = _mapped_topology_pair(
+        descriptor
+    )
     constrained = GraphMorphism(
         graph_morphism.source,
         graph_morphism.target,
@@ -358,8 +771,9 @@ def test_wildcard_port_position_is_part_of_numbering_independent_signature() -> 
         graph_morphism.f,
         {
             2: WildcardConstraint(
-                WildcardRole.ATTACHMENT_PORT,
+                WildcardRole.STEREO_LIGAND_PORT,
                 owner=1,
+                stereo_slot=0,
             )
         },
     )
@@ -370,15 +784,30 @@ def test_wildcard_port_position_is_part_of_numbering_independent_signature() -> 
 
 def test_wildcard_port_constraints_and_stereo_witnesses_compose_together() -> None:
     descriptor_a = TetrahedralStereo((1, 2, 3, 4, 5), 1)
-    graph_a = _graph((descriptor_a,))
+    graph_a = _topology_graph(descriptor_a)
+    graph_a.nodes[2]["element"] = "*"
     map_ab = {node: node + 10 for node in graph_a}
     descriptor_b = descriptor_a.relabel(map_ab)
-    graph_b = _graph((descriptor_b,))
+    graph_b = nx.relabel_nodes(graph_a, map_ab, copy=True)
+    for old, new in map_ab.items():
+        graph_b.nodes[new]["atom_map"] = new
+    graph_b.graph["stereo_descriptors"] = {"atom:11": descriptor_b}
     map_bc = {node: node + 100 for node in graph_b}
     descriptor_c = descriptor_b.relabel(map_bc)
-    graph_c = _graph((descriptor_c,))
-    constraint_a = WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=1)
-    constraint_b = WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=11)
+    graph_c = nx.relabel_nodes(graph_b, map_bc, copy=True)
+    for old, new in map_bc.items():
+        graph_c.nodes[new]["atom_map"] = new
+    graph_c.graph["stereo_descriptors"] = {"atom:111": descriptor_c}
+    constraint_a = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        owner=1,
+        stereo_slot=0,
+    )
+    constraint_b = WildcardConstraint(
+        WildcardRole.STEREO_LIGAND_PORT,
+        owner=11,
+        stereo_slot=0,
+    )
     ab = StereoMorphism.from_graphs(
         GraphMorphism(
             "A",

@@ -99,7 +99,12 @@ def _frozen_domain(value: Any) -> frozenset[Any] | None:
 
 @dataclass(frozen=True)
 class WildcardConstraint:
-    """Immutable typed wildcard predicate and resource contract."""
+    """Immutable typed wildcard predicate and resource contract.
+
+    ``stereo_slot`` is zero-based in the declared owner's peripheral sequence
+    of the authoritative orbit configuration; descriptor locus positions are
+    excluded.
+    """
 
     role: WildcardRole
     elements: frozenset[str] | None = None

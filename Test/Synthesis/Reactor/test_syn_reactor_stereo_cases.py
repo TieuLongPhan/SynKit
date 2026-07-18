@@ -93,6 +93,96 @@ def _reactor(substrate, rule, **kwargs):
     )
 
 
+def _typed_generic_sn2_rule(
+    *,
+    first_elements=("C",),
+    first_owner=2,
+    first_slot=1,
+    first_side="any",
+):
+    rc = rsmi_to_its(
+        GENERIC_SN2_RULE,
+        format="tuple",
+        drop_non_aam=False,
+        use_index_as_atom_map=True,
+    )
+    rc.nodes[1].update(
+        wildcard_role="stereo_ligand_port",
+        owner=first_owner,
+        stereo_slot=first_slot,
+        elements=set(first_elements),
+        side=first_side,
+    )
+    rc.nodes[3].update(
+        wildcard_role="stereo_ligand_port",
+        owner=2,
+        stereo_slot=0,
+        elements={"F"},
+    )
+    return SynRule(rc, format="tuple", implicit_h=False)
+
+
+def test_reactor_enforces_typed_stereo_ligand_domains() -> None:
+    accepted = _reactor(
+        "C[C@H](F)Cl.[OH-]",
+        _typed_generic_sn2_rule(),
+    )
+    rejected = _reactor(
+        "C[C@H](F)Cl.[OH-]",
+        _typed_generic_sn2_rule(first_elements=("Xe",)),
+    )
+
+    assert accepted.mapping_count == 1
+    assert len(accepted.its_list) == 1
+    assert rejected.mapping_count == 0
+    assert rejected.its_list == []
+    assert {issue.code.value for issue in rejected.stereo_morphism_issues} == {
+        "STEREO_MORPHISM_PORT_DOMAIN_MISMATCH"
+    }
+
+
+def test_reactor_enforces_typed_stereo_port_endpoint_side() -> None:
+    reactant = _reactor(
+        "C[C@H](F)Cl.[OH-]",
+        _typed_generic_sn2_rule(first_side="reactant"),
+    )
+    product_only = _reactor(
+        "C[C@H](F)Cl.[OH-]",
+        _typed_generic_sn2_rule(first_side="product"),
+    )
+
+    assert reactant.mapping_count == 1
+    assert product_only.mapping_count == 0
+
+
+def test_typed_stereo_ports_realign_on_reverse_and_double_reverse() -> None:
+    rule = _typed_generic_sn2_rule()
+    forward = _reactor("C[C@H](F)Cl.[OH-]", rule)
+    product = forward.smarts[0].split(">>", 1)[1]
+    reverse_rule = rule.reversed()
+    reverse = _reactor(product, reverse_rule)
+
+    assert reverse.mapping_count == 1
+    assert reverse_rule.left.raw.nodes[1]["stereo_slot"] == 0
+    assert reverse_rule.left.raw.nodes[3]["stereo_slot"] == 1
+    assert reverse_rule.reversed() == rule
+
+
+@pytest.mark.parametrize(
+    ("owner", "slot"),
+    ((3, 1), (2, 99)),
+)
+def test_reactor_rejects_wrong_typed_stereo_owner_or_slot(owner, slot) -> None:
+    reactor = _reactor(
+        "C[C@H](F)Cl.[OH-]",
+        _typed_generic_sn2_rule(first_owner=owner, first_slot=slot),
+    )
+
+    assert reactor.mapping_count == 0
+    assert reactor.its_list == []
+    assert reactor.stereo_morphism_issues
+
+
 def test_unmapped_radical_substrate_preserves_explicit_product_state():
     rule = "[CH3:1][CH2:2][Cl:3]>>[CH3:1][CH2:2].[Cl:3]"
     reactor = _reactor("CCCl", rule)

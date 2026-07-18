@@ -56,9 +56,7 @@ class FusionProofDocument:
         return copy.deepcopy(dict(self.payload))
 
 
-def _proof_configuration(
-    evidence: Mapping[str, Any], name: str
-) -> StereoConfiguration:
+def _proof_configuration(evidence: Mapping[str, Any], name: str) -> StereoConfiguration:
     payload = evidence.get(name)
     if not isinstance(payload, Mapping):
         raise FusionProofError(
@@ -88,9 +86,7 @@ def _proof_reference_mapping(evidence: Mapping[str, Any]) -> dict[int, int]:
     try:
         pairs = tuple(tuple(pair) for pair in evidence["reference_mapping"])
         if any(
-            len(pair) != 2
-            or type(pair[0]) is not int
-            or type(pair[1]) is not int
+            len(pair) != 2 or type(pair[0]) is not int or type(pair[1]) is not int
             for pair in pairs
         ):
             raise ValueError("mapping entries must be integer pairs")
@@ -179,10 +175,8 @@ def _validate_v2_stereo_evidence(evidence: Mapping[str, Any]) -> None:
         class_id = relation.get("class_id")
         if (
             relation.get("shape") != source.shape
-            or relation.get("source_canonical")
-            != list(relation_source.canonical_frame)
-            or relation.get("target_canonical")
-            != list(relation_target.canonical_frame)
+            or relation.get("source_canonical") != list(relation_source.canonical_frame)
+            or relation.get("target_canonical") != list(relation_target.canonical_frame)
             or relation.get("kind") != classified.kind.value
             or (tuple(class_id) if class_id is not None else None)
             != classified.class_id
@@ -226,7 +220,9 @@ def read_fusion_proof(
     value: Mapping[str, Any] | str,
 ) -> FusionProofDocument:
     """Read proof schema v1 or replay and validate every v2 stereo claim."""
-    payload = json.loads(value) if isinstance(value, str) else copy.deepcopy(dict(value))
+    payload = (
+        json.loads(value) if isinstance(value, str) else copy.deepcopy(dict(value))
+    )
     schema = payload.get("proof_schema")
     if schema not in SUPPORTED_FUSION_PROOF_SCHEMAS:
         raise FusionProofError(
@@ -349,9 +345,7 @@ def _proof_digest(
         # structural interface signature deliberately excludes raw side names
         # and descriptor IDs so operand exchange and map relabeling remain
         # invariant.
-        "interface": stable_value(
-            construction.interface.canonical_signature()[:2]
-        ),
+        "interface": stable_value(construction.interface.canonical_signature()[:2]),
         "graph": graph_signature,
         "wildcards": stable_value(construction.provenance.wildcard_substitutions),
         "endpoint": construction.endpoint_certificate.digest_payload(),
@@ -423,19 +417,13 @@ def fusion_candidates_exactly_equivalent(
         return False
     left_stereo = tuple(
         sorted(
-            (
-                evidence.canonical_signature()
-                for evidence in left.stereo_evidence
-            ),
+            (evidence.canonical_signature() for evidence in left.stereo_evidence),
             key=repr,
         )
     )
     right_stereo = tuple(
         sorted(
-            (
-                evidence.canonical_signature()
-                for evidence in right.stereo_evidence
-            ),
+            (evidence.canonical_signature() for evidence in right.stereo_evidence),
             key=repr,
         )
     )

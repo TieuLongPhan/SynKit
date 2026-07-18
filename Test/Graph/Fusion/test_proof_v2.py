@@ -95,9 +95,9 @@ def test_declared_inversion_records_opposite_relation_and_replays():
 def test_v2_reader_rejects_a_relation_label_without_witness():
     payload = _candidate().to_dict()
     corrupted = copy.deepcopy(payload)
-    corrupted["provenance"]["stereo_evidence"][0][
-        "interface_to_candidate"
-    ]["witness"] = None
+    corrupted["provenance"]["stereo_evidence"][0]["interface_to_candidate"][
+        "witness"
+    ] = None
 
     with pytest.raises(FusionProofError) as excinfo:
         read_fusion_proof(corrupted)
@@ -107,9 +107,9 @@ def test_v2_reader_rejects_a_relation_label_without_witness():
 
 def test_v2_reader_rejects_a_present_but_false_witness():
     corrupted = _candidate().to_dict()
-    corrupted["provenance"]["stereo_evidence"][0][
-        "interface_to_candidate"
-    ]["witness"] = [0, 2, 1, 3, 4]
+    corrupted["provenance"]["stereo_evidence"][0]["interface_to_candidate"][
+        "witness"
+    ] = [0, 2, 1, 3, 4]
 
     with pytest.raises(FusionProofError) as excinfo:
         read_fusion_proof(corrupted)
@@ -119,9 +119,9 @@ def test_v2_reader_rejects_a_present_but_false_witness():
 
 def test_v2_reader_rejects_forged_relation_endpoint_claims():
     corrupted = _candidate().to_dict()
-    corrupted["provenance"]["stereo_evidence"][0][
-        "direct_relation"
-    ]["target_canonical"] = ["forged"]
+    corrupted["provenance"]["stereo_evidence"][0]["direct_relation"][
+        "target_canonical"
+    ] = ["forged"]
 
     with pytest.raises(FusionProofError) as excinfo:
         read_fusion_proof(corrupted)
@@ -168,9 +168,7 @@ def test_stereo_proof_digest_is_operand_and_map_relabeling_invariant():
         backward,
         forward,
         {right: left for left, right in mapping.items()},
-    ).with_stereo_effects(
-        {("forward", "state", "atom:11"): StereoEffect.INVERT}
-    )
+    ).with_stereo_effects({("forward", "state", "atom:11"): StereoEffect.INVERT})
     swapped = fusion_candidate_from_construction(
         construct_pushout(backward, forward, swapped_interface)
     )
@@ -180,16 +178,13 @@ def test_stereo_proof_digest_is_operand_and_map_relabeling_invariant():
     relabeled_forward = nx.relabel_nodes(forward, forward_labels, copy=True)
     relabeled_backward = nx.relabel_nodes(backward, backward_labels, copy=True)
     relabeled_mapping = {
-        forward_labels[left]: backward_labels[right]
-        for left, right in mapping.items()
+        forward_labels[left]: backward_labels[right] for left, right in mapping.items()
     }
     relabeled_interface = FusionInterface.from_mapping(
         relabeled_forward,
         relabeled_backward,
         relabeled_mapping,
-    ).with_stereo_effects(
-        {("backward", "state", "atom:11"): StereoEffect.INVERT}
-    )
+    ).with_stereo_effects({("backward", "state", "atom:11"): StereoEffect.INVERT})
     relabeled = fusion_candidate_from_construction(
         construct_pushout(
             relabeled_forward,
@@ -222,9 +217,7 @@ def test_fusion_compare_mode_returns_orbit_graph_and_registered_audit():
         forward,
         backward,
         mapping,
-    ).with_stereo_effects(
-        {("backward", "state", "atom:11"): StereoEffect.INVERT}
-    )
+    ).with_stereo_effects({("backward", "state", "atom:11"): StereoEffect.INVERT})
     diagnostics = []
 
     orbit = construct_pushout(forward, backward, interface)
@@ -277,9 +270,7 @@ def test_tbp_fusion_registers_only_the_nonbinary_relation_classification():
         forward,
         backward,
         mapping,
-    ).with_stereo_effects(
-        {("backward", "state", "atom:11"): StereoEffect.INVERT}
-    )
+    ).with_stereo_effects({("backward", "state", "atom:11"): StereoEffect.INVERT})
     diagnostics = []
 
     construction = construct_pushout(
@@ -290,11 +281,11 @@ def test_tbp_fusion_registers_only_the_nonbinary_relation_classification():
         stereo_diagnostics=diagnostics,
     )
 
-    assert all(evidence.replay().valid for evidence in construction.provenance.stereo_evidence)
+    assert all(
+        evidence.replay().valid for evidence in construction.provenance.stereo_evidence
+    )
     divergences = [item for item in diagnostics if not item.agreement]
     assert len(divergences) == 1
     assert divergences[0].stage == "fusion_stereo_relation"
-    assert divergences[0].expected_divergence == (
-        "nonbinary_orbit_reconfiguration"
-    )
+    assert divergences[0].expected_divergence == ("nonbinary_orbit_reconfiguration")
     assert divergences[0].registered

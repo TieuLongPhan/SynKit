@@ -9,6 +9,7 @@ from .fusion_validation import (
     validate_wildcard_mapping_roles,
 )
 from .rbl_policy import RBLSearchPolicy, SearchScope, TerminationPolicy
+from .assignment import StereoWildcardAssignmentLimitError
 
 __all__ = [
     "FusionIssue",
@@ -22,4 +23,5 @@ __all__ = [
     "RBLSearchPolicy",
     "SearchScope",
     "TerminationPolicy",
+    "StereoWildcardAssignmentLimitError",
 ]

@@ -1,0 +1,30 @@
+{
+  "schema": "synkit.external-stereo-benchmark-reference/1",
+  "title": "Validation Suite for Cahn-Ingold-Prelog descriptors",
+  "source": {
+    "repository": "https://github.com/CIPValidationSuite/ValidationSuite",
+    "file_url": "https://github.com/CIPValidationSuite/ValidationSuite/blob/master/compounds.smi",
+    "revision_audited": "6b9f9db46dadc6749da8234b05164e1e0fb413b9",
+    "audited_sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059"
+  },
+  "article": {
+    "title": "Algorithmic analysis of Cahn-Ingold-Prelog rules of stereochemistry: Proposals for revised rules and a guide for machine implementation",
+    "authors": [
+      "Robert M. Hanson",
+      "John W. Mayfield",
+      "Mikko J. Vainio",
+      "Andrey Yerin",
+      "Sophia Musacchio",
+      "Dmitry Redkin"
+    ],
+    "year": 2018,
+    "doi": "10.1021/acs.jcim.8b00324"
+  },
+  "records": 300,
+  "task": "Local CIP descriptor assignment for TH, CT, AT, HE, extended tetrahedral, and extended cis/trans stereo units.",
+  "vendored": false,
+  "license": null,
+  "redistribution_status": "blocked",
+  "reason": "No LICENSE file or explicit redistribution grant was present at the audited revision. Public GitHub access is not a redistribution license.",
+  "whole_molecule_protocol_applicable": false
+}

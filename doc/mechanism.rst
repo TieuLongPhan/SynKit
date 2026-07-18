@@ -58,6 +58,25 @@ structural isomorphisms and retains only mappings that preserve the complete
 relative descriptor registry. ``stereo_isomorphism_mapping`` returns one such
 mapping for audit or relabeling workflows.
 
+Typed stereo ligand ports
+-------------------------
+
+A wildcard used as an ordered stereo ligand can declare
+``wildcard_role="stereo_ligand_port"`` together with an ``owner`` and
+``stereo_slot``. The slot is zero-based within the owner's peripheral ligand
+sequence in the authoritative orbit configuration; locus positions are not
+counted. For bond-centred descriptors each endpoint has its own owner-local
+slot sequence.
+
+Typed ports are enforced predicates, not proof annotations. Reactor preserves
+their rule metadata, filters materialization candidates, and passes the
+constraints into ``StereoMorphism``. Accepted proofs validate owner incidence,
+ordered slot, element, charge, radical, bond order, endpoint side, mapped
+identity, capacity, materialization, and optional virtual ``H``/``LP`` kind.
+Unknown orientation and wildcard-ligand matching remain independent policies.
+An invalid typed port fails closed and never falls back to the legacy untyped
+wildcard matcher.
+
 Migration from v1.5
 -------------------
 

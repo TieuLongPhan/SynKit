@@ -284,5 +284,34 @@ def test_unspecified_rule_refuses_reverse_before_mutation():
     assert rule.stereo_summary() == original_summary
 
 
+def _typed_wildcard_rule(elements):
+    its = rsmi_to_its(
+        "[*:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>" "[*:1][C@@H:2]([F:3])[OH:5].[Cl-:4]",
+        format="tuple",
+        drop_non_aam=False,
+        use_index_as_atom_map=True,
+    )
+    its.nodes[1].update(
+        wildcard_role="stereo_ligand_port",
+        owner=2,
+        stereo_slot=1,
+        elements=set(elements),
+    )
+    return SynRule(its, implicit_h=False, format="tuple")
+
+
+def test_typed_wildcard_contract_participates_in_rule_identity_and_hashing():
+    carbon = _typed_wildcard_rule({"C"})
+    same = _typed_wildcard_rule({"C"})
+    xenon = _typed_wildcard_rule({"Xe"})
+
+    assert carbon == same
+    assert hash(carbon) == hash(same)
+    assert carbon != xenon
+    assert hash(carbon) != hash(xenon)
+    assert carbon.left.raw.nodes[1]["wildcard_role"] == "stereo_ligand_port"
+    assert carbon.left.raw.nodes[1]["elements"] == {"C"}
+
+
 if __name__ == "__main__":
     unittest.main()

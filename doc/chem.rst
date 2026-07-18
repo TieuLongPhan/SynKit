@@ -10,6 +10,71 @@ datasets and pipelines by enforcing consistent labeling and normalized string fo
 For unmapped reactions, see :ref:`atom-to-atom-mapping` for the WL/SLAP-based
 ``AAMapper`` workflow and a complete runnable example.
 
+Whole-molecule chirality
+------------------------
+
+``classify_molecular_chirality`` determines whether a molecule is identical to
+its mirror image. This is a molecule-level global automorphism calculation,
+not a reaction-rule operation. The classifier completes eligible sp3 topology
+before reflection, so it also handles globally chiral cages whose local atom
+tags are removed by RDKit.
+
+.. code-block:: python
+   :caption: Classifying whole-molecule chirality
+   :linenos:
+
+   from rdkit import Chem
+   from synkit.Chem.Molecule.chirality import (
+       assess_molecular_chirality,
+       classify_molecular_chirality,
+   )
+
+   molecule = Chem.MolFromSmiles("F[C@](Cl)(Br)I")
+   result = classify_molecular_chirality(molecule)
+   print(result.classification.value)
+
+   unspecified = Chem.MolFromSmiles("FC(Cl)C(Br)I")
+   assessment = assess_molecular_chirality(unspecified, max_isomers=256)
+   print(assessment.outcome.value)
+
+.. admonition:: Example output
+   :class: note synkit-example-output
+
+   .. code-block:: text
+
+      Chiral
+      necessarily_chiral
+
+Removing ``@``, ``@@``, slash, or backslash stereo markers is lossy. The
+classifier's ``stereo_complete`` option can probe whether an unlabelled
+topology supports chirality, but it cannot recover an erased relative
+configuration. Distinct meso and chiral stereoisomers may have the same
+stereo-free SMILES; such input should be treated as stereochemically
+underspecified rather than assigned an exact stereoisomer-level label. The
+result exposes ``input_stereo_status`` and ``unspecified_stereo_loci`` so a
+caller can enforce that distinction instead of silently accepting the
+provisional binary classification.
+
+For supported unassigned tetrahedral atoms and double bonds,
+``assess_molecular_chirality`` enumerates unique configurations and returns one
+of ``necessarily_chiral``, ``necessarily_achiral``,
+``configuration_dependent``, or ``unsupported_or_incomplete``. Its explicit
+``max_isomers`` bound never promotes a truncated one-sided sample to a
+necessary conclusion; discovering both chiral and achiral completions is
+already a definitive configuration-dependent result. Unresolved square-planar,
+TBP, octahedral, cumulene, and atropisomeric input currently fails closed.
+Call ``classify_molecular_chirality(..., require_specified=True)`` when a
+binary-only consumer should reject every underspecified input.
+
+External molecule-stereo datasets are registered under
+``Data/Benchmark/Stereo`` with task and license metadata. The ACS 258-case set
+supports both binary supplied-stereo and four-state stereo-stripped protocols.
+ChiralFinder RotA is instead a positive axial-locus dataset, and the CIP
+Validation Suite is a local descriptor-assignment suite; neither contributes
+to global chiral/achiral accuracy. RotA is vendored under MIT. The CIP fixture
+remains external-only because its repository did not provide a redistribution
+license at the audited revision.
+
 .. raw:: html
 
    <style>

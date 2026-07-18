@@ -22,6 +22,7 @@ from synkit.Graph.Stereo.orbits import (
     StereoSpecification,
 )
 
+from .constraints import EndpointSide, WildcardConstraint, WildcardRole
 from .morphism import GraphMorphism
 
 
@@ -57,6 +58,16 @@ class StereoMorphismIssueCode(str, Enum):
     POLICY_MISMATCH = "STEREO_MORPHISM_POLICY_MISMATCH"
     INTERMEDIATE_MISMATCH = "STEREO_MORPHISM_INTERMEDIATE_MISMATCH"
     WITNESS_MISMATCH = "STEREO_MORPHISM_WITNESS_MISMATCH"
+    PORT_ROLE_MISMATCH = "STEREO_MORPHISM_PORT_ROLE_MISMATCH"
+    PORT_SOURCE_NOT_WILDCARD = "STEREO_MORPHISM_PORT_SOURCE_NOT_WILDCARD"
+    PORT_BINDING_MISSING = "STEREO_MORPHISM_PORT_BINDING_MISSING"
+    PORT_BINDING_AMBIGUOUS = "STEREO_MORPHISM_PORT_BINDING_AMBIGUOUS"
+    PORT_OWNER_MISMATCH = "STEREO_MORPHISM_PORT_OWNER_MISMATCH"
+    PORT_INCIDENCE_MISMATCH = "STEREO_MORPHISM_PORT_INCIDENCE_MISMATCH"
+    PORT_SLOT_MISMATCH = "STEREO_MORPHISM_PORT_SLOT_MISMATCH"
+    PORT_DOMAIN_MISMATCH = "STEREO_MORPHISM_PORT_DOMAIN_MISMATCH"
+    PORT_VIRTUAL_KIND_MISMATCH = "STEREO_MORPHISM_PORT_VIRTUAL_KIND_MISMATCH"
+    PORT_CAPACITY_MISMATCH = "STEREO_MORPHISM_PORT_CAPACITY_MISMATCH"
 
 
 @dataclass(frozen=True)
@@ -156,6 +167,350 @@ def _owned_references(descriptor: StereoValue, owner: int) -> tuple[Any, ...]:
         if owner == descriptor.atoms[2]
         else tuple(descriptor.atoms[4:])
     )
+
+
+def _node_token(value: Hashable) -> tuple[str, Hashable]:
+    return "node", value
+
+
+def _owner_node(
+    owner: Hashable,
+    resolver: StereoReferenceResolver,
+    graph: nx.Graph,
+) -> Hashable | None:
+    if owner in graph:
+        return owner
+    try:
+        return _material_node(resolver(owner))
+    except StereoIdentityError:
+        return None
+
+
+def _endpoint_side(layer: str, graph: nx.Graph | None = None) -> EndpointSide:
+    if layer == "reactant":
+        return EndpointSide.REACTANT
+    if layer == "product":
+        return EndpointSide.PRODUCT
+    projection = None if graph is None else graph.graph.get("stereo_projection")
+    if projection == "reactant":
+        return EndpointSide.REACTANT
+    if projection == "product":
+        return EndpointSide.PRODUCT
+    return EndpointSide.ANY
+
+
+def _target_virtual_kind(
+    graph: nx.Graph,
+    target_node: Hashable,
+    layer: str,
+) -> str | None:
+    element = _layer_value(graph.nodes[target_node].get("element"), layer)
+    if element == "H":
+        return "H"
+    if element in {"LP", "Lp", "lp"}:
+        return "LP"
+    return None
+
+
+def _port_concrete_state(
+    constraint: WildcardConstraint,
+    target_graph: nx.Graph,
+    target_node: Hashable,
+    target_owner: Hashable,
+    layer: str,
+    side: EndpointSide,
+) -> dict[str, Any]:
+    attrs = target_graph.nodes[target_node]
+    virtual_kind = _target_virtual_kind(target_graph, target_node, layer)
+    concrete = {
+        "element": _layer_value(attrs.get("element"), layer),
+        "charge": _layer_value(attrs.get("charge", 0), layer),
+        "radical": _layer_value(attrs.get("radical", 0), layer),
+        "owner": constraint.owner,
+        "side": side.value,
+        "stereo_slot": constraint.stereo_slot,
+        "virtual_kind": virtual_kind,
+        "mapped_identity": _layer_value(attrs.get("atom_map", target_node), layer),
+        "materialization": attrs.get(
+            "materialization",
+            "virtual" if virtual_kind is not None else "concrete",
+        ),
+        "capacity": 1,
+        "resource_usage": 1,
+    }
+    if target_graph.has_edge(target_owner, target_node):
+        edge = target_graph.edges[target_owner, target_node]
+        concrete["bond_order"] = _layer_value(edge.get("order"), layer)
+    return concrete
+
+
+def _descriptor_port_bindings(
+    source_graph: nx.Graph,
+    source_node: Hashable,
+) -> list[tuple[str, str, Hashable, int]]:
+    """Return ``(layer, descriptor key, owner node, owner-local slot)`` values."""
+    bindings: list[tuple[str, str, Hashable, int]] = []
+    for layer, registry in sorted(stereo_registry_layers(source_graph).items()):
+        resolver = _morphism_reference_resolver(source_graph, layer)
+        for key, descriptor in sorted(registry.items(), key=lambda item: str(item[0])):
+            configuration = _resolved_configuration(
+                descriptor,
+                resolver,
+                source_graph,
+                layer,
+            )
+            binding = _configuration_port_binding(configuration, source_node)
+            if binding is not None:
+                owner_node, slot = binding
+                bindings.append((layer, str(key), owner_node, slot))
+    return bindings
+
+
+def _port_materialization_issue(
+    constraint: WildcardConstraint,
+    source_graph: nx.Graph,
+    target_graph: nx.Graph,
+    target_node: Hashable,
+    target_owner: Hashable,
+    layer: str,
+    context: Mapping[str, Any],
+) -> StereoMorphismIssue | None:
+    concrete = _port_concrete_state(
+        constraint,
+        target_graph,
+        target_node,
+        target_owner,
+        layer,
+        _endpoint_side(layer, source_graph),
+    )
+    if constraint.virtual_kind is not None and (
+        concrete["virtual_kind"] != constraint.virtual_kind
+    ):
+        return StereoMorphismIssue(
+            StereoMorphismIssueCode.PORT_VIRTUAL_KIND_MISMATCH,
+            "A stereo ligand port materialized as the wrong virtual kind.",
+            context,
+        )
+    if constraint.capacity < 1 or (
+        constraint.resource_budget is not None and constraint.resource_budget < 1
+    ):
+        return StereoMorphismIssue(
+            StereoMorphismIssueCode.PORT_CAPACITY_MISMATCH,
+            "A stereo ligand port has no capacity for its mapped ligand.",
+            context,
+        )
+    if not constraint.satisfies(concrete):
+        return StereoMorphismIssue(
+            StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+            "A mapped stereo ligand does not satisfy its typed constraint.",
+            context,
+        )
+    return None
+
+
+def _validate_stereo_port_bindings(
+    graph_morphism: GraphMorphism,
+    source_graph: nx.Graph,
+    target_graph: nx.Graph,
+) -> None:
+    """Validate typed stereo ports against owner-local ordered frames."""
+    issues: list[StereoMorphismIssue] = []
+    mapping = graph_morphism.mapping
+    for source_node, constraint in graph_morphism.substitutions.items():
+        bindings = _descriptor_port_bindings(source_graph, source_node)
+        if not bindings:
+            if constraint.role is WildcardRole.STEREO_LIGAND_PORT:
+                issues.append(
+                    StereoMorphismIssue(
+                        StereoMorphismIssueCode.PORT_BINDING_MISSING,
+                        "A typed stereo ligand port is absent from every source frame.",
+                        {"source_node": repr(source_node)},
+                    )
+                )
+            continue
+        if constraint.role is not WildcardRole.STEREO_LIGAND_PORT:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_ROLE_MISMATCH,
+                    "A wildcard used as a stereo ligand must declare the stereo-ligand-port role.",
+                    {
+                        "source_node": repr(source_node),
+                        "role": constraint.role.value,
+                    },
+                )
+            )
+            continue
+        if len(bindings) != 1:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_BINDING_AMBIGUOUS,
+                    "A stereo ligand port must bind exactly one descriptor slot.",
+                    {"source_node": repr(source_node), "bindings": len(bindings)},
+                )
+            )
+            continue
+        layer, descriptor_key, source_owner, slot = bindings[0]
+        source_element = _layer_value(
+            source_graph.nodes[source_node].get("element"),
+            layer,
+        )
+        declared_owner = _owner_node(
+            constraint.owner,  # type: ignore[arg-type]
+            _morphism_reference_resolver(source_graph, layer),
+            source_graph,
+        )
+        context = {
+            "source_node": repr(source_node),
+            "layer": layer,
+            "descriptor": descriptor_key,
+            "owner": repr(source_owner),
+            "slot": slot,
+        }
+        if source_element != "*":
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_SOURCE_NOT_WILDCARD,
+                    "A typed stereo ligand port must originate at a wildcard node.",
+                    context,
+                )
+            )
+            continue
+        if declared_owner != source_owner:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_OWNER_MISMATCH,
+                    "A stereo ligand port declares the wrong descriptor owner.",
+                    context,
+                )
+            )
+            continue
+        if constraint.stereo_slot != slot:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_SLOT_MISMATCH,
+                    "A stereo ligand port declares the wrong owner-local frame slot.",
+                    context,
+                )
+            )
+            continue
+        target_node = mapping[source_node]
+        target_owner = mapping[source_owner]
+        if not source_graph.has_edge(source_owner, source_node) or (
+            not target_graph.has_edge(target_owner, target_node)
+        ):
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_INCIDENCE_MISMATCH,
+                    "A stereo ligand port must remain incident to its mapped owner.",
+                    context,
+                )
+            )
+            continue
+        materialization_issue = _port_materialization_issue(
+            constraint,
+            source_graph,
+            target_graph,
+            target_node,
+            target_owner,
+            layer,
+            context,
+        )
+        if materialization_issue is not None:
+            issues.append(materialization_issue)
+    if issues:
+        raise StereoMorphismError(*issues)
+
+
+def _configuration_port_binding(
+    configuration: StereoConfiguration,
+    source_node: Hashable,
+) -> tuple[Hashable, int] | None:
+    token = _node_token(source_node)
+    positions = [
+        position
+        for position, reference in enumerate(configuration.frame)
+        if reference == token
+    ]
+    if len(positions) != 1:
+        return None
+    position = positions[0]
+    if configuration.shape in _ATOM_CENTERED_STEREO:
+        if position == 0:
+            return None
+        owner_token = configuration.frame[0]
+        return _material_node(owner_token), position - 1
+    if position in {0, 1}:
+        return _material_node(configuration.frame[2]), position
+    if position in {4, 5}:
+        return _material_node(configuration.frame[3]), position - 4
+    return None
+
+
+def _validate_stored_port_bindings(
+    graph_morphism: GraphMorphism,
+    certificates: tuple[LocalStereoCertificate, ...],
+) -> None:
+    """Replay owner-local port bindings without retaining endpoint graphs."""
+    issues: list[StereoMorphismIssue] = []
+    for source_node, constraint in graph_morphism.substitutions.items():
+        bindings = [
+            binding
+            for certificate in certificates
+            if (
+                binding := _configuration_port_binding(
+                    certificate.source_configuration,
+                    source_node,
+                )
+            )
+            is not None
+        ]
+        if not bindings:
+            if constraint.role is WildcardRole.STEREO_LIGAND_PORT:
+                issues.append(
+                    StereoMorphismIssue(
+                        StereoMorphismIssueCode.PORT_BINDING_MISSING,
+                        "A stored stereo port has no certificate-local frame binding.",
+                        {"source_node": repr(source_node)},
+                    )
+                )
+            continue
+        if constraint.role is not WildcardRole.STEREO_LIGAND_PORT:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_ROLE_MISMATCH,
+                    "A stored wildcard frame reference has a non-stereo role.",
+                    {"source_node": repr(source_node)},
+                )
+            )
+            continue
+        if len(bindings) != 1:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_BINDING_AMBIGUOUS,
+                    "A stored stereo port binds more than one local certificate.",
+                    {"source_node": repr(source_node)},
+                )
+            )
+            continue
+        owner, slot = bindings[0]
+        if owner != constraint.owner:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_OWNER_MISMATCH,
+                    "A stored stereo port owner disagrees with its local frame.",
+                    {"source_node": repr(source_node)},
+                )
+            )
+        if slot != constraint.stereo_slot:
+            issues.append(
+                StereoMorphismIssue(
+                    StereoMorphismIssueCode.PORT_SLOT_MISMATCH,
+                    "A stored stereo port slot disagrees with its local frame.",
+                    {"source_node": repr(source_node)},
+                )
+            )
+    if issues:
+        raise StereoMorphismError(*issues)
 
 
 def _topology_supports_implicit_hydrogen(
@@ -336,6 +691,7 @@ def _morphism_reference_resolver(
 def _transport_token(
     token: Hashable,
     node_mapping: Mapping[Hashable, Hashable],
+    substitutions: Mapping[Hashable, WildcardConstraint] | None = None,
 ) -> Hashable:
     if isinstance(token, tuple) and len(token) == 2 and token[0] == "node":
         node = token[1]
@@ -347,6 +703,18 @@ def _transport_token(
                     {"node": repr(node)},
                 )
             )
+        constraint = (substitutions or {}).get(node)
+        if constraint is not None and constraint.virtual_kind is not None:
+            owner = constraint.owner
+            if owner not in node_mapping:
+                raise StereoMorphismError(
+                    StereoMorphismIssue(
+                        StereoMorphismIssueCode.PORT_OWNER_MISMATCH,
+                        "A virtual stereo port owner lies outside the morphism.",
+                        {"owner": repr(owner)},
+                    )
+                )
+            return "virtual", constraint.virtual_kind, ("node", node_mapping[owner])
         return "node", node_mapping[node]
     if isinstance(token, tuple) and len(token) == 3 and token[0] == "virtual":
         return token[0], token[1], _transport_token(token[2], node_mapping)
@@ -362,10 +730,14 @@ def _transport_token(
 def _transport_configuration(
     configuration: StereoConfiguration,
     node_mapping: Mapping[Hashable, Hashable],
+    substitutions: Mapping[Hashable, WildcardConstraint] | None = None,
 ) -> StereoConfiguration:
     return StereoConfiguration(
         configuration.shape,
-        tuple(_transport_token(token, node_mapping) for token in configuration.frame),
+        tuple(
+            _transport_token(token, node_mapping, substitutions)
+            for token in configuration.frame
+        ),
         configuration.specification,
     )
 
@@ -388,6 +760,7 @@ def _information_accepts(
     source_graph: nx.Graph,
     layer: str,
     node_mapping: Mapping[Hashable, Hashable],
+    substitutions: Mapping[Hashable, WildcardConstraint],
     policy: StereoInformationPolicy,
 ) -> bool:
     if policy is StereoInformationPolicy.EXACT:
@@ -404,6 +777,7 @@ def _information_accepts(
     alternative = _transport_configuration(
         _descriptor_alternative(descriptor, resolver, source_graph, layer),
         node_mapping,
+        substitutions,
     )
     return transported_source.same_configuration(target) or (
         alternative.same_configuration(target)
@@ -417,7 +791,11 @@ def _matched_certificate(
     graph_morphism: GraphMorphism,
     policy: StereoInformationPolicy,
 ) -> LocalStereoCertificate:
-    transported = _transport_configuration(source, graph_morphism.mapping)
+    transported = _transport_configuration(
+        source,
+        graph_morphism.mapping,
+        graph_morphism.substitutions,
+    )
     relation = transported.relation_to(target)
     if relation.witness is None:
         raise StereoMorphismError(
@@ -557,6 +935,7 @@ def _layer_certificates(
         transported = _transport_configuration(
             source_configuration,
             graph_morphism.mapping,
+            graph_morphism.substitutions,
         )
         descriptor_options = []
         for target_index, target_configuration in enumerate(target_configurations):
@@ -569,6 +948,7 @@ def _layer_certificates(
                 source_graph,
                 layer,
                 graph_morphism.mapping,
+                graph_morphism.substitutions,
                 source_policy,
             ):
                 continue
@@ -709,12 +1089,14 @@ class StereoMorphism:
             )
         )
         object.__setattr__(self, "certificates", certificates)
+        _validate_stored_port_bindings(self.graph_morphism, certificates)
         for certificate in certificates:
             if certificate.status is not StereoCertificateStatus.MATCHED:
                 continue
             transported = _transport_configuration(
                 certificate.source_configuration,
                 self.graph_morphism.mapping,
+                self.graph_morphism.substitutions,
             )
             target = certificate.target_configuration
             witness = certificate.witness
@@ -776,6 +1158,11 @@ class StereoMorphism:
                 )
             )
         try:
+            _validate_stereo_port_bindings(
+                graph_morphism,
+                source_graph,
+                target_graph,
+            )
             certificates = _build_certificates(
                 graph_morphism,
                 source_graph,
@@ -882,6 +1269,7 @@ class StereoMorphism:
             transported = _transport_configuration(
                 first.source_configuration,
                 graph_morphism.mapping,
+                graph_morphism.substitutions,
             )
             direct = transported.relation_to(target)
             witness = first.witness.then(second.witness)
@@ -947,6 +1335,7 @@ class StereoMorphism:
                 transported = _transport_configuration(
                     source_configuration,
                     graph_morphism.mapping,
+                    graph_morphism.substitutions,
                 )
                 direct = transported.relation_to(target_configuration)
                 relation = replace(direct, witness=certificate.witness)

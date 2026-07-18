@@ -30,6 +30,7 @@ from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Hyrogen._misc import normalize_h_pair_graph
+from synkit.Graph.Morphism.constraints import NodeStateKind, adapt_legacy_node_state
 from synkit.Graph.Stereo import (
     NonInvertibleStereoEffectError,
     StereoCoupling,
@@ -44,6 +45,22 @@ from synkit.IO.chem_converter import (
 )
 
 __all__ = ["NonInvertibleStereoEffectError", "SynRule"]
+
+_WILDCARD_CONTRACT_KEYS = (
+    "wildcard_role",
+    "elements",
+    "charges",
+    "radicals",
+    "bond_orders",
+    "side",
+    "owner",
+    "capacity",
+    "resource_budget",
+    "stereo_slot",
+    "virtual_kind",
+    "mapped_identity",
+    "materialization",
+)
 
 
 class SynRule:
@@ -197,6 +214,7 @@ class SynRule:
         elif self._implicit_h and self._format == "tuple":
             self._strip_explicit_h_tuple(rc_graph, left_graph, right_graph)
             left_graph, right_graph = self._decompose(rc_graph, self._format)
+        self._project_wildcard_contracts(rc_graph, left_graph, right_graph)
         stereo_sides = rc_graph.graph.get("stereo_descriptors", {})
         self.stereo_guards = dict(stereo_sides.get("reactant", {}))
         self.stereo_effects = dict(rc_graph.graph.get("stereo_changes", {}))
@@ -426,6 +444,78 @@ class SynRule:
         return its_decompose(rc)
 
     @staticmethod
+    def _project_wildcard_contracts(
+        rc: nx.Graph,
+        left: nx.Graph,
+        right: nx.Graph,
+    ) -> None:
+        """Preserve additive typed-wildcard metadata on rule endpoints."""
+        for node, attrs in rc.nodes(data=True):
+            contract = {
+                key: attrs[key] for key in _WILDCARD_CONTRACT_KEYS if key in attrs
+            }
+            if not contract:
+                continue
+            for endpoint in (left, right):
+                if node in endpoint:
+                    endpoint.nodes[node].update(contract)
+
+    @staticmethod
+    def _reverse_wildcard_contracts(
+        original: nx.Graph,
+        reversed_graph: nx.Graph,
+        reactant_descriptors: Mapping[str, Any],
+    ) -> None:
+        """Transport typed wildcard contracts to the reversed source frame."""
+        atom_shapes = {
+            "tetrahedral",
+            "square_planar",
+            "trigonal_bipyramidal",
+            "octahedral",
+        }
+
+        def binding(descriptor: Any, reference: Any) -> tuple[Any, int] | None:
+            frame = descriptor.configuration.frame
+            positions = [
+                index for index, candidate in enumerate(frame) if candidate == reference
+            ]
+            if len(positions) != 1:
+                return None
+            position = positions[0]
+            if descriptor.descriptor_class in atom_shapes:
+                return None if position == 0 else (frame[0], position - 1)
+            if position in {0, 1}:
+                return frame[2], position
+            if position in {4, 5}:
+                return frame[3], position - 4
+            return None
+
+        for node, attrs in original.nodes(data=True):
+            if "wildcard_role" not in attrs or node not in reversed_graph:
+                continue
+            contract = {
+                key: attrs[key] for key in _WILDCARD_CONTRACT_KEYS if key in attrs
+            }
+            side = contract.get("side")
+            if side == "reactant":
+                contract["side"] = "product"
+            elif side == "product":
+                contract["side"] = "reactant"
+            atom_map = attrs.get("atom_map", node)
+            if isinstance(atom_map, (tuple, list)) and len(atom_map) == 2:
+                atom_map = atom_map[1]
+            bindings = [
+                result
+                for descriptor in reactant_descriptors.values()
+                if (result := binding(descriptor, atom_map)) is not None
+            ]
+            if contract.get("wildcard_role") == "stereo_ligand_port" and (
+                len(bindings) == 1
+            ):
+                contract["owner"], contract["stereo_slot"] = bindings[0]
+            reversed_graph.nodes[node].update(contract)
+
+    @staticmethod
     def _strip_explicit_h(
         rc: nx.Graph,
         left: nx.Graph,
@@ -624,6 +714,16 @@ class SynRule:
             )
         )
         reverse_queries = tuple(sorted(self._reverse_stereo_query_policies.values()))
+        wildcard_contracts = []
+        for _, attrs in self.rc.raw.nodes(data=True):
+            if "wildcard_role" not in attrs:
+                continue
+            state = adapt_legacy_node_state(attrs)
+            if state.kind is not NodeStateKind.WILDCARD or state.constraint is None:
+                continue
+            values = list(state.constraint.normalized())
+            values[6] = state.constraint.owner is not None
+            wildcard_contracts.append(tuple(values))
         return (
             guards,
             effects,
@@ -632,6 +732,7 @@ class SynRule:
             query_policies,
             reverse_outcomes,
             reverse_queries,
+            tuple(sorted(wildcard_contracts, key=repr)),
         )
 
     def __str__(self) -> str:
@@ -849,6 +950,11 @@ class SynRule:
             reversed_graph.graph["stereo_descriptors"]["transition"] = dict(
                 sides["transition"]
             )
+        self._reverse_wildcard_contracts(
+            self.rc.raw,
+            reversed_graph,
+            reversed_graph.graph["stereo_descriptors"]["reactant"],
+        )
 
         if self._reverse_stereo_outcomes:
             # This rule is already the reverse view of a branching rule.

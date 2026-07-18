@@ -642,13 +642,33 @@ def candidate_mapping_stereo_morphism(
     """Return a proof-bearing refinement of one structural candidate mapping."""
     if mode not in {"require", "strict", "ignore", "propagate"}:
         raise ValueError(f"Unsupported stereo matching mode: {mode!r}")
+    normalized_substitutions = {}
+    for node, constraint in (substitutions or {}).items():
+        owner = constraint.owner
+        if owner is not None and owner not in pattern:
+            owner_nodes = [
+                candidate
+                for candidate, attrs in pattern.nodes(data=True)
+                if owner
+                in (
+                    attrs.get("atom_map"),
+                    *(
+                        attrs.get("atom_map")
+                        if isinstance(attrs.get("atom_map"), (tuple, list))
+                        else ()
+                    ),
+                )
+            ]
+            if len(owner_nodes) == 1:
+                constraint = constraint.relabel_owner({owner: owner_nodes[0]})
+        normalized_substitutions[node] = constraint
     graph_morphism = GraphMorphism(
         source_id,
         target_id,
         frozenset(pattern.nodes),
         frozenset(host.nodes),
         mapping,
-        substitutions or {},
+        normalized_substitutions,
     )
     return StereoMorphism.from_graphs(
         graph_morphism,
@@ -707,12 +727,31 @@ def candidate_mapping_stereo_matches(
     mode: str = "require",
     unknown_policy: str = "exact",
     query_policies: Mapping[str, str] | None = None,
+    substitutions: Mapping[Hashable, WildcardConstraint] | None = None,
     semantics: StereoSemanticsMode | str = StereoSemanticsMode.ORBIT,
     diagnostics: list[StereoSemanticComparison] | None = None,
+    morphism_issues: list[Any] | None = None,
 ) -> bool:
     """Check one candidate mapping and optionally audit frozen behavior."""
     semantics_mode = StereoSemanticsMode(semantics)
     if semantics_mode is StereoSemanticsMode.LEGACY:
+        if substitutions:
+            try:
+                candidate_mapping_stereo_morphism(
+                    pattern,
+                    host,
+                    mapping,
+                    mode=mode,
+                    unknown_policy=unknown_policy,
+                    query_policies=query_policies,
+                    substitutions=substitutions,
+                )
+            except StereoMorphismError as error:
+                if morphism_issues is not None:
+                    morphism_issues.extend(error.issues)
+                return False
+            except GraphMorphismError:
+                return False
         return _legacy_candidate_mapping_stereo_matches(
             pattern,
             host,
@@ -729,9 +768,14 @@ def candidate_mapping_stereo_matches(
             mode=mode,
             unknown_policy=unknown_policy,
             query_policies=query_policies,
+            substitutions=substitutions,
         )
         orbit_result = True
-    except (GraphMorphismError, StereoMorphismError):
+    except StereoMorphismError as error:
+        if morphism_issues is not None:
+            morphism_issues.extend(error.issues)
+        orbit_result = False
+    except GraphMorphismError:
         orbit_result = False
     if semantics_mode is StereoSemanticsMode.ORBIT:
         return orbit_result

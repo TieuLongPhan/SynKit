@@ -17,7 +17,6 @@ from synkit.Graph.Stereo import (
     summarize_stereo_comparisons,
 )
 
-
 DESCRIPTORS = (
     TetrahedralStereo((1, 2, 3, 4, 5), 1),
     SquarePlanarStereo((1, 2, 3, 4, 5), 0),
@@ -47,9 +46,7 @@ def _descriptor_graph(descriptor):
             graph.add_edge(left, ligand, order=1.0)
         for ligand in descriptor.atoms[4:]:
             graph.add_edge(right, ligand, order=1.0)
-    graph.graph["stereo_descriptors"] = {
-        descriptor_id(descriptor): descriptor
-    }
+    graph.graph["stereo_descriptors"] = {descriptor_id(descriptor): descriptor}
     return graph
 
 
@@ -141,10 +138,7 @@ def test_complete_six_geometry_migration_audit_has_no_unregistered_divergence():
     assert report["unexpected_divergences"] == 0
     assert report["expected_divergences"] == 4
     assert report["total"] == 62
-    assert {
-        stage: values["total"]
-        for stage, values in report["stages"].items()
-    } == {
+    assert {stage: values["total"] for stage, values in report["stages"].items()} == {
         "candidate_mapping": 6,
         "descriptor_identity": 6,
         "descriptor_query": 6,

@@ -42,6 +42,8 @@ synkit/Graph/dev/*
 !Data/Mech/stereo.json
 !Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
 !Data/Conformance/stereomolgraph_graph_conformance.json
+!Data/Benchmark/Stereo/
+!Data/Benchmark/Stereo/**
 *.txt
 !LICENSES/*.txt
 *.log

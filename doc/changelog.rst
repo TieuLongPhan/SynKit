@@ -12,6 +12,21 @@ Version 2.0.0
   deduplication, endpoint certificates, and explicit completeness reporting.
 - Optimized interface discovery and proof reuse while retaining the Beta 1
   compatibility projections.
+- Enforced typed stereo-ligand ports through owner-local orbit-frame slots,
+  chemical/virtual domains, Reactor candidate expansion, and immutable
+  morphism proof replay; legacy untyped wildcard rules remain explicit
+  compatibility inputs.
+- Added a standalone whole-molecule chiral/achiral classifier under
+  ``synkit.Chem.Molecule``. It completes eligible sp3 stereo topology and tests
+  exact equality with the molecular mirror using element, hydrogen-count, and
+  connectivity identity; it is independent of reaction and rule semantics.
+- Added bounded, cached configuration-aware molecular chirality assessment for
+  stereo-underspecified input, with necessary/configuration-dependent/incomplete
+  outcomes and an opt-in strict binary mode that rejects unresolved stereo.
+- Consolidated molecule-stereo datasets under a task-aware benchmark registry:
+  the ACS whole-molecule set and MIT-licensed ChiralFinder RotA are vendored
+  with integrity metadata, while the unlicensed CIP Validation Suite remains
+  an external-only descriptor-benchmark reference.
 
 **Beta 1 release checkpoint**
 

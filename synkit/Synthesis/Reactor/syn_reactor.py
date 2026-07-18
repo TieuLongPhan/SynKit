@@ -58,6 +58,7 @@ from synkit.Graph import (
     has_wildcard_node,
 )
 from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor.assignment import StereoWildcardAssignmentLimitError
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Typing aliases
@@ -153,6 +154,10 @@ class SynReactor:
         while still finalizing electron fields and validating stereo state.
         This policy is independent of mapping-level ``automorphism`` pruning.
     :type dedup_its: bool
+    :param stereo_assignment_limit: Optional hard cap on admissible injective
+        typed stereo-port assignments. Exceeding it raises instead of silently
+        truncating the search.
+    :type stereo_assignment_limit: Optional[int]
     :ivar _graph: Cached SynGraph for the substrate.
     :vartype _graph: Optional[SynGraph]
     :ivar _rule: Cached SynRule for the template.
@@ -187,6 +192,7 @@ class SynReactor:
     automorphism: bool = True
     preserve_mapped_hydrogens: bool = False
     dedup_its: bool = True
+    stereo_assignment_limit: int | None = None
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -196,6 +202,11 @@ class SynReactor:
     _smarts: List[str] | None = field(init=False, default=None, repr=False)
     _host_for_matching: nx.Graph | None = field(init=False, default=None, repr=False)
     _stereo_semantic_diagnostics: List[Any] = field(
+        init=False,
+        default_factory=list,
+        repr=False,
+    )
+    _stereo_morphism_issues: List[Any] = field(
         init=False,
         default_factory=list,
         repr=False,
@@ -228,6 +239,11 @@ class SynReactor:
             )
         if not isinstance(self.dedup_its, bool):
             raise TypeError("dedup_its must be a bool.")
+        if self.stereo_assignment_limit is not None and (
+            type(self.stereo_assignment_limit) is not int
+            or self.stereo_assignment_limit < 1
+        ):
+            raise ValueError("stereo_assignment_limit must be a positive integer.")
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -252,6 +268,7 @@ class SynReactor:
         stereo_semantics: str = "orbit",
         preserve_mapped_hydrogens: bool = False,
         dedup_its: bool = True,
+        stereo_assignment_limit: int | None = None,
     ) -> "SynReactor":
         """
         Alternate constructor: build a SynReactor directly from SMILES.
@@ -293,6 +310,9 @@ class SynReactor:
         :param dedup_its: Consolidate equivalent post-rewrite ITS graphs while
             preserving all correctness finalization and validation steps.
         :type dedup_its: bool
+        :param stereo_assignment_limit: Optional hard cap on exhaustive typed
+            stereo-port assignments.
+        :type stereo_assignment_limit: Optional[int]
         :returns: A new `SynReactor` instance.
         :rtype: SynReactor
         """
@@ -313,6 +333,7 @@ class SynReactor:
             stereo_semantics=stereo_semantics,
             preserve_mapped_hydrogens=preserve_mapped_hydrogens,
             dedup_its=dedup_its,
+            stereo_assignment_limit=stereo_assignment_limit,
         )
 
     # ------------------------------------------------------------------
@@ -322,6 +343,11 @@ class SynReactor:
     def stereo_semantic_diagnostics(self) -> tuple[Any, ...]:
         """Return accumulated orbit/legacy mapping and application audits."""
         return tuple(self._stereo_semantic_diagnostics)
+
+    @property
+    def stereo_morphism_issues(self) -> tuple[Any, ...]:
+        """Return structured reasons rejected typed stereo mappings failed."""
+        return tuple(self._stereo_morphism_issues)
 
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
@@ -425,10 +451,17 @@ class SynReactor:
                 reverse=True,
             )
 
+            stereo_substitutions = self._typed_stereo_wildcard_substitutions(
+                full_pattern_graph
+            )
+            certified_generic = bool(
+                self.rule.rc.raw.graph.get("generic_stereo_extraction")
+            )
             raw_maps = self._expand_stereo_wildcard_mappings(
                 raw_maps,
                 full_pattern_graph,
                 matching_host,
+                substitutions=stereo_substitutions,
             )
 
             if self.radical_policy == "lower_bound":
@@ -448,11 +481,32 @@ class SynReactor:
                         mode=self.stereo_mode,
                         unknown_policy=self.stereo_query_mode,
                         query_policies=self.rule.stereo_query_policies,
+                        substitutions=stereo_substitutions,
                         semantics=self.stereo_semantics,
                         diagnostics=self._stereo_semantic_diagnostics,
+                        morphism_issues=self._stereo_morphism_issues,
                     )
                 ]
             elif self.stereo_mode == "propagate":
+                if certified_generic and stereo_substitutions:
+                    from synkit.Graph.Stereo import candidate_mapping_stereo_matches
+
+                    raw_maps = [
+                        mapping
+                        for mapping in raw_maps
+                        if candidate_mapping_stereo_matches(
+                            full_pattern_graph,
+                            matching_host,
+                            mapping,
+                            mode="propagate",
+                            unknown_policy=self.stereo_query_mode,
+                            query_policies=self.rule.stereo_query_policies,
+                            substitutions=stereo_substitutions,
+                            semantics=self.stereo_semantics,
+                            diagnostics=self._stereo_semantic_diagnostics,
+                            morphism_issues=self._stereo_morphism_issues,
+                        )
+                    ]
                 exact_targets = self._noncovariant_propagation_targets()
                 if exact_targets:
                     from synkit.Graph.Stereo import candidate_mapping_stereo_matches
@@ -485,6 +539,17 @@ class SynReactor:
             )
             if len(raw_maps) < 2:
                 self._mappings = raw_maps
+            elif certified_generic:
+                # Certified generic rules retain the complete injective port
+                # assignment population. Exact product quotienting happens
+                # only after rewrite, where multiplicity and provenance can
+                # be preserved. A future stabilizer optimization must prove
+                # population equivalence before entering this branch.
+                self._mappings = raw_maps
+                log.debug(
+                    "Certified generic stereo rule retained %d exhaustive mapping(s)",
+                    len(raw_maps),
+                )
             elif self.automorphism and not stereo_sensitive:
                 automorphism_pattern = self._automorphism_pattern_graph(pattern_graph)
                 auto = Automorphism(
@@ -579,6 +644,8 @@ class SynReactor:
         mappings: List[MappingDict],
         pattern: nx.Graph,
         host: nx.Graph,
+        *,
+        substitutions: Mapping[NodeId, Any] | None = None,
     ) -> List[MappingDict]:
         """Bind wildcard stereo references to actual host neighbors.
 
@@ -622,6 +689,30 @@ class SynReactor:
             return mappings
 
         expanded: List[MappingDict] = []
+        assignment_count = 0
+        substitutions = substitutions or {}
+        from synkit.Graph.Morphism import (
+            StereoMorphismIssue,
+            StereoMorphismIssueCode,
+        )
+
+        def reject(
+            code: Any,
+            message: str,
+            wildcard: NodeId,
+            candidate: NodeId | None = None,
+        ) -> None:
+            self._stereo_morphism_issues.append(
+                StereoMorphismIssue(
+                    code,
+                    message,
+                    {
+                        "source_node": repr(wildcard),
+                        "target_node": repr(candidate),
+                    },
+                )
+            )
+
         for mapping in mappings:
             partials = [dict(mapping)]
             for wildcard in stereo_wildcards:
@@ -642,12 +733,127 @@ class SynReactor:
                         candidates &= set(host.neighbors(anchor))
                     candidates -= set(partial.values())
                     for candidate in sorted(candidates, key=repr):
+                        constraint = substitutions.get(wildcard)
+                        if constraint is not None:
+                            owner = constraint.owner
+                            owner_node = (
+                                owner if owner in pattern else by_map.get(owner)
+                            )
+                            target_owner = (
+                                partial.get(owner_node)
+                                if owner_node is not None
+                                else None
+                            )
+                            if target_owner is None or not host.has_edge(
+                                target_owner, candidate
+                            ):
+                                reject(
+                                    StereoMorphismIssueCode.PORT_OWNER_MISMATCH,
+                                    "A typed stereo port owner is absent from the candidate mapping.",
+                                    wildcard,
+                                    candidate,
+                                )
+                                continue
+                            attrs = host.nodes[candidate]
+                            element = attrs.get("element")
+                            virtual_kind = (
+                                "H"
+                                if element == "H"
+                                else ("LP" if element in {"LP", "Lp", "lp"} else None)
+                            )
+                            concrete = {
+                                "element": element,
+                                "charge": attrs.get("charge", 0),
+                                "radical": attrs.get("radical", 0),
+                                "bond_order": host.edges[target_owner, candidate].get(
+                                    "order"
+                                ),
+                                "owner": constraint.owner,
+                                "side": "reactant",
+                                "stereo_slot": constraint.stereo_slot,
+                                "virtual_kind": virtual_kind,
+                                "mapped_identity": attrs.get("atom_map", candidate),
+                                "materialization": attrs.get(
+                                    "materialization",
+                                    (
+                                        "virtual"
+                                        if virtual_kind is not None
+                                        else "concrete"
+                                    ),
+                                ),
+                                "capacity": 1,
+                                "resource_usage": 1,
+                            }
+                            if constraint.virtual_kind is not None and (
+                                virtual_kind != constraint.virtual_kind
+                            ):
+                                reject(
+                                    StereoMorphismIssueCode.PORT_VIRTUAL_KIND_MISMATCH,
+                                    "A stereo port candidate has the wrong virtual kind.",
+                                    wildcard,
+                                    candidate,
+                                )
+                                continue
+                            if constraint.capacity < 1 or (
+                                constraint.resource_budget is not None
+                                and constraint.resource_budget < 1
+                            ):
+                                reject(
+                                    StereoMorphismIssueCode.PORT_CAPACITY_MISMATCH,
+                                    "A stereo port has no materialization capacity.",
+                                    wildcard,
+                                    candidate,
+                                )
+                                continue
+                            if not constraint.satisfies(concrete):
+                                reject(
+                                    StereoMorphismIssueCode.PORT_DOMAIN_MISMATCH,
+                                    "A stereo port candidate violates its typed domain.",
+                                    wildcard,
+                                    candidate,
+                                )
+                                continue
                         branch = dict(partial)
                         branch[wildcard] = candidate
                         next_partials.append(branch)
                 partials = next_partials
+            assignment_count += len(partials)
+            if (
+                self.stereo_assignment_limit is not None
+                and assignment_count > self.stereo_assignment_limit
+            ):
+                raise StereoWildcardAssignmentLimitError(
+                    self.stereo_assignment_limit,
+                    assignment_count,
+                )
             expanded.extend(partials)
         return expanded
+
+    @staticmethod
+    def _typed_stereo_wildcard_substitutions(
+        pattern: nx.Graph,
+    ) -> Dict[NodeId, Any]:
+        """Adapt explicitly typed stereo wildcard nodes at the Reactor boundary."""
+        from synkit.Graph.Morphism import (
+            NodeStateKind,
+            WildcardRole,
+            adapt_legacy_node_state,
+        )
+
+        substitutions: Dict[NodeId, Any] = {}
+        for node, attrs in pattern.nodes(data=True):
+            if attrs.get("element") not in {"*", ("*", "*")} or (
+                "wildcard_role" not in attrs
+            ):
+                continue
+            state = adapt_legacy_node_state(attrs)
+            if (
+                state.kind is NodeStateKind.WILDCARD
+                and state.constraint is not None
+                and state.constraint.role is WildcardRole.STEREO_LIGAND_PORT
+            ):
+                substitutions[node] = state.constraint
+        return substitutions
 
     @staticmethod
     def _with_aromatic_n_pi_roles(graph: nx.Graph) -> nx.Graph:
@@ -744,9 +950,40 @@ class SynReactor:
             strategy = Strategy.from_string(self.strategy)
             relative_pi_edges = self._relative_pi_rewrite_edges(rc_raw)
             electron_aware = self._is_electron_aware_template(rc_raw)
+            stereo_substitutions = self._typed_stereo_wildcard_substitutions(
+                pattern_explicit
+            )
+            certified_generic = bool(
+                self.rule.rc.raw.graph.get("generic_stereo_extraction")
+            )
             self._its = []
             raw_application_index = 0
             for mapping_index, m in enumerate(self.mappings):
+                retain_provenance = not self.dedup_its or certified_generic
+                mapping_provenance = (
+                    self._mapping_provenance(m, pattern_explicit, host_raw)
+                    if retain_provenance
+                    else ()
+                )
+                port_assignment = tuple(
+                    pair
+                    for pair in mapping_provenance
+                    if pair[0]
+                    in {
+                        pattern_explicit.nodes[node].get("atom_map", node)
+                        for node in stereo_substitutions
+                    }
+                )
+                stereo_proof = (
+                    self._stereo_application_provenance(
+                        pattern_explicit,
+                        host_raw,
+                        m,
+                        stereo_substitutions,
+                    )
+                    if certified_generic
+                    else None
+                )
                 its_batch = self._glue_graph(
                     host_raw,
                     rc_raw,
@@ -764,20 +1001,24 @@ class SynReactor:
                 stereo_batch: List[nx.Graph] = []
                 for rewrite_index, candidate in enumerate(its_batch):
                     branches = self._apply_stereo_rule_metadata(candidate, host_raw, m)
-                    if not self.dedup_its:
-                        mapping_provenance = self._mapping_provenance(
-                            m,
-                            pattern_explicit,
-                            host_raw,
-                        )
+                    if retain_provenance:
                         for stereo_branch_index, branch in enumerate(branches):
-                            branch.graph["application_provenance"] = {
+                            provenance = {
                                 "application_index": raw_application_index,
                                 "mapping_index": mapping_index,
                                 "rewrite_index": rewrite_index,
                                 "stereo_branch_index": stereo_branch_index,
                                 "mapping": mapping_provenance,
+                                "port_assignment": port_assignment,
                             }
+                            if stereo_proof is not None:
+                                provenance["stereo_morphism"] = stereo_proof
+                            branch.graph["application_provenance"] = provenance
+                            if certified_generic:
+                                branch.graph["application_orbit"] = {
+                                    "multiplicity": 1,
+                                    "applications": [provenance],
+                                }
                             raw_application_index += 1
                     stereo_batch.extend(branches)
                 self._its.extend(stereo_batch)
@@ -2014,6 +2255,94 @@ class SynReactor:
         return tuple(sorted(pairs, key=lambda pair: (repr(pair[0]), repr(pair[1]))))
 
     @staticmethod
+    def _configuration_provenance(configuration: Any | None) -> Any:
+        """Return deterministic JSON-compatible local-frame evidence."""
+        if configuration is None:
+            return None
+        shape, specification, frame = configuration.canonical_form()
+        return {
+            "shape": shape,
+            "specification": specification,
+            "canonical_frame": [repr(reference) for reference in frame],
+        }
+
+    def _stereo_application_provenance(
+        self,
+        pattern: nx.Graph,
+        host: nx.Graph,
+        mapping: MappingDict,
+        substitutions: Mapping[NodeId, Any],
+    ) -> Dict[str, Any]:
+        """Build replayable local stereo evidence for one accepted mapping."""
+        from synkit.Graph.Stereo import candidate_mapping_stereo_morphism
+
+        proof = candidate_mapping_stereo_morphism(
+            pattern,
+            host,
+            mapping,
+            mode=self.stereo_mode,
+            unknown_policy=self.stereo_query_mode,
+            query_policies=self.rule.stereo_query_policies,
+            substitutions=substitutions,
+        )
+        certificates = []
+        for certificate in proof.certificates:
+            relation = certificate.relation
+            witness = certificate.witness
+            certificates.append(
+                {
+                    "layer": certificate.layer,
+                    "status": certificate.status.value,
+                    "information_policy": certificate.information_policy.value,
+                    "source": self._configuration_provenance(
+                        certificate.source_configuration
+                    ),
+                    "target": self._configuration_provenance(
+                        certificate.target_configuration
+                    ),
+                    "relation": (
+                        None
+                        if relation is None
+                        else {
+                            "kind": relation.kind.value,
+                            "shape": relation.shape,
+                            "class_id": relation.class_id,
+                        }
+                    ),
+                    "witness": (
+                        None if witness is None else tuple(witness.permutation.image)
+                    ),
+                }
+            )
+        return {
+            "presence_mode": proof.presence_mode.value,
+            "information_policy": proof.information_policy.value,
+            "certificates": certificates,
+        }
+
+    @staticmethod
+    def _merge_application_orbits(
+        representative: nx.Graph,
+        members: List[nx.Graph],
+    ) -> None:
+        """Retain every application contributing to one exact product orbit."""
+        applications = []
+        for member in members:
+            orbit = member.graph.get("application_orbit")
+            if orbit is not None:
+                applications.extend(orbit.get("applications", ()))
+                continue
+            provenance = member.graph.get("application_provenance")
+            if provenance is not None:
+                applications.append(provenance)
+        if applications:
+            applications.sort(key=lambda value: value["application_index"])
+            representative.graph["application_orbit"] = {
+                "multiplicity": len(applications),
+                "applications": applications,
+            }
+
+    @staticmethod
     def _chemical_rewrite_role(role: Any) -> Any:
         """Drop provenance-only atom-map identity from tuple rewrite roles."""
         if isinstance(role, tuple) and len(role) >= 9:
@@ -2108,7 +2437,13 @@ class SynReactor:
             prepared = [prepared for _, prepared in bucket]
             classes, _ = cluster.iterative_cluster(prepared)
             for cls in classes:
-                representative_indices.append(bucket[min(cls)][0])
+                member_indices = [bucket[index][0] for index in sorted(cls)]
+                representative_index = member_indices[0]
+                representative_indices.append(representative_index)
+                SynReactor._merge_application_orbits(
+                    its_graphs[representative_index],
+                    [its_graphs[index] for index in member_indices],
+                )
 
         representative_indices.sort()
         return [its_graphs[index] for index in representative_indices]
@@ -2401,6 +2736,10 @@ class SynReactor:
                         branches.discard(None)
                         retained_metadata["equivalent_face_branches"] = sorted(branches)
                         retained_metadata["symmetry_multiplicity"] = len(branches)
+                    SynReactor._merge_application_orbits(
+                        other_its,
+                        [other_its, its],
+                    )
                     duplicate = True
                     break
             if duplicate:

@@ -47,6 +47,41 @@ Rule utilities are organized into native graph-based subpackages:
 - :py:mod:`synkit.Rule.Apply` — native rule matching
 - :py:mod:`synkit.Rule.Modify` — editing / normalization (e.g., hydrogen handling, context tuning)
 
+Proof-bearing generic stereo rules
+----------------------------------
+
+Ordinary :class:`~synkit.Rule.SynRule` construction remains exact. To
+generalize unchanged peripheral ligands of a mapped stereo reaction, use the
+additive :class:`~synkit.Rule.GenericStereoRuleExtractor` API::
+
+   from synkit.Rule import GenericStereoRuleExtractor, GenericStereoRulePolicy
+
+   policy = GenericStereoRulePolicy(
+       domain_source="class",
+       explicit_domains={
+           1: {"elements": {"C"}},
+           3: {"elements": {"F", "Br"}},
+       },
+   )
+   result = GenericStereoRuleExtractor(policy).extract(mapped_reaction)
+   rule = result.rule
+   certificate = result.certificate
+
+The default ``observed`` policy admits only the chemistry present in the
+source. Broader ``class`` and ``corpus`` domains must be supplied explicitly;
+``exact`` performs no generalization. Accepted extraction requires exact
+forward replay and, for invertible effects, exact reverse replay. Reaction
+loci, entering and leaving ligands, virtual H/LP identities, descriptor orbit
+relations, and witnesses are retained rather than replaced by unrestricted
+wildcards.
+
+Typed stereo ports are assigned exhaustively during application. Set
+``SynReactor(stereo_assignment_limit=N)`` to bound that search; exceeding the
+cap raises ``StereoWildcardAssignmentLimitError`` and never returns a partial
+population. Exact stereo-aware product quotienting records
+``application_orbit`` multiplicity and all contributing mapping, port, and
+local-morphism provenance for certified generic rules.
+
 Common patterns
 ---------------
 

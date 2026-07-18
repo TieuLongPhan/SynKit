@@ -7,6 +7,7 @@ from typing import Any
 
 import networkx as nx
 
+from synkit.Graph.Morphism.constraints import NodeStateKind, adapt_legacy_node_state
 from synkit.Graph.Stereo.identity import (
     StereoIdentityError,
     descriptor_relative_form,
@@ -80,6 +81,43 @@ def _reaction_relation_form(
             else relation.witness.permutation.image
         ),
     )
+
+
+def _wildcard_contract_form(
+    rule: Any,
+    node_mapping: Mapping[Any, Any] | None,
+) -> tuple[Any, ...]:
+    graph = rule.rc.raw
+    mapping = node_mapping or {}
+    records = []
+    for node, attrs in graph.nodes(data=True):
+        if "wildcard_role" not in attrs:
+            continue
+        state = adapt_legacy_node_state(attrs)
+        if state.kind is not NodeStateKind.WILDCARD or state.constraint is None:
+            continue
+        constraint = state.constraint
+        owner = constraint.owner
+        if owner is not None and owner not in graph:
+            candidates = [
+                candidate
+                for candidate, data in graph.nodes(data=True)
+                if owner
+                in (
+                    data.get("atom_map"),
+                    *(
+                        data.get("atom_map")
+                        if isinstance(data.get("atom_map"), (tuple, list))
+                        else ()
+                    ),
+                )
+            ]
+            if len(candidates) == 1:
+                owner = candidates[0]
+        values = list(constraint.normalized())
+        values[6] = None if owner is None else repr(mapping.get(owner, owner))
+        records.append((repr(mapping.get(node, node)), tuple(values)))
+    return tuple(sorted(records, key=repr))
 
 
 def _rule_metadata_form(
@@ -179,6 +217,7 @@ def _rule_metadata_form(
         query_policies,
         reverse_outcomes,
         reverse_queries,
+        _wildcard_contract_form(rule, node_mapping),
     )
 
 

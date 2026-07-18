@@ -75,6 +75,10 @@ obtaining an optimality certificate. The exact helpers are available from
 Molecule
 --------
 
+.. automodule:: synkit.Chem.Molecule.chirality
+   :members:
+   :show-inheritance:
+
 .. automodule:: synkit.Chem.Molecule.atom_features
    :members:
    :show-inheritance:

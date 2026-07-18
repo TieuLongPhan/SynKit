@@ -161,6 +161,36 @@ def test_dataset_matches_the_local_validation_environment():
     }
 
 
+def test_benchmark_reports_direct_morphism_and_deferred_boundaries_honestly():
+    direct_reactor = [
+        case
+        for case in POSITIVE_TRANSFORMATIONS
+        if case["representation"]
+        in {
+            "native_stereo_rewrite",
+            "non_tetrahedral_rewrite",
+        }
+        or (
+            case["representation"] == "reaction_smiles"
+            and case["status"] in {"executable", "graph_only"}
+        )
+    ]
+    mechanism_replay = [
+        case
+        for case in POSITIVE_TRANSFORMATIONS
+        if case["representation"] == "mechanism_replay"
+    ]
+    deferred = [
+        case
+        for case in POSITIVE_TRANSFORMATIONS
+        if case["status"] == "deferred_isotope_support"
+    ]
+
+    assert (len(direct_reactor), len(mechanism_replay), len(deferred)) == (70, 7, 3)
+    assert "wildcard_role" not in DATA_PATH.read_text(encoding="utf-8")
+    assert "stereo_slot" not in DATA_PATH.read_text(encoding="utf-8")
+
+
 @pytest.mark.parametrize(
     ("case", "step"),
     STEPS,
