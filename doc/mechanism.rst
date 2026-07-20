@@ -82,7 +82,8 @@ Migration from v1.5
 
 Legacy EPD and EF-SMIRKS enter through adapters. ASCII/legacy locus names are
 normalized at the boundary; public v2 JSON always emits canonical Unicode.
-The public Lewis-state graph acronym is LSG; LWG remains a compatibility name.
+The public term is Lewis-labelled graph (LLG). LSG and LWG remain compatibility
+names through the 2.x series.
 Conversions to formats that cannot carry grouping, fishhook coupling, or
 stereo effects return ``ConversionLossReport`` instead of silently dropping
 those fields. The schema is ``2.0.0-draft1`` until all release-owner gates are

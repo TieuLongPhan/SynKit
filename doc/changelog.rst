@@ -1,6 +1,16 @@
 Changelog
 =========
 
+Version 1.6.0
+-------------
+
+**Beta 1 release checkpoint**
+
+- Prepared the ``1.6.0b1`` prerelease with the current graph-native reaction,
+  mechanism-verification, stereo, and reactor fixes.
+- Removed Kekule-phase-sensitive aromatic-nitrogen matching constraints that
+  could reject chemically equivalent ``SynReactor`` embeddings.
+
 Version 2.0.0
 -------------
 

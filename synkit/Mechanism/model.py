@@ -223,6 +223,7 @@ class ElectronMoveGroup:
             "BETA_SCISSION",
             "H_ABSTRACTION",
             "RADICAL_RESONANCE",
+            "LONE_PAIR_RADICAL_RELOCATION",
         }
     )
     REVERSE_MACRO: ClassVar[Mapping[str, str]] = {
@@ -232,6 +233,7 @@ class ElectronMoveGroup:
         "BETA_SCISSION": "RADICAL_ADDITION",
         "H_ABSTRACTION": "H_ABSTRACTION",
         "RADICAL_RESONANCE": "RADICAL_RESONANCE",
+        "LONE_PAIR_RADICAL_RELOCATION": "LONE_PAIR_RADICAL_RELOCATION",
     }
 
     def __post_init__(self) -> None:
@@ -271,17 +273,20 @@ class ElectronMoveGroup:
             seen.add(signature)
             if move.electron_count == 1:
                 if not move.coupling_id:
-                    issues.append(
-                        VerificationIssue(
-                            code="MISSING_COUPLED_FISHHOOK",
-                            message="Fishhook moves require a coupling_id before commit.",
-                            group_id=self.group_id,
+                    if self.macro != "LONE_PAIR_RADICAL_RELOCATION":
+                        issues.append(
+                            VerificationIssue(
+                                code="MISSING_COUPLED_FISHHOOK",
+                                message=(
+                                    "Fishhook moves require a coupling_id before commit."
+                                ),
+                                group_id=self.group_id,
+                            )
                         )
-                    )
                 else:
                     coupled.setdefault(move.coupling_id, []).append(move)
         for coupling_id, moves in coupled.items():
-            if len(moves) < 2:
+            if len(moves) < 2 and self.macro != "LONE_PAIR_RADICAL_RELOCATION":
                 issues.append(
                     VerificationIssue(
                         code="MISSING_COUPLED_FISHHOOK",
@@ -292,18 +297,57 @@ class ElectronMoveGroup:
         issues.extend(self._macro_issues())
         return tuple(issues)
 
-    def _macro_issues(self) -> list[VerificationIssue]:
+    def _macro_issues(self) -> list[VerificationIssue]:  # noqa: C901
         if not self.macro:
             return []
         fishhooks = [move for move in self.moves if move.electron_count == 1]
+        pairs = Counter((move.source.kind, move.target.kind) for move in fishhooks)
+
+        def pair_counts(value: Counter) -> dict[str, int]:
+            return {
+                f"{source}->{target}": count
+                for (source, target), count in value.items()
+            }
+
+        if self.macro == "LONE_PAIR_RADICAL_RELOCATION":
+            valid = (
+                len(fishhooks) == 1
+                and fishhooks[0].source.kind == LONE_PAIR
+                and fishhooks[0].target.kind == LONE_PAIR
+                and fishhooks[0].source.atom_maps != fishhooks[0].target.atom_maps
+            )
+            if valid:
+                return []
+            return [
+                VerificationIssue(
+                    code="UNBALANCED_EVENT_GROUP",
+                    message=(
+                        "LONE_PAIR_RADICAL_RELOCATION requires one fishhook "
+                        "between distinct atom-local lone-pair loci."
+                    ),
+                    group_id=self.group_id,
+                    expected={"lp->lp": 1},
+                    observed={
+                        "fishhook_count": len(fishhooks),
+                        "locus_pairs": pair_counts(pairs),
+                    },
+                )
+            ]
+
         if len(fishhooks) < 2:
             return [
                 VerificationIssue(
                     code="UNBALANCED_EVENT_GROUP",
                     message=f"{self.macro} requires coupled one-electron moves.",
                     group_id=self.group_id,
+                    expected={"minimum_fishhooks": 2},
+                    observed={
+                        "fishhook_count": len(fishhooks),
+                        "locus_pairs": pair_counts(pairs),
+                    },
                 )
             ]
+
         if self.macro == "HOMOLYSIS":
             sources = {move.source for move in fishhooks}
             targets = {move.target for move in fishhooks}
@@ -321,6 +365,8 @@ class ElectronMoveGroup:
                         "UNBALANCED_EVENT_GROUP",
                         "HOMOLYSIS requires one sigma source and two radical targets.",
                         group_id=self.group_id,
+                        expected={"σ->∙": 2},
+                        observed=pair_counts(pairs),
                     )
                 ]
         if self.macro == "RECOMBINATION":
@@ -340,9 +386,10 @@ class ElectronMoveGroup:
                         "UNBALANCED_EVENT_GROUP",
                         "RECOMBINATION requires two radical sources and one sigma target.",
                         group_id=self.group_id,
+                        expected={"∙->σ": 2},
+                        observed=pair_counts(pairs),
                     )
                 ]
-        pairs = Counter((move.source.kind, move.target.kind) for move in fishhooks)
         exact_patterns = {
             "RADICAL_ADDITION": Counter(
                 {(RADICAL, SIGMA): 1, (PI, SIGMA): 1, (PI, RADICAL): 1}
@@ -361,8 +408,8 @@ class ElectronMoveGroup:
                     "UNBALANCED_EVENT_GROUP",
                     f"{self.macro} fishhook locus pattern is invalid.",
                     group_id=self.group_id,
-                    expected={f"{a}->{b}": count for (a, b), count in expected.items()},
-                    observed={f"{a}->{b}": count for (a, b), count in pairs.items()},
+                    expected=pair_counts(expected),
+                    observed=pair_counts(pairs),
                 )
             ]
         if expected is not None and not self._macro_incidence_is_valid(fishhooks):
@@ -406,6 +453,14 @@ class ElectronMoveGroup:
                         "UNBALANCED_EVENT_GROUP",
                         "H_ABSTRACTION requires a radical source plus coupled old/new bond electron pairs.",
                         group_id=self.group_id,
+                        expected={
+                            "allowed": [
+                                pair_counts(simple_h_abstraction),
+                                pair_counts(expected_h_abstraction),
+                                pair_counts(reverse_h_abstraction),
+                            ]
+                        },
+                        observed=pair_counts(pairs),
                     )
                 ]
         return []
@@ -589,6 +644,20 @@ class ElectronMoveGroup:
                         atom_maps=locus.atom_maps,
                         expected=available,
                         observed=count,
+                    )
+                )
+        if self.macro == "LONE_PAIR_RADICAL_RELOCATION" and len(self.moves) == 1:
+            move = self.moves[0]
+            target_radical = ElectronLocus(RADICAL, move.target.atom_maps)
+            if all(atom_map in by_map for atom_map in target_radical.atom_maps) and (
+                self._available_electrons(graph, by_map, target_radical) < 1
+            ):
+                issues.append(
+                    VerificationIssue(
+                        "TARGET_RADICAL_ABSENT",
+                        "Lone-pair radical relocation requires a radical acceptor.",
+                        group_id=self.group_id,
+                        atom_maps=move.target.atom_maps,
                     )
                 )
         return tuple(issues)

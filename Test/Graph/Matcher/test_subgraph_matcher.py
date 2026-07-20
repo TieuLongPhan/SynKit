@@ -95,6 +95,25 @@ class TestSubGraphSearchEngine(unittest.TestCase):
         )
         self.assertEqual(len(mapping), 0)
 
+    def test_pre_filter_does_not_reject_large_candidate_domain(self):
+        host = nx.cycle_graph(10)
+        pattern = nx.path_graph(9)
+        nx.set_node_attributes(host, "C", "element")
+        nx.set_node_attributes(pattern, "C", "element")
+        nx.set_edge_attributes(host, 1.0, "order")
+        nx.set_edge_attributes(pattern, 1.0, "order")
+
+        mappings = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=["element"],
+            edge_attrs=["order"],
+            threshold=100,
+            pre_filter=True,
+        )
+
+        self.assertEqual(len(mappings), 20)
+
     def test_electron_aware_node_matching(self):
         host = nx.Graph()
         host.add_node(1, element="O", lone_pairs=3, radical=0, hcount=1)
@@ -172,7 +191,7 @@ class TestSubGraphSearchEngine(unittest.TestCase):
         )
         self.assertEqual(edge_attrs, ["order", "sigma_order", "pi_order"])
 
-    def test_resolve_template_match_attrs_uses_aromatic_n_pi_role(self):
+    def test_resolve_template_match_attrs_ignores_kekule_phase_role(self):
         pattern = nx.Graph()
         pattern.add_node(
             1,
@@ -187,7 +206,7 @@ class TestSubGraphSearchEngine(unittest.TestCase):
 
         node_attrs, _ = resolve_template_match_attrs(pattern)
 
-        self.assertIn("aromatic_n_pi_count", node_attrs)
+        self.assertNotIn("aromatic_n_pi_count", node_attrs)
 
     def test_diagnose_candidate_node_match_reports_electron_reason(self):
         diagnostic = diagnose_candidate_node_match(

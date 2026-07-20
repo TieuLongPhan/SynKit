@@ -13,12 +13,11 @@
 
 **Graph-native reaction informatics and supplied-mechanism verification**
 
-SynKit represents mapped reactions, Lewis-state graphs, transformation rules,
-and explicitly supplied electron-flow mechanisms. The in-development v2 API
-adds atomic curved-arrow/fishhook groups, radical state, relative atom- and
-bond-centered stereochemistry, deterministic replay certificates, and
-mechanism trajectory graphs. It validates annotations; it does not predict the
-chemically preferred mechanism.
+SynKit represents mapped reactions, Lewis-labelled graphs (LLGs), transformation rules,
+and explicitly supplied electron-flow mechanisms. The prerelease API
+adds atomic curved-arrow/fishhook groups, radical state, deterministic replay
+certificates, and mechanism trajectory graphs. It validates annotations; it
+does not predict the chemically preferred mechanism.
 
 ![SynKit](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit.png)
 
@@ -28,7 +27,7 @@ chemically preferred mechanism.
 from synkit.Mechanism import MechanismRecord
 
 mechanism = MechanismRecord.from_ef_smirks(text)
-certificate = mechanism.verify(electron="strict", stereo="stepwise")
+certificate = mechanism.verify(electron="strict")
 trajectory = mechanism.to_mtg()
 mechanism.draw(certificate=certificate, path="mechanism.svg")
 mechanism.to_json("mechanism.json")
@@ -38,31 +37,8 @@ Canonical internal electron loci are `lp`, `σ`, `π`, and `∙`; adapters accep
 documented ASCII and legacy spellings. Curved arrows carry two electrons and
 fishhooks carry one electron. Coupled radical events commit atomically.
 
-SynKit graph/rule metadata supports relative tetrahedral, square-planar,
-trigonal-bipyramidal, octahedral, planar double-bond, and atrop-bond stereo.
-The RDKit adapter round-trips all six families when the state is representable:
-tetrahedral and planar-bond stereo plus assigned square-planar,
-trigonal-bipyramidal, octahedral, and atrop-bond descriptors. Unknown
-non-tetrahedral or atrop orientation fails explicitly instead of disappearing.
-Coordinate inference, rigid-bond descriptor variants, enhanced stereo groups,
-face-selectivity prediction, and physical inference of configurational
-stability remain outside the current claims. The prerelease package version is
-`2.0.0b2`; its mechanism schema remains `2.0.0-draft1` while that schema is
-still under prerelease review.
-
-Stereo-bearing reaction rules keep three concerns separate:
-`stereo_guards` constrain reactant mappings, `stereo_effects` store stable
-before/after descriptors plus optional transition-state stereo, and
-`stereo_outcomes` control product distributions. `RACEMIC` always means an
-equal 0.5/0.5 pair; unequal weights use `ENANTIOMERIC_MIXTURE`. Unknown parity
-is exact unless a rule or reactor explicitly selects wildcard query semantics.
-Reversing a branching rule accepts either reactant enantiomer and emits one
-reverse product instead of incorrectly branching a second time.
-
-`stereo_isomorphic(left, right)` enumerates structural graph isomorphisms and
-accepts only mappings that preserve the complete relative descriptor registry.
-This prevents a connectivity-only mapping from equating enantiomers while
-still allowing a later stereo-valid mapping in a symmetric graph.
+The prerelease package version is `1.6.0b1`; its mechanism schema remains
+`2.0.0-draft1` while that schema is still under prerelease review.
 
 For more details on each utility within the repository, please refer to the documentation provided in the respective folders.
 
@@ -192,19 +168,5 @@ git pull
 This project is licensed under MIT License - see the [License](LICENSE) file for details.
 
 ## Acknowledgments
-
-The relative-stereo rule model is implemented from the ideas in M.
-Papusha and K. Leonhard, “StereoMolGraph: Stereochemistry-Aware Molecular and
-Reaction Graphs,” *J. Chem. Inf. Model.* (2026), and the MIT-licensed
-[StereoMolGraph repository](https://github.com/maxim-papusha/StereoMolGraph),
-cross-validation commit `2189f610f23eaaf992e2e01a12ea4d0532496601`.
-Non-tetrahedral permutation groups are adapted under the upstream MIT license;
-the retained notice is in
-[`LICENSES/StereoMolGraph-MIT.txt`](LICENSES/StereoMolGraph-MIT.txt).
-The optional development check is run with
-`python tools/stereo_conformance.py /path/to/StereoMolGraph`; StereoMolGraph is
-not a SynKit runtime dependency. Its unknown-parity wildcard equality is an
-intentional difference: SynKit keeps stored-value equality exact and exposes
-wildcards only through explicit rule-query policy.
 
 This project has received funding from the European Unions Horizon Europe Doctoral Network programme under the Marie-Skłodowska-Curie grant agreement No 101072930 ([TACsy](https://tacsy.eu/) -- Training Alliance for Computational)

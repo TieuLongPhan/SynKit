@@ -41,6 +41,9 @@ class MolToGraph:
     :type attr_profile: str
     :param with_topology: If ``True``, run :class:`GraphAnnotator` on the graph.
     :type with_topology: bool
+    :param include_stereo_descriptors: If ``False``, omit the graph-level
+        relative-stereochemistry registry. Defaults to ``True``.
+    :type include_stereo_descriptors: bool
     :raises ValueError: If ``attr_profile`` is unsupported.
 
     .. code-block:: python
@@ -64,6 +67,37 @@ class MolToGraph:
     """
 
     SUPPORTED_PROFILES = ("minimal", "full")
+    AUGMENTED_NODE_ATTRS = frozenset(
+        {
+            "oxidation_state",
+            "available_lp",
+            "lone_pairs",
+            "valence_electrons",
+            "stereo_descriptor",
+            "cip_label",
+            "chiral_tag",
+            "bond_order_sum",
+            "lp_bond_order_sum",
+            "estimated_lone_pairs",
+            "available_lone_pairs",
+        }
+    )
+    DIRECT_NODE_ATTRS = frozenset(
+        {
+            "element",
+            "isotope",
+            "aromatic",
+            "hcount",
+            "charge",
+            "radical",
+            "neighbors",
+            "atom_map",
+        }
+    )
+    KEKULE_EDGE_ATTRS = frozenset(
+        {"kekule_order", "sigma_order", "pi_order", "kekule_bond_type"}
+    )
+    DIRECT_EDGE_ATTRS = frozenset({"order", "aromatic"})
 
     # Pauling electronegativities used for oxidation-state bookkeeping.
     # Missing elements are skipped instead of guessed.
@@ -89,6 +123,7 @@ class MolToGraph:
         *,
         attr_profile: str = "minimal",
         with_topology: bool = False,
+        include_stereo_descriptors: bool = True,
     ) -> None:
         """Initialize the converter.
 
@@ -100,6 +135,9 @@ class MolToGraph:
         :type attr_profile: str
         :param with_topology: Whether to add topology annotations.
         :type with_topology: bool
+        :param include_stereo_descriptors: Whether to construct the graph-level
+            relative-stereochemistry registry.
+        :type include_stereo_descriptors: bool
         :raises ValueError: If ``attr_profile`` is unsupported.
         """
         if attr_profile not in self.SUPPORTED_PROFILES:
@@ -116,6 +154,7 @@ class MolToGraph:
         )
         self.attr_profile: str = attr_profile
         self.with_topology: bool = bool(with_topology)
+        self.include_stereo_descriptors: bool = bool(include_stereo_descriptors)
 
         self._graph: Optional[nx.Graph] = None
         self._last_mol: Optional[Chem.Mol] = None
@@ -161,13 +200,31 @@ class MolToGraph:
 
         self._last_mol = mol
 
-        try:
-            compute_gasteiger_inplace(mol)
-        except Exception:
-            logger.debug("Gasteiger computation failed (best-effort). Continuing.")
+        needs_partial_charge = (
+            self.node_attrs is None or "partial_charge" in self.node_attrs
+        )
+        if needs_partial_charge:
+            try:
+                compute_gasteiger_inplace(mol)
+            except Exception:
+                logger.debug("Gasteiger computation failed (best-effort). Continuing.")
 
-        kek_mol: Optional[Chem.Mol] = self._make_kekule_copy(mol)
-        oxidation_states = self.estimate_oxidation_states(mol, kek_mol=kek_mol)
+        needs_oxidation_state = (
+            self.node_attrs is None or "oxidation_state" in self.node_attrs
+        )
+        needs_kekule = (
+            self.edge_attrs is None
+            or bool(self.KEKULE_EDGE_ATTRS.intersection(self.edge_attrs))
+            or needs_oxidation_state
+        )
+        kek_mol: Optional[Chem.Mol] = (
+            self._make_kekule_copy(mol) if needs_kekule else None
+        )
+        oxidation_states = (
+            self.estimate_oxidation_states(mol, kek_mol=kek_mol)
+            if needs_oxidation_state
+            else {}
+        )
 
         per: Optional[PerMolDescriptors] = None
         if self.attr_profile == "full":
@@ -178,6 +235,17 @@ class MolToGraph:
                 per = None
 
         extractor = AtomFeatureExtractor(mol, per=per, profile=self.attr_profile)
+        needs_augmentation = self.node_attrs is None or bool(
+            self.AUGMENTED_NODE_ATTRS.intersection(self.node_attrs)
+        )
+        requested_node_attrs = frozenset(self.node_attrs or ())
+        use_direct_node_attrs = self.node_attrs is not None and (
+            requested_node_attrs.issubset(self.DIRECT_NODE_ATTRS)
+        )
+        requested_edge_attrs = frozenset(self.edge_attrs or ())
+        use_direct_edge_attrs = self.edge_attrs is not None and (
+            requested_edge_attrs.issubset(self.DIRECT_EDGE_ATTRS)
+        )
 
         graph = nx.Graph()
         index_to_id: Dict[int, int] = {}
@@ -193,25 +261,29 @@ class MolToGraph:
             if drop_non_aam and atom_map == 0:
                 continue
 
-            try:
-                props = extractor.build_dict(atom)
-                props = self._augment_atom_properties(
-                    atom,
-                    props,
-                    oxidation_state=oxidation_states.get(atom.GetIdx()),
-                    profile=self.attr_profile,
-                )
-            except Exception as exc:
-                logger.debug(
-                    "AtomFeatureExtractor failed for atom %s: %s",
-                    atom.GetIdx(),
-                    exc,
-                )
-                props = self._gather_atom_properties(
-                    atom,
-                    oxidation_state=oxidation_states.get(atom.GetIdx()),
-                    profile=self.attr_profile,
-                )
+            if use_direct_node_attrs:
+                props = self._gather_direct_atom_properties(atom, requested_node_attrs)
+            else:
+                try:
+                    props = extractor.build_dict(atom)
+                    if needs_augmentation:
+                        props = self._augment_atom_properties(
+                            atom,
+                            props,
+                            oxidation_state=oxidation_states.get(atom.GetIdx()),
+                            profile=self.attr_profile,
+                        )
+                except Exception as exc:
+                    logger.debug(
+                        "AtomFeatureExtractor failed for atom %s: %s",
+                        atom.GetIdx(),
+                        exc,
+                    )
+                    props = self._gather_atom_properties(
+                        atom,
+                        oxidation_state=oxidation_states.get(atom.GetIdx()),
+                        profile=self.attr_profile,
+                    )
 
             if self.node_attrs is not None:
                 props = {k: v for k, v in props.items() if k in self.node_attrs}
@@ -235,47 +307,50 @@ class MolToGraph:
                 except Exception:
                     kek_bond = None
 
-            try:
-                bprops = self._gather_bond_properties(bond, kek_bond=kek_bond)
-            except Exception as exc:
-                logger.debug(
-                    "Bond property collection failed for bond %s: %s",
-                    bond.GetIdx(),
-                    exc,
-                )
-                original_order = (
-                    bond.GetBondTypeAsDouble()
-                    if hasattr(bond, "GetBondTypeAsDouble")
-                    else 1.0
-                )
-                bprops = {
-                    "order": original_order,
-                    "bond_type": (
-                        str(bond.GetBondType())
-                        if hasattr(bond, "GetBondType")
-                        else "UNKNOWN"
-                    ),
-                    "kekule_order": (
-                        kek_bond.GetBondTypeAsDouble()
-                        if kek_bond is not None
-                        and hasattr(kek_bond, "GetBondTypeAsDouble")
-                        else original_order
-                    ),
-                    "kekule_bond_type": (
-                        str(kek_bond.GetBondType())
-                        if kek_bond is not None and hasattr(kek_bond, "GetBondType")
-                        else (
+            if use_direct_edge_attrs:
+                bprops = self._gather_direct_bond_properties(bond, requested_edge_attrs)
+            else:
+                try:
+                    bprops = self._gather_bond_properties(bond, kek_bond=kek_bond)
+                except Exception as exc:
+                    logger.debug(
+                        "Bond property collection failed for bond %s: %s",
+                        bond.GetIdx(),
+                        exc,
+                    )
+                    original_order = (
+                        bond.GetBondTypeAsDouble()
+                        if hasattr(bond, "GetBondTypeAsDouble")
+                        else 1.0
+                    )
+                    bprops = {
+                        "order": original_order,
+                        "bond_type": (
                             str(bond.GetBondType())
                             if hasattr(bond, "GetBondType")
                             else "UNKNOWN"
-                        )
-                    ),
-                    "aromatic": (
-                        bond.GetIsAromatic()
-                        if hasattr(bond, "GetIsAromatic")
-                        else False
-                    ),
-                }
+                        ),
+                        "kekule_order": (
+                            kek_bond.GetBondTypeAsDouble()
+                            if kek_bond is not None
+                            and hasattr(kek_bond, "GetBondTypeAsDouble")
+                            else original_order
+                        ),
+                        "kekule_bond_type": (
+                            str(kek_bond.GetBondType())
+                            if kek_bond is not None and hasattr(kek_bond, "GetBondType")
+                            else (
+                                str(bond.GetBondType())
+                                if hasattr(bond, "GetBondType")
+                                else "UNKNOWN"
+                            )
+                        ),
+                        "aromatic": (
+                            bond.GetIsAromatic()
+                            if hasattr(bond, "GetIsAromatic")
+                            else False
+                        ),
+                    }
 
             if self.edge_attrs is not None:
                 bprops = {k: v for k, v in bprops.items() if k in self.edge_attrs}
@@ -286,16 +361,18 @@ class MolToGraph:
         # multiple atoms. For ordinary unmapped reactor substrates, graph node
         # IDs (RDKit index + 1) provide stable internal references; external
         # atom maps remain reserved for mapped rules and serialized reactions.
-        try:
-            from synkit.Graph.Stereo import descriptors_from_rdkit
+        descriptors = {}
+        if self.include_stereo_descriptors:
+            try:
+                from synkit.Graph.Stereo import descriptors_from_rdkit
 
-            atom_maps = [int(atom.GetAtomMapNum()) for atom in mol.GetAtoms()]
-            mapped = all(value > 0 for value in atom_maps) and len(
-                set(atom_maps)
-            ) == len(atom_maps)
-            descriptors = descriptors_from_rdkit(mol, require_atom_maps=mapped)
-        except ImportError:
-            descriptors = {}
+                atom_maps = [int(atom.GetAtomMapNum()) for atom in mol.GetAtoms()]
+                mapped = all(value > 0 for value in atom_maps) and len(
+                    set(atom_maps)
+                ) == len(atom_maps)
+                descriptors = descriptors_from_rdkit(mol, require_atom_maps=mapped)
+            except ImportError:
+                descriptors = {}
         graph.graph["stereo_descriptors"] = descriptors
         node_by_map = {
             int(attrs.get("atom_map", 0)): node
@@ -327,6 +404,46 @@ class MolToGraph:
                 logger.debug("GraphAnnotator failed: %s", exc)
 
         return graph
+
+    @staticmethod
+    def _gather_direct_atom_properties(
+        atom: Chem.Atom,
+        attributes: frozenset[str],
+    ) -> Dict[str, Any]:
+        """Read a requested subset of inexpensive RDKit atom properties."""
+        props: Dict[str, Any] = {}
+        if "element" in attributes:
+            props["element"] = atom.GetSymbol()
+        if "isotope" in attributes:
+            props["isotope"] = atom.GetIsotope()
+        if "aromatic" in attributes:
+            props["aromatic"] = atom.GetIsAromatic()
+        if "hcount" in attributes:
+            props["hcount"] = atom.GetTotalNumHs()
+        if "charge" in attributes:
+            props["charge"] = atom.GetFormalCharge()
+        if "radical" in attributes:
+            props["radical"] = atom.GetNumRadicalElectrons()
+        if "neighbors" in attributes:
+            props["neighbors"] = sorted(
+                neighbor.GetSymbol() for neighbor in atom.GetNeighbors()
+            )
+        if "atom_map" in attributes:
+            props["atom_map"] = atom.GetAtomMapNum()
+        return props
+
+    @staticmethod
+    def _gather_direct_bond_properties(
+        bond: Chem.Bond,
+        attributes: frozenset[str],
+    ) -> Dict[str, Any]:
+        """Read requested bond attributes without building discarded fields."""
+        props: Dict[str, Any] = {}
+        if "order" in attributes:
+            props["order"] = bond.GetBondTypeAsDouble()
+        if "aromatic" in attributes:
+            props["aromatic"] = bond.GetIsAromatic()
+        return props
 
     def transform_store(
         self,
@@ -379,7 +496,9 @@ class MolToGraph:
 
         return (
             f"{self.__class__.__name__}(profile={self.attr_profile!r}, "
-            f"with_topology={self.with_topology}, node_attrs={self.node_attrs!r}, "
+            f"with_topology={self.with_topology}, "
+            f"include_stereo_descriptors={self.include_stereo_descriptors}, "
+            f"node_attrs={self.node_attrs!r}, "
             f"edge_attrs={self.edge_attrs!r}, last_nodes={n})"
         )
 

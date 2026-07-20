@@ -15,8 +15,11 @@ from synkit.Mechanism import (
     RADICAL,
     SIGMA,
     RadicalStateAudit,
+    COMPATIBLE_LEWIS_GRAPH_ACRONYMS,
+    PREVIOUS_PUBLIC_LEWIS_GRAPH_ACRONYM,
     PUBLIC_LEWIS_GRAPH_ACRONYM,
     audit_local_electron_state,
+    complete_radical_aam,
     external_locus_symbol,
     group_from_legacy_epd,
     mechanism_from_legacy_epd,
@@ -237,8 +240,11 @@ def test_attribute_propagation_contract_is_a_data_artifact():
     path = Path(__file__).parents[2] / "Data/Schema/attribute_propagation_v1_5.json"
     contract = json.loads(path.read_text())
 
-    assert PUBLIC_LEWIS_GRAPH_ACRONYM == "LSG"
-    assert contract["public_v2_acronym"] == "LSG"
+    assert PUBLIC_LEWIS_GRAPH_ACRONYM == "LLG"
+    assert PREVIOUS_PUBLIC_LEWIS_GRAPH_ACRONYM == "LSG"
+    assert COMPATIBLE_LEWIS_GRAPH_ACRONYMS == ("LLG", "LSG", "LWG")
+    assert contract["public_v2_acronym"] == "LLG"
+    assert contract["previous_public_acronym"] == "LSG"
     assert "radical" in contract["attributes"]
 
 
@@ -374,13 +380,13 @@ def test_unspecified_stereo_reversal_fails_explicitly():
             ],
         ),
         (
-            4,
+            23,
             [
-                "CC(C)(C[O:20])C.CC(C)([CH:11]([H:10])[O:12])C>>"
-                "CC(C)(C[O:20][H:10])C.CC(C)([C:11]([H])=[O:12])C "
-                "20-20,10;10,11-20,10;10,11-11,12;12-11,12",
+                "[H:20][CH:21]=O.N(=O)[O:10]>>"
+                "[H:20][O:10]N=O.[CH:21]=O "
+                "10-10,20;20,21-10,20;20,21-21",
                 "Room Temperature",
-                "Termination",
+                "Propagation",
                 "abstraction",
             ],
         ),
@@ -422,20 +428,376 @@ def test_radical_dataset_adapter_normalizes_representative_macros(logical_row, r
     )
 
 
-def test_radical_dataset_adapter_quarantines_unreviewed_class_and_bad_separator():
-    unreviewed = normalize_radical_row(
+def test_radical_dataset_adapter_types_lone_pair_radical_relocation():
+    relocated = normalize_radical_row(
         ["[O-:1][N+:2]=O>>[O:1][N:2]=O 1-2", "", "", "ha resonance"],
         row_number=1,
     )
+
+    assert relocated.accepted
+    group = relocated.mechanism.steps[0].groups[0]
+    assert group.macro == "LONE_PAIR_RADICAL_RELOCATION"
+    assert group.issues() == ()
+    move = group.moves[0]
+    assert move.source == ElectronLocus.atom("lp", atom_map=1)
+    assert move.target == ElectronLocus.atom("lp", atom_map=2)
+    assert "CompactAtomArrow→state-resolved:lp→lp" in (
+        relocated.report.aliases_normalized
+    )
+
+
+def test_radical_dataset_adapter_rejects_reversed_atom_transfer_annotation():
+    reversed_arrow = normalize_radical_row(
+        [
+            "[N:10](=O)[O:21]>>[N+:10](=O)[O-:21] 21-10",
+            "",
+            "",
+            "ha resonance",
+        ],
+        row_number=2046,
+    )
+
+    assert not reversed_arrow.accepted
+    assert reversed_arrow.report.issues[0].code == ("FLOW_ATOM_TRANSFER_STATE_MISMATCH")
+
+
+def test_radical_dataset_adapter_quarantines_bad_separator():
     bad_separator = normalize_radical_row(
-        ["[B:2].[O:1]>>[B:2][O:1] 1=2", "", "", "recombine"],
+        ["[B:2].[O:1]>>[B:2][O:1] 1=2-2", "", "", "recombine"],
         row_number=2,
     )
 
-    assert not unreviewed.accepted
-    assert unreviewed.report.issues[0].code == "UNREVIEWED_RADICAL_CLASS"
     assert not bad_separator.accepted
-    assert "NONSTANDARD_FLOW_SEPARATOR" in bad_separator.report.issues[0].message
+    assert bad_separator.report.issues[0].code == "MALFORMED_ELECTRON_FLOW"
+    assert "MALFORMED_FLOW_SEPARATOR" in bad_separator.report.issues[0].message
+
+
+def test_radical_dataset_adapter_normalizes_unambiguous_legacy_flow_syntax():
+    equals_flow = normalize_radical_row(
+        ["[B:2].[O:1]>>[B:2][O:1] 1=2", "", "", "addition"],
+        row_number=540,
+    )
+    pair_hyphen = normalize_radical_row(
+        [
+            "C[C:21](=[CH2:20])[CH:22]=[CH2:23].[OH:10]>>"
+            "[CH2:23]/[CH:22]=[C:21]([CH2:20][OH:10])\\C "
+            "10-10,20;20,21-10,20;20,21-21,22;"
+            "22,23-21-22;22,23-23",
+            "Room Temperature",
+            "Propagation",
+            "addition",
+        ],
+        row_number=2928,
+    )
+
+    assert not equals_flow.accepted
+    assert "FlowSeparator=→-" in equals_flow.report.aliases_normalized
+    assert all(
+        issue.code != "MALFORMED_ELECTRON_FLOW" for issue in equals_flow.report.issues
+    )
+    assert not pair_hyphen.accepted
+    assert "FlowPairSeparator-→," in pair_hyphen.report.aliases_normalized
+    assert all(
+        issue.code != "MALFORMED_ELECTRON_FLOW" for issue in pair_hyphen.report.issues
+    )
+
+
+def test_radical_dataset_adapter_retains_flow_steps_after_whitespace():
+    compact = normalize_radical_row(
+        [
+            "[H:20][Br:21].[OH:10]>>[H:20][OH:10].[Br:21] "
+            "10-10,20;20,21-10,20;20,21-21",
+            "Room Temperature",
+            "Propagation",
+            "abstraction",
+        ]
+    )
+    spaced = normalize_radical_row(
+        [
+            "[H:20][Br:21].[OH:10]>>[H:20][OH:10].[Br:21] "
+            "10-10,20; 20,21-10,20; 20,21-21",
+            "Room Temperature",
+            "Propagation",
+            "abstraction",
+        ]
+    )
+
+    assert compact.accepted, compact.report.issues
+    assert spaced.accepted, spaced.report.issues
+    assert spaced.mechanism is not None
+    assert compact.mechanism is not None
+    assert spaced.mechanism.mapped_reaction == compact.mechanism.mapped_reaction
+    assert spaced.mechanism.steps == compact.mechanism.steps
+    assert "FlowWhitespace→canonical" not in compact.report.aliases_normalized
+    assert "FlowWhitespace→canonical" in spaced.report.aliases_normalized
+
+
+def test_radical_dataset_adapter_explicitly_ignores_stereo_during_aam():
+    normalized = normalize_radical_row(
+        [
+            "[H:20][Br:21].CCC/[C:10]=C/Br>>"
+            "[H:20]/[C:10](=C\\Br)/CCC.[Br:21] "
+            "10-10,20;20,21-10,20;20,21-21",
+            "Room Temperature",
+            "Propagation",
+            "abstraction",
+        ],
+        row_number=861,
+    )
+
+    assert normalized.accepted, normalized.report.issues
+    assert normalized.report.stereochemistry_ignored_for_expansion
+    assert "Stereo→constitution-only" in normalized.report.aliases_normalized
+    assert normalized.report.constitution_checked
+    assert normalized.report.radical_state_preserved
+    assert normalized.report.spin_assessment == "UNASSESSED_NO_SOURCE_EVIDENCE"
+
+
+def test_radical_dataset_adapter_classifies_unrepairable_flow_references():
+    missing_map = normalize_radical_row(
+        ["[OH:1]>>[OH:1] 1-1; 1-2", "", "", "recombine"]
+    )
+    missing_bond = normalize_radical_row(
+        ["[O:1].[O:2]>>[O:1].[O:2] 1-1,2", "", "", "recombine"]
+    )
+
+    assert missing_map.report.issues[0].code == "FLOW_ATOM_MAP_MISSING"
+    assert "FlowWhitespace→canonical" in missing_map.report.aliases_normalized
+    assert missing_bond.report.issues[0].code == "FLOW_BOND_ABSENT_FROM_ITS"
+
+
+def test_radical_dataset_adapter_preserves_mapped_radical_state():
+    normalized = normalize_radical_row(
+        [
+            "[CH2:10][C:20]1=[CH:21]C=CC=C1>>"
+            "[CH2:10]=[C:20]1C=CC=C[CH:21]1 "
+            "10-10,20;20,21-10,20;20,21-21",
+            "Room Temperature",
+            "Propagation",
+            "resonance",
+        ],
+        row_number=1491,
+    )
+
+    assert normalized.accepted, normalized.report.issues
+    assert normalized.report.aam_expanded
+    assert normalized.report.aam_expansion_side == "reactant"
+    assert not normalized.report.aam_fallback_used
+    assert normalized.report.constitution_checked
+    assert normalized.mechanism is not None
+
+
+def test_radical_dataset_adapter_does_not_remap_complete_aam():
+    reaction = "[H:20][Br:21].[OH:10]>>[H:20][OH:10].[Br:21]"
+    normalized = normalize_radical_row(
+        [
+            f"{reaction} 10-10,20;20,21-10,20;20,21-21",
+            "Room Temperature",
+            "Propagation",
+            "abstraction",
+        ],
+        row_number=32,
+    )
+
+    assert normalized.accepted, normalized.report.issues
+    assert not normalized.report.aam_expanded
+    assert normalized.report.aam_expansion_side is None
+    assert normalized.report.constitution_checked
+    assert normalized.mechanism is not None
+    assert normalized.mechanism.mapped_reaction == reaction
+
+
+def test_radical_dataset_adapter_folds_unmapped_explicit_hydrogens():
+    normalized = normalize_radical_row(
+        [
+            "[H][C:10]([H])[H].[H]/[C:20]([H])=[C:21]([H])/[H]>>"
+            "[CH2:21][C:20]([H])([H])[C:10]([H])([H])[H] "
+            "10-10,20;20,21-10,20;20,21-21",
+            "Room Temperature",
+            "Propagation",
+            "addition",
+        ],
+        row_number=184,
+    )
+
+    assert normalized.accepted, normalized.report.issues
+    assert normalized.report.unmapped_explicit_hydrogens_folded
+    assert normalized.report.folded_unmapped_explicit_hydrogen_count > 0
+    assert normalized.mechanism is not None
+
+
+def test_radical_dataset_adapter_preserves_folded_explicit_hydrogen_count():
+    normalized = normalize_radical_row(
+        [
+            "CC(C)(C[O:20])C.CC(C)([CH:11]([H:10])[O:12])C>>"
+            "CC(C)(C[O:20][H:10])C.CC(C)([C:11]([H])=[O:12])C "
+            "20-20,10;10,11-20,10;10,11-11,12;12-11,12",
+            "Room Temperature",
+            "Termination",
+            "abstraction",
+        ],
+        row_number=4,
+    )
+
+    assert normalized.accepted, normalized.report.issues
+    assert normalized.report.unmapped_explicit_hydrogens_folded
+    assert normalized.report.folded_unmapped_explicit_hydrogen_count == 1
+    assert normalized.mechanism is not None
+    assert "[CH:11]=[O:12]" in normalized.mechanism.mapped_reaction
+
+
+def test_radical_aam_completion_is_independent_of_arrow_grammar():
+    reaction = "[H:20][CH:21]=O.N(=O)[O:10]>>" "[H:20][O:10]N=O.[CH:21]=O"
+
+    completed = complete_radical_aam(reaction)
+
+    assert completed.usable, completed.failure_reason
+    assert completed.status == "COMPLETED"
+    assert completed.method == "its"
+    assert completed.all_atoms_mapped
+    assert completed.balanced_atom_maps
+    assert completed.source_anchors_preserved
+    assert completed.constitution_preserved
+    assert completed.explicit_hydrogen_serialization
+    assert completed.mapped_reaction is not None
+    assert all(
+        f":{atom_map}]" in completed.mapped_reaction for atom_map in (10, 20, 21)
+    )
+
+
+def test_radical_aam_completion_preserves_mapped_spectator_hydrogens():
+    reaction = (
+        "[H:1][C:2]([H:3])([H:4])[H:5].[I:6].[He]>>"
+        "[He].[H:3][C:2]([H:4])[H:1].[H:5][I:6]"
+    )
+
+    completed = complete_radical_aam(reaction)
+
+    assert completed.usable, completed.failure_reason
+    assert completed.mapped_reaction is not None
+    assert {
+        atom.GetAtomMapNum()
+        for side in completed.mapped_reaction.split(">>")
+        for atom in Chem.MolFromSmiles(side, sanitize=False).GetAtoms()
+    } == set(range(1, 8))
+
+
+def test_radical_aam_completion_validates_complete_source_and_fails_closed():
+    complete = complete_radical_aam("[H:20][Br:21].[OH:10]>>[H:20][OH:10].[Br:21]")
+    duplicate = complete_radical_aam("[O:1].[C:1]>>[O:1].[C:1]")
+
+    assert complete.usable
+    assert complete.status == "ALREADY_COMPLETE"
+    assert complete.method == "source"
+    assert duplicate.status == "FAILED"
+    assert not duplicate.usable
+    assert duplicate.mapped_reaction is None
+    assert "duplicate" in duplicate.failure_reason.lower()
+
+
+@pytest.mark.parametrize(
+    ("reaction", "flow", "source_class"),
+    [
+        (
+            "CCCC(C(C)[O:20][O:21][O])O[N+](=O)[O-]>>"
+            "CCCC(C(C)[O:20])O[N+](=O)[O-].[O:21][O]",
+            "20,21-20;20,21-2",
+            "homolyze",
+        ),
+        (
+            "[H:20][CH:21](C)CC(=O)CC.[OH:10]>>" "[H:20][OH:10].CCC(=O)C[CH:21]C",
+            "10-10,20;20,21-10,20;20,21-2",
+            "abstraction",
+        ),
+    ],
+)
+def test_radical_aam_completion_ignores_nonexistent_arrow_map(
+    reaction, flow, source_class
+):
+    arrow_normalization = normalize_radical_row(
+        [f"{reaction} {flow}", "", "", source_class]
+    )
+    completed = complete_radical_aam(reaction)
+
+    assert arrow_normalization.report.issues[0].code == "FLOW_ATOM_MAP_MISSING"
+    assert completed.usable, completed.failure_reason
+
+
+def test_radical_aam_completion_retains_non_arrow_skeletal_anchor():
+    reaction = (
+        "[H:20][O:21][O].CC[C:11]12CC(C(C=C1)(C)O[O])O[O:10]2>>"
+        "[H:20][O:10]OC1C[C:11](C=CC1(C)O[O])CC.[O:21][O]"
+    )
+    arrow_normalization = normalize_radical_row(
+        [
+            f"{reaction} 10-10,20; 21,20-10,20; 20,21-21",
+            "Room Temperature",
+            "Initiation",
+            "abstraction",
+        ],
+        row_number=4325,
+    )
+    completed = complete_radical_aam(reaction)
+
+    assert arrow_normalization.accepted, arrow_normalization.report.issues
+    assert completed.usable, completed.failure_reason
+    assert completed.mapped_reaction is not None
+    assert ":11]" in completed.mapped_reaction
+
+
+def test_radical_arrow_normalization_repairs_unique_reactant_symmetry_swap():
+    normalized = normalize_radical_row(
+        [
+            "[CH3:1][C:2]([CH3:3])[C:4]1=[CH:5][CH:6]=[CH:7]"
+            "[CH:8]=[CH:9]1.[O:10][O:11]>>"
+            "[CH3:1][C:2]([CH3:3])([C:4]1=[CH:5][CH:6]=[CH:7]"
+            "[CH:8]=[CH:9]1)[O:10][O:11] 11-11,2; 2-11,2",
+            "Room Temperature",
+            "Termination",
+            "recombine",
+        ],
+        row_number=56,
+    )
+
+    assert normalized.accepted, normalized.report.issues
+    assert normalized.report.equivalent_map_swap == (10, 11)
+    assert normalized.report.arrow_repair_assessment == "REACTANT_SYMMETRY_UNIQUE"
+    assert "EquivalentReactantMapSwap:10↔11" in normalized.report.aliases_normalized
+    assert normalized.report.to_dict()["equivalent_map_swap"] == [10, 11]
+
+
+def test_radical_arrow_symmetry_swap_does_not_weaken_macro_grammar():
+    normalized = normalize_radical_row(
+        [
+            "[CH:6]=[CH:7][CH:8].[O:23][O:24]>>"
+            "[CH:6]([CH:7]=[CH:8])[O:23][O:24] "
+            "8-8,7;6,7-7,8;6,7-6,24;24-24,6",
+            "",
+            "",
+            "recombine",
+        ],
+        row_number=134,
+    )
+
+    assert not normalized.accepted
+    assert normalized.report.equivalent_map_swap == (23, 24)
+    assert normalized.report.issues[0].code == "UNBALANCED_EVENT_GROUP"
+
+
+def test_radical_arrow_normalization_rejects_nonequivalent_map_repair():
+    normalized = normalize_radical_row(
+        [
+            "[CH2:22]=[C:21].[S:5]>>[C:21][CH2:22][S:5] " "5-5,21;22,21-5,22;22,21-21",
+            "",
+            "",
+            "addition",
+        ],
+        row_number=404,
+    )
+
+    assert not normalized.accepted
+    assert normalized.report.equivalent_map_swap is None
+    assert normalized.report.issues[0].code == "FLOW_BOND_ABSENT_FROM_ITS"
 
 
 def test_event_group_signature_is_permutation_invariant():

@@ -69,6 +69,32 @@ def test_atomic_homolysis_replay_never_stores_half_fishhook_state():
     ) == [1, 1]
 
 
+def test_lone_pair_radical_relocation_commits_whole_resources():
+    move = ElectronMove(
+        ElectronLocus.atom("lp", atom_map=1),
+        ElectronLocus.atom("lp", atom_map=2),
+        1,
+        "fishhook",
+        "g1",
+    )
+    group = ElectronMoveGroup("g1", (move,), macro="LONE_PAIR_RADICAL_RELOCATION")
+
+    result = MechanismReplayer().replay(
+        _record(
+            "[O-:1][N+:2]=[O:3]>>[O:1][N:2]=[O:3]",
+            group,
+        )
+    )
+
+    assert result.certificate.status == "VALID", result.certificate.issues
+    assert result.certificate.final_match["matches"]
+    by_map = {
+        attrs["atom_map"]: attrs for _, attrs in result.final_graph.nodes(data=True)
+    }
+    assert (by_map[1]["lone_pairs"], by_map[1]["radical"]) == (2, 1)
+    assert (by_map[2]["lone_pairs"], by_map[2]["radical"]) == (1, 0)
+
+
 def test_missing_fishhook_partner_fails_before_commit():
     source = ElectronLocus.bond("σ", atom_maps=(1, 2))
     move = ElectronMove(

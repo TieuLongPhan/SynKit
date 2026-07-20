@@ -11,4 +11,4 @@ def test_source_version_matches_project_metadata() -> None:
     version = tomllib.loads(project.read_text(encoding="utf-8"))["project"]["version"]
 
     assert synkit.__version__ == version
-    assert version == "2.0.0b2"
+    assert version == "1.6.0b1"

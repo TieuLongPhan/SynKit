@@ -15,7 +15,9 @@ from .audit import (
     radical_match,
 )
 from .compatibility import (
+    COMPATIBLE_LEWIS_GRAPH_ACRONYMS,
     LEGACY_LEWIS_GRAPH_ACRONYM,
+    PREVIOUS_PUBLIC_LEWIS_GRAPH_ACRONYM,
     PUBLIC_LEWIS_GRAPH_ACRONYM,
     PUBLIC_LEWIS_GRAPH_NAME,
 )
@@ -52,8 +54,10 @@ from .benchmark import (
 )
 from .radical_data import (
     RADICAL_CLASS_TO_MACRO,
+    RadicalAAMCompletionResult,
     RadicalDatasetRecord,
     RadicalNormalizationReport,
+    complete_radical_aam,
     iter_radical_csv,
     normalize_radical_row,
     radical_dataset_summary,
@@ -91,7 +95,9 @@ __all__ = [
     "audit_local_electron_state",
     "PUBLIC_LEWIS_GRAPH_NAME",
     "PUBLIC_LEWIS_GRAPH_ACRONYM",
+    "PREVIOUS_PUBLIC_LEWIS_GRAPH_ACRONYM",
     "LEGACY_LEWIS_GRAPH_ACRONYM",
+    "COMPATIBLE_LEWIS_GRAPH_ACRONYMS",
     "radical_counts_by_atom_map",
     "radical_match",
     "electron_move_from_legacy_epd",
@@ -109,8 +115,10 @@ __all__ = [
     "internal_action_label",
     "legacy_action_label",
     "RADICAL_CLASS_TO_MACRO",
+    "RadicalAAMCompletionResult",
     "RadicalDatasetRecord",
     "RadicalNormalizationReport",
+    "complete_radical_aam",
     "normalize_radical_row",
     "iter_radical_csv",
     "radical_dataset_summary",

@@ -1,4 +1,4 @@
-"""Relative stereodescriptors adapted for mapped SynKit Lewis-state graphs.
+"""Relative stereodescriptors adapted for mapped SynKit Lewis-labelled graphs.
 
 Stereo identity is relative and permutation-aware; CIP labels are
 intentionally outside descriptor identity.  The non-tetrahedral permutation

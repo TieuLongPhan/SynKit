@@ -132,7 +132,7 @@ def audit_local_electron_state(  # noqa: C901
                 issues.append(
                     VerificationIssue(
                         "DUPLICATE_ATOM_MAP",
-                        "Lewis-state graphs require unique positive atom maps.",
+                        "Lewis-labelled graphs require unique positive atom maps.",
                         atom_maps=(atom_map,),
                         observed=(maps[atom_map], node),
                     )

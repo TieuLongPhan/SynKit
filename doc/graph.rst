@@ -189,16 +189,17 @@ The ``synkit.Graph.ITS`` package supports the construction and decomposition of
 - :py:func:`~synkit.Graph.ITS.its_decompose.get_rc` — extract the minimal reaction-center subgraph
 - :py:func:`~synkit.Graph.ITS.its_decompose.its_decompose` — split an ITS graph into reactant/product graphs
 
-Lewis State Graph fields
+Lewis-labelled graph fields
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-SynKit 1.4 introduces the Lewis State Graph (LSG) framework for the
+SynKit 1.4 introduced the representation now called the Lewis-labelled graph
+(LLG) framework for the
 pure-Python reactor and new mechanistic work. Legacy ITS remains available,
-but LSG is the preferred representation when valence-state information must be
+but LLG is the preferred representation when valence-state information must be
 explicit. In the current API this representation is requested with
 ``format="tuple"``.
 
-Important LSG fields:
+Important LLG fields:
 
 .. list-table::
    :header-rows: 1
@@ -211,16 +212,16 @@ Important LSG fields:
      - Integer-like bond order used for product reconstruction; normally
        ``sigma_order + pi_order``.
    * - ``lone_pairs`` / ``radical``
-     - Valence-state fields used by LSG matching and product accounting.
+     - Valence-state fields used by LLG matching and product accounting.
    * - ``valence_electrons``
      - Element valence-shell reference used when recomputing charge.
    * - ``order``
      - Legacy or presentation order. Aromatic ``1.5`` values are useful for
-       matching and visualization, but not the LSG-authoritative rewrite
+       matching and visualization, but not the LLG-authoritative rewrite
        source.
 
 .. code-block:: python
-   :caption: Building an LSG/ITS graph with Lewis-state fields
+   :caption: Building an LLG/ITS graph with Lewis-state fields
    :linenos:
 
    from synkit.IO import rsmi_to_its
@@ -233,7 +234,7 @@ Important LSG fields:
 
 .. note::
 
-   Aromatic LSG matching is intentionally conservative. Aromaticity is still
+   Aromatic LLG matching is intentionally conservative. Aromaticity is still
    useful for presentation and pruning, but full aromatic-system relabeling is
    tracked as ongoing work.
 
@@ -287,7 +288,7 @@ The ``synkit.Graph.MTG`` package provides tools for constructing and analyzing
 - :py:class:`~synkit.Graph.MTG.mcs_matcher.MCSMatcher` — maximum common substructure mappings
 - :py:class:`~synkit.Graph.MTG.mtg.MTG` — MTG construction from ITS graphs and MCS mapping
 
-The current MTG direction is aligned with LSG/ITS. Invariant atom data such
+The current MTG direction is aligned with LLG/ITS. Invariant atom data such
 as ``element`` and ``atom_map`` should be stored once, while temporal fields
 such as ``charge``, ``hcount``, ``lone_pairs``, ``radical``,
 ``sigma_order``, and ``pi_order`` store compact histories across snapshots.
@@ -305,10 +306,10 @@ round trips easier to inspect.
    composed = mtg.get_compose_its()
 
 When an MTG is built from RSMI strings, SynKit 1.4.0 converts those strings
-to Lewis State Graph ITS by default:
+to Lewis-labelled graph ITS by default:
 
 .. code-block:: python
-   :caption: RSMI sequence to LSG MTG
+   :caption: RSMI sequence to LLG MTG
    :linenos:
 
    mtg = MTG(step_rsmis, mcs_mol=True)
@@ -324,7 +325,7 @@ Legacy string conversion is still available for compatibility:
 Compact MTG data model
 ~~~~~~~~~~~~~~~~~~~~~~
 
-An LSG-backed MTG is a normal ``networkx.Graph``. Node attributes split into
+An LLG-backed MTG is a normal ``networkx.Graph``. Node attributes split into
 two categories:
 
 .. list-table::
@@ -348,18 +349,18 @@ two categories:
        present but no bond exists.
 
 This compact form intentionally avoids legacy ``typesGH`` and redundant
-``*_step_history`` attributes in the new Lewis State Graph path.
+``*_step_history`` attributes in the new Lewis-labelled graph path.
 
-Example: LSG MTG changed core
+Example: LLG MTG changed core
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This example reads a stepwise aldol mechanism, constructs an LSG-backed MTG
+This example reads a stepwise aldol mechanism, constructs an LLG-backed MTG
 directly from the RSMI strings, and visualizes the changed core. The default
 MTG string conversion uses ``format="tuple"`` internally, so the result stores
 Lewis-state timelines rather than legacy ``typesGH`` fields.
 
 .. code-block:: python
-   :caption: Building and visualizing a compact LSG MTG
+   :caption: Building and visualizing a compact LLG MTG
    :linenos:
 
    from synkit.IO import load_database
@@ -390,11 +391,11 @@ Use ``compress=False`` when debugging the full mechanism-state sequence.
 .. container:: figure
 
    .. image:: ./figures/mtg_lsg_changed_core.png
-      :alt: Compact LSG MTG changed-core visualization
+      :alt: Compact LLG MTG changed-core visualization
       :align: center
       :width: 760px
 
-   *Figure:* LSG MTG changed-core view for the neutral aldol mechanism.
+   *Figure:* LLG MTG changed-core view for the neutral aldol mechanism.
    Green edges are net formed, red edges are net broken, and pink dashed edges
    are transient timelines that change internally but have the same compressed
    first/final state.

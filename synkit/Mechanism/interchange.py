@@ -120,5 +120,5 @@ def project_stereo_graph(graph: nx.Graph) -> tuple[nx.Graph, ConversionLossRepor
         "provenance",
     )
     return projected, ConversionLossReport(
-        "SynKit LSG", "stereo connectivity projection", discarded
+        "SynKit LLG", "stereo connectivity projection", discarded
     )

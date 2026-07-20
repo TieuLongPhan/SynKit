@@ -12,6 +12,16 @@ from synkit.Graph.ITS.its_decompose import get_rc
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Chem.utils import enumerate_tautomers, mapping_success_rate
 
+CONSTITUTIONAL_NODE_ATTRS = (
+    "element",
+    "aromatic",
+    "hcount",
+    "charge",
+    "neighbors",
+    "atom_map",
+)
+CONSTITUTIONAL_EDGE_ATTRS = ("order",)
+
 
 class _DualMethod:
     """Bind a method to either an instance or the class."""
@@ -156,25 +166,21 @@ class AAMValidator:
         return classified, len(classified)
 
     @_DualMethod
-    def smiles_check(
+    def smiles_checks(
         self,
         cls,
         mapped_smile: str,
         ground_truth: str,
-        check_method: str = "RC",
         ignore_aromaticity: bool = False,
         strip_unbalanced_maps: Optional[bool] = None,
-    ) -> bool:
-        """Validate a single mapped SMILES string against ground truth.
+        constitutional_only: bool = False,
+    ) -> Dict[str, bool]:
+        """Return ITS and reaction-centre verdicts from one graph construction.
 
         :param mapped_smile: The mapped SMILES to validate.
         :type mapped_smile: str
         :param ground_truth: The reference SMILES string.
         :type ground_truth: str
-        :param check_method: Which method to use: `"RC"` for
-            reaction‐center graph or `"ITS"` for full ITS‐graph
-            isomorphism.
-        :type check_method: str
         :param ignore_aromaticity: If True, ignore aromaticity
             differences in ITS construction.
         :type ignore_aromaticity: bool
@@ -182,9 +188,11 @@ class AAMValidator:
             on only one side before graph comparison. If None, use the
             instance default or False for class-level calls.
         :type strip_unbalanced_maps: bool or None
-        :returns: True if exactly one isomorphic match is found; False
-            otherwise.
-        :rtype: bool
+        :param constitutional_only: Convert only attributes used by the
+            ITS/RC isomorphism test and omit graph-level stereo descriptors.
+        :type constitutional_only: bool
+        :returns: Dictionary with Boolean ``"ITS"`` and ``"RC"`` verdicts.
+        :rtype: Dict[str, bool]
         """
         its_graphs, rc_graphs = [], []
         strip_unbalanced_maps = cls._resolve_strip_unbalanced_maps(
@@ -192,7 +200,18 @@ class AAMValidator:
         )
         try:
             for rsmi in (mapped_smile, ground_truth):
-                G, H = rsmi_to_graph(rsmi=rsmi, sanitize=True, drop_non_aam=True)
+                G, H = rsmi_to_graph(
+                    rsmi=rsmi,
+                    sanitize=True,
+                    drop_non_aam=True,
+                    node_attrs=(
+                        CONSTITUTIONAL_NODE_ATTRS if constitutional_only else None
+                    ),
+                    edge_attrs=(
+                        CONSTITUTIONAL_EDGE_ATTRS if constitutional_only else None
+                    ),
+                    include_stereo_descriptors=not constitutional_only,
+                )
                 if strip_unbalanced_maps:
                     G, H = cls._strip_unbalanced_map_nodes(G, H)
                 its = ITSConstruction().ITSGraph(
@@ -201,11 +220,40 @@ class AAMValidator:
                 its_graphs.append(its)
                 rc_graphs.append(get_rc(its))
 
-            graphs = rc_graphs if check_method.upper() == "RC" else its_graphs
-            _, count = AAMValidator.check_equivariant_graph(graphs)
-            return count == 1
+            _, its_count = AAMValidator.check_equivariant_graph(its_graphs)
+            _, rc_count = AAMValidator.check_equivariant_graph(rc_graphs)
+            return {"ITS": its_count == 1, "RC": rc_count == 1}
         except Exception:
-            return False
+            return {"ITS": False, "RC": False}
+
+    @_DualMethod
+    def smiles_check(
+        self,
+        cls,
+        mapped_smile: str,
+        ground_truth: str,
+        check_method: str = "RC",
+        ignore_aromaticity: bool = False,
+        strip_unbalanced_maps: Optional[bool] = None,
+        constitutional_only: bool = False,
+    ) -> bool:
+        """Validate one mapped SMILES against ground truth.
+
+        This compatibility wrapper selects one result from
+        :meth:`smiles_checks`.  Use ``smiles_checks`` when both ITS and RC
+        verdicts are required so the endpoint and ITS graphs are built once.
+        """
+        verdicts = cls.smiles_checks(
+            mapped_smile,
+            ground_truth,
+            ignore_aromaticity=ignore_aromaticity,
+            strip_unbalanced_maps=cls._resolve_strip_unbalanced_maps(
+                self, strip_unbalanced_maps
+            ),
+            constitutional_only=constitutional_only,
+        )
+        key = "RC" if check_method.upper() == "RC" else "ITS"
+        return verdicts[key]
 
     @_DualMethod
     def smiles_check_tautomer(

@@ -64,7 +64,7 @@ class MTG:
     :param node_label_names: Keys for node-label matching.
     :param canonicaliser: Optional GraphCanonicaliser for snapshot canonicalisation.
     :param its_format: ITS format used when ``sequences`` contains RSMI strings.
-        Defaults to ``"tuple"`` for Lewis State Graph MTGs. Pass
+        Defaults to ``"tuple"`` for Lewis-labelled graph MTGs. Pass
         ``"typesGH"`` to build legacy MTGs from strings.
     :raises ValueError: On invalid sequence or mapping lengths.
     :raises RuntimeError: On mapping failures.

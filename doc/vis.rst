@@ -142,7 +142,7 @@ ITS edge-label modes:
 Lewis-State Labels
 ------------------
 
-For Lewis State Graph / ITS graphs, node labels can show charge, lone-pair, or
+For Lewis-labelled graph / ITS graphs, node labels can show charge, lone-pair, or
 radical changes. Use one signal at a time for readable figures.
 
 .. code-block:: python
@@ -163,11 +163,11 @@ radical changes. Use one signal at a time for readable figures.
 .. container:: figure
 
    .. image:: ./figures/vis_lsg_sn2.png
-      :alt: Lewis State Graph visualization for SN2 lone-pair changes
+      :alt: Lewis-labelled graph visualization for SN2 lone-pair changes
       :align: center
       :width: 820px
 
-   *Figure:* LSG/ITS view of the SN2 example. Bond colors show broken/formed
+   *Figure:* LLG/ITS view of the SN2 example. Bond colors show broken/formed
    edges and the node badges show a lone-pair transfer.
 
 Lewis-state label modes:
@@ -274,7 +274,7 @@ Compact MTG visualization has two complementary views:
    from synkit.Graph.MTG.mtg import MTG
    from synkit.Vis import draw_mtg_graph, draw_mtg_steps
 
-   # Step RSMI strings are converted to Lewis State Graph ITS by default.
+   # Step RSMI strings are converted to Lewis-labelled graph ITS by default.
    mtg = MTG(step_rsmis, mcs_mol=True)
 
    fig, ax = draw_mtg_graph(
@@ -346,7 +346,7 @@ MTG display conventions:
        formation or net loss.
    * - Step panels
      - Reuse the ITS-only renderer so a step can be checked with the same
-       visual language as a normal LSG/ITS graph.
+       visual language as a normal LLG/ITS graph.
 
 Diagnostic Graph View
 ---------------------

@@ -1,13 +1,59 @@
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass
+
+import networkx as nx
+from rdkit import Chem
+
 from synkit.IO.chem_converter import rsmi_to_graph, graph_to_rsmi, smiles_to_graph
-from synkit.Graph.ITS.its_decompose import its_decompose
+from synkit.Graph.ITS.its_decompose import get_rc, its_decompose
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.Graph.ITS.its_builder import ITSBuilder
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Graph.ITS.its_relabel import ITSRelabel
 
 std = Standardize()
+
+CONSTITUTIONAL_RC_NODE_ATTRS = (
+    "element",
+    "aromatic",
+    "hcount",
+    "charge",
+    "neighbors",
+    "atom_map",
+)
+CONSTITUTIONAL_SIDE_NODE_ATTRS = (
+    *CONSTITUTIONAL_RC_NODE_ATTRS,
+    "radical",
+)
+CONSTITUTIONAL_RC_EDGE_ATTRS = ("order",)
+CONSTITUTIONAL_SIDE_EDGE_ATTRS = ("order",)
+
+
+class ITSExpansionError(ValueError):
+    """Raised when partial-AAM ITS reconstruction cannot produce a safe RSMI."""
+
+
+@dataclass(frozen=True)
+class ITSExpansionResult:
+    """Structured evidence for one successful partial-AAM expansion."""
+
+    rsmi: str
+    preferred_side: str
+    selected_side: str
+    fallback_used: bool
+    constitution_checked: bool
+    constitution_guard_passed: bool | None
+    unmapped_explicit_hydrogens_folded: bool = False
+    folded_unmapped_explicit_hydrogen_count: int = 0
+    stereochemistry_ignored_for_expansion: bool = False
+    explicit_hydrogen_serialization: bool = False
+    radical_state_preserved: bool = False
+    fallback_reason: str | None = None
+
+    def to_dict(self) -> dict:
+        """Return JSON-serializable expansion evidence."""
+        return asdict(self)
 
 
 class ITSExpand:
@@ -426,12 +472,496 @@ class ITSExpand:
         return ITSExpand._rebuild_graph_with_mapping(graph, mapping)
 
     @staticmethod
-    def expand_aam_with_its(
+    def _canonical_unmapped_constitution(smiles: str) -> str:
+        """Return an atom-map- and stereo-independent constitutional key.
+
+        Isotopes, formal charges, explicit hydrogens, bond orders, and molecular
+        fragments remain part of the key. Only atom-map labels and
+        stereochemical annotations are removed.
+        """
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            raise ITSExpansionError(
+                f"Cannot parse endpoint while checking constitution: {smiles!r}"
+            )
+
+        for atom in mol.GetAtoms():
+            atom.SetAtomMapNum(0)
+        Chem.RemoveStereochemistry(mol)
+        return Chem.MolToSmiles(mol, canonical=True, isomericSmiles=True)
+
+    @classmethod
+    def endpoint_constitutions_match(
+        cls, source_rsmi: str, candidate_rsmi: str
+    ) -> bool:
+        """Check that reactant and product constitutions are independently equal.
+
+        This is a fail-closed guard for partial-AAM completion, not an atom-map
+        accuracy metric. It prevents a fallback reconstruction from silently
+        deleting fragments or changing either reaction endpoint.
+        """
+        source_react, source_prod = cls._split_rsmi(source_rsmi)
+        candidate_react, candidate_prod = cls._split_rsmi(candidate_rsmi)
+        return cls._canonical_unmapped_constitution(
+            source_react
+        ) == cls._canonical_unmapped_constitution(
+            candidate_react
+        ) and cls._canonical_unmapped_constitution(
+            source_prod
+        ) == cls._canonical_unmapped_constitution(
+            candidate_prod
+        )
+
+    @staticmethod
+    def _fold_unmapped_explicit_hydrogens_in_side_with_count(
+        smiles: str,
+    ) -> tuple[str, int]:
+        """Fold removable unmapped H atoms into their heavy-atom H count.
+
+        Mapped hydrogen atoms, isotopic hydrogens, and non-removable standalone
+        hydrogen fragments remain explicit. This prevents the partial-AAM
+        reaction-center path from deleting an unmapped explicit H without
+        transferring its hydrogen count to the attached atom.
+        """
+        parser = Chem.SmilesParserParams()
+        parser.removeHs = False
+        mol = Chem.MolFromSmiles(smiles, parser)
+        if mol is None:
+            raise ITSExpansionError(
+                f"Cannot parse endpoint while folding unmapped H: {smiles!r}"
+            )
+
+        explicit_unmapped_before = sum(
+            atom.GetAtomicNum() == 1 and atom.GetAtomMapNum() == 0
+            for atom in mol.GetAtoms()
+        )
+
+        parameters = Chem.RemoveHsParameters()
+        parameters.removeMapped = False
+        parameters.updateExplicitCount = True
+        try:
+            folded = Chem.RemoveHs(mol, parameters, sanitize=True)
+        except Exception as exc:
+            raise ITSExpansionError(
+                f"Cannot safely fold unmapped explicit H: {smiles!r}; {exc}"
+            ) from exc
+        explicit_unmapped_after = sum(
+            atom.GetAtomicNum() == 1 and atom.GetAtomMapNum() == 0
+            for atom in folded.GetAtoms()
+        )
+        return Chem.MolToSmiles(
+            folded,
+            canonical=False,
+            isomericSmiles=True,
+        ), int(explicit_unmapped_before - explicit_unmapped_after)
+
+    @classmethod
+    def _fold_unmapped_explicit_hydrogens_in_side(cls, smiles: str) -> str:
+        """Fold removable unmapped H atoms and return the normalized side."""
+        folded, _count = cls._fold_unmapped_explicit_hydrogens_in_side_with_count(
+            smiles
+        )
+        return folded
+
+    @classmethod
+    def fold_unmapped_explicit_hydrogens(cls, rsmi: str) -> str:
+        """Normalize removable unmapped H on both reaction endpoints."""
+        reactant, product = cls._split_rsmi(rsmi)
+        return (
+            f"{cls._fold_unmapped_explicit_hydrogens_in_side(reactant)}>>"
+            f"{cls._fold_unmapped_explicit_hydrogens_in_side(product)}"
+        )
+
+    @classmethod
+    def _fold_unmapped_explicit_hydrogens_with_count(cls, rsmi: str) -> tuple[str, int]:
+        """Normalize both endpoints and count the explicit H atoms folded."""
+        reactant, product = cls._split_rsmi(rsmi)
+        folded_reactant, reactant_count = (
+            cls._fold_unmapped_explicit_hydrogens_in_side_with_count(reactant)
+        )
+        folded_product, product_count = (
+            cls._fold_unmapped_explicit_hydrogens_in_side_with_count(product)
+        )
+        return (
+            f"{folded_reactant}>>{folded_product}",
+            reactant_count + product_count,
+        )
+
+    @staticmethod
+    def _side_has_stereochemistry(smiles: str) -> bool:
+        """Return whether an endpoint contains atom or bond stereochemistry."""
+        parser = Chem.SmilesParserParams()
+        parser.removeHs = False
+        mol = Chem.MolFromSmiles(smiles, parser)
+        if mol is None:
+            raise ITSExpansionError(
+                f"Cannot parse endpoint while inspecting stereochemistry: {smiles!r}"
+            )
+        return any(
+            atom.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED
+            for atom in mol.GetAtoms()
+        ) or any(
+            bond.GetStereo() != Chem.BondStereo.STEREONONE
+            or bond.GetBondDir() != Chem.BondDir.NONE
+            for bond in mol.GetBonds()
+        )
+
+    @staticmethod
+    def _remove_stereochemistry_in_side(smiles: str) -> str:
+        """Remove atom/bond stereo while retaining explicit mapped H atoms."""
+        parser = Chem.SmilesParserParams()
+        parser.removeHs = False
+        mol = Chem.MolFromSmiles(smiles, parser)
+        if mol is None:
+            raise ITSExpansionError(
+                f"Cannot parse endpoint while removing stereochemistry: {smiles!r}"
+            )
+        Chem.RemoveStereochemistry(mol)
+        return Chem.MolToSmiles(mol, canonical=False, isomericSmiles=False)
+
+    @classmethod
+    def remove_stereochemistry(cls, rsmi: str) -> str:
+        """Remove endpoint stereo without folding explicit mapped H atoms."""
+        reactant, product = cls._split_rsmi(rsmi)
+        return (
+            f"{cls._remove_stereochemistry_in_side(reactant)}>>"
+            f"{cls._remove_stereochemistry_in_side(product)}"
+        )
+
+    @classmethod
+    def _rsmi_has_stereochemistry(cls, rsmi: str) -> bool:
+        """Return whether either reaction endpoint carries stereo metadata."""
+        if not any(marker in rsmi for marker in ("@", "/", "\\")):
+            return False
+        return any(
+            cls._side_has_stereochemistry(side) for side in cls._split_rsmi(rsmi)
+        )
+
+    @staticmethod
+    def _build_expansion_reaction_center(
+        rsmi: str,
+        *,
+        constitutional_only: bool,
+    ) -> nx.Graph:
+        """Convert partial endpoints and construct their ITS reaction centre."""
+        react_graph, prod_graph = rsmi_to_graph(
+            rsmi,
+            node_attrs=(CONSTITUTIONAL_RC_NODE_ATTRS if constitutional_only else None),
+            edge_attrs=(CONSTITUTIONAL_RC_EDGE_ATTRS if constitutional_only else None),
+            include_stereo_descriptors=not constitutional_only,
+        )
+        if react_graph is None or prod_graph is None:
+            raise ITSExpansionError("reaction graph conversion returned None")
+        rc_graph = ITSConstruction().ITSGraph(react_graph, prod_graph)
+        if rc_graph is None:
+            raise ITSExpansionError("ITS reaction-center construction returned None")
+        return rc_graph
+
+    @staticmethod
+    def _convert_expansion_side(
+        smiles: str,
+        *,
+        constitutional_only: bool,
+        preserve_radical_state: bool,
+    ) -> nx.Graph:
+        """Convert one complete endpoint with only expansion-required fields."""
+        graph = smiles_to_graph(
+            smiles,
+            sanitize=True,
+            drop_non_aam=False,
+            use_index_as_atom_map=False,
+            node_attrs=(
+                (
+                    CONSTITUTIONAL_SIDE_NODE_ATTRS
+                    if preserve_radical_state
+                    else CONSTITUTIONAL_RC_NODE_ATTRS
+                )
+                if constitutional_only
+                else None
+            ),
+            edge_attrs=(
+                CONSTITUTIONAL_SIDE_EDGE_ATTRS if constitutional_only else None
+            ),
+            include_stereo_descriptors=not constitutional_only,
+        )
+        if graph is None:
+            raise ITSExpansionError("full endpoint conversion returned None")
+        return graph
+
+    @classmethod
+    def _expansion_side_graphs(
+        cls,
+        react_smi: str,
+        prod_smi: str,
+        *,
+        use_G: bool,
+        preserve_radical_state: bool,
+        constitutional_only: bool,
+    ) -> tuple[nx.Graph, nx.Graph | None, nx.Graph | None]:
+        """Return selected side and optional radical-reference endpoints."""
+        selected_smiles = react_smi if use_G else prod_smi
+        side_graph = cls._convert_expansion_side(
+            selected_smiles,
+            constitutional_only=constitutional_only,
+            preserve_radical_state=preserve_radical_state,
+        )
+        full_react_graph = side_graph if use_G else None
+        full_prod_graph = side_graph if not use_G else None
+        if preserve_radical_state:
+            other_graph = cls._convert_expansion_side(
+                prod_smi if use_G else react_smi,
+                constitutional_only=constitutional_only,
+                preserve_radical_state=True,
+            )
+            if use_G:
+                full_prod_graph = other_graph
+            else:
+                full_react_graph = other_graph
+        return side_graph, full_react_graph, full_prod_graph
+
+    @staticmethod
+    def _reacting_hydrogen_output_maps(
+        rc_graph: nx.Graph,
+        side_graph: nx.Graph,
+        *,
+        explicit_hydrogen: bool,
+    ) -> list[int]:
+        """Translate reacting H labels to post-builder atom-map identifiers."""
+        if explicit_hydrogen:
+            return []
+        reacting_hydrogen_maps = {
+            data["atom_map"]
+            for _, data in get_rc(rc_graph).nodes(data=True)
+            if data.get("element") == "H"
+        }
+        return [
+            node
+            for node, data in side_graph.nodes(data=True)
+            if data.get("atom_map") in reacting_hydrogen_maps
+        ]
+
+    @staticmethod
+    def _serialize_expansion(
+        react_graph: nx.Graph,
+        prod_graph: nx.Graph,
+        its_graph: nx.Graph,
+        *,
+        explicit_hydrogen: bool,
+        preserve_hydrogen_maps: list[int],
+        standardize_output: bool,
+    ) -> str:
+        """Serialize a reconstructed ITS and optionally standardize its RSMI."""
+        expanded_rsmi = graph_to_rsmi(
+            react_graph,
+            prod_graph,
+            its_graph,
+            sanitize=True,
+            explicit_hydrogen=explicit_hydrogen,
+            preserve_hydrogen_maps=preserve_hydrogen_maps,
+        )
+        if not isinstance(expanded_rsmi, str) or not expanded_rsmi:
+            raise ITSExpansionError("graph-to-RSMI serialization returned no result")
+        if not standardize_output:
+            return expanded_rsmi
+        standardized = std.fit(
+            expanded_rsmi,
+            remove_aam=False,
+            remove_invalid=False,
+        )
+        if not standardized:
+            raise ITSExpansionError(
+                "expanded RSMI contains an invalid fragment; no fragments were dropped"
+            )
+        return standardized
+
+    @classmethod
+    def _expand_aam_once(
+        cls,
+        rsmi: str,
+        *,
+        use_G: bool,
+        preserve_older_map: bool,
+        explicit_hydrogen: bool,
+        preserve_radical_state: bool,
+        constitutional_only: bool,
+        standardize_output: bool,
+    ) -> str:
+        """Run one side-specific ITS expansion and fail on invalid output."""
+        side_name = "reactant" if use_G else "product"
+        try:
+            react_smi, prod_smi = cls._split_rsmi(rsmi)
+            rc_graph = cls._build_expansion_reaction_center(
+                rsmi,
+                constitutional_only=constitutional_only,
+            )
+            side_graph, full_react_graph, full_prod_graph = (
+                cls._expansion_side_graphs(
+                    react_smi,
+                    prod_smi,
+                    use_G=use_G,
+                    preserve_radical_state=preserve_radical_state,
+                    constitutional_only=constitutional_only,
+                )
+            )
+
+            if preserve_older_map:
+                side_graph = cls.reindex_side_graph_by_atom_map(
+                    side_graph,
+                    contiguous=False,
+                )
+
+            preserve_hydrogen_maps = cls._reacting_hydrogen_output_maps(
+                rc_graph,
+                side_graph,
+                explicit_hydrogen=explicit_hydrogen,
+            )
+
+            its_graph = ITSBuilder().ITSGraph(side_graph, rc_graph)
+            if its_graph is None:
+                raise ITSExpansionError("ITS reconstruction returned None")
+
+            new_react, new_prod = its_decompose(its_graph)
+            if preserve_radical_state:
+                assert full_react_graph is not None
+                assert full_prod_graph is not None
+                cls._transfer_endpoint_radicals(
+                    full_react_graph,
+                    new_react,
+                    preserve_atom_maps=preserve_older_map,
+                )
+                cls._transfer_endpoint_radicals(
+                    full_prod_graph,
+                    new_prod,
+                    preserve_atom_maps=preserve_older_map,
+                )
+            return cls._serialize_expansion(
+                new_react,
+                new_prod,
+                its_graph,
+                explicit_hydrogen=explicit_hydrogen,
+                preserve_hydrogen_maps=preserve_hydrogen_maps,
+                standardize_output=standardize_output,
+            )
+        except ITSExpansionError as exc:
+            raise ITSExpansionError(
+                f"{side_name}-side ITS expansion failed: {exc}"
+            ) from exc
+        except Exception as exc:
+            raise ITSExpansionError(
+                f"{side_name}-side ITS expansion failed: {exc}"
+            ) from exc
+
+    @staticmethod
+    def _mapped_radical_assignments(source_graph, target_graph):
+        """Return direct map-anchored radical assignments when compatible."""
+        radical_sources = [
+            data
+            for _, data in source_graph.nodes(data=True)
+            if int(data.get("radical", 0) or 0) > 0
+        ]
+        target_by_map = {
+            int(data.get("atom_map", 0) or 0): node
+            for node, data in target_graph.nodes(data=True)
+            if int(data.get("atom_map", 0) or 0) > 0
+        }
+        assignments = []
+        for source_data in radical_sources:
+            target_node = target_by_map.get(int(source_data.get("atom_map", 0) or 0))
+            if target_node is None:
+                return None
+            target_data = target_graph.nodes[target_node]
+            if any(
+                source_data.get(name) != target_data.get(name)
+                for name in ("element", "aromatic", "hcount", "charge")
+            ):
+                return None
+            assignments.append((target_node, int(source_data.get("radical", 0) or 0)))
+        return assignments
+
+    @staticmethod
+    def _transfer_endpoint_radicals(
+        source_graph,
+        target_graph,
+        *,
+        preserve_atom_maps: bool = True,
+    ) -> None:
+        """Transfer radical counts through exact endpoint identity.
+
+        Existing atom maps constrain the correspondence only when the caller
+        requested anchor preservation.  In normal, unanchored expansion the
+        reconstructed endpoint has deliberately received fresh map numbers,
+        so requiring equality to the source labels would make a valid graph
+        isomorphism impossible.
+        """
+
+        radical_sources = [
+            (node, data)
+            for node, data in source_graph.nodes(data=True)
+            if int(data.get("radical", 0) or 0) > 0
+        ]
+        if not radical_sources:
+            nx.set_node_attributes(target_graph, 0, "radical")
+            return
+
+        if preserve_atom_maps:
+            direct_assignments = ITSExpand._mapped_radical_assignments(
+                source_graph, target_graph
+            )
+            if direct_assignments is not None:
+                nx.set_node_attributes(target_graph, 0, "radical")
+                for target_node, radical_count in direct_assignments:
+                    target_graph.nodes[target_node]["radical"] = radical_count
+                return
+
+        def node_match(source: dict, target: dict) -> bool:
+            if any(
+                source.get(name) != target.get(name)
+                for name in ("element", "aromatic", "hcount", "charge")
+            ):
+                return False
+            if not preserve_atom_maps:
+                return True
+            required_map = int(source.get("atom_map", 0) or 0)
+            target_map = int(target.get("atom_map", 0) or 0)
+            return required_map == 0 or required_map == target_map
+
+        def edge_match(source: dict, target: dict) -> bool:
+            return source.get("order", 1.0) == target.get("order", 1.0)
+
+        matcher = nx.algorithms.isomorphism.GraphMatcher(
+            source_graph,
+            target_graph,
+            node_match=node_match,
+            edge_match=edge_match,
+        )
+        try:
+            mapping = next(matcher.isomorphisms_iter())
+        except StopIteration as exc:
+            raise ITSExpansionError(
+                "Cannot align a reconstructed endpoint with its supplied radical state"
+            ) from exc
+
+        for source_node, target_node in mapping.items():
+            target_graph.nodes[target_node]["radical"] = int(
+                source_graph.nodes[source_node].get("radical", 0) or 0
+            )
+
+    @classmethod
+    def expand_aam_with_its_report(
+        cls,
         rsmi: str,
         relabel: bool = False,
         use_G: bool = True,
         preserve_older_map: bool = False,
-    ) -> str:
+        fallback_to_other_side: bool = False,
+        require_constitution_preservation: bool = False,
+        fold_unmapped_explicit_hydrogens: bool = False,
+        ignore_stereochemistry: bool = False,
+        explicit_hydrogen: bool = False,
+        preserve_radical_state: bool = False,
+        constitutional_only: bool = False,
+        standardize_output: bool = True,
+    ) -> ITSExpansionResult:
         """Expand a partial reaction SMILES to a full AAM RSMI using ITS
         reconstruction.
 
@@ -449,9 +979,43 @@ class ITSExpand:
             This keeps old maps such as ``:20`` attached to the same atom.
             This option is incompatible with ``relabel=True``.
         :type preserve_older_map: bool
-        :returns: Fully atom-mapped reaction SMILES after ITS expansion and
-            standardization.
-        :rtype: str
+        :param fallback_to_other_side: Retry from the opposite reaction side if
+            the preferred side cannot be expanded. Defaults to False.
+        :type fallback_to_other_side: bool
+        :param require_constitution_preservation: Require the expanded RSMI to
+            preserve the reactant and product constitutions independently.
+            This guard ignores atom maps and stereochemistry but retains
+            isotopes, charges, hydrogens, fragments, and bond orders.
+        :type require_constitution_preservation: bool
+        :param fold_unmapped_explicit_hydrogens: Fold removable unmapped
+            explicit H atoms into heavy-atom hydrogen counts before partial
+            reaction-center construction, while retaining mapped H atoms.
+        :type fold_unmapped_explicit_hydrogens: bool
+        :param ignore_stereochemistry: Remove atom and bond stereo from the
+            working RSMI before ITS construction. This is useful when stereo is
+            explicitly outside the expansion task and malformed directional
+            annotations prevent graph conversion. The constitution guard still
+            compares both original endpoints independently.
+        :type ignore_stereochemistry: bool
+        :param explicit_hydrogen: Preserve explicit hydrogen graph nodes during
+            graph-to-RSMI serialization. This does not materialize hydrogen
+            atoms already represented only by ``hcount``.
+        :type explicit_hydrogen: bool
+        :param preserve_radical_state: Transfer supplied endpoint radical
+            counts through exact endpoint identity instead of asking RDKit to
+            infer them solely from valence during serialization. Existing maps
+            constrain identity only when ``preserve_older_map=True``.
+        :type preserve_radical_state: bool
+        :param constitutional_only: Build only attributes required for
+            constitutional partial-AAM completion and omit graph-level stereo
+            descriptors. Defaults to False.
+        :type constitutional_only: bool
+        :param standardize_output: Reparse and standardize the already
+            sanitized graph serialization. Disable only for the minimal RSMI
+            adapter, whose validation is performed separately.
+        :type standardize_output: bool
+        :returns: Fully mapped RSMI and structured expansion evidence.
+        :rtype: ITSExpansionResult
         :raises ValueError: If input RSMI format is invalid, if incompatible
             options are used, or if side-graph reindexing is unsafe.
 
@@ -471,50 +1035,168 @@ class ITSExpand:
             )
 
         if relabel:
-            return ITSRelabel().fit(rsmi)
-
-        react_smi, prod_smi = ITSExpand._split_rsmi(rsmi)
-
-        # Build graphs for reactants and products.
-        react_graph, prod_graph = rsmi_to_graph(rsmi)
-
-        # Construct the ITS reaction-center graph.
-        #
-        # Do NOT reindex rc_graph here.
-        # The reaction-center graph already uses atom-map numbers as node IDs,
-        # for example nodes 10, 11, 12, and 20.
-        rc_graph = ITSConstruction().ITSGraph(react_graph, prod_graph)
-
-        # Choose which side to expand.
-        smi_side = react_smi if use_G else prod_smi
-
-        side_graph = smiles_to_graph(
-            smi_side,
-            sanitize=True,
-            drop_non_aam=False,
-            use_index_as_atom_map=False,
-        )
-
-        # Node IDs remain contiguous from 1..N.
-        if preserve_older_map:
-            side_graph = ITSExpand.reindex_side_graph_by_atom_map(
-                side_graph,
-                contiguous=False,
+            expanded = ITSRelabel().fit(rsmi)
+            if (
+                require_constitution_preservation
+                and not cls.endpoint_constitutions_match(rsmi, expanded)
+            ):
+                raise ITSExpansionError(
+                    "Relabelled RSMI does not preserve both endpoint constitutions."
+                )
+            return ITSExpansionResult(
+                expanded,
+                preferred_side="relabel",
+                selected_side="relabel",
+                fallback_used=False,
+                constitution_checked=require_constitution_preservation,
+                constitution_guard_passed=(
+                    True if require_constitution_preservation else None
+                ),
+                explicit_hydrogen_serialization=explicit_hydrogen,
+                radical_state_preserved=preserve_radical_state,
             )
 
-        # Reconstruct the full ITS graph.
-        its_graph = ITSBuilder().ITSGraph(side_graph, rc_graph)
+        cls._split_rsmi(rsmi)
+        source_rsmi = rsmi
+        if fold_unmapped_explicit_hydrogens:
+            working_rsmi, folded_hydrogen_count = (
+                cls._fold_unmapped_explicit_hydrogens_with_count(rsmi)
+            )
+        else:
+            working_rsmi = rsmi
+            folded_hydrogen_count = 0
+        stereochemistry_ignored = bool(
+            ignore_stereochemistry and cls._rsmi_has_stereochemistry(working_rsmi)
+        )
+        if stereochemistry_ignored:
+            working_rsmi = cls.remove_stereochemistry(working_rsmi)
+        preferred_name = "reactant" if use_G else "product"
+        fallback_name = "product" if use_G else "reactant"
 
-        # Decompose ITS back into reactant and product graphs.
-        new_react, new_prod = its_decompose(its_graph)
+        def expand_and_guard(side: bool) -> str:
+            expanded = cls._expand_aam_once(
+                working_rsmi,
+                use_G=side,
+                preserve_older_map=preserve_older_map,
+                explicit_hydrogen=explicit_hydrogen,
+                preserve_radical_state=preserve_radical_state,
+                constitutional_only=constitutional_only,
+                standardize_output=standardize_output,
+            )
+            if (
+                require_constitution_preservation
+                and not cls.endpoint_constitutions_match(source_rsmi, expanded)
+            ):
+                side_name = "reactant" if side else "product"
+                raise ITSExpansionError(
+                    f"{side_name}-side expansion changed an endpoint constitution"
+                )
+            return expanded
 
-        # Convert graphs back to RSMI and standardize atom mappings.
-        expanded_rsmi = graph_to_rsmi(
-            new_react,
-            new_prod,
-            its_graph,
-            True,
-            False,
+        try:
+            expanded = expand_and_guard(use_G)
+            return ITSExpansionResult(
+                expanded,
+                preferred_side=preferred_name,
+                selected_side=preferred_name,
+                fallback_used=False,
+                constitution_checked=require_constitution_preservation,
+                constitution_guard_passed=(
+                    True if require_constitution_preservation else None
+                ),
+                unmapped_explicit_hydrogens_folded=(folded_hydrogen_count > 0),
+                folded_unmapped_explicit_hydrogen_count=folded_hydrogen_count,
+                stereochemistry_ignored_for_expansion=stereochemistry_ignored,
+                explicit_hydrogen_serialization=explicit_hydrogen,
+                radical_state_preserved=preserve_radical_state,
+            )
+        except ITSExpansionError as preferred_error:
+            if not fallback_to_other_side:
+                raise
+
+            try:
+                expanded = expand_and_guard(not use_G)
+                return ITSExpansionResult(
+                    expanded,
+                    preferred_side=preferred_name,
+                    selected_side=fallback_name,
+                    fallback_used=True,
+                    constitution_checked=require_constitution_preservation,
+                    constitution_guard_passed=(
+                        True if require_constitution_preservation else None
+                    ),
+                    unmapped_explicit_hydrogens_folded=(folded_hydrogen_count > 0),
+                    folded_unmapped_explicit_hydrogen_count=folded_hydrogen_count,
+                    stereochemistry_ignored_for_expansion=stereochemistry_ignored,
+                    explicit_hydrogen_serialization=explicit_hydrogen,
+                    radical_state_preserved=preserve_radical_state,
+                    fallback_reason=str(preferred_error),
+                )
+            except ITSExpansionError as fallback_error:
+                raise ITSExpansionError(
+                    f"Both ITS expansion directions failed. {preferred_name}: "
+                    f"{preferred_error}; {fallback_name}: {fallback_error}"
+                ) from fallback_error
+
+    @classmethod
+    def expand_rsmi(cls, rsmi: str, *, use_G: bool = True) -> str:
+        """Complete partial AAM through the minimal RSMI reconstruction path.
+
+        This adapter parses the mapped reaction centre and one complete
+        endpoint, performs ITS glue/decomposition, and serializes the result.
+        It deliberately assigns fresh maps and excludes optional hydrogen,
+        stereo, radical, fallback, and post-expansion constitution guards.
+        Use :meth:`expand_aam_with_its_report` when those policies or their
+        structured evidence are required.
+
+        :param rsmi: Partially mapped reaction SMILES.
+        :type rsmi: str
+        :param use_G: Reconstruct from reactants when True, products otherwise.
+        :type use_G: bool
+        :returns: Completely mapped reaction SMILES.
+        :rtype: str
+        """
+        return cls.expand_aam_with_its(
+            rsmi,
+            use_G=use_G,
+            preserve_older_map=False,
+            constitutional_only=True,
+            standardize_output=False,
         )
 
-        return std.fit(expanded_rsmi, remove_aam=False)
+    @classmethod
+    def expand_aam_with_its(
+        cls,
+        rsmi: str,
+        relabel: bool = False,
+        use_G: bool = True,
+        preserve_older_map: bool = False,
+        fallback_to_other_side: bool = False,
+        require_constitution_preservation: bool = False,
+        fold_unmapped_explicit_hydrogens: bool = False,
+        ignore_stereochemistry: bool = False,
+        explicit_hydrogen: bool = False,
+        preserve_radical_state: bool = False,
+        constitutional_only: bool = False,
+        standardize_output: bool = True,
+    ) -> str:
+        """Expand partial AAM and return the completed reaction SMILES.
+
+        Use :meth:`expand_aam_with_its_report` when selected-side and guard
+        evidence are also required. This method preserves the historical
+        string-returning API.
+        """
+        return cls.expand_aam_with_its_report(
+            rsmi,
+            relabel=relabel,
+            use_G=use_G,
+            preserve_older_map=preserve_older_map,
+            fallback_to_other_side=fallback_to_other_side,
+            require_constitution_preservation=require_constitution_preservation,
+            fold_unmapped_explicit_hydrogens=fold_unmapped_explicit_hydrogens,
+            ignore_stereochemistry=ignore_stereochemistry,
+            explicit_hydrogen=explicit_hydrogen,
+            preserve_radical_state=preserve_radical_state,
+            constitutional_only=constitutional_only,
+            standardize_output=standardize_output,
+        ).rsmi

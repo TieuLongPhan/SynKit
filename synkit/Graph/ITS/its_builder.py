@@ -1,5 +1,4 @@
 import networkx as nx
-from copy import deepcopy
 
 
 class ITSBuilder:
@@ -36,7 +35,7 @@ class ITSBuilder:
         state metadata.
 
         The returned ITS graph will have:
-          1. A deep copy of G’s nodes and edges.
+          1. An independent shallow copy of G’s nodes and edges.
           2. A new node attribute 'typesGH' storing G‑side and H‑side element/aromaticity/etc.
           3. Edge attributes:
              - 'order': tuple of the original order replicated for G and H.
@@ -62,7 +61,11 @@ class ITSBuilder:
         True
         """
         # 1) Copy base graph
-        its = deepcopy(G)
+        # NetworkX copies node/edge attribute dictionaries, which is sufficient
+        # here: this builder replaces top-level values and never mutates the
+        # nested values inherited from ``G``.  A recursive deepcopy dominated
+        # normal expansion time for larger Lewis-labelled graphs.
+        its = G.copy()
 
         # 2) Initialize 'typesGH' for each node
         for node, attrs in its.nodes(data=True):

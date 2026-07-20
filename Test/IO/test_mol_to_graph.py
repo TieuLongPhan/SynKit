@@ -1,8 +1,10 @@
 import unittest
+from unittest.mock import patch
 
 import networkx as nx
 from rdkit import Chem
 
+import synkit.IO.mol_to_graph as mol_to_graph_module
 from synkit.IO.mol_to_graph import MolToGraph
 
 
@@ -154,6 +156,75 @@ class TestMolToGraph(unittest.TestCase):
         g = MolToGraph(node_attrs=["element", "charge"]).transform(self.mol)
         for _, data in g.nodes(data=True):
             self.assertEqual(set(data.keys()), {"element", "charge"})
+
+    def test_transform_skips_unrequested_expensive_node_features(self):
+        converter = MolToGraph(node_attrs=["element", "charge"])
+        with (
+            patch("synkit.IO.mol_to_graph.compute_gasteiger_inplace") as gasteiger,
+            patch.object(MolToGraph, "estimate_oxidation_states") as oxidation,
+            patch.object(MolToGraph, "_augment_atom_properties") as augmentation,
+        ):
+            converter.transform(self.mol)
+
+        gasteiger.assert_not_called()
+        oxidation.assert_not_called()
+        augmentation.assert_not_called()
+
+    def test_direct_whitelist_skips_generic_extractors_and_kekulization(self):
+        converter = MolToGraph(
+            node_attrs=["element", "aromatic", "hcount", "charge", "atom_map"],
+            edge_attrs=["order"],
+            include_stereo_descriptors=False,
+        )
+        with (
+            patch(
+                "synkit.IO.mol_to_graph.AtomFeatureExtractor.build_dict"
+            ) as atom_extractor,
+            patch.object(MolToGraph, "_gather_bond_properties") as bond_extractor,
+            patch.object(MolToGraph, "_make_kekule_copy") as kekulize,
+        ):
+            graph = converter.transform(self.mol)
+
+        atom_extractor.assert_not_called()
+        bond_extractor.assert_not_called()
+        kekulize.assert_not_called()
+        self.assertTrue(graph.nodes)
+        self.assertTrue(graph.edges)
+        for _, attributes in graph.nodes(data=True):
+            self.assertEqual(
+                set(attributes),
+                {"element", "aromatic", "hcount", "charge", "atom_map"},
+            )
+        for _, _, attributes in graph.edges(data=True):
+            self.assertEqual(set(attributes), {"order"})
+
+    def test_transform_computes_explicitly_requested_node_features(self):
+        converter = MolToGraph(
+            node_attrs=["element", "partial_charge", "oxidation_state"]
+        )
+        with (
+            patch(
+                "synkit.IO.mol_to_graph.compute_gasteiger_inplace",
+                wraps=mol_to_graph_module.compute_gasteiger_inplace,
+            ) as gasteiger,
+            patch.object(
+                MolToGraph,
+                "estimate_oxidation_states",
+                wraps=MolToGraph.estimate_oxidation_states,
+            ) as oxidation,
+        ):
+            converter.transform(self.mol)
+
+        gasteiger.assert_called_once_with(self.mol)
+        oxidation.assert_called_once()
+
+    def test_transform_can_skip_stereo_descriptor_registry(self):
+        converter = MolToGraph(include_stereo_descriptors=False)
+        with patch("synkit.Graph.Stereo.descriptors_from_rdkit") as descriptors:
+            graph = converter.transform(self.mol)
+
+        descriptors.assert_not_called()
+        self.assertEqual(graph.graph["stereo_descriptors"], {})
 
     def test_transform_edge_whitelist(self):
         g = MolToGraph(edge_attrs=["order"]).transform(self.mol)

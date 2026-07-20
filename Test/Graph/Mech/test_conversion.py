@@ -1,4 +1,5 @@
 import networkx as nx
+import pytest
 
 from synkit.Graph.Mech.conversion import (
     ef_smirks_to_epd,
@@ -33,6 +34,59 @@ def test_typed_convert_arrow_code_reuses_atom_map_index():
         ["Sigma-/LP+", [1, 2], [1]],
     ]
     assert its.nodes_calls == 1
+
+
+def test_typed_atom_transfer_uses_endpoint_resources_for_polar_arrow():
+    its = nx.Graph()
+    its.add_node("a", atom_map=1)
+    its.add_node("b", atom_map=2)
+    its.graph["endpoint_electron_states"] = {
+        1: ({"lone_pairs": 2, "radical": 0}, {"lone_pairs": 1, "radical": 0}),
+        2: ({"lone_pairs": 0, "radical": 0}, {"lone_pairs": 1, "radical": 0}),
+    }
+
+    assert typed_convert_arrow_code("1=2", its, electron_count=2) == [
+        ["LP-/LP+", [1], [2]]
+    ]
+
+
+def test_typed_atom_transfer_uses_endpoint_resources_for_radical_arrow():
+    its = nx.Graph()
+    its.add_node("a", atom_map=1)
+    its.add_node("b", atom_map=2)
+    its.add_edge("a", "b", order=(1.0, 1.0))
+    its.graph["endpoint_electron_states"] = {
+        1: ({"lone_pairs": 3, "radical": 0}, {"lone_pairs": 2, "radical": 1}),
+        2: ({"lone_pairs": 0, "radical": 1}, {"lone_pairs": 1, "radical": 0}),
+    }
+
+    assert typed_convert_arrow_code("1=2", its, electron_count=1) == [
+        ["LP-/LP+", [1], [2]]
+    ]
+
+
+def test_typed_bond_arrow_resolves_radical_atom_from_endpoint_resources():
+    its = nx.Graph()
+    its.add_node("a", atom_map=1)
+    its.add_node("b", atom_map=2)
+    its.add_edge("a", "b", order=(0.0, 1.0))
+    its.graph["endpoint_electron_states"] = {
+        1: ({"lone_pairs": 0, "radical": 1}, {"lone_pairs": 0, "radical": 0}),
+        2: ({"lone_pairs": 0, "radical": 1}, {"lone_pairs": 0, "radical": 0}),
+    }
+
+    assert typed_convert_arrow_code("1=1,2", its, electron_count=1) == [
+        ["Rad-/Sigma+", [1], [1, 2]]
+    ]
+
+
+def test_typed_atom_arrow_without_bond_or_state_evidence_fails_closed():
+    its = nx.Graph()
+    its.add_node("a", atom_map=1)
+    its.add_node("b", atom_map=2)
+
+    with pytest.raises(ValueError, match="ITS graph has no edge"):
+        typed_convert_arrow_code("1=2", its)
 
 
 def test_ef_smirks_round_trip_completes_aam_and_preserves_flow_code():

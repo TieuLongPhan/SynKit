@@ -35,7 +35,6 @@ from synkit.Graph.Matcher.automorphism import (
     Automorphism,
 )
 from synkit.Graph.Matcher.dedup_matches import deduplicate_matches_with_anchor
-from synkit.Graph.Matcher.auto_est import AutoEst
 from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
@@ -82,6 +81,7 @@ ITS_STRUCTURAL_NODE_ATTRS = [
     "lone_pairs",
     "valence_electrons",
     "present",
+    "_legacy_typesgh_sig",
 ]
 ITS_STRUCTURAL_EDGE_ATTRS = ["order", "kekule_order", "sigma_order", "pi_order"]
 
@@ -408,8 +408,7 @@ class SynReactor:
             if has_wildcard_node(pattern_graph):
                 pattern_graph = remove_wildcard_nodes(pattern_graph, inplace=False)
 
-            pattern_graph = self._with_aromatic_n_pi_roles(pattern_graph)
-            matching_host = self._with_aromatic_n_pi_roles(self._matching_host_graph())
+            matching_host = self._matching_host_graph()
             node_attrs, edge_attrs = resolve_template_match_attrs(pattern_graph)
             if self.radical_policy in {"lower_bound", "ignore"}:
                 node_attrs = [attr for attr in node_attrs if attr != "radical"]
@@ -623,18 +622,7 @@ class SynReactor:
                     len(self._mappings),
                 )
             else:
-                auto = AutoEst(
-                    pattern_graph,
-                    node_attrs=["element", "charge", "aromatic", "hcount"],
-                    edge_attrs=["order"],
-                )
-                auto.fit()
-                self._mappings = deduplicate_matches_with_anchor(
-                    raw_maps,
-                    pattern_orbits=auto.orbits,
-                    pattern_anchor=auto.anchor_component,
-                )
-                # self._mappings = raw_maps
+                self._mappings = raw_maps
 
             log.info("%d mapping(s) discovered", len(self._mappings))
         return self._mappings
@@ -854,20 +842,6 @@ class SynReactor:
             ):
                 substitutions[node] = state.constraint
         return substitutions
-
-    @staticmethod
-    def _with_aromatic_n_pi_roles(graph: nx.Graph) -> nx.Graph:
-        """Label aromatic nitrogens by incident aromatic pi-bond count."""
-        decorated = graph.copy()
-        for node, attrs in decorated.nodes(data=True):
-            if attrs.get("element") != "N" or not attrs.get("aromatic", False):
-                continue
-            attrs["aromatic_n_pi_count"] = sum(
-                1
-                for _, _, edge in decorated.edges(node, data=True)
-                if edge.get("order") == 1.5 and edge.get("pi_order") == 1.0
-            )
-        return decorated
 
     @staticmethod
     def _nodes_by_atom_map(graph: nx.Graph) -> Dict[int, Any]:
@@ -2121,7 +2095,24 @@ class SynReactor:
                             "standard_order", 0.0
                         )
                     else:
-                        host_attr.update(rc_attr)
+                        # The host is the authoritative reactant endpoint.
+                        # Independently parsed aromatic graphs may have an
+                        # equivalent but different Kekule phase from the rule.
+                        # Replacing the complete rule tuple here used to copy
+                        # that phase onto the host half and could serialize the
+                        # unchanged substrate as spurious [C]/[CH] radicals.
+                        for key, rule_value in rc_attr.items():
+                            if isinstance(rule_value, tuple) and len(rule_value) == 2:
+                                host_value = host_attr.get(key)
+                                host_left = (
+                                    host_value[0]
+                                    if isinstance(host_value, tuple)
+                                    and len(host_value) == 2
+                                    else host_value
+                                )
+                                host_attr[key] = (host_left, rule_value[1])
+                            else:
+                                host_attr[key] = rule_value
             its.graph["electron_aware_rewrite"] = electron_aware
             if electron_aware:
                 its.graph["_product_electron_fields_current"] = False
@@ -2169,9 +2160,44 @@ class SynReactor:
         return attrs
 
     def _automorphism_pattern_graph(self, pattern: nx.Graph) -> nx.Graph:
-        """Decorate tuple patterns with product-side rewrite roles for pruning."""
-        if getattr(self.rule, "_format", None) != "tuple":
-            return pattern
+        """Decorate patterns with complete local rewrite roles for pruning.
+
+        Pattern connectivity contains only the source endpoint.  Two source
+        atoms can therefore be symmetric even when the rule reconnects them
+        to different leaving groups on the other endpoint.  Automorphism
+        pruning must include that transition incidence or it can discard the
+        only application that reconstructs the reference precursors.
+        """
+
+        def freeze(value: Any) -> Any:
+            if isinstance(value, dict):
+                return tuple(sorted((key, freeze(item)) for key, item in value.items()))
+            if isinstance(value, (list, tuple)):
+                return tuple(freeze(item) for item in value)
+            if isinstance(value, set):
+                return tuple(sorted((freeze(item) for item in value), key=repr))
+            return value
+
+        def node_transition(attrs: Mapping[str, Any]) -> Any:
+            types = attrs.get("typesGH")
+            if isinstance(types, tuple) and len(types) == 2:
+                return tuple(
+                    freeze(self._chemical_rewrite_role(side)) for side in types
+                )
+            return freeze(
+                tuple(
+                    (key, attrs.get(key))
+                    for key in (
+                        "element",
+                        "aromatic",
+                        "hcount",
+                        "charge",
+                        "lone_pairs",
+                        "radical",
+                        "valence_electrons",
+                    )
+                )
+            )
 
         decorated = pattern.copy()
         rc = self.rule.rc.raw
@@ -2179,9 +2205,20 @@ class SynReactor:
             rc_attrs = rc.nodes.get(node)
             if not rc_attrs:
                 continue
-            types = rc_attrs.get("typesGH")
-            if isinstance(types, tuple) and len(types) == 2:
-                attrs["_rewrite_role"] = self._chemical_rewrite_role(types[1])
+            incidence = []
+            for neighbor in rc.neighbors(node):
+                edge = rc.edges[node, neighbor]
+                incidence.append(
+                    (
+                        node_transition(rc.nodes[neighbor]),
+                        freeze(edge.get("order")),
+                        freeze(edge.get("standard_order")),
+                    )
+                )
+            attrs["_rewrite_role"] = (
+                node_transition(rc_attrs),
+                tuple(sorted(incidence, key=repr)),
+            )
         return decorated
 
     def _stereo_automorphism_pattern_graph(self, pattern: nx.Graph) -> nx.Graph:
@@ -2344,7 +2381,7 @@ class SynReactor:
 
     @staticmethod
     def _chemical_rewrite_role(role: Any) -> Any:
-        """Drop provenance-only atom-map identity from tuple rewrite roles."""
+        """Drop provenance-only atom-map identity from chemical rewrite roles."""
         if isinstance(role, tuple) and len(role) >= 9:
             chemical_role = role[:-1]
             if chemical_role[0] == "H":
@@ -2376,7 +2413,11 @@ class SynReactor:
             template_charge = prepared.nodes[node].get("template_charge")
             if isinstance(template_charge, tuple) and len(template_charge) == 2:
                 prepared.nodes[node]["charge"] = template_charge
+        electron_aware = bool(prepared.graph.get("electron_aware_rewrite", False))
         for _, attrs in prepared.nodes(data=True):
+            attrs["_legacy_typesgh_sig"] = (
+                () if electron_aware else attrs.get("typesGH", ())
+            )
             attrs["_its_node_sig"] = "|".join(
                 str(attrs.get(name, "")) for name in ITS_STRUCTURAL_NODE_ATTRS
             )
@@ -2426,7 +2467,7 @@ class SynReactor:
 
         cluster = GraphCluster(
             node_label_names=ITS_STRUCTURAL_NODE_ATTRS,
-            node_label_default=["*", False, 0, 0, 0, 0, 0, ()],
+            node_label_default=["*", False, 0, 0, 0, 0, 0, (), ()],
             edge_attribute="_its_edge_sig",
         )
         representative_indices: List[int] = []
@@ -2712,7 +2753,7 @@ class SynReactor:
                     other_prepared,
                     node_match=categorical_node_match(
                         ITS_STRUCTURAL_NODE_ATTRS,
-                        ["*", False, 0, 0, 0, 0, 0, ()],
+                        ["*", False, 0, 0, 0, 0, 0, (), ()],
                     ),
                     edge_match=categorical_edge_match("_its_edge_sig", ()),
                 ):

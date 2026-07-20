@@ -20,6 +20,9 @@ dev/*
 test_syn_reactor.py
 
 Data/Benchmark/*
+!Data/Benchmark/partial_expand/
+!Data/Benchmark/partial_expand/**
+Data/Benchmark/partial_expand/results/
 *.json.gz
 # *.png
 
@@ -49,8 +52,10 @@ synkit/Graph/dev/*
 *.log
 /dist/
 sprint/
+sprint/*
 test_syn.py
 .gitignore
 measure_candidate_stages.py
 run_valid_bug_cases.py
 paper/*
+Data/Benchmark/partial_expand/__pycache__/benchmark_expansion_comparison.cpython-311.pyc

@@ -263,16 +263,12 @@ def load_cip(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _two_protocol_diagnostic(
+def _parse_diagnostic_molecules(
     records: list[dict[str, Any]],
-    *,
-    max_isomers: int,
-    case_timeout_seconds: float,
-    progress_label: str,
-) -> dict[str, Any]:
-    """Run both global protocols without treating local labels as truth."""
+) -> tuple[list[tuple[str, Chem.Mol]], list[str]]:
+    """Parse diagnostic rows and retain failed identifiers."""
     molecules: list[tuple[str, Chem.Mol]] = []
-    parse_failures = []
+    parse_failures: list[str] = []
     for record in records:
         identifier = str(record["ID"])
         molecule = Chem.MolFromSmiles(str(record["SMILES"]))
@@ -280,10 +276,20 @@ def _two_protocol_diagnostic(
             parse_failures.append(identifier)
         else:
             molecules.append((identifier, molecule))
+    return molecules, parse_failures
+
+
+def _run_original_diagnostic(
+    molecules: list[tuple[str, Chem.Mol]],
+    *,
+    case_timeout_seconds: float,
+    progress_label: str,
+) -> tuple[Counter[str], Counter[str], list[dict[str, str]], float]:
+    """Classify supplied-stereo molecules for the diagnostic report."""
 
     original_predictions: Counter[str] = Counter()
     original_statuses: Counter[str] = Counter()
-    original_errors = []
+    original_errors: list[dict[str, str]] = []
     started = time.perf_counter()
     for position, (identifier, molecule) in enumerate(molecules, start=1):
         try:
@@ -303,6 +309,18 @@ def _two_protocol_diagnostic(
                 flush=True,
             )
     original_seconds = time.perf_counter() - started
+    return (
+        original_predictions,
+        original_statuses,
+        original_errors,
+        original_seconds,
+    )
+
+
+def _group_stripped_constitutions(
+    molecules: list[tuple[str, Chem.Mol]],
+) -> dict[str, tuple[Chem.Mol, list[str]]]:
+    """Group input rows by stereo-stripped molecular constitution."""
 
     grouped: dict[str, tuple[Chem.Mol, list[str]]] = {}
     for identifier, molecule in molecules:
@@ -312,11 +330,22 @@ def _two_protocol_diagnostic(
         if key not in grouped:
             grouped[key] = stripped, []
         grouped[key][1].append(identifier)
+    return grouped
+
+
+def _run_stripped_diagnostic(
+    grouped: dict[str, tuple[Chem.Mol, list[str]]],
+    *,
+    max_isomers: int,
+    case_timeout_seconds: float,
+    progress_label: str,
+) -> tuple[Counter[str], list[dict[str, Any]], list[dict[str, str]], float]:
+    """Assess unique stereo-stripped constitutions for the report."""
 
     clear_molecular_chirality_cache()
     row_outcomes: Counter[str] = Counter()
-    incomplete_cases = []
-    stripped_errors = []
+    incomplete_cases: list[dict[str, Any]] = []
+    stripped_errors: list[dict[str, str]] = []
     started = time.perf_counter()
     for position, (molecule, identifiers) in enumerate(grouped.values(), start=1):
         try:
@@ -356,6 +385,40 @@ def _two_protocol_diagnostic(
                 flush=True,
             )
     stripped_seconds = time.perf_counter() - started
+    return row_outcomes, incomplete_cases, stripped_errors, stripped_seconds
+
+
+def _two_protocol_diagnostic(
+    records: list[dict[str, Any]],
+    *,
+    max_isomers: int,
+    case_timeout_seconds: float,
+    progress_label: str,
+) -> dict[str, Any]:
+    """Run both global protocols without treating local labels as truth."""
+    molecules, parse_failures = _parse_diagnostic_molecules(records)
+    (
+        original_predictions,
+        original_statuses,
+        original_errors,
+        original_seconds,
+    ) = _run_original_diagnostic(
+        molecules,
+        case_timeout_seconds=case_timeout_seconds,
+        progress_label=progress_label,
+    )
+    grouped = _group_stripped_constitutions(molecules)
+    (
+        row_outcomes,
+        incomplete_cases,
+        stripped_errors,
+        stripped_seconds,
+    ) = _run_stripped_diagnostic(
+        grouped,
+        max_isomers=max_isomers,
+        case_timeout_seconds=case_timeout_seconds,
+        progress_label=progress_label,
+    )
 
     diagnostic_note = (
         "Diagnostic distribution only: this dataset's reference annotations "

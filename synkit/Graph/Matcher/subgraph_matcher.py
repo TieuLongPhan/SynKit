@@ -108,7 +108,6 @@ def electron_aware_node_match(
 
     - ``hcount``: host must be greater than or equal to pattern
     - ``lone_pairs``: host must be greater than or equal to pattern
-    - ``aromatic_n_pi_count``: exact aromatic-N role label when present
     ``radical`` therefore remains exact whenever the caller includes it in
     ``node_attrs``.
     """
@@ -217,7 +216,6 @@ def resolve_template_match_attrs(
         "hcount",
         "lone_pairs",
         "radical",
-        "aromatic_n_pi_count",
     ):
         if any(attr in data for _, data in pattern.nodes(data=True)):
             node_attrs.append(attr)
@@ -367,13 +365,14 @@ class SubgraphSearchEngine:
         node_attrs: List[str],
         threshold: int,
     ) -> bool:
-        """Estimate if candidate-product exceeds threshold with degree pruning.
+        """Return whether a degree-aware node domain proves no embedding exists.
 
-        We refine the basic Cartesian-product by requiring each host candidate
-        to match node attributes *and* have degree ≥ the pattern node’s degree.
-        This tighter filter greatly reduces false positives (over-pruning).
+        A Cartesian product of candidate-domain sizes is only a loose upper
+        bound on the number of embeddings.  It must not be compared with the
+        result threshold: graph connectivity can reduce a very large product
+        to only a handful of valid mappings.  The enumerator itself enforces
+        ``threshold`` safely.
         """
-        estimate = 1
         # Pre-compute pattern degrees
         pat_degrees = {n: pattern.degree(n) for n in pattern.nodes()}
         for p_node, pat_data in pattern.nodes(data=True):
@@ -387,9 +386,6 @@ class SubgraphSearchEngine:
             )
             # if no candidates; impossible match
             if count == 0:
-                return True
-            estimate *= count
-            if estimate > threshold * 1e4:  # reduce false positives
                 return True
         return False
 

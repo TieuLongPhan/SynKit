@@ -247,8 +247,23 @@ class MechanismReplayer:
         graph = deepcopy(pre_state)
         deltas: Counter[ElectronLocus] = Counter()
         for move in group.moves:
-            deltas[move.source] -= move.electron_count
-            deltas[move.target] += move.electron_count
+            if (
+                group.macro == "LONE_PAIR_RADICAL_RELOCATION"
+                and move.electron_count == 1
+                and move.source.kind == LONE_PAIR
+                and move.target.kind == LONE_PAIR
+            ):
+                # A fishhook can split one donor lone pair and pair with one
+                # acceptor radical. Pair/ radical resources must remain whole
+                # at the committed boundary even though only one electron
+                # moves between atoms.
+                deltas[move.source] -= 2
+                deltas[ElectronLocus(RADICAL, move.source.atom_maps)] += 1
+                deltas[ElectronLocus(RADICAL, move.target.atom_maps)] -= 1
+                deltas[move.target] += 2
+            else:
+                deltas[move.source] -= move.electron_count
+                deltas[move.target] += move.electron_count
 
         try:
             lookup = self._atom_map_lookup(graph)

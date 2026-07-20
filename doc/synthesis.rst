@@ -68,7 +68,7 @@ Reactor parameters
      - str
      - ``'typesGH'``
      - ITS representation used when the template is a reaction string.
-       Use ``'tuple'`` for the Lewis State Graph representation.
+       Use ``'tuple'`` for the Lewis-labelled graph representation.
    * - ``electron_diagnostics``
      - bool
      - ``False``
@@ -217,19 +217,19 @@ while keeping ``explicit_h=False``.
         '[CH3:1][CH3:2].[CH:3]([CH:4]=[O:5])=[O:6]>>[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]'
       ]
 
-Lewis State Graph Templates
+Lewis-labelled graph templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The NetworkX reactor can consume Lewis State Graph (LSG) templates. This is
+The NetworkX reactor can consume Lewis-labelled graph (LLG) templates. This is
 the SynKit-native path for transformations where valence-state information
 matters: lone pairs, radicals, valence electrons, and sigma/pi bond components
 are stored in the template and used during matching/rewrite. In the current API
-LSG construction is requested with ``format="tuple"``.
+LLG construction is requested with ``format="tuple"``.
 
 There are two common entry points:
 
 .. code-block:: python
-   :caption: Build the LSG template explicitly
+   :caption: Build the LLG template explicitly
    :linenos:
 
    from synkit.IO import rsmi_to_its
@@ -250,7 +250,7 @@ There are two common entry points:
    print(reactor.smarts)
 
 .. code-block:: python
-   :caption: Let SynReactor build an LSG template from a reaction string
+   :caption: Let SynReactor build an LLG template from a reaction string
    :linenos:
 
    reactor = SynReactor(
@@ -262,7 +262,7 @@ There are two common entry points:
        electron_diagnostics=True,
    )
 
-LSG rewrite policy:
+LLG rewrite policy:
 
 .. list-table::
    :header-rows: 1
@@ -279,7 +279,7 @@ LSG rewrite policy:
        radical count, and Kekule bond-order sum.
    * - Aromaticity
      - Aromatic flags are still useful for matching and display, but aromatic
-       ``order=1.5`` is not used as the LSG-authoritative rewrite value.
+       ``order=1.5`` is not used as the LLG-authoritative rewrite value.
 
 Radical-based linking
 ---------------------

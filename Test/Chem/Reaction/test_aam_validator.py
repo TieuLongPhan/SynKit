@@ -1,5 +1,8 @@
 import unittest
+from unittest.mock import patch
+
 from synkit.Chem.Reaction.aam_validator import AAMValidator
+from synkit.Chem.Reaction.Mapper import aam_validator as validator_module
 
 
 class TestAMMValidator(unittest.TestCase):
@@ -55,6 +58,36 @@ class TestAMMValidator(unittest.TestCase):
         self.assertFalse(
             AAMValidator.smiles_check(
                 *self.false_pair, check_method="RC", ignore_aromaticity=False
+            )
+        )
+
+    def test_smiles_checks_builds_pair_once_and_returns_both_verdicts(self):
+        with patch.object(
+            validator_module,
+            "rsmi_to_graph",
+            wraps=validator_module.rsmi_to_graph,
+        ) as converter:
+            verdicts = AAMValidator().smiles_checks(*self.true_pair)
+
+        self.assertEqual(verdicts, {"ITS": True, "RC": True})
+        self.assertEqual(converter.call_count, 2)
+
+    def test_smiles_checks_constitutional_profile_omits_stereo_registry(self):
+        with patch.object(
+            validator_module,
+            "rsmi_to_graph",
+            wraps=validator_module.rsmi_to_graph,
+        ) as converter:
+            verdicts = AAMValidator().smiles_checks(
+                *self.true_pair,
+                constitutional_only=True,
+            )
+
+        self.assertEqual(verdicts, {"ITS": True, "RC": True})
+        self.assertTrue(
+            all(
+                call.kwargs["include_stereo_descriptors"] is False
+                for call in converter.call_args_list
             )
         )
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 # ============================================================
 # Optional SynKit imports
@@ -443,6 +443,12 @@ def build_its_from_rsmi(
     arrow_code: str,
     expand_aam: bool = True,
     remove_non_arrow_maps: bool = True,
+    aam_fallback_to_other_side: bool = False,
+    require_constitution_preservation: bool = False,
+    fold_unmapped_explicit_hydrogens: bool = False,
+    ignore_stereochemistry: bool = False,
+    explicit_hydrogen: bool = False,
+    preserve_radical_state: bool = False,
 ):
     """
     Build SynKit ITS graph from reaction SMILES.
@@ -463,6 +469,25 @@ def build_its_from_rsmi(
     :type expand_aam: bool
     :param remove_non_arrow_maps: Whether to remove atom maps not used by the arrow code.
     :type remove_non_arrow_maps: bool
+    :param aam_fallback_to_other_side: Retry partial-AAM reconstruction from
+        the opposite endpoint if the preferred side fails.
+    :type aam_fallback_to_other_side: bool
+    :param require_constitution_preservation: Reject AAM expansion if either
+        endpoint constitution changes.
+    :type require_constitution_preservation: bool
+    :param fold_unmapped_explicit_hydrogens: Fold removable unmapped explicit
+        H atoms before partial-AAM reconstruction while retaining mapped H.
+    :type fold_unmapped_explicit_hydrogens: bool
+    :param ignore_stereochemistry: Remove stereo from the working partial-AAM
+        RSMI before ITS construction while retaining the original endpoint
+        constitution as the guard reference.
+    :type ignore_stereochemistry: bool
+    :param explicit_hydrogen: Preserve explicit H graph nodes during expanded
+        RSMI serialization.
+    :type explicit_hydrogen: bool
+    :param preserve_radical_state: Preserve supplied endpoint radical counts
+        during partial-AAM reconstruction.
+    :type preserve_radical_state: bool
     :returns: ITS graph, expanded RSMI, cleaned RSMI, and validation diagnostics.
     :rtype: tuple
     :raises ImportError: If required SynKit conversion helpers are unavailable.
@@ -484,17 +509,80 @@ def build_its_from_rsmi(
     else:
         rsmi_for_its = rsmi
 
-    expanded_rsmi = (
-        ITSExpand().expand_aam_with_its(
-            rsmi_for_its, relabel=False, preserve_older_map=True
+    if expand_aam:
+        expansion = ITSExpand().expand_aam_with_its_report(
+            rsmi_for_its,
+            relabel=False,
+            preserve_older_map=True,
+            fallback_to_other_side=aam_fallback_to_other_side,
+            require_constitution_preservation=require_constitution_preservation,
+            fold_unmapped_explicit_hydrogens=fold_unmapped_explicit_hydrogens,
+            ignore_stereochemistry=ignore_stereochemistry,
+            explicit_hydrogen=explicit_hydrogen,
+            preserve_radical_state=preserve_radical_state,
         )
-        if expand_aam
-        else rsmi_for_its
-    )
+        expanded_rsmi = expansion.rsmi
+        diagnostics["aam_expansion"] = expansion.to_dict()
+    else:
+        expanded_rsmi = rsmi_for_its
+        diagnostics["aam_expansion"] = {
+            "performed": False,
+            "constitution_checked": False,
+        }
 
     its = rsmi_to_its(expanded_rsmi)
+    endpoint_states = _endpoint_electron_states(expanded_rsmi)
+    if endpoint_states is not None:
+        # ``typesGH`` retains endpoint charge/H presentation but not the
+        # endpoint-local lone-pair/radical partition. Keep that partition as
+        # conversion evidence on this transient ITS graph so compact arrow
+        # annotations can be typed from the actual pre/post resources.
+        its.graph["endpoint_electron_states"] = endpoint_states
+        diagnostics["endpoint_electron_states_available"] = True
+    else:
+        diagnostics["endpoint_electron_states_available"] = False
 
     return its, expanded_rsmi, rsmi_for_its, diagnostics
+
+
+def _endpoint_electron_states(
+    mapped_reaction: str,
+) -> dict[int, tuple[dict[str, Any], dict[str, Any]]] | None:
+    """Return mapped pre/post nonbonding state for state-aware arrow typing."""
+    try:
+        from rdkit import Chem
+
+        from synkit.IO.mol_to_graph import MolToGraph
+
+        reactants, products = mapped_reaction.split(">>", 1)
+        parser = Chem.SmilesParserParams()
+        parser.removeHs = False
+        sides: list[dict[int, dict[str, Any]]] = []
+        for smiles in (reactants, products):
+            mol = Chem.MolFromSmiles(smiles, parser)
+            if mol is None:
+                return None
+            states: dict[int, dict[str, Any]] = {}
+            for atom in mol.GetAtoms():
+                atom_map = int(atom.GetAtomMapNum())
+                if atom_map <= 0:
+                    continue
+                if atom_map in states:
+                    return None
+                states[atom_map] = {
+                    "element": atom.GetSymbol(),
+                    "charge": int(atom.GetFormalCharge()),
+                    "radical": int(atom.GetNumRadicalElectrons()),
+                    "lone_pairs": int(MolToGraph.estimate_lone_pairs(atom)),
+                }
+            sides.append(states)
+        if set(sides[0]) != set(sides[1]):
+            return None
+        return {
+            atom_map: (sides[0][atom_map], sides[1][atom_map]) for atom_map in sides[0]
+        }
+    except (ImportError, TypeError, ValueError):
+        return None
 
 
 # ============================================================
@@ -749,6 +837,67 @@ def bond_plus_type(
     return "B+"
 
 
+def _infer_atom_locus_kind(
+    its,
+    atom_map: int,
+    *,
+    role: Literal["source", "target"],
+    electron_count: Literal[1, 2],
+) -> str | None:
+    """Infer an atom locus from its complete endpoint resource transition.
+
+    Compact EPD/EF-SMIRKS identifies atom-map endpoints but does not say
+    whether a one-atom fishhook touches a lone pair or a radical orbital. The
+    pre/post lone-pair and radical deltas disambiguate the supported cases.
+    """
+    endpoint_states = its.graph.get("endpoint_electron_states")
+    if not isinstance(endpoint_states, dict) or atom_map not in endpoint_states:
+        return None
+    reactant, product = endpoint_states[atom_map]
+    lp_delta = int(product["lone_pairs"]) - int(reactant["lone_pairs"])
+    radical_delta = int(product["radical"]) - int(reactant["radical"])
+    electron_delta = 2 * lp_delta + radical_delta
+    expected_delta = -electron_count if role == "source" else electron_count
+    if electron_delta != expected_delta:
+        return None
+
+    if electron_count == 2:
+        if radical_delta == 0 and lp_delta == (-1 if role == "source" else 1):
+            return "LP"
+        return None
+
+    if role == "source":
+        if radical_delta == -1 and lp_delta == 0:
+            return "Rad"
+        if radical_delta == 1 and lp_delta == -1:
+            return "LP"
+    else:
+        if radical_delta == 1 and lp_delta == 0:
+            return "Rad"
+        if radical_delta == -1 and lp_delta == 1:
+            return "LP"
+    return None
+
+
+def _infer_atom_to_atom_step(
+    its,
+    source_map: int,
+    target_map: int,
+    *,
+    electron_count: Literal[1, 2],
+) -> list[Any] | None:
+    """Resolve a compact ``a=b`` step as a nonbonding atom transfer."""
+    source_kind = _infer_atom_locus_kind(
+        its, source_map, role="source", electron_count=electron_count
+    )
+    target_kind = _infer_atom_locus_kind(
+        its, target_map, role="target", electron_count=electron_count
+    )
+    if source_kind is None or target_kind is None:
+        return None
+    return [f"{source_kind}-/{target_kind}+", [source_map], [target_map]]
+
+
 # ============================================================
 # Typed LP/Sigma/Pi conversion
 # ============================================================
@@ -759,6 +908,7 @@ def typed_convert_step(
     its,
     strict_bond_lookup: bool = True,
     atom_map_nodes: Optional[dict[int, list[Any]]] = None,
+    electron_count: Literal[1, 2] = 2,
 ) -> list[Any]:
     """
     Convert one arrow-code step into typed LP/Sigma/Pi format.
@@ -776,6 +926,8 @@ def typed_convert_step(
     :type strict_bond_lookup: bool
     :param atom_map_nodes: Optional precomputed atom-map to node index.
     :type atom_map_nodes: Optional[dict[int, list[Any]]]
+    :param electron_count: Electrons carried by the annotated arrow.
+    :type electron_count: Literal[1, 2]
     :returns: Typed LP/Sigma/Pi conversion record.
     :rtype: list[Any]
     :raises ValueError: If the step shape is unsupported or strict lookup fails.
@@ -790,17 +942,59 @@ def typed_convert_step(
         a = lhs[0]
         b = rhs[0]
 
+        node_a = get_unique_node_for_atom_map(
+            its,
+            a,
+            strict=strict_bond_lookup,
+            atom_map_nodes=atom_map_nodes,
+        )
+        node_b = get_unique_node_for_atom_map(
+            its,
+            b,
+            strict=strict_bond_lookup,
+            atom_map_nodes=atom_map_nodes,
+        )
+        has_bond = (
+            node_a is not None and node_b is not None and its.has_edge(node_a, node_b)
+        )
+
         r_order, p_order = get_its_bond_order(
             its,
             a,
             b,
-            strict=strict_bond_lookup,
+            strict=False,
             context=step,
             atom_map_nodes=atom_map_nodes,
         )
+        if is_zero(p_order - r_order):
+            atom_transfer = _infer_atom_to_atom_step(
+                its, a, b, electron_count=electron_count
+            )
+            if atom_transfer is not None:
+                return atom_transfer
+            if strict_bond_lookup and not has_bond:
+                raise ValueError(
+                    f"ITS graph has no edge for atom maps {a}-{b}. "
+                    "Endpoint states do not support an atom-to-atom transfer."
+                )
+            if strict_bond_lookup and "endpoint_electron_states" in its.graph:
+                raise ValueError(
+                    "ATOM_TRANSFER_STATE_MISMATCH: one-atom endpoints neither change "
+                    f"bond {a}-{b} nor match a supported nonbonding resource "
+                    "transfer."
+                )
+        elif p_order < r_order and strict_bond_lookup:
+            raise ValueError(
+                f"ARROW_TARGET_BOND_NOT_FORMED: bond {a}-{b} decreases from "
+                f"{r_order} to {p_order}."
+            )
         plus = bond_plus_type(r_order, p_order)
+        source_kind = (
+            _infer_atom_locus_kind(its, a, role="source", electron_count=electron_count)
+            or "LP"
+        )
 
-        return [f"LP-/{plus}", [a], [a, b]]
+        return [f"{source_kind}-/{plus}", [a], [a, b]]
 
     # --------------------------------------------------------
     # Case 2: a=b,c
@@ -823,8 +1017,12 @@ def typed_convert_step(
             atom_map_nodes=atom_map_nodes,
         )
         plus = bond_plus_type(r_order, p_order)
+        source_kind = (
+            _infer_atom_locus_kind(its, a, role="source", electron_count=electron_count)
+            or "LP"
+        )
 
-        return [f"LP-/{plus}", [a], [b, c]]
+        return [f"{source_kind}-/{plus}", [a], [b, c]]
 
     # --------------------------------------------------------
     # Case 3: a,b=c
@@ -843,8 +1041,12 @@ def typed_convert_step(
             atom_map_nodes=atom_map_nodes,
         )
         minus = bond_minus_type(r_order)
+        target_kind = (
+            _infer_atom_locus_kind(its, c, role="target", electron_count=electron_count)
+            or "LP"
+        )
 
-        return [f"{minus}/LP+", [a, b], [c]]
+        return [f"{minus}/{target_kind}+", [a, b], [c]]
 
     # --------------------------------------------------------
     # Case 4: a,b=c,d
@@ -884,6 +1086,7 @@ def typed_convert_arrow_code(
     arrow_code: str,
     its,
     strict_bond_lookup: bool = True,
+    electron_count: Literal[1, 2] = 2,
 ) -> list[list[Any]]:
     """Convert every step in an arrow code to typed LP/Sigma/Pi form.
 
@@ -893,6 +1096,8 @@ def typed_convert_arrow_code(
     :type its: networkx.Graph
     :param strict_bond_lookup: Whether missing bond lookups should raise.
     :type strict_bond_lookup: bool
+    :param electron_count: Electrons carried by every supplied arrow.
+    :type electron_count: Literal[1, 2]
     :returns: Typed conversion records for each step.
     :rtype: list[list[Any]]
     """
@@ -904,6 +1109,7 @@ def typed_convert_arrow_code(
             its=its,
             strict_bond_lookup=strict_bond_lookup,
             atom_map_nodes=atom_map_nodes,
+            electron_count=electron_count,
         )
         for step in split_arrow_code(arrow_code)
     ]
