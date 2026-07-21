@@ -363,7 +363,6 @@ class SubgraphSearchEngine:
         host: nx.Graph,
         pattern: nx.Graph,
         node_attrs: List[str],
-        threshold: int,
     ) -> bool:
         """Return whether a degree-aware node domain proves no embedding exists.
 
@@ -399,7 +398,7 @@ class SubgraphSearchEngine:
         strategy: Union[str, Strategy] = Strategy.COMPONENT,
         max_results: Optional[int] = None,
         strict_cc_count: bool = True,
-        threshold: Optional[int] = None,
+        threshold: Optional[int] = DEFAULT_THRESHOLD,
         pre_filter: bool = False,
     ) -> List[MappingDict]:
         """Dispatch to a subgraph-matching strategy with optional guards.
@@ -418,9 +417,10 @@ class SubgraphSearchEngine:
         strict_cc_count
             If True, host CC count must ≤ pattern CC count for COMPONENT/BACKTRACK.
         threshold
-            Override the default cap (DEFAULT_THRESHOLD) on embeddings.
+            Embedding cap. Passing ``None`` disables the cap; omitting the
+            argument uses ``DEFAULT_THRESHOLD``.
         pre_filter
-            If True, run a cheap Cartesian-product pre-filter against the threshold.
+            If True, reject patterns having an empty candidate-node domain.
 
         Returns
         -------
@@ -431,12 +431,7 @@ class SubgraphSearchEngine:
         if strat is Strategy.PARTIAL:
             raise NotImplementedError("PARTIAL strategy not implemented yet.")
 
-        # determine effective threshold
-        thresh = (
-            threshold
-            if threshold is not None
-            else SubgraphSearchEngine.DEFAULT_THRESHOLD
-        )
+        thresh = threshold
 
         # defensive copies
         host = host.copy()
@@ -444,7 +439,7 @@ class SubgraphSearchEngine:
 
         # quick pre-filter
         if pre_filter and SubgraphSearchEngine._quick_pre_filter(
-            host, pattern, node_attrs, thresh
+            host, pattern, node_attrs
         ):
             return []
 
@@ -475,7 +470,7 @@ class SubgraphSearchEngine:
             )
 
         # final threshold guard
-        return [] if len(results) > thresh else results
+        return [] if thresh is not None and len(results) > thresh else results
 
     @staticmethod
     def _find_all_subgraph_mappings(
@@ -484,7 +479,7 @@ class SubgraphSearchEngine:
         node_attrs: List[str],
         edge_attrs: List[str],
         max_results: Optional[int],
-        threshold: int,
+        threshold: Optional[int],
     ) -> List[MappingDict]:
         """Classic VF2 over the whole host graph."""
 
@@ -500,7 +495,7 @@ class SubgraphSearchEngine:
             results.append({p: h for h, p in iso.items()})
             if max_results and len(results) >= max_results:
                 break
-            if len(results) > threshold:
+            if threshold is not None and len(results) > threshold:
                 return []
         return results
 
@@ -512,7 +507,7 @@ class SubgraphSearchEngine:
         edge_attrs: List[str],
         max_results: Optional[int],
         strict_cc_count: bool,
-        threshold: int,
+        threshold: Optional[int],
     ) -> List[MappingDict]:
         """Component-aware VF2 split by connected components."""
         host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
@@ -548,7 +543,7 @@ class SubgraphSearchEngine:
                     maps.append((i, {p: h for h, p in iso.items()}))
                     if max_results and len(maps) >= max_results:
                         break
-                    if len(maps) > threshold:
+                    if threshold is not None and len(maps) > threshold:
                         return []
                 if max_results and len(maps) >= max_results:
                     break
@@ -564,7 +559,7 @@ class SubgraphSearchEngine:
         def backtrack(level: int, acc: MappingDict):
             if max_results and len(results) >= max_results:
                 return
-            if len(results) > threshold:
+            if threshold is not None and len(results) > threshold:
                 return
             if level == pcc:
                 results.append(acc.copy())
@@ -580,7 +575,7 @@ class SubgraphSearchEngine:
                 used.remove(hi)
                 if max_results and len(results) >= max_results:
                     return
-                if len(results) > threshold:
+                if threshold is not None and len(results) > threshold:
                     return
 
         backtrack(0, {})
@@ -594,7 +589,7 @@ class SubgraphSearchEngine:
         edge_attrs: List[str],
         max_results: Optional[int],
         strict_cc_count: bool,
-        threshold: int,
+        threshold: Optional[int],
     ) -> List[MappingDict]:
         primary = SubgraphSearchEngine._find_component_aware_subgraph_mappings(
             host,

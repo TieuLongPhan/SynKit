@@ -471,9 +471,18 @@ def _fishhook_move(
 
 
 def normalize_radical_row(  # noqa: C901
-    row: Sequence[str], *, row_number: int = 0
+    row: Sequence[str],
+    *,
+    row_number: int = 0,
+    enforce_source_macro: bool = True,
 ) -> RadicalDatasetRecord:
-    """Normalize one four-column radical CSV row or return a quarantine report."""
+    """Normalize one four-column radical CSV row or return a quarantine report.
+
+    ``enforce_source_macro=False`` validates and reconstructs the typed
+    fishhook group independently of the dataset's reaction-class label. The
+    state-resolved single-fishhook transition retains its operational marker
+    because replay needs its paired lone-pair/radical commit semantics.
+    """
     source_row = tuple(str(value) for value in row)
     source_class = source_row[3].strip().lower() if len(source_row) >= 4 else ""
     macro = RADICAL_CLASS_TO_MACRO.get(source_class)
@@ -483,7 +492,7 @@ def normalize_radical_row(  # noqa: C901
         issues.append(
             VerificationIssue("INVALID_DATASET_ROW", "Expected four CSV columns.")
         )
-    if macro is None:
+    if enforce_source_macro and macro is None:
         issues.append(
             VerificationIssue(
                 "UNREVIEWED_RADICAL_CLASS",
@@ -586,6 +595,17 @@ def normalize_radical_row(  # noqa: C901
         folded_hydrogen_count = aam_completion.folded_unmapped_explicit_hydrogen_count
         stereochemistry_ignored = aam_completion.stereochemistry_ignored_for_expansion
         radical_state_preserved = aam_completion.radical_state_preserved
+        is_state_relocation = (
+            len(typed) == 1
+            and len(typed[0][1]) == 1
+            and len(typed[0][2]) == 1
+            and str(typed[0][0]).lower().startswith("lp-/lp")
+        )
+        operational_macro = (
+            "LONE_PAIR_RADICAL_RELOCATION"
+            if is_state_relocation
+            else macro if enforce_source_macro else None
+        )
         aliases = (
             "LP→∙",
             "Sigma→σ",
@@ -593,7 +613,7 @@ def normalize_radical_row(  # noqa: C901
             *flow_aliases,
             *(
                 ("CompactAtomArrow→state-resolved:lp→lp",)
-                if macro == "LONE_PAIR_RADICAL_RELOCATION"
+                if is_state_relocation
                 else ()
             ),
             *(("Stereo→constitution-only",) if stereochemistry_ignored else ()),
@@ -609,7 +629,7 @@ def normalize_radical_row(  # noqa: C901
         group_id = f"g{row_number or 1}"
         coupling_id = (
             None
-            if macro == "LONE_PAIR_RADICAL_RELOCATION"
+            if operational_macro == "LONE_PAIR_RADICAL_RELOCATION"
             else f"{source_class}-{row_number or 1}"
         )
         moves = tuple(
@@ -624,7 +644,7 @@ def normalize_radical_row(  # noqa: C901
         group = ElectronMoveGroup(
             group_id,
             moves,
-            macro=macro,
+            macro=operational_macro,
             metadata={"source_class": source_class},
         )
         grammar_issues = group.issues()

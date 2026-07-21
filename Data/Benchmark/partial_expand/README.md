@@ -1,102 +1,84 @@
-# Partial expansion and rule-replay benchmarks
+# Minimal partial-expansion benchmark
 
-This directory separates two experiments that answer different questions.
+This directory compares minimal partial atom-mapping expansion. The general
+corpus contains 39,732 records with an independent fully mapped `smart`
+reference. The radical corpus contains 5,426 records without an independent
+full-AAM reference, so it reports valid-completion coverage instead of mapping
+accuracy.
 
-1. **Partial-AAM expansion** reconstructs a complete mapped reaction from the
-   supplied reaction centre and one endpoint. Existing atom maps provide the
-   correspondence, so this step performs no new matching-morphism search.
-2. **Rule replay** extracts the reaction-centre rule and then applies it to an
-   unmapped endpoint. This experiment includes matching, rewriting, and
-   serialization and times those stages independently. Recovery requires a
-   complete generated reaction to equal the reference after both are normalized
-   with `Standardize.fit(remove_aam=True, ignore_stereo=True)`; it is not merely
-   a product-side or reaction-centre check.
+The methods are:
 
-Rule replay uses disclosed ceilings of 10,000 raw embeddings and five wall
-seconds per direction and case. A case that exceeds either ceiling is reported
-as a threshold error or timeout; it is not silently truncated. These guards
-prevent an unbounded symmetric embedding/application population from blocking
-the corpus-level report.
+- `synkit`: `ITSExpand.expand_rsmi` in the current `synkit` environment;
+- `gm`: historical GranMapache expansion;
+- `rb1`: historical `PartialAAMs.extend`;
+- `rb2`: historical `PartialAAMs.extend_g`.
 
-`ITSExpand` is an operational, map-anchored reconstruction with the shape of a
-DPO completion. The implementation should not be described as an exact
-categorical pushout/pushout-complement construction unless the relevant
-universal property and DPO gluing conditions are established separately.
-
-## Data and protocols
-
-- General expansion uses all 39,732 records in
-  `Data/Benchmark/benchmark.json.gz`; `smart` is the fully mapped reference and
-  `partial` is the masked input.
-- Radical expansion uses all 5,426 source records, but these have no independent
-  fully mapped reference. It therefore reports guarded completion gates rather
-  than a misleading AAMValidator ITS self-comparison.
-- Full-corpus rule application uses every general reaction in both the
-  electron-aware Lewis-labelled graph (`tuple`) and legacy atom-bond graph
-  (`typesGH`) representations. The radical corpus is replayed only as `tuple`,
-  because `typesGH` has no side-specific lone-pair, radical, or valence-electron
-  annotations. Hydrogen policy, automorphism handling, ceilings, and recovery
-  checks are identical.
-
-Generated candidates and machine reports belong in `results/`, which is
-ignored by Git. Commands assume the repository root as the working directory.
-
-```bash
-conda run -n synkit python \
-  Data/Benchmark/partial_expand/run_full_benchmarks.py
-```
-
-This single command runs SynKit, GM, RB1 (`PartialAAMs.extend`), and RB2
-(`PartialAAMs.extend_g`) completion on both corpora, followed by forward and
-inverse replay for general/tuple, general/`typesGH`, and radical/tuple. It
-expects the frozen external sources at the paths disclosed by
-`benchmark_expansion_comparison.py`. Use `--limit N --force` for a pilot and
-`--only expansion` or `--only replay` to run one experiment family. Put pilots
-in a separate directory, for example `--results /tmp/synkit-benchmark-pilot`,
-so `--force` cannot overwrite completed full reports.
-When all five reports are present, the runner also writes
-`results/full-benchmark-summary.json`, including matched successful-case
-solution totals for the two general replay representations.
-
-The rule is extracted with `core=True` and implicit-H normalization. Both
-general representations retain mapped-H edits as reaction-centre before/after
-`hcount` transitions. `explicit_h=False` therefore avoids expanding spectator
-hydrogen nodes without dropping reacting-hydrogen information.
-
-Use `--limit N` for a pilot. General expansion generation and evaluation are
-separate so the generated mapping is assessed against the independent
-`smart` reference by the current `AAMValidator` (`ITS` and `RC`, constitutional
-profile).
-
-## Five-repeat expansion comparison
-
-The paper comparison uses AAM accuracy without requiring source-map anchors to
-be retained.  Anchor preservation remains a separate reported property.  Mean
-generation time uses every attempted input, including failed attempts, so an
-implementation is not made artificially faster by early exceptions.
-
-Run SynKit five times on both complete datasets in the current environment:
+Run SynKit five times:
 
 ```bash
 conda run -n synkit python \
   Data/Benchmark/partial_expand/run_expansion_5x_synkit.py
 ```
 
-Run GM, RB1 (`extend`), and RB2 (`extend_g`) five times on both datasets.  The
-parent/current environment performs the common evaluation, while generation is
-re-launched inside the isolated `aam` environment:
+Use the same generation-only boundary for the radical corpus:
+
+```bash
+conda run -n synkit python \
+  Data/Benchmark/partial_expand/run_expansion_5x_synkit.py \
+  --suite radical
+```
+
+Only radical attribute transport is enabled during radical generation. All
+completion, constitution, and radical-state checks run after the generation
+timer.
+
+Run the three historical methods in the reconstructed `aam` environment:
 
 ```bash
 conda run -n synkit python \
   Data/Benchmark/partial_expand/run_expansion_5x_external_aam.py
 ```
 
-The reconstructed historical generator stack is SynKit 0.0.6, PartialAAMs
-commit `008173e`, and GranMapache commit `4c8f292`. These are the final versions
-available before the 5 May 2025 CSV run. The later PartialAAMs commit `edfbcbec`
-contains that CSV but not the source/dependency state that generated it.
+Generate the two-panel comparison with the single plot script:
 
-Each runner writes individual JSON reports and compressed case records plus an
-`aggregate.json` containing five-run means and sample standard deviations.
-Use `--limit 10 --repetitions 1 --output-dir /tmp/partial-aam-pilot` for a quick
-pilot. Existing outputs are protected unless `--force` is supplied.
+```bash
+conda run -n synkit python \
+  Data/Benchmark/partial_expand/plot_general_radical_comparison.py
+```
+
+Panel A reports general-corpus generation time. Panel B reports general ITS
+accuracy and radical valid-completion coverage; radical runtime is deliberately
+omitted because its required attribute transport is not directly comparable to
+the normal path. External radical coverage uses the audited aggregate retained
+in `sprint/SS_LOG.md`.
+
+Use `--limit 10 --repetitions 1 --output-dir /tmp/partial-expand-pilot`
+for a pilot. Existing outputs are protected unless `--force` is supplied.
+
+Reproduce forward and backward rule replay for both graph representations:
+
+```bash
+conda run -n synkit python \
+  Data/Benchmark/partial_expand/benchmark_bidirectional_replay.py
+```
+
+The runner writes separate tuple and `typesGH` summaries plus compressed
+case-level evidence. Complete enumeration is the default: there is no
+per-direction timeout and no embedding cap. Use `--record-ids` to select a
+focused audit; `--case-timeout` and `--embedding-threshold` are optional
+diagnostic ceilings only. After symmetry-safe matcher and product-clustering
+optimization, records 12272, 12602, 13898, and 32345 recover all 16 tested
+representation/direction combinations without either ceiling.
+
+Plot the graph-rewriting population comparison (runtime is intentionally
+excluded):
+
+```bash
+conda run -n synkit python \
+  Data/Benchmark/partial_expand/plot_graph_rewriting_comparison.py
+```
+
+The paired-dot figure reports LLG change relative to the atom--bond graph for
+forward/reverse mapping populations and unique standardized reactions. Exact
+counts are printed beside the points. The script writes PDF/PNG benchmark
+outputs and refreshes `paper/lwg/fig/graph_rewriting_comparison.png`.

@@ -7,6 +7,8 @@ else
   paths=(synkit Test)
 fi
 
+python tools/check_python_file_size.py
+
 flake8 "${paths[@]}" \
   --count \
   --max-complexity=13 \
@@ -33,6 +35,7 @@ synkit/IO/chem_converter.py:C901,\
 synkit/IO/combinatorial/gml_to_graph.py:C901,\
 synkit/IO/gml_to_graph.py:C901,\
 synkit/IO/mol_to_graph.py:C901,\
+synkit/IO/mol_to_graph_chemistry.py:C901,\
 synkit/Mechanism/stereo_state.py:C901,\
 synkit/Rule/syn_rule.py:C901,\
 synkit/Rule/Apply/retro_reactor.py:C901,\
@@ -41,6 +44,10 @@ synkit/Rule/Apply/rule_apply.py:C901,\
 synkit/Synthesis/MSR/path_finder.py:C901,\
 synkit/Synthesis/Reactor/retro_reactor.py:C901,\
 synkit/Synthesis/Reactor/rbl_engine.py:C901,\
+synkit/Synthesis/Reactor/graph_rewrite.py:C901,\
+synkit/Synthesis/Reactor/reactor_matching.py:C901,\
+synkit/Synthesis/Reactor/reactor_stereo.py:C901,\
+synkit/Synthesis/Reactor/serialization.py:C901,\
 synkit/Synthesis/Reactor/syn_reactor.py:C901,\
 synkit/Synthesis/Reactor/reactor_engine.py:C901,\
 synkit/Vis/crn/visualizer.py:C901,\

@@ -14,6 +14,7 @@ dev/*
 !/tools/
 /tools/*
 !/tools/stereo_conformance.py
+!/tools/check_python_file_size.py
 /debug/
 /Test/Conformance/
 *.rdf
@@ -23,6 +24,11 @@ Data/Benchmark/*
 !Data/Benchmark/partial_expand/
 !Data/Benchmark/partial_expand/**
 Data/Benchmark/partial_expand/results/
+!Data/Benchmark/mech/
+Data/Benchmark/mech/*
+!Data/Benchmark/mech/README.md
+!Data/Benchmark/mech/polar-failures.csv
+!Data/Benchmark/mech/radical-failures.csv
 *.json.gz
 # *.png
 
@@ -40,6 +46,7 @@ Data/Study/CRN/case_formose/*
 synkit/Graph/dev/*
 *.ipynb
 *.json
+!/tools/python_file_size_baseline.json
 !Data/Mech/polar.json
 !Data/Mech/radical.json
 !Data/Mech/stereo.json
@@ -58,4 +65,7 @@ test_syn.py
 measure_candidate_stages.py
 run_valid_bug_cases.py
 paper/*
-Data/Benchmark/partial_expand/__pycache__/benchmark_expansion_comparison.cpython-311.pyc
+
+# Keep generated Python bytecode ignored after directory re-inclusions above.
+**/__pycache__/
+*.py[cod]

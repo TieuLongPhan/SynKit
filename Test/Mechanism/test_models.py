@@ -446,6 +446,25 @@ def test_radical_dataset_adapter_types_lone_pair_radical_relocation():
     )
 
 
+def test_radical_dataset_adapter_can_reconstruct_without_source_macro_policy():
+    row = [
+        "CC(C)(C[O:11][N+:10]([O-])=O)C.[Ar]>>CC(C)(C[O:11])C."
+        "[O-][N+:10]=O.[Ar] 10,11-10;10,11-11",
+        "Heat",
+        "Initiation",
+        "recombine",
+    ]
+
+    class_checked = normalize_radical_row(row, row_number=1)
+    reconstruction_only = normalize_radical_row(
+        row, row_number=1, enforce_source_macro=False
+    )
+
+    assert not class_checked.accepted
+    assert reconstruction_only.accepted, reconstruction_only.report.issues
+    assert reconstruction_only.mechanism.steps[0].groups[0].macro is None
+
+
 def test_radical_dataset_adapter_rejects_reversed_atom_transfer_annotation():
     reversed_arrow = normalize_radical_row(
         [

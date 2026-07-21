@@ -114,6 +114,29 @@ class TestSubGraphSearchEngine(unittest.TestCase):
 
         self.assertEqual(len(mappings), 20)
 
+    def test_explicit_none_disables_embedding_threshold(self):
+        host = nx.empty_graph(self.gm.DEFAULT_THRESHOLD + 1)
+        pattern = nx.empty_graph(1)
+
+        capped = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=[],
+            edge_attrs=[],
+            strategy="all",
+        )
+        uncapped = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=[],
+            edge_attrs=[],
+            strategy="all",
+            threshold=None,
+        )
+
+        self.assertEqual(capped, [])
+        self.assertEqual(len(uncapped), self.gm.DEFAULT_THRESHOLD + 1)
+
     def test_electron_aware_node_matching(self):
         host = nx.Graph()
         host.add_node(1, element="O", lone_pairs=3, radical=0, hcount=1)

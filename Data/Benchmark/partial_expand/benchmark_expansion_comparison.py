@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Compare full-corpus partial-AAM completion methods.
-
-For the general PartialAAMs corpus, every candidate is evaluated against the
-independent fully mapped ``smart`` reference with the same current
-``AAMValidator``.  The radical corpus has no independent full-AAM reference,
-so it is compared on disclosed completion postconditions: complete and unique
-maps, balanced map sets, atom identity, endpoint constitution, and radical
-state.  Source-anchor preservation is recorded separately and is not an
-accuracy/acceptance condition.
-"""
+"""Compare minimal partial-AAM expansion on general or radical corpora."""
 
 from __future__ import annotations
 
@@ -44,24 +35,21 @@ from common import (  # noqa: E402
 )
 from synkit.Chem.Reaction import AAMValidator  # noqa: E402
 from synkit.Graph.ITS.its_expand import ITSExpand  # noqa: E402
-from synkit.Mechanism.radical_data import complete_radical_aam  # noqa: E402
 
-METHODS = ("synkit", "synkit_rsmi", "synkit_noanchors", "gm", "rb1", "rb2")
+METHODS = ("synkit", "gm", "rb1", "rb2")
 METHOD_LABELS = {
-    "synkit": "SynKit guarded ITS completion",
-    "synkit_rsmi": "SynKit minimal RSMI ITS completion",
-    "synkit_noanchors": "SynKit ITS completion without anchor retention",
+    "synkit": "SynKit minimal ITS expansion",
     "gm": "GM",
     "rb1": "RB1 (PartialAAMs extend)",
     "rb2": "RB2 (PartialAAMs extend_g)",
 }
-DEFAULT_DEPENDENCIES = Path("/tmp/synkit-sprint25-partialaam-deps")
-DEFAULT_GMAPACHE = Path("/tmp/synkit-sprint25-gmapache")
+DEFAULT_DEPENDENCIES = Path("/tmp/synkit-partialaam-deps")
+DEFAULT_GMAPACHE = Path("/tmp/synkit-gmapache")
 DEFAULT_PARTIALAAMS = Path("/tmp/PartialAAMs")
 
 
 class CaseTimeout(TimeoutError):
-    """Raised when one completion exceeds the disclosed wall ceiling."""
+    """Raised when one expansion exceeds the declared wall-time ceiling."""
 
 
 def _package_version(name: str) -> str | None:
@@ -82,22 +70,28 @@ def _synkit_version() -> str | None:
 
 
 def _raise_timeout(_signum, _frame) -> None:
-    raise CaseTimeout("Partial-AAM completion exceeded the per-case time ceiling")
+    raise CaseTimeout("Partial-AAM expansion exceeded the per-case time ceiling")
 
 
-def _has_radical(reaction: str) -> bool:
+def _side_maps(side: str) -> tuple[dict[int, tuple[int, int]], bool, bool]:
     parser = Chem.SmilesParserParams()
     parser.removeHs = False
-    for side in reaction.split(">>"):
-        molecule = Chem.MolFromSmiles(side, parser)
-        if molecule is None:
-            raise ValueError("RDKit rejected a reaction endpoint")
-        if any(atom.GetNumRadicalElectrons() for atom in molecule.GetAtoms()):
-            return True
-    return False
+    molecule = Chem.MolFromSmiles(side, parser)
+    if molecule is None:
+        raise ValueError(f"RDKit rejected endpoint {side!r}")
+    atoms = [atom for atom in molecule.GetAtoms() if atom.GetAtomicNum() > 0]
+    maps = [atom.GetAtomMapNum() for atom in atoms]
+    positive = [atom_map for atom_map in maps if atom_map > 0]
+    identities = {
+        atom.GetAtomMapNum(): (atom.GetAtomicNum(), atom.GetIsotope())
+        for atom in atoms
+        if atom.GetAtomMapNum() > 0
+    }
+    return identities, len(positive) == len(set(positive)), all(maps)
 
 
 def _canonical_radical_endpoint(side: str) -> str:
+    """Return a map-independent endpoint key retaining radical state."""
     parser = Chem.SmilesParserParams()
     parser.removeHs = False
     molecule = Chem.MolFromSmiles(side, parser)
@@ -106,80 +100,19 @@ def _canonical_radical_endpoint(side: str) -> str:
     for atom in molecule.GetAtoms():
         atom.SetAtomMapNum(0)
     molecule = Chem.RemoveHs(molecule)
-    Chem.RemoveStereochemistry(molecule)
-    return Chem.MolToSmiles(molecule, canonical=True, isomericSmiles=True)
+    return Chem.MolToSmiles(molecule, canonical=True, isomericSmiles=False)
 
 
-def _side_maps(
-    side: str,
+def completion_gates(
+    source: str,
+    candidate: str,
     *,
-    require_complete: bool,
-) -> tuple[dict[int, tuple[int, int]], bool, bool]:
-    parser = Chem.SmilesParserParams()
-    parser.removeHs = False
-    molecule = Chem.MolFromSmiles(side, parser)
-    if molecule is None:
-        raise ValueError(f"RDKit rejected endpoint {side!r}")
-    atoms = [atom for atom in molecule.GetAtoms() if atom.GetAtomicNum() > 0]
-    maps = [atom.GetAtomMapNum() for atom in atoms]
-    complete = not any(atom_map <= 0 for atom_map in maps)
-    positive = [atom_map for atom_map in maps if atom_map > 0]
-    unique = len(positive) == len(set(positive))
-    identities = {
-        atom.GetAtomMapNum(): (atom.GetAtomicNum(), atom.GetIsotope())
-        for atom in atoms
-        if atom.GetAtomMapNum() > 0
-    }
-    return identities, unique, complete or not require_complete
-
-
-def _anchors_preserved(source_side: str, candidate_side: str) -> bool:
-    """Test anchors through an endpoint isomorphism, allowing atom reordering."""
-    parser = Chem.SmilesParserParams()
-    parser.removeHs = False
-    source = Chem.MolFromSmiles(source_side, parser)
-    candidate = Chem.MolFromSmiles(candidate_side, parser)
-    if source is None or candidate is None:
-        raise ValueError("RDKit rejected a reaction endpoint")
-    if source.GetNumAtoms() != candidate.GetNumAtoms():
-        return False
-    anchors = [
-        (atom.GetIdx(), atom.GetAtomMapNum())
-        for atom in source.GetAtoms()
-        if atom.GetAtomMapNum() > 0
-    ]
-    if not anchors:
-        return True
-    source_query = Chem.Mol(source)
-    candidate_target = Chem.Mol(candidate)
-    for atom in source_query.GetAtoms():
-        atom.SetAtomMapNum(0)
-    for atom in candidate_target.GetAtoms():
-        atom.SetAtomMapNum(0)
-    matches = candidate_target.GetSubstructMatches(
-        source_query,
-        uniquify=False,
-        useChirality=False,
-        maxMatches=100000,
-    )
-    return any(
-        all(
-            candidate.GetAtomWithIdx(match[source_index]).GetAtomMapNum() == atom_map
-            for source_index, atom_map in anchors
-        )
-        for match in matches
-    )
-
-
-def completion_gates(source: str, candidate: str) -> dict[str, bool]:
-    """Evaluate method-independent structural completion postconditions."""
+    require_radical_state: bool = False,
+) -> dict[str, bool]:
+    """Evaluate map completeness and endpoint preservation."""
     if source.count(">>") != 1 or candidate.count(">>") != 1:
         raise ValueError("Expected one reaction separator")
-    source_sides = source.split(">>")
-    candidate_sides = candidate.split(">>")
-    candidate_results = [
-        _side_maps(side, require_complete=True) for side in candidate_sides
-    ]
+    candidate_results = [_side_maps(side) for side in candidate.split(">>")]
     candidate_maps = [item[0] for item in candidate_results]
     complete = all(item[2] for item in candidate_results)
     unique = complete and all(item[1] for item in candidate_results)
@@ -188,26 +121,27 @@ def completion_gates(source: str, candidate: str) -> dict[str, bool]:
         candidate_maps[0][atom_map] == candidate_maps[1][atom_map]
         for atom_map in candidate_maps[0]
     )
-    anchors = unique and all(
-        _anchors_preserved(source_side, candidate_side)
-        for source_side, candidate_side in zip(source_sides, candidate_sides)
-    )
-    constitution = ITSExpand.endpoint_constitutions_match(source, candidate)
-    source_radicals = [_canonical_radical_endpoint(side) for side in source_sides]
-    candidate_radicals = [_canonical_radical_endpoint(side) for side in candidate_sides]
-    radical_state = source_radicals == candidate_radicals
-    return {
+    gates = {
         "all_atoms_mapped": complete,
         "unique_atom_maps": unique,
         "balanced_atom_maps": balanced,
         "atom_identity_preserved": identity,
-        "source_anchors_preserved": anchors,
-        "endpoint_constitution_preserved": constitution,
-        "radical_state_preserved": radical_state,
+        "endpoint_constitution_preserved": ITSExpand.endpoint_constitutions_match(
+            source, candidate
+        ),
     }
+    if require_radical_state:
+        gates["radical_state_preserved"] = all(
+            _canonical_radical_endpoint(source_side)
+            == _canonical_radical_endpoint(candidate_side)
+            for source_side, candidate_side in zip(
+                source.split(">>"), candidate.split(">>")
+            )
+        )
+    return gates
 
 
-def _general_rows(path: Path) -> list[dict[str, Any]]:
+def general_rows(path: Path) -> list[dict[str, Any]]:
     return [
         {
             "record_id": int(row["R-id"]),
@@ -218,7 +152,7 @@ def _general_rows(path: Path) -> list[dict[str, Any]]:
     ]
 
 
-def _radical_rows(path: Path) -> list[dict[str, Any]]:
+def radical_rows(path: Path) -> list[dict[str, Any]]:
     records = []
     with path.open(newline="", encoding="utf-8-sig") as handle:
         for row_number, row in enumerate(csv.reader(handle), start=1):
@@ -233,53 +167,11 @@ def _radical_rows(path: Path) -> list[dict[str, Any]]:
     return records
 
 
-def _synkit_general(source: str) -> str:
-    result = ITSExpand.expand_aam_with_its_report(
+def _synkit_expand(source: str, *, preserve_radical_state: bool = False) -> str:
+    return ITSExpand.expand_rsmi(
         source,
-        preserve_older_map=True,
-        fallback_to_other_side=True,
-        require_constitution_preservation=True,
-        fold_unmapped_explicit_hydrogens=True,
-        ignore_stereochemistry=True,
-        explicit_hydrogen=True,
-        preserve_radical_state=_has_radical(source),
-        constitutional_only=True,
+        preserve_radical_state=preserve_radical_state,
     )
-    return result.rsmi
-
-
-def _synkit_general_noanchors(source: str) -> str:
-    """Run the same guarded completion without preserving supplied map labels."""
-    result = ITSExpand.expand_aam_with_its_report(
-        source,
-        preserve_older_map=False,
-        fallback_to_other_side=True,
-        require_constitution_preservation=True,
-        fold_unmapped_explicit_hydrogens=True,
-        ignore_stereochemistry=True,
-        explicit_hydrogen=True,
-        preserve_radical_state=_has_radical(source),
-        constitutional_only=True,
-    )
-    return result.rsmi
-
-
-def _synkit_general_rsmi(source: str) -> str:
-    """Time only the minimal RSMI adapter around mapped RC reconstruction.
-
-    Independent ITS/RC and completion gates are still evaluated by the common
-    benchmark harness after the generation timer stops. This profile excludes
-    anchor retention, H folding, stereo normalization, radical transport,
-    opposite-side fallback, and the post-expansion constitution guard.
-    """
-    return ITSExpand.expand_rsmi(source)
-
-
-def _synkit_radical(source: str) -> str:
-    result = complete_radical_aam(source)
-    if not result.usable or result.mapped_reaction is None:
-        raise ValueError(result.failure_reason or "SynKit radical completion failed")
-    return result.mapped_reaction
 
 
 def load_methods(
@@ -289,16 +181,15 @@ def load_methods(
     gmapache: Path,
     partialaams: Path,
 ) -> dict[str, Callable[[str], str]]:
-    methods: dict[str, Callable[[str], str]] = {
-        "synkit": _synkit_radical if suite == "radical" else _synkit_general,
-        "synkit_rsmi": _synkit_general_rsmi,
-        "synkit_noanchors": (
-            _synkit_radical if suite == "radical" else _synkit_general_noanchors
-        ),
-    }
-    if suite == "radical" and "synkit_rsmi" in selected:
-        raise ValueError("synkit_rsmi is defined only for the general corpus")
-    if set(selected).issubset({"synkit", "synkit_rsmi", "synkit_noanchors"}):
+    if suite == "radical":
+        synkit_expand = lambda source: _synkit_expand(  # noqa: E731
+            source,
+            preserve_radical_state=True,
+        )
+    else:
+        synkit_expand = _synkit_expand
+    methods: dict[str, Callable[[str], str]] = {"synkit": synkit_expand}
+    if set(selected) == {"synkit"}:
         return methods
     for path in (dependencies, gmapache, partialaams):
         if not path.exists():
@@ -317,91 +208,83 @@ def load_methods(
     return methods
 
 
+def _reference_checks(
+    validator: AAMValidator,
+    candidate: str,
+    reference: str,
+) -> dict[str, bool]:
+    return {
+        key: bool(value)
+        for key, value in validator.smiles_checks(
+            candidate,
+            reference,
+            constitutional_only=True,
+        ).items()
+        if key in {"ITS", "RC"}
+    }
+
+
 def benchmark_method(
+    suite: str,
     name: str,
     function: Callable[[str], str],
     rows: list[dict[str, Any]],
-    suite: str,
     case_handle,
     progress_every: int,
     case_timeout: float,
 ) -> dict[str, Any]:
-    validator = AAMValidator(strip_unbalanced_maps=True) if suite == "general" else None
+    validator = AAMValidator(strip_unbalanced_maps=True)
     counts: Counter[str] = Counter()
     timings: dict[str, list[float]] = defaultdict(list)
-    started = time.perf_counter()
+    wall_started = time.perf_counter()
     for index, row in enumerate(rows, start=1):
-        record_id = int(row["record_id"])
-        source = str(row["source"])
-        case: dict[str, Any] = {"method": name, "record_id": record_id}
+        case: dict[str, Any] = {"method": name, "record_id": row["record_id"]}
         previous_handler = signal.signal(signal.SIGALRM, _raise_timeout)
         signal.setitimer(signal.ITIMER_REAL, case_timeout)
         generation_started = time.perf_counter()
-        generation_seconds: float | None = None
         try:
-            candidate = function(source)
+            candidate = function(str(row["source"]))
             generation_seconds = time.perf_counter() - generation_started
             timings["generation"].append(generation_seconds)
             if not isinstance(candidate, str) or candidate.count(">>") != 1:
                 raise ValueError("Method did not return a reaction SMILES")
             counts["output"] += 1
             validation_started = time.perf_counter()
-            gates = completion_gates(source, candidate)
-            for gate, passed in gates.items():
-                counts[f"{gate}:{str(passed).lower()}"] += 1
-            verdicts: dict[str, bool] | None = None
-            if validator is not None:
-                verdicts = {
-                    key: bool(value)
-                    for key, value in validator.smiles_checks(
-                        candidate,
-                        str(row["reference"]),
-                        constitutional_only=True,
-                    ).items()
-                    if key in {"ITS", "RC"}
-                }
-                for check, passed in verdicts.items():
-                    counts[f"aam_validator_{check.lower()}:{str(passed).lower()}"] += 1
+            gates = completion_gates(
+                str(row["source"]),
+                candidate,
+                require_radical_state=suite == "radical",
+            )
+            checks = (
+                _reference_checks(validator, candidate, str(row["reference"]))
+                if suite == "general"
+                else {}
+            )
+            for key, passed in {**gates, **checks}.items():
+                prefix = "aam_validator_" if key in {"ITS", "RC"} else ""
+                counts[f"{prefix}{key.lower()}:{str(passed).lower()}"] += 1
+            accepted = all(gates.values()) and all(checks.values())
+            counts[f"accepted:{str(accepted).lower()}"] += 1
             validation_seconds = time.perf_counter() - validation_started
             timings["validation"].append(validation_seconds)
-            extension_valid_without_anchors = all(
-                gate_passed
-                for gate, gate_passed in gates.items()
-                if gate != "source_anchors_preserved"
-            )
-            anchor_preserving_extension_valid = all(gates.values())
-            counts[
-                "extension_valid_without_anchors:"
-                f"{str(extension_valid_without_anchors).lower()}"
-            ] += 1
-            counts[
-                "anchor_preserving_extension_valid:"
-                f"{str(anchor_preserving_extension_valid).lower()}"
-            ] += 1
-            passed = (
-                extension_valid_without_anchors
-                if verdicts is None
-                else all(verdicts.values())
-            )
-            counts[f"accepted:{str(passed).lower()}"] += 1
             case.update(
-                status="PASS" if passed else "FAIL",
+                status="PASS" if accepted else "FAIL",
                 generation_seconds=generation_seconds,
                 validation_seconds=validation_seconds,
                 gates=gates,
-                reference_checks=verdicts,
-                extension_valid_without_anchors=extension_valid_without_anchors,
-                anchor_preserving_extension_valid=anchor_preserving_extension_valid,
+                reference_checks=checks,
             )
-            if not passed:
+            if not accepted:
                 case["candidate"] = candidate
         except Exception as exc:
-            if generation_seconds is None:
-                generation_seconds = time.perf_counter() - generation_started
+            generation_seconds = time.perf_counter() - generation_started
+            if (
+                not timings["generation"]
+                or generation_seconds != timings["generation"][-1]
+            ):
                 timings["generation"].append(generation_seconds)
             counts["error"] += 1
-            if isinstance(exc, CaseTimeout):
-                counts["timeout"] += 1
+            counts["timeout"] += isinstance(exc, CaseTimeout)
             case.update(
                 status="ERROR",
                 error_type=type(exc).__name__,
@@ -413,12 +296,8 @@ def benchmark_method(
             signal.signal(signal.SIGALRM, previous_handler)
         case_handle.write(json.dumps(case, sort_keys=True) + "\n")
         if progress_every and index % progress_every == 0:
-            print(
-                f"expansion {suite}/{name}: {index}/{len(rows)}",
-                file=sys.stderr,
-                flush=True,
-            )
-    wall = time.perf_counter() - started
+            print(f"expansion {name}: {index}/{len(rows)}", file=sys.stderr, flush=True)
+    wall = time.perf_counter() - wall_started
     return {
         "method": name,
         "label": METHOD_LABELS[name],
@@ -435,7 +314,7 @@ def benchmark_method(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--suite", choices=("general", "radical"), required=True)
+    parser.add_argument("--suite", choices=("general", "radical"), default="general")
     parser.add_argument("--dataset", type=Path)
     parser.add_argument("--methods", nargs="+", choices=METHODS, default=list(METHODS))
     parser.add_argument("--dependencies", type=Path, default=DEFAULT_DEPENDENCIES)
@@ -448,7 +327,6 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--cases", type=Path, required=True)
     args = parser.parse_args()
-
     if args.offset < 0 or (args.limit is not None and args.limit < 1):
         parser.error("offset must be nonnegative and limit must be positive")
     RDLogger.DisableLog("rdApp.*")
@@ -456,7 +334,7 @@ def main() -> int:
         args.dataset or (RADICAL_DATASET if args.suite == "radical" else POLAR_DATASET)
     ).resolve()
     all_rows = (
-        _radical_rows(dataset) if args.suite == "radical" else _general_rows(dataset)
+        radical_rows(dataset) if args.suite == "radical" else general_rows(dataset)
     )
     rows = all_rows[
         args.offset : None if args.limit is None else args.offset + args.limit
@@ -472,10 +350,10 @@ def main() -> int:
     with open_text(args.cases, "wt") as case_handle:
         reports = [
             benchmark_method(
+                args.suite,
                 name,
                 methods[name],
                 rows,
-                args.suite,
                 case_handle,
                 args.progress_every,
                 args.case_timeout,
@@ -483,8 +361,7 @@ def main() -> int:
             for name in args.methods
         ]
     report = {
-        "schema": "synkit.partial-aam-method-comparison/1",
-        "suite": args.suite,
+        "schema": f"synkit.partial-aam-{args.suite}-comparison/1",
         "dataset": {"path": str(dataset), "sha256": sha256(dataset)},
         "selection": {
             "offset": args.offset,
@@ -501,12 +378,8 @@ def main() -> int:
             if args.suite == "general"
             else {
                 "independent_full_aam": False,
-                "checks": [
-                    "structural completion gates excluding source-anchor preservation",
-                    "radical-state preservation",
-                ],
-                "separate_metric": "source_anchors_preserved",
-                "warning": "Radical results are completion validity, not AAM accuracy.",
+                "checks": ["completion gates", "radical-state preservation"],
+                "warning": "Radical results are structural coverage, not AAM accuracy.",
             }
         ),
         "case_timeout_seconds": args.case_timeout,

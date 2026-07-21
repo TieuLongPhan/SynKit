@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-"""Run historical GM, RB1, and RB2 five times in the ``aam`` conda env.
-
-Generation runs in the reconstructed 5 May 2025 dependency stack.  The parent
-process evaluates all generated candidates with the current common evaluator,
-keeping source-anchor preservation separate from AAM accuracy.
-"""
+"""Repeat historical GM, RB1, and RB2 normal expansion in the ``aam`` env."""
 
 from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
-import csv
 import gzip
 import hashlib
 import importlib.metadata
@@ -30,7 +24,6 @@ from run_expansion_5x_synkit import aggregate_reports
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 GENERAL_DATASET = ROOT / "Data" / "Benchmark" / "benchmark.json.gz"
-RADICAL_DATASET = ROOT / "Data" / "Benchmark" / "radical" / "all.csv"
 
 
 class CaseTimeout(TimeoutError):
@@ -49,29 +42,16 @@ def open_text(path: Path, mode: str) -> TextIO:
     return opener(path, mode, encoding="utf-8")
 
 
-def load_sources(path: Path, suite: str) -> list[dict[str, Any]]:
-    if suite == "general":
-        with open_text(path, "rt") as handle:
-            return [
-                {
-                    "record_id": int(row["R-id"]),
-                    "source": str(row["partial"]),
-                    "reference": str(row["smart"]),
-                }
-                for row in json.load(handle)
-            ]
-    records = []
-    with path.open(newline="", encoding="utf-8-sig") as handle:
-        for row_number, row in enumerate(csv.reader(handle), start=1):
-            if row:
-                records.append(
-                    {
-                        "record_id": row_number,
-                        "source": row[0].strip().split(None, 1)[0],
-                        "reference": None,
-                    }
-                )
-    return records
+def load_sources(path: Path) -> list[dict[str, Any]]:
+    with open_text(path, "rt") as handle:
+        return [
+            {
+                "record_id": int(row["R-id"]),
+                "source": str(row["partial"]),
+                "reference": str(row["smart"]),
+            }
+            for row in json.load(handle)
+        ]
 
 
 def sha256(path: Path) -> str:
@@ -86,7 +66,6 @@ def worker_main(arguments: list[str]) -> int:
     parser = argparse.ArgumentParser(
         description="Historical external generation worker"
     )
-    parser.add_argument("--suite", choices=("general", "radical"), required=True)
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--methods", nargs="+", required=True)
     parser.add_argument("--limit", type=int)
@@ -105,7 +84,7 @@ def worker_main(arguments: list[str]) -> int:
     if synkit_version != "0.0.6":
         raise RuntimeError(f"Expected SynKit 0.0.6 in aam, found {synkit_version}")
 
-    rows = load_sources(args.dataset.resolve(), args.suite)
+    rows = load_sources(args.dataset.resolve())
     if args.limit is not None:
         rows = rows[: args.limit]
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -148,7 +127,7 @@ def worker_main(arguments: list[str]) -> int:
                 handle.write(json.dumps(output, sort_keys=True) + "\n")
                 if args.progress_every and index % args.progress_every == 0:
                     print(
-                        f"external {args.suite}/{method}: {index}/{len(rows)}",
+                        f"external {method}: {index}/{len(rows)}",
                         file=sys.stderr,
                         flush=True,
                     )
@@ -167,7 +146,6 @@ def worker_main(arguments: list[str]) -> int:
             )
     summary = {
         "schema": "synkit.external-partial-aam-generation/1",
-        "suite": args.suite,
         "rows": len(rows),
         "environment": {
             "python": platform.python_version(),
@@ -200,7 +178,6 @@ def timing_summary(values: list[float]) -> dict[str, float | int]:
 
 def evaluate_generation(
     *,
-    suite: str,
     dataset: Path,
     generated: Path,
     generation_summary: Path,
@@ -210,10 +187,10 @@ def evaluate_generation(
     from benchmark_expansion_comparison import completion_gates
     from synkit.Chem.Reaction import AAMValidator
 
-    sources = {row["record_id"]: row for row in load_sources(dataset, suite)}
+    sources = {row["record_id"]: row for row in load_sources(dataset)}
     generation = json.loads(generation_summary.read_text())
     rows = int(generation["rows"])
-    validator = AAMValidator(strip_unbalanced_maps=True) if suite == "general" else None
+    validator = AAMValidator(strip_unbalanced_maps=True)
     counts_by_method: dict[str, Counter[str]] = defaultdict(Counter)
     generation_times: dict[str, list[float]] = defaultdict(list)
     validation_times: dict[str, list[float]] = defaultdict(list)
@@ -250,44 +227,23 @@ def evaluate_generation(
                 gates = completion_gates(record["source"], candidate)
                 for gate, passed in gates.items():
                     counts[f"{gate}:{str(passed).lower()}"] += 1
-                extension_valid = all(
-                    passed
-                    for gate, passed in gates.items()
-                    if gate != "source_anchors_preserved"
-                )
-                anchored_valid = all(gates.values())
-                counts[
-                    "extension_valid_without_anchors:" f"{str(extension_valid).lower()}"
-                ] += 1
-                counts[
-                    "anchor_preserving_extension_valid:"
-                    f"{str(anchored_valid).lower()}"
-                ] += 1
-                verdicts = None
-                if validator is not None:
-                    verdicts = {
-                        key: bool(value)
-                        for key, value in validator.smiles_checks(
-                            candidate,
-                            record["reference"],
-                            constitutional_only=True,
-                        ).items()
-                        if key in {"ITS", "RC"}
-                    }
-                    for check, passed in verdicts.items():
-                        counts[
-                            f"aam_validator_{check.lower()}:{str(passed).lower()}"
-                        ] += 1
-                accepted = (
-                    extension_valid if verdicts is None else all(verdicts.values())
-                )
+                verdicts = {
+                    key: bool(value)
+                    for key, value in validator.smiles_checks(
+                        candidate,
+                        record["reference"],
+                        constitutional_only=True,
+                    ).items()
+                    if key in {"ITS", "RC"}
+                }
+                for check, passed in verdicts.items():
+                    counts[f"aam_validator_{check.lower()}:{str(passed).lower()}"] += 1
+                accepted = all(gates.values()) and all(verdicts.values())
                 counts[f"accepted:{str(accepted).lower()}"] += 1
                 case.update(
                     status="PASS" if accepted else "FAIL",
                     gates=gates,
                     reference_checks=verdicts,
-                    extension_valid_without_anchors=extension_valid,
-                    anchor_preserving_extension_valid=anchored_valid,
                 )
                 if not accepted:
                     case["candidate"] = candidate
@@ -325,8 +281,7 @@ def evaluate_generation(
             }
         )
     report = {
-        "schema": "synkit.partial-aam-method-comparison/1",
-        "suite": suite,
+        "schema": "synkit.partial-aam-normal-comparison/1",
         "dataset": {"path": str(dataset.resolve()), "sha256": sha256(dataset)},
         "selection": {
             "rows": rows,
@@ -334,8 +289,9 @@ def evaluate_generation(
             "limit": rows if rows != len(sources) else None,
         },
         "reference_policy": {
-            "accuracy_excludes_anchor_preservation": True,
-            "source_anchors_preserved_reported_separately": True,
+            "independent_full_aam": True,
+            "reference_field": "smart",
+            "checks": ["AAMValidator.ITS", "AAMValidator.RC"],
         },
         "external_generation_environment": generation["environment"],
         "methods": methods,
@@ -377,7 +333,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=HERE / "results" / "external-aam-expansion-5x",
+        default=HERE / "results" / "gm-rb-normal-expansion-5x",
     )
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()
@@ -398,61 +354,54 @@ def main() -> int:
     child_env["PYTHONPATH"] = str(partialaams)
     reports = []
 
-    for suite, dataset in (
-        ("general", GENERAL_DATASET),
-        ("radical", RADICAL_DATASET),
-    ):
-        for repetition in range(1, args.repetitions + 1):
-            for method in ("gm", "rb1", "rb2"):
-                stem = f"{suite}-{method}-run-{repetition:02d}"
-                generated = output_dir / f"{stem}-generated.jsonl.gz"
-                generation_summary = output_dir / f"{stem}-generation.json"
-                report = output_dir / f"{stem}.json"
-                cases = output_dir / f"{stem}-cases.jsonl.gz"
-                targets = (generated, generation_summary, report, cases)
-                if not args.force and any(path.exists() for path in targets):
-                    raise FileExistsError(f"Refusing to overwrite {stem}; pass --force")
-                command = [
-                    "conda",
-                    "run",
-                    "--no-capture-output",
-                    "-n",
-                    args.conda_env,
-                    "python",
-                    str(Path(__file__).resolve()),
-                    "--worker",
-                    "--suite",
-                    suite,
-                    "--dataset",
-                    str(dataset),
-                    "--methods",
-                    method,
-                    "--case-timeout",
-                    str(args.case_timeout),
-                    "--progress-every",
-                    str(args.progress_every),
-                    "--output",
-                    str(generated),
-                    "--summary",
-                    str(generation_summary),
-                ]
-                if args.limit is not None:
-                    command.extend(["--limit", str(args.limit)])
-                print(
-                    f"Running external {suite}/{method} repetition "
-                    f"{repetition}/{args.repetitions}",
-                    flush=True,
-                )
-                subprocess.run(command, cwd=ROOT, env=child_env, check=True)
-                evaluate_generation(
-                    suite=suite,
-                    dataset=dataset,
-                    generated=generated,
-                    generation_summary=generation_summary,
-                    report_path=report,
-                    cases_path=cases,
-                )
-                reports.append(report)
+    for repetition in range(1, args.repetitions + 1):
+        for method in ("gm", "rb1", "rb2"):
+            stem = f"general-{method}-run-{repetition:02d}"
+            generated = output_dir / f"{stem}-generated.jsonl.gz"
+            generation_summary = output_dir / f"{stem}-generation.json"
+            report = output_dir / f"{stem}.json"
+            cases = output_dir / f"{stem}-cases.jsonl.gz"
+            targets = (generated, generation_summary, report, cases)
+            if not args.force and any(path.exists() for path in targets):
+                raise FileExistsError(f"Refusing to overwrite {stem}; pass --force")
+            command = [
+                "conda",
+                "run",
+                "--no-capture-output",
+                "-n",
+                args.conda_env,
+                "python",
+                str(Path(__file__).resolve()),
+                "--worker",
+                "--dataset",
+                str(GENERAL_DATASET),
+                "--methods",
+                method,
+                "--case-timeout",
+                str(args.case_timeout),
+                "--progress-every",
+                str(args.progress_every),
+                "--output",
+                str(generated),
+                "--summary",
+                str(generation_summary),
+            ]
+            if args.limit is not None:
+                command.extend(["--limit", str(args.limit)])
+            print(
+                f"Running external {method} repetition "
+                f"{repetition}/{args.repetitions}",
+                flush=True,
+            )
+            subprocess.run(command, cwd=ROOT, env=child_env, check=True)
+            evaluate_generation(
+                dataset=GENERAL_DATASET,
+                generated=generated,
+                generation_summary=generation_summary,
+                report_path=report,
+                cases_path=cases,
+            )
+            reports.append(report)
 
     aggregate = output_dir / "aggregate.json"
     aggregate_reports(reports, aggregate)

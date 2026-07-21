@@ -794,14 +794,12 @@ class ITSExpand:
                 rsmi,
                 constitutional_only=constitutional_only,
             )
-            side_graph, full_react_graph, full_prod_graph = (
-                cls._expansion_side_graphs(
-                    react_smi,
-                    prod_smi,
-                    use_G=use_G,
-                    preserve_radical_state=preserve_radical_state,
-                    constitutional_only=constitutional_only,
-                )
+            side_graph, full_react_graph, full_prod_graph = cls._expansion_side_graphs(
+                react_smi,
+                prod_smi,
+                use_G=use_G,
+                preserve_radical_state=preserve_radical_state,
+                constitutional_only=constitutional_only,
             )
 
             if preserve_older_map:
@@ -853,10 +851,10 @@ class ITSExpand:
 
     @staticmethod
     def _mapped_radical_assignments(source_graph, target_graph):
-        """Return direct map-anchored radical assignments when compatible."""
+        """Return unique anchor-local radical assignments when compatible."""
         radical_sources = [
-            data
-            for _, data in source_graph.nodes(data=True)
+            (node, data)
+            for node, data in source_graph.nodes(data=True)
             if int(data.get("radical", 0) or 0) > 0
         ]
         target_by_map = {
@@ -865,16 +863,56 @@ class ITSExpand:
             if int(data.get("atom_map", 0) or 0) > 0
         }
         assignments = []
-        for source_data in radical_sources:
-            target_node = target_by_map.get(int(source_data.get("atom_map", 0) or 0))
-            if target_node is None:
-                return None
-            target_data = target_graph.nodes[target_node]
-            if any(
-                source_data.get(name) != target_data.get(name)
+        assigned_targets = set()
+
+        def compatible(source_data, target_data) -> bool:
+            return all(
+                source_data.get(name) == target_data.get(name)
                 for name in ("element", "aromatic", "hcount", "charge")
-            ):
-                return None
+            )
+
+        def mapped_neighbour_signature(graph, node):
+            signature = []
+            for neighbour in graph.neighbors(node):
+                neighbour_data = graph.nodes[neighbour]
+                atom_map = int(neighbour_data.get("atom_map", 0) or 0)
+                if atom_map <= 0:
+                    continue
+                signature.append(
+                    (
+                        atom_map,
+                        neighbour_data.get("element"),
+                        neighbour_data.get("charge"),
+                        graph.edges[node, neighbour].get("order", 1.0),
+                    )
+                )
+            return tuple(sorted(signature))
+
+        for source_node, source_data in radical_sources:
+            source_map = int(source_data.get("atom_map", 0) or 0)
+            if source_map > 0:
+                target_node = target_by_map.get(source_map)
+                if target_node is None or not compatible(
+                    source_data, target_graph.nodes[target_node]
+                ):
+                    return None
+            else:
+                source_signature = mapped_neighbour_signature(source_graph, source_node)
+                if not source_signature:
+                    return None
+                candidates = [
+                    node
+                    for node, target_data in target_graph.nodes(data=True)
+                    if node not in assigned_targets
+                    and compatible(source_data, target_data)
+                    and source_graph.degree[source_node] == target_graph.degree[node]
+                    and mapped_neighbour_signature(target_graph, node)
+                    == source_signature
+                ]
+                if len(candidates) != 1:
+                    return None
+                target_node = candidates[0]
+            assigned_targets.add(target_node)
             assignments.append((target_node, int(source_data.get("radical", 0) or 0)))
         return assignments
 
@@ -1139,20 +1177,29 @@ class ITSExpand:
                 ) from fallback_error
 
     @classmethod
-    def expand_rsmi(cls, rsmi: str, *, use_G: bool = True) -> str:
+    def expand_rsmi(
+        cls,
+        rsmi: str,
+        *,
+        use_G: bool = True,
+        preserve_radical_state: bool = False,
+    ) -> str:
         """Complete partial AAM through the minimal RSMI reconstruction path.
 
         This adapter parses the mapped reaction centre and one complete
         endpoint, performs ITS glue/decomposition, and serializes the result.
         It deliberately assigns fresh maps and excludes optional hydrogen,
-        stereo, radical, fallback, and post-expansion constitution guards.
-        Use :meth:`expand_aam_with_its_report` when those policies or their
-        structured evidence are required.
+        stereo, fallback, and post-expansion constitution guards. Radical
+        attributes can be transported as part of reconstruction without
+        enabling those guards.
 
         :param rsmi: Partially mapped reaction SMILES.
         :type rsmi: str
         :param use_G: Reconstruct from reactants when True, products otherwise.
         :type use_G: bool
+        :param preserve_radical_state: Transport endpoint radical counts as a
+            required graph attribute. This does not enable validation guards.
+        :type preserve_radical_state: bool
         :returns: Completely mapped reaction SMILES.
         :rtype: str
         """
@@ -1160,6 +1207,7 @@ class ITSExpand:
             rsmi,
             use_G=use_G,
             preserve_older_map=False,
+            preserve_radical_state=preserve_radical_state,
             constitutional_only=True,
             standardize_output=False,
         )

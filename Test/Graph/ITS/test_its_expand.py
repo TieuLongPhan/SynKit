@@ -80,6 +80,19 @@ class TestPartialExpand(unittest.TestCase):
             )
         )
 
+    def test_expand_rsmi_transports_radicals_without_guards(self):
+        input_rsmi = (
+            "CC(C)(C[O:11][N+:10]([O-])=O)C.[Ar]" ">>CC(C)(C[O:11])C.[O-][N+:10]=O.[Ar]"
+        )
+
+        output_rsmi = ITSExpand.expand_rsmi(
+            input_rsmi,
+            preserve_radical_state=True,
+        )
+
+        self.assertTrue(ITSExpand.endpoint_constitutions_match(input_rsmi, output_rsmi))
+        self.assertNotIn(":11]", output_rsmi)
+
     def test_expand_preserve_sparse_atom_maps(self):
         input_rsmi = (
             "Br[C:64]1=[CH:63][CH:62]=[C:61]([S-:10])[CH:72]=[CH:73]1."
@@ -158,6 +171,78 @@ class TestPartialExpand(unittest.TestCase):
 
         matcher.assert_not_called()
         self.assertEqual(target.nodes[7]["radical"], 1)
+
+    def test_unmapped_radical_uses_unique_mapped_neighbour_anchor(self):
+        source = nx.Graph()
+        source.add_node(
+            1,
+            element="O",
+            aromatic=False,
+            hcount=0,
+            charge=0,
+            atom_map=0,
+            radical=1,
+        )
+        source.add_node(
+            2,
+            element="O",
+            aromatic=False,
+            hcount=0,
+            charge=0,
+            atom_map=10,
+            radical=0,
+        )
+        source.add_edge(1, 2, order=1.0)
+        target = nx.Graph()
+        target.add_node(
+            7,
+            element="O",
+            aromatic=False,
+            hcount=0,
+            charge=0,
+            atom_map=8,
+            radical=0,
+        )
+        target.add_node(
+            8,
+            element="O",
+            aromatic=False,
+            hcount=0,
+            charge=0,
+            atom_map=10,
+            radical=0,
+        )
+        target.add_edge(7, 8, order=1.0)
+
+        with patch(
+            "synkit.Graph.ITS.its_expand.nx.algorithms.isomorphism.GraphMatcher"
+        ) as matcher:
+            ITSExpand._transfer_endpoint_radicals(source, target)
+
+        matcher.assert_not_called()
+        self.assertEqual(target.nodes[7]["radical"], 1)
+        self.assertEqual(target.nodes[8]["radical"], 0)
+
+    def test_guarded_expansion_handles_unmapped_peroxide_radical(self):
+        input_rsmi = (
+            "[H:20][C:21]1(C=CC=C[CH:22]1)O.[O:10][O]>>"
+            "[H:20][O:10][O].C1=C[CH:22]=[C:21](C=C1)O"
+        )
+
+        report = ITSExpand.expand_aam_with_its_report(
+            input_rsmi,
+            preserve_older_map=True,
+            fallback_to_other_side=True,
+            require_constitution_preservation=True,
+            fold_unmapped_explicit_hydrogens=True,
+            ignore_stereochemistry=True,
+            explicit_hydrogen=True,
+            preserve_radical_state=True,
+        )
+
+        self.assertTrue(report.radical_state_preserved)
+        self.assertTrue(report.constitution_guard_passed)
+        self.assertTrue(ITSExpand.endpoint_constitutions_match(input_rsmi, report.rsmi))
 
     def test_unanchored_radical_transfer_ignores_reassigned_atom_maps(self):
         source = nx.Graph()
