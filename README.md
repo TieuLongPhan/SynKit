@@ -14,10 +14,10 @@
 **Graph-native reaction informatics and supplied-mechanism verification**
 
 SynKit represents mapped reactions, Lewis-labelled graphs (LLGs), transformation rules,
-and explicitly supplied electron-flow mechanisms. The prerelease API
-adds atomic curved-arrow/fishhook groups, radical state, deterministic replay
-certificates, and mechanism trajectory graphs. It validates annotations; it
-does not predict the chemically preferred mechanism.
+and explicitly supplied electron-flow mechanisms. Version 1.6.0 introduces
+resource-aware Lewis graph states and a locus-sorted arrow-pushing grammar for
+curved arrows and coupled fishhooks. It validates supplied annotations; it does
+not predict the chemically preferred mechanism.
 
 ![SynKit](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit.png)
 
@@ -37,8 +37,7 @@ Canonical internal electron loci are `lp`, `σ`, `π`, and `∙`; adapters accep
 documented ASCII and legacy spellings. Curved arrows carry two electrons and
 fishhooks carry one electron. Coupled radical events commit atomically.
 
-The prerelease package version is `1.6.0b1`; its mechanism schema remains
-`2.0.0-draft1` while that schema is still under prerelease review.
+The current package version is `1.6.0`.
 
 For more details on each utility within the repository, please refer to the documentation provided in the respective folders.
 

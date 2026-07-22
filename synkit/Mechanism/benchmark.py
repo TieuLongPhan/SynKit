@@ -497,13 +497,24 @@ def corrupt_record(  # noqa: C901
     move["coupling_id"] = "orphan"
     add("missing_fishhook_partner", payload, "MISSING_COUPLED_FISHHOOK")
     payload, move = first_move()
-    if is_fishhook_group(payload):
+    fishhook_group = is_fishhook_group(payload)
+    if fishhook_group:
         remap_complete_group(payload)
     else:
         move["source"] = {"locus": "lp", "atom_maps": [999999]}
-    add("wrong_source_or_target_locus", payload, "SOURCE_LOCUS_ABSENT")
+    absent_issue = (
+        "SOURCE_LOCUS_ABSENT"
+        if fishhook_group or move["target"]["locus"] == "lp"
+        else "NONLOCAL_ELECTRON_MOVE"
+    )
+    add(
+        "wrong_source_or_target_locus",
+        payload,
+        absent_issue,
+    )
     payload, move = first_move()
-    if is_fishhook_group(payload):
+    fishhook_group = is_fishhook_group(payload)
+    if fishhook_group:
         reverse_complete_group(payload)
     else:
         atom_maps = sorted(
@@ -537,7 +548,16 @@ def corrupt_record(  # noqa: C901
         # reorder.  Requesting a product-side resource from that pre-state is
         # therefore represented by an absent source locus.
         move["source"] = {"locus": "lp", "atom_maps": [999999]}
-    add("wrong_step_order", payload, "SOURCE_LOCUS_ABSENT")
+    absent_issue = (
+        "SOURCE_LOCUS_ABSENT"
+        if fishhook_group or move["target"]["locus"] == "lp"
+        else "NONLOCAL_ELECTRON_MOVE"
+    )
+    add(
+        "wrong_step_order",
+        payload,
+        absent_issue,
+    )
     payload = deepcopy(original)
     reactants, products = payload["mapped_reaction"].split(">>", 1)
     payload["mapped_reaction"] = f"{reactants}>>{products}.[CH3:999999]"

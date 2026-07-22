@@ -247,6 +247,21 @@ class ElectronMoveGroup:
         seen: set[tuple[Any, ...]] = set()
         coupled: dict[str, list[ElectronMove]] = {}
         for move in self.moves:
+            if not self._move_support_is_local(move):
+                issues.append(
+                    VerificationIssue(
+                        code="NONLOCAL_ELECTRON_MOVE",
+                        message=(
+                            "Source and target loci must share a reacting atom; "
+                            "atom-to-atom lone-pair relocation is checked against "
+                            "the pre-state adjacency separately."
+                        ),
+                        group_id=self.group_id,
+                        atom_maps=tuple(
+                            sorted(set(move.source.atom_maps + move.target.atom_maps))
+                        ),
+                    )
+                )
             signature = (move.source, move.target, move.electron_count, move.arrow_type)
             if signature in seen:
                 issues.append(
@@ -286,6 +301,15 @@ class ElectronMoveGroup:
                 )
         issues.extend(self._macro_issues())
         return tuple(issues)
+
+    @staticmethod
+    def _move_support_is_local(move: ElectronMove) -> bool:
+        """Require each primitive arrow to connect incident locus supports."""
+        source_support = set(move.source.atom_maps)
+        target_support = set(move.target.atom_maps)
+        if source_support & target_support:
+            return True
+        return move.source.kind == move.target.kind == LONE_PAIR
 
     def _macro_issues(self) -> list[VerificationIssue]:  # noqa: C901
         if not self.macro:
@@ -597,6 +621,28 @@ class ElectronMoveGroup:
         requested: dict[ElectronLocus, int] = {}
         for move in self.moves:
             requested[move.source] = requested.get(move.source, 0) + move.electron_count
+            if (
+                move.source.kind == move.target.kind == LONE_PAIR
+                and all(
+                    atom_map in by_map
+                    for atom_map in move.source.atom_maps + move.target.atom_maps
+                )
+            ):
+                source_node = by_map[move.source.atom_maps[0]]
+                target_node = by_map[move.target.atom_maps[0]]
+                if not graph.has_edge(source_node, target_node):
+                    issues.append(
+                        VerificationIssue(
+                            "NONLOCAL_ELECTRON_MOVE",
+                            "Lone-pair relocation requires adjacent donor and acceptor atoms.",
+                            group_id=self.group_id,
+                            atom_maps=tuple(
+                                sorted(
+                                    move.source.atom_maps + move.target.atom_maps
+                                )
+                            ),
+                        )
+                    )
             for locus, is_source in ((move.source, True), (move.target, False)):
                 if any(atom_map not in by_map for atom_map in locus.atom_maps):
                     issues.append(

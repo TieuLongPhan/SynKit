@@ -4,75 +4,21 @@ Changelog
 Version 1.6.0
 -------------
 
-**Beta 1 release checkpoint**
+**Lewis-labelled graphs**
 
-- Prepared the ``1.6.0b1`` prerelease with the current graph-native reaction,
-  mechanism-verification, stereo, and reactor fixes.
-- Removed Kekule-phase-sensitive aromatic-nitrogen matching constraints that
-  could reject chemically equivalent ``SynReactor`` embeddings.
+- Added Lewis-labelled graph states with explicit lone-pair, radical,
+  sigma-bond, and pi-bond resources and derived charge and bond-order fields.
+- Added resource-aware matching and rewriting with explicit availability and
+  policy-validity checks.
 
-Version 2.0.0
--------------
+**Arrow-pushing grammar**
 
-**Beta 2 release checkpoint**
-
-- Prepared the ``2.0.0b2`` prerelease with typed wildcard-aware graph
-  morphisms and verified, proof-bearing graph fusion.
-- Added deterministic exhaustive fusion search, exact structural/stereo
-  deduplication, endpoint certificates, and explicit completeness reporting.
-- Optimized interface discovery and proof reuse while retaining the Beta 1
-  compatibility projections.
-- Enforced typed stereo-ligand ports through owner-local orbit-frame slots,
-  chemical/virtual domains, Reactor candidate expansion, and immutable
-  morphism proof replay; legacy untyped wildcard rules remain explicit
-  compatibility inputs.
-- Added a standalone whole-molecule chiral/achiral classifier under
-  ``synkit.Chem.Molecule``. It completes eligible sp3 stereo topology and tests
-  exact equality with the molecular mirror using element, hydrogen-count, and
-  connectivity identity; it is independent of reaction and rule semantics.
-- Added bounded, cached configuration-aware molecular chirality assessment for
-  stereo-underspecified input, with necessary/configuration-dependent/incomplete
-  outcomes and an opt-in strict binary mode that rejects unresolved stereo.
-- Consolidated molecule-stereo datasets under a task-aware benchmark registry:
-  the ACS whole-molecule set and MIT-licensed ChiralFinder RotA are vendored
-  with integrity metadata, while the unlicensed CIP Validation Suite remains
-  an external-only descriptor-benchmark reference.
-
-**Beta 1 release checkpoint**
-
-- Prepared the ``2.0.0b1`` prerelease after completing the native-only
-  migration, the 80/80/80 MechanismBench data boundary, and stereo rule
-  soundness for intentionally non-invertible outcomes.
-- Restored RBL explicit-hydrogen/AAM compatibility and made every accepted
-  result pass one structured fusion-validation contract.
-- Added proof-gated product preservation through SynKit's component-aware
-  subgraph matcher and relative-stereo registry, with explicit search scope,
-  termination policies, and typed wildcard-role conflicts.
-
-**Native graph stack**
-
-- Removed the external legacy graph-grammar backend and its reactor,
-  derivation-graph, rule-composition, CRN, visualization, and persistence
-  adapters.
-- Standardized reaction rewriting on ``SynReactor``, CRN construction on the
-  native builders/``SynCRN``, and matching on NetworkX graph identities.
-- Kept GML as a supported serialization format through native parsers and
-  graph-isomorphism tests.
-
-**SynReactor execution policy and performance**
-
-- Added the SynReactor-only ``dedup_its`` policy. The default retains exact
-  post-rewrite consolidation; raw mode preserves deterministic mapping and
-  stereo-branch multiplicity with application provenance.
-- Kept mapping-level ``automorphism`` pruning independent from ITS-level
-  consolidation and left ``BatchReactor`` on the default consolidated path
-  without exposing the new option.
-- Separated deferred tuple product-electron finalization from ITS clustering,
-  so raw results still carry current electron fields and validated stereo
-  registries.
-- Reduced tuple rewrite overhead through shallow graph copies, direct common
-  electron refresh, native WL hashing, cached stereo preparation, and lazy
-  product serialization.
+- Added locus-sorted two-electron curved-arrow moves and atomically coupled
+  one-electron fishhook groups.
+- Added executable polar transition classes and radical macros with
+  integrality, locality, resource-availability, and endpoint replay checks.
+- Added deterministic mechanism verification with structured diagnostics for
+  invalid or inconsistent supplied electron-flow annotations.
 
 Version 1.5.0
 -------------

@@ -131,7 +131,10 @@ def test_homolysis_requires_radicals_on_the_broken_bond_endpoints():
 
     issues = ElectronMoveGroup("g1", moves, macro="HOMOLYSIS").issues()
 
-    assert issues[0].code == "UNBALANCED_EVENT_GROUP"
+    assert {issue.code for issue in issues} == {
+        "NONLOCAL_ELECTRON_MOVE",
+        "UNBALANCED_EVENT_GROUP",
+    }
 
 
 def test_group_rejects_simultaneous_overconsumption_before_replay():
@@ -148,6 +151,39 @@ def test_group_rejects_simultaneous_overconsumption_before_replay():
     assert "LOCUS_OVERCONSUMED" in {
         issue.code for issue in ElectronMoveGroup("g1", moves).validate_pre_state(graph)
     }
+
+
+def test_group_rejects_nonlocal_primitive_move():
+    move = ElectronMove(
+        ElectronLocus.atom("lp", atom_map=1),
+        ElectronLocus.bond("sigma", atom_maps=(2, 3)),
+        2,
+        "curved",
+        "g1",
+    )
+
+    assert "NONLOCAL_ELECTRON_MOVE" in {
+        issue.code for issue in ElectronMoveGroup("g1", (move,)).issues()
+    }
+
+
+def test_lone_pair_relocation_requires_pre_state_adjacency():
+    graph = nx.Graph()
+    graph.add_node(1, atom_map=1, lone_pairs=1, radical=0)
+    graph.add_node(2, atom_map=2, lone_pairs=0, radical=1)
+    move = ElectronMove(
+        ElectronLocus.atom("lp", atom_map=1),
+        ElectronLocus.atom("lp", atom_map=2),
+        1,
+        "fishhook",
+        "g1",
+    )
+
+    issues = ElectronMoveGroup(
+        "g1", (move,), macro="LONE_PAIR_RADICAL_RELOCATION"
+    ).validate_pre_state(graph)
+
+    assert "NONLOCAL_ELECTRON_MOVE" in {issue.code for issue in issues}
 
 
 def test_radical_audit_and_policies():
