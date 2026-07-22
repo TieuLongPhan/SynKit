@@ -274,7 +274,7 @@ def test_generic_legacy_bond_locus_requires_context():
 
 def test_attribute_propagation_contract_is_a_data_artifact():
     path = Path(__file__).parents[2] / "Data/Schema/attribute_propagation_v1_5.json"
-    contract = json.loads(path.read_text())
+    contract = json.loads(path.read_text(encoding="utf-8"))
 
     assert PUBLIC_LEWIS_GRAPH_ACRONYM == "LLG"
     assert PREVIOUS_PUBLIC_LEWIS_GRAPH_ACRONYM == "LSG"

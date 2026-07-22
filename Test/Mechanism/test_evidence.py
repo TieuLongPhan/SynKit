@@ -46,7 +46,7 @@ def test_evidence_runner_reports_replay_corruptions_and_resource_scope(tmp_path)
 
     output = tmp_path / "evidence.json"
     write_evidence_report(report, output)
-    assert json.loads(output.read_text()) == report
+    assert json.loads(output.read_text(encoding="utf-8")) == report
 
 
 def test_every_controlled_corruption_reaches_its_declared_issue_code():

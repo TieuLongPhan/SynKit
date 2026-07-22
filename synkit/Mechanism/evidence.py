@@ -37,7 +37,9 @@ def load_evidence_cases(benchmark_dir: str | Path) -> tuple[EvidenceCase, ...]:
     directory = Path(benchmark_dir)
     cases: list[EvidenceCase] = []
     for partition in ("polar", "radical", "stereo"):
-        payload = json.loads((directory / f"{partition}.json").read_text())
+        payload = json.loads(
+            (directory / f"{partition}.json").read_text(encoding="utf-8")
+        )
         for serialized in payload.get("cases", ()):
             if "record" not in serialized:
                 continue

@@ -12,7 +12,9 @@ ROOT = Path(__file__).parents[2]
 
 
 def test_reviewed_radical_manifest_replays_forward_reverse_and_double_reverse():
-    manifest = json.loads((ROOT / "Data/Mech/radical.json").read_text())
+    manifest = json.loads(
+        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+    )
 
     assert len(manifest["cases"]) == 80
     assert manifest["schema"] == "MechanismBench-radical-reviewed-v1"
@@ -44,7 +46,9 @@ def test_reviewed_radical_manifest_replays_forward_reverse_and_double_reverse():
 
 
 def test_each_radical_macro_has_an_executable_grammar_corruption():
-    manifest = json.loads((ROOT / "Data/Mech/radical.json").read_text())
+    manifest = json.loads(
+        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+    )
     representatives = {}
     for case in manifest["cases"]:
         macro = case["record"]["steps"][0]["groups"][0]["macro"]
@@ -74,12 +78,16 @@ def test_mechanismbench_json_files_are_executable_case_data_only():
         "stereo.json",
     ]
     for filename in json_files:
-        payload = json.loads((ROOT / "Data/Mech" / filename).read_text())
+        payload = json.loads(
+            (ROOT / "Data/Mech" / filename).read_text(encoding="utf-8")
+        )
         assert payload["cases"]
 
 
 def test_polar_manifest_is_a_reviewed_stratified_subset_with_replay_evidence():
-    manifest = json.loads((ROOT / "Data/Mech/polar.json").read_text())
+    manifest = json.loads(
+        (ROOT / "Data/Mech/polar.json").read_text(encoding="utf-8")
+    )
 
     assert manifest["schema"] == "MechanismBench-polar-reviewed-v1"
     assert manifest["source"] == {
@@ -106,9 +114,15 @@ def test_polar_manifest_is_a_reviewed_stratified_subset_with_replay_evidence():
 
 
 def test_public_partitions_state_the_current_80_positive_stereo_boundary():
-    polar = json.loads((ROOT / "Data/Mech/polar.json").read_text())
-    radical = json.loads((ROOT / "Data/Mech/radical.json").read_text())
-    stereo = json.loads((ROOT / "Data/Mech/stereo.json").read_text())
+    polar = json.loads(
+        (ROOT / "Data/Mech/polar.json").read_text(encoding="utf-8")
+    )
+    radical = json.loads(
+        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+    )
+    stereo = json.loads(
+        (ROOT / "Data/Mech/stereo.json").read_text(encoding="utf-8")
+    )
 
     assert len(polar["cases"]) == len(radical["cases"]) == 80
     assert polar["canonical_path"] == "Data/Mech/polar.json"
@@ -132,7 +146,9 @@ def test_public_partitions_state_the_current_80_positive_stereo_boundary():
 
 
 def test_rule_reapplication_audit_covers_every_unmapped_reactant():
-    manifest = json.loads((ROOT / "Data/Mech/radical.json").read_text())
+    manifest = json.loads(
+        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+    )
     audits = [
         case["provenance"]["chemistry_review"]["rule_reapplication"]
         for case in manifest["cases"]
@@ -145,7 +161,9 @@ def test_rule_reapplication_audit_covers_every_unmapped_reactant():
 
 
 def test_four_review_corrections_preserve_original_and_replay():
-    manifest = json.loads((ROOT / "Data/Mech/radical.json").read_text())
+    manifest = json.loads(
+        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+    )
     corrected = [
         case
         for case in manifest["cases"]
@@ -165,7 +183,9 @@ def test_four_review_corrections_preserve_original_and_replay():
 
 
 def test_allene_regiochemistry_is_retained_as_advisory():
-    manifest = json.loads((ROOT / "Data/Mech/radical.json").read_text())
+    manifest = json.loads(
+        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+    )
     case = next(
         case for case in manifest["cases"] if case["case_id"] == "radical-00034"
     )
@@ -176,7 +196,9 @@ def test_allene_regiochemistry_is_retained_as_advisory():
 
 @pytest.mark.parametrize("case_id", ["radical-00002", "radical-00054"])
 def test_rule_reapplication_uses_aam_alignment_and_radical_node_state(case_id):
-    manifest = json.loads((ROOT / "Data/Mech/radical.json").read_text())
+    manifest = json.loads(
+        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+    )
     case = next(case for case in manifest["cases"] if case["case_id"] == case_id)
 
     audit = _audit_rule_reapplication(MechanismRecord.from_dict(case["record"]))
