@@ -20,6 +20,14 @@ Version 1.6.0
 - Added deterministic mechanism verification with structured diagnostics for
   invalid or inconsistent supplied electron-flow annotations.
 
+**Native graph backend**
+
+- Removed the external MØD-backed reactor, rule-composition, CRN,
+  visualization, and persistence adapters.
+- Standardized supported execution paths on the native NetworkX graph stack.
+- Retained GML as a supported serialization format through the native readers
+  and writers.
+
 Version 1.5.0
 -------------
 
