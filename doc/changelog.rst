@@ -1,6 +1,33 @@
 Changelog
 =========
 
+Version 1.6.0
+-------------
+
+**Lewis-labelled graphs**
+
+- Added Lewis-labelled graph states with explicit lone-pair, radical,
+  sigma-bond, and pi-bond resources and derived charge and bond-order fields.
+- Added resource-aware matching and rewriting with explicit availability and
+  policy-validity checks.
+
+**Arrow-pushing grammar**
+
+- Added locus-sorted two-electron curved-arrow moves and atomically coupled
+  one-electron fishhook groups.
+- Added executable polar transition classes and radical macros with
+  integrality, locality, resource-availability, and endpoint replay checks.
+- Added deterministic mechanism verification with structured diagnostics for
+  invalid or inconsistent supplied electron-flow annotations.
+
+**Native graph backend**
+
+- Removed the external MØD-backed reactor, rule-composition, CRN,
+  visualization, and persistence adapters.
+- Standardized supported execution paths on the native NetworkX graph stack.
+- Retained GML as a supported serialization format through the native readers
+  and writers.
+
 Version 1.5.0
 -------------
 
@@ -133,7 +160,6 @@ Version 1.4.0
 **Compatibility and known limits**
 
 - Legacy ITS / ``typesGH`` behavior remains available for existing workflows.
-- MØD-backed workflows remain separate from the new SynKit LSG reactor path.
 - Aromatic LSG matching is still conservative. Some aromatic false-positive
   or false-negative cases require a future aromatic-system relabeling policy
   rather than a local matcher tweak.
@@ -142,8 +168,7 @@ Version 1.4.0
 
 **Infrastructure**
 
-- Added ``networkx>=3.3`` to ``requirements.txt`` so non-Linux CI jobs do not
-  rely on the Linux-only ``mod`` install to pull in NetworkX indirectly.
+- Added ``networkx>=3.3`` as a direct dependency for graph algorithms.
 
 
 Version 1.1.1
@@ -182,7 +207,6 @@ Version 0.0.7
 
 - Refactored source-code structure into six primary submodules at the root level:  
   `IO`, `Chem`, `Graph`, `Rule`, `Synthesis`, and `Vis`.  
-- Added MØD‐free operation mode: functions requiring MØD now raise clear errors but fall back to pure‐Python implementations where available.  
 
 IO Module
 ^^^^^^^^^
@@ -210,7 +234,7 @@ Graph Module
   - `arbitrary`  
   - `backtracking`  
 - Introduced **`SING`** and **`TURBOIS`** for mapping multiple patterns in a single host graph.  
-- Extended **`GraphCluster`** and **`BatchClustering`** to support both `nx` and `mod` backends.  
+- Extended **`GraphCluster`** and **`BatchClustering`** native graph support.
 - Enhanced **`WLHash`** to hash lists of node/edge attributes.  
 - Added **`MTG`** submodule for Mechanistic Transition Graphs (direct rule composition).  
 - New **`Hydrogen`** submodule for reaction-center H-completion and **`Context`** for radius-based expansion.  
@@ -223,17 +247,12 @@ Rule Module
   - **Apply** (retro-prediction via partial composition)  
   - **Compose** (rule composition)  
   - **Modify** (rule editing and H-handling)  
-- Provided non‐MØD fallbacks where possible.  
 
 Synthesis Module
 ^^^^^^^^^^^^^^^^
 
-- Divided into three submodules:  
-  - **Reactor** (`nx` via `SynReactor`; `mod` via `MODReactor`/`MODAAM`)  
-  - **CRN** (Chemical Reaction Network builder via `MODCRN`)  
-  - **MSR** (multi-step reaction pathfinder)  
+- Divided into native reactor, CRN, and multi-step pathfinder submodules.
 - **`SynReactor`** now supports implicit‐H templates.  
-- **`MODCRN`** wraps MØD for CRN generation; requires manual re-run for PDF summaries.  
 
 Vis Module
 ^^^^^^^^^^

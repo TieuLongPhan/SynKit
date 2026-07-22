@@ -184,6 +184,7 @@ class AtomFeatureExtractor:
 
         return {
             "element": atom.GetSymbol(),
+            "isotope": int(atom.GetIsotope()),
             "aromatic": bool(atom.GetIsAromatic()),
             "hcount": int(atom.GetTotalNumHs()),
             "charge": int(atom.GetFormalCharge()),

@@ -2,7 +2,7 @@ name: Test & Lint
 
 on:
   push:
-    branches: [ "main", "staging", "mech" ]
+    branches: [ "main", "staging", "mech", "stereo" ]
   pull_request:
     branches: [ "main" ]
 
@@ -33,17 +33,12 @@ jobs:
           activate-environment: synkit-env
           use-mamba: true                  # optional, just faster
 
-      # 2) Extra Linux‑only dependency: mod ≥ 0.17
-      - name: Install mod (Linux only)
-        if: matrix.os == 'ubuntu-latest'
-        run: conda run -n synkit-env conda install -c jakobandersen -c conda-forge "mod>=0.17" -y
-
-      # 3) Optional extra project deps via pip (requirements.txt)
+      # 2) Optional extra project deps via pip (requirements.txt)
       - name: Install project requirements
         if: hashFiles('requirements.txt') != ''
         run: conda run -n synkit-env pip install -r requirements.txt
 
-      # 4a) Lint on Linux/macOS
+      # 3a) Lint on Linux/macOS
       - name: Lint (Unix)
         if: matrix.os != 'windows-latest'
         shell: bash -l {0}
@@ -51,7 +46,7 @@ jobs:
           conda activate synkit-env
           bash lint.sh
 
-      # 4b) Lint on Windows
+      # 3b) Lint on Windows
       - name: Lint (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash -l {0}
@@ -60,7 +55,7 @@ jobs:
           bash lint.sh
 
 
-      # 5) Test
+      # 4) Test
       - name: Test
         shell: bash -l {0}
         run: |

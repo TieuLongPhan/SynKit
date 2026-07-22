@@ -1,14 +1,8 @@
 import unittest
 
-from synkit.IO.data_io import load_database
-from synkit.CRN.Construct.DAG.crn import CRN
 from synkit.Synthesis.MSR.path_finder import PathFinder
-import importlib.util
-
-MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
 
 
-@unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
 class TestPathFinder(unittest.TestCase):
     def setUp(self):
         # Define a simple reaction round for testing
@@ -17,21 +11,16 @@ class TestPathFinder(unittest.TestCase):
             {"Round 2": ["B>>E", "C>>F", "D>>G"]},
         ]
         self.path_finder = PathFinder(self.reaction_rounds)
-        self.rules = load_database("Data/Testcase/para_rule.json.gz")
-        self.smiles = [
-            "c1ccccc1",
-            "ClCl",
-            "O[Na]",
-            "O=[N+]([O-])O",
-            "[H][H].[H][H].[H][H]",
-            "CC(=O)Cl",
+        pathway_rounds = [
+            {"Round 1": ["O=[N+]([O-])O.c1ccccc1>>O.O=[N+]([O-])c1ccccc1"]},
+            {
+                "Round 2": [
+                    "O=[N+]([O-])c1ccccc1.[H][H].[H][H].[H][H]>>" "Nc1ccccc1.O.O"
+                ]
+            },
+            {"Round 3": ["CC(=O)Cl.Nc1ccccc1>>CC(=O)Nc1ccccc1.Cl"]},
         ]
-        self.crn_instance = CRN(
-            rule_list=self.rules, smiles_list=self.smiles, n_repeats=3
-        )
-
-        solutions = self.crn_instance.rounds
-        self.finder = PathFinder(solutions)
+        self.finder = PathFinder(pathway_rounds)
 
     def test_initialization(self):
         # Check that the initialization correctly sets the reaction rounds

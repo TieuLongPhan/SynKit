@@ -1,10 +1,6 @@
 name: PyPI publish
 
 on:
-  push:
-    branches:
-      - beta
-      - beta
   release:
     types:
       - published
@@ -36,49 +32,27 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install build twine packaging
 
-      - name: Validate beta version on beta branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/beta'
+      - name: Validate release tag matches project version
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           python - <<'PY'
+          import os
           import tomllib
           from packaging.version import Version
 
           with open("pyproject.toml", "rb") as f:
               data = tomllib.load(f)
 
-          version = data["project"]["version"]
-          parsed = Version(version)
-
-          if not parsed.is_prerelease:
+          project_version = Version(data["project"]["version"])
+          tag_version = Version(os.environ["RELEASE_TAG"].removeprefix("v"))
+          if tag_version != project_version:
               raise SystemExit(
-                  f"Beta branch must use a pre-release version, "
-                  f"e.g. 0.1.0b1. Current version is: {version}"
+                  f"Release tag {tag_version} does not match "
+                  f"pyproject.toml version {project_version}"
               )
-
-          print(f"Valid beta/pre-release version: {version}")
-          PY
-
-      - name: Validate beta pre-release version on beta branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/beta'
-        run: |
-          python - <<'PY'
-          import tomllib
-          from packaging.version import Version
-
-          with open("pyproject.toml", "rb") as f:
-              data = tomllib.load(f)
-
-          version = data["project"]["version"]
-          parsed = Version(version)
-
-          if not parsed.is_prerelease:
-              raise SystemExit(
-                  f"beta branch must use a PyPI pre-release version, "
-                  f"e.g. 0.1.0b1 or 0.1.0.dev1. "
-                  f"Current version is: {version}"
-              )
-
-          print(f"Valid beta pre-release version: {version}")
+          print(f"Release tag matches project version: {project_version}")
           PY
 
       - name: Build source and wheel distributions
@@ -104,6 +78,7 @@ jobs:
   publish:
     name: Publish package to PyPI
     needs: build
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     environment:

@@ -12,8 +12,7 @@ from __future__ import annotations
 
 import itertools
 from collections import defaultdict, deque
-from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -27,6 +26,7 @@ from ..chem.smiles import get_numbered_rxn_smiles, expand_reaction_center_hydrog
 from ..graph.automorphism import to_nx
 from ..slap.lap import _adjacency_and_elements, chemical_distance, recover_mapping
 from .branching import solve_kernel_blockwise
+from .enumeration_result import EnumerationResult, mapping_to_lgp
 from .kernel import apply_kernel_solution
 
 _MAX_MAPPED_ENUMERATION_RESULTS = 1000
@@ -41,32 +41,6 @@ _MAX_HCOUNT_PERMUTATION_PRODUCTS = 5000
 _LOCAL_SWAP_DEFAULT_MAX_ALL_ATOMS = 48
 _LOCAL_SWAP_DEFAULT_MAX_POOL_PER_ELEMENT = 14
 _LOCAL_SWAP_DEFAULT_MAX_DESCENT_STEPS = 8
-
-
-@dataclass
-class EnumerationResult:
-    """Symmetry-distinct exact optima for a kernel."""
-
-    cost: float
-    mappings: List[List[int]]
-    sub_mappings: List[Dict[int, int]]
-    results: List[dict]
-    proven_optimal: bool = True
-    enumeration_complete: bool = True
-
-
-def mapping_to_lgp(lgp, mapping):
-    """Return a resolved graph pair whose labels encode ``mapping``."""
-    out = [lgp[0].copy(), lgp[1].copy()]
-    labels0 = list(range(1, len(mapping) + 1))
-    labels1 = [0] * len(mapping)
-    for i, p in enumerate(mapping):
-        labels1[p] = i + 1
-    out[0].labels = labels0
-    out[1].labels = labels1
-    out[0].build_label2idxs()
-    out[1].build_label2idxs()
-    return out
 
 
 def improve_results_by_pair_swaps(lgp, results, binary=False, valfactor=2):

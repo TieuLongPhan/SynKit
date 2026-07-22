@@ -1,14 +1,10 @@
-import networkx as nx
 from operator import eq
 from typing import List, Dict, Any, Tuple, Optional, Callable
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 from synkit.Utils.utils import stratified_random_sample
 from synkit.Rule.Modify.rule_utils import strip_context
-from synkit.Graph.Matcher.graph_cluster import GraphCluster
+from synkit.Graph.Matcher.graph_cluster import GraphCluster, _as_native_graph
 from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
-
-# from synkit.Graph.Matcher.rule_morphism import rule_isomorphism
-from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
 
 
 class BatchCluster:
@@ -35,10 +31,7 @@ class BatchCluster:
           do not match.
         """
         self.backend = backend.lower()
-        available = self.available_backends()
-        if self.backend not in available:
-            if self.backend == "rule":
-                raise ImportError("MOD is not installed")
+        if self.backend != "nx":
             raise ValueError(f"Unsupported backend: {backend!r}")
         if len(node_label_names) != len(node_label_default):
             raise ValueError(
@@ -54,16 +47,8 @@ class BatchCluster:
             self.edgeMatch = generic_edge_match(edge_attribute, 1, eq)
 
     def available_backends(self) -> List[str]:
-        """
-        Return available backends: always includes 'nx'; adds 'rule' if the 'mod' package is installed.
-        """
-        import importlib.util
-
-        backends = ["nx"]
-        # Check if 'mod' package is importable without executing it
-        if importlib.util.find_spec("mod") is not None:
-            backends.append("rule")
-        return backends
+        """Return the native matching backend."""
+        return ["nx"]
 
     def lib_check(
         self,
@@ -108,26 +93,14 @@ class BatchCluster:
                 else data[rule_key]
             )
 
-            if isinstance(data_rule, str):
-                iso_function = GraphMatcherEngine()._isomorphic_rule
-                apply_match_args = False
-            elif isinstance(data_rule, nx.Graph):
-                iso_function = graph_isomorphism
-                apply_match_args = True
-
-            if apply_match_args:
-                if iso_function(
-                    template_data,
-                    data_rule,
-                    nodeMatch or self.nodeMatch,
-                    edgeMatch or self.edgeMatch,
-                ):
-                    data["class"] = template["class"]
-                    break
-            else:
-                if iso_function(template_data, data_rule):
-                    data["class"] = template["class"]
-                    break
+            if graph_isomorphism(
+                _as_native_graph(template_data),
+                _as_native_graph(data_rule),
+                nodeMatch or self.nodeMatch,
+                edgeMatch or self.edgeMatch,
+            ):
+                data["class"] = template["class"]
+                break
         else:
             new_class = max((temp["class"] for temp in templates), default=-1) + 1
             data["class"] = new_class

@@ -11,14 +11,6 @@ from synkit.Graph.Matcher.subgraph_matcher import (
     resolve_template_match_attrs,
 )
 
-# Determine if the rule backend is available
-try:
-    from mod import ruleGMLString  # noqa: F401
-
-    RULE_AVAILABLE = True
-except ImportError:
-    RULE_AVAILABLE = False
-
 
 class TestSubgraphMatch(unittest.TestCase):
 
@@ -35,34 +27,6 @@ class TestSubgraphMatch(unittest.TestCase):
         self.rc = get_rc(self.its)
 
         self.gm = SubgraphMatch()
-        self.small = """rule [
-            ruleID "Small"
-            left [
-                node [ id 1 label "H" ]
-                node [ id 2 label "O" ]
-                edge [ source 1 target 2 label "-" ]
-            ]
-            right [
-                node [ id 1 label "H+" ]
-                node [ id 2 label "O-" ]
-            ]
-        ]"""
-        self.large = """rule [
-            ruleID "Large"
-            left [
-                node [ id 1 label "H" ]
-                node [ id 2 label "O" ]
-                edge [ source 1 target 2 label "-" ]
-            ]
-            context [
-                node [ id 3 label "C" ]
-                edge [ source 2 target 3 label "-" ]
-            ]
-            right [
-                node [ id 1 label "H+" ]
-                node [ id 2 label "O-" ]
-            ]
-        ]"""
 
     def test_graph_subgraph_morphism_true(self):
         is_sub = self.gm.is_subgraph(
@@ -104,13 +68,6 @@ class TestSubgraphMatch(unittest.TestCase):
         )
         self.assertFalse(result)
 
-    @unittest.skipUnless(RULE_AVAILABLE, "requires ruleGMLString")
-    def test_rule_isomorphism_monomorphism(self):
-        # small is a subgraph of large
-        self.assertTrue(self.gm.rule_subgraph_morphism(self.small, self.large))
-        # large is not a subgraph of small
-        self.assertFalse(self.gm.rule_subgraph_morphism(self.large, self.small))
-
 
 class TestSubGraphSearchEngine(unittest.TestCase):
 
@@ -137,6 +94,48 @@ class TestSubGraphSearchEngine(unittest.TestCase):
             edge_attrs=["order"],
         )
         self.assertEqual(len(mapping), 0)
+
+    def test_pre_filter_does_not_reject_large_candidate_domain(self):
+        host = nx.cycle_graph(10)
+        pattern = nx.path_graph(9)
+        nx.set_node_attributes(host, "C", "element")
+        nx.set_node_attributes(pattern, "C", "element")
+        nx.set_edge_attributes(host, 1.0, "order")
+        nx.set_edge_attributes(pattern, 1.0, "order")
+
+        mappings = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=["element"],
+            edge_attrs=["order"],
+            threshold=100,
+            pre_filter=True,
+        )
+
+        self.assertEqual(len(mappings), 20)
+
+    def test_explicit_none_disables_embedding_threshold(self):
+        host = nx.empty_graph(self.gm.DEFAULT_THRESHOLD + 1)
+        pattern = nx.empty_graph(1)
+
+        capped = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=[],
+            edge_attrs=[],
+            strategy="all",
+        )
+        uncapped = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=[],
+            edge_attrs=[],
+            strategy="all",
+            threshold=None,
+        )
+
+        self.assertEqual(capped, [])
+        self.assertEqual(len(uncapped), self.gm.DEFAULT_THRESHOLD + 1)
 
     def test_electron_aware_node_matching(self):
         host = nx.Graph()
@@ -215,7 +214,7 @@ class TestSubGraphSearchEngine(unittest.TestCase):
         )
         self.assertEqual(edge_attrs, ["order", "sigma_order", "pi_order"])
 
-    def test_resolve_template_match_attrs_uses_aromatic_n_pi_role(self):
+    def test_resolve_template_match_attrs_ignores_kekule_phase_role(self):
         pattern = nx.Graph()
         pattern.add_node(
             1,
@@ -230,7 +229,7 @@ class TestSubGraphSearchEngine(unittest.TestCase):
 
         node_attrs, _ = resolve_template_match_attrs(pattern)
 
-        self.assertIn("aromatic_n_pi_count", node_attrs)
+        self.assertNotIn("aromatic_n_pi_count", node_attrs)
 
     def test_diagnose_candidate_node_match_reports_electron_reason(self):
         diagnostic = diagnose_candidate_node_match(

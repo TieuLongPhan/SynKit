@@ -46,7 +46,11 @@ def nonbonding_electron_count(graph: nx.Graph, node: Any) -> float:
 
 
 def bond_electron_count(graph: nx.Graph, node: Any) -> float:
-    """Return the bonding-electron count, including implicit hydrogens."""
+    """Return the atom's formal-charge bonding allocation.
+
+    Each bond pair contributes one electron to this atom; this is therefore
+    not the complete two-electron population of the bonds.
+    """
     return float(graph.nodes[node].get("hcount", 0)) + bond_order_sum(graph, node)
 
 

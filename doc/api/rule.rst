@@ -1,7 +1,7 @@
 Rule
 ====
 
-Rule objects and utilities for composing, applying, and modifying reaction rules.
+Rule objects and utilities for identifying, matching, and modifying reaction rules.
 
 Core
 ----
@@ -10,45 +10,24 @@ Core
    :members:
    :show-inheritance:
 
-Compose
--------
+Generic stereo extraction
+-------------------------
 
-.. automodule:: synkit.Rule.Compose.compose_rule
+.. automodule:: synkit.Rule.generic_stereo
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Rule.Compose.rule_compose
-   :members:
-   :show-inheritance:
+Identity
+--------
 
-.. automodule:: synkit.Rule.Compose.rule_mapping
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.Rule.Compose.seq_comp
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.Rule.Compose.valence_constrain
+.. automodule:: synkit.Rule.Compose._identity
    :members:
    :show-inheritance:
 
 Apply
 -----
 
-.. automodule:: synkit.Rule.Apply.reactor_rule
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.Rule.Apply.retro_reactor
-   :members:
-   :show-inheritance:
-
 .. automodule:: synkit.Rule.Apply.rule_matcher
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.Rule.Apply.rule_rbl
    :members:
    :show-inheritance:
 

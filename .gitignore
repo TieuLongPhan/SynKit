@@ -9,10 +9,26 @@
 
 .coverage
 dev/*
+# Local development, audit, and debugging helpers.
+/tools/
+!/tools/
+/tools/*
+!/tools/stereo_conformance.py
+!/tools/check_python_file_size.py
+/debug/
+/Test/Conformance/
 *.rdf
 test_syn_reactor.py
 
 Data/Benchmark/*
+!Data/Benchmark/partial_expand/
+!Data/Benchmark/partial_expand/**
+Data/Benchmark/partial_expand/results/
+!Data/Benchmark/mech/
+Data/Benchmark/mech/*
+!Data/Benchmark/mech/README.md
+!Data/Benchmark/mech/polar-failures.csv
+!Data/Benchmark/mech/radical-failures.csv
 *.json.gz
 # *.png
 
@@ -30,10 +46,28 @@ Data/Study/CRN/case_formose/*
 synkit/Graph/dev/*
 *.ipynb
 *.json
+!Data/Schema/
+!Data/Schema/attribute_propagation_v1_5.json
+!/tools/python_file_size_baseline.json
+!Data/Mech/polar.json
+!Data/Mech/radical.json
+!Data/Mech/stereo.json
+!Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
+!Data/Conformance/stereomolgraph_graph_conformance.json
+!Data/Benchmark/Stereo/
+!Data/Benchmark/Stereo/**
 *.txt
+!LICENSES/*.txt
 *.log
+/dist/
 sprint/
+sprint/*
 test_syn.py
 .gitignore
 measure_candidate_stages.py
 run_valid_bug_cases.py
+paper/*
+
+# Keep generated Python bytecode ignored after directory re-inclusions above.
+**/__pycache__/
+*.py[cod]

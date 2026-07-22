@@ -1,0 +1,516 @@
+{
+  "dataset": {
+    "doi": "10.1021/acs.jcim.5c02523.s002",
+    "records": 258,
+    "scope": "whole-molecule chiral/achiral classification",
+    "sha256": "b90d64bba99d36f0be2429cad255e7836b244dfc26e7c9b4281b36d9ed51fff0"
+  },
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2025.09.3"
+  },
+  "failure_analysis": {
+    "assigned_local_plus_lewis_identity": {
+      "cause": "assigned local descriptors omit globally stereogenic topologies and Lewis-state identity blocks mirror maps accepted by the publisher topology profile",
+      "correct": 235,
+      "false_achiral": 20,
+      "false_chiral": 3
+    },
+    "complete_topology_plus_lewis_identity": {
+      "cause": "complete topology fixes missing chiral cases; raw bond order/charge still splits groups treated as equivalent by the publisher topology profile",
+      "correct": 253,
+      "false_achiral": 0,
+      "false_chiral": 5
+    },
+    "complete_topology_plus_molecular_identity": {
+      "expected_correct": 258,
+      "identity": "element, total hydrogen count, connectivity"
+    },
+    "lewis_or_resonance_symmetry_ids": [
+      "VS042",
+      "VS044",
+      "VS170",
+      "VS215",
+      "VS216"
+    ],
+    "missing_complete_topology_ids": [
+      "VS279",
+      "VS280",
+      "VS281",
+      "VS282",
+      "VS283",
+      "VS284",
+      "VS285",
+      "VS286",
+      "VS288",
+      "VS289",
+      "VS290",
+      "VS291",
+      "VS292",
+      "VS293",
+      "VS294",
+      "VS295",
+      "VS296",
+      "VS297",
+      "VS298",
+      "VS300"
+    ]
+  },
+  "live_stereomolgraph": {
+    "accuracy": 0.9844961240310077,
+    "agreement_with_published_stereomolgraph": 254,
+    "checkout": "/tmp/StereoMolGraph",
+    "confusion": {
+      "false_achiral": 0,
+      "false_chiral": 4,
+      "true_achiral": 90,
+      "true_chiral": 164
+    },
+    "correct": 254,
+    "disagreements": [
+      {
+        "id": "VS246",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS247",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS248",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS299",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      }
+    ],
+    "predictions": {
+      "Achiral": 90,
+      "Chiral": 168
+    },
+    "protocol": "Chem.AddHs outside timing; from_rdmol(stereo_complete=True); graph == graph.enantiomer()",
+    "published_stereomolgraph_disagreement_ids": [
+      "VS246",
+      "VS247",
+      "VS248",
+      "VS299"
+    ],
+    "revision": "2189f610f23eaaf992e2e01a12ea4d0532496601",
+    "timing": {
+      "cases": 258,
+      "mean_ms": 6.898187441860466,
+      "median_ms": 3.881343,
+      "p95_ms": 14.81444,
+      "total_seconds": 1.77973236
+    }
+  },
+  "manual_labels": {
+    "Achiral": 94,
+    "Chiral": 164
+  },
+  "published_stereomolgraph": {
+    "accuracy": 1.0,
+    "agreement_with_published_stereomolgraph": 258,
+    "confusion": {
+      "false_achiral": 0,
+      "false_chiral": 0,
+      "true_achiral": 94,
+      "true_chiral": 164
+    },
+    "correct": 258,
+    "disagreements": [],
+    "predictions": {
+      "Achiral": 94,
+      "Chiral": 164
+    },
+    "published_stereomolgraph_disagreement_ids": []
+  },
+  "schema": "synkit.molecular-chirality-benchmark/1",
+  "stereo_stripped_input": {
+    "accuracy": 0.8643410852713178,
+    "agreement_with_published_stereomolgraph": 223,
+    "confusion": {
+      "false_achiral": 22,
+      "false_chiral": 13,
+      "true_achiral": 81,
+      "true_chiral": 142
+    },
+    "correct": 223,
+    "disagreements": [
+      {
+        "id": "VS014",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS016",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS017",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS050",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS074",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS080",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS087",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS088",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS103",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS127",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS138",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS147",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS191",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS192",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS193",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS194",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS195",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS197",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS199",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS200",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS201",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS229",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS230",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS233",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS234",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS238",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS239",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS249",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS250",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS251",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS264",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS267",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS274",
+        "manual": "Achiral",
+        "prediction": "Chiral"
+      },
+      {
+        "id": "VS276",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      },
+      {
+        "id": "VS279",
+        "manual": "Chiral",
+        "prediction": "Achiral"
+      }
+    ],
+    "information_theoretic_maximum_accuracy": 0.9689922480620154,
+    "information_theoretic_maximum_correct": 250,
+    "interpretation": "stereo removal maps distinct chiral and achiral stereoisomers to identical inputs; stereo_complete selects one provisional configuration but cannot recover the erased configuration",
+    "mixed_label_constitution_count": 6,
+    "mixed_label_constitutions": {
+      "CC(Cl)C(C(C)Cl)C(C(C(C)Cl)C(C)Cl)(C(C(C)Cl)C(C)Cl)C(O)C(C(C(C)Cl)C(C)Cl)(C(C(C)Cl)C(C)Cl)C(C(C)Cl)C(C)Cl": [
+        {
+          "id": "VS273",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS274",
+          "manual": "Achiral"
+        }
+      ],
+      "CC(Cl)C(C(C)Cl)C(Cl)C(C(Br)CC(O)CC(Br)C(C(Cl)C(C(C)Cl)C(C)Cl)C(Cl)C(C(C)Cl)C(C)Cl)C(Cl)C(C(C)Cl)C(C)Cl": [
+        {
+          "id": "VS249",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS250",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS269",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS270",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS275",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS277",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS278",
+          "manual": "Chiral"
+        }
+      ],
+      "CC(Cl)C(C(C)Cl)C(Cl)N(CCC(O)CCN(C(Cl)C(C(C)Cl)C(C)Cl)C(Cl)C(C(C)Cl)C(C)Cl)C(Cl)C(C(C)Cl)C(C)Cl": [
+        {
+          "id": "VS233",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS262",
+          "manual": "Chiral"
+        }
+      ],
+      "ClC1C(Cl)C(Cl)C(Cl)C(Cl)C1Cl": [
+        {
+          "id": "VS196",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS197",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS209",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS210",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS253",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS254",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS255",
+          "manual": "Achiral"
+        }
+      ],
+      "O=C(O)C(Cl)C(Cl)C(Cl)C(=O)O": [
+        {
+          "id": "VS016",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS017",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS227",
+          "manual": "Achiral"
+        },
+        {
+          "id": "VS228",
+          "manual": "Achiral"
+        }
+      ],
+      "O=C(O)C1CCC(Oc2ccc(C=COC=Cc3ccc(OC4CCC(C(=O)O)CC4OC=Cc4ccccc4)cc3)cc2)C(OC=Cc2ccccc2)C1": [
+        {
+          "id": "VS126",
+          "manual": "Chiral"
+        },
+        {
+          "id": "VS127",
+          "manual": "Achiral"
+        }
+      ]
+    },
+    "predictions": {
+      "Achiral": 103,
+      "Chiral": 155
+    },
+    "published_stereomolgraph_disagreement_ids": [
+      "VS014",
+      "VS016",
+      "VS017",
+      "VS050",
+      "VS074",
+      "VS080",
+      "VS087",
+      "VS088",
+      "VS103",
+      "VS127",
+      "VS138",
+      "VS147",
+      "VS191",
+      "VS192",
+      "VS193",
+      "VS194",
+      "VS195",
+      "VS197",
+      "VS199",
+      "VS200",
+      "VS201",
+      "VS229",
+      "VS230",
+      "VS233",
+      "VS234",
+      "VS238",
+      "VS239",
+      "VS249",
+      "VS250",
+      "VS251",
+      "VS264",
+      "VS267",
+      "VS274",
+      "VS276",
+      "VS279"
+    ],
+    "timing": {
+      "cases": 258,
+      "mean_ms": 4.346914302325581,
+      "median_ms": 2.509545,
+      "p95_ms": 13.166606,
+      "total_seconds": 1.12150389
+    }
+  },
+  "synkit": {
+    "accuracy": 1.0,
+    "agreement_with_published_stereomolgraph": 258,
+    "completed_tetrahedral_centers": 125,
+    "confusion": {
+      "false_achiral": 0,
+      "false_chiral": 0,
+      "true_achiral": 94,
+      "true_chiral": 164
+    },
+    "correct": 258,
+    "decision_methods": {
+      "exact_mirror_isomorphism": 129,
+      "stereo_colour_prefilter": 129
+    },
+    "descriptor_instances": 1135,
+    "disagreements": [],
+    "method": "complete eligible sp3 topology, reflect parity-bearing descriptors, then test element/H-count/connectivity mirror isomorphism",
+    "predictions": {
+      "Achiral": 94,
+      "Chiral": 164
+    },
+    "published_stereomolgraph_disagreement_ids": [],
+    "timing": {
+      "cases": 258,
+      "mean_ms": 6.524678775193799,
+      "median_ms": 2.762481,
+      "p95_ms": 27.528674,
+      "total_seconds": 1.683367124
+    }
+  },
+  "timing_ratio_synkit_over_live_stereomolgraph": 0.94585408561094
+}

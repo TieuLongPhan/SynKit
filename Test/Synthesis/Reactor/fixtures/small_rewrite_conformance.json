@@ -1,0 +1,156 @@
+{
+  "schema": "SynKit-small-rewrite-conformance-v1",
+  "description": "Nine compact, atom-mapped cases for inspecting hydrogen movement and rule-level stereochemistry without loading a benchmark corpus.",
+  "cases": [
+    {
+      "case_id": "h-atom-transfer",
+      "focus": ["hydrogen", "radical"],
+      "family": "H_ATOM_TRANSFER",
+      "mapped_reaction": "[CH3:1].[H:2][Br:3]>>[CH3:1][H:2].[Br:3]",
+      "application": {
+        "substrate": "Br.[CH3]",
+        "expected_product_constitution": "C.[Br]",
+        "expected_product_count": 1,
+        "rejected_substrates": []
+      },
+      "expected": {
+        "changed_hydrogen_maps": [2],
+        "stereo_changes": {}
+      }
+    },
+    {
+      "case_id": "hydride-transfer",
+      "focus": ["hydrogen", "polar"],
+      "family": "HYDRIDE_TRANSFER",
+      "mapped_reaction": "[CH3+:1].[H:2][BH3-:3]>>[CH3:1][H:2].[BH3:3]",
+      "application": {
+        "substrate": "[BH4-].[CH3+]",
+        "expected_product_constitution": "B.C",
+        "expected_product_count": 1,
+        "rejected_substrates": []
+      },
+      "expected": {
+        "changed_hydrogen_maps": [2],
+        "stereo_changes": {}
+      }
+    },
+    {
+      "case_id": "proton-transfer",
+      "focus": ["hydrogen", "polar"],
+      "family": "PROTON_TRANSFER",
+      "mapped_reaction": "[O-:1][CH3:4].[H:2][Cl:3]>>[O:1]([H:2])[CH3:4].[Cl-:3]",
+      "application": {
+        "substrate": "C[O-].Cl",
+        "expected_product_constitution": "CO.[Cl-]",
+        "expected_product_count": 1,
+        "rejected_substrates": []
+      },
+      "expected": {
+        "changed_hydrogen_maps": [2],
+        "stereo_changes": {}
+      }
+    },
+    {
+      "case_id": "h2-ez-hydrogenation",
+      "focus": ["hydrogen", "stereo"],
+      "family": "H2_ADDITION_EZ_LOSS",
+      "mapped_reaction": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[H:5][H:6]>>[CH3:1][CH:2]([H:5])[CH:3]([H:6])[CH3:4]",
+      "application": {
+        "substrate": "C/C=C/C.[H][H]",
+        "expected_product_constitution": "CCCC",
+        "expected_product_count": 1,
+        "rejected_substrates": ["C/C=C\\C.[H][H]"]
+      },
+      "expected": {
+        "changed_hydrogen_maps": [5, 6],
+        "stereo_changes": {"bond:2-3": "BROKEN"}
+      }
+    },
+    {
+      "case_id": "h2-ez-elimination",
+      "focus": ["hydrogen", "stereo"],
+      "family": "H2_ELIMINATION_EZ_FORMATION",
+      "mapped_reaction": "[CH3:1][CH:2]([H:5])[CH:3]([H:6])[CH3:4]>>[CH3:1]/[CH:2]=[CH:3]/[CH3:4].[H:5][H:6]",
+      "application": {
+        "substrate": "CCCC",
+        "expected_product_constitution": "CC=CC.[H][H]",
+        "expected_product_count": 1,
+        "rejected_substrates": []
+      },
+      "expected": {
+        "changed_hydrogen_maps": [5, 6],
+        "stereo_changes": {"bond:2-3": "FORMED"}
+      }
+    },
+    {
+      "case_id": "sn2-inversion",
+      "focus": ["stereo"],
+      "family": "TETRAHEDRAL_INVERSION",
+      "mapped_reaction": "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>[CH3:1][C@@H:2]([F:3])[OH:5].[Cl-:4]",
+      "application": {
+        "substrate": "C[C@H](F)Cl.[OH-]",
+        "expected_product_constitution": "CC(O)F.[Cl-]",
+        "expected_product_count": 1,
+        "rejected_substrates": ["C[C@@H](F)Cl.[OH-]"]
+      },
+      "expected": {
+        "changed_hydrogen_maps": [],
+        "stereo_changes": {"atom:2": "INVERTED"}
+      }
+    },
+    {
+      "case_id": "stereoretentive-substitution",
+      "focus": ["stereo"],
+      "family": "TETRAHEDRAL_RETENTION",
+      "mapped_reaction": "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>[CH3:1][C@H:2]([F:3])[OH:5].[Cl-:4]",
+      "application": {
+        "substrate": "C[C@H](F)Cl.[OH-]",
+        "expected_product_constitution": "CC(O)F.[Cl-]",
+        "expected_product_count": 1,
+        "rejected_substrates": ["C[C@@H](F)Cl.[OH-]"]
+      },
+      "expected": {
+        "changed_hydrogen_maps": [],
+        "stereo_changes": {"atom:2": "RETAINED"}
+      }
+    },
+    {
+      "case_id": "tetrahedral-destruction",
+      "focus": ["stereo"],
+      "family": "TETRAHEDRAL_DESTRUCTION",
+      "mapped_reaction": "[CH3:1][C@H:2]([F:3])[Cl:4]>>[CH3:1][CH+:2][F:3].[Cl-:4]",
+      "application": {
+        "substrate": "C[C@H](F)Cl",
+        "expected_product_constitution": "C[CH+]F.[Cl-]",
+        "expected_product_count": 1,
+        "rejected_substrates": ["C[C@@H](F)Cl"]
+      },
+      "expected": {
+        "changed_hydrogen_maps": [],
+        "stereo_changes": {"atom:2": "BROKEN"}
+      }
+    },
+    {
+      "case_id": "sn1-racemic-capture",
+      "focus": ["stereo"],
+      "family": "TETRAHEDRAL_RACEMIC_FORMATION",
+      "mapped_reaction": "[CH3:1][CH+:2][F:3].[OH-:4]>>[CH3:1][C@H:2]([F:3])[OH:4]",
+      "rule_metadata": {
+        "stereo_outcomes": {
+          "atom:2": {"kind": "RACEMIC", "weights": [0.5, 0.5]}
+        }
+      },
+      "application": {
+        "substrate": "C[CH+]F.[OH-]",
+        "expected_product_constitution": "CC(O)F",
+        "expected_product_count": 2,
+        "expected_cip_codes": ["R", "S"],
+        "rejected_substrates": []
+      },
+      "expected": {
+        "changed_hydrogen_maps": [],
+        "stereo_changes": {"atom:2": "FORMED"}
+      }
+    }
+  ]
+}

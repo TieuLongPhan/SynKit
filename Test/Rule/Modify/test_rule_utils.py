@@ -7,11 +7,8 @@ from synkit.Rule.Modify.rule_utils import (
     strip_context,
     _increment_gml_ids,
 )
-from synkit.Graph.Matcher.graph_matcher import GraphMatcherEngine
-from synkit.Graph.Matcher.subgraph_matcher import SubgraphMatch
-import importlib
-
-MOD_AVAILABLE = importlib.util.find_spec("mod") is not None
+from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
+from synkit.IO.chem_converter import gml_to_its
 
 
 class TestGMLFunctions(unittest.TestCase):
@@ -166,20 +163,18 @@ class TestGMLFunctions(unittest.TestCase):
             self.assertNotIn(e[0], {"5", "6", "7", "8", "9"})
             self.assertNotIn(e[1], {"5", "6", "7", "8", "9"})
 
-    @unittest.skipUnless(MOD_AVAILABLE, "requires `mod` package for rule backend")
     def test_strip_context(self):
         self.assertFalse(
-            GraphMatcherEngine(backend="mod")._isomorphic_rule(
-                self.gml_expected, self.gml_h
+            graph_isomorphism(
+                gml_to_its(self.gml_expected),
+                gml_to_its(self.gml_h),
             )
-        )
-        self.assertTrue(
-            SubgraphMatch().rule_subgraph_morphism(self.gml_expected, self.gml_h)
         )
         output = strip_context(self.gml_h)
         self.assertTrue(
-            GraphMatcherEngine(backend="mod")._isomorphic_rule(
-                self.gml_expected, output
+            graph_isomorphism(
+                gml_to_its(self.gml_expected),
+                gml_to_its(output),
             )
         )
 

@@ -554,6 +554,15 @@ class RCExtractor:
                 rc_nodes.add(u)
                 rc_nodes.add(v)
 
+        try:
+            from synkit.Graph.Stereo import stereo_complete_reaction_center_nodes
+
+            for node in stereo_complete_reaction_center_nodes(its):
+                rc_nodes.add(node)
+                node_reasons.setdefault(node, []).append("stereo_change_dependency")
+        except ImportError:
+            pass
+
         rc_graph = its.subgraph(rc_nodes).copy()
         rc_graph.graph["rc"] = {
             "nodes": sorted(rc_nodes),

@@ -6,8 +6,8 @@ plus a SHA‑256 signature for fast isomorphism checks.
 
 Key features
 ------------
-* **Value‑object semantics** – `__eq__` and `__hash__` use the canonical signature,
-  so graphs can be used in sets/dicts.
+* **Value‑object semantics** – `__eq__` and `__hash__` use structural plus
+  map-invariant stereo identity, so graphs can be used in sets/dicts.
 * **Lazy canonicalisation** – canonical graph & signature are computed once on demand
   (cached internally) to avoid upfront cost when not needed.
 * **Transparent delegation** – any unknown attribute/method is forwarded to the raw graph.
@@ -24,11 +24,19 @@ Example
 """
 
 from __future__ import annotations
+import hashlib
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 import networkx as nx
 
 from synkit.Graph.canon_graph import GraphCanonicaliser
+from synkit.Graph.Stereo.identity import (
+    stereo_identity_edge_match,
+    stereo_identity_form,
+    stereo_identity_node_match,
+    stereo_identity_signature,
+)
+from synkit.Graph.Stereo.matching import stereo_isomorphic
 
 __all__ = ["SynGraph"]
 
@@ -85,10 +93,22 @@ class SynGraph:
         return getattr(self._raw, name)
 
     def __eq__(self, other: object) -> bool:
-        """Two SynGraph instances are equal iff their signatures match."""
+        """Compare canonical identity, resolving stereo collisions exactly."""
         if not isinstance(other, SynGraph):
             return False
-        return self.signature == other.signature
+        if self.signature != other.signature:
+            return False
+        left_stereo = self.stereo_signature
+        right_stereo = other.stereo_signature
+        if left_stereo is None or right_stereo is None:
+            return left_stereo is right_stereo
+        return stereo_isomorphic(
+            self._raw,
+            other._raw,
+            node_match=stereo_identity_node_match,
+            edge_match=stereo_identity_edge_match,
+            unknown_policy="exact",
+        )
 
     def __hash__(self) -> int:
         """Hash on the signature, allowing use in sets and as dict keys."""
@@ -106,8 +126,29 @@ class SynGraph:
 
     @property
     def signature(self) -> Optional[str]:
-        """SHA-256 hex digest of the canonical form, or None."""
+        """Combined structural/stereo digest, preserving legacy plain graphs."""
+        structural = self.structural_signature
+        stereo = self.stereo_signature
+        if stereo is None:
+            return structural
+        return hashlib.sha256(
+            f"{structural}|stereo:{stereo}".encode("utf-8")
+        ).hexdigest()[:32]
+
+    @property
+    def structural_signature(self) -> str:
+        """Legacy connectivity/Lewis-state signature from the canonicaliser."""
         return self._canonicaliser.canonical_signature(self._raw)
+
+    @property
+    def stereo_form(self) -> tuple[Any, ...]:
+        """Inspectable map-invariant form of all molecule or ITS stereo layers."""
+        return stereo_identity_form(self._raw)
+
+    @property
+    def stereo_signature(self) -> str | None:
+        """Digest of :attr:`stereo_form`, or ``None`` when stereo is absent."""
+        return stereo_identity_signature(self._raw)
 
     def get_nodes(
         self, data: bool = True
@@ -148,7 +189,8 @@ class SynGraph:
             "----------\n"
             "raw          original networkx.Graph\n"
             "canonical    canonical networkx.Graph\n"
-            "signature    SHA-256 hex digest\n"
+            "signature    combined structural/stereo SHA-256 digest\n"
+            "stereo_form  inspectable map-invariant descriptor form\n"
             "get_nodes()  nodes (with data)\n"
             "get_edges()  edges (with data)\n"
             "__eq__/__hash__ use signature for comparisons"

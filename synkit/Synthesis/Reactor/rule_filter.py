@@ -22,8 +22,7 @@ class RuleFilter:
     :param invert: If True, use the "modifier" component of each
         decomposition; otherwise use the normal part.
     :type invert: bool
-    :param engine: Matching engine to use: "turbo", "sing", "nx", or
-        "mod".
+    :param engine: Matching engine to use: "turbo", "sing", or "nx".
     :type engine: str
     :param node_label: Node attribute(s) for TurboISO to match on.
     :type node_label: str or list
@@ -92,7 +91,7 @@ class RuleFilter:
             )
         elif self._engine == "sing":
             self._matcher = SING(self._host, max_path_length=sing_max_path)
-        elif self._engine in ("nx", "mod"):
+        elif self._engine == "nx":
             self._matcher = SubgraphMatch()
         else:
             raise ValueError(f"Unknown matching engine '{engine}'")
@@ -127,8 +126,7 @@ class RuleFilter:
                     pattern, self._host, check_type="mono"
                 )
             )
-        # "mod"
-        return bool(self._matcher.rule_subgraph_morphism(pattern, self._host))
+        raise ValueError(f"Unknown matching engine '{self._engine}'")
 
     @property
     def host(self) -> nx.Graph:

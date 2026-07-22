@@ -5,23 +5,47 @@ import logging
 
 import networkx as nx
 
-from synkit.Chem.utils import remove_explicit_H_from_rsmi, reverse_reaction
+from synkit.Chem.utils import remove_explicit_H_from_rsmi
 from synkit.Graph.Hyrogen._misc import standardize_hydrogen, h_to_implicit
 from synkit.IO import its_to_rsmi, rsmi_to_its
 from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 from synkit.Graph.Wildcard.its_merge import fuse_its_graphs
+from synkit.Graph.Fusion import (
+    FUSION_PROOF_SCHEMA,
+    FusionCandidate,
+    FusionConstructionError,
+    FusionInterface,
+    FusionInterfaceError,
+    construct_pushout,
+    fusion_candidate_from_construction,
+    fusion_candidates_exactly_equivalent,
+)
 from synkit.Graph.Matcher.mcs_matcher import MCSMatcher
 from synkit.Graph.Matcher.wl_sel import WLSel
 
 # from synkit.Graph.Matcher.approx_mcs import ApproxMCSMatcher
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Graph.Wildcard.graph_wc import GraphCollectionSelector
+from synkit.Synthesis.Reactor.fusion_validation import (
+    FusionIssueCode,
+    FusionValidation,
+    validate_fusion_rsmi,
+    validate_rbl_candidate,
+    validate_wildcard_mapping_roles,
+)
+from synkit.Synthesis.Reactor.rbl_policy import (
+    RBLSearchPolicy,
+    SearchScope,
+    TerminationPolicy,
+)
+from synkit.Synthesis.Reactor.rbl_matching import RBLMatchingMixin
+from synkit.Synthesis.Reactor.rbl_reaction import RBLReactionMixin
 
 ITSLike = Any
 
 
-class RBLEngine:
+class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
     """
     Radical-based linking (RBL) engine for bidirectional template
     application and ITS-graph fusion using wildcard-based subgraph
@@ -179,6 +203,9 @@ class RBLEngine:
         stage is skipped entirely, even if :attr:`early_stop` is
         ``True``. This can be overridden per-call in :meth:`process`.
     :type fast_paths_only: bool, optional
+    :param search_policy: Explicit search scope and termination policy. This
+        is mutually exclusive with the compatibility ``mode`` presets.
+    :type search_policy: RBLSearchPolicy or None, optional
     :param max_mappings_per_pair: Hard cap on the number of mappings to
         consider for each (forward ITS, backward ITS) pair. Default is
         ``1``.
@@ -191,6 +218,11 @@ class RBLEngine:
         (``explicit_h`` argument). Controls whether explicit hydrogens
         are kept during reaction application.
     :type explicit_h: bool, optional
+    :param preserve_original_sides: Original endpoints that every accepted
+        candidate must preserve through a component-injective exact subgraph
+        embedding. RBL defaults to ``("products",)`` because it may
+        reconstruct the reactant set while preserving the observed target.
+    :type preserve_original_sides: Sequence[str], optional
     :param embed_threshold: Hard cap forwarded to :class:`SynReactor`
         (``embed_threshold`` argument), typically controlling the
         maximum number of embeddings before the reactor aborts.
@@ -300,10 +332,12 @@ class RBLEngine:
         early_stop: bool = True,
         fast_paths_only: bool = False,
         mode: str | None = None,
+        search_policy: RBLSearchPolicy | None = None,
         max_mappings_per_pair: int = 1,
         implicit_temp: bool = True,
         explicit_h: bool = False,
         electron_diagnostics: bool = False,
+        preserve_original_sides: Sequence[str] = ("products",),
         embed_threshold: int = 10_000,
         reactor_cls: type = SynReactor,
         wildcard_adder_cls: type = RadicalWildcardAdder,
@@ -330,31 +364,49 @@ class RBLEngine:
         self.edge_attrs: List[str] = (
             list(edge_attrs) if edge_attrs is not None else ["order"]
         )
+        verified_mode = mode == "verified"
+        if verified_mode:
+            prune_automorphisms = False
+            max_mappings_per_pair = 0
         self.prune_wc: bool = prune_wc
         self.prune_automorphisms: bool = prune_automorphisms
         self.mcs_side: str = mcs_side
-        valid_modes = ("fast_track", "early_stop", "full")
-        if mode is not None and mode not in valid_modes:
-            raise ValueError(f"Invalid mode {mode!r}. Choose from {valid_modes}.")
+        if mode is not None and search_policy is not None:
+            raise ValueError("Specify either mode or search_policy, not both.")
         self.mode = mode
-        if mode == "fast_track":
-            self.early_stop = True
-            self.fast_paths_only = True
-        elif mode == "early_stop":
-            self.early_stop = True
-            self.fast_paths_only = False
-        elif mode == "full":
-            self.early_stop = False
-            self.fast_paths_only = False
+        self.verified_mode = verified_mode
+        if search_policy is not None:
+            if not isinstance(search_policy, RBLSearchPolicy):
+                raise TypeError("search_policy must be an RBLSearchPolicy.")
+            self.search_policy = search_policy
+        elif mode is not None:
+            self.search_policy = RBLSearchPolicy.from_mode(mode)
+        elif fast_paths_only:
+            self.search_policy = RBLSearchPolicy.from_mode("fast_track")
+        elif early_stop:
+            self.search_policy = RBLSearchPolicy.from_mode("early_stop")
         else:
-            self.early_stop = bool(early_stop)
-            self.fast_paths_only = bool(fast_paths_only)
-        self.max_mappings_per_pair: int = max(1, int(max_mappings_per_pair))
+            self.search_policy = RBLSearchPolicy.from_mode("full")
+        self.early_stop = (
+            self.search_policy.termination is TerminationPolicy.FIRST_VALID
+        )
+        self.fast_paths_only = self.search_policy.scope is SearchScope.FAST_PATHS_ONLY
+        self.max_mappings_per_pair: int = max(0, int(max_mappings_per_pair))
 
         # Reactor behaviour flags
         self.implicit_temp: bool = bool(implicit_temp)
         self.explicit_h: bool = bool(explicit_h)
         self.electron_diagnostics: bool = bool(electron_diagnostics)
+        unknown_preservation_sides = set(preserve_original_sides) - {
+            "reactants",
+            "products",
+        }
+        if unknown_preservation_sides:
+            raise ValueError(
+                "Unknown preserve_original_sides values: "
+                f"{sorted(unknown_preservation_sides)!r}."
+            )
+        self.preserve_original_sides = tuple(dict.fromkeys(preserve_original_sides))
         self.embed_threshold: int = int(embed_threshold)
 
         # Dependencies (DI)
@@ -386,16 +438,22 @@ class RBLEngine:
         self._backward_its: List[ITSLike] = []
         self._fused_its: List[ITSLike] = []
         self._fused_rsmis: List[str] = []
+        self._fusion_candidates: List[FusionCandidate] = []
+        self._fusion_search_stats: Dict[str, Any] = {}
+        self._latest_postprocessed_its: Optional[ITSLike] = None
+        self._latest_output_validation: Optional[FusionValidation] = None
         self._diagnostics: Dict[str, List[Dict[str, Any]]] = {
             "forward": [],
             "backward": [],
             "quick_check": [],
+            "fusion": [],
         }
 
         # Result / termination bookkeeping
         self._last_stop_mode: str = "not_run"
         self._last_stop_reason: str = "not_run"
         self._last_stop_metadata: Dict[str, Any] = {}
+        self._active_search_policy = self.search_policy
 
     # ------------------------------------------------------------------
     # Small helpers
@@ -431,27 +489,6 @@ class RBLEngine:
             return None
         return reactants, products
 
-    @staticmethod
-    def _pick_main_component(side_str: str) -> str:
-        """
-        Pick the main component from a multi-fragment side.
-
-        Strategy
-        --------
-        * Split ``side_str`` by ``"."``.
-        * Discard empty fragments.
-        * Return the **longest** fragment by string length.
-
-        :param side_str: Reactant or product side string.
-        :type side_str: str
-        :returns: Longest non-empty fragment, or ``""`` if none.
-        :rtype: str
-        """
-        parts = [p for p in side_str.split(".") if p]
-        if not parts:
-            return ""
-        return max(parts, key=len)
-
     def _reset_run_state(self) -> None:
         """
         Reset per-run state before a new :meth:`process` call.
@@ -463,10 +500,20 @@ class RBLEngine:
         self._backward_its = []
         self._fused_its = []
         self._fused_rsmis = []
-        self._diagnostics = {"forward": [], "backward": [], "quick_check": []}
+        self._fusion_candidates = []
+        self._fusion_search_stats = {}
+        self._latest_postprocessed_its = None
+        self._latest_output_validation = None
+        self._diagnostics = {
+            "forward": [],
+            "backward": [],
+            "quick_check": [],
+            "fusion": [],
+        }
         self._last_stop_mode = "not_run"
         self._last_stop_reason = "not_run"
         self._last_stop_metadata = {}
+        self._active_search_policy = self.search_policy
 
     def _record_stop(
         self,
@@ -547,6 +594,11 @@ class RBLEngine:
         return list(self._fused_rsmis)
 
     @property
+    def fusion_candidates(self) -> List[FusionCandidate]:
+        """Return proof-bearing Sprint 15 candidates from the fusion stage."""
+        return list(self._fusion_candidates)
+
+    @property
     def last_reaction(self) -> Optional[str]:
         """
         Last processed reaction RSMI string.
@@ -584,6 +636,18 @@ class RBLEngine:
             "n_forward_its": len(self._forward_its),
             "n_backward_its": len(self._backward_its),
             "n_fused_its": len(self._fused_its),
+            "fusion_proof_schema": FUSION_PROOF_SCHEMA,
+            "fusion_candidates": [
+                candidate.to_dict() for candidate in self._fusion_candidates
+            ],
+            "fusion_search": dict(self._fusion_search_stats),
+            "verified_fusion_mode": self.verified_mode,
+            "search_policy": self._active_search_policy.to_dict(),
+            "acceptance_policy": {
+                "preserve_original_sides": list(self.preserve_original_sides),
+                "relation": "component_injective_subgraph",
+                "use_chirality": True,
+            },
             "diagnostics": self.diagnostics,
         }
 
@@ -591,610 +655,6 @@ class RBLEngine:
     def diagnostics(self) -> Dict[str, List[Dict[str, Any]]]:
         """Electron diagnostics grouped by reactor stage."""
         return {stage: list(reports) for stage, reports in self._diagnostics.items()}
-
-    # ------------------------------------------------------------------
-    # Template preparation
-    # ------------------------------------------------------------------
-
-    def _prepare_from_graph(self, template: nx.Graph) -> ITSLike:
-        """
-        Internal helper: prepare a template from a NetworkX graph.
-
-        :param template: ITS-like NetworkX graph.
-        :type template: nx.Graph
-        :returns: Standardized ITS-like object.
-        :rtype: ITSLike
-        """
-        temp = self.h_to_implicit_fn(template)
-        return self.standardize_h_fn(temp)
-
-    def _prepare_from_str(self, template: str) -> ITSLike:
-        """
-        Internal helper: prepare a template from a reaction SMILES string.
-
-        :param template: Reaction SMILES.
-        :type template: str
-        :returns: Standardized ITS-like object.
-        :rtype: ITSLike
-        """
-        cleaned = self.remove_explicit_H_fn(template)
-        temp = self.rsmi_to_its_fn(cleaned, core=True)
-        return self.standardize_h_fn(temp)
-
-    def prepare_template(self, template: Union[str, nx.Graph, ITSLike]) -> RBLEngine:
-        """
-        Prepare a reaction template into a standardized ITS representation.
-
-        :param template: Template as reaction SMILES, graph or ITS-like.
-        :type template: str | nx.Graph | ITSLike
-        :returns: The current engine instance (for chaining).
-        :rtype: RBLEngine
-        """
-        self._template_raw = template
-
-        if isinstance(template, nx.Graph):
-            self._template_its = self._prepare_from_graph(template)
-        elif isinstance(template, str):
-            self._template_its = self._prepare_from_str(template)
-        else:
-            self._template_its = self.standardize_h_fn(template)
-
-        self.logger.debug("Template prepared: %s", type(self._template_its))
-        return self
-
-    # ------------------------------------------------------------------
-    # Reaction application core helpers
-    # ------------------------------------------------------------------
-
-    def _safe_its_to_rsmi(
-        self,
-        its_graph: ITSLike,
-        *,
-        fmt: str = "tuple",
-    ) -> Optional[str]:
-        """
-        Safely convert ITS to RSMI, returning ``None`` on failure.
-
-        :param its_graph: ITS-like graph to convert.
-        :type its_graph: ITSLike
-        :returns: Reaction SMILES or ``None`` on failure.
-        :rtype: Optional[str]
-        """
-        try:
-            return self.its_to_rsmi_fn(its_graph, format=fmt)
-        except Exception as exc:  # pragma: no cover - defensive
-            self.logger.debug("ITS→RSMI conversion failed: %s", exc)
-            return None
-
-    def _safe_rsmi_to_its(self, rsmi: str) -> Optional[ITSLike]:
-        """
-        Safely convert RSMI to ITS, returning ``None`` on failure.
-
-        :param rsmi: Reaction SMILES to convert.
-        :type rsmi: str
-        :returns: ITS-like object or ``None`` on failure.
-        :rtype: Optional[ITSLike]
-        """
-        try:
-            return self.rsmi_to_its_fn(rsmi, format="tuple")
-        except Exception as exc:  # pragma: no cover - defensive
-            self.logger.debug("RSMI→ITS conversion failed: %s", exc)
-            return None
-
-    def _decorate_radical(self, rsmi: str, invert: bool) -> Optional[str]:
-        """
-        Apply radical wildcard decoration (and optional inversion).
-
-        :param rsmi: Reaction SMILES to decorate.
-        :type rsmi: str
-        :param invert: Whether to reverse the reaction (products↔reactants)
-            after decoration.
-        :type invert: bool
-        :returns: Decorated (and possibly inverted) reaction SMILES, or
-            ``None`` on failure.
-        :rtype: Optional[str]
-        """
-        rw_adder = self.wildcard_adder_cls()
-        try:
-            decorated = rw_adder.transform(rsmi)
-        except Exception as exc:  # pragma: no cover - defensive
-            self.logger.debug("Radical wildcard decoration failed: %s", exc)
-            return None
-
-        if invert:
-            return reverse_reaction(decorated)
-        return decorated
-
-    def _run_reaction(
-        self,
-        substrate: Union[str, ITSLike],
-        pattern: ITSLike,
-        invert: bool,
-    ) -> List[ITSLike]:
-        """
-        Internal helper: apply template to substrate using :class:`SynReactor`.
-
-        For each resulting ITS, the method performs:
-
-        1. ITS → RSMI
-        2. Radical wildcard decoration
-        3. Optional inversion
-        4. RSMI → ITS
-
-        Any failing conversions are skipped.
-
-        :param substrate: Substrate reaction string or ITS-like object.
-        :type substrate: str | ITSLike
-        :param pattern: Template ITS-like object.
-        :type pattern: ITSLike
-        :param invert: Whether to run the reactor in inverted mode.
-        :type invert: bool
-        :returns: List of ITS-like objects after decoration.
-        :rtype: list[ITSLike]
-        """
-        self.logger.debug(
-            "Running reaction: invert=%s, substrate type=%s",
-            invert,
-            type(substrate),
-        )
-
-        reactor = self.reactor_cls(
-            substrate,
-            pattern,
-            partial=True,
-            implicit_temp=self.implicit_temp,
-            explicit_h=self.explicit_h,
-            automorphism=False,
-            invert=invert,
-            embed_threshold=self.embed_threshold,
-            electron_diagnostics=self.electron_diagnostics,
-        )
-        stage = "backward" if invert else "forward"
-        self._diagnostics[stage].extend(getattr(reactor, "diagnostics", []) or [])
-
-        out: List[ITSLike] = []
-        its_list: Sequence[ITSLike] = getattr(reactor, "its", []) or []
-
-        for its_graph in its_list:
-            rsmi = self._safe_its_to_rsmi(its_graph, fmt="typesGH")
-            if rsmi is None:
-                continue
-
-            rsmi_decorated = self._decorate_radical(rsmi, invert)
-            if rsmi_decorated is None:
-                continue
-
-            its_back = self._safe_rsmi_to_its(rsmi_decorated)
-            if its_back is not None:
-                out.append(its_back)
-
-        self.logger.debug("Reaction produced %d ITS graphs", len(out))
-        return out
-
-    def react(
-        self,
-        substrate: Union[str, ITSLike],
-        pattern: Optional[ITSLike] = None,
-        invert: bool = False,
-    ) -> RBLEngine:
-        """
-        Public wrapper around :meth:`_run_reaction` that updates engine state.
-
-        If ``pattern`` is ``None``, the last prepared template
-        (:pyattr:`template_its`) is used.
-
-        Results are stored in :pyattr:`forward_its` (for ``invert=False``)
-        or :pyattr:`backward_its` (for ``invert=True``).
-
-        :param substrate: Substrate reaction string or ITS-like object.
-        :type substrate: str | ITSLike
-        :param pattern: Optional template ITS; if ``None``, use
-            :pyattr:`template_its`.
-        :type pattern: ITSLike or None
-        :param invert: If ``True``, store results as backward ITS.
-        :type invert: bool
-        :returns: The current engine instance.
-        :rtype: RBLEngine
-        :raises ValueError: If no template pattern was provided or prepared.
-        """
-        if pattern is None:
-            pattern = self._template_its
-        if pattern is None:
-            raise ValueError("No template pattern provided or prepared.")
-
-        its_list = self._run_reaction(substrate, pattern, invert=invert)
-
-        if invert:
-            self._backward_its = its_list
-        else:
-            self._forward_its = its_list
-
-        return self
-
-    # ------------------------------------------------------------------
-    # Wildcard → H replacement and wildcard detection
-    # ------------------------------------------------------------------
-
-    def _has_wildcard_nodes(self, G: ITSLike) -> bool:
-        """
-        Check whether an ITS graph contains any wildcard atoms.
-
-        For now this assumes a NetworkX-style graph with node attributes.
-
-        :param G: ITS graph to inspect.
-        :type G: ITSLike
-        :returns: ``True`` if any node has ``element_key == wildcard_element``.
-        :rtype: bool
-        """
-        if not isinstance(G, nx.Graph):
-            # For non-graph ITS types we conservatively return True
-            # so that the fast path is not applied.
-            return True
-
-        wildcard = self.wildcard_element
-        scalar_wildcard = wildcard[0] if isinstance(wildcard, tuple) else wildcard
-        element_key = self.element_key
-
-        for _, data in G.nodes(data=True):
-            if data.get(element_key) in (wildcard, scalar_wildcard):
-                return True
-        return False
-
-    def replace_wildcard_with_H(self, G: nx.Graph) -> nx.Graph:
-        """
-        Replace wildcard atoms in an ITS graph with hydrogen.
-
-        This updates node-level attributes:
-
-        * ``node[element_key]``
-        * ``typesGH`` (if present, element field only)
-        * ``neighbors`` lists (string-based)
-
-        Edge structure and other attributes are not touched.
-
-        :param G: ITS graph to modify in-place.
-        :type G: nx.Graph
-        :returns: The same graph instance, for convenience.
-        :rtype: nx.Graph
-        """
-        wildcard = self.wildcard_element
-        scalar_wildcard = wildcard[0] if isinstance(wildcard, tuple) else wildcard
-        element_key = self.element_key
-
-        wildcard_nodes = [
-            n
-            for n, d in G.nodes(data=True)
-            if d.get(element_key) in (wildcard, scalar_wildcard)
-        ]
-        if not wildcard_nodes:
-            return G
-
-        for n in wildcard_nodes:
-            data = G.nodes[n]
-            data[element_key] = (
-                ("H", "H") if isinstance(data.get(element_key), tuple) else "H"
-            )
-
-            if "typesGH" in data and isinstance(data["typesGH"], tuple):
-                gh1, gh2 = data["typesGH"]
-                gh1 = ("H",) + tuple(gh1[1:])
-                gh2 = ("H",) + tuple(gh2[1:])
-                data["typesGH"] = (gh1, gh2)
-
-        for _, d in G.nodes(data=True):
-            if "neighbors" not in d:
-                continue
-            neighbors = d["neighbors"]
-            if isinstance(neighbors, tuple) and len(neighbors) == 2:
-                d["neighbors"] = (
-                    [("H" if x == scalar_wildcard else x) for x in neighbors[0]],
-                    [("H" if x == scalar_wildcard else x) for x in neighbors[1]],
-                )
-            else:
-                d["neighbors"] = [
-                    ("H" if x == scalar_wildcard else x) for x in neighbors
-                ]
-
-        return G
-
-    # ------------------------------------------------------------------
-    # Matcher construction
-    # ------------------------------------------------------------------
-
-    def _build_matcher(self) -> Any:
-        """
-        Construct a matcher instance using engine configuration.
-
-        Assumes :attr:`matcher_cls` is API-compatible with :class:`MCSMatcher`
-        or :class:`ApproxMCSMatcher`.
-
-        :returns: Matcher instance.
-        :rtype: Any
-        """
-        node_defaults: List[Any] = []
-        for attr in self.node_attrs:
-            if attr == "element":
-                node_defaults.append(self.wildcard_element)
-            elif attr == "aromatic":
-                node_defaults.append((False, False))
-            elif attr == "charge":
-                node_defaults.append((0, 0))
-            else:
-                node_defaults.append(self.wildcard_element)
-
-        matcher = self.matcher_cls(
-            node_attrs=self.node_attrs,
-            node_defaults=node_defaults,
-            edge_attrs=self.edge_attrs,
-            prune_wc=self.prune_wc,
-            prune_automorphisms=self.prune_automorphisms,
-            wildcard_element=self.wildcard_element,
-            element_key=self.element_key,
-        )
-        return matcher
-
-    # ------------------------------------------------------------------
-    # Quick-check logic (pre-pipeline early-stop)
-    # ------------------------------------------------------------------
-
-    def _quick_check(
-        self,
-        rsmi: str,
-        template: Union[str, nx.Graph, ITSLike],
-    ) -> Optional[str]:
-        """
-        Fast pre-check used when early-stop or fast-paths-only logic is active.
-
-        Logic:
-
-        1. Canonicalize the input reaction using :attr:`standardize_fn`.
-        2. Split into reactants/products (``r``, ``p``).
-        3. Prepare the template ITS (mirroring normal preparation).
-        4. Run :class:`SynReactor` with ``partial=False``.
-        5. For each candidate solution in ``reactor.smarts``, canonicalize it
-           and check whether the product side contains the canonicalized
-           product ``p``. The first such solution is returned.
-
-        If a match is found, :meth:`_record_stop` is called with mode
-        ``"quick_check"`` and the corresponding reason.
-
-        :param rsmi: Input reaction SMILES.
-        :type rsmi: str
-        :param template: Template as reaction SMILES, graph or ITS-like.
-        :type template: str | nx.Graph | ITSLike
-        :returns: Matching solution string or ``None`` if no match is found.
-        :rtype: Optional[str]
-        """
-        split = self._canonical_split(rsmi)
-        if split is None:
-            return None
-        r_canon, p_canon = split
-
-        if isinstance(template, nx.Graph):
-            temp_its = template
-        elif isinstance(template, str):
-            temp_its = self._prepare_from_str(template)
-        else:
-            temp_its = self.standardize_h_fn(template)
-
-        reactor = self.reactor_cls(
-            r_canon,
-            temp_its,
-            partial=False,
-            implicit_temp=self.implicit_temp,
-            explicit_h=self.explicit_h,
-            automorphism=False,
-            invert=False,
-            embed_threshold=self.embed_threshold,
-            electron_diagnostics=self.electron_diagnostics,
-        )
-        self._diagnostics["quick_check"].extend(
-            getattr(reactor, "diagnostics", []) or []
-        )
-
-        sols: Sequence[str] = getattr(reactor, "smarts", []) or []
-        if not sols:
-            return None
-
-        canon_sols = [self.standardize_fn(sol) for sol in sols]
-        for idx, rxn in enumerate(canon_sols):
-            split_sol = self._canonical_split(rxn)
-            if split_sol is None:
-                continue
-            _, prod = split_sol
-            if p_canon in prod:
-                self.logger.debug("Quick-check succeeded with solution index %d.", idx)
-                self._record_stop(
-                    mode="quick_check",
-                    reason="quick_check_match",
-                    metadata={"solution_index": idx, "n_solutions": len(sols)},
-                )
-                return sols
-
-        return None
-
-    # ------------------------------------------------------------------
-    # Early-stop pruning on wildcard-free ITS
-    # ------------------------------------------------------------------
-
-    def _validate_candidate_rsmi(
-        self,
-        *,
-        side: str,
-        rsmi_candidate: str,
-        canon_r: str,
-        canon_p: str,
-    ) -> bool:
-        """
-        Validate a candidate fused reaction against the original reaction.
-
-        * For forward candidates (``side == "fw"``), compare the **main
-          product fragment** (longest component after splitting by
-          ``"."``) between the original reaction and the candidate.
-        * For backward candidates (``side == "bw"``), compare the **main
-          reactant fragment** analogously.
-
-        This avoids fragile substring checks like ``cand_p in canon_p``
-        and instead focuses on the dominant component (likely the main
-        product/reactant) being identical.
-
-        :param side: Either ``"fw"`` or ``"bw"``.
-        :type side: str
-        :param rsmi_candidate: Candidate fused reaction SMILES.
-        :type rsmi_candidate: str
-        :param canon_r: Canonical reactant side of the original reaction.
-        :type canon_r: str
-        :param canon_p: Canonical product side of the original reaction.
-        :type canon_p: str
-        :returns: ``True`` if the candidate passes the verification, else
-            ``False``.
-        :rtype: bool
-        """
-        split = self._canonical_split(rsmi_candidate)
-        if split is None:
-            return False
-
-        cand_r, cand_p = split
-
-        if side == "fw":
-            if not canon_p:
-                return False
-            main_orig = self._pick_main_component(canon_p)
-            main_cand = self._pick_main_component(cand_p)
-            if not main_orig or not main_cand:
-                return False
-            return main_orig == main_cand
-
-        # backward
-        if not canon_r:
-            return False
-        main_orig = self._pick_main_component(canon_r)
-        main_cand = self._pick_main_component(cand_r)
-        if not main_orig or not main_cand:
-            return False
-        return main_orig == main_cand
-
-    def _early_stop_on_nonwildcard(
-        self,
-        fw_its: Sequence[ITSLike],
-        bw_its: Sequence[ITSLike],
-        *,
-        replace_wc: bool,
-    ) -> bool:
-        """
-        Try an early-stop path based on ITS graphs that contain no wildcard
-        atoms at all, with canonical reactant/product verification.
-
-        Rationale
-        ---------
-        For many reactions, some forward or backward ITS graphs are already
-        fully resolved (i.e. they do not contain any wildcard atoms).
-        In early-stop mode, we can treat such graphs as "good enough" and
-        directly post-process them without running expensive MCS/fusion,
-        provided that the resulting reaction is consistent with the
-        original one on the appropriate side.
-
-        Strategy
-        --------
-        1. Compute canonical reactant/product sides for the original
-           reaction via :meth:`_canonical_split`.
-        2. Collect all forward ITS without wildcard atoms.
-        3. Collect all backward ITS without wildcard atoms.
-        4. Iterate through these candidates (forward first, then backward),
-           and for each:
-           a. Post-process via :meth:`_postprocess_single`.
-           b. Canonicalize the resulting reaction and verify the **main
-              component**:
-
-              * forward: main original product must equal the main
-                candidate product;
-              * backward: main original reactant must equal the main
-                candidate reactant.
-
-           c. On first success, record an early-stop and return ``True``.
-        5. If no candidate yields a valid fused RSMI, return ``False`` and
-           fall back to full fusion (unless fast-path-only mode is active).
-
-        :param fw_its: Forward ITS graphs.
-        :type fw_its: Sequence[ITSLike]
-        :param bw_its: Backward ITS graphs.
-        :type bw_its: Sequence[ITSLike]
-        :param replace_wc: Whether to replace wildcard atoms with H during
-            post-processing.
-        :type replace_wc: bool
-        :returns: ``True`` if an early-stop solution was found, ``False``
-            otherwise.
-        :rtype: bool
-        """
-        if (not fw_its and not bw_its) or self._last_reaction is None:
-            return False
-
-        split = self._canonical_split(self._last_reaction)
-        if split is None:
-            return False
-        canon_r, canon_p = split
-
-        candidates: List[tuple[str, ITSLike]] = []
-        for g in fw_its:
-            if not self._has_wildcard_nodes(g):
-                candidates.append(("fw", g))
-        for g in bw_its:
-            if not self._has_wildcard_nodes(g):
-                candidates.append(("bw", g))
-
-        if not candidates:
-            return False
-
-        rw_adder = self.wildcard_adder_cls()
-        fused_graphs: List[ITSLike] = []
-        fused_rsmis: List[str] = []
-
-        for side, graph in candidates:
-            rsmi_final = self._postprocess_single(
-                graph,
-                replace_wc=replace_wc,
-                rw_adder=rw_adder,
-            )
-            if rsmi_final is None:
-                continue
-
-            if not self._validate_candidate_rsmi(
-                side=side,
-                rsmi_candidate=rsmi_final,
-                canon_r=canon_r,
-                canon_p=canon_p,
-            ):
-                continue
-
-            fused_graphs.append(graph)
-            fused_rsmis.append(rsmi_final)
-
-            self._fused_its = fused_graphs
-            self._fused_rsmis = fused_rsmis
-            self._record_stop(
-                mode="early_stop",
-                reason="early_stop_nonwildcard_its",
-                metadata={
-                    "source": side,
-                    "n_fw": len(fw_its),
-                    "n_bw": len(bw_its),
-                    "n_candidates": len(candidates),
-                    "n_fused_rsmis": len(fused_rsmis),
-                    "early_stop": True,
-                },
-            )
-            self.logger.debug(
-                "Early-stop on non-wildcard ITS: source=%s, "
-                "n_candidates=%d, fused_rsmis=%d",
-                side,
-                len(candidates),
-                len(fused_rsmis),
-            )
-            return True
-
-        # All candidates failed verification or post-processing;
-        # fall back to full fusion (unless fast-path-only mode is active).
-        return False
 
     def _fuse_and_postprocess(
         self,
@@ -1247,6 +707,10 @@ class RBLEngine:
 
         n_pairs = 0
         n_mappings_total = 0
+        n_mappings_rejected = 0
+        n_candidates_deduplicated = 0
+        n_mappings_truncated = 0
+        candidate_buckets: Dict[str, List[FusionCandidate]] = {}
 
         for i_fw, i_bw in pairs:
             fw = fw_its[i_fw]
@@ -1267,38 +731,166 @@ class RBLEngine:
             if not mappings:
                 continue
 
+            mapping_count = len(mappings)
             if self.max_mappings_per_pair > 0:
                 mappings = mappings[: self.max_mappings_per_pair]
+                n_mappings_truncated += mapping_count - len(mappings)
 
             for i_map, mapping in enumerate(mappings):
                 n_mappings_total += 1
+                role_validation = validate_wildcard_mapping_roles(
+                    fw,
+                    bw,
+                    mapping,
+                    element_key=self.element_key,
+                    wildcard_element=self.wildcard_element,
+                )
+                if not role_validation.valid:
+                    n_mappings_rejected += 1
+                    payload = role_validation.to_dict()
+                    payload.update(
+                        {
+                            "source": "wildcard_mapping",
+                            "pair_index": (i_fw, i_bw),
+                            "mapping_index": i_map,
+                        }
+                    )
+                    self._diagnostics["fusion"].append(payload)
+                    continue
+                diagnostic_context = {
+                    "pair_index": (i_fw, i_bw),
+                    "mapping_index": i_map,
+                }
                 try:
-                    fused_graph = self.fuse_fn(
+                    interface = FusionInterface.from_mapping(
                         fw,
                         bw,
                         mapping,
-                        remove_wildcards=True,
+                        node_keys=self.node_attrs,
+                        edge_keys=self.edge_attrs,
+                        element_key=self.element_key,
+                        wildcard_element=self.wildcard_element,
                     )
-                except TypeError:
-                    fused_graph = self.fuse_fn(  # type: ignore[arg-type]
+                    proof_construction = construct_pushout(
                         fw,
                         bw,
-                        mapping,
+                        interface,
+                        node_keys=self.node_attrs,
+                        edge_keys=self.edge_attrs,
+                        element_key=self.element_key,
+                        wildcard_element=self.wildcard_element,
                     )
+                except FusionInterfaceError as exc:
+                    n_mappings_rejected += 1
+                    self._record_fusion_failure(
+                        FusionIssueCode.INTERFACE_INVALID,
+                        "The proposed Sprint 15 fusion interface is incompatible.",
+                        source="verified_interface",
+                        context={
+                            **diagnostic_context,
+                            "issues": [issue.to_dict() for issue in exc.issues],
+                        },
+                    )
+                    continue
+                except FusionConstructionError as exc:
+                    n_mappings_rejected += 1
+                    self._record_fusion_failure(
+                        FusionIssueCode.CONSTRUCTION_INVALID,
+                        "The Sprint 15 pushout audit rejected the mapping.",
+                        source="verified_construction",
+                        context={
+                            **diagnostic_context,
+                            "issues": [issue.to_dict() for issue in exc.issues],
+                        },
+                    )
+                    continue
+                try:
+                    try:
+                        fused_graph = self.fuse_fn(
+                            fw,
+                            bw,
+                            mapping,
+                            remove_wildcards=True,
+                        )
+                    except TypeError:
+                        fused_graph = self.fuse_fn(  # type: ignore[arg-type]
+                            fw,
+                            bw,
+                            mapping,
+                        )
                 except Exception as exc:  # pragma: no cover - defensive
+                    n_mappings_rejected += 1
                     self.logger.debug("Fusion failed for mapping %s: %s", mapping, exc)
+                    self._record_fusion_failure(
+                        FusionIssueCode.OPERATION_FAILED,
+                        "ITS graph fusion failed for the selected mapping.",
+                        source="construction",
+                        context={
+                            **diagnostic_context,
+                            "error": type(exc).__name__,
+                        },
+                    )
                     continue
 
-                fused_graphs.append(fused_graph)
-
+                # The base implementation populates these caches, while a
+                # subclass override safely falls back to reparsing/revalidating.
+                # Clear them here so an override can never inherit evidence
+                # from the preceding mapping.
+                self._latest_postprocessed_its = None
+                self._latest_output_validation = None
                 rsmi_final = self._postprocess_single(
                     fused_graph,
                     replace_wc=replace_wc,
                     rw_adder=rw_adder,
+                    diagnostic_context=diagnostic_context,
                 )
                 if rsmi_final is None:
+                    n_mappings_rejected += 1
+                    continue
+                final_graph = self._latest_postprocessed_its
+                if not isinstance(final_graph, nx.Graph):
+                    final_graph = self._safe_rsmi_to_its(rsmi_final)
+                if not isinstance(final_graph, nx.Graph):
+                    n_mappings_rejected += 1
+                    self._record_fusion_failure(
+                        FusionIssueCode.PROOF_FAILED,
+                        "The accepted serialization could not be restored as an ITS graph.",
+                        source="verified_proof",
+                        context=diagnostic_context,
+                    )
+                    continue
+                proof_validation = self._latest_output_validation
+                if proof_validation is None:
+                    proof_validation = (
+                        validate_rbl_candidate(
+                            self._last_reaction,
+                            rsmi_final,
+                            allow_wildcards=not replace_wc,
+                            preserve_sides=self.preserve_original_sides,
+                        )
+                        if self._last_reaction is not None
+                        else validate_fusion_rsmi(
+                            rsmi_final,
+                            allow_wildcards=not replace_wc,
+                        )
+                    )
+                candidate = fusion_candidate_from_construction(
+                    proof_construction,
+                    rsmi=rsmi_final,
+                    validation=(proof_validation.to_dict(),),
+                    graph=final_graph,
+                )
+                bucket = candidate_buckets.setdefault(candidate.canonical_signature, [])
+                if any(
+                    fusion_candidates_exactly_equivalent(candidate, previous)
+                    for previous in bucket
+                ):
+                    n_candidates_deduplicated += 1
                     continue
 
+                self._fusion_candidates.append(candidate)
+                bucket.append(candidate)
+                fused_graphs.append(fused_graph)
                 fused_rsmis.append(rsmi_final)
                 if early_stop:
                     self.logger.debug(
@@ -1310,6 +902,16 @@ class RBLEngine:
                     )
                     self._fused_its = fused_graphs
                     self._fused_rsmis = fused_rsmis
+                    self._fusion_search_stats = {
+                        "complete": False,
+                        "termination": "first_valid",
+                        "pairs_explored": n_pairs,
+                        "mappings_explored": n_mappings_total,
+                        "mappings_rejected": n_mappings_rejected,
+                        "candidates_valid": len(self._fusion_candidates),
+                        "candidates_deduplicated": n_candidates_deduplicated,
+                        "mappings_truncated": n_mappings_truncated,
+                    }
                     self._record_stop(
                         mode="early_stop",
                         reason="early_stop_first_valid",
@@ -1328,8 +930,29 @@ class RBLEngine:
                     return
 
         # No early-stop taken: finalise results
-        self._fused_its = fused_graphs
-        self._fused_rsmis = fused_rsmis
+        ranked = sorted(
+            zip(self._fusion_candidates, fused_graphs, fused_rsmis, strict=True),
+            key=lambda record: (
+                record[0].score,
+                record[0].canonical_signature,
+                record[0].proof_digest,
+            ),
+        )
+        self._fusion_candidates = [record[0] for record in ranked]
+        self._fused_its = [record[1] for record in ranked]
+        self._fused_rsmis = [record[2] for record in ranked]
+        search_complete = n_mappings_truncated == 0 and not self.prune_automorphisms
+        self._fusion_search_stats = {
+            "complete": search_complete,
+            "termination": "exhaustive" if search_complete else "bounded",
+            "pairs_explored": n_pairs,
+            "mappings_explored": n_mappings_total,
+            "mappings_rejected": n_mappings_rejected,
+            "candidates_valid": len(self._fusion_candidates),
+            "candidates_deduplicated": n_candidates_deduplicated,
+            "mappings_truncated": n_mappings_truncated,
+            "automorphism_pruned": self.prune_automorphisms,
+        }
 
         if not fused_graphs:
             self._record_stop(
@@ -1382,6 +1005,7 @@ class RBLEngine:
         *,
         replace_wc: bool,
         rw_adder: Optional[RadicalWildcardAdder] = None,
+        diagnostic_context: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
         """
         Post-process a single fused ITS graph to a fused RSMI string.
@@ -1405,27 +1029,74 @@ class RBLEngine:
         :returns: Final fused reaction SMILES or ``None`` if any step fails.
         :rtype: Optional[str]
         """
+        self._latest_postprocessed_its = None
+        self._latest_output_validation = None
         if rw_adder is None:
             rw_adder = self.wildcard_adder_cls()
 
         rsmi1 = self._safe_its_to_rsmi(graph, fmt="tuple")
         if rsmi1 is None:
+            self._record_fusion_failure(
+                FusionIssueCode.SERIALIZATION_FAILED,
+                "Could not serialize the fused ITS before post-processing.",
+                source="postprocess",
+                context=diagnostic_context,
+            )
             return None
+
+        # Radical completion can create the same isolated wildcard spectator
+        # on both endpoints.  Remove only that side-symmetric multiset before
+        # materialising the remaining wildcards as hydrogen.
+        rsmi1 = self._strip_balanced_isolated_wildcards(rsmi1)
 
         try:
             rsmi2 = rw_adder.transform(rsmi1)
         except Exception as exc:  # pragma: no cover - defensive
             self.logger.debug("Radical wildcard decoration (single) failed: %s", exc)
+            self._record_fusion_failure(
+                FusionIssueCode.POSTPROCESS_FAILED,
+                "Radical wildcard decoration failed during post-processing.",
+                source="postprocess",
+                context={**(diagnostic_context or {}), "error": type(exc).__name__},
+            )
             return None
 
         its_back = self._safe_rsmi_to_its(rsmi2)
         if its_back is None:
+            self._record_fusion_failure(
+                FusionIssueCode.POSTPROCESS_FAILED,
+                "Could not parse the wildcard-decorated reaction.",
+                source="postprocess",
+                context=diagnostic_context,
+            )
             return None
 
         if isinstance(its_back, nx.Graph) and replace_wc:
             its_back = self.replace_wildcard_with_H(its_back)
 
-        rsmi_final = self._safe_its_to_rsmi(its_back, fmt="tuple")
+        rsmi_final = self._safe_its_to_rsmi(
+            its_back,
+            fmt="tuple",
+            explicit_hydrogen=replace_wc,
+        )
+        if rsmi_final is None:
+            self._record_fusion_failure(
+                FusionIssueCode.SERIALIZATION_FAILED,
+                "Could not serialize the materialized fusion endpoint.",
+                source="postprocess",
+                context=diagnostic_context,
+            )
+            return None
+
+        validation = self._validate_fusion_output(
+            rsmi_final,
+            allow_wildcards=not replace_wc,
+            source="postprocess",
+            context=diagnostic_context,
+        )
+        if not validation.valid:
+            return None
+        self._latest_postprocessed_its = its_back
         return rsmi_final
 
     # ------------------------------------------------------------------
@@ -1489,17 +1160,26 @@ class RBLEngine:
         self._last_reactants = reactants
         self._last_products = products
 
-        # Resolve per-call fast-path-only flag
-        fast_only = (
-            self.fast_paths_only if fast_paths_only is None else bool(fast_paths_only)
-        )
-        run_fast_paths = self.early_stop or fast_only
+        # Resolve the compatibility override into the same explicit policy.
+        if fast_paths_only is None:
+            policy = self.search_policy
+        elif fast_paths_only:
+            policy = RBLSearchPolicy.from_mode("fast_track")
+        else:
+            policy = RBLSearchPolicy(
+                SearchScope.FUSION,
+                self.search_policy.termination,
+            )
+        self._active_search_policy = policy
+        fast_only = policy.scope is SearchScope.FAST_PATHS_ONLY
+        stop_first = policy.termination is TerminationPolicy.FIRST_VALID
+        run_fast_paths = stop_first
 
         self.logger.debug(
             "Processing reaction: %s (early_stop=%s, fast_paths_only=%s, "
             "implicit_temp=%s, explicit_h=%s, embed_threshold=%d)",
             rsmi,
-            self.early_stop,
+            stop_first,
             fast_only,
             self.implicit_temp,
             self.explicit_h,
@@ -1512,13 +1192,24 @@ class RBLEngine:
             quick_solution = self._quick_check(rsmi, template)
 
         if quick_solution is not None:
-            self.logger.debug("Quick-check path taken; skipping full RBL pipeline.")
-            self._forward_its = []
-            self._backward_its = []
-            self._fused_its = []
-            self._fused_rsmis = [quick_solution]
-            # _record_stop has already been called in _quick_check
-            return self
+            validation = self._validate_fusion_output(
+                quick_solution,
+                allow_wildcards=not replace_wc,
+                source="quick_check",
+            )
+            if validation.valid:
+                self.logger.debug("Quick-check path taken; skipping full RBL pipeline.")
+                self._forward_its = []
+                self._backward_its = []
+                self._fused_its = []
+                self._fused_rsmis = [quick_solution]
+                # _record_stop has already been called in _quick_check
+                return self
+
+            self.logger.debug(
+                "Quick-check candidate failed the shared fusion contract; "
+                "continuing with the RBL pipeline."
+            )
 
         # Full RBL pipeline setup (up to ITS generation)
         self.prepare_template(template)
@@ -1552,7 +1243,7 @@ class RBLEngine:
                         "n_fw": len(fw_its),
                         "n_bw": len(bw_its),
                         "fast_paths_only": fast_only,
-                        "early_stop": self.early_stop,
+                        "early_stop": stop_first,
                     },
                 )
                 self.logger.debug(
@@ -1581,7 +1272,7 @@ class RBLEngine:
             self._forward_its,
             self._backward_its,
             replace_wc=replace_wc,
-            early_stop=self.early_stop,
+            early_stop=stop_first,
         )
 
         return self
@@ -1611,9 +1302,11 @@ class RBLEngine:
             f"  mcs_side           : {self.mcs_side!r}\n"
             f"  early_stop         : {self.early_stop}\n"
             f"  fast_paths_only    : {self.fast_paths_only}\n"
+            f"  search_policy      : {self.search_policy.to_dict()!r}\n"
             f"  max_maps/pair      : {self.max_mappings_per_pair}\n"
             f"  implicit_temp      : {self.implicit_temp}\n"
             f"  explicit_h         : {self.explicit_h}\n"
+            f"  preserve_sides     : {self.preserve_original_sides!r}\n"
             f"  embed_threshold    : {self.embed_threshold}\n"
             f"  reactor_cls        : {self.reactor_cls.__name__}\n"
             f"  matcher_cls        : {self.matcher_cls.__name__}\n"
@@ -1642,9 +1335,11 @@ class RBLEngine:
             f"mcs_side={self.mcs_side!r} "
             f"early_stop={self.early_stop} "
             f"fast_paths_only={self.fast_paths_only} "
+            f"search_policy={self.search_policy.to_dict()!r} "
             f"max_mappings_per_pair={self.max_mappings_per_pair} "
             f"implicit_temp={self.implicit_temp} "
             f"explicit_h={self.explicit_h} "
+            f"preserve_original_sides={self.preserve_original_sides!r} "
             f"embed_threshold={self.embed_threshold} "
             f"reactor_cls={self.reactor_cls.__name__}>"
         )

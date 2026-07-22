@@ -4,7 +4,7 @@ Rule
 ====
 
 The :py:mod:`synkit.Rule` package treats reaction transformations as **first-class objects**.
-It provides a focused toolkit to **compose**, **apply**, and **modify** reaction rules for
+It provides a focused toolkit to **identify**, **apply**, and **modify** reaction rules for
 forward prediction, retrosynthesis, and rule-database workflows. In practice, rules serve as
 portable graph-rewriting operators that can be analyzed, normalized, and reused across datasets.
 
@@ -19,12 +19,11 @@ portable graph-rewriting operators that can be analyzed, normalized, and reused 
 .. grid:: 1 1 2 3
    :gutter: 2
 
-   .. grid-item-card:: :octicon:`git-merge` Compose
+   .. grid-item-card:: :octicon:`diff` Identity
       :class-card: sd-shadow-sm
 
-      Build new rules by composing smaller transformations.
-      Useful for mechanism-inspired template construction, rule closure,
-      and assembling multi-step edits into a single reusable template.
+      Compare and deduplicate native rule and graph objects with exact,
+      stereo-aware identity semantics.
 
    .. grid-item-card:: :octicon:`play` Apply
       :class-card: sd-shadow-sm
@@ -42,47 +41,49 @@ portable graph-rewriting operators that can be analyzed, normalized, and reused 
 Package layout
 --------------
 
-Rule utilities are typically organized into three subpackages:
+Rule utilities are organized into native graph-based subpackages:
 
-- :py:mod:`synkit.Rule.Compose` — rule composition and combination
-- :py:mod:`synkit.Rule.Apply` — applying rules (often via reactor workflows)
+- :py:mod:`synkit.Rule.Compose` — native rule identity and clustering helpers
+- :py:mod:`synkit.Rule.Apply` — native rule matching
 - :py:mod:`synkit.Rule.Modify` — editing / normalization (e.g., hydrogen handling, context tuning)
+
+Proof-bearing generic stereo rules
+----------------------------------
+
+Ordinary :class:`~synkit.Rule.SynRule` construction remains exact. To
+generalize unchanged peripheral ligands of a mapped stereo reaction, use the
+additive :class:`~synkit.Rule.GenericStereoRuleExtractor` API::
+
+   from synkit.Rule import GenericStereoRuleExtractor, GenericStereoRulePolicy
+
+   policy = GenericStereoRulePolicy(
+       domain_source="class",
+       explicit_domains={
+           1: {"elements": {"C"}},
+           3: {"elements": {"F", "Br"}},
+       },
+   )
+   result = GenericStereoRuleExtractor(policy).extract(mapped_reaction)
+   rule = result.rule
+   certificate = result.certificate
+
+The default ``observed`` policy admits only the chemistry present in the
+source. Broader ``class`` and ``corpus`` domains must be supplied explicitly;
+``exact`` performs no generalization. Accepted extraction requires exact
+forward replay and, for invertible effects, exact reverse replay. Reaction
+loci, entering and leaving ligands, virtual H/LP identities, descriptor orbit
+relations, and witnesses are retained rather than replaced by unrestricted
+wildcards.
+
+Typed stereo ports are assigned exhaustively during application. Set
+``SynReactor(stereo_assignment_limit=N)`` to bound that search; exceeding the
+cap raises ``StereoWildcardAssignmentLimitError`` and never returns a partial
+population. Exact stereo-aware product quotienting records
+``application_orbit`` multiplicity and all contributing mapping, port, and
+local-morphism provenance for certified generic rules.
 
 Common patterns
 ---------------
-
-Compose then apply
-^^^^^^^^^^^^^^^^^^
-
-Compose a new rule from existing templates and apply it via a reactor workflow. This is a
-common pattern for building “macro-templates” that capture a richer transformation while
-remaining directly applicable to substrates.
-
-.. code-block:: python
-   :caption: Compose rules, then apply the composed rule via a reactor
-   :linenos:
-
-   # Pseudocode (exact function names may vary by version)
-   from synkit.Rule.Compose.rule_compose import compose_rules
-   from synkit.Synthesis.Reactor.syn_reactor import SynReactor
-
-   r_new = compose_rules(rule_a, rule_b)
-
-   reactor = SynReactor(
-       substrate="CC=O.CC=O",
-       template=r_new,
-       invert=False,
-       strategy="comp",
-   )
-   products = reactor.smarts_list
-   print(products)
-
-.. admonition:: Notes
-   :class: tip
-
-   - Composition is useful when you want a single template that “summarizes” multiple edits.
-   - Applying a composed rule typically benefits from ``strategy='comp'`` when substrates contain
-     multiple disconnected components.
 
 Context and hydrogen handling
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

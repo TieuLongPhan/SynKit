@@ -1,0 +1,49 @@
+{
+  "schema": "synkit.stereo-benchmark-registry/1",
+  "datasets": [
+    {
+      "id": "acs_stereomolgraph_molecular_chirality",
+      "records": 258,
+      "task": "whole_molecule_chiral_achiral",
+      "path": "ACS-StereoMolGraph/ci5c02523_si_002.csv",
+      "vendored": true,
+      "license": "CC BY-NC 4.0",
+      "protocols": {
+        "supplied_stereo_binary": true,
+        "stereo_stripped_four_state": true
+      }
+    },
+    {
+      "id": "chiralfinder_rota",
+      "records": 650,
+      "task": "axial_stereo_locus_detection",
+      "path": "ChiralFinder-RotA/RotA.xlsx",
+      "vendored": true,
+      "license": "MIT",
+      "protocols": {
+        "supplied_stereo_binary": false,
+        "stereo_stripped_four_state": false
+      },
+      "diagnostics": {
+        "supplied_stereo_binary": true,
+        "stereo_stripped_four_state": true
+      }
+    },
+    {
+      "id": "cip_validation_suite",
+      "records": 300,
+      "task": "local_cip_descriptor_assignment",
+      "path": null,
+      "vendored": false,
+      "license": null,
+      "protocols": {
+        "supplied_stereo_binary": false,
+        "stereo_stripped_four_state": false
+      },
+      "diagnostics": {
+        "supplied_stereo_binary": true,
+        "stereo_stripped_four_state": true
+      }
+    }
+  ]
+}

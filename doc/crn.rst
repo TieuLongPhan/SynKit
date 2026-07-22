@@ -68,7 +68,7 @@ This layer is useful when you want to generate a CRN from:
    :caption: Expand a CRN from seeds and rules, then convert to SynCRN
    :linenos:
 
-   from synkit.CRN.Construct.DAG.crn import CRNExpand
+   from synkit.CRN.Construct.builder import CRNExpand
    from synkit.CRN.Structure.syncrn import SynCRN
 
    dg = CRNExpand(

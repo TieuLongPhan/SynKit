@@ -4,7 +4,7 @@ from __future__ import annotations
 
 The compact MTG view is a timeline diagnostic. Step panels reuse the molecule-
 like ITS renderer so each reconstructed ITS step is inspected with the same
-visual language as normal Lewis State Graph / ITS drawings.
+visual language as normal Lewis-labelled graph / ITS drawings.
 """
 
 from typing import Any, Iterable, Mapping, Optional

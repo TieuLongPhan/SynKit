@@ -1,0 +1,48 @@
+{
+  "schema": "synkit.external-stereo-benchmark/1",
+  "file": "ci5c02523_si_002.csv",
+  "title": "StereoMolGraph validation enantiomer dataset",
+  "article": {
+    "title": "StereoMolGraph: Stereochemistry-Aware Molecular and Reaction Graphs",
+    "authors": [
+      "Maxim Papusha",
+      "Kai Leonhard"
+    ],
+    "journal": "Journal of Chemical Information and Modeling",
+    "year": 2026,
+    "doi": "10.1021/acs.jcim.5c02523",
+    "url": "https://pubs.acs.org/doi/10.1021/acs.jcim.5c02523"
+  },
+  "dataset": {
+    "doi": "10.1021/acs.jcim.5c02523.s002",
+    "acs_url": "https://pubs.acs.org/doi/suppl/10.1021/acs.jcim.5c02523/suppl_file/ci5c02523_si_002.csv",
+    "figshare_url": "https://acs.figshare.com/articles/dataset/StereoMolGraph_Stereochemistry-Aware_Molecular_and_Reaction_Graphs/31876033",
+    "figshare_file_id": 63199129
+  },
+  "license": {
+    "name": "CC BY-NC 4.0",
+    "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "notice": "Third-party ACS supporting information; not covered by SynKit's project license. Preserve attribution and the non-commercial restriction."
+  },
+  "retrieved": "2026-07-18",
+  "records": 258,
+  "bytes": 24736,
+  "columns": [
+    "ID",
+    "Input SMILES",
+    "manual",
+    "StereoMolGraph",
+    "InChI",
+    "RDKit SMILES",
+    "chython"
+  ],
+  "hashes": {
+    "md5": "17da48f77988c6616e62ab92a5d3453c",
+    "sha256": "b90d64bba99d36f0be2429cad255e7836b244dfc26e7c9b4281b36d9ed51fff0"
+  },
+  "scope": "Whole-molecule chiral/achiral classification by equality with the molecular mirror image.",
+  "protocols": [
+    "supplied_stereo_binary",
+    "stereo_stripped_configuration_aware"
+  ]
+}

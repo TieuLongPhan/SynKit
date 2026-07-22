@@ -29,15 +29,9 @@ The ``synkit.Synthesis.Reactor`` submodule applies a reaction **template** (SMAR
 to an input **substrate** (SMILES) and enumerates all valid transformations under a chosen
 graph-matching strategy.
 
-Two interchangeable backends are available:
-
-- **NetworkX-based reactor**
-  :py:class:`~synkit.Synthesis.Reactor.syn_reactor.SynReactor`
-  (lightweight, pure-Python workflow and tight integration with ``synkit`` graphs)
-
-- **MØD-based reactor**
-  :py:class:`~synkit.Synthesis.Reactor.mod_reactor.MODReactor` :cite:`andersen2016software`
-  (graph-grammar engine backend, suitable for robust rewriting and larger workloads)
+Reaction rewriting uses the native
+:py:class:`~synkit.Synthesis.Reactor.syn_reactor.SynReactor`, with NetworkX
+graphs and direct integration with SynKit Lewis-state and stereo models.
 
 Reactor parameters
 ~~~~~~~~~~~~~~~~~~
@@ -74,7 +68,7 @@ Reactor parameters
      - str
      - ``'typesGH'``
      - ITS representation used when the template is a reaction string.
-       Use ``'tuple'`` for the Lewis State Graph representation.
+       Use ``'tuple'`` for the Lewis-labelled graph representation.
    * - ``electron_diagnostics``
      - bool
      - ``False``
@@ -86,6 +80,39 @@ Reactor parameters
      - bool
      - ``True``
      - Deduplicate symmetry-equivalent matches before rewriting.
+   * - ``dedup_its``
+     - bool
+     - ``True``
+     - Consolidate equivalent post-rewrite ITS graphs. Set this to ``False``
+       to retain deterministic raw mapping and stereo-branch multiplicity.
+       Electron finalization and stereo validation still run. This option is
+       available only on ``SynReactor``; ``BatchReactor`` always uses the
+       default consolidated behavior.
+
+Raw ITS applications and multiplicity
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``automorphism`` and ``dedup_its`` control different stages. The first prunes
+equivalent mappings before rewriting; the second consolidates equivalent ITS
+graphs afterward. Disable both to inspect every raw application:
+
+.. code-block:: python
+
+   reactor = SynReactor(
+       substrate="CC",
+       template="[CH2:1]([H:3])[CH2:2]([H:4])>>[CH2:1]=[CH2:2].[H:3][H:4]",
+       template_format="tuple",
+       explicit_h=False,
+       automorphism=False,
+       dedup_its=False,
+   )
+
+   for its in reactor.its_list:
+       print(its.graph["application_provenance"])
+
+In raw mode, ``its_list``, ``smarts_list``, and optional diagnostics remain
+aligned one-to-one. Raw multiplicity counts graph applications and stereo
+branches; it is not a kinetic weight or predicted product distribution.
 
 Example: Forward Prediction (NetworkX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -190,19 +217,19 @@ while keeping ``explicit_h=False``.
         '[CH3:1][CH3:2].[CH:3]([CH:4]=[O:5])=[O:6]>>[CH3:1][CH:2]=[CH:3][CH:4]=[O:5].[OH2:6]'
       ]
 
-Lewis State Graph Templates
+Lewis-labelled graph templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The NetworkX reactor can consume Lewis State Graph (LSG) templates. This is
+The NetworkX reactor can consume Lewis-labelled graph (LLG) templates. This is
 the SynKit-native path for transformations where valence-state information
 matters: lone pairs, radicals, valence electrons, and sigma/pi bond components
 are stored in the template and used during matching/rewrite. In the current API
-LSG construction is requested with ``format="tuple"``.
+LLG construction is requested with ``format="tuple"``.
 
 There are two common entry points:
 
 .. code-block:: python
-   :caption: Build the LSG template explicitly
+   :caption: Build the LLG template explicitly
    :linenos:
 
    from synkit.IO import rsmi_to_its
@@ -223,7 +250,7 @@ There are two common entry points:
    print(reactor.smarts)
 
 .. code-block:: python
-   :caption: Let SynReactor build an LSG template from a reaction string
+   :caption: Let SynReactor build an LLG template from a reaction string
    :linenos:
 
    reactor = SynReactor(
@@ -235,7 +262,7 @@ There are two common entry points:
        electron_diagnostics=True,
    )
 
-LSG rewrite policy:
+LLG rewrite policy:
 
 .. list-table::
    :header-rows: 1
@@ -252,80 +279,7 @@ LSG rewrite policy:
        radical count, and Kekule bond-order sum.
    * - Aromaticity
      - Aromatic flags are still useful for matching and display, but aromatic
-       ``order=1.5`` is not used as the LSG-authoritative rewrite value.
-
-.. note::
-
-   LSG rewriting is currently a SynKit ``SynReactor`` path. MØD-backed
-   reactors remain on the legacy rule representation.
-
-Example: Forward Prediction (MØD)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-   :caption: Forward prediction using the MØD backend
-   :linenos:
-
-   from synkit.Synthesis.Reactor.mod_reactor import MODReactor
-
-   input_fw = 'CC=O.CC=O'
-   template = '[C:2]=[O:3].[C:4]([H:7])[H:8]>>[C:2]=[C:4].[O:3]([H:7])[H:8]'
-
-   reactor_mod = MODReactor(
-       substrate=input_fw,
-       rule_file=template,
-       invert=False,
-       strategy='bt'
-   )
-
-   reaction_list = reactor_mod.reaction_smiles
-   print(reaction_list)
-
-.. admonition:: Example output
-   :class: note synkit-example-output
-
-   .. code-block:: text
-
-      ['CC=O.CC=O>>CC=CC=O.O']
-
-Example: Backward Prediction with AAM (MØD)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-When atom mapping must be retained end-to-end, use the AAM-aware variant (e.g., ``MODAAM``)
-together with a GML rule representation.
-
-.. code-block:: python
-   :caption: Backward prediction with atom-map preservation
-   :linenos:
-
-   from synkit.Synthesis.Reactor.mod_aam import MODAAM
-   from synkit.IO import smart_to_gml
-
-   input_bw = 'CC=CC=O.O'
-   rule_gml = smart_to_gml(
-       '[C:2]=[O:3].[C:4]([H:7])[H:8]>>[C:2]=[C:4].[O:3]([H:7])[H:8]',
-       core=True
-   )
-
-   reactor_aam = MODAAM(
-       substrate=input_bw,
-       rule_file=rule_gml,
-       invert=True,
-       strategy='bt'
-   )
-
-   smarts_list = reactor_aam.get_smarts()
-   print(smarts_list)
-
-.. admonition:: Example output
-   :class: note synkit-example-output
-
-   .. code-block:: text
-
-      [
-        '[CH3:1][CH:2]=[O:3].[CH:4]([CH:5]=[O:6])([H:7])[H:8]>>[CH3:1][CH:2]=[CH:4][CH:5]=[O:6].[O:3]([H:7])[H:8]',
-        '[CH3:1][CH:2]([H:3])[H:4].[CH:5]([CH:6]=[O:7])=[O:8]>>[CH3:1][CH:2]=[CH:5][CH:6]=[O:7].[H:3][O:8][H:4]'
-      ]
+       ``order=1.5`` is not used as the LLG-authoritative rewrite value.
 
 Radical-based linking
 ---------------------

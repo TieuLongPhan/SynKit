@@ -1,0 +1,475 @@
+{
+  "datasets": {
+    "acs_stereomolgraph_molecular_chirality": {
+      "normal": {
+        "manual_labels": {
+          "Achiral": 94,
+          "Chiral": 164
+        },
+        "protocol": "supplied_stereo_binary",
+        "published_chython": {
+          "accuracy": 0.813953488372093,
+          "correct": 210,
+          "disagreement_ids": [
+            "VS014",
+            "VS015",
+            "VS019",
+            "VS031",
+            "VS038",
+            "VS039",
+            "VS045",
+            "VS054",
+            "VS059",
+            "VS068",
+            "VS071",
+            "VS074",
+            "VS093",
+            "VS095",
+            "VS104",
+            "VS122",
+            "VS130",
+            "VS138",
+            "VS140",
+            "VS147",
+            "VS165",
+            "VS170",
+            "VS196",
+            "VS197",
+            "VS207",
+            "VS212",
+            "VS215",
+            "VS216",
+            "VS224",
+            "VS252",
+            "VS253",
+            "VS255",
+            "VS256",
+            "VS280",
+            "VS281",
+            "VS282",
+            "VS283",
+            "VS284",
+            "VS285",
+            "VS288",
+            "VS289",
+            "VS290",
+            "VS291",
+            "VS292",
+            "VS294",
+            "VS295",
+            "VS297",
+            "VS300"
+          ],
+          "predictions": {
+            "Achiral": 114,
+            "Chiral": 144
+          }
+        },
+        "published_inchi": {
+          "accuracy": 0.9224806201550387,
+          "correct": 238,
+          "disagreement_ids": [
+            "VS279",
+            "VS280",
+            "VS281",
+            "VS282",
+            "VS283",
+            "VS284",
+            "VS285",
+            "VS286",
+            "VS288",
+            "VS289",
+            "VS290",
+            "VS291",
+            "VS292",
+            "VS293",
+            "VS294",
+            "VS295",
+            "VS296",
+            "VS297",
+            "VS298",
+            "VS300"
+          ],
+          "predictions": {
+            "Achiral": 114,
+            "Chiral": 144
+          }
+        },
+        "published_rdkit_smiles": {
+          "accuracy": 0.9108527131782945,
+          "correct": 235,
+          "disagreement_ids": [
+            "VS170",
+            "VS215",
+            "VS216",
+            "VS279",
+            "VS280",
+            "VS281",
+            "VS282",
+            "VS283",
+            "VS284",
+            "VS285",
+            "VS286",
+            "VS288",
+            "VS289",
+            "VS290",
+            "VS291",
+            "VS292",
+            "VS293",
+            "VS294",
+            "VS295",
+            "VS296",
+            "VS297",
+            "VS298",
+            "VS300"
+          ],
+          "predictions": {
+            "Achiral": 111,
+            "Chiral": 147
+          }
+        },
+        "published_stereomolgraph": {
+          "accuracy": 1.0,
+          "correct": 258,
+          "disagreement_ids": [],
+          "predictions": {
+            "Achiral": 94,
+            "Chiral": 164
+          }
+        },
+        "synkit": {
+          "accuracy": 1.0,
+          "correct": 258,
+          "disagreement_ids": [],
+          "predictions": {
+            "Achiral": 94,
+            "Chiral": 164
+          },
+          "seconds": 1.489529874001164
+        }
+      },
+      "records": 258,
+      "stereo_removed": {
+        "configuration_dependent_ids": [
+          "VS016",
+          "VS017",
+          "VS050",
+          "VS065",
+          "VS069",
+          "VS080",
+          "VS087",
+          "VS088",
+          "VS103",
+          "VS108",
+          "VS126",
+          "VS127",
+          "VS131",
+          "VS191",
+          "VS192",
+          "VS193",
+          "VS194",
+          "VS195",
+          "VS196",
+          "VS197",
+          "VS198",
+          "VS199",
+          "VS200",
+          "VS201",
+          "VS202",
+          "VS203",
+          "VS204",
+          "VS209",
+          "VS210",
+          "VS227",
+          "VS228",
+          "VS230",
+          "VS233",
+          "VS234",
+          "VS236",
+          "VS237",
+          "VS238",
+          "VS239",
+          "VS240",
+          "VS241",
+          "VS242",
+          "VS245",
+          "VS249",
+          "VS250",
+          "VS251",
+          "VS253",
+          "VS254",
+          "VS255",
+          "VS261",
+          "VS262",
+          "VS263",
+          "VS264",
+          "VS267",
+          "VS269",
+          "VS270",
+          "VS271",
+          "VS272",
+          "VS273",
+          "VS274",
+          "VS275",
+          "VS276",
+          "VS277",
+          "VS278",
+          "VS279",
+          "VS294",
+          "VS295"
+        ],
+        "definitive_rows": 254,
+        "incomplete_cases": [
+          {
+            "constitutional_smiles": "CC1CCC(C2(C3CCC(C)CC3)CCC(C3CCC(C)CC3)(C3CCC(C)CC3)CC2)CC1",
+            "evaluated_isomer_count": 6,
+            "ids": [
+              "VS226"
+            ],
+            "observed_classifications": [
+              "Achiral"
+            ],
+            "theoretical_isomer_upper_bound": 1024,
+            "unsupported_stereo_loci": []
+          },
+          {
+            "constitutional_smiles": "CCC(CCCC(CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)(CCCC(CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)C(C)Cl",
+            "evaluated_isomer_count": 256,
+            "ids": [
+              "VS265"
+            ],
+            "observed_classifications": [
+              "Chiral"
+            ],
+            "theoretical_isomer_upper_bound": 16777216,
+            "unsupported_stereo_loci": []
+          },
+          {
+            "constitutional_smiles": "CCC(CCCN(CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)(CCCN(CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)C(C)F",
+            "evaluated_isomer_count": 256,
+            "ids": [
+              "VS266"
+            ],
+            "observed_classifications": [
+              "Chiral"
+            ],
+            "theoretical_isomer_upper_bound": 4194304,
+            "unsupported_stereo_loci": []
+          },
+          {
+            "constitutional_smiles": "CC(Cl)C(Cl)C(CC(CCC(CCC(CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)(C(C)F)C(C)F)CC(C(Cl)C(C)Cl)C(Cl)C(C)Cl)C(Cl)C(C)Cl",
+            "evaluated_isomer_count": 256,
+            "ids": [
+              "VS268"
+            ],
+            "observed_classifications": [
+              "Chiral"
+            ],
+            "theoretical_isomer_upper_bound": 33554432,
+            "unsupported_stereo_loci": []
+          }
+        ],
+        "interpretation": "Coverage asks whether the erased manual label remains among the enumerated possibilities; it is not recovery accuracy.",
+        "manual_label_in_observed_population": 258,
+        "max_isomers": 256,
+        "protocol": "stereo_stripped_four_state",
+        "row_outcomes": {
+          "configuration_dependent": 66,
+          "necessarily_achiral": 65,
+          "necessarily_chiral": 123,
+          "unsupported_or_incomplete": 4
+        },
+        "seconds": 22.70072056198842,
+        "unique_constitutions": 214
+      },
+      "task": "whole_molecule_chiral_achiral"
+    },
+    "chiralfinder_rota": {
+      "axis_count_distribution": {
+        "1": 610,
+        "2": 32,
+        "3": 8
+      },
+      "chiral_type_counts": {
+        "Allene-like structure": 15,
+        "Biaryl structure": 325,
+        "Chiral atom pair": 59,
+        "Heterobiaryl (C-B)": 88,
+        "Heterobiaryl (C-C)": 3,
+        "Heterobiaryl (C-N)": 51,
+        "Nonbiaryl": 87,
+        "Spiral atom and chain": 22
+      },
+      "normal": {
+        "case_timeout_seconds": 10.0,
+        "errors": [],
+        "evaluated_records": 650,
+        "executed": true,
+        "input_stereo_status": {
+          "specified": 615,
+          "underspecified": 35
+        },
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "predictions": {
+          "Achiral": 542,
+          "Chiral": 108
+        },
+        "protocol": "supplied_stereo_binary",
+        "reference_accuracy": null,
+        "seconds": 9.21819652299746
+      },
+      "rdkit_parse_failures": [],
+      "records": 650,
+      "reference_accuracy_applicable": false,
+      "rows_changed_by_stereo_removal": 175,
+      "rows_with_rdkit_specified_stereo": 175,
+      "stereo_removed": {
+        "case_timeout_seconds": 10.0,
+        "errors": [
+          {
+            "error_type": "case_timeout",
+            "id": "RotA-0293"
+          }
+        ],
+        "evaluated_records": 649,
+        "executed": true,
+        "incomplete_cases": [
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0450"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "Atom_TrigonalBipyramidal:1",
+              "Atom_TrigonalBipyramidal:34"
+            ]
+          }
+        ],
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "max_isomers": 256,
+        "protocol": "stereo_stripped_four_state",
+        "reference_accuracy": null,
+        "row_outcomes": {
+          "configuration_dependent": 43,
+          "necessarily_achiral": 538,
+          "necessarily_chiral": 67,
+          "unsupported_or_incomplete": 1
+        },
+        "seconds": 33.23961829402833,
+        "unique_constitutions": 650
+      },
+      "task": "axial_stereo_locus_detection",
+      "task_boundary": "RotA labels axial atom-pair/chain loci in a positive-only corpus; its labels are not global chiral/achiral truth."
+    },
+    "cip_validation_suite": {
+      "benchmark_run": true,
+      "normal": {
+        "case_timeout_seconds": 10.0,
+        "errors": [],
+        "evaluated_records": 300,
+        "executed": true,
+        "input_stereo_status": {
+          "specified": 258,
+          "underspecified": 42
+        },
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "predictions": {
+          "Achiral": 125,
+          "Chiral": 175
+        },
+        "protocol": "supplied_stereo_binary",
+        "reference_accuracy": null,
+        "seconds": 1.6428724410070572
+      },
+      "rdkit_parse_failures": [],
+      "records": 300,
+      "reference_accuracy_applicable": false,
+      "source_integrity": {
+        "sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059"
+      },
+      "stereo_removed": {
+        "case_timeout_seconds": 10.0,
+        "errors": [],
+        "evaluated_records": 300,
+        "executed": true,
+        "incomplete_cases": [
+          {
+            "evaluated_isomer_count": 6,
+            "ids": [
+              "VS226"
+            ],
+            "observed_classifications": [
+              "Achiral"
+            ],
+            "theoretical_isomer_upper_bound": 1024,
+            "unsupported_stereo_loci": []
+          },
+          {
+            "evaluated_isomer_count": 256,
+            "ids": [
+              "VS265"
+            ],
+            "observed_classifications": [
+              "Chiral"
+            ],
+            "theoretical_isomer_upper_bound": 16777216,
+            "unsupported_stereo_loci": []
+          },
+          {
+            "evaluated_isomer_count": 256,
+            "ids": [
+              "VS266"
+            ],
+            "observed_classifications": [
+              "Chiral"
+            ],
+            "theoretical_isomer_upper_bound": 4194304,
+            "unsupported_stereo_loci": []
+          },
+          {
+            "evaluated_isomer_count": 256,
+            "ids": [
+              "VS268"
+            ],
+            "observed_classifications": [
+              "Chiral"
+            ],
+            "theoretical_isomer_upper_bound": 33554432,
+            "unsupported_stereo_loci": []
+          }
+        ],
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "max_isomers": 256,
+        "protocol": "stereo_stripped_four_state",
+        "reference_accuracy": null,
+        "row_outcomes": {
+          "configuration_dependent": 68,
+          "necessarily_achiral": 94,
+          "necessarily_chiral": 134,
+          "unsupported_or_incomplete": 4
+        },
+        "seconds": 23.014354176004417,
+        "unique_constitutions": 254
+      },
+      "stereo_unit_counts": {
+        "AT": 7,
+        "CT": 65,
+        "CT4": 5,
+        "HE": 2,
+        "TH": 249,
+        "TH3": 8,
+        "TH5": 2
+      },
+      "task": "local_cip_descriptor_assignment",
+      "task_boundary": "CIP annotations are local R/S/r/s/M/P/m/p/E/Z assignments, not whole-molecule chiral/achiral truth.",
+      "vendored": false
+    }
+  },
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2025.09.3"
+  },
+  "schema": "synkit.stereo-dataset-benchmark/1"
+}

@@ -85,14 +85,6 @@ from networkx.algorithms.isomorphism import generic_node_match, generic_edge_mat
 
 from synkit.Synthesis.Reactor.strategy import Strategy
 
-try:
-    from mod import ruleGMLString
-
-    _RULE_AVAILABLE = True
-except ImportError:
-    ruleGMLString = None  # type: ignore[assignment]
-    _RULE_AVAILABLE = False
-
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------
@@ -116,11 +108,17 @@ def electron_aware_node_match(
 
     - ``hcount``: host must be greater than or equal to pattern
     - ``lone_pairs``: host must be greater than or equal to pattern
-    - ``aromatic_n_pi_count``: exact aromatic-N role label when present
     ``radical`` therefore remains exact whenever the caller includes it in
     ``node_attrs``.
     """
     for attr in node_attrs:
+        # A compact coupled pi-addition rule may use a deliberately
+        # under-valenced atom (for example ``[C:1]=[C:2]``) to state only the
+        # reaction locus. RDKit represents that notation with placeholder
+        # radical electrons. They are a parser consequence, not a radical
+        # query; the reactor marks only those inferred coupling centers.
+        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+            continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
         )
@@ -147,9 +145,22 @@ def electron_aware_edge_match(
     particular ``sigma_order`` / ``pi_order`` split depends on the chosen
     Kekule form and is not stable across independently parsed graphs.
     """
+    minimum_pi = pattern_data.get("_minimum_pi_order")
+    if minimum_pi is not None:
+        # Relative pi reduction: C=C means "a bond carrying at least one pi
+        # bond" at this explicitly marked reaction locus. Thus the same
+        # chemical edit can consume C=C or C#C without weakening matching
+        # anywhere else in the pattern.
+        if host_data.get("order") == 1.5:
+            return False
+        if float(host_data.get("pi_order", 0.0)) < float(minimum_pi):
+            return False
+
     host_is_aromatic = host_data.get("order") == 1.5
     pattern_is_aromatic = pattern_data.get("order") == 1.5
     for attr in edge_attrs:
+        if minimum_pi is not None and attr in {"order", "pi_order"}:
+            continue
         if (
             attr in {"sigma_order", "pi_order"}
             and host_is_aromatic
@@ -169,6 +180,8 @@ def explain_node_mismatch(
     """Return node-level mismatch reasons using matcher semantics."""
     reasons: list[str] = []
     for attr in node_attrs:
+        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+            continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
         )
@@ -203,7 +216,6 @@ def resolve_template_match_attrs(
         "hcount",
         "lone_pairs",
         "radical",
-        "aromatic_n_pi_count",
     ):
         if any(attr in data for _, data in pattern.nodes(data=True)):
             node_attrs.append(attr)
@@ -232,70 +244,8 @@ class SubgraphMatch:
     """Boolean-only checks for graph isomorphism and subgraph (induced or
     monomorphic) matching.
 
-    Provides static methods for NetworkX-based checks and optional GML
-    "rule" backend.
+    Provides static methods for NetworkX-based checks.
     """
-
-    @staticmethod
-    def _get_edge_labels(graph: Any) -> list:
-        """Extracts the bond types (edge labels) from a given graph.
-
-        Parameters:
-        - graph: The graph object containing the edges.
-
-        Returns:
-        - list: List of edge labels as strings.
-        """
-        return [str(e.bondType) for e in graph.edges]
-
-    @staticmethod
-    def _get_node_labels(graph: Any) -> list:
-        """Extracts the atom IDs (node labels) from a given graph.
-
-        Parameters:
-        - graph: The graph object containing the vertices.
-
-        Returns:
-        - list: List of node labels as strings.
-        """
-        return [str(v.atomId) for v in graph.vertices]
-
-    @staticmethod
-    def rule_subgraph_morphism(
-        rule_1: str, rule_2: str, use_filter: bool = False
-    ) -> bool:
-        """Evaluates if two GML-formatted rule representations are isomorphic
-        or one is a subgraph of the other (monomorphic).
-
-        Parameters:
-        - rule_1 (str): GML string of the first rule.
-        - rule_2 (str): GML string of the second rule.
-        - use_filter (bool, optional): Whether to filter by node/edge labels and vertex counts.
-
-        Returns:
-        - bool: True if the monomorphism condition is met, False otherwise.
-        """
-        try:
-            rule_obj_1 = ruleGMLString(rule_1, add=False)
-            rule_obj_2 = ruleGMLString(rule_2, add=False)
-        except Exception as e:
-            raise Exception(f"Error parsing GML strings: {e}")
-
-        if use_filter:
-            if rule_obj_1.context.numVertices > rule_obj_2.context.numVertices:
-                return False
-
-            node_1_left = SubgraphMatch._get_node_labels(rule_obj_1.left)
-            node_2_left = SubgraphMatch._get_node_labels(rule_obj_2.left)
-            edge_1_left = SubgraphMatch._get_edge_labels(rule_obj_1.left)
-            edge_2_left = SubgraphMatch._get_edge_labels(rule_obj_2.left)
-
-            if not all(node in node_2_left for node in node_1_left):
-                return False
-            if not all(edge in edge_2_left for edge in edge_1_left):
-                return False
-
-        return rule_obj_1.monomorphism(rule_obj_2) == 1
 
     @staticmethod
     def subgraph_isomorphism(
@@ -379,25 +329,20 @@ class SubgraphMatch:
         check_type: str = "induced",
         backend: str = "nx",
     ) -> bool:
-        """Unified API for subgraph/isomorphism either via NX or GML
-        backend."""
-        if backend == "nx":
-            return SubgraphMatch.subgraph_isomorphism(
-                pattern,
-                host,
-                node_label_names,
-                node_label_default,
-                edge_attribute,
-                use_filter,
-                check_type,
-            )
-        if backend == "mod":
-            if not _RULE_AVAILABLE:
-                raise ImportError("GML rule backend not installed – pip install mod.")
-            return SubgraphMatch.rule_subgraph_morphism(
-                pattern, host, use_filter=use_filter
-            )
-        raise ValueError(f"Unknown backend: {backend}")
+        """Run a native NetworkX subgraph or isomorphism check."""
+        if backend != "nx":
+            raise ValueError(f"Unknown backend: {backend}")
+        if not isinstance(pattern, nx.Graph) or not isinstance(host, nx.Graph):
+            raise TypeError("NetworkX backend expects graph inputs.")
+        return SubgraphMatch.subgraph_isomorphism(
+            pattern,
+            host,
+            node_label_names,
+            node_label_default,
+            edge_attribute,
+            use_filter,
+            check_type,
+        )
 
 
 # -----------------------------------------------------------------------------
@@ -418,15 +363,15 @@ class SubgraphSearchEngine:
         host: nx.Graph,
         pattern: nx.Graph,
         node_attrs: List[str],
-        threshold: int,
     ) -> bool:
-        """Estimate if candidate-product exceeds threshold with degree pruning.
+        """Return whether a degree-aware node domain proves no embedding exists.
 
-        We refine the basic Cartesian-product by requiring each host candidate
-        to match node attributes *and* have degree ≥ the pattern node’s degree.
-        This tighter filter greatly reduces false positives (over-pruning).
+        A Cartesian product of candidate-domain sizes is only a loose upper
+        bound on the number of embeddings.  It must not be compared with the
+        result threshold: graph connectivity can reduce a very large product
+        to only a handful of valid mappings.  The enumerator itself enforces
+        ``threshold`` safely.
         """
-        estimate = 1
         # Pre-compute pattern degrees
         pat_degrees = {n: pattern.degree(n) for n in pattern.nodes()}
         for p_node, pat_data in pattern.nodes(data=True):
@@ -441,9 +386,6 @@ class SubgraphSearchEngine:
             # if no candidates; impossible match
             if count == 0:
                 return True
-            estimate *= count
-            if estimate > threshold * 1e4:  # reduce false positives
-                return True
         return False
 
     @staticmethod
@@ -456,7 +398,7 @@ class SubgraphSearchEngine:
         strategy: Union[str, Strategy] = Strategy.COMPONENT,
         max_results: Optional[int] = None,
         strict_cc_count: bool = True,
-        threshold: Optional[int] = None,
+        threshold: Optional[int] = DEFAULT_THRESHOLD,
         pre_filter: bool = False,
     ) -> List[MappingDict]:
         """Dispatch to a subgraph-matching strategy with optional guards.
@@ -475,9 +417,10 @@ class SubgraphSearchEngine:
         strict_cc_count
             If True, host CC count must ≤ pattern CC count for COMPONENT/BACKTRACK.
         threshold
-            Override the default cap (DEFAULT_THRESHOLD) on embeddings.
+            Embedding cap. Passing ``None`` disables the cap; omitting the
+            argument uses ``DEFAULT_THRESHOLD``.
         pre_filter
-            If True, run a cheap Cartesian-product pre-filter against the threshold.
+            If True, reject patterns having an empty candidate-node domain.
 
         Returns
         -------
@@ -488,12 +431,7 @@ class SubgraphSearchEngine:
         if strat is Strategy.PARTIAL:
             raise NotImplementedError("PARTIAL strategy not implemented yet.")
 
-        # determine effective threshold
-        thresh = (
-            threshold
-            if threshold is not None
-            else SubgraphSearchEngine.DEFAULT_THRESHOLD
-        )
+        thresh = threshold
 
         # defensive copies
         host = host.copy()
@@ -501,7 +439,7 @@ class SubgraphSearchEngine:
 
         # quick pre-filter
         if pre_filter and SubgraphSearchEngine._quick_pre_filter(
-            host, pattern, node_attrs, thresh
+            host, pattern, node_attrs
         ):
             return []
 
@@ -532,7 +470,7 @@ class SubgraphSearchEngine:
             )
 
         # final threshold guard
-        return [] if len(results) > thresh else results
+        return [] if thresh is not None and len(results) > thresh else results
 
     @staticmethod
     def _find_all_subgraph_mappings(
@@ -541,7 +479,7 @@ class SubgraphSearchEngine:
         node_attrs: List[str],
         edge_attrs: List[str],
         max_results: Optional[int],
-        threshold: int,
+        threshold: Optional[int],
     ) -> List[MappingDict]:
         """Classic VF2 over the whole host graph."""
 
@@ -557,7 +495,7 @@ class SubgraphSearchEngine:
             results.append({p: h for h, p in iso.items()})
             if max_results and len(results) >= max_results:
                 break
-            if len(results) > threshold:
+            if threshold is not None and len(results) > threshold:
                 return []
         return results
 
@@ -569,7 +507,7 @@ class SubgraphSearchEngine:
         edge_attrs: List[str],
         max_results: Optional[int],
         strict_cc_count: bool,
-        threshold: int,
+        threshold: Optional[int],
     ) -> List[MappingDict]:
         """Component-aware VF2 split by connected components."""
         host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
@@ -605,7 +543,7 @@ class SubgraphSearchEngine:
                     maps.append((i, {p: h for h, p in iso.items()}))
                     if max_results and len(maps) >= max_results:
                         break
-                    if len(maps) > threshold:
+                    if threshold is not None and len(maps) > threshold:
                         return []
                 if max_results and len(maps) >= max_results:
                     break
@@ -621,7 +559,7 @@ class SubgraphSearchEngine:
         def backtrack(level: int, acc: MappingDict):
             if max_results and len(results) >= max_results:
                 return
-            if len(results) > threshold:
+            if threshold is not None and len(results) > threshold:
                 return
             if level == pcc:
                 results.append(acc.copy())
@@ -637,7 +575,7 @@ class SubgraphSearchEngine:
                 used.remove(hi)
                 if max_results and len(results) >= max_results:
                     return
-                if len(results) > threshold:
+                if threshold is not None and len(results) > threshold:
                     return
 
         backtrack(0, {})
@@ -651,7 +589,7 @@ class SubgraphSearchEngine:
         edge_attrs: List[str],
         max_results: Optional[int],
         strict_cc_count: bool,
-        threshold: int,
+        threshold: Optional[int],
     ) -> List[MappingDict]:
         primary = SubgraphSearchEngine._find_component_aware_subgraph_mappings(
             host,

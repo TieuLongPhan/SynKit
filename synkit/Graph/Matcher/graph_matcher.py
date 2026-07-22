@@ -24,14 +24,6 @@ from weakref import WeakKeyDictionary
 import networkx as nx
 from networkx.algorithms.isomorphism import GraphMatcher as _NXGraphMatcher
 
-try:
-    from mod import ruleGMLString
-
-    _RULE_AVAILABLE = True
-except ImportError:
-    ruleGMLString = None  # type: ignore[assignment]
-    _RULE_AVAILABLE = False
-
 MappingDict = Dict[int, int]
 
 __all__ = ["GraphMatcherEngine", "MappingDict"]
@@ -73,9 +65,7 @@ class GraphMatcherEngine:
     Parameters
     ----------
     backend:
-        * ``"nx"`` (default) – pure‑Python implementation that relies on
-        :class:`~networkx.algorithms.isomorphism.GraphMatcher`.
-        * ``"rule"`` – optional, requires the third‑party *mod* package.
+        ``"nx"`` – the native NetworkX implementation.
     node_attrs, edge_attrs:
         Lists of attribute keys used for matching. ``hcount`` and
         ``lone_pairs`` are treated specially: the host must be **≥** the
@@ -107,8 +97,6 @@ class GraphMatcherEngine:
         self.backend = backend.lower()
         if self.backend not in self.available_backends():
             raise ValueError(f"Unsupported backend: {backend!r}")
-        if self.backend == "rule" and not _RULE_AVAILABLE:
-            raise ImportError("GML *rule* backend not installed – `pip install mod`. ")
 
         # Store attributes as *immutable* tuples so they can be hashed & used in
         # lru_cache‑decorated helpers.
@@ -129,10 +117,7 @@ class GraphMatcherEngine:
 
     @staticmethod
     def available_backends() -> List[str]:
-        backends = ["nx"]
-        if _RULE_AVAILABLE:
-            backends.append("mod")
-        return backends
+        return ["nx"]
 
     # ---------------------------------------------------------------------
     # Fast WL hash cache – we key only on the *id* of the graph instance.
@@ -194,14 +179,10 @@ class GraphMatcherEngine:
     # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
 
     def isomorphic(self, obj1: Any, obj2: Any) -> bool:
-        if self.backend == "nx":
-            return self._isomorphic_nx(obj1, obj2)
-        return self._isomorphic_rule(obj1, obj2)  # type: ignore[arg‑type]
+        return self._isomorphic_nx(obj1, obj2)
 
     def get_mappings(self, host: Any, pattern: Any) -> List[MappingDict]:
-        if self.backend == "nx":
-            return self._get_mappings_nx(host, pattern)
-        return self._get_mappings_rule(host, pattern)  # type: ignore[arg‑type]
+        return self._get_mappings_nx(host, pattern)
 
     # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
     # NetworkX backend – private helpers
@@ -292,30 +273,6 @@ class GraphMatcherEngine:
             for mapping in iso_iter
         ]
 
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
-    # Rule (GML) backend – thin wrappers around ``mod.ruleGMLString``
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
-
-    def _isomorphic_rule(
-        self, obj1: str, obj2: str
-    ) -> bool:  # noqa: D401 – imperative mood
-        if not _RULE_AVAILABLE:
-            raise ImportError("GML *rule* backend not installed.")
-        if not (isinstance(obj1, str) and isinstance(obj2, str)):
-            raise TypeError("Rule backend expects *GML strings*.")
-        r1 = ruleGMLString(obj1, add=False)  # type: ignore[operator]
-        r2 = ruleGMLString(obj2, add=False)  # type: ignore[operator]
-        return r1.isomorphism(r2) == 1
-
-    def _get_mappings_rule(self, host: str, pattern: str) -> List[MappingDict]:
-        if not _RULE_AVAILABLE:
-            raise ImportError("GML *rule* backend not installed.")
-        if not (isinstance(host, str) and isinstance(pattern, str)):
-            raise TypeError("Rule backend expects *GML strings*.")
-        r1 = ruleGMLString(host, add=False)  # type: ignore[operator]
-        r2 = ruleGMLString(pattern, add=False)  # type: ignore[operator]
-        return [{}] if r1.isomorphism(r2) == 1 else []
-
     # ------------------------------------------------------------------
     # Introspection helpers – nice‑to‑have but not critical to hot path.
     # ------------------------------------------------------------------
@@ -333,7 +290,7 @@ class GraphMatcherEngine:
     # Keep the help() method for API compatibility (slightly condensed).
     def help(self) -> str:  # noqa: D401 – imperative mood
         return (
-            "GraphMatcherEngine(backend='nx'|'rule', node_attrs=[...], edge_attrs=[...], "
+            "GraphMatcherEngine(backend='nx', node_attrs=[...], edge_attrs=[...], "
             "wl1_filter=True|False, max_mappings=N)\n"
             "Methods: isomorphic(obj1, obj2)  get_mappings(host, pattern)"
         )

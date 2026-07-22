@@ -1,49 +1,28 @@
-import os
-import subprocess
 import networkx as nx
 import matplotlib.pyplot as plt
 from typing import Union, Tuple, List
 
 from synkit.Vis.graph_visualizer import GraphVisualizer
-from synkit.IO.chem_converter import rsmi_to_graph, smart_to_gml
+from synkit.IO.chem_converter import rsmi_to_graph
 from synkit.Graph.ITS.its_construction import ITSConstruction
 from synkit.IO.gml_to_nx import GMLToNX
-from synkit.IO.nx_to_gml import NXToGML
 
 
 class RuleVis:
     def __init__(self, backend: str = "nx") -> None:
+        if backend != "nx":
+            raise ValueError("RuleVis supports only the native 'nx' backend.")
         self.backend = backend
         self.vis_graph = GraphVisualizer()
 
     def vis(self, input: Union[str, Tuple[nx.Graph, nx.Graph, nx.Graph]], **kwargs):
-        """Wrapper to select between nx_vis and mod_vis based on backend and
-        input type.
-
-        Converts input as needed.
-        """
-        if self.backend == "nx":
-            if isinstance(input, str) and (
-                input.strip().startswith("graph [") or "rule [" in input
-            ):
-                # GML string representing a rule, convert to nx.Graph (simplified as identical for L/K/R)
-                r, p, its = GMLToNX(input).transform()
-                return self.nx_vis((r, p, its), **kwargs)
-            else:
-                return self.nx_vis(input, **kwargs)
-
-        elif self.backend == "mod":
-            if isinstance(input, tuple):
-                gml_str = NXToGML().transform(*input, explicit_hydrogen=False)
-                return self.mod_vis(gml_str, **kwargs)
-            elif isinstance(input, str):
-                if input.strip().startswith("graph [") or "rule [" in input:
-                    return self.mod_vis(input, **kwargs)
-                else:
-                    r, p = rsmi_to_graph(input)
-                    its = ITSConstruction().ITSGraph(r, p)
-                    gml_str = smart_to_gml(input, core=False, sanitize=False)
-                    return self.mod_vis(gml_str, **kwargs)
+        """Visualize native graph tuples, reaction SMILES, or GML rules."""
+        if isinstance(input, str) and (
+            input.strip().startswith("graph [") or "rule [" in input
+        ):
+            r, p, its = GMLToNX(input).transform()
+            return self.nx_vis((r, p, its), **kwargs)
+        return self.nx_vis(input, **kwargs)
 
     def nx_vis(
         self,
@@ -151,27 +130,10 @@ class RuleVis:
             if was_interactive:
                 plt.ion()
 
-    def mod_vis(self, gml: str, path: str = "./") -> None:
-        """Simple MOD visualization via mod_post CLI."""
-        from mod import ruleGMLString
-
-        rule = ruleGMLString(gml, add=False)
-        os.makedirs(f"{path}out", exist_ok=True)
-        rule.print()
-        # subprocess.run(["mod_post"], check=True)
-        self.post()
-
-    def post(self) -> None:
-        """Generate an external report via the `mod_post` CLI."""
-        try:
-            subprocess.run(["mod_post"], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"mod_post failed with exit code {e.returncode}")
-
     def help(self) -> None:
         print(
             "RuleVis Usage:\n"
-            "  rv = RuleVis(backend='nx' or 'mod')\n"
+            "  rv = RuleVis(backend='nx')\n"
             "  rv.vis(input_smiles_or_gml)\n"
         )
 

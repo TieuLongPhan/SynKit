@@ -34,7 +34,13 @@ DEFAULT_NODE_ATTRS = (
     "atom_map",
 )
 
-DEFAULT_EDGE_ATTRS = ("order", "kekule_order", "sigma_order", "pi_order")
+DEFAULT_EDGE_ATTRS = (
+    "order",
+    "kekule_order",
+    "sigma_order",
+    "pi_order",
+    "aromatic",
+)
 
 logger = setup_logging()
 
@@ -308,6 +314,7 @@ def smiles_to_graph(
     use_index_as_atom_map: bool = False,
     node_attrs: Optional[Sequence[str]] = None,
     edge_attrs: Optional[Sequence[str]] = None,
+    include_stereo_descriptors: bool = True,
 ) -> Optional[nx.Graph]:
     """
     Convert a SMILES string to a molecular graph.
@@ -325,6 +332,9 @@ def smiles_to_graph(
     :type node_attrs: Optional[Sequence[str]]
     :param edge_attrs: Edge attributes to export into the graph.
     :type edge_attrs: Optional[Sequence[str]]
+    :param include_stereo_descriptors: Whether to construct the graph-level
+        relative-stereochemistry registry.
+    :type include_stereo_descriptors: bool
     :return: Molecular graph or ``None`` on failure.
     :rtype: Optional[nx.Graph]
     """
@@ -353,6 +363,7 @@ def smiles_to_graph(
         graph = MolToGraph(
             node_attrs=resolved_node_attrs,
             edge_attrs=resolved_edge_attrs,
+            include_stereo_descriptors=include_stereo_descriptors,
         ).transform(
             mol,
             drop_non_aam=drop_non_aam,
@@ -380,6 +391,7 @@ def rsmi_to_graph(
     use_index_as_atom_map: bool = True,
     node_attrs: Optional[Sequence[str]] = None,
     edge_attrs: Optional[Sequence[str]] = None,
+    include_stereo_descriptors: bool = True,
 ) -> tuple[Optional[nx.Graph], Optional[nx.Graph]]:
     """
     Convert a reaction SMILES into reactant and product graphs.
@@ -397,6 +409,9 @@ def rsmi_to_graph(
     :type node_attrs: Optional[Sequence[str]]
     :param edge_attrs: Edge attributes to export into the graphs.
     :type edge_attrs: Optional[Sequence[str]]
+    :param include_stereo_descriptors: Whether to construct graph-level
+        relative-stereochemistry registries.
+    :type include_stereo_descriptors: bool
     :return: Tuple of reactant and product graphs.
     :rtype: tuple[Optional[nx.Graph], Optional[nx.Graph]]
     """
@@ -418,6 +433,7 @@ def rsmi_to_graph(
         use_index_as_atom_map=use_index_as_atom_map,
         node_attrs=resolved_node_attrs,
         edge_attrs=resolved_edge_attrs,
+        include_stereo_descriptors=include_stereo_descriptors,
     )
     product_graph = smiles_to_graph(
         smiles=products_smiles,
@@ -426,6 +442,7 @@ def rsmi_to_graph(
         use_index_as_atom_map=use_index_as_atom_map,
         node_attrs=resolved_node_attrs,
         edge_attrs=resolved_edge_attrs,
+        include_stereo_descriptors=include_stereo_descriptors,
     )
     return reactant_graph, product_graph
 
@@ -434,6 +451,7 @@ def graph_to_smi(
     graph: nx.Graph,
     sanitize: bool = True,
     preserve_atom_maps: Optional[Sequence[int]] = None,
+    prefer_kekule_order: bool = True,
 ) -> Optional[str]:
     """
     Convert a molecular graph to a SMILES string.
@@ -445,6 +463,9 @@ def graph_to_smi(
     :param preserve_atom_maps: Atom-map numbers whose hydrogens should
         remain explicit.
     :type preserve_atom_maps: Optional[Sequence[int]]
+    :param prefer_kekule_order: Whether retained Kekule/sigma-pi edge fields
+        should take precedence over aromatic presentation order.
+    :type prefer_kekule_order: bool
     :return: SMILES string or ``None`` on failure.
     :rtype: Optional[str]
     """
@@ -455,6 +476,7 @@ def graph_to_smi(
                 graph,
                 sanitize=sanitize,
                 use_h_count=True,
+                prefer_kekule_order=prefer_kekule_order,
             )
         else:
             from synkit.Graph.Hyrogen._misc import implicit_hydrogen
@@ -464,6 +486,7 @@ def graph_to_smi(
                 graph_imp,
                 sanitize=sanitize,
                 use_h_count=True,
+                prefer_kekule_order=prefer_kekule_order,
             )
 
         if mol is None:
@@ -480,6 +503,7 @@ def graph_to_rsmi(
     its: Optional[nx.Graph] = None,
     sanitize: bool = True,
     explicit_hydrogen: bool = False,
+    preserve_hydrogen_maps: Optional[Sequence[int]] = None,
 ) -> Optional[str]:
     """Convert reactant and product graphs into a reaction SMILES string.
 
@@ -495,6 +519,10 @@ def graph_to_rsmi(
     :param explicit_hydrogen: Whether to preserve explicit hydrogens in
         the SMILES.
     :type explicit_hydrogen: bool
+    :param preserve_hydrogen_maps: Precomputed atom maps of reaction-centre
+        hydrogens that must remain explicit. When omitted, derive them from
+        ``its`` for backward compatibility.
+    :type preserve_hydrogen_maps: Optional[Sequence[int]]
     :returns: Reaction SMILES string in 'reactants>>products' format or
         None on failure.
     :rtype: str or None
@@ -504,12 +532,17 @@ def graph_to_rsmi(
             r_smiles = graph_to_smi(r, sanitize=sanitize)
             p_smiles = graph_to_smi(p, sanitize=sanitize)
         else:
-            if its is None:
-                its = ITSConstruction().ITSGraph(r, p)
-            rc = get_rc(its)
-            list_hydrogen = [
-                d["atom_map"] for _, d in rc.nodes(data=True) if d.get("element") == "H"
-            ]
+            if preserve_hydrogen_maps is None:
+                if its is None:
+                    its = ITSConstruction().ITSGraph(r, p)
+                rc = get_rc(its)
+                list_hydrogen = [
+                    d["atom_map"]
+                    for _, d in rc.nodes(data=True)
+                    if d.get("element") == "H"
+                ]
+            else:
+                list_hydrogen = list(preserve_hydrogen_maps)
             r_smiles = graph_to_smi(
                 r,
                 sanitize=sanitize,

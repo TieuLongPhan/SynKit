@@ -1,7 +1,9 @@
 import unittest
 import networkx as nx
+import pytest
 from synkit.IO.chem_converter import rsmi_to_its
-from synkit.Rule.syn_rule import SynRule
+from synkit.Graph.Stereo import StereoChange, TetrahedralStereo
+from synkit.Rule import NonInvertibleStereoEffectError, SynRule
 from synkit.Graph.canon_graph import GraphCanonicaliser
 
 
@@ -93,6 +95,134 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         self.assertIn("rc=(|V|=", r)
         self.assertIn("left=(|V|=", r)
         self.assertIn("right=(|V|=", r)
+        self.assertIn("stereo=none", r)
+
+    def test_repr_summarizes_stereo_semantics(self):
+        sn2 = SynRule.from_smart(
+            "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>"
+            "[CH3:1][C@@H:2]([F:3])[OH:5].[Cl-:4]",
+            name="sn2-inversion",
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+        )
+        self.assertIn(
+            "stereo=(guards={atom:1},effects={INVERTED:1})",
+            repr(sn2),
+        )
+        self.assertEqual(
+            sn2.stereo_summary(),
+            {
+                "atom:2": {
+                    "descriptor": "tetrahedral",
+                    "change": "INVERTED",
+                    "relation": {
+                        "kind": "opposite",
+                        "alignment": {
+                            "status": "inferred",
+                            "mapping": [[4, 5]],
+                            "removed": [4],
+                            "added": [5],
+                        },
+                        "relation": {
+                            "kind": "opposite",
+                            "shape": "tetrahedral",
+                            "class_id": [0, 1, 2, 4, 3],
+                            "witness": [0, 2, 1, 3, 4],
+                        },
+                    },
+                    "reactant": {
+                        "atoms": [2, 1, 3, 4, "@H:2"],
+                        "parity": -1,
+                    },
+                    "product": {
+                        "atoms": [2, 1, 3, 5, "@H:2"],
+                        "parity": 1,
+                    },
+                    "reference_delta": {"removed": [4], "added": [5]},
+                }
+            },
+        )
+
+        racemic = SynRule.from_smart(
+            "[CH3:1][CH+:2][F:3].[OH-:4]>>" "[CH3:1][C@H:2]([F:3])[OH:4]",
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+            stereo_outcomes={"atom:2": "RACEMIC"},
+        )
+        self.assertIn(
+            "stereo=(guards=0,effects={FORMED:1},outcomes={RACEMIC:1})",
+            repr(racemic),
+        )
+        self.assertEqual(
+            racemic.stereo_summary()["atom:2"]["outcome"],
+            {"kind": "RACEMIC", "weights": [0.5, 0.5]},
+        )
+        self.assertIn("queries={either:1}", repr(racemic.reversed()))
+
+    def test_syn_anti_coupling_replaces_encoded_endpoint_stereo(self):
+        semihydrogenation = (
+            "[CH3:1][C:2]#[C:3][CH3:4].[H:5][H:6]>>"
+            "[CH3:1][C:2]([H:5])=[C:3]([H:6])[CH3:4]"
+        )
+
+        def coupling(relation):
+            return {"bond:2-3": relation}
+
+        syn = SynRule.from_smart(
+            semihydrogenation,
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+            stereo_couplings=coupling("syn"),
+        )
+        anti = SynRule.from_smart(
+            semihydrogenation,
+            canon=False,
+            implicit_h=False,
+            format="tuple",
+            stereo_couplings=coupling("anti"),
+        )
+
+        self.assertEqual(
+            syn.stereo_summary()["bond:2-3"]["coupling"],
+            {
+                "kind": "VICINAL_ADDITION",
+                "relation": "SYN",
+                "centers": [2, 3],
+                "ligands": [5, 6],
+            },
+        )
+        self.assertEqual(
+            anti.stereo_summary()["bond:2-3"]["coupling"]["relation"],
+            "ANTI",
+        )
+        self.assertEqual(syn.stereo_effects, {})
+        self.assertEqual(anti.stereo_effects, {})
+        self.assertEqual(
+            anti.rc.raw.graph["stereo_couplings"],
+            {"bond:2-3": "ANTI"},
+        )
+        self.assertNotEqual(syn, anti)
+        self.assertIn("couplings={SYN:1}", repr(syn))
+        self.assertEqual(
+            syn.reversed().stereo_couplings["bond:2-3"].kind,
+            "VICINAL_ELIMINATION",
+        )
+
+        encoded_endpoint = (
+            "[CH3:1][C:2]#[C:3][CH3:4].[H:5][H:6]>>"
+            "[CH3:1]/[C:2]([H:5])=[C:3](/[H:6])[CH3:4]"
+        )
+        with self.assertRaisesRegex(ValueError, "derives endpoint stereo"):
+            SynRule.from_smart(
+                encoded_endpoint,
+                canon=False,
+                implicit_h=False,
+                format="tuple",
+                stereo_couplings=coupling("syn"),
+            )
 
     def test_tuple_rule_preserves_tuple_representation(self):
         smart = "[CH3:1][CH3:2]>>[CH2:1]=[CH2:2]"
@@ -130,6 +260,57 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
         self.assertEqual(rule.rc.raw.nodes[3]["hcount"], (2, 1))
         self.assertTrue(rule.rc.raw.nodes[2]["h_pairs"])
         self.assertTrue(rule.rc.raw.nodes[3]["h_pairs"])
+
+
+def test_unspecified_rule_refuses_reverse_before_mutation():
+    its = rsmi_to_its("[CH3:1][Cl:2]>>[CH3:1][Cl:2]", format="tuple")
+    before = TetrahedralStereo((1, 2, 3, 4, 5), 1)
+    after = TetrahedralStereo((1, 2, 3, 4, 5), None)
+    its.graph["stereo_descriptors"] = {
+        "reactant": {"atom:1": before},
+        "product": {"atom:1": after},
+    }
+    its.graph["stereo_changes"] = {"atom:1": StereoChange("UNSPECIFIED", before, after)}
+    rule = SynRule(its, canon=False, implicit_h=False, format="tuple")
+    original_summary = rule.stereo_summary()
+
+    assert rule.is_stereo_reversible is False
+    assert rule.non_invertible_stereo_targets() == ("atom:1",)
+    for _ in range(2):
+        with pytest.raises(NonInvertibleStereoEffectError) as excinfo:
+            rule.reversed()
+        assert excinfo.value.reason == "non_reversible_unspecified_descriptor"
+        assert excinfo.value.targets == ("atom:1",)
+    assert rule.stereo_summary() == original_summary
+
+
+def _typed_wildcard_rule(elements):
+    its = rsmi_to_its(
+        "[*:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>" "[*:1][C@@H:2]([F:3])[OH:5].[Cl-:4]",
+        format="tuple",
+        drop_non_aam=False,
+        use_index_as_atom_map=True,
+    )
+    its.nodes[1].update(
+        wildcard_role="stereo_ligand_port",
+        owner=2,
+        stereo_slot=1,
+        elements=set(elements),
+    )
+    return SynRule(its, implicit_h=False, format="tuple")
+
+
+def test_typed_wildcard_contract_participates_in_rule_identity_and_hashing():
+    carbon = _typed_wildcard_rule({"C"})
+    same = _typed_wildcard_rule({"C"})
+    xenon = _typed_wildcard_rule({"Xe"})
+
+    assert carbon == same
+    assert hash(carbon) == hash(same)
+    assert carbon != xenon
+    assert hash(carbon) != hash(xenon)
+    assert carbon.left.raw.nodes[1]["wildcard_role"] == "stereo_ligand_port"
+    assert carbon.left.raw.nodes[1]["elements"] == {"C"}
 
 
 if __name__ == "__main__":

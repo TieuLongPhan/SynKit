@@ -1,0 +1,59 @@
+{
+  "schema": "SynKit-StereoMolGraph-graph-isomorphism-conformance-v1",
+  "generated": "2026-07-16",
+  "runner": "tools/stereo_conformance.py",
+  "oracle": "StereoMolGraph",
+  "expected_commit": "2189f610f23eaaf992e2e01a12ea4d0532496601",
+  "observed_commit": "2189f610f23eaaf992e2e01a12ea4d0532496601",
+  "commit_status": "PASS",
+  "fixture_contract": "For each class, compare a map-relabel-equivalent graph and an exact-topology graph carrying a distinct relative orientation. Unique atom types force the structural correspondence so the result isolates descriptor semantics.",
+  "checks": {
+    "tetrahedral": {
+      "synkit": [true, false],
+      "stereomolgraph": [true, false],
+      "status": "PASS"
+    },
+    "square_planar": {
+      "synkit": [true, false],
+      "stereomolgraph": [true, false],
+      "status": "PASS"
+    },
+    "trigonal_bipyramidal": {
+      "synkit": [true, false],
+      "stereomolgraph": [true, false],
+      "status": "PASS"
+    },
+    "octahedral": {
+      "synkit": [true, false],
+      "stereomolgraph": [true, false],
+      "status": "PASS"
+    },
+    "planar_bond": {
+      "synkit": [true, false],
+      "stereomolgraph": [true, false],
+      "status": "PASS"
+    },
+    "atrop_bond": {
+      "synkit": [true, false],
+      "stereomolgraph": [true, false],
+      "status": "PASS"
+    }
+  },
+  "descriptor_matrix_status": "PASS",
+  "classified_differences": [
+    {
+      "feature": "unknown-versus-specified descriptor equality",
+      "stereomolgraph": "parity=None participates as a wildcard in descriptor equality",
+      "synkit": "unknown is a distinct stored state; wildcard behavior is selected explicitly by the rule query policy",
+      "classification": "intentional rule-query semantic boundary"
+    }
+  ],
+  "deferred": [
+    "rigid_bond_33",
+    "rigid_bond_23",
+    "rigid_bond_13",
+    "rigid_bond_12",
+    "coordinate_inference"
+  ],
+  "status": "PASS"
+}

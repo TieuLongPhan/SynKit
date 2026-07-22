@@ -34,6 +34,8 @@ from .utils import median_bond_length, tget
 def _transition_label(transition: Any) -> Optional[str]:
     """Return the most specific action label available for display."""
     data = tget(transition, "data", {}) or {}
+    if isinstance(data, dict) and data.get("internal_kind"):
+        return str(data["internal_kind"])
     if isinstance(data, dict) and data.get("typed_kind"):
         return str(data["typed_kind"])
     kind = tget(transition, "kind")
@@ -58,7 +60,7 @@ def _endpoint_label(component: str, atoms: Tuple[int, ...]) -> str:
     """Format one endpoint in atom-map space."""
     clean = component.rstrip("+-") or "B"
     atom_text = "-".join(str(x) for x in atoms)
-    if clean in {"LP", "H"}:
+    if clean in {"LP", "lp", "∙", "H"}:
         return f"{clean} {atom_text}"
     return f"{clean} {atom_text}"
 

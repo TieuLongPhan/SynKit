@@ -11,13 +11,33 @@
 [![Dependency PRs](https://img.shields.io/github/issues-pr-raw/tieulongphan/synkit?label=dependency%20PRs)](https://github.com/tieulongphan/synkit/pulls?q=is%3Apr+label%3Adependencies)
 [![Stars](https://img.shields.io/github/stars/tieulongphan/synkit.svg?style=social&label=Star)](https://github.com/tieulongphan/synkit/stargazers)
 
-**Toolkit for Synthesis Planning**
+**Graph-native reaction informatics and supplied-mechanism verification**
 
-SynKit is a collection of tools designed to support the planning and execution of chemical synthesis. Check out the [documentation](https://tieulongphan.github.io/SynKit/) for a comprehensive description of its features.
+SynKit represents mapped reactions, Lewis-labelled graphs (LLGs), transformation rules,
+and explicitly supplied electron-flow mechanisms. Version 1.6.0 introduces
+resource-aware Lewis graph states and a locus-sorted arrow-pushing grammar for
+curved arrows and coupled fishhooks. It validates supplied annotations; it does
+not predict the chemically preferred mechanism.
 
 ![SynKit](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit.png)
 
-Our tools are tailored to assist researchers and chemists in navigating complex chemical reactions and synthesis pathways, leveraging the power of modern computational chemistry. Whether you're designing novel compounds or optimizing existing processes, ``synkit`` aims to provide the critical tools you need.
+### Mechanism verification quick start
+
+```python
+from synkit.Mechanism import MechanismRecord
+
+mechanism = MechanismRecord.from_ef_smirks(text)
+certificate = mechanism.verify(electron="strict")
+trajectory = mechanism.to_mtg()
+mechanism.draw(certificate=certificate, path="mechanism.svg")
+mechanism.to_json("mechanism.json")
+```
+
+Canonical internal electron loci are `lp`, `σ`, `π`, and `∙`; adapters accept
+documented ASCII and legacy spellings. Curved arrows carry two electrons and
+fishhooks carry one electron. Coupled radical events commit atomically.
+
+The current package version is `1.6.0`.
 
 For more details on each utility within the repository, please refer to the documentation provided in the respective folders.
 
@@ -103,7 +123,7 @@ git pull
    Before finalizing your feature, run the following commands to ensure your code meets our formatting standards and passes all tests:
 
    ```bash
-   ./lint.sh # Check code format
+   ./lint.sh # Check lint and the 1,000-line Python-file limit
    pytest Test # Run tests
    ```
 

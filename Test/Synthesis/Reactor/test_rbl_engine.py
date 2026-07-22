@@ -2,6 +2,7 @@ import unittest
 
 from synkit.IO import its_to_rsmi, rsmi_to_its
 from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+from synkit.Synthesis.Reactor.fusion_validation import validate_fusion_rsmi
 
 
 class TestRBLEngineExamples(unittest.TestCase):
@@ -50,6 +51,9 @@ class TestRBLEngineExamples(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertTrue(all(">>" in candidate for candidate in result))
+        self.assertTrue(
+            all(validate_fusion_rsmi(candidate).valid for candidate in result)
+        )
 
     def test_example2(self) -> None:
         """
@@ -64,6 +68,9 @@ class TestRBLEngineExamples(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertTrue(all(">>" in candidate for candidate in result))
+        self.assertTrue(
+            all(validate_fusion_rsmi(candidate).valid for candidate in result)
+        )
 
 
 class DummyQuickCheckRBLEngine(RBLEngine):
@@ -83,8 +90,8 @@ class DummyQuickCheckRBLEngine(RBLEngine):
     ) -> str | None:
         # Only pretend to succeed for a specific marker reaction so
         # the behaviour is well-defined in the test.
-        if rsmi == "A>>B":
-            return "A*>>B*"
+        if rsmi == "[CH3:1]>>[CH3:1]":
+            return "[CH3:1]>>[CH3:1]"
         return None
 
 
@@ -116,7 +123,8 @@ class TestRBLEngineAPI(unittest.TestCase):
         )
 
         self.assertEqual(
-            set(engine.diagnostics), {"forward", "backward", "quick_check"}
+            set(engine.diagnostics),
+            {"forward", "backward", "quick_check", "fusion"},
         )
         self.assertTrue(engine.diagnostics["forward"])
         self.assertTrue(engine.diagnostics["backward"])
@@ -133,9 +141,9 @@ class TestRBLEngineAPI(unittest.TestCase):
         """
         engine = DummyQuickCheckRBLEngine(early_stop=True)
 
-        engine.process("A>>B", "[C:1]>>[C:1]")
+        engine.process("[CH3:1]>>[CH3:1]", "[C:1]>>[C:1]")
 
-        self.assertEqual(engine.fused_rsmis, ["A*>>B*"])
+        self.assertEqual(engine.fused_rsmis, ["[CH3:1]>>[CH3:1]"])
         self.assertEqual(engine.fused_its, [])
 
 
