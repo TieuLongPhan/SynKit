@@ -46,6 +46,8 @@ Data/Study/CRN/case_formose/*
 synkit/Graph/dev/*
 *.ipynb
 *.json
+!Data/Schema/
+!Data/Schema/attribute_propagation_v1_5.json
 !/tools/python_file_size_baseline.json
 !Data/Mech/polar.json
 !Data/Mech/radical.json
