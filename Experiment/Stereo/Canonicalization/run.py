@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
 from Experiment.Stereo.datasets import (  # noqa: E402
     load_cip,
 )
-from Experiment.Stereo.Canonicalization.internal import (  # noqa: E402
+from Experiment.Stereo.Canonicalization.global_local import (  # noqa: E402
     _case_time_limit,
     _fixture_catalog,
 )
@@ -41,7 +41,7 @@ from Experiment.Stereo.Canonicalization.local_permutations import (  # noqa: E40
     all_local_arrangements,
     same_configuration_representations,
 )
-from Experiment.Stereo.acs_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.Chirality.published import (  # noqa: E402
     DATASET as ACS_DATASET,
     load_dataset,
 )
@@ -70,7 +70,7 @@ from synkit.Chem.Molecule.stereo_perception import (  # noqa: E402
     detect_potential_stereo_elements,
 )
 
-CANON_DATA_ROOT = ROOT / "Experiment" / "Stereo" / "Data" / "Canon"
+CANON_DATA_ROOT = ROOT / "Experiment" / "Stereo" / "Data" / "Canonicalization"
 _TASKS = ("internal", "acs", "cip")
 _TABLE_FIELDS = (
     "source",

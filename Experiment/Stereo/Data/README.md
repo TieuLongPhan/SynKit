@@ -5,6 +5,15 @@ preserving their different scientific tasks and license boundaries. Datasets
 must not be pooled into one accuracy number merely because they contain
 stereochemistry.
 
+Generated and retained evidence is grouped by task:
+
+```text
+Canonicalization/  local, global-by-local, and multi-element reports
+Chirality/         exact mirror and stereoisomer-relation reports
+Perception/        CIP label, carrier, and axial-locus reports
+Diagnostics/       historical or task-mismatched backend comparisons
+```
+
 ## Registered datasets
 
 | Dataset | Records | Actual task | Vendored | License |
@@ -42,7 +51,7 @@ incomplete and 81 timeout outcomes. This audit must not be conflated with the
 ACS-specialized topology-completion classifier's 258/258 result.
 
 Multi-element composition is frozen separately in
-`Canon/multi_element_canonicalization_report.json`. Six designed two- and
+`Canonicalization/multi_element_canonicalization_report.json`. Six designed two- and
 three-element graphs exhaust 32 binary local assignments, which quotient to 31
 global classes: 13 enantiomer pairs, 64 diastereomer pairs, and five
 mirror-fixed classes. All class mirrors close, and six representative
@@ -96,7 +105,7 @@ aggregates and case identifiers, not redistributed structures.
 
 ## Historical live three-backend comparison
 
-`backend_comparison_report.json` compares SynKit, the publisher's live RDKit-
+`Diagnostics/backend_comparison_report.json` compares SynKit, the publisher's live RDKit-
 SMILES procedure, and live StereoMolGraph revision
 `2189f610f23eaaf992e2e01a12ea4d0532496601`. All 1,208 inputs completed in
 both supplied-stereo and stereo-removed settings for all three backends with no

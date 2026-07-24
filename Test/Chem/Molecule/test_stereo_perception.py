@@ -1,11 +1,13 @@
 """Sprint 34 stereo-element perception boundary."""
 
+import networkx as nx
 import pytest
 from rdkit import Chem
 
 from synkit.Chem.Molecule.stereo_perception import (
     LocalNeighborKey,
     PotentialStereoElement,
+    StereoCarrierStatus,
     StereoConfigurationState,
     StereoElementType,
     TetrahedralConstitutionStatus,
@@ -19,9 +21,13 @@ from synkit.Chem.Molecule.stereo_perception import (
     perceive_tetrahedral_stereo,
     tetrahedral_local_neighbor_keys,
 )
+from synkit.Chem.Molecule._stereo_orientation_constraints import (
+    tetrahedral_stabilizer_result,
+)
 from synkit.Graph.Stereo import (
     AtomStereoSupport,
     AxisStereoSupport,
+    PathStereoSupport,
     TetrahedralStereo,
     virtual_reference,
 )
@@ -59,12 +65,68 @@ def test_perception_partitions_atom_bond_and_axis_supports() -> None:
     )
 
 
+def test_isotope_distinguished_alkene_is_detected_without_configuration(
+) -> None:
+    elements = detect_potential_stereo_elements(_molecule("CC=C[2H]"))
+
+    double_bonds = [
+        element
+        for element in elements
+        if element.element_type is StereoElementType.DOUBLE_BOND
+    ]
+    assert len(double_bonds) == 1
+    assert double_bonds[0].support.endpoints == (1, 2)
+    assert (
+        double_bonds[0].configuration_state
+        is StereoConfigurationState.UNSPECIFIED
+    )
+
+
+@pytest.mark.parametrize(
+    ("smiles", "center", "has_lone_pair"),
+    (
+        ("CS(=O)CC", 1, True),
+        ("CP(C1=CC=CC=C1)CCC", 1, True),
+        ("CC(C)OP(C)(F)=O", 4, False),
+        ("N(C)(CC)CCC", 0, True),
+    ),
+)
+def test_heteroatom_tetrahedral_carriers_use_constitution_only(
+    smiles: str,
+    center: int,
+    has_lone_pair: bool,
+) -> None:
+    element = next(
+        item
+        for item in detect_potential_stereo_elements(_molecule(smiles))
+        if item.element_type is StereoElementType.TETRAHEDRAL
+        and item.support.center == center
+    )
+
+    assert element.configuration_state is StereoConfigurationState.UNSPECIFIED
+    assert element.constitutional_evidence is not None
+    frame = element.constitutional_evidence.canonical_frame
+    assert frame is not None
+    assert (virtual_reference("LP", center) in frame) is has_lone_pair
+
+
 def test_cumulene_bonds_are_not_independent_double_bond_elements() -> None:
     elements = detect_potential_stereo_elements(_molecule("ClC=C=CCl"))
 
     assert tuple(element.identifier for element in elements) == ("cumulene_axis:1-2-3",)
     assert isinstance(elements[0].support, AxisStereoSupport)
     assert elements[0].configuration_state is StereoConfigurationState.UNSPECIFIED
+    assert elements[0].carrier_status is StereoCarrierStatus.CONFIRMED
+
+
+def test_symmetric_cumulene_remains_a_typed_broad_candidate() -> None:
+    elements = detect_potential_stereo_elements(_molecule("FC(F)=C=C(Br)I"))
+
+    assert tuple(element.identifier for element in elements) == (
+        "cumulene_axis:1-3-4",
+    )
+    assert elements[0].carrier_status is StereoCarrierStatus.SYMMETRY_RELATED
+    assert elements[0].carrier_reason == "duplicate_terminal_ligands"
 
 
 def test_odd_cumulene_is_one_extended_cis_trans_path() -> None:
@@ -77,6 +139,28 @@ def test_odd_cumulene_is_one_extended_cis_trans_path() -> None:
     assert isinstance(elements[0].support, AxisStereoSupport)
     assert elements[0].support.path == (1, 2, 3, 4)
     assert elements[0].configuration_state is StereoConfigurationState.UNSPECIFIED
+    assert elements[0].carrier_status is StereoCarrierStatus.CONFIRMED
+
+
+def test_symmetric_extended_cis_trans_remains_a_typed_broad_candidate() -> None:
+    elements = detect_potential_stereo_elements(_molecule("FC(F)=C=C=C(Br)I"))
+
+    assert tuple(element.identifier for element in elements) == (
+        "extended_cis_trans:1-3-4-5",
+    )
+    assert elements[0].carrier_status is StereoCarrierStatus.SYMMETRY_RELATED
+    assert elements[0].carrier_reason == "duplicate_terminal_ligands"
+
+
+def test_symmetric_biaryl_remains_a_typed_broad_candidate() -> None:
+    elements = detect_potential_stereo_elements(
+        _molecule("c1ccccc1-c1ccccc1")
+    )
+
+    assert len(elements) == 1
+    assert elements[0].element_type is StereoElementType.ATROP_AXIS
+    assert elements[0].carrier_status is StereoCarrierStatus.SYMMETRY_RELATED
+    assert elements[0].carrier_reason == "symmetry_related_terminal_paths"
 
 
 def test_input_configuration_state_is_evidence_not_a_derived_label() -> None:
@@ -126,6 +210,32 @@ def test_bare_helical_connectivity_does_not_invent_a_path_configuration() -> Non
     elements = detect_potential_stereo_elements(_molecule("c1ccc2cc3ccccc3cc2c1"))
 
     assert all(element.element_type.value != "helical" for element in elements)
+
+
+def test_angular_five_ring_helicene_is_a_configuration_free_path_carrier(
+) -> None:
+    molecule = _molecule("c1ccc2c(c1)ccc1ccc3ccc4ccccc4c3c12")
+
+    helices = [
+        element
+        for element in detect_potential_stereo_elements(molecule)
+        if element.element_type is StereoElementType.HELICAL
+    ]
+
+    assert len(helices) == 1
+    assert isinstance(helices[0].support, PathStereoSupport)
+    assert len(helices[0].support.path) == 6
+    assert helices[0].configuration_state is StereoConfigurationState.UNSPECIFIED
+    assert helices[0].carrier_status is StereoCarrierStatus.CONFIRMED
+
+
+def test_linear_five_ring_acene_is_not_a_helical_path_carrier() -> None:
+    molecule = _molecule("c1ccc2cc3cc4cc5ccccc5cc4cc3cc2c1")
+
+    assert all(
+        element.element_type is not StereoElementType.HELICAL
+        for element in detect_potential_stereo_elements(molecule)
+    )
 
 
 def test_broad_carrier_detection_precedes_stereogenicity_detection() -> None:
@@ -336,7 +446,7 @@ def test_integrated_perception_configuration_survives_atom_renumbering() -> None
     )
 
 
-def test_fixed_point_resolves_center_with_opposite_configured_ligands() -> None:
+def test_oriented_neighbor_frames_resolve_opposite_configured_ligands() -> None:
     molecule = _molecule("F[C@](Cl)([C@H](Br)I)[C@@H](Br)I")
 
     primary = {
@@ -348,8 +458,10 @@ def test_fixed_point_resolves_center_with_opposite_configured_ligands() -> None:
     assert primary[1].status is TetrahedralConstitutionStatus.SYMMETRY_RELATED
     assert resolved[1].status is TetrahedralConstitutionStatus.STEREO_DEPENDENT_DISTINCT
     assert resolved[1].dependency_depth == 1
-    assert resolved[1].has_canonical_frame
+    assert not resolved[1].has_canonical_frame
+    assert resolved[1].frame_status is TetrahedralFrameStatus.ORIENTATION_ORBIT
     assert perception.dependency_iterations == 1
+    assert not perception.stereo_markers
     assert {item.support.center for item in perception.elements} == {1, 3, 6}
 
 
@@ -362,6 +474,75 @@ def test_equal_configured_ligands_remain_symmetry_related() -> None:
     assert evidence[1].status is TetrahedralConstitutionStatus.SYMMETRY_RELATED
     assert evidence[1].canonical_frame is None
     assert {item.support.center for item in perception.elements} == {3, 6}
+
+
+def test_planar_neighbor_orientations_distinguish_tetrahedral_ligands() -> None:
+    molecule = _molecule("FC(Cl)(C/C=C/C)C/C=C\\C")
+    neutral = Chem.Mol(molecule)
+    Chem.RemoveStereochemistry(neutral)
+
+    configured_centers = {
+        item.support.center
+        for item in detect_potential_stereo_elements(molecule)
+        if item.element_type is StereoElementType.TETRAHEDRAL
+    }
+    neutral_centers = {
+        item.support.center
+        for item in detect_potential_stereo_elements(neutral)
+        if item.element_type is StereoElementType.TETRAHEDRAL
+    }
+
+    assert 1 in configured_centers
+    assert 1 not in neutral_centers
+
+
+def _formal_tetrahedral_stabilizer_graph(
+    *,
+    preserve_even_matchings: bool,
+) -> nx.Graph:
+    graph = nx.Graph()
+    graph.add_node(0, atomic_number=6, stereo_anchor=True)
+    for neighbor in range(1, 5):
+        graph.add_node(neighbor, atomic_number=6, stereo_anchor=False)
+        graph.add_edge(0, neighbor, bond_type="single", aromatic=False)
+    if preserve_even_matchings:
+        matchings = (
+            ("a", ((1, 2), (3, 4))),
+            ("b", ((1, 3), (2, 4))),
+            ("c", ((1, 4), (2, 3))),
+        )
+        for bond_type, edges in matchings:
+            for left, right in edges:
+                graph.add_edge(
+                    left,
+                    right,
+                    bond_type=bond_type,
+                    aromatic=False,
+                )
+    return graph
+
+
+def test_center_stabilizer_parity_not_four_singleton_orbits_is_criterion(
+) -> None:
+    references = (1, 2, 3, 4)
+
+    even_only = tetrahedral_stabilizer_result(
+        _formal_tetrahedral_stabilizer_graph(
+            preserve_even_matchings=True,
+        ),
+        references,
+    )
+    unrestricted = tetrahedral_stabilizer_result(
+        _formal_tetrahedral_stabilizer_graph(
+            preserve_even_matchings=False,
+        ),
+        references,
+    )
+
+    assert even_only.is_stereogenic
+    assert even_only.odd_permutation_witness is None
+    assert not unrestricted.is_stereogenic
+    assert unrestricted.odd_permutation_witness is not None
 
 
 def test_focal_configuration_cannot_construct_its_own_frame() -> None:
@@ -401,9 +582,10 @@ def test_dependent_frame_ignores_focal_inversion_and_cip_properties() -> None:
         first_center.constitutional_evidence.canonical_frame
         == inverted_center.constitutional_evidence.canonical_frame
     )
-    assert first_center.configuration is not None
-    assert inverted_center.configuration is not None
-    assert first_center.configuration.parity == -inverted_center.configuration.parity
+    assert first_center.configuration is None
+    assert inverted_center.configuration is None
+    assert first_center.configuration_state is StereoConfigurationState.SPECIFIED
+    assert inverted_center.configuration_state is StereoConfigurationState.SPECIFIED
 
 
 def test_dependent_fixed_point_survives_atom_renumbering() -> None:
@@ -419,8 +601,10 @@ def test_dependent_fixed_point_survives_atom_renumbering() -> None:
     assert original.dependency_iterations == transported.dependency_iterations
     for element in original.elements:
         other = transported_elements[mapping[element.support.center]]
-        assert element.configuration is not None
-        assert other.configuration == element.configuration.relabel(mapping)
+        if element.configuration is None:
+            assert other.configuration is None
+        else:
+            assert other.configuration == element.configuration.relabel(mapping)
         assert other.constitutional_evidence is not None
         assert (
             other.constitutional_evidence.dependency_depth

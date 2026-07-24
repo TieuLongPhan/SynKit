@@ -224,6 +224,40 @@ def test_mechanism_envelope_accepts_extended_descriptor_classes():
     assert [StereoDescriptor.from_dict(value.to_dict()) for value in values] == values
 
 
+@pytest.mark.parametrize(
+    ("smiles", "descriptor_type", "atom_maps"),
+    [
+        (
+            "[F:1][Pt@SP:2]([Cl:3])([Br:4])[I:5]",
+            SquarePlanarStereo,
+            {1, 2, 3, 4, 5},
+        ),
+        (
+            "[F:1][P@TB:2]([Cl:3])([Br:4])([I:5])[N:6]",
+            TrigonalBipyramidalStereo,
+            {1, 2, 3, 4, 5, 6},
+        ),
+        (
+            "[F:1][Co@OH:2]([Cl:3])([Br:4])([I:5])([N:6])[P:7]",
+            OctahedralStereo,
+            {1, 2, 3, 4, 5, 6, 7},
+        ),
+    ],
+)
+def test_rdkit_extracts_declared_shape_with_unknown_configuration(
+    smiles,
+    descriptor_type,
+    atom_maps,
+):
+    molecule = Chem.MolFromSmiles(smiles)
+    descriptor = next(iter(descriptors_from_rdkit(molecule).values()))
+
+    assert isinstance(descriptor, descriptor_type)
+    assert descriptor.center == 2
+    assert set(descriptor.atoms) == atom_maps
+    assert descriptor.parity is None
+
+
 def test_rdkit_boundary_rejects_unknown_square_planar_projection():
     mol = Chem.MolFromSmiles(
         "[CH3:1][Pt:2]([F:3])([Cl:4])[Br:5]",

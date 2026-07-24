@@ -45,7 +45,7 @@ from Experiment.Stereo.datasets import (  # noqa: E402
     load_cip,
     load_rota,
 )
-from Experiment.Stereo.acs_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.Chirality.published import (  # noqa: E402
     DATASET,
     EXPECTED_SHA256,
     load_dataset,
@@ -62,8 +62,8 @@ from synkit.Graph.Stereo.canonical import (  # noqa: E402
 )
 
 STEREO_ROOT = ROOT / "Experiment" / "Stereo" / "Data"
-ROTA_LOCUS_REPORT = STEREO_ROOT / "rota_locus_report.json"
-CIP_ELEMENT_REPORT = STEREO_ROOT / "stereo_element_report.json"
+ROTA_LOCUS_REPORT = STEREO_ROOT / "Perception" / "rota_locus_report.json"
+CIP_ELEMENT_REPORT = STEREO_ROOT / "Perception" / "stereo_element_report.json"
 
 _DEFAULT_ACS_CASE_IDS = (
     "VS066",  # two tetrahedral, chiral

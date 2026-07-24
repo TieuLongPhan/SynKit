@@ -44,7 +44,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Experiment.Stereo.rota_loci import (  # noqa: E402
+from Experiment.Stereo.Perception.axis_loci import (  # noqa: E402
     _axis_predictions,
 )
 from Experiment.Stereo.datasets import (  # noqa: E402
@@ -52,9 +52,9 @@ from Experiment.Stereo.datasets import (  # noqa: E402
     load_cip,
     load_rota,
 )
-from Experiment.Stereo.Canonicalization.internal import (  # noqa: E402
+from Experiment.Stereo.Canonicalization.global_local import (  # noqa: E402
     _case_time_limit,
-    benchmark_exact_canonicalization,
+    benchmark_global_local_canonicalization,
 )
 from Experiment.Stereo.Canonicalization.inventory import (  # noqa: E402
     DEFAULT_CSV,
@@ -62,7 +62,7 @@ from Experiment.Stereo.Canonicalization.inventory import (  # noqa: E402
     build_inventory,
     write_inventory,
 )
-from Experiment.Stereo.acs_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.Chirality.published import (  # noqa: E402
     DATASET as ACS_DATASET,
     load_dataset,
 )
@@ -71,8 +71,8 @@ from synkit.Graph.Stereo import (  # noqa: E402
     descriptors_from_rdkit,
 )
 
-CANON_DATA_ROOT = ROOT / "Experiment" / "Stereo" / "Data" / "Canon"
-_TASKS = ("internal", "acs", "rota", "cip")
+CANON_DATA_ROOT = ROOT / "Experiment" / "Stereo" / "Data" / "Canonicalization"
+_TASKS = ("global-local", "internal", "acs", "rota", "cip")
 
 
 def _ratio(numerator: int, denominator: int) -> float | None:
@@ -603,9 +603,9 @@ def _run_cip(
     }
 
 
-def _run_internal(arguments: argparse.Namespace) -> dict[str, Any]:
+def _run_global_local(arguments: argparse.Namespace) -> dict[str, Any]:
     started = time.perf_counter()
-    report = benchmark_exact_canonicalization(
+    report = benchmark_global_local_canonicalization(
         arguments.acs_path,
         family_names=tuple(arguments.family or ()),
         class_relabelings=arguments.class_relabelings,
@@ -618,7 +618,7 @@ def _run_internal(arguments: argparse.Namespace) -> dict[str, Any]:
     totals = report["totals"]
     families_passed = totals["families"] - totals["family_failures"]
     return {
-        "task": "internal",
+        "task": "global_local",
         "canonicalization_scope": "ten_configured_stereo_families",
         "summary": {
             "families": totals["families"],
@@ -758,8 +758,8 @@ def main() -> int:
         print(json.dumps(inventory["summary"], indent=2, sort_keys=True))
         return 0
 
-    if arguments.task == "internal":
-        task_result = _run_internal(arguments)
+    if arguments.task in {"global-local", "internal"}:
+        task_result = _run_global_local(arguments)
     elif arguments.task == "acs":
         task_result = _run_acs(
             inventory,

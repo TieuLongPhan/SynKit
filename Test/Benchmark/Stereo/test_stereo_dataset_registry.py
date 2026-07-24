@@ -16,16 +16,16 @@ from Experiment.Stereo.datasets import (  # noqa: E402
     STEREO_ROOT,
     load_rota,
 )
-from Experiment.Stereo.backend_comparison import (  # noqa: E402
+from Experiment.Stereo.Diagnostics.backend_comparison import (  # noqa: E402
     _classify_rdkit_smiles,
 )
-from Experiment.Stereo.acs_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.Chirality.published import (  # noqa: E402
     load_dataset,
 )
 
 MANIFEST = STEREO_ROOT / "manifest.json"
-REPORT = STEREO_ROOT / "benchmark_report.json"
-BACKEND_REPORT = STEREO_ROOT / "backend_comparison_report.json"
+REPORT = STEREO_ROOT / "Diagnostics" / "benchmark_report.json"
+BACKEND_REPORT = STEREO_ROOT / "Diagnostics" / "backend_comparison_report.json"
 
 
 def test_registry_preserves_task_and_license_boundaries() -> None:
@@ -39,9 +39,11 @@ def test_registry_preserves_task_and_license_boundaries() -> None:
     assert acs["protocols"]["supplied_stereo_binary"]
     assert acs["protocols"]["exact_configured_mirror_audit"]
     assert acs["protocols"]["fixed_graph_local_permutation_audit"]
-    assert acs["exact_mirror_report"].endswith("Global/exact_acs_mirror_report.json")
+    assert acs["exact_mirror_report"].endswith(
+        "Chirality/exact_acs_mirror_report.json"
+    )
     assert acs["canonicalization_report"].endswith(
-        "Canon/acs_local_canonicalization_report.json"
+        "Canonicalization/acs_local_canonicalization_report.json"
     )
 
     rota = datasets["chiralfinder_rota"]
@@ -62,7 +64,7 @@ def test_registry_preserves_task_and_license_boundaries() -> None:
     assert cip["frozen_report"].endswith("cip_native_report.json")
     assert cip["stereo_element_report"].endswith("stereo_element_report.json")
     assert cip["canonicalization_report"].endswith(
-        "Canon/cip_local_canonicalization_report.json"
+        "Canonicalization/cip_local_canonicalization_report.json"
     )
     assert all(cip["diagnostics"].values())
     assert not (CIP_METADATA.parent / "compounds.smi").exists()

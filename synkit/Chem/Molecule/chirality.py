@@ -35,6 +35,7 @@ from synkit.Graph.Stereo.identity import descriptor_relative_form
 from synkit.Graph.Stereo.supports import AxisStereoSupport
 from synkit.IO.mol_to_graph import MolToGraph
 
+from ._chirality_loci import detect_potential_axis_supports
 from .stereo_evidence import (
     ExtendedStereoStability,
     MolecularStereoConfiguration,
@@ -572,109 +573,10 @@ def _complete_tetrahedral_topology(
     return tuple(completed)
 
 
-def _cumulene_end_references(
-    atom: Chem.Atom,
-    axis_neighbor: int,
-) -> tuple[Reference, Reference] | None:
-    """Return zero-based terminal references for one cumulene end."""
-    center = atom.GetIdx()
-    references: list[Reference] = [
-        neighbor.GetIdx()
-        for neighbor in atom.GetNeighbors()
-        if neighbor.GetIdx() != axis_neighbor
-    ]
-    hidden_hydrogens = int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
-    references.extend(virtual_reference("H", center) for _ in range(hidden_hydrogens))
-    if len(references) != 2 or references[0] == references[1]:
-        return None
-    return references[0], references[1]
-
-
-def _potential_cumulene_loci(
-    molecule: Chem.Mol,
-) -> tuple[PotentialStereoLocus, ...]:
-    """Detect even-cumulene axes without assigning their orientation."""
-    double_graph = nx.Graph()
-    double_graph.add_edges_from(
-        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
-        for bond in molecule.GetBonds()
-        if bond.GetBondType() == Chem.BondType.DOUBLE
-    )
-    loci = []
-    for component in nx.connected_components(double_graph):
-        axis = double_graph.subgraph(component)
-        edge_count = axis.number_of_edges()
-        if edge_count < 2 or edge_count % 2 != 0:
-            continue
-        if edge_count != axis.number_of_nodes() - 1:
-            continue
-        degrees = dict(axis.degree())
-        if any(degree > 2 for degree in degrees.values()):
-            continue
-        ends = sorted(node for node, degree in degrees.items() if degree == 1)
-        if len(ends) != 2:
-            continue
-        path = nx.shortest_path(axis, ends[0], ends[1])
-        if any(molecule.GetAtomWithIdx(node).GetDegree() != 2 for node in path[1:-1]):
-            continue
-        left_refs = _cumulene_end_references(
-            molecule.GetAtomWithIdx(path[0]),
-            path[1],
-        )
-        right_refs = _cumulene_end_references(
-            molecule.GetAtomWithIdx(path[-1]),
-            path[-2],
-        )
-        if left_refs is None or right_refs is None:
-            continue
-        loci.append(
-            PotentialStereoLocus(
-                locus_type=PotentialStereoLocusType.CUMULENE_AXIS,
-                support=AxisStereoSupport(tuple(path), (left_refs, right_refs)),
-            )
-        )
-    return tuple(loci)
-
-
-def _potential_biaryl_loci(
-    molecule: Chem.Mol,
-) -> tuple[PotentialStereoLocus, ...]:
-    """Detect inter-ring aromatic axes without orientation or barrier claims."""
-    loci = []
-    for bond in molecule.GetBonds():
-        if bond.GetIsAromatic():
-            continue
-        left_atom = bond.GetBeginAtom()
-        right_atom = bond.GetEndAtom()
-        if not left_atom.GetIsAromatic() or not right_atom.GetIsAromatic():
-            continue
-        left, right = left_atom.GetIdx(), right_atom.GetIdx()
-        left_refs = tuple(
-            neighbor.GetIdx()
-            for neighbor in left_atom.GetNeighbors()
-            if neighbor.GetIdx() != right_atom.GetIdx()
-        )
-        right_refs = tuple(
-            neighbor.GetIdx()
-            for neighbor in right_atom.GetNeighbors()
-            if neighbor.GetIdx() != left_atom.GetIdx()
-        )
-        if len(left_refs) != 2 or len(right_refs) != 2:
-            continue
-        loci.append(
-            PotentialStereoLocus(
-                locus_type=PotentialStereoLocusType.ATROP_AXIS,
-                support=AxisStereoSupport(
-                    (left, right),
-                    (left_refs, right_refs),
-                ),
-            )
-        )
-    return tuple(loci)
-
-
 def detect_potential_stereo_loci(
     molecule: Chem.Mol,
+    *,
+    include_extended_ring_axes: bool = False,
 ) -> tuple[PotentialStereoLocus, ...]:
     """Return topology-supported, orientation-unspecified axial loci.
 
@@ -682,10 +584,16 @@ def detect_potential_stereo_loci(
     configured descriptor, a rotational-stability claim, or proof that the
     complete molecule is chiral.
     """
-    if molecule is None:
-        raise ValueError("Potential stereo-locus detection requires a molecule.")
-    working = Chem.Mol(molecule)
-    loci = (*_potential_cumulene_loci(working), *_potential_biaryl_loci(working))
+    loci = tuple(
+        PotentialStereoLocus(
+            locus_type=PotentialStereoLocusType(locus_type),
+            support=support,
+        )
+        for locus_type, support in detect_potential_axis_supports(
+            molecule,
+            include_extended_ring_axes=include_extended_ring_axes,
+        )
+    )
     return tuple(sorted(loci, key=lambda locus: locus.identifier))
 
 

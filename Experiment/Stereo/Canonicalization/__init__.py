@@ -1,1 +1,1 @@
-"""Fixed-graph configured-stereograph experiments."""
+"""Local, global-by-local, and multi-element canonicalization benchmarks."""

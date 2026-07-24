@@ -18,7 +18,7 @@ with:
 
 ```text
 conda run -n synkit python \
-  Experiment/Stereo/acs_molecular_chirality.py \
+  Experiment/Stereo/Chirality/published.py \
   --stereomolgraph /tmp/StereoMolGraph \
   --output Experiment/Stereo/Data/ACS-StereoMolGraph/published_chirality_benchmark.json
 ```

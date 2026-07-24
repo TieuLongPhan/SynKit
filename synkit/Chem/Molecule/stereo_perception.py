@@ -30,7 +30,24 @@ from synkit.Graph.Stereo.supports import (
     AtomStereoSupport,
     AxisStereoSupport,
     BondStereoSupport,
+    PathStereoSupport,
     StereoSupport,
+)
+
+from ._stereo_axis_evidence import (
+    StereoCarrierStatus,
+    validated_carrier_status,
+)
+from ._stereo_orientation_constraints import (
+    LocalOrientationConstraints,
+    extract_local_orientation_constraints,
+    tetrahedral_stabilizer_result,
+)
+from ._tetrahedral_carriers import (
+    detect_tetrahedral_carriers,
+    hidden_hydrogen_count as _hidden_hydrogen_count,
+    is_tetrahedral_carrier as _is_tetrahedral_carrier,
+    lone_pair_count as _lone_pair_count,
 )
 
 
@@ -42,6 +59,7 @@ class StereoElementType(str, Enum):
     CUMULENE_AXIS = "cumulene_axis"
     EXTENDED_CIS_TRANS = "extended_cis_trans"
     ATROP_AXIS = "atrop_axis"
+    HELICAL = "helical"
 
 
 class StereoConfigurationState(str, Enum):
@@ -55,6 +73,9 @@ class TetrahedralConstitutionStatus(str, Enum):
     """Canonicalization conclusion for one tetrahedral carrier."""
 
     CONSTITUTIONALLY_DISTINCT = "constitutionally_distinct"
+    CONSTITUTIONALLY_ORIENTATION_DISTINCT = (
+        "constitutionally_orientation_distinct"
+    )
     STEREO_DEPENDENT_DISTINCT = "stereo_dependent_distinct"
     SYMMETRY_RELATED = "symmetry_related"
 
@@ -63,6 +84,7 @@ class TetrahedralFrameStatus(str, Enum):
     """Outcome of configuration-neutral tetrahedral frame construction."""
 
     CANONICAL = "canonical"
+    ORIENTATION_ORBIT = "orientation_orbit"
     SYMMETRY_RELATED = "symmetry_related"
     NEIGHBORHOOD_KEY_COLLISION = "neighborhood_key_collision"
 
@@ -110,12 +132,12 @@ class LigandSymmetryClass:
 class TetrahedralConstitution:
     """Exact local-symmetry evidence for a tetrahedral carrier.
 
-    ``ligand_classes`` is canonical up to atom relabelling: two material
-    ligands share a class exactly when a rooted attributed-graph isomorphism
-    fixing the center maps one to the other. At dependency depth zero only
-    constitution participates. Later depths may include canonical stereo
-    markers established at other centers; the focal center remains unmarked.
-    Hidden hydrogens are one owner-scoped class with their actual multiplicity.
+    The authoritative criterion is the parity action of the exact center
+    stabilizer on the four coordination slots: the carrier is stereogenic
+    exactly when no allowed automorphism induces an odd slot permutation.
+    ``ligand_classes`` records the coarser slot orbits for diagnostics.  Local
+    orientation constraints may restrict the stabilizer, but configuration at
+    the focal center, CIP labels, ranks, and atom indices never participate.
     """
 
     support: AtomStereoSupport
@@ -127,9 +149,7 @@ class TetrahedralConstitution:
     refinement_depth: int = 0
     dependency_depth: int = 0
     stereo_marker_count: int = 0
-    method: str = (
-        "recursive_local_neighbor_sha256_v2" "+exact_rooted_isomorphism_tie_audit"
-    )
+    method: str = "exact_center_stabilizer_slot_parity_v1"
 
     @property
     def ligand_count(self) -> int:
@@ -139,6 +159,7 @@ class TetrahedralConstitution:
     def confirms_stereogenic_center(self) -> bool:
         return self.status in {
             TetrahedralConstitutionStatus.CONSTITUTIONALLY_DISTINCT,
+            TetrahedralConstitutionStatus.CONSTITUTIONALLY_ORIENTATION_DISTINCT,
             TetrahedralConstitutionStatus.STEREO_DEPENDENT_DISTINCT,
         }
 
@@ -157,6 +178,7 @@ _EXPECTED_SUPPORT = {
     StereoElementType.CUMULENE_AXIS: AxisStereoSupport,
     StereoElementType.EXTENDED_CIS_TRANS: AxisStereoSupport,
     StereoElementType.ATROP_AXIS: AxisStereoSupport,
+    StereoElementType.HELICAL: PathStereoSupport,
 }
 
 
@@ -177,6 +199,8 @@ class PotentialStereoElement:
     source_identifier: str
     constitutional_evidence: TetrahedralConstitution | None = None
     configuration: TetrahedralStereo | None = None
+    carrier_status: StereoCarrierStatus = StereoCarrierStatus.CONFIRMED
+    carrier_reason: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "element_type", StereoElementType(self.element_type))
@@ -184,6 +208,11 @@ class PotentialStereoElement:
             self,
             "configuration_state",
             StereoConfigurationState(self.configuration_state),
+        )
+        object.__setattr__(
+            self,
+            "carrier_status",
+            validated_carrier_status(self.carrier_status, self.carrier_reason),
         )
         expected = _EXPECTED_SUPPORT[self.element_type]
         if not isinstance(self.support, expected):
@@ -283,40 +312,6 @@ def _cumulated_double_bonds(molecule: Chem.Mol) -> frozenset[int]:
         for bond_index in bond_indices
     }
     return frozenset(cumulated)
-
-
-def _hidden_hydrogen_count(atom: Chem.Atom) -> int:
-    return int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
-
-
-def _is_tetrahedral_carrier(atom: Chem.Atom) -> bool:
-    """Return whether the represented constitution has four tetrahedral slots."""
-    if atom.GetIsAromatic():
-        return False
-    if atom.GetHybridization() != Chem.HybridizationType.SP3:
-        return False
-    if any(bond.GetBondType() != Chem.BondType.SINGLE for bond in atom.GetBonds()):
-        return False
-    return atom.GetDegree() + _hidden_hydrogen_count(atom) == 4
-
-
-def detect_tetrahedral_carriers(
-    molecule: Chem.Mol,
-) -> tuple[AtomStereoSupport, ...]:
-    """Return broad tetrahedral carriers before ligand-symmetry refinement.
-
-    This topology gate deliberately includes methane-like and repeated-ligand
-    environments.  It answers whether four tetrahedral slots exist, not whether
-    the four ligands are distinguishable.
-    """
-    if molecule is None:
-        raise ValueError("Tetrahedral-carrier detection requires a molecule.")
-    working = Chem.Mol(molecule)
-    return tuple(
-        AtomStereoSupport(atom.GetIdx())
-        for atom in working.GetAtoms()
-        if _is_tetrahedral_carrier(atom)
-    )
 
 
 def _constitutional_graph(
@@ -480,6 +475,11 @@ def tetrahedral_local_neighbor_keys(
             virtual_digests.pop(),
             depth,
         )
+    if _lone_pair_count(atom):
+        keys[virtual_reference("LP", center)] = LocalNeighborKey(
+            _local_key_digest(("virtual_lone_pair_v2",)),
+            depth,
+        )
     return keys
 
 
@@ -571,22 +571,12 @@ def _exact_material_ligand_classes(
     return classes, witness_checks
 
 
-def canonicalize_tetrahedral_constitution(
+def _validated_tetrahedral_atom(
     molecule: Chem.Mol,
     center: int,
-    *,
-    stereo_markers: Mapping[int, tuple[str, int]] | None = None,
-    dependency_depth: int = 0,
-) -> TetrahedralConstitution:
-    """Partition tetrahedral ligands under exact center-fixed isomorphisms.
-
-    The depth-zero calculation intentionally ignores configured stereo and CIP.
-    Later dependency rounds may read canonical markers from already resolved
-    neighboring centers, but never configuration at the focal center. A
-    ``constitutionally_distinct`` or ``stereo_dependent_distinct`` result
-    confirms a tetrahedral stereogenic center. ``symmetry_related`` is not an
-    achiral verdict; it means that the staged detector cannot confirm it.
-    """
+    dependency_depth: int,
+) -> tuple[Chem.Mol, Chem.Atom]:
+    """Validate one constitutional request and return an isolated atom view."""
     if molecule is None:
         raise ValueError("Tetrahedral constitutional analysis requires a molecule.")
     if type(center) is not int or center < 0 or center >= molecule.GetNumAtoms():
@@ -597,7 +587,30 @@ def canonicalize_tetrahedral_constitution(
     atom = working.GetAtomWithIdx(center)
     if not _is_tetrahedral_carrier(atom):
         raise ValueError(f"Atom {center} is not a supported tetrahedral carrier.")
+    return working, atom
 
+
+def canonicalize_tetrahedral_constitution(
+    molecule: Chem.Mol,
+    center: int,
+    *,
+    stereo_markers: Mapping[int, tuple[str, int]] | None = None,
+    neighbor_orientation_constraints: LocalOrientationConstraints | None = None,
+    dependency_depth: int = 0,
+) -> TetrahedralConstitution:
+    """Classify a tetrahedral carrier by exact center-stabilizer parity.
+
+    The depth-zero calculation uses constitution alone.  A constrained pass
+    may additionally require graph maps to preserve supplied orientations at
+    other local elements, but never reads the focal center's configuration or
+    any CIP descriptor.  A center is confirmed exactly when its allowed
+    stabilizer contains no odd permutation of the four coordination slots.
+    """
+    working, atom = _validated_tetrahedral_atom(
+        molecule,
+        center,
+        dependency_depth,
+    )
     markers = {
         index: marker
         for index, marker in (stereo_markers or {}).items()
@@ -624,6 +637,15 @@ def canonicalize_tetrahedral_constitution(
                 local_keys[virtual_reference("H", center)],
             )
         )
+    lone_pairs = _lone_pair_count(atom)
+    if lone_pairs:
+        classes.append(
+            LigandSymmetryClass(
+                (virtual_reference("LP", center),),
+                lone_pairs,
+                local_keys[virtual_reference("LP", center)],
+            )
+        )
     classes.sort(
         key=lambda item: (
             item.neighborhood_key,
@@ -631,19 +653,55 @@ def canonicalize_tetrahedral_constitution(
             repr(item.references),
         )
     )
-    status = (
-        (
-            TetrahedralConstitutionStatus.STEREO_DEPENDENT_DISTINCT
-            if dependency_depth
-            else TetrahedralConstitutionStatus.CONSTITUTIONALLY_DISTINCT
-        )
-        if len(classes) == 4 and all(item.multiplicity == 1 for item in classes)
-        else TetrahedralConstitutionStatus.SYMMETRY_RELATED
+    references = tuple(
+        [
+            *(neighbor.GetIdx() for neighbor in atom.GetNeighbors()),
+            *(
+                virtual_reference("H", center)
+                for _ in range(hidden_hydrogens)
+            ),
+            *(
+                virtual_reference("LP", center)
+                for _ in range(lone_pairs)
+            ),
+        ]
     )
+    if neighbor_orientation_constraints is not None and not isinstance(
+        neighbor_orientation_constraints,
+        LocalOrientationConstraints,
+    ):
+        raise TypeError(
+            "Neighbor orientation constraints have an unsupported type."
+        )
+    singleton_ligands = len(classes) == 4 and all(
+        item.multiplicity == 1 for item in classes
+    )
+    stabilizer = (
+        None
+        if singleton_ligands
+        else tetrahedral_stabilizer_result(
+            graph,
+            references,  # type: ignore[arg-type]
+            constraints=neighbor_orientation_constraints,
+        )
+    )
+    if stabilizer is not None and not stabilizer.is_stereogenic:
+        status = TetrahedralConstitutionStatus.SYMMETRY_RELATED
+    elif dependency_depth or neighbor_orientation_constraints is not None:
+        status = TetrahedralConstitutionStatus.STEREO_DEPENDENT_DISTINCT
+    elif singleton_ligands:
+        status = TetrahedralConstitutionStatus.CONSTITUTIONALLY_DISTINCT
+    else:
+        status = (
+            TetrahedralConstitutionStatus.CONSTITUTIONALLY_ORIENTATION_DISTINCT
+        )
     class_keys = tuple(item.neighborhood_key for item in classes)
     if status is TetrahedralConstitutionStatus.SYMMETRY_RELATED:
         canonical_frame = None
         frame_status = TetrahedralFrameStatus.SYMMETRY_RELATED
+    elif not singleton_ligands:
+        canonical_frame = None
+        frame_status = TetrahedralFrameStatus.ORIENTATION_ORBIT
     elif len(set(class_keys)) != len(class_keys):
         canonical_frame = None
         frame_status = TetrahedralFrameStatus.NEIGHBORHOOD_KEY_COLLISION
@@ -657,7 +715,10 @@ def canonicalize_tetrahedral_constitution(
         support=AtomStereoSupport(center),
         ligand_classes=tuple(classes),
         status=status,
-        automorphism_witness_checks=witness_checks,
+        automorphism_witness_checks=(
+            witness_checks
+            + (0 if stabilizer is None else stabilizer.automorphism_checks)
+        ),
         canonical_frame=canonical_frame,
         frame_status=frame_status,
         refinement_depth=next(iter(local_keys.values())).depth,
@@ -754,8 +815,12 @@ def _raw_tetrahedral_configuration(
         neighbor.GetIdx() for neighbor in atom.GetNeighbors()
     ]
     hidden_hydrogens = _hidden_hydrogen_count(atom)
-    if len(references) == 3 and hidden_hydrogens == 1:
-        references.append(virtual_reference("H", center))
+    references.extend(
+        virtual_reference("H", center) for _ in range(hidden_hydrogens)
+    )
+    references.extend(
+        virtual_reference("LP", center) for _ in range(_lone_pair_count(atom))
+    )
     if len(references) != 4:
         raise ValueError(
             f"Configured tetrahedral center {center} does not expose four ligands."
@@ -782,8 +847,8 @@ def _element_from_tetrahedral_evidence(
     evidence: TetrahedralConstitution,
 ) -> PotentialStereoElement:
     support = evidence.support
-    if not evidence.confirms_stereogenic_center or not evidence.has_canonical_frame:
-        raise ValueError("Tetrahedral evidence does not define a canonical element.")
+    if not evidence.confirms_stereogenic_center:
+        raise ValueError("Tetrahedral evidence does not define a stereo element.")
     raw_configuration = _raw_tetrahedral_configuration(
         molecule.GetAtomWithIdx(support.center)
     )
@@ -793,7 +858,7 @@ def _element_from_tetrahedral_evidence(
             raw_configuration,
             constitutional_evidence=evidence,
         )
-        if raw_configuration is not None
+        if raw_configuration is not None and evidence.has_canonical_frame
         else None
     )
     configuration_state = (
@@ -801,11 +866,15 @@ def _element_from_tetrahedral_evidence(
         if raw_configuration is not None
         else StereoConfigurationState.UNSPECIFIED
     )
-    provenance = (
-        "synkit_stereo_dependent_recursive_neighborhood"
-        if evidence.is_stereo_dependent
-        else "synkit_recursive_neighborhood_and_exact_symmetry"
-    )
+    if evidence.is_stereo_dependent:
+        provenance = "synkit_orientation_constrained_center_stabilizer"
+    elif (
+        evidence.status
+        is TetrahedralConstitutionStatus.CONSTITUTIONALLY_ORIENTATION_DISTINCT
+    ):
+        provenance = "synkit_even_center_stabilizer"
+    else:
+        provenance = "synkit_recursive_neighborhood_and_exact_symmetry"
     return PotentialStereoElement(
         StereoElementType.TETRAHEDRAL,
         support,
@@ -817,23 +886,14 @@ def _element_from_tetrahedral_evidence(
     )
 
 
-def _canonical_stereo_marker(
-    element: PotentialStereoElement,
-) -> tuple[str, int] | None:
-    configuration = element.configuration
-    if configuration is None or configuration.parity is None:
-        return None
-    return configuration.descriptor_class, configuration.parity
-
-
 def perceive_tetrahedral_stereo(
     molecule: Chem.Mol,
 ) -> TetrahedralPerceptionResult:
-    """Resolve primary then dependent tetrahedral centers to a fixed point.
+    """Resolve tetrahedral centers from constitution and local neighbor frames.
 
-    Each dependency round reads only canonical configurations established in
-    earlier rounds.  The focal center's own configuration is never a marker in
-    its frame construction, and CIP properties are never read.
+    A constrained pass reads oriented neighbor frames directly from molecular
+    input.  It never converts them to CIP or canonical local descriptors, and
+    the focal center's own frame is excluded.
     """
     if molecule is None:
         raise ValueError("Tetrahedral perception requires a molecule.")
@@ -841,49 +901,48 @@ def perceive_tetrahedral_stereo(
     initial = analyze_tetrahedral_carriers(working)
     evidence_by_center = {evidence.support.center: evidence for evidence in initial}
     elements: dict[int, PotentialStereoElement] = {}
-    markers: dict[int, tuple[str, int]] = {}
     pending = set(evidence_by_center)
 
     for center, evidence in evidence_by_center.items():
-        if not evidence.has_canonical_frame:
+        if not evidence.confirms_stereogenic_center:
             continue
         element = _element_from_tetrahedral_evidence(working, evidence)
         elements[center] = element
         pending.discard(center)
-        marker = _canonical_stereo_marker(element)
-        if marker is not None:
-            markers[center] = marker
 
     dependency_iterations = 0
-    while pending and markers:
-        dependency_iterations += 1
-        marker_snapshot = dict(markers)
-        resolved_this_round: list[
-            tuple[int, TetrahedralConstitution, PotentialStereoElement]
-        ] = []
-        for center in sorted(pending):
-            evidence = canonicalize_tetrahedral_constitution(
-                working,
-                center,
-                stereo_markers=marker_snapshot,
-                dependency_depth=dependency_iterations,
-            )
-            evidence_by_center[center] = evidence
-            if not evidence.has_canonical_frame:
-                continue
-            element = _element_from_tetrahedral_evidence(working, evidence)
-            resolved_this_round.append((center, evidence, element))
-
-        new_marker_count = 0
-        for center, _evidence, element in resolved_this_round:
-            elements[center] = element
-            pending.discard(center)
-            marker = _canonical_stereo_marker(element)
-            if marker is not None:
-                markers[center] = marker
-                new_marker_count += 1
-        if new_marker_count == 0:
-            break
+    if pending:
+        constraints = extract_local_orientation_constraints(working)
+        if (
+            constraints.tetrahedral
+            or constraints.planar
+            or constraints.cumulene
+        ):
+            dependency_iterations = 1
+            for center in sorted(tuple(pending)):
+                focal_constraints = LocalOrientationConstraints(
+                    tuple(
+                        constraint
+                        for constraint in constraints.tetrahedral
+                        if constraint.center != center
+                    ),
+                    constraints.planar,
+                    constraints.cumulene,
+                )
+                evidence = canonicalize_tetrahedral_constitution(
+                    working,
+                    center,
+                    neighbor_orientation_constraints=focal_constraints,
+                    dependency_depth=1,
+                )
+                evidence_by_center[center] = evidence
+                if not evidence.confirms_stereogenic_center:
+                    continue
+                elements[center] = _element_from_tetrahedral_evidence(
+                    working,
+                    evidence,
+                )
+                pending.discard(center)
 
     return TetrahedralPerceptionResult(
         carrier_evidence=tuple(
@@ -891,7 +950,7 @@ def perceive_tetrahedral_stereo(
         ),
         elements=tuple(elements[center] for center in sorted(elements)),
         dependency_iterations=dependency_iterations,
-        stereo_markers=tuple(sorted(markers.items())),
+        stereo_markers=(),
     )
 
 
@@ -913,126 +972,10 @@ def detect_constitutionally_distinct_tetrahedral_centers(
     )
 
 
-def _rdkit_elements(molecule: Chem.Mol) -> tuple[PotentialStereoElement, ...]:
-    """Project RDKit double-bond perception into typed support evidence."""
-    cumulated_bonds = _cumulated_double_bonds(molecule)
-    elements = []
-    for info in Chem.FindPotentialStereo(molecule):
-        centered_on = int(info.centeredOn)
-        if info.type != Chem.StereoType.Bond_Double:
-            continue
-        if centered_on in cumulated_bonds:
-            # A bond inside a cumulene is not an independent local E/Z element.
-            continue
-        bond = molecule.GetBondWithIdx(centered_on)
-        elements.append(
-            PotentialStereoElement(
-                StereoElementType.DOUBLE_BOND,
-                BondStereoSupport(
-                    bond.GetBeginAtomIdx(),
-                    bond.GetEndAtomIdx(),
-                ),
-                _configuration_state(info),
-                "rdkit_find_potential_stereo",
-                f"Bond_Double:{centered_on}",
-            )
-        )
-    return tuple(elements)
-
-
-def _cumulene_terminal_references(
-    molecule: Chem.Mol,
-    owner: int,
-    path_neighbor: int,
-) -> tuple[Reference, Reference] | None:
-    atom = molecule.GetAtomWithIdx(owner)
-    references: list[Reference] = [
-        neighbor.GetIdx()
-        for neighbor in atom.GetNeighbors()
-        if neighbor.GetIdx() != path_neighbor
-    ]
-    hidden_hydrogens = int(atom.GetNumExplicitHs()) + int(atom.GetNumImplicitHs())
-    references.extend(virtual_reference("H", owner) for _ in range(hidden_hydrogens))
-    if len(references) != 2 or references[0] == references[1]:
-        return None
-    return references[0], references[1]
-
-
-def _extended_cis_trans_elements(
-    molecule: Chem.Mol,
-) -> tuple[PotentialStereoElement, ...]:
-    """Detect odd-bond extended cumulene E/Z supports without inventing state."""
-    double_graph = nx.Graph()
-    double_graph.add_edges_from(
-        (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
-        for bond in molecule.GetBonds()
-        if bond.GetBondType() == Chem.BondType.DOUBLE
-    )
-    elements = []
-    for component in nx.connected_components(double_graph):
-        path_graph = double_graph.subgraph(component)
-        edge_count = path_graph.number_of_edges()
-        if edge_count < 3 or edge_count % 2 != 1:
-            continue
-        if edge_count != path_graph.number_of_nodes() - 1:
-            continue
-        degrees = dict(path_graph.degree())
-        if any(degree > 2 for degree in degrees.values()):
-            continue
-        ends = sorted(node for node, degree in degrees.items() if degree == 1)
-        if len(ends) != 2:
-            continue
-        path = tuple(nx.shortest_path(path_graph, ends[0], ends[1]))
-        if any(molecule.GetAtomWithIdx(node).GetDegree() != 2 for node in path[1:-1]):
-            continue
-        left = _cumulene_terminal_references(
-            molecule,
-            path[0],
-            path[1],
-        )
-        right = _cumulene_terminal_references(
-            molecule,
-            path[-1],
-            path[-2],
-        )
-        if left is None or right is None:
-            continue
-        support = AxisStereoSupport(path, (left, right))
-        elements.append(
-            PotentialStereoElement(
-                StereoElementType.EXTENDED_CIS_TRANS,
-                support,
-                StereoConfigurationState.UNSPECIFIED,
-                "synkit_odd_cumulene_path_perception",
-                "Extended_CisTrans:" + "-".join(str(atom) for atom in path),
-            )
-        )
-    return tuple(elements)
-
-
-def _axis_elements(molecule: Chem.Mol) -> tuple[PotentialStereoElement, ...]:
-    """Adapt the existing conservative axial-locus detector."""
-    # Local import avoids making whole-molecule chirality a dependency of the
-    # typed support module at import time.  The legacy API remains authoritative
-    # for this additive migration slice.
-    from .chirality import detect_potential_stereo_loci
-
-    elements = []
-    for locus in detect_potential_stereo_loci(molecule):
-        elements.append(
-            PotentialStereoElement(
-                StereoElementType(locus.locus_type.value),
-                locus.support,
-                StereoConfigurationState.UNSPECIFIED,
-                locus.evidence_provenance,
-                locus.identifier,
-            )
-        )
-    return tuple(elements)
-
-
 def detect_potential_stereo_elements(
     molecule: Chem.Mol,
+    *,
+    include_extended_ring_axes: bool = False,
 ) -> tuple[PotentialStereoElement, ...]:
     """Detect supported atom, bond, and axis stereo carriers.
 
@@ -1044,13 +987,24 @@ def detect_potential_stereo_elements(
     """
     if molecule is None:
         raise ValueError("Stereo-element perception requires a molecule.")
+    from ._stereo_element_detection import (
+        axis_elements,
+        extended_cis_trans_elements,
+        helical_elements,
+        rdkit_double_bond_elements,
+    )
+
     working = Chem.Mol(molecule)
     Chem.AssignStereochemistry(working, cleanIt=False, force=True)
     elements = (
         *detect_tetrahedral_elements(working),
-        *_rdkit_elements(working),
-        *_axis_elements(working),
-        *_extended_cis_trans_elements(working),
+        *rdkit_double_bond_elements(working),
+        *axis_elements(
+            working,
+            include_extended_ring_axes=include_extended_ring_axes,
+        ),
+        *extended_cis_trans_elements(working),
+        *helical_elements(working),
     )
     return tuple(sorted(elements, key=lambda element: element.identifier))
 
@@ -1059,6 +1013,7 @@ __all__ = [
     "LigandSymmetryClass",
     "LocalNeighborKey",
     "PotentialStereoElement",
+    "StereoCarrierStatus",
     "StereoConfigurationState",
     "StereoElementType",
     "TetrahedralConstitution",

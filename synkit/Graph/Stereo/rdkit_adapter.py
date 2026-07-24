@@ -222,12 +222,6 @@ def descriptors_from_rdkit(
         if tag == Chem.ChiralType.CHI_SQUAREPLANAR:
             center = ids[atom.GetIdx()]
             permutation = square_planar_permutations.get(atom.GetIdx())
-            positions = _SQUARE_PLANAR_POSITION_MAPS.get(permutation)
-            if positions is None:
-                raise ValueError(
-                    f"Square-planar center {center} has unsupported RDKit "
-                    f"permutation {permutation!r}."
-                )
             local_refs = _non_tetrahedral_local_references(
                 atom,
                 ids,
@@ -235,6 +229,20 @@ def descriptors_from_rdkit(
                 4,
                 "Square-planar",
             )
+            if permutation == 0:
+                descriptor = SquarePlanarStereo(
+                    (center, *local_refs),
+                    None,
+                    "rdkit",
+                )
+                descriptors[descriptor_id(descriptor)] = descriptor
+                continue
+            positions = _SQUARE_PLANAR_POSITION_MAPS.get(permutation)
+            if positions is None:
+                raise ValueError(
+                    f"Square-planar center {center} has unsupported RDKit "
+                    f"permutation {permutation!r}."
+                )
             cyclic_refs = tuple(local_refs[index] for index in positions)
             descriptor = SquarePlanarStereo(
                 (center, *cyclic_refs),
@@ -246,12 +254,6 @@ def descriptors_from_rdkit(
         if tag == Chem.ChiralType.CHI_TRIGONALBIPYRAMIDAL:
             center = ids[atom.GetIdx()]
             permutation = trigonal_bipyramidal_permutations.get(atom.GetIdx())
-            positions = _TRIGONAL_BIPYRAMIDAL_POSITION_MAPS.get(permutation)
-            if positions is None:
-                raise ValueError(
-                    f"Trigonal-bipyramidal center {center} has unsupported "
-                    f"RDKit permutation {permutation!r}."
-                )
             local_refs = _non_tetrahedral_local_references(
                 atom,
                 ids,
@@ -259,6 +261,20 @@ def descriptors_from_rdkit(
                 5,
                 "Trigonal-bipyramidal",
             )
+            if permutation == 0:
+                descriptor = TrigonalBipyramidalStereo(
+                    (center, *local_refs),
+                    None,
+                    "rdkit",
+                )
+                descriptors[descriptor_id(descriptor)] = descriptor
+                continue
+            positions = _TRIGONAL_BIPYRAMIDAL_POSITION_MAPS.get(permutation)
+            if positions is None:
+                raise ValueError(
+                    f"Trigonal-bipyramidal center {center} has unsupported "
+                    f"RDKit permutation {permutation!r}."
+                )
             positional_refs = tuple(local_refs[index] for index in positions)
             descriptor = TrigonalBipyramidalStereo(
                 (center, *positional_refs),
@@ -270,12 +286,6 @@ def descriptors_from_rdkit(
         if tag == Chem.ChiralType.CHI_OCTAHEDRAL:
             center = ids[atom.GetIdx()]
             permutation = octahedral_permutations.get(atom.GetIdx())
-            positions = _OCTAHEDRAL_POSITION_MAPS.get(permutation)
-            if positions is None:
-                raise ValueError(
-                    f"Octahedral center {center} has unsupported RDKit "
-                    f"permutation {permutation!r}."
-                )
             local_refs = _non_tetrahedral_local_references(
                 atom,
                 ids,
@@ -283,6 +293,20 @@ def descriptors_from_rdkit(
                 6,
                 "Octahedral",
             )
+            if permutation == 0:
+                descriptor = OctahedralStereo(
+                    (center, *local_refs),
+                    None,
+                    "rdkit",
+                )
+                descriptors[descriptor_id(descriptor)] = descriptor
+                continue
+            positions = _OCTAHEDRAL_POSITION_MAPS.get(permutation)
+            if positions is None:
+                raise ValueError(
+                    f"Octahedral center {center} has unsupported RDKit "
+                    f"permutation {permutation!r}."
+                )
             positional_refs = tuple(local_refs[index] for index in positions)
             descriptor = OctahedralStereo(
                 (center, *positional_refs),

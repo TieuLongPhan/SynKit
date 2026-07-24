@@ -329,11 +329,21 @@ def test_opposite_configured_ligands_resolve_a_dependent_focal_center() -> None:
     assert molecule is not None
 
     result = enumerate_rdkit_stereographs(molecule)
+    renumbered = Chem.RenumberAtoms(
+        molecule,
+        tuple(reversed(range(molecule.GetNumAtoms()))),
+    )
+    transported = enumerate_rdkit_stereographs(renumbered)
 
     assert result.unresolved_loci == ("atom:2",)
     assert result.focal_evidence[0].all_ports_distinct
     assert result.theoretical_assignment_count == 2
     assert result.exact_assignment_count == 2
+    assert {
+        assignment.canonical_code for assignment in result.assignments
+    } == {
+        assignment.canonical_code for assignment in transported.assignments
+    }
 
 
 def test_equal_configured_ligands_do_not_create_a_focal_element() -> None:

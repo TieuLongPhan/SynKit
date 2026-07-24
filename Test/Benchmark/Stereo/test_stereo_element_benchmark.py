@@ -5,13 +5,20 @@ from pathlib import Path
 
 from rdkit import Chem
 
-from Experiment.Stereo.stereo_elements import (
+from Experiment.Stereo.Perception.stereo_elements import (
     _record_result,
     _reference_rs_positions,
 )
 
 ROOT = Path(__file__).resolve().parents[3]
-FROZEN_REPORT = ROOT / "Experiment" / "Stereo" / "Data" / "stereo_element_report.json"
+FROZEN_REPORT = (
+    ROOT
+    / "Experiment"
+    / "Stereo"
+    / "Data"
+    / "Perception"
+    / "stereo_element_report.json"
+)
 
 
 def _record(
@@ -78,7 +85,7 @@ def test_audit_separates_primary_and_stereo_dependent_centers() -> None:
 
     assert result["primary_centers"] == [4, 7]
     assert result["stereo_dependent_centers"] == [2]
-    assert result["canonical_frames"] == [2, 4, 7]
+    assert result["canonical_frames"] == [4, 7]
     assert result["dependency_iterations"] == 1
     assert result["renumbering_invariant"]
 

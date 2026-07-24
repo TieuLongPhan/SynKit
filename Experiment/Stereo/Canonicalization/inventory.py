@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Experiment.Stereo.acs_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.Chirality.published import (  # noqa: E402
     DATASET as ACS_DATASET,
     EXPECTED_SHA256 as ACS_SHA256,
     load_dataset,
@@ -47,9 +47,9 @@ from synkit.Graph.Stereo import (  # noqa: E402
 )
 
 STEREO_ROOT = ROOT / "Experiment" / "Stereo" / "Data"
-CIP_ELEMENT_REPORT = STEREO_ROOT / "stereo_element_report.json"
-ROTA_LOCUS_REPORT = STEREO_ROOT / "rota_locus_report.json"
-CANON_DATA_ROOT = STEREO_ROOT / "Canon"
+CIP_ELEMENT_REPORT = STEREO_ROOT / "Perception" / "stereo_element_report.json"
+ROTA_LOCUS_REPORT = STEREO_ROOT / "Perception" / "rota_locus_report.json"
+CANON_DATA_ROOT = STEREO_ROOT / "Canonicalization"
 DEFAULT_JSON = CANON_DATA_ROOT / "canonicalization_inventory.json"
 DEFAULT_CSV = CANON_DATA_ROOT / "canonicalization_inventory.csv"
 

@@ -460,6 +460,38 @@ def _double_bond_unknown(molecule, support, identifiers):
     )
 
 
+def _tetrahedral_unknown(evidence, identifiers):
+    """Build an enumeration frame without claiming that it is canonical."""
+    if evidence.canonical_frame is not None:
+        references = evidence.canonical_frame[1:]
+    else:
+        expanded = []
+        for symmetry_class in evidence.ligand_classes:
+            if len(symmetry_class.references) == symmetry_class.multiplicity:
+                expanded.extend(symmetry_class.references)
+            elif len(symmetry_class.references) == 1:
+                expanded.extend(
+                    symmetry_class.references * symmetry_class.multiplicity
+                )
+            else:  # pragma: no cover - guarded by perception invariants
+                raise ValueError("Invalid tetrahedral ligand symmetry class.")
+        references = tuple(expanded)
+    if len(references) != 4 or len(set(references)) != 4:
+        raise ValueError("Confirmed tetrahedral element lacks four slots.")
+    center = identifiers[evidence.support.center]
+    return TetrahedralStereo(
+        (
+            center,
+            *(
+                _translate_reference(reference, identifiers)
+                for reference in references
+            ),
+        ),
+        None,
+        "exact_focal_perception_local_frame",
+    )
+
+
 def enumerate_rdkit_stereographs(
     molecule: Any,
     *,
@@ -482,16 +514,11 @@ def enumerate_rdkit_stereographs(
             continue
         if element.element_type is StereoElementType.TETRAHEDRAL:
             evidence = element.constitutional_evidence
-            if evidence is None or evidence.canonical_frame is None:
+            if evidence is None:
                 continue
-            atoms = tuple(
-                _translate_reference(reference, identifiers)
-                for reference in evidence.canonical_frame
-            )
-            descriptor: StereoValue = TetrahedralStereo(
-                atoms,  # type: ignore[arg-type]
-                None,
-                "exact_focal_perception",
+            descriptor: StereoValue = _tetrahedral_unknown(
+                evidence,
+                identifiers,
             )
         elif element.element_type is StereoElementType.DOUBLE_BOND:
             descriptor = _double_bond_unknown(

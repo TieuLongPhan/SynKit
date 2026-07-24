@@ -5,14 +5,21 @@ from pathlib import Path
 
 from rdkit import Chem
 
-from Experiment.Stereo.cip_native import (
+from Experiment.Stereo.Perception.cip_labels import (
     _category_scores,
     _record_result,
     _score_records,
 )
 
 ROOT = Path(__file__).resolve().parents[3]
-FROZEN_REPORT = ROOT / "Experiment" / "Stereo" / "Data" / "cip_native_report.json"
+FROZEN_REPORT = (
+    ROOT
+    / "Experiment"
+    / "Stereo"
+    / "Data"
+    / "Perception"
+    / "cip_native_report.json"
+)
 
 
 def _record(
