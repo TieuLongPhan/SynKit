@@ -14,7 +14,7 @@ from synkit.Rule import SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
-DATA_PATH = ROOT / "Data/Mech/stereo.json"
+DATA_PATH = ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json"
 PAYLOAD = json.loads(DATA_PATH.read_text(encoding="utf-8"))
 CASES = PAYLOAD["cases"]
 POSITIVE_TRANSFORMATIONS = [

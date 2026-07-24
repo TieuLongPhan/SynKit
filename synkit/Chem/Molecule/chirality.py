@@ -21,24 +21,47 @@ from rdkit.Chem.EnumerateStereoisomers import (
 )
 
 from synkit.Graph.Stereo.descriptors import (
+    AtropBondStereo,
+    CumuleneAxisStereo,
+    ExtendedCisTransStereo,
     Reference,
     TetrahedralStereo,
     descriptor_id,
     parse_virtual_reference,
     virtual_reference,
 )
+from synkit.Graph.Stereo.extended_descriptors import HelicalStereo
 from synkit.Graph.Stereo.identity import descriptor_relative_form
+from synkit.Graph.Stereo.supports import AxisStereoSupport
 from synkit.IO.mol_to_graph import MolToGraph
+
+from .stereo_evidence import (
+    ExtendedStereoStability,
+    MolecularStereoConfiguration,
+    MolecularStereoConfigurationSet,
+    StereoEvidenceSource,
+    StereoPopulationStatus,
+)
 
 __all__ = [
     "MolecularChirality",
     "MolecularChiralityAssessment",
     "MolecularChiralityOutcome",
     "MolecularChiralityResult",
+    "MolecularStereoConfiguration",
+    "MolecularStereoConfigurationSet",
+    "ExtendedStereoStability",
+    "PotentialStereoLocus",
+    "PotentialStereoLocusType",
+    "StereoOrientationState",
+    "StereoEvidenceSource",
+    "StereoPopulationStatus",
+    "StereoStabilityStatus",
     "UnspecifiedMolecularStereoError",
     "assess_molecular_chirality",
     "classify_molecular_chirality",
     "clear_molecular_chirality_cache",
+    "detect_potential_stereo_loci",
     "is_molecular_chiral",
 ]
 
@@ -59,6 +82,25 @@ class MolecularChiralityOutcome(str, Enum):
     UNSUPPORTED_OR_INCOMPLETE = "unsupported_or_incomplete"
 
 
+class PotentialStereoLocusType(str, Enum):
+    """Topology-supported stereo locus whose configuration is not supplied."""
+
+    CUMULENE_AXIS = "cumulene_axis"
+    ATROP_AXIS = "atrop_axis"
+
+
+class StereoOrientationState(str, Enum):
+    """Information state of a potential stereo locus."""
+
+    UNSPECIFIED = "unspecified"
+
+
+class StereoStabilityStatus(str, Enum):
+    """Configurational-stability evidence attached to a potential locus."""
+
+    UNASSESSED = "unassessed"
+
+
 class UnspecifiedMolecularStereoError(ValueError):
     """Raised when strict binary classification receives unresolved stereo."""
 
@@ -76,12 +118,19 @@ class MolecularChiralityResult:
     mirror_isomorphism: tuple[tuple[int, int], ...] | None
     descriptor_count: int
     completed_tetrahedral_centers: tuple[int, ...]
+    # Compatibility fields retained for readers of the exploratory report.
+    # Sound classification never populates them from 2D connectivity alone.
     completed_extended_tetrahedral_axes: tuple[tuple[int, int], ...] = ()
     completed_biaryl_atrop_axes: tuple[tuple[int, int], ...] = ()
     identity_profile: str = "element-isotope-hydrogen-connectivity"
     decision_method: str = "exact_mirror_isomorphism"
     input_stereo_status: str = "specified"
     unspecified_stereo_loci: tuple[str, ...] = ()
+    potential_stereo_loci: tuple["PotentialStereoLocus", ...] = ()
+    configured_extended_descriptor_count: int = 0
+    stereo_evidence_source: str | None = None
+    extended_stability_status: str | None = None
+    population_fraction: float | None = None
 
     @property
     def is_chiral(self) -> bool:
@@ -89,84 +138,71 @@ class MolecularChiralityResult:
         return self.classification is MolecularChirality.CHIRAL
 
 
-@dataclass(frozen=True, eq=False)
-class _MolecularAxialStereo:
-    """Molecule-only relative orientation along a topological axis.
+@dataclass(frozen=True, init=False)
+class PotentialStereoLocus:
+    """A typed candidate locus without an invented configuration.
 
-    SynKit's public reaction descriptor model does not yet claim extended
-    tetrahedral support. This private value supplies only the operations used
-    by the whole-molecule mirror matcher, without widening that public
-    reaction capability boundary.
+    Atom indices and material terminal references are zero-based RDKit atom
+    indices. Virtual hydrogen references use ``@H:<owner-index>``. Detection
+    from 2D connectivity proves only that the topology can support the locus;
+    it supplies neither handedness nor configurational-stability evidence.
     """
 
-    atoms: tuple[Reference, Reference, int, int, Reference, Reference]
-    parity: int
-    descriptor_class: str
-    provenance: str
+    locus_type: PotentialStereoLocusType
+    support: AxisStereoSupport
+    orientation_state: StereoOrientationState = StereoOrientationState.UNSPECIFIED
+    evidence_provenance: str = "two_dimensional_connectivity"
+    stability_status: StereoStabilityStatus = StereoStabilityStatus.UNASSESSED
 
-    _INVERSION = (1, 0, 2, 3, 4, 5)
-    _PERMUTATIONS = (
-        (0, 1, 2, 3, 4, 5),
-        (1, 0, 2, 3, 5, 4),
-        (4, 5, 3, 2, 0, 1),
-        (5, 4, 3, 2, 1, 0),
-    )
+    def __init__(
+        self,
+        locus_type: PotentialStereoLocusType,
+        atom_indices: tuple[int, ...] | None = None,
+        terminal_references: tuple[tuple[Reference, ...], ...] | None = None,
+        orientation_state: StereoOrientationState = StereoOrientationState.UNSPECIFIED,
+        evidence_provenance: str = "two_dimensional_connectivity",
+        stability_status: StereoStabilityStatus = StereoStabilityStatus.UNASSESSED,
+        *,
+        support: AxisStereoSupport | None = None,
+    ) -> None:
+        """Build from typed support or the compatible legacy field pair."""
+        if support is None:
+            if atom_indices is None or terminal_references is None:
+                raise TypeError(
+                    "Potential stereo loci require axis support or both legacy "
+                    "atom_indices and terminal_references."
+                )
+            support = AxisStereoSupport(
+                tuple(atom_indices),
+                tuple(tuple(frame) for frame in terminal_references),  # type: ignore[arg-type]
+            )
+        elif atom_indices is not None or terminal_references is not None:
+            raise TypeError("Supply typed support or legacy support fields, not both.")
+        object.__setattr__(self, "locus_type", PotentialStereoLocusType(locus_type))
+        object.__setattr__(self, "support", support)
+        object.__setattr__(
+            self, "orientation_state", StereoOrientationState(orientation_state)
+        )
+        object.__setattr__(self, "evidence_provenance", evidence_provenance)
+        object.__setattr__(
+            self, "stability_status", StereoStabilityStatus(stability_status)
+        )
 
     @property
-    def dependencies(self) -> frozenset[int]:
-        return frozenset(value for value in self.atoms if type(value) is int)
+    def atom_indices(self) -> tuple[int, ...]:
+        """Return the compatible axis-path view."""
+        return self.support.path
 
-    def _canonical_form(self) -> tuple[Reference, ...]:
-        working = self.atoms
-        if self.parity == -1:
-            working = tuple(working[index] for index in self._INVERSION)  # type: ignore[assignment]
-        return min(
-            (
-                tuple(working[index] for index in permutation)
-                for permutation in self._PERMUTATIONS
-            ),
-            key=repr,
-        )
+    @property
+    def terminal_references(self) -> tuple[tuple[Reference, Reference], ...]:
+        """Return the compatible terminal-frame view."""
+        return self.support.terminal_frames
 
-    def invert(self) -> "_MolecularAxialStereo":
-        return _MolecularAxialStereo(
-            self.atoms,
-            -self.parity,
-            self.descriptor_class,
-            self.provenance,
-        )
-
-    def relabel(
-        self,
-        mapping: Mapping[int, int],
-    ) -> "_MolecularAxialStereo":
-        def relabel_reference(value: Reference) -> Reference:
-            if type(value) is int:
-                return mapping.get(value, value)
-            virtual = parse_virtual_reference(value)
-            if virtual is None:
-                return value
-            return virtual_reference(
-                virtual.kind,
-                mapping.get(virtual.center, virtual.center),
-            )
-
-        return _MolecularAxialStereo(
-            tuple(relabel_reference(value) for value in self.atoms),  # type: ignore[arg-type]
-            self.parity,
-            self.descriptor_class,
-            self.provenance,
-        )
-
-    def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, _MolecularAxialStereo)
-            and self.descriptor_class == other.descriptor_class
-            and self._canonical_form() == other._canonical_form()
-        )
-
-    def __hash__(self) -> int:
-        return hash((self.descriptor_class, self._canonical_form()))
+    @property
+    def identifier(self) -> str:
+        """Return a deterministic diagnostic identifier."""
+        support = "-".join(str(index) for index in self.atom_indices)
+        return f"{self.locus_type.value}:{support}"
 
 
 @dataclass(frozen=True)
@@ -183,6 +219,8 @@ class MolecularChiralityAssessment:
     enumeration_complete: bool
     max_isomers: int
     representative_isomers: tuple[tuple[str, MolecularChirality], ...] = ()
+    configured_alternative_count: int = 0
+    configured_population_status: str | None = None
 
     @property
     def is_definitive(self) -> bool:
@@ -248,6 +286,78 @@ def _molecular_node_colours(graph: Any) -> dict[int, int]:
     return colours
 
 
+def _resolved_cumulene_form(
+    descriptor: CumuleneAxisStereo,
+    resolve: Any,
+) -> tuple[Any, ...]:
+    """Resolve a complete cumulene path without entering rule semantics."""
+    path = tuple(resolve(atom) for atom in descriptor.axis_path)
+    frames = tuple(
+        tuple(resolve(reference) for reference in frame)
+        for frame in descriptor.terminal_frames
+    )
+    if descriptor.parity is None:
+        left, right = (tuple(sorted(frame, key=repr)) for frame in frames)
+        candidates = ((path, left, right), (tuple(reversed(path)), right, left))
+        return descriptor.descriptor_class, None, min(candidates, key=repr)
+    atoms = (*frames[0], path[0], path[-1], *frames[1])
+    if descriptor.parity == -1:
+        atoms = tuple(atoms[index] for index in descriptor._INVERSION)
+    candidates = []
+    for permutation in descriptor._PERMUTATIONS:
+        frame = tuple(atoms[index] for index in permutation)
+        oriented_path = tuple(reversed(path)) if permutation[2] == 3 else path
+        candidates.append((oriented_path, frame))
+    return descriptor.descriptor_class, 1, min(candidates, key=repr)
+
+
+def _resolved_extended_cis_trans_form(
+    descriptor: ExtendedCisTransStereo,
+    resolve: Any,
+) -> tuple[Any, ...]:
+    """Resolve a complete odd-bond cumulene path and terminal frames."""
+    path = tuple(resolve(atom) for atom in descriptor.path)
+    frames = tuple(
+        tuple(resolve(reference) for reference in frame)
+        for frame in descriptor.terminal_frames
+    )
+    if descriptor.parity is None:
+        left, right = (tuple(sorted(frame, key=repr)) for frame in frames)
+        candidates = ((path, left, right), (tuple(reversed(path)), right, left))
+        return descriptor.descriptor_class, None, min(candidates, key=repr)
+    atoms = (*frames[0], path[0], path[-1], *frames[1])
+    candidates = []
+    for permutation in descriptor._PERMUTATIONS:
+        frame = tuple(atoms[index] for index in permutation)
+        oriented_path = tuple(reversed(path)) if permutation[2] == 3 else path
+        candidates.append((oriented_path, frame))
+    return descriptor.descriptor_class, 0, min(candidates, key=repr)
+
+
+def _resolved_helical_form(
+    descriptor: HelicalStereo,
+    resolve: Any,
+) -> tuple[Any, ...]:
+    """Resolve open/cyclic path identity for molecular mirror matching."""
+    path = tuple(resolve(atom) for atom in descriptor.path)
+    if descriptor.cyclic:
+        reverse = tuple(reversed(path))
+        variants = tuple(
+            sequence[offset:] + sequence[:offset]
+            for sequence in (path, reverse)
+            for offset in range(len(path))
+        )
+    else:
+        variants = path, tuple(reversed(path))
+    return (
+        descriptor.descriptor_class,
+        min(variants, key=repr),
+        descriptor.cyclic,
+        descriptor.parity,
+        descriptor.coupling_id,
+    )
+
+
 def _molecular_stereo_form(graph: Any) -> tuple[Any, ...]:
     """Return a safe colour-refinement prefilter for mirror isomorphism."""
     registry = graph.graph.get("stereo_descriptors", {})
@@ -265,12 +375,18 @@ def _molecular_stereo_form(graph: Any) -> tuple[Any, ...]:
             raise ValueError(f"Invalid virtual stereo reference: {reference!r}.")
         return "virtual", (virtual.kind, colours[virtual.center])
 
+    def descriptor_form(descriptor: Any) -> tuple[Any, ...]:
+        if isinstance(descriptor, CumuleneAxisStereo):
+            return _resolved_cumulene_form(descriptor, resolve)
+        if isinstance(descriptor, ExtendedCisTransStereo):
+            return _resolved_extended_cis_trans_form(descriptor, resolve)
+        if isinstance(descriptor, HelicalStereo):
+            return _resolved_helical_form(descriptor, resolve)
+        return descriptor_relative_form(descriptor, resolve)
+
     return tuple(
         sorted(
-            (
-                descriptor_relative_form(descriptor, resolve)
-                for descriptor in registry.values()
-            ),
+            (descriptor_form(descriptor) for descriptor in registry.values()),
             key=repr,
         )
     )
@@ -344,12 +460,57 @@ def _indexed_copy(molecule: Chem.Mol) -> Chem.Mol:
     return working
 
 
-def _unspecified_stereo_loci(molecule: Chem.Mol) -> tuple[str, ...]:
+def _configuration_covers_rdkit_locus(
+    molecule: Chem.Mol,
+    info: Any,
+    configuration: MolecularStereoConfiguration,
+) -> bool:
+    if info.type != Chem.StereoType.Bond_Double:
+        return False
+    bond = molecule.GetBondWithIdx(int(info.centeredOn))
+    locus = frozenset((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+    return any(
+        isinstance(
+            descriptor,
+            (CumuleneAxisStereo, ExtendedCisTransStereo),
+        )
+        and locus
+        in {
+            frozenset(pair)
+            for pair in zip(
+                (
+                    descriptor.axis_path
+                    if isinstance(descriptor, CumuleneAxisStereo)
+                    else descriptor.path
+                ),
+                (
+                    descriptor.axis_path[1:]
+                    if isinstance(descriptor, CumuleneAxisStereo)
+                    else descriptor.path[1:]
+                ),
+            )
+        }
+        for descriptor in configuration.descriptors
+    )
+
+
+def _unspecified_stereo_loci(
+    molecule: Chem.Mol,
+    configurations: tuple[MolecularStereoConfiguration, ...] = (),
+) -> tuple[str, ...]:
+    def unresolved(info: Any) -> bool:
+        if info.specified == Chem.StereoSpecified.Specified:
+            return False
+        return not configurations or not all(
+            _configuration_covers_rdkit_locus(molecule, info, configuration)
+            for configuration in configurations
+        )
+
     return tuple(
         sorted(
             f"{info.type}:{int(info.centeredOn)}"
             for info in Chem.FindPotentialStereo(molecule)
-            if info.specified != Chem.StereoSpecified.Specified
+            if unresolved(info)
         )
     )
 
@@ -415,10 +576,10 @@ def _cumulene_end_references(
     atom: Chem.Atom,
     axis_neighbor: int,
 ) -> tuple[Reference, Reference] | None:
-    """Return the two terminal ligands of one cumulene end, if explicit."""
-    center = atom.GetIdx() + 1
+    """Return zero-based terminal references for one cumulene end."""
+    center = atom.GetIdx()
     references: list[Reference] = [
-        neighbor.GetIdx() + 1
+        neighbor.GetIdx()
         for neighbor in atom.GetNeighbors()
         if neighbor.GetIdx() != axis_neighbor
     ]
@@ -429,25 +590,17 @@ def _cumulene_end_references(
     return references[0], references[1]
 
 
-def _complete_extended_tetrahedral_topology(
+def _potential_cumulene_loci(
     molecule: Chem.Mol,
-    registry: dict[str, Any],
-) -> tuple[tuple[int, int], ...]:
-    """Add relative probes for topologically recoverable cumulene axes.
-
-    An even number of consecutive double bonds places the terminal ligand
-    planes orthogonally. The local ``@`` token is discarded by current RDKit
-    SMILES parsing, but whole-molecule chiral/achiral classification needs
-    only one relative orientation: the mirror matcher decides whether that
-    orientation can be superposed on its inverse.
-    """
+) -> tuple[PotentialStereoLocus, ...]:
+    """Detect even-cumulene axes without assigning their orientation."""
     double_graph = nx.Graph()
     double_graph.add_edges_from(
         (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
         for bond in molecule.GetBonds()
         if bond.GetBondType() == Chem.BondType.DOUBLE
     )
-    completed = []
+    loci = []
     for component in nx.connected_components(double_graph):
         axis = double_graph.subgraph(component)
         edge_count = axis.number_of_edges()
@@ -474,35 +627,20 @@ def _complete_extended_tetrahedral_topology(
         )
         if left_refs is None or right_refs is None:
             continue
-        left, right = path[0] + 1, path[-1] + 1
-        descriptor = _MolecularAxialStereo(
-            (*left_refs, left, right, *right_refs),
-            1,
-            "extended_tetrahedral",
-            "molecular_chirality:cumulene_topology",
+        loci.append(
+            PotentialStereoLocus(
+                locus_type=PotentialStereoLocusType.CUMULENE_AXIS,
+                support=AxisStereoSupport(tuple(path), (left_refs, right_refs)),
+            )
         )
-        registry[f"extended:{min(left, right)}-{max(left, right)}"] = descriptor
-        completed.append((left, right))
-    return tuple(completed)
+    return tuple(loci)
 
 
-def _complete_biaryl_atrop_topology(
+def _potential_biaryl_loci(
     molecule: Chem.Mol,
-    registry: dict[str, Any],
-) -> tuple[tuple[int, int], ...]:
-    """Add provisional axial probes to inter-ring aromatic single bonds.
-
-    Connectivity identifies a stereogenic biaryl axis but cannot establish
-    its rotational barrier. These probes therefore support molecular
-    stereogenicity analysis; they are not kinetic claims of configurational
-    stability.
-    """
-    represented = {
-        descriptor.bond
-        for descriptor in registry.values()
-        if descriptor.descriptor_class == "atrop_bond"
-    }
-    completed = []
+) -> tuple[PotentialStereoLocus, ...]:
+    """Detect inter-ring aromatic axes without orientation or barrier claims."""
+    loci = []
     for bond in molecule.GetBonds():
         if bond.GetIsAromatic():
             continue
@@ -510,30 +648,161 @@ def _complete_biaryl_atrop_topology(
         right_atom = bond.GetEndAtom()
         if not left_atom.GetIsAromatic() or not right_atom.GetIsAromatic():
             continue
-        left, right = left_atom.GetIdx() + 1, right_atom.GetIdx() + 1
-        if frozenset((left, right)) in represented:
-            continue
+        left, right = left_atom.GetIdx(), right_atom.GetIdx()
         left_refs = tuple(
-            neighbor.GetIdx() + 1
+            neighbor.GetIdx()
             for neighbor in left_atom.GetNeighbors()
             if neighbor.GetIdx() != right_atom.GetIdx()
         )
         right_refs = tuple(
-            neighbor.GetIdx() + 1
+            neighbor.GetIdx()
             for neighbor in right_atom.GetNeighbors()
             if neighbor.GetIdx() != left_atom.GetIdx()
         )
         if len(left_refs) != 2 or len(right_refs) != 2:
             continue
-        descriptor = _MolecularAxialStereo(
-            (*left_refs, left, right, *right_refs),
-            1,
-            "biaryl_atrop",
-            "molecular_chirality:biaryl_topology",
+        loci.append(
+            PotentialStereoLocus(
+                locus_type=PotentialStereoLocusType.ATROP_AXIS,
+                support=AxisStereoSupport(
+                    (left, right),
+                    (left_refs, right_refs),
+                ),
+            )
         )
-        registry[f"biaryl:{min(left, right)}-{max(left, right)}"] = descriptor
-        completed.append((left, right))
-    return tuple(completed)
+    return tuple(loci)
+
+
+def detect_potential_stereo_loci(
+    molecule: Chem.Mol,
+) -> tuple[PotentialStereoLocus, ...]:
+    """Return topology-supported, orientation-unspecified axial loci.
+
+    The detector intentionally over-approximates. A returned locus is not a
+    configured descriptor, a rotational-stability claim, or proof that the
+    complete molecule is chiral.
+    """
+    if molecule is None:
+        raise ValueError("Potential stereo-locus detection requires a molecule.")
+    working = Chem.Mol(molecule)
+    loci = (*_potential_cumulene_loci(working), *_potential_biaryl_loci(working))
+    return tuple(sorted(loci, key=lambda locus: locus.identifier))
+
+
+def _validate_material_frame(
+    molecule: Chem.Mol,
+    owner: int,
+    references: tuple[Reference, ...],
+) -> None:
+    """Validate one zero-based molecular sidecar frame."""
+    owner_atom = molecule.GetAtomWithIdx(owner)
+    neighbors = {neighbor.GetIdx() for neighbor in owner_atom.GetNeighbors()}
+    virtual_counts = {"H": 0, "LP": 0}
+    for reference in references:
+        if type(reference) is int:
+            if reference < 0 or reference >= molecule.GetNumAtoms():
+                raise ValueError(f"Extended stereo reference {reference} is absent.")
+            if reference not in neighbors:
+                raise ValueError(
+                    f"Extended stereo reference {reference} is not adjacent to {owner}."
+                )
+            continue
+        virtual = parse_virtual_reference(reference)
+        if virtual is None or virtual.center != owner:
+            raise ValueError(f"Invalid extended virtual reference: {reference!r}.")
+        virtual_counts[virtual.kind] += 1
+    available_h = int(owner_atom.GetNumExplicitHs()) + int(
+        owner_atom.GetNumImplicitHs()
+    )
+    if virtual_counts["H"] > available_h:
+        raise ValueError(f"Extended stereo requires unavailable hydrogen at {owner}.")
+
+
+def _validate_molecular_configuration(
+    molecule: Chem.Mol,
+    configuration: MolecularStereoConfiguration,
+) -> None:
+    """Prove that declared zero-based descriptor supports exist in the molecule."""
+    atom_count = molecule.GetNumAtoms()
+    for descriptor in configuration.descriptors:
+        material = descriptor.dependencies
+        if any(atom < 0 or atom >= atom_count for atom in material):
+            raise ValueError("Extended stereo support contains an absent atom index.")
+        if isinstance(
+            descriptor,
+            (CumuleneAxisStereo, ExtendedCisTransStereo),
+        ):
+            path = (
+                descriptor.axis_path
+                if isinstance(descriptor, CumuleneAxisStereo)
+                else descriptor.path
+            )
+            for left, right in zip(path, path[1:]):
+                bond = molecule.GetBondBetweenAtoms(left, right)
+                if bond is None or bond.GetBondType() != Chem.BondType.DOUBLE:
+                    raise ValueError(
+                        "Cumulene evidence requires a continuous double-bond path."
+                    )
+            for owner, frame in zip(
+                (path[0], path[-1]),
+                descriptor.terminal_frames,
+            ):
+                _validate_material_frame(molecule, owner, frame)
+        elif isinstance(descriptor, AtropBondStereo):
+            left, right = descriptor.atoms[2:4]
+            if molecule.GetBondBetweenAtoms(left, right) is None:
+                raise ValueError("Atrop evidence requires its central bond.")
+            _validate_material_frame(molecule, left, descriptor.atoms[:2])
+            _validate_material_frame(molecule, right, descriptor.atoms[4:])
+        elif isinstance(descriptor, HelicalStereo):
+            pairs = list(zip(descriptor.path, descriptor.path[1:]))
+            if descriptor.cyclic:
+                pairs.append((descriptor.path[-1], descriptor.path[0]))
+            if any(
+                molecule.GetBondBetweenAtoms(left, right) is None
+                for left, right in pairs
+            ):
+                raise ValueError(
+                    "Helical evidence requires a continuous molecular path."
+                )
+
+
+def _configuration_covers_locus(
+    configuration: MolecularStereoConfiguration,
+    locus: PotentialStereoLocus,
+) -> bool:
+    target = min(locus.support.path, tuple(reversed(locus.support.path)))
+    for descriptor in configuration.descriptors:
+        if isinstance(descriptor, (CumuleneAxisStereo, AtropBondStereo)):
+            path = descriptor.support.path
+            if min(path, tuple(reversed(path))) == target:
+                return True
+    return False
+
+
+def _inject_molecular_configuration(
+    registry: dict[str, Any],
+    configuration: MolecularStereoConfiguration,
+) -> None:
+    for descriptor in configuration.graph_descriptors():
+        key = descriptor_id(descriptor)
+        previous = registry.get(key)
+        if previous is not None and previous != descriptor:
+            raise ValueError(f"Conflicting configured stereo evidence at {key}.")
+        registry[key] = descriptor
+
+
+def _configuration_result_metadata(
+    configuration: MolecularStereoConfiguration | None,
+) -> dict[str, Any]:
+    if configuration is None:
+        return {}
+    return {
+        "configured_extended_descriptor_count": len(configuration.descriptors),
+        "stereo_evidence_source": configuration.evidence_source.value,
+        "extended_stability_status": configuration.stability.value,
+        "population_fraction": configuration.population_fraction,
+    }
 
 
 def classify_molecular_chirality(
@@ -541,6 +810,7 @@ def classify_molecular_chirality(
     *,
     stereo_complete: bool = True,
     require_specified: bool = False,
+    stereo_configuration: MolecularStereoConfiguration | None = None,
 ) -> MolecularChiralityResult:
     """Classify a molecule as globally chiral or achiral.
 
@@ -549,25 +819,40 @@ def classify_molecular_chirality(
     StereoMolGraph validation protocol and deliberately avoids raw charge and
     bond-order fields from a single Lewis/resonance form. Assigned local
     descriptors are retained. When ``stereo_complete`` is true, eligible
-    unrepresented sp3, even-cumulene, and biaryl-axis topologies receive
-    provisional probes before all parity-bearing configurations are reflected.
-    Exact stereo-aware graph isomorphism is the final authority.
+    unrepresented sp3 topologies receive the published protocol's completion
+    probes before all parity-bearing configurations are reflected. Cumulene
+    and biaryl topology is reported separately as orientation-unspecified
+    potential loci and never injected into the descriptor registry.
 
     This is a molecule classifier. It does not extract, apply, or compare
     reaction rules. The identity profile is a graph-topology convention, not a
     quantum/geometric chirality proof: bond-order distinctions that do not
     change hydrogen topology can be collapsed, as in validation case VS170.
-    ``stereo_complete`` supplies provisional topology probes; it cannot recover
-    a stereochemical configuration erased from an input SMILES. In particular,
-    a topological biaryl candidate does not prove a high rotational barrier,
-    and ordinary SMILES cannot distinguish helicene handedness. Set
-    ``require_specified`` to reject RDKit-recognized unresolved input instead
-    of returning the provisional binary result.
+    ``stereo_complete`` cannot recover a stereochemical configuration erased
+    from an input SMILES. In particular, a topological biaryl candidate proves
+    neither orientation nor a high rotational barrier, and ordinary SMILES
+    cannot distinguish helicene handedness. Set ``require_specified`` to reject
+    RDKit-recognized unresolved input and detected unconfigured axial loci.
+    ``stereo_configuration`` may add fixed extended descriptors only through
+    the authorized evidence model; its references are zero-based RDKit indices.
     """
+    if stereo_configuration is not None:
+        _validate_molecular_configuration(molecule, stereo_configuration)
     working = _indexed_copy(molecule)
-    unspecified = _unspecified_stereo_loci(working)
-    if require_specified and unspecified:
-        raise UnspecifiedMolecularStereoError(unspecified)
+    unspecified = _unspecified_stereo_loci(
+        working,
+        () if stereo_configuration is None else (stereo_configuration,),
+    )
+    potential_loci = detect_potential_stereo_loci(working)
+    potential_identifiers = tuple(
+        locus.identifier
+        for locus in potential_loci
+        if stereo_configuration is None
+        or not _configuration_covers_locus(stereo_configuration, locus)
+    )
+    unresolved = tuple(sorted((*unspecified, *potential_identifiers)))
+    if require_specified and unresolved:
+        raise UnspecifiedMolecularStereoError(unresolved)
     graph = MolToGraph(attr_profile="minimal").transform(
         working,
         use_index_as_atom_map=True,
@@ -576,14 +861,8 @@ def classify_molecular_chirality(
     completed = (
         _complete_tetrahedral_topology(working, registry) if stereo_complete else ()
     )
-    completed_extended = (
-        _complete_extended_tetrahedral_topology(working, registry)
-        if stereo_complete
-        else ()
-    )
-    completed_biaryl = (
-        _complete_biaryl_atrop_topology(working, registry) if stereo_complete else ()
-    )
+    if stereo_configuration is not None:
+        _inject_molecular_configuration(registry, stereo_configuration)
     graph.graph["stereo_descriptors"] = registry
 
     mirror = graph.copy()
@@ -597,11 +876,11 @@ def classify_molecular_chirality(
             mirror_isomorphism=None,
             descriptor_count=len(registry),
             completed_tetrahedral_centers=completed,
-            completed_extended_tetrahedral_axes=completed_extended,
-            completed_biaryl_atrop_axes=completed_biaryl,
+            potential_stereo_loci=potential_loci,
             decision_method="stereo_colour_prefilter",
-            input_stereo_status=("underspecified" if unspecified else "specified"),
-            unspecified_stereo_loci=unspecified,
+            input_stereo_status=("underspecified" if unresolved else "specified"),
+            unspecified_stereo_loci=unresolved,
+            **_configuration_result_metadata(stereo_configuration),
         )
     matcher = _MolecularStereoGraphMatcher(graph, mirror)
     mapping = dict(matcher.mapping) if matcher.is_isomorphic() else None
@@ -615,10 +894,10 @@ def classify_molecular_chirality(
         ),
         descriptor_count=len(registry),
         completed_tetrahedral_centers=completed,
-        completed_extended_tetrahedral_axes=completed_extended,
-        completed_biaryl_atrop_axes=completed_biaryl,
-        input_stereo_status=("underspecified" if unspecified else "specified"),
-        unspecified_stereo_loci=unspecified,
+        potential_stereo_loci=potential_loci,
+        input_stereo_status=("underspecified" if unresolved else "specified"),
+        unspecified_stereo_loci=unresolved,
+        **_configuration_result_metadata(stereo_configuration),
     )
 
 
@@ -627,12 +906,14 @@ def is_molecular_chiral(
     *,
     stereo_complete: bool = True,
     require_specified: bool = False,
+    stereo_configuration: MolecularStereoConfiguration | None = None,
 ) -> bool:
     """Return the boolean whole-molecule chirality classification."""
     return classify_molecular_chirality(
         molecule,
         stereo_complete=stereo_complete,
         require_specified=require_specified,
+        stereo_configuration=stereo_configuration,
     ).is_chiral
 
 
@@ -663,6 +944,34 @@ def clear_molecular_chirality_cache() -> None:
     _cached_isomer_classification.cache_clear()
 
 
+def _assessment_configuration_alternatives(
+    molecule: Chem.Mol,
+    configuration_set: MolecularStereoConfigurationSet | None,
+) -> tuple[MolecularStereoConfiguration | None, ...]:
+    if configuration_set is None:
+        return (None,)
+    for configuration in configuration_set.configurations:
+        _validate_molecular_configuration(molecule, configuration)
+    return configuration_set.configurations
+
+
+def _covered_rdkit_binary_loci(
+    molecule: Chem.Mol,
+    configurations: tuple[MolecularStereoConfiguration | None, ...],
+) -> int:
+    configured = tuple(item for item in configurations if item is not None)
+    if len(configured) != len(configurations):
+        return 0
+    return sum(
+        info.specified != Chem.StereoSpecified.Specified
+        and all(
+            _configuration_covers_rdkit_locus(molecule, info, configuration)
+            for configuration in configured
+        )
+        for info in Chem.FindPotentialStereo(molecule)
+    )
+
+
 def assess_molecular_chirality(
     molecule: Chem.Mol,
     *,
@@ -670,6 +979,7 @@ def assess_molecular_chirality(
     stereo_complete: bool = True,
     try_embedding: bool = False,
     use_cache: bool = True,
+    stereo_configurations: MolecularStereoConfigurationSet | None = None,
 ) -> MolecularChiralityAssessment:
     """Assess chirality across supported completions of unresolved stereo.
 
@@ -686,11 +996,29 @@ def assess_molecular_chirality(
         raise ValueError("max_isomers must be a positive integer.")
 
     working = Chem.Mol(molecule)
+    configurations = _assessment_configuration_alternatives(
+        working, stereo_configurations
+    )
     for atom in working.GetAtoms():
         atom.SetAtomMapNum(0)
     Chem.AssignStereochemistry(working, cleanIt=False, force=True)
-    unspecified = _unspecified_stereo_loci(working)
-    unsupported = _unsupported_stereo_loci(working)
+    configured = tuple(
+        configuration for configuration in configurations if configuration is not None
+    )
+    unspecified = _unspecified_stereo_loci(working, configured)
+    potential_loci = detect_potential_stereo_loci(working)
+    unsupported_potential = tuple(
+        locus.identifier
+        for locus in potential_loci
+        if any(
+            configuration is None
+            or not _configuration_covers_locus(configuration, locus)
+            for configuration in configurations
+        )
+    )
+    unsupported = tuple(
+        sorted((*_unsupported_stereo_loci(working),) + unsupported_potential)
+    )
     if unsupported:
         return MolecularChiralityAssessment(
             outcome=MolecularChiralityOutcome.UNSUPPORTED_OR_INCOMPLETE,
@@ -702,6 +1030,14 @@ def assess_molecular_chirality(
             evaluated_isomer_count=0,
             enumeration_complete=False,
             max_isomers=max_isomers,
+            configured_alternative_count=(
+                0 if stereo_configurations is None else len(configurations)
+            ),
+            configured_population_status=(
+                None
+                if stereo_configurations is None
+                else stereo_configurations.population_status.value
+            ),
         )
 
     options = StereoEnumerationOptions(
@@ -711,27 +1047,38 @@ def assess_molecular_chirality(
         rand=0x5A17,
         unique=True,
     )
-    theoretical = int(GetStereoisomerCount(working, options=options))
+    raw_rdkit_theoretical = int(GetStereoisomerCount(working, options=options))
+    covered_binary = _covered_rdkit_binary_loci(working, configurations)
+    rdkit_theoretical = max(1, raw_rdkit_theoretical // (2**covered_binary))
+    theoretical = rdkit_theoretical * len(configurations)
     exhaustive = theoretical <= max_isomers
     classifications: set[MolecularChirality] = set()
     representatives: dict[MolecularChirality, str] = {}
     evaluated = 0
     stopped_after_decisive_mixture = False
+    stopped_at_cap = False
     for isomer in EnumerateStereoisomers(working, options=options):
         isomeric_smiles = _canonical_isomeric_smiles(isomer)
-        classification = (
-            _cached_isomer_classification(isomeric_smiles, stereo_complete)
-            if use_cache
-            else classify_molecular_chirality(
-                isomer,
-                stereo_complete=stereo_complete,
-            ).classification
-        )
-        evaluated += 1
-        classifications.add(classification)
-        representatives.setdefault(classification, isomeric_smiles)
-        if len(classifications) > 1:
-            stopped_after_decisive_mixture = True
+        for configuration in configurations:
+            if evaluated >= max_isomers:
+                stopped_at_cap = True
+                break
+            classification = (
+                _cached_isomer_classification(isomeric_smiles, stereo_complete)
+                if use_cache and configuration is None
+                else classify_molecular_chirality(
+                    isomer,
+                    stereo_complete=stereo_complete,
+                    stereo_configuration=configuration,
+                ).classification
+            )
+            evaluated += 1
+            classifications.add(classification)
+            representatives.setdefault(classification, isomeric_smiles)
+            if len(classifications) > 1:
+                stopped_after_decisive_mixture = True
+                break
+        if stopped_after_decisive_mixture or stopped_at_cap:
             break
 
     observed = tuple(sorted(classifications, key=lambda value: value.value))
@@ -758,4 +1105,12 @@ def assess_molecular_chirality(
         enumeration_complete=(exhaustive and not stopped_after_decisive_mixture),
         max_isomers=max_isomers,
         representative_isomers=evidence,
+        configured_alternative_count=(
+            0 if stereo_configurations is None else len(configurations)
+        ),
+        configured_population_status=(
+            None
+            if stereo_configurations is None
+            else stereo_configurations.population_status.value
+        ),
     )

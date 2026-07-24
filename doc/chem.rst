@@ -13,6 +13,46 @@ For unmapped reactions, see :ref:`atom-to-atom-mapping` for the WL/SLAP-based
 Whole-molecule chirality
 ------------------------
 
+Stereo-element perception is a separate, earlier step. The typed detector
+reports whether atom, bond, or axis support can carry stereochemistry and
+whether the input supplies configuration. It does not assign a descriptor,
+CIP label, stability state, or molecular chiral/achiral verdict.
+
+For tetrahedral atoms, broad carrier detection comes first. A second operation
+canonically partitions the four ligand slots under exact molecular
+automorphisms that fix the center. Four singleton ligand classes confirm an
+ordinary constitutionally distinct stereogenic center. Repeated classes remain
+``symmetry_related`` rather than being declared permanently nonstereogenic,
+because the configuration-neutral detector cannot confirm them. Supplied
+configuration and CIP are attached later and never split or reorder these
+constitutional neighbor classes.
+
+.. code-block:: python
+   :caption: Perceiving stereo elements without promoting configuration
+
+   from rdkit import Chem
+   from synkit.Chem.Molecule.stereo_perception import (
+       canonicalize_tetrahedral_constitution,
+       detect_potential_stereo_elements,
+       detect_tetrahedral_carriers,
+   )
+
+   molecule = Chem.MolFromSmiles("FC(Cl)Br.FC=CCl.ClC=C=CCl")
+   elements = detect_potential_stereo_elements(molecule)
+   print([(item.element_type.value, item.configuration_state.value)
+          for item in elements])
+
+   carrier = Chem.MolFromSmiles("FC(Cl)Br")
+   support = detect_tetrahedral_carriers(carrier)[0]
+   symmetry = canonicalize_tetrahedral_constitution(carrier, support.center)
+   print(symmetry.status.value)
+
+Cumulated double bonds are not emitted as independent local ``E/Z`` elements.
+Even-bond cumulenes are represented once as an axis, while odd-bond extended
+cumulenes are represented once by ``ExtendedCisTransStereo`` over the complete
+path. Bare helical connectivity likewise never creates a configured path
+descriptor.
+
 ``classify_molecular_chirality`` determines whether a molecule is identical to
 its mirror image. This is a molecule-level global automorphism calculation,
 not a reaction-rule operation. The classifier completes eligible sp3 topology
@@ -27,6 +67,7 @@ tags are removed by RDKit.
    from synkit.Chem.Molecule.chirality import (
        assess_molecular_chirality,
        classify_molecular_chirality,
+       detect_potential_stereo_loci,
    )
 
    molecule = Chem.MolFromSmiles("F[C@](Cl)(Br)I")
@@ -37,6 +78,10 @@ tags are removed by RDKit.
    assessment = assess_molecular_chirality(unspecified, max_isomers=256)
    print(assessment.outcome.value)
 
+   cumulene = Chem.MolFromSmiles("ClC=C=CCl")
+   loci = detect_potential_stereo_loci(cumulene)
+   print(loci[0].orientation_state.value)
+
 .. admonition:: Example output
    :class: note synkit-example-output
 
@@ -44,6 +89,7 @@ tags are removed by RDKit.
 
       Chiral
       necessarily_chiral
+      unspecified
 
 Removing ``@``, ``@@``, slash, or backslash stereo markers is lossy. The
 classifier's ``stereo_complete`` option can probe whether an unlabelled
@@ -55,6 +101,87 @@ result exposes ``input_stereo_status`` and ``unspecified_stereo_loci`` so a
 caller can enforce that distinction instead of silently accepting the
 provisional binary classification.
 
+Potential cumulene and biaryl axes are returned as typed
+``PotentialStereoLocus`` values. Their atom support, terminal references,
+2D-connectivity provenance, unspecified orientation, and unassessed stability
+remain evidence—not configured descriptors. They do not participate in binary
+mirror comparison until configuration comes from explicit input, validated
+geometry, or exhaustive enumeration.
+
+Configured cumulene and helical descriptors can be supplied through a typed
+``MolecularStereoConfiguration``. Descriptor references at this boundary are
+zero-based RDKit atom indices. Orientation, evidence source, stability, and
+population remain separate values; a descriptor whose parity is unspecified
+is rejected as configuration evidence.
+
+.. code-block:: python
+   :caption: Classifying a declared cumulene configuration
+
+   from synkit.Chem.Molecule.stereo_evidence import (
+       MolecularStereoConfiguration,
+       StereoEvidenceSource,
+   )
+   from synkit.Graph.Stereo import CumuleneAxisStereo
+
+   cumulene = Chem.MolFromSmiles("FC=C=C(Cl)Br")
+   axis = CumuleneAxisStereo(
+       (1, 2, 3),
+       ((0, "@H:1"), (4, 5)),
+       1,
+       "declared_sidecar",
+   )
+   evidence = MolecularStereoConfiguration(
+       (axis,),
+       StereoEvidenceSource.DECLARED_SIDECAR,
+   )
+   configured = classify_molecular_chirality(
+       cumulene,
+       stereo_configuration=evidence,
+       require_specified=True,
+   )
+
+Derived CIP labels
+------------------
+
+``assign_cip_label`` projects a configured descriptor to a local label without
+changing the molecule or descriptor. Tetrahedral and trigonal-pyramidal
+environments use ``R/S`` (with the owner-scoped virtual ligand participating at
+atomic number zero), planar bonds use ``E/Z``, and configured axes or helices
+use ``M/P``. Labels are report values only: they never enter stereo descriptor
+IDs, hashes, serialization, reaction rules, or graph identity.
+
+``derive_rdkit_stereo_names`` accepts one exact Version 2
+``StereoAssignment`` produced by stereograph enumeration, verifies its
+certificate digest and complete fixed configuration, and binds the local
+assignment reports to that source certificate. This is a one-way dependency:
+the resulting names cannot change the assignment or its canonical code.
+
+.. code-block:: python
+   :caption: Deriving a witnessed local label
+
+   from synkit.Chem.Molecule.cip_assignment import assign_cip_label
+   from synkit.Graph.Stereo import TetrahedralStereo
+
+   molecule = Chem.MolFromSmiles("F[C@](Cl)(Br)I")
+   descriptor = TetrahedralStereo((1, 0, 2, 3, 4), -1)
+   assignment = assign_cip_label(molecule, descriptor)
+   print(assignment.label, assignment.status.value)
+
+.. admonition:: Example output
+   :class: note synkit-example-output
+
+   .. code-block:: text
+
+      S assigned
+
+The independent ranking kernel currently implements witnessed Sequence Rules
+1a, 1b, and 2, including exact nuclide masses for isotope comparisons. Ties
+that require Rules 3--5, a complete aromatic duplicate-node
+model, or a relabel-invariant axis direction return a typed unsupported or
+unresolved result instead of an atom-index tiebreak. Coordination geometries
+also return structured unsupported results. Unspecified configurations never
+emit a label.
+
 For supported unassigned tetrahedral atoms and double bonds,
 ``assess_molecular_chirality`` enumerates unique configurations and returns one
 of ``necessarily_chiral``, ``necessarily_achiral``,
@@ -62,18 +189,25 @@ of ``necessarily_chiral``, ``necessarily_achiral``,
 ``max_isomers`` bound never promotes a truncated one-sided sample to a
 necessary conclusion; discovering both chiral and achiral completions is
 already a definitive configuration-dependent result. Unresolved square-planar,
-TBP, octahedral, cumulene, and atropisomeric input currently fails closed.
+TBP, octahedral, cumulene, helical, and atropisomeric input fails closed unless
+the configured extended locus is covered by authorized evidence.
 Call ``classify_molecular_chirality(..., require_specified=True)`` when a
 binary-only consumer should reject every underspecified input.
 
 External molecule-stereo datasets are registered under
-``Data/Benchmark/Stereo`` with task and license metadata. The ACS 258-case set
+``Experiment/Stereo/Data`` with task and license metadata. The ACS 258-case set
 supports both binary supplied-stereo and four-state stereo-stripped protocols.
 ChiralFinder RotA is instead a positive axial-locus dataset, and the CIP
 Validation Suite is a local descriptor-assignment suite; neither contributes
 to global chiral/achiral accuracy. RotA is vendored under MIT. The CIP fixture
 remains external-only because its repository did not provide a redistribution
-license at the audited revision.
+license at the audited revision. At the pinned 300-record revision, SynKit's
+independent incremental label layer exactly reproduces 155 complete record
+sets and 843 of 1,252 individual reference labels (67.33% recall, 97.80%
+precision). The 145 non-exact records remain explicitly classified as 15
+unsupported-class, 27 missing-orientation, 101 ranking-defect, and 2
+label-projection primary limitations. This is native local-label validation,
+not global molecular-chirality accuracy.
 
 .. raw:: html
 

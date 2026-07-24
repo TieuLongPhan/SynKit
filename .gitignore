@@ -1,6 +1,10 @@
 *.pyc
 *cachedir
 *.csv
+!Experiment/Lewis/Data/all.csv
+!Experiment/Lewis/Data/combinatorial_all.csv
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/polar-failures.csv
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-failures.csv
 */catboost_info/*
 
 
@@ -30,6 +34,7 @@ Data/Benchmark/mech/*
 !Data/Benchmark/mech/polar-failures.csv
 !Data/Benchmark/mech/radical-failures.csv
 *.json.gz
+!Experiment/Lewis/Data/benchmark.json.gz
 # *.png
 
 run.sh
@@ -67,6 +72,10 @@ test_syn.py
 measure_candidate_stages.py
 run_valid_bug_cases.py
 paper/*
+
+# Fresh benchmark runs are reproducible and can be large. Retained reference
+# outputs live inside each experiment's Data directory.
+Experiment/Lewis/Runs/
 
 # Keep generated Python bytecode ignored after directory re-inclusions above.
 **/__pycache__/

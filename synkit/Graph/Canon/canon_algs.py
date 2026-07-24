@@ -11,7 +11,8 @@ tasks and returns:
 Dependencies:
   * networkx
   * numpy
-  * python-bliss (optional, for NAUTY/BLISS canonicalisation)
+
+No nauty, bliss, or third-party canonical-labeling binding is required.
 """
 
 import hashlib

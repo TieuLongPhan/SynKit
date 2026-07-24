@@ -2,8 +2,8 @@
 
 The fixture values are adapted under MIT from StereoMolGraph commit
 2189f610f23eaaf992e2e01a12ea4d0532496601; see
-``LICENSES/StereoMolGraph-MIT.txt``. No StereoMolGraph runtime dependency is
-required for this always-on SynKit suite.
+``synkit/Graph/Stereo/LICENSES/StereoMolGraph-MIT.txt``. No StereoMolGraph
+runtime dependency is required for this always-on SynKit suite.
 """
 
 from __future__ import annotations

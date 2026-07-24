@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Test.Chem.Molecule.benchmark_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.acs_molecular_chirality import (  # noqa: E402
     load_dataset,
 )
 from synkit.Chem.Molecule.chirality import (  # noqa: E402
@@ -33,6 +33,33 @@ def test_strict_binary_mode_rejects_unassigned_stereo() -> None:
         "Atom_Tetrahedral:1",
         "Atom_Tetrahedral:3",
     )
+
+
+@pytest.mark.parametrize(
+    ("smiles", "identifier"),
+    [
+        ("ClC=C=CCl", "cumulene_axis:1-2-3"),
+        (
+            "O=C(O)c1cccc(Br)c1-c1c(Br)cccc1C(=O)O",
+            "atrop_axis:9-10",
+        ),
+    ],
+)
+def test_unconfigured_axial_loci_fail_closed(
+    smiles: str,
+    identifier: str,
+) -> None:
+    molecule = Chem.MolFromSmiles(smiles)
+    assert molecule is not None
+
+    with pytest.raises(UnspecifiedMolecularStereoError) as error:
+        classify_molecular_chirality(molecule, require_specified=True)
+    assessment = assess_molecular_chirality(molecule)
+
+    assert identifier in error.value.loci
+    assert assessment.outcome is MolecularChiralityOutcome.UNSUPPORTED_OR_INCOMPLETE
+    assert identifier in assessment.unsupported_stereo_loci
+    assert assessment.evaluated_isomer_count == 0
 
 
 @pytest.mark.parametrize(

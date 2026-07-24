@@ -13,7 +13,9 @@ ROOT = Path(__file__).parents[2]
 
 def test_reviewed_radical_manifest_replays_forward_reverse_and_double_reverse():
     manifest = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
 
     assert len(manifest["cases"]) == 80
@@ -47,7 +49,9 @@ def test_reviewed_radical_manifest_replays_forward_reverse_and_double_reverse():
 
 def test_each_radical_macro_has_an_executable_grammar_corruption():
     manifest = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     representatives = {}
     for case in manifest["cases"]:
@@ -68,7 +72,7 @@ def test_each_radical_macro_has_an_executable_grammar_corruption():
 
 
 def test_mechanismbench_json_files_are_executable_case_data_only():
-    data_dir = ROOT / "Data/Mech"
+    data_dir = ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench"
     json_files = sorted(path.name for path in data_dir.glob("*.json"))
 
     assert not list(data_dir.glob("*.csv"))
@@ -79,14 +83,18 @@ def test_mechanismbench_json_files_are_executable_case_data_only():
     ]
     for filename in json_files:
         payload = json.loads(
-            (ROOT / "Data/Mech" / filename).read_text(encoding="utf-8")
+            (
+                ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench" / filename
+            ).read_text(encoding="utf-8")
         )
         assert payload["cases"]
 
 
 def test_polar_manifest_is_a_reviewed_stratified_subset_with_replay_evidence():
     manifest = json.loads(
-        (ROOT / "Data/Mech/polar.json").read_text(encoding="utf-8")
+        (ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/polar.json").read_text(
+            encoding="utf-8"
+        )
     )
 
     assert manifest["schema"] == "MechanismBench-polar-reviewed-v1"
@@ -115,19 +123,34 @@ def test_polar_manifest_is_a_reviewed_stratified_subset_with_replay_evidence():
 
 def test_public_partitions_state_the_current_80_positive_stereo_boundary():
     polar = json.loads(
-        (ROOT / "Data/Mech/polar.json").read_text(encoding="utf-8")
+        (ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/polar.json").read_text(
+            encoding="utf-8"
+        )
     )
     radical = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     stereo = json.loads(
-        (ROOT / "Data/Mech/stereo.json").read_text(encoding="utf-8")
+        (ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json").read_text(
+            encoding="utf-8"
+        )
     )
 
     assert len(polar["cases"]) == len(radical["cases"]) == 80
-    assert polar["canonical_path"] == "Data/Mech/polar.json"
-    assert radical["canonical_path"] == "Data/Mech/radical.json"
-    assert stereo["canonical_path"] == "Data/Mech/stereo.json"
+    assert (
+        polar["canonical_path"]
+        == "Experiment/Lewis/mech_path/Data/MechanismBench/polar.json"
+    )
+    assert (
+        radical["canonical_path"]
+        == "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+    )
+    assert (
+        stereo["canonical_path"]
+        == "Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json"
+    )
     assert stereo["positive_case_count"] == 80
     assert (
         len([case for case in stereo["cases"] if case["case_kind"] == "transformation"])
@@ -147,7 +170,9 @@ def test_public_partitions_state_the_current_80_positive_stereo_boundary():
 
 def test_rule_reapplication_audit_covers_every_unmapped_reactant():
     manifest = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     audits = [
         case["provenance"]["chemistry_review"]["rule_reapplication"]
@@ -162,7 +187,9 @@ def test_rule_reapplication_audit_covers_every_unmapped_reactant():
 
 def test_four_review_corrections_preserve_original_and_replay():
     manifest = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     corrected = [
         case
@@ -184,7 +211,9 @@ def test_four_review_corrections_preserve_original_and_replay():
 
 def test_allene_regiochemistry_is_retained_as_advisory():
     manifest = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     case = next(
         case for case in manifest["cases"] if case["case_id"] == "radical-00034"
@@ -197,7 +226,9 @@ def test_allene_regiochemistry_is_retained_as_advisory():
 @pytest.mark.parametrize("case_id", ["radical-00002", "radical-00054"])
 def test_rule_reapplication_uses_aam_alignment_and_radical_node_state(case_id):
     manifest = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     case = next(case for case in manifest["cases"] if case["case_id"] == case_id)
 

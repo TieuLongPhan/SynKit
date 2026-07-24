@@ -53,7 +53,7 @@ def test_every_controlled_corruption_reaches_its_declared_issue_code():
     from synkit.Mechanism.evidence import load_evidence_cases
 
     mismatches = []
-    for case in load_evidence_cases("Data/Mech"):
+    for case in load_evidence_cases("Experiment/Lewis/mech_path/Data/MechanismBench"):
         for corruption in corrupt_record(case.record):
             if corruption.expected_issue_code not in corruption.observed_issue_codes():
                 mismatches.append((case.case_id, corruption.corruption))

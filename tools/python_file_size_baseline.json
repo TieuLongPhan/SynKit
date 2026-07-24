@@ -1,4 +1,7 @@
 {
-  "files": {},
+  "files": {
+    "synkit/Chem/Molecule/chirality.py": 1025,
+    "synkit/Graph/Stereo/descriptors.py": 1233
+  },
   "max_non_docstring_lines": 1000
 }

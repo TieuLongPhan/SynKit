@@ -23,7 +23,15 @@ from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule import GenericStereoRuleExtractor, SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
-DATA_PATH = Path(__file__).parents[2] / "Data" / "Mech" / "stereo.json"
+DATA_PATH = (
+    Path(__file__).parents[2]
+    / "Experiment"
+    / "Lewis"
+    / "mech_path"
+    / "Data"
+    / "MechanismBench"
+    / "stereo.json"
+)
 SN2 = "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>" "[CH3:1][C@@H:2]([F:3])[OH:5].[Cl-:4]"
 PLANAR = (
     "[F:1]/[C:2]([Cl:3])=[C:4]([Br:5])/[I:6]>>"

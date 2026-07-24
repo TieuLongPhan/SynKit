@@ -75,7 +75,23 @@ obtaining an optimality certificate. The exact helpers are available from
 Molecule
 --------
 
+.. automodule:: synkit.Chem.Molecule.stereo_perception
+   :members:
+   :show-inheritance:
+
 .. automodule:: synkit.Chem.Molecule.chirality
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Molecule.cip_ranking
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Molecule.cip_assignment
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Molecule.derived_stereo_naming
    :members:
    :show-inheritance:
 

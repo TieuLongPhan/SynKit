@@ -9,7 +9,7 @@ description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-license-files = ["LICENSE", "LICENSES/*"]
+license-files = ["LICENSE", "synkit/Graph/Stereo/LICENSES/*"]
 authors = [
   { name = "Tieu Long Phan", email = "tieu@bioinf.uni-leipzig.de" }
 ]

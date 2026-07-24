@@ -178,7 +178,6 @@ Funded by the European Union Horizon Europe Doctoral Network
    :hidden:
 
    getting_started
-   mechanism
    io
    chem
    graph

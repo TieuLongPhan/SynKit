@@ -18,7 +18,9 @@ from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 ROOT = Path(__file__).parents[2]
 STEREO_MANIFEST = json.loads(
-    (ROOT / "Data/Mech/stereo.json").read_text(encoding="utf-8")
+    (ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json").read_text(
+        encoding="utf-8"
+    )
 )
 PHASE2R_CASES = tuple(
     case
@@ -275,7 +277,9 @@ def test_wrong_stereo_guard_rolls_back_valid_sn2_electron_moves():
 
 def test_all_six_radical_macros_preserve_supported_remote_stereo():
     payload = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     representatives = {}
     for case in payload["cases"]:
@@ -376,7 +380,9 @@ def _assert_rule_replay_direction(record, rule):
 
 def test_rule_and_typed_replay_agree_forward_reverse_and_double_reverse():
     payload = json.loads(
-        (ROOT / "Data/Mech/radical.json").read_text(encoding="utf-8")
+        (
+            ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/radical.json"
+        ).read_text(encoding="utf-8")
     )
     radical_representatives = {}
     for case in payload["cases"]:

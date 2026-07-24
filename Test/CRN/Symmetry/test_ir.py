@@ -7,6 +7,7 @@ import networkx as nx
 from synkit.CRN.Structure import SynCRN
 from synkit.CRN.Symmetry._common import SymmetryConfig
 from synkit.CRN.Symmetry._ir import IRCanonicalEngine, IRInternalResult
+from synkit.Graph.Canon.exact import CanonicalSearchIncomplete
 
 
 class TestIRCanonicalEngine(unittest.TestCase):
@@ -140,6 +141,14 @@ class TestIRCanonicalEngine(unittest.TestCase):
         self.assertEqual(can_res.canonical_order, run_res.canonical_order)
         self.assertEqual(can_res.canonical_key, run_res.canonical_key)
         self.assertTrue(can_res.exact)
+
+    def test_canonical_result_refuses_timeout_evidence(self) -> None:
+        """A stopped diagnostic traversal cannot become exact identity."""
+        syn = SynCRN.from_reaction_strings(self.small_chain)
+        eng = IRCanonicalEngine(syn)
+
+        with self.assertRaises(CanonicalSearchIncomplete):
+            eng.canonical_result(timeout_sec=0.0)
 
     def test_automorphism_result_matches_run(self) -> None:
         """

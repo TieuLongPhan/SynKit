@@ -25,7 +25,11 @@ from synkit.Rule import NonInvertibleStereoEffectError, SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
-PAYLOAD = json.loads((ROOT / "Data/Mech/stereo.json").read_text(encoding="utf-8"))
+PAYLOAD = json.loads(
+    (ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json").read_text(
+        encoding="utf-8"
+    )
+)
 CASES = tuple(
     case
     for case in PAYLOAD["cases"]
