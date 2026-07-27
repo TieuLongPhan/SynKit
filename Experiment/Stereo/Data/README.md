@@ -5,7 +5,12 @@ preserving their different scientific tasks and license boundaries. Datasets
 must not be pooled into one accuracy number merely because they contain
 stereochemistry.
 
-Generated and retained evidence is grouped by task:
+Only immutable inputs, provenance metadata, licenses, and the manifest are
+versioned in a clean checkout. `Experiment/Stereo/benchmark.sh` generates the
+report files locally; they remain Git-visible for an explicit results commit
+but are not required from a prior run.
+
+Generated evidence is grouped by task:
 
 ```text
 Canonicalization/  local, global-by-local, and multi-element reports

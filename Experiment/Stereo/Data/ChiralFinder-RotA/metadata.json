@@ -1,0 +1,50 @@
+{
+  "schema": "synkit.external-stereo-benchmark/1",
+  "file": "RotA.xlsx",
+  "title": "ChiralFinder RotA axial chirality dataset",
+  "source": {
+    "repository": "https://github.com/Meteor-han/chiralfinder",
+    "file_url": "https://github.com/Meteor-han/chiralfinder/blob/main/data/RotA.xlsx",
+    "revision": "6aa14678f0f0d559badf2dac89811fbfa085459e"
+  },
+  "article": {
+    "title": "A unifying geometric framework for computational representation of stereoisomers based on mixed product",
+    "authors": [
+      "Runhan Shi",
+      "Chi Zhang",
+      "Gufeng Yu",
+      "Xiaohong Huo",
+      "Yang Yang"
+    ],
+    "journal": "Cell Reports Physical Science",
+    "year": 2026,
+    "doi": "10.1016/j.xcrp.2025.103065"
+  },
+  "license": {
+    "name": "MIT",
+    "file": "LICENSE",
+    "copyright": "Copyright (c) 2024 Meteor-han"
+  },
+  "retrieved": "2026-07-18",
+  "records": 650,
+  "bytes": 54154,
+  "sha256": "141ae5281c034f8d08b900454fc387556b5c8702b3e2347d7141ddbd69c4daff",
+  "columns": [
+    "SMILES",
+    "chiral_type",
+    "label",
+    "label_expanded",
+    "Lipinski",
+    "TPSA",
+    "logP",
+    "Mol Weight",
+    "H Acceptors",
+    "H Donors",
+    "Ring Count",
+    "Heavy Atom Count",
+    "Rotatable Bond Count"
+  ],
+  "scope": "Positive axial-stereo locus detection; labels are atom pairs/chains, not whole-molecule chiral/achiral classes.",
+  "whole_molecule_protocol_applicable": false,
+  "reason": "The supplied 2D SMILES do not encode the conformational atropisomer and the corpus has no achiral negative class."
+}

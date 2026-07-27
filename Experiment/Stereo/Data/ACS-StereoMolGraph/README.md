@@ -12,9 +12,9 @@ Stereochemistry-Aware Molecular and Reaction Graphs*, J. Chem. Inf. Model.
 - Publisher MD5: `17da48f77988c6616e62ab92a5d3453c`
 - SHA-256: `b90d64bba99d36f0be2429cad255e7836b244dfc26e7c9b4281b36d9ed51fff0`
 
-The metadata JSON records the complete provenance and license boundary. The
-benchmark JSON freezes one SynKit and direct StereoMolGraph run. Reproduce it
-with:
+The metadata JSON records the complete provenance and license boundary. A
+generated benchmark JSON can freeze one SynKit and direct StereoMolGraph run.
+Create it with:
 
 ```text
 conda run -n synkit python \

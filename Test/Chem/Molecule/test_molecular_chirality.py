@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 
+import pytest
 from rdkit import Chem
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -179,6 +180,10 @@ def test_removing_stereo_flags_makes_chiral_and_achiral_inputs_indistinguishable
     assert achiral_result.unspecified_stereo_loci
 
 
+@pytest.mark.skipif(
+    not REPORT.is_file(),
+    reason="generated published-chirality report is absent; run benchmark.sh",
+)
 def test_frozen_benchmark_separates_published_labels_from_live_reproduction() -> None:
     report = json.loads(REPORT.read_text(encoding="utf-8"))
 

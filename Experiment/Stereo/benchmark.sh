@@ -71,13 +71,6 @@ python "${LOCAL_RUNNER}" rota --jobs "${BENCHMARK_JOBS}" --timeout 10 \
   --output "${CANON_LOCAL}/rota_local_canonicalization_report.json" \
   --table "${CANON_LOCAL}/rota_local_canonicalization_table.csv"
 
-python Experiment/Stereo/Canonicalization/atom_relabel.py global-local \
-  --permutations 8 --class-relabelings 3 --exhaustive-max-atoms 5 \
-  --timeout 10 \
-  --output "${CANON_GLOBAL}/global_local_canonicalization_report.json" \
-  --inventory-json "${CANON_GLOBAL}/canonicalization_inventory.json" \
-  --inventory-csv "${CANON_GLOBAL}/canonicalization_inventory.csv"
-
 # Complete maintained configuration-free global matrix.
 python "${GLOBAL_ABC_RUNNER}" A --cip-path "${CIP_FILE}" \
   --enumeration-mode formal --jobs "${BENCHMARK_JOBS}" \
@@ -131,6 +124,15 @@ python Experiment/Stereo/Perception/cip_labels.py \
 python Experiment/Stereo/Perception/stereo_elements.py \
   --cip-path "${CIP_FILE}" \
   --output "${PERCEPTION_ELEMENTS}/stereo_element_report.json"
+
+# This stage consumes the stereo-element report generated immediately above.
+# Keeping it here makes a clean checkout independent of prior-run outputs.
+python Experiment/Stereo/Canonicalization/atom_relabel.py global-local \
+  --permutations 8 --class-relabelings 3 --exhaustive-max-atoms 5 \
+  --timeout 10 \
+  --output "${CANON_GLOBAL}/global_local_canonicalization_report.json" \
+  --inventory-json "${CANON_GLOBAL}/canonicalization_inventory.json" \
+  --inventory-csv "${CANON_GLOBAL}/canonicalization_inventory.csv"
 
 python - \
   "${CANON_LOCAL}/canonicalization_inventory.json" \

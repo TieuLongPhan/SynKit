@@ -49,6 +49,11 @@ Data/Study/CRN/case_formose/*
 synkit/Graph/dev/*
 *.ipynb
 *.json
+# Stereo benchmark inputs are versioned for reproducible fresh-clone runs.
+# Generated reports stay Git-visible so completed results can be committed
+# explicitly, including reports created by the long raw stress stages.
+!Experiment/Stereo/Data/**/*.csv
+!Experiment/Stereo/Data/**/*.json
 !Data/Schema/
 !Data/Schema/attribute_propagation_v1_5.json
 !/tools/python_file_size_baseline.json
