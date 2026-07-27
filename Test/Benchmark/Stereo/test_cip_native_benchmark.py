@@ -122,17 +122,17 @@ def test_frozen_native_report_covers_all_300_records() -> None:
     }
     assert report["parse_failures"] == []
     assert report["schema"] == "synkit.cip-native-validation/2"
-    assert report["overall"]["exact_records"] == 155
-    assert report["overall"]["true_positive_labels"] == 843
-    assert len(report["nonexact_records"]) == 145
+    assert report["overall"]["exact_records"] == 175
+    assert report["overall"]["true_positive_labels"] == 902
+    assert len(report["nonexact_records"]) == 125
     assert report["primary_limitation_counts"] == {
         "disputed_reference": 0,
-        "label_projection_defect": 2,
-        "missing_orientation_evidence": 27,
-        "ranking_defect": 101,
-        "unsupported_class": 15,
+        "label_projection_defect": 0,
+        "missing_orientation_evidence": 32,
+        "ranking_defect": 83,
+        "unsupported_class": 10,
     }
-    assert sum(report["primary_limitation_counts"].values()) == 145
+    assert sum(report["primary_limitation_counts"].values()) == 125
 
 
 def test_frozen_native_report_contains_no_benchmark_structures() -> None:

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
-from typing import Any, Hashable
+from typing import Any, Hashable, Literal
 
 import networkx as nx
 
@@ -20,6 +20,7 @@ from .canonical import (
     StereoPortVertex,
     StereoSlotVertex,
     StereoTupleVertex,
+    STEREOGRAPH_SCHEMA,
     StereographMirrorResult,
     StereographMirrorStatus,
     VirtualResourceVertex,
@@ -28,9 +29,10 @@ from .canonical import (
     _Expansion,
     _add_coloured_node,
     _add_configuration_orbit,
-    _expand,
+    _expand_base_graph,
     _material_port_resource,
     _project_witnesses,
+    _rdkit_graph,
     _rdkit_graph_and_registry,
 )
 from .descriptors import (
@@ -49,7 +51,9 @@ from .descriptors import (
 from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
 from .orbits import StereoSpecification
 
-CONFIGURED_STEREOGRAPH_SCHEMA = "synkit.canonical-stereograph/2"
+# Compatibility alias for callers that adopted the former configured-prefixed
+# API.  SynKit now exposes one canonical stereograph model.
+CONFIGURED_STEREOGRAPH_SCHEMA = STEREOGRAPH_SCHEMA
 
 AtomDescriptor = (
     TetrahedralStereo
@@ -58,14 +62,7 @@ AtomDescriptor = (
     | OctahedralStereo
 )
 BondDescriptor = PlanarBondStereo | AtropBondStereo
-ConfiguredDescriptor = (
-    AtomDescriptor
-    | BondDescriptor
-    | CumuleneAxisStereo
-    | ExtendedCisTransStereo
-    | HelicalStereo
-    | PlanarChiralityStereo
-)
+ConfiguredDescriptor = StereoValue
 CONFIGURED_DESCRIPTOR_TYPES = (
     TetrahedralStereo,
     SquarePlanarStereo,
@@ -78,6 +75,41 @@ CONFIGURED_DESCRIPTOR_TYPES = (
     HelicalStereo,
     PlanarChiralityStereo,
 )
+
+MirrorIdentityProfile = Literal["chemical", "lewis_state", "acs_topology"]
+_ACS_TOPOLOGY_ATOM_COLOR = ("element", "isotope", "hcount")
+_MAX_RESONANCE_FORMS = 4096
+
+
+def _connectivity_bond_color(_attributes: Mapping[str, Any]) -> str:
+    """Collapse bond placement for the explicit ACS topology profile."""
+    return "bond"
+
+
+def _mirror_profile_options(
+    identity_profile: MirrorIdentityProfile,
+) -> dict[str, AttributeSelector]:
+    if identity_profile == "acs_topology":
+        return {
+            "atom_color": _ACS_TOPOLOGY_ATOM_COLOR,
+            "bond_color": _connectivity_bond_color,
+        }
+    if identity_profile in {"chemical", "lewis_state"}:
+        return {}
+    raise ValueError(
+        "Mirror identity profile must be 'chemical', 'lewis_state', "
+        "or 'acs_topology'."
+    )
+
+
+def _record_mirror_profile(
+    result: StereographMirrorResult,
+    identity_profile: MirrorIdentityProfile,
+) -> StereographMirrorResult:
+    return replace(
+        result,
+        method=f"{result.method}:{identity_profile}",
+    )
 
 
 @dataclass(frozen=True)
@@ -93,9 +125,9 @@ def _prepare(
     atom_color: AttributeSelector,
     bond_color: AttributeSelector,
 ) -> _Prepared:
-    expansion = _expand(
-        base_graph,
-        (),
+    base = base_graph.copy()
+    expansion = _expand_base_graph(
+        base,
         atom_color=atom_color,
         bond_color=bond_color,
     )
@@ -109,7 +141,7 @@ def _prepare(
         left, right = expansion.bond_endpoints[node.index]
         bonds[(left, right)] = node
         bonds[(right, left)] = node
-    return _Prepared(expansion, base_graph.copy(), atoms, bonds)
+    return _Prepared(expansion, base, atoms, bonds)
 
 
 def _port(
@@ -487,6 +519,7 @@ def canonicalize_configured_stereograph(
     *,
     atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
     bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
+    enumerate_automorphism_group: bool = True,
 ) -> CanonicalStereographResult:
     expansion = _expanded(
         base_graph,
@@ -498,6 +531,8 @@ def canonicalize_configured_stereograph(
         expansion.graph,
         node_color="color",
         edge_color=None,
+        prune_automorphisms=True,
+        enumerate_automorphism_group=enumerate_automorphism_group,
     ).canonicalize()
     atom_order = tuple(
         node.reference
@@ -517,9 +552,9 @@ def canonicalize_configured_stereograph(
     port_order = tuple(
         node for node in auxiliary.canonical_order if isinstance(node, StereoPortVertex)
     )
-    code = f"{CONFIGURED_STEREOGRAPH_SCHEMA}\n{auxiliary.canonical_code}"
+    code = f"{STEREOGRAPH_SCHEMA}\n{auxiliary.canonical_code}"
     return CanonicalStereographResult(
-        schema=CONFIGURED_STEREOGRAPH_SCHEMA,
+        schema=STEREOGRAPH_SCHEMA,
         canonical_code=code,
         canonical_digest=hashlib.sha256(code.encode("utf-8")).hexdigest(),
         atom_order=atom_order,
@@ -587,15 +622,13 @@ def mirror_configured_descriptor(
     raise TypeError(f"Unsupported configured mirror family: {type(descriptor)!r}.")
 
 
-def classify_configured_stereograph_mirror(
-    base_graph: nx.Graph,
+def _configured_mirror_boundary(
     registry: Mapping[str, StereoValue],
     *,
     incomplete_loci: Iterable[str] = (),
     unsupported_loci: Iterable[str] = (),
-    atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
-    bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
-) -> StereographMirrorResult:
+) -> StereographMirrorResult | None:
+    """Return a fail-closed boundary result, or ``None`` when definitive."""
     unsupported_entries = tuple(
         (key, value.descriptor_class)
         for key, value in registry.items()
@@ -617,7 +650,7 @@ def classify_configured_stereograph_mirror(
             unsupported_families=tuple(
                 sorted({family for _key, family in unsupported_entries})
             ),
-            method="exact_canonical_stereograph_v2_mirror_comparison",
+            method="exact_canonical_stereograph_mirror_comparison",
         )
     unknown = tuple(
         key
@@ -630,8 +663,27 @@ def classify_configured_stereograph_mirror(
             StereographMirrorStatus.INCOMPLETE,
             len(registry),
             incomplete_loci=missing,
-            method="exact_canonical_stereograph_v2_mirror_comparison",
+            method="exact_canonical_stereograph_mirror_comparison",
         )
+    return None
+
+
+def classify_configured_stereograph_mirror(
+    base_graph: nx.Graph,
+    registry: Mapping[str, StereoValue],
+    *,
+    incomplete_loci: Iterable[str] = (),
+    unsupported_loci: Iterable[str] = (),
+    atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
+    bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
+) -> StereographMirrorResult:
+    boundary = _configured_mirror_boundary(
+        registry,
+        incomplete_loci=incomplete_loci,
+        unsupported_loci=unsupported_loci,
+    )
+    if boundary is not None:
+        return boundary
     original = canonicalize_configured_registry(
         base_graph,
         registry,
@@ -660,7 +712,85 @@ def classify_configured_stereograph_mirror(
         mirror,
         tuple(mirrored.values()),
         (tuple(zip(original.atom_order, mirror.atom_order)) if achiral else None),
-        method="exact_canonical_stereograph_v2_mirror_comparison",
+        method="exact_canonical_stereograph_mirror_comparison",
+    )
+
+
+def _resonance_graphs(molecule: Any) -> tuple[nx.Graph, ...]:
+    """Return every RDKit resonance form as an attributed molecular graph."""
+    from rdkit import Chem
+
+    supplier = Chem.ResonanceMolSupplier(
+        molecule,
+        flags=Chem.ResonanceFlags.ALLOW_CHARGE_SEPARATION,
+        maxStructs=_MAX_RESONANCE_FORMS,
+    )
+    forms = tuple(supplier)
+    if len(forms) >= _MAX_RESONANCE_FORMS:
+        raise RuntimeError(
+            "Exact resonance-family enumeration reached the "
+            f"{_MAX_RESONANCE_FORMS}-form safety limit."
+        )
+    if not forms:
+        forms = (Chem.Mol(molecule),)
+    graphs = []
+    for form in forms:
+        normalized = Chem.Mol(form)
+        Chem.SetAromaticity(normalized)
+        graphs.append(_rdkit_graph(normalized))
+    return tuple(graphs)
+
+
+def _classify_resonance_family_mirror(
+    molecule: Any,
+    registry: Mapping[str, StereoValue],
+    *,
+    incomplete_loci: Iterable[str] = (),
+    unsupported_loci: Iterable[str] = (),
+) -> StereographMirrorResult:
+    """Compare the complete Lewis-resonance family with its mirror exactly."""
+    boundary = _configured_mirror_boundary(
+        registry,
+        incomplete_loci=incomplete_loci,
+        unsupported_loci=unsupported_loci,
+    )
+    if boundary is not None:
+        return boundary
+
+    mirrored = {
+        key: mirror_configured_descriptor(value)  # type: ignore[arg-type]
+        for key, value in registry.items()
+    }
+    originals = []
+    mirrors = []
+    for graph in _resonance_graphs(molecule):
+        originals.append(canonicalize_configured_registry(graph, registry))
+        mirrors.append(canonicalize_configured_registry(graph, mirrored))
+    originals.sort(key=lambda result: result.canonical_code)
+    mirrors.sort(key=lambda result: result.canonical_code)
+    mirror_by_code = {result.canonical_code: result for result in mirrors}
+    matched = next(
+        (
+            (original, mirror_by_code[original.canonical_code])
+            for original in originals
+            if original.canonical_code in mirror_by_code
+        ),
+        None,
+    )
+    achiral = matched is not None
+    original, mirror = matched or (originals[0], mirrors[0])
+    return StereographMirrorResult(
+        (
+            StereographMirrorStatus.ACHIRAL
+            if achiral
+            else StereographMirrorStatus.CHIRAL
+        ),
+        len(registry),
+        original,
+        mirror,
+        tuple(mirrored.values()),
+        (tuple(zip(original.atom_order, mirror.atom_order)) if achiral else None),
+        method="exact_resonance_family_stereograph_mirror_comparison",
     )
 
 
@@ -671,33 +801,155 @@ def canonicalize_rdkit_configured_stereograph(
     return canonicalize_configured_registry(graph, registry)
 
 
+def _is_terminal_phosphate_resonance_locus(molecule: Any, element: Any) -> bool:
+    """Return whether an apparent P center differs only by localized resonance.
+
+    A neutral tetra-coordinate phosphorus with terminal ``P=O`` and
+    ``P-[O-]`` ligands contains two drawings of the same delocalized phosphate
+    oxygen environment.  Treating bond order and formal charge as ligand
+    identity makes this look tetrahedral even though exchanging those terminal
+    oxygens is resonance-equivalent in the molecular-identity task.
+    """
+    from rdkit import Chem
+
+    support = element.support
+    if not hasattr(support, "center"):
+        return False
+    atom = molecule.GetAtomWithIdx(support.center)
+    if atom.GetAtomicNum() != 15 or atom.GetFormalCharge() != 0:
+        return False
+    terminal_oxygen_bonds = [
+        (neighbor, molecule.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx()))
+        for neighbor in atom.GetNeighbors()
+        if neighbor.GetAtomicNum() == 8 and neighbor.GetDegree() == 1
+    ]
+    has_neutral_double = any(
+        oxygen.GetFormalCharge() == 0
+        and bond.GetBondType() is Chem.BondType.DOUBLE
+        for oxygen, bond in terminal_oxygen_bonds
+    )
+    has_anionic_single = any(
+        oxygen.GetFormalCharge() == -1
+        and bond.GetBondType() is Chem.BondType.SINGLE
+        for oxygen, bond in terminal_oxygen_bonds
+    )
+    return has_neutral_double and has_anionic_single
+
+
+def _classify_rdkit_identity_profile(
+    molecule: Any,
+    graph: nx.Graph,
+    registry: Mapping[str, StereoValue],
+    identity_profile: MirrorIdentityProfile,
+    *,
+    incomplete_loci: Iterable[str] = (),
+    unsupported_loci: Iterable[str] = (),
+) -> StereographMirrorResult:
+    if identity_profile == "chemical":
+        result = _classify_resonance_family_mirror(
+            molecule,
+            registry,
+            incomplete_loci=incomplete_loci,
+            unsupported_loci=unsupported_loci,
+        )
+    else:
+        result = classify_configured_stereograph_mirror(
+            graph,
+            registry,
+            incomplete_loci=incomplete_loci,
+            unsupported_loci=unsupported_loci,
+            **_mirror_profile_options(identity_profile),
+        )
+    return _record_mirror_profile(result, identity_profile)
+
+
 def classify_rdkit_configured_stereograph_mirror(
     molecule: Any,
+    *,
+    require_complete: bool = True,
+    identity_profile: MirrorIdentityProfile = "chemical",
 ) -> StereographMirrorResult:
-    """Classify an RDKit molecule with the exact Version 2 mirror test.
+    """Classify an RDKit molecule with the exact stereograph mirror test.
+
+    The ``chemical`` default compares the complete enumerated resonance family:
+    genuine bond-order differences remain distinct, while alternative
+    resonance/Kekule drawings do not create false chirality.
+    ``lewis_state`` audits the precise supplied charge/bond-order drawing.
+    ``acs_topology`` reproduces the external benchmark's connectivity-only
+    identity convention and must not be reported as literal Lewis-structure
+    chirality.
 
     Perception is used only to identify supported loci whose configuration is
     absent.  It does not supply a configuration or a handedness label.
+    Set ``require_complete=False`` to classify exactly the source-declared
+    configured stereograph while leaving every undeclared locus unconstrained.
     Enhanced stereo groups remain outside the single-stereoisomer contract.
+    A chiral verdict on the supplied descriptors remains exact when additional
+    loci are unresolved: adding stereo constraints can only remove candidate
+    mirror isomorphisms, never create one.
     """
+    from rdkit import Chem
+
     from synkit.Chem.Molecule.stereo_perception import (
         StereoConfigurationState,
         detect_potential_stereo_elements,
     )
 
+    _mirror_profile_options(identity_profile)
     graph, registry = _rdkit_graph_and_registry(molecule)
-    incomplete = tuple(
-        element.identifier
-        for element in detect_potential_stereo_elements(molecule)
-        if element.configuration_state is StereoConfigurationState.UNSPECIFIED
-    )
     enhanced_groups = tuple(
         f"enhanced_stereo_group:{index}:{group.GetGroupType()}"
         for index, group in enumerate(molecule.GetStereoGroups())
     )
-    return classify_configured_stereograph_mirror(
+    if not require_complete:
+        return _classify_rdkit_identity_profile(
+            molecule,
+            graph,
+            registry,
+            identity_profile,
+            unsupported_loci=enhanced_groups,
+        )
+    configured_tetrahedral_centers = tuple(
+        atom.GetIdx()
+        for atom in molecule.GetAtoms()
+        if atom.GetChiralTag()
+        in {
+            Chem.ChiralType.CHI_TETRAHEDRAL_CW,
+            Chem.ChiralType.CHI_TETRAHEDRAL_CCW,
+        }
+    )
+    incomplete = tuple(
+        element.identifier
+        for element in detect_potential_stereo_elements(
+            molecule,
+            excluded_tetrahedral_centers=configured_tetrahedral_centers,
+        )
+        if (
+            element.configuration_state is StereoConfigurationState.UNSPECIFIED
+            and not _is_terminal_phosphate_resonance_locus(molecule, element)
+        )
+    )
+    if incomplete and not enhanced_groups:
+        relaxed = _classify_rdkit_identity_profile(
+            molecule,
+            graph,
+            registry,
+            identity_profile,
+        )
+        if relaxed.status is StereographMirrorStatus.CHIRAL:
+            return replace(
+                relaxed,
+                incomplete_loci=tuple(sorted(set(incomplete))),
+                method=(
+                    "exact_stereograph_monotone_chiral_mirror_proof:"
+                    f"{identity_profile}"
+                ),
+            )
+    return _classify_rdkit_identity_profile(
+        molecule,
         graph,
         registry,
+        identity_profile,
         incomplete_loci=incomplete,
         unsupported_loci=enhanced_groups,
     )
@@ -707,6 +959,7 @@ __all__ = [
     "CONFIGURED_DESCRIPTOR_TYPES",
     "CONFIGURED_STEREOGRAPH_SCHEMA",
     "ConfiguredDescriptor",
+    "MirrorIdentityProfile",
     "canonicalize_configured_registry",
     "canonicalize_configured_stereograph",
     "canonicalize_rdkit_configured_stereograph",

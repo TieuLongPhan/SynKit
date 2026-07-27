@@ -2,9 +2,9 @@
 
 The implementation follows the hierarchical ordering in IUPAC Blue Book
 P-92: Sequence Rule 1a is exhausted before duplicate-node Rule 1b, followed
-by isotope Rule 2. Later geometrical/topographical rules are represented in
-the evidence but fail closed until their dedicated implementations exist.
-No RDKit CIPCode or CIPRank property is read.
+by isotope Rule 2. Sequence Rule 3 and the reference-independent, single-pair
+subset of Rules 4c/5 are witnessed explicitly; multi-unit Rule 4b continues
+to fail closed. No RDKit CIPCode or CIPRank property is read.
 
 Reference: https://iupac.qmul.ac.uk/BlueBook/P9.html#92010000
 """
@@ -22,6 +22,37 @@ from rdkit import Chem
 from synkit.Graph.Stereo import descriptor_id, parse_virtual_reference
 
 Reference = int | str
+
+_STEREO_HIGH_LABELS = frozenset({"R", "M", "Z", "r", "m", "z"})
+_STEREO_LOW_LABELS = frozenset({"S", "P", "E", "s", "p", "e"})
+_STEREO_LABEL_FAMILIES = {
+    "R": "center",
+    "S": "center",
+    "r": "center",
+    "s": "center",
+    "M": "axis",
+    "P": "axis",
+    "m": "axis",
+    "p": "axis",
+    "Z": "planar",
+    "E": "planar",
+    "z": "planar",
+    "e": "planar",
+}
+_REFLECTED_STEREO_LABEL = {
+    "R": "S",
+    "S": "R",
+    "M": "P",
+    "P": "M",
+    "r": "r",
+    "s": "s",
+    "m": "m",
+    "p": "p",
+    "Z": "Z",
+    "E": "E",
+    "z": "z",
+    "e": "e",
+}
 
 
 class CIPSequenceRule(str, Enum):
@@ -51,7 +82,7 @@ class CIPNodeEvidence:
     """One material, duplicate, or virtual node in a ligand digraph sphere."""
 
     depth: int
-    atomic_number: int
+    atomic_number: float
     mass: float
     atom_index: int | None
     path: tuple[int, ...]
@@ -60,11 +91,11 @@ class CIPNodeEvidence:
     duplicate_kind: str | None = None
 
     @property
-    def atomic_key(self) -> int:
+    def atomic_key(self) -> float:
         return self.atomic_number
 
     @property
-    def isotope_key(self) -> tuple[int, float]:
+    def isotope_key(self) -> tuple[float, float]:
         return self.atomic_number, self.mass
 
 
@@ -74,7 +105,7 @@ class CIPSphereEvidence:
     nodes: tuple[CIPNodeEvidence, ...]
 
     @property
-    def atomic_signature(self) -> tuple[int, ...]:
+    def atomic_signature(self) -> tuple[float, ...]:
         return tuple(
             sorted(
                 (node.atomic_number for node in self.nodes),
@@ -83,7 +114,7 @@ class CIPSphereEvidence:
         )
 
     @property
-    def isotope_signature(self) -> tuple[tuple[int, float], ...]:
+    def isotope_signature(self) -> tuple[tuple[float, float], ...]:
         return tuple(
             sorted(
                 (node.isotope_key for node in self.nodes),
@@ -92,7 +123,7 @@ class CIPSphereEvidence:
         )
 
     @property
-    def duplicate_signature(self) -> tuple[tuple[int, int], ...]:
+    def duplicate_signature(self) -> tuple[tuple[float, int], ...]:
         values = (
             (node.atomic_number, -int(node.duplicate_source_depth))
             for node in self.nodes
@@ -106,6 +137,8 @@ class CIPStereogenicUnitEvidence:
     descriptor_class: str
     identifier: str
     parity: int | None
+    label: str | None
+    depth: int
     encountered_atoms: tuple[int, ...]
 
 
@@ -213,9 +246,48 @@ def _virtual_node(reference: str) -> CIPNodeEvidence:
 
 def _bond_multiplicity(bond: Chem.Bond) -> tuple[int, str | None]:
     if bond.GetIsAromatic():
-        return 2, "aromatic_duplicate_model"
+        return 1, None
     order = int(round(float(bond.GetBondTypeAsDouble())))
     return max(1, order), None
+
+
+def _mancude_duplicate_values(
+    molecule: Chem.Mol,
+    atom_index: int,
+) -> tuple[float, float] | None:
+    """Return the averaged duplicate node for a simple mancude ring atom.
+
+    IUPAC P-92.1.4.4 averages the atomic number over the possible Kekulé
+    double-bond positions.  A non-fused even aromatic ring has two such
+    neighbours at every atom, so its exact mean is available without choosing
+    an arbitrary Kekulé form.  Fused and odd aromatic systems remain explicit
+    unsupported features until their full resonance ensemble is implemented.
+    """
+    atom = molecule.GetAtomWithIdx(atom_index)
+    aromatic_neighbours = tuple(
+        bond.GetOtherAtomIdx(atom_index)
+        for bond in atom.GetBonds()
+        if bond.GetIsAromatic()
+    )
+    rings = tuple(
+        ring
+        for ring in molecule.GetRingInfo().AtomRings()
+        if atom_index in ring
+        and all(molecule.GetAtomWithIdx(index).GetIsAromatic() for index in ring)
+    )
+    if (
+        len(aromatic_neighbours) != 2
+        or len(rings) != 1
+        or len(rings[0]) % 2
+    ):
+        return None
+    neighbours = tuple(
+        molecule.GetAtomWithIdx(index) for index in aromatic_neighbours
+    )
+    return (
+        sum(atom.GetAtomicNum() for atom in neighbours) / len(neighbours),
+        sum(_effective_mass(atom) for atom in neighbours) / len(neighbours),
+    )
 
 
 def _sort_nodes(
@@ -248,12 +320,18 @@ class CIPRanker:
         molecule: Chem.Mol,
         *,
         configured_descriptors: Iterable[Any] = (),
+        configured_labels: dict[str, str] | None = None,
         max_depth: int | None = None,
     ) -> None:
         if molecule is None:
             raise ValueError("CIP ranking requires a molecule.")
         self.molecule = Chem.Mol(molecule)
         self.configured_descriptors = tuple(configured_descriptors)
+        self.configured_labels = dict(configured_labels or {})
+        self._mancude_duplicate_cache: dict[
+            int,
+            tuple[float, float] | None,
+        ] = {}
         self.max_depth = (
             max(4, self.molecule.GetNumAtoms() * 2 + 2)
             if max_depth is None
@@ -283,23 +361,75 @@ class CIPRanker:
                 f"Virtual CIP reference {reference!r} is not owned " f"by {center}."
             )
 
+    def reflected(self) -> CIPRanker:
+        """Return the same constitutional ranker with reflected stereo labels."""
+        return CIPRanker(
+            self.molecule,
+            configured_descriptors=self.configured_descriptors,
+            configured_labels={
+                identifier: _REFLECTED_STEREO_LABEL.get(label, label)
+                for identifier, label in self.configured_labels.items()
+            },
+            max_depth=self.max_depth,
+        )
+
+    def _mancude_duplicate(
+        self,
+        atom_index: int,
+        *,
+        depth: int,
+        path: tuple[int, ...],
+    ) -> CIPNodeEvidence | None:
+        if atom_index not in self._mancude_duplicate_cache:
+            self._mancude_duplicate_cache[atom_index] = (
+                _mancude_duplicate_values(self.molecule, atom_index)
+            )
+        values = self._mancude_duplicate_cache[atom_index]
+        if values is None:
+            return None
+        atomic_number, mass = values
+        return CIPNodeEvidence(
+            depth,
+            atomic_number,
+            mass,
+            None,
+            path,
+            duplicate=True,
+            duplicate_source_depth=depth,
+            duplicate_kind="mancude_average",
+        )
+
     def _stereo_evidence(
-        self, material_atoms: frozenset[int]
+        self, material_depths: dict[int, int]
     ) -> tuple[CIPStereogenicUnitEvidence, ...]:
         result = []
         for descriptor in self.configured_descriptors:
-            encountered = tuple(sorted(descriptor.dependencies & material_atoms))
+            encountered = tuple(
+                sorted(descriptor.dependencies & set(material_depths))
+            )
             if not encountered:
                 continue
+            identifier = descriptor_id(descriptor)
             result.append(
                 CIPStereogenicUnitEvidence(
                     descriptor.descriptor_class,
-                    descriptor_id(descriptor),
+                    identifier,
                     descriptor.parity,
+                    self.configured_labels.get(identifier),
+                    min(material_depths[atom] for atom in encountered),
                     encountered,
                 )
             )
-        return tuple(sorted(result, key=repr))
+        return tuple(
+            sorted(
+                result,
+                key=lambda item: (
+                    item.depth,
+                    item.descriptor_class,
+                    item.identifier,
+                ),
+            )
+        )
 
     def build_evidence(
         self,
@@ -326,7 +456,7 @@ class CIPRanker:
         )
         spheres = [CIPSphereEvidence(1, (first,))]
         active = [_Occurrence(reference, center, (center, reference), 1)]
-        material_atoms = {reference}
+        material_depths = {reference: 1}
         unsupported: set[str] = set()
         termination = CIPTermination.EXHAUSTED
 
@@ -351,6 +481,16 @@ class CIPRanker:
                     )
                     for _ in range(hidden_h)
                 )
+                if atom.GetIsAromatic():
+                    mancude_duplicate = self._mancude_duplicate(
+                        occurrence.atom_index,
+                        depth=next_depth,
+                        path=occurrence.path,
+                    )
+                    if mancude_duplicate is None:
+                        unsupported.add("unsupported_mancude_duplicate_model")
+                    else:
+                        next_nodes.append(mancude_duplicate)
                 for bond in atom.GetBonds():
                     neighbor = bond.GetOtherAtomIdx(occurrence.atom_index)
                     multiplicity, feature = _bond_multiplicity(bond)
@@ -388,29 +528,29 @@ class CIPRanker:
                                     next_depth,
                                 )
                             )
-                            material_atoms.add(neighbor)
-                    source_depth = (
-                        occurrence.path.index(neighbor)
-                        if neighbor in occurrence.path
-                        else next_depth
-                    )
-                    next_nodes.extend(
-                        _node(
-                            self.molecule,
-                            neighbor,
-                            depth=next_depth,
-                            path=occurrence.path + (neighbor,),
-                            duplicate=True,
-                            duplicate_source_depth=source_depth,
-                            duplicate_kind="multiple_bond",
+                            material_depths.setdefault(neighbor, next_depth)
+                        source_depth = (
+                            occurrence.path.index(neighbor)
+                            if neighbor in occurrence.path
+                            else next_depth
                         )
-                        for _ in range(multiplicity - 1)
-                    )
+                        next_nodes.extend(
+                            _node(
+                                self.molecule,
+                                neighbor,
+                                depth=next_depth,
+                                path=occurrence.path + (neighbor,),
+                                duplicate=True,
+                                duplicate_source_depth=source_depth,
+                                duplicate_kind="multiple_bond",
+                            )
+                            for _ in range(multiplicity - 1)
+                        )
             if next_nodes:
                 spheres.append(CIPSphereEvidence(next_depth, _sort_nodes(next_nodes)))
             active = next_active
 
-        stereo = self._stereo_evidence(frozenset(material_atoms))
+        stereo = self._stereo_evidence(material_depths)
         return CIPLigandEvidence(
             center,
             reference,
@@ -462,6 +602,82 @@ class CIPRanker:
             if left > right
             else CIPComparisonOutcome.RIGHT_HIGHER
         )
+
+    @staticmethod
+    def _resolved_stereo_units(
+        evidence: CIPLigandEvidence,
+    ) -> tuple[CIPStereogenicUnitEvidence, ...] | None:
+        if any(unit.label is None for unit in evidence.stereogenic_units):
+            return None
+        return evidence.stereogenic_units
+
+    def _stereo_difference(
+        self,
+        left: CIPLigandEvidence,
+        right: CIPLigandEvidence,
+    ) -> tuple[
+        CIPSequenceRule,
+        tuple[Any, ...],
+        tuple[Any, ...],
+        str,
+    ] | None:
+        left_units = self._resolved_stereo_units(left)
+        right_units = self._resolved_stereo_units(right)
+        if left_units is None or right_units is None:
+            return None
+        # A single corresponding pair is the closed, reference-independent
+        # subset of Rules 4c/5.  Multi-unit Rule 4b requires the full
+        # reference-descriptor pairing algorithm and therefore still fails
+        # closed below.
+        if len(left_units) != 1 or len(right_units) != 1:
+            return None
+        left_unit, right_unit = left_units[0], right_units[0]
+        left_label, right_label = str(left_unit.label), str(right_unit.label)
+        if (
+            left_unit.depth != right_unit.depth
+            or _STEREO_LABEL_FAMILIES.get(left_label)
+            != _STEREO_LABEL_FAMILIES.get(right_label)
+            or (left_label in _STEREO_HIGH_LABELS)
+            == (right_label in _STEREO_HIGH_LABELS)
+        ):
+            return None
+        left_witness = (
+            -left_unit.depth,
+            _STEREO_LABEL_FAMILIES[left_label],
+            int(left_label in _STEREO_HIGH_LABELS),
+        )
+        right_witness = (
+            -right_unit.depth,
+            _STEREO_LABEL_FAMILIES[right_label],
+            int(right_label in _STEREO_HIGH_LABELS),
+        )
+        if (
+            _STEREO_LABEL_FAMILIES[left_label] == "planar"
+            and left_label.isupper()
+            and right_label.isupper()
+        ):
+            return (
+                CIPSequenceRule.RULE_3_SEQUENCE_GEOMETRY,
+                left_witness,
+                right_witness,
+                "Sequence Rule 3 ranks seqCis/Z before seqTrans/E.",
+            )
+        if left_label.islower() and right_label.islower():
+            return (
+                CIPSequenceRule.RULE_4_STEREOGENIC_UNIT,
+                left_witness,
+                right_witness,
+                "Sequence Rule 4c ranks r before s and m before p.",
+            )
+        if left_label.isupper() and right_label.isupper():
+            return (
+                CIPSequenceRule.RULE_5_REFLECTION_VARIANT,
+                left_witness,
+                right_witness,
+                "Sequence Rule 5 ranks R/M/seqCis before "
+                "S/P/seqTrans enantiomorphs.",
+            )
+        return None
 
     def compare(
         self,
@@ -534,13 +750,30 @@ class CIPRanker:
                 right,
             )
 
+        stereo = self._stereo_difference(left, right)
+        if stereo is not None:
+            rule, left_witness, right_witness, reason = stereo
+            return CIPComparison(
+                center,
+                left_reference,
+                right_reference,
+                self._outcome(left_witness, right_witness),
+                rule,
+                None,
+                left_witness,
+                right_witness,
+                reason,
+                left,
+                right,
+            )
+
         if (
             left.termination is CIPTermination.DEPTH_CAP
             or right.termination is CIPTermination.DEPTH_CAP
         ):
             reason = "Ligand exploration reached the explicit depth cap."
         elif left.unsupported_features or right.unsupported_features:
-            reason = "Tied ligands require an unsupported aromatic " "duplicate model."
+            reason = "Tied ligands require an unsupported mancude duplicate model."
         elif left.stereogenic_units or right.stereogenic_units:
             reason = (
                 "Tied ligands require Sequence Rules 3-5 " "stereogenic-unit ordering."

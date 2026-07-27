@@ -8,6 +8,7 @@ from rdkit import Chem
 
 from synkit.Graph.Stereo import (
     CONFIGURED_STEREOGRAPH_SCHEMA,
+    STEREOGRAPH_SCHEMA,
     AtropBondStereo,
     CumuleneAxisStereo,
     HelicalStereo,
@@ -19,6 +20,7 @@ from synkit.Graph.Stereo import (
     canonicalize_configured_stereograph,
     canonicalize_rdkit_configured_stereograph,
     classify_configured_stereograph_mirror,
+    classify_rdkit_configured_stereograph_mirror,
     descriptor_id,
     expand_configured_stereograph,
     mirror_configured_descriptor,
@@ -47,6 +49,107 @@ def _canonical(graph: nx.Graph, descriptor):
         atom_color="color",
         bond_color="color",
     )
+
+
+def test_configured_schema_name_is_a_compatibility_alias() -> None:
+    assert CONFIGURED_STEREOGRAPH_SCHEMA == STEREOGRAPH_SCHEMA
+
+
+def test_existing_chiral_certificate_is_definitive_with_unresolved_amine() -> None:
+    molecule = Chem.MolFromSmiles("FC(CN1[C@@H](C2=CC=CS2)CCC1)(F)F")
+    assert molecule is not None
+
+    result = classify_rdkit_configured_stereograph_mirror(molecule)
+
+    assert result.status is StereographMirrorStatus.CHIRAL
+    assert result.is_definitive
+    assert result.incomplete_loci == ("tetrahedral:3",)
+    assert result.original is not None and result.mirror is not None
+    assert "monotone_chiral_mirror_proof" in result.method
+    assert result.method.endswith(":chemical")
+
+
+def test_supplied_configuration_mode_does_not_require_latent_loci() -> None:
+    molecule = Chem.MolFromSmiles("C/C=C/1\\C/C(/C1)=C\\C")
+    assert molecule is not None
+
+    strict = classify_rdkit_configured_stereograph_mirror(molecule)
+    supplied = classify_rdkit_configured_stereograph_mirror(
+        molecule,
+        require_complete=False,
+    )
+
+    assert strict.status is StereographMirrorStatus.INCOMPLETE
+    assert supplied.status is StereographMirrorStatus.ACHIRAL
+    assert supplied.incomplete_loci == ()
+
+
+@pytest.mark.parametrize(
+    "smiles",
+    (
+        "C1=C2[C@@H]3C(C=NC4=CC=CC(=N1)[C@@H]43)=CC=C2",
+        "C1=C2[C@H]3C(C=NC4=CC=CC(=N1)[C@H]43)=CC=C2",
+    ),
+)
+def test_resonance_family_recognizes_vs215_vs216_as_achiral(
+    smiles: str,
+) -> None:
+    molecule = Chem.MolFromSmiles(smiles)
+    assert molecule is not None
+
+    chemical = classify_rdkit_configured_stereograph_mirror(
+        molecule,
+        require_complete=False,
+    )
+    lewis = classify_rdkit_configured_stereograph_mirror(
+        molecule,
+        require_complete=False,
+        identity_profile="lewis_state",
+    )
+
+    assert chemical.status is StereographMirrorStatus.ACHIRAL
+    assert chemical.method.endswith(":chemical")
+    assert lewis.status is StereographMirrorStatus.CHIRAL
+    assert lewis.method.endswith(":lewis_state")
+
+
+def test_vs170_preserves_genuine_bond_order_difference() -> None:
+    molecule = Chem.MolFromSmiles("[C@H](O)(SI)S#I")
+    assert molecule is not None
+
+    chemical = classify_rdkit_configured_stereograph_mirror(
+        molecule,
+        require_complete=False,
+    )
+    acs_topology = classify_rdkit_configured_stereograph_mirror(
+        molecule,
+        require_complete=False,
+        identity_profile="acs_topology",
+    )
+
+    assert chemical.status is StereographMirrorStatus.CHIRAL
+    assert chemical.method.endswith(":chemical")
+    assert acs_topology.status is StereographMirrorStatus.ACHIRAL
+    assert acs_topology.method.endswith(":acs_topology")
+
+
+@pytest.mark.parametrize(
+    "smiles",
+    (
+        "CC1=C(C=CC=C1)/N=N/P(=O)([O-])OC",
+        "COP(=O)(/N=N/C1=CC(=CC=C1)F)[O-]",
+    ),
+)
+def test_terminal_phosphate_resonance_pair_is_not_a_missing_p_center(
+    smiles: str,
+) -> None:
+    molecule = Chem.MolFromSmiles(smiles)
+    assert molecule is not None
+
+    result = classify_rdkit_configured_stereograph_mirror(molecule)
+
+    assert result.status is StereographMirrorStatus.ACHIRAL
+    assert result.incomplete_loci == ()
 
 
 @pytest.mark.parametrize(

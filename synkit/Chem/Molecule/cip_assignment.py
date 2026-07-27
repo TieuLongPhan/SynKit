@@ -254,6 +254,17 @@ def _assign_tetrahedral(
         return _incomplete_result(original, (ranking,))
     sign = descriptor.parity * _permutation_sign(references, ranking.ordered_references)
     label = "R" if sign == 1 else "S"
+    if CIPSequenceRule.RULE_5_REFLECTION_VARIANT in _required_rules(
+        ranking.comparisons
+    ):
+        reflected = ranker.reflected().rank(descriptor.center, references)
+        if reflected.complete:
+            reflected_sign = -descriptor.parity * _permutation_sign(
+                references,
+                reflected.ordered_references,
+            )
+            if reflected_sign == sign:
+                label = label.lower()
     return _result(
         original,
         CIPAssignmentStatus.ASSIGNED,
@@ -283,6 +294,32 @@ def _assign_planar(
     left_position = descriptor.atoms[:2].index(left.ordered_references[0])
     right_position = descriptor.atoms[4:].index(right.ordered_references[0])
     label = "Z" if left_position == right_position else "E"
+    if CIPSequenceRule.RULE_5_REFLECTION_VARIANT in _required_rules(
+        _comparisons(rankings)
+    ):
+        reflected_ranker = ranker.reflected()
+        reflected_left = reflected_ranker.rank(
+            descriptor.atoms[2],
+            descriptor.atoms[:2],
+        )
+        reflected_right = reflected_ranker.rank(
+            descriptor.atoms[3],
+            descriptor.atoms[4:],
+        )
+        if reflected_left.complete and reflected_right.complete:
+            reflected_left_position = descriptor.atoms[:2].index(
+                reflected_left.ordered_references[0]
+            )
+            reflected_right_position = descriptor.atoms[4:].index(
+                reflected_right.ordered_references[0]
+            )
+            reflected_label = (
+                "Z"
+                if reflected_left_position == reflected_right_position
+                else "E"
+            )
+            if reflected_label != label:
+                label = label.lower()
     return _result(
         original,
         CIPAssignmentStatus.ASSIGNED,
@@ -368,6 +405,41 @@ def _assign_axis(
     right_factor = 1 if right_frame[0] == right.ordered_references[0] else -1
     sign = descriptor.parity * left_factor * right_factor * direction
     label = "P" if sign == 1 else "M"
+    if CIPSequenceRule.RULE_5_REFLECTION_VARIANT in _required_rules(
+        (*_comparisons(rankings), *direction_comparisons)
+    ):
+        reflected_ranker = ranker.reflected()
+        reflected_left = reflected_ranker.rank(left_center, left_frame)
+        reflected_right = reflected_ranker.rank(right_center, right_frame)
+        if reflected_left.complete and reflected_right.complete:
+            reflected_direction, _comparisons_reflected = _axis_direction(
+                reflected_ranker,
+                left_center,
+                right_center,
+                reflected_left,
+                reflected_right,
+            )
+            if reflected_direction is not None:
+                reflected_left_factor = (
+                    1
+                    if left_frame[0]
+                    == reflected_left.ordered_references[0]
+                    else -1
+                )
+                reflected_right_factor = (
+                    1
+                    if right_frame[0]
+                    == reflected_right.ordered_references[0]
+                    else -1
+                )
+                reflected_sign = (
+                    -descriptor.parity
+                    * reflected_left_factor
+                    * reflected_right_factor
+                    * reflected_direction
+                )
+                if reflected_sign == sign:
+                    label = label.lower()
     return _result(
         original,
         CIPAssignmentStatus.ASSIGNED,
@@ -445,22 +517,39 @@ def assign_cip_labels(
         _normalize_descriptor(molecule, descriptor, reference_to_index)
         for descriptor in original
     )
-    return tuple(
-        _assign_normalized(
-            source,
-            target,
-            CIPRanker(
-                molecule,
-                configured_descriptors=tuple(
-                    candidate
-                    for candidate_index, candidate in enumerate(normalized)
-                    if candidate_index != index
-                    and isinstance(candidate, _SUPPORTED_TYPES)
+
+    def assign_all(labels: dict[str, str]) -> tuple[CIPAssignment, ...]:
+        return tuple(
+            _assign_normalized(
+                source,
+                target,
+                CIPRanker(
+                    molecule,
+                    configured_descriptors=tuple(
+                        candidate
+                        for candidate_index, candidate in enumerate(normalized)
+                        if candidate_index != index
+                        and isinstance(candidate, _SUPPORTED_TYPES)
+                    ),
+                    configured_labels=labels,
                 ),
-            ),
+            )
+            for index, (source, target) in enumerate(zip(original, normalized))
         )
-        for index, (source, target) in enumerate(zip(original, normalized))
-    )
+
+    labels: dict[str, str] = {}
+    results = assign_all(labels)
+    for _iteration in range(len(normalized)):
+        updated = {
+            descriptor_id(descriptor): assignment.label
+            for descriptor, assignment in zip(normalized, results)
+            if assignment.assigned and assignment.label is not None
+        }
+        if updated == labels:
+            break
+        labels = updated
+        results = assign_all(labels)
+    return results
 
 
 def assign_cip_label(

@@ -3,8 +3,6 @@
 *.csv
 !Experiment/Lewis/Data/all.csv
 !Experiment/Lewis/Data/combinatorial_all.csv
-!Experiment/Lewis/mech_path/Data/reconstruction_audit/polar-failures.csv
-!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-failures.csv
 */catboost_info/*
 
 

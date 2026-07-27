@@ -245,7 +245,7 @@ def test_coordination_geometry_returns_structured_unsupported_result() -> None:
     assert "Coordination" in assignment.reason
 
 
-def test_tied_ligands_and_rules_three_to_five_do_not_guess_labels() -> None:
+def test_tied_ligands_fail_closed_but_single_rule_five_pair_is_assigned() -> None:
     tied_molecule = Chem.MolFromSmiles("CC(C)(F)Cl")
     assert tied_molecule is not None
     tied = TetrahedralStereo((1, 0, 2, 3, 4), 1)
@@ -266,8 +266,9 @@ def test_tied_ligands_and_rules_three_to_five_do_not_guess_labels() -> None:
 
     assert tied_result.label is None
     assert tied_result.status is CIPAssignmentStatus.UNRESOLVED_PRIORITY
-    assert stereo_result.label is None
-    assert stereo_result.status is CIPAssignmentStatus.UNSUPPORTED_SEQUENCE_RULE
+    assert stereo_result.label == "r"
+    assert stereo_result.status is CIPAssignmentStatus.ASSIGNED
+    assert stereo_result.required_rules[-1].value == "5_reflection_variant"
 
 
 def test_toolkit_cip_cache_is_not_an_assignment_input() -> None:

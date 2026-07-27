@@ -101,34 +101,31 @@ should therefore be reported as stereochemically underspecified or as
 underspecified input with four outcomes: necessarily chiral, necessarily
 achiral, configuration-dependent, or unsupported/incomplete. It enumerates
 unique RDKit-supported unassigned tetrahedral and double-bond configurations,
-stops as soon as both molecular classes prove configuration dependence, caches
-isomer classifications, and fails closed when an explicit ``max_isomers`` cap
-cannot prove a one-sided population. ``require_specified=True`` supplies the
-corresponding strict binary refusal mode.
+stops as soon as both molecular classes prove configuration dependence, and
+caches isomer classifications. For large tetrahedral products, exact
+automorphism-parity constraints decide whether any achiral completion exists;
+an unresolved capped population still fails closed.
+``require_specified=True`` supplies the corresponding strict binary refusal
+mode.
 
 With every stereo flag removed from the 258 published inputs and a 256-isomer
-cap, 123 rows are necessarily chiral, 65 necessarily achiral, 66
-configuration-dependent, and four incomplete. Thus 254/258 receive definitive
-set-valued answers without pretending to reconstruct the original isomer; the
-manual label lies in the observed completion population for all 258 rows. The
-214 unique constitutions required 2,761 classified stereoisomers. A cold pass
-took 22.940 s and a repeated cache-warm pass took 1.293 s (0.056 ratio, about
-17.7x faster). Seven warmed repetitions of the original specified-input binary
-benchmark retained 258/258 accuracy with a 1.678 s median total
-(1.535--1.842 s range). Raw evidence is frozen in
-``sprint/sprint_23_benchmark.json``.
+cap, 125 rows are necessarily chiral, 66 necessarily achiral, and 67
+configuration-dependent; none is incomplete. Thus 258/258 receive definitive
+set-valued answers without pretending to reconstruct the original isomer, and
+the manual label lies in the completion population for all 258 rows. VS226
+exhausts after six symmetry-unique isomers. Exact parity constraints over the
+constitutional automorphisms prove VS265 and VS266 necessarily chiral and
+construct an achiral witness for configuration-dependent VS268.
 
 This is constitutional configuration coverage, not a prediction of which
 stereoisomer was synthesized, populated, or experimentally stable. Unresolved
 square-planar, TBP, octahedral, cumulene, and atropisomeric input is outside the
 enumerator and is reported as unsupported/incomplete.
 
-Here “configuration-dependent” is a proven mixed completion population. The
-four incomplete cases are VS226 (1,024 theoretical assignments; six unique
-achiral completions seen from the capped search), VS265 (16,777,216; 256
-chiral seen), VS266 (4,194,304; 256 chiral seen), and VS268 (33,554,432; 256
-chiral seen). Exhausting VS226 at 1,024 resolves it as necessarily achiral;
-the frozen common-cap report retains the uniform 256 limit for comparability.
+Here “configuration-dependent” is a proven mixed completion population.
+The common 256 cap remains uniform: exact generator-exhaustion detection and
+automorphism-parity reasoning resolve the four formerly non-definitive rows
+without per-record cap tuning.
 
 This directory, module, runner, and tests concern molecules only. They do not
 import or exercise reaction, rule-extraction, wildcard, or product-generation

@@ -53,9 +53,9 @@ def test_inventory_preserves_source_specific_task_boundaries() -> None:
         "single": 87,
     }
     assert cip["attached_tetrahedral_multiplicity"] == {
-        "multiple": 116,
-        "none": 128,
-        "single": 54,
+        "multiple": 117,
+        "none": 113,
+        "single": 68,
     }
 
     rota = summary["chiralfinder_rota"]

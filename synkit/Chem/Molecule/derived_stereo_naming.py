@@ -21,7 +21,7 @@ from synkit.Chem.Molecule.cip_assignment import (
     assign_cip_labels,
 )
 from synkit.Graph.Stereo import (
-    CONFIGURED_STEREOGRAPH_SCHEMA,
+    STEREOGRAPH_SCHEMA,
     StereoAssignment,
     StereoSpecification,
 )
@@ -90,9 +90,9 @@ def _validate_exact_assignment(assignment: StereoAssignment) -> str:
     if not isinstance(assignment, StereoAssignment):
         raise TypeError("Derived naming requires an exact StereoAssignment.")
     source_schema, separator, _body = assignment.canonical_code.partition("\n")
-    if not separator or source_schema != CONFIGURED_STEREOGRAPH_SCHEMA:
+    if not separator or source_schema != STEREOGRAPH_SCHEMA:
         raise ValueError(
-            "Derived naming requires a Version 2 configured-stereograph " "certificate."
+            "Derived naming requires a complete configured-stereograph certificate."
         )
     observed_digest = sha256(assignment.canonical_code.encode("utf-8")).hexdigest()
     if observed_digest != assignment.canonical_digest:

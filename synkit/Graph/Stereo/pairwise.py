@@ -9,11 +9,14 @@ from typing import Any
 
 import networkx as nx
 
-from .canonical import CanonicalStereographResult, _rdkit_graph_and_registry
+from .canonical import (
+    CanonicalStereographResult,
+    _rdkit_graph_and_registry,
+    canonicalize_stereo_registry,
+    mirror_stereo_descriptor,
+)
 from .configured import (
     CONFIGURED_DESCRIPTOR_TYPES,
-    canonicalize_configured_registry,
-    mirror_configured_descriptor,
 )
 from .descriptors import StereoValue
 from .orbits import StereoSpecification
@@ -79,8 +82,8 @@ def classify_stereoisomer_relation(
     diastereomeric.  No CIP ranking or local R/S or E/Z text label enters the
     certificates.
     """
-    left_constitution = canonicalize_configured_registry(left_graph, {})
-    right_constitution = canonicalize_configured_registry(right_graph, {})
+    left_constitution = canonicalize_stereo_registry(left_graph, {})
+    right_constitution = canonicalize_stereo_registry(right_graph, {})
     if not left_constitution.same_stereograph(right_constitution):
         return StereoisomerRelationResult(
             StereoisomerRelation.CONSTITUTIONALLY_DIFFERENT,
@@ -141,8 +144,8 @@ def classify_stereoisomer_relation(
             incomplete_loci=tuple(sorted({*unknown, *declared_incomplete})),
         )
 
-    left = canonicalize_configured_registry(left_graph, left_registry)
-    right = canonicalize_configured_registry(right_graph, right_registry)
+    left = canonicalize_stereo_registry(left_graph, left_registry)
+    right = canonicalize_stereo_registry(right_graph, right_registry)
     if left.same_stereograph(right):
         return StereoisomerRelationResult(
             StereoisomerRelation.IDENTICAL,
@@ -153,10 +156,10 @@ def classify_stereoisomer_relation(
         )
 
     mirrored_registry = {
-        key: mirror_configured_descriptor(value)  # type: ignore[arg-type]
+        key: mirror_stereo_descriptor(value)
         for key, value in left_registry.items()
     }
-    mirror_left = canonicalize_configured_registry(left_graph, mirrored_registry)
+    mirror_left = canonicalize_stereo_registry(left_graph, mirrored_registry)
     relation = (
         StereoisomerRelation.ENANTIOMERS
         if mirror_left.same_stereograph(right)

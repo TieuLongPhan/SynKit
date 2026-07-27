@@ -1,5 +1,6 @@
 """Architecture gates for executable Lewis benchmark workflows."""
 
+import csv
 from pathlib import Path
 import sys
 
@@ -62,7 +63,7 @@ def test_shared_dataset_paths_are_collocated_with_lewis_experiments() -> None:
 
 def test_reconstruction_audits_retain_ids_only() -> None:
     audit_root = EXPERIMENT_ROOT / "mech_path" / "Data" / "reconstruction_audit"
-    expected_counts = {"polar": 3_274, "radical": 10}
+    expected_counts = {"polar": 0, "radical": 1}
     for name, expected_count in expected_counts.items():
         rows = (audit_root / f"{name}-failures.csv").read_text().splitlines()
         assert rows[0] == "source_row"
@@ -70,7 +71,7 @@ def test_reconstruction_audits_retain_ids_only() -> None:
         assert all(row.isdigit() for row in rows[1:])
 
 
-def test_radical_source_failure_registry_matches_retained_ids() -> None:
+def test_radical_unresolved_registry_matches_retained_ids() -> None:
     path = (
         EXPERIMENT_ROOT
         / "mech_path"
@@ -79,4 +80,23 @@ def test_radical_source_failure_registry_matches_retained_ids() -> None:
         / "radical-failures.csv"
     )
     retained = {int(row) for row in path.read_text().splitlines()[1:]}
-    assert retained == mech_audit.RADICAL_SOURCE_FAILURE_IDS
+    assert retained == mech_audit.RADICAL_UNRESOLVED_IDS
+
+
+def test_radical_arrow_review_has_ids_and_no_reaction_column() -> None:
+    path = (
+        EXPERIMENT_ROOT
+        / "mech_path"
+        / "Data"
+        / "reconstruction_audit"
+        / "radical-arrow-review.csv"
+    )
+    rows = list(csv.reader(path.open(newline="", encoding="utf-8")))
+    assert rows[0] == [
+        "source_row",
+        "recorded_arrow",
+        "reviewed_arrow",
+        "outcome",
+    ]
+    assert {int(row[0]) for row in rows[1:]} == mech_audit.RADICAL_REVIEW_IDS
+    assert all(len(row) == 4 for row in rows)

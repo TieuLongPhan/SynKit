@@ -99,11 +99,16 @@ def _canonicalize(
     registry: dict[str, Any],
     *,
     timeout_seconds: float,
+    enumerate_automorphism_group: bool = True,
 ) -> tuple[Any | None, str | None, float]:
     started = time.perf_counter()
     try:
         with _case_time_limit(timeout_seconds):
-            result = canonicalize_configured_registry(graph, registry)
+            result = canonicalize_configured_registry(
+                graph,
+                registry,
+                enumerate_automorphism_group=enumerate_automorphism_group,
+            )
     except TimeoutError:
         return None, "timeout", time.perf_counter() - started
     except Exception as error:  # pragma: no cover - diagnostic boundary

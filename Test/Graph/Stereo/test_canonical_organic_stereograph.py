@@ -169,7 +169,7 @@ def test_planar_hidden_hydrogens_are_owner_scoped_resources() -> None:
 def test_planar_support_must_match_the_central_bond_and_endpoint_owners() -> None:
     graph = _alkene(("fluorine", "chlorine", "bromine", "iodine"))
 
-    with pytest.raises(ValueError, match="not a base-graph bond"):
+    with pytest.raises(ValueError, match="is absent"):
         _planar(graph, PlanarBondStereo((1, 2, 0, 3, 4, 5), 0))
 
     with pytest.raises(ValueError, match="not bonded to owner"):
@@ -204,7 +204,7 @@ def test_mixed_locus_order_is_nonsemantic_and_projections_are_complete() -> None
     assert len(first.locus_automorphisms) >= 1
 
 
-def test_version_one_registry_accepts_tetrahedral_and_planar_only() -> None:
+def test_public_registry_uses_the_complete_configured_catalogue() -> None:
     graph = _alkene(("fluorine", "chlorine", "bromine", "iodine"))
     planar = PlanarBondStereo((0, 1, 2, 3, 4, 5), 0)
     expected = _planar(graph, planar)
@@ -217,11 +217,41 @@ def test_version_one_registry_accepts_tetrahedral_and_planar_only() -> None:
     )
 
     assert observed.same_stereograph(expected)
-    with pytest.raises(TypeError, match="atrop_bond"):
-        canonicalize_stereo_registry(
-            graph,
-            {"bond:2-3": AtropBondStereo(planar.atoms, 1)},
-        )
+    atrop = canonicalize_stereo_registry(
+        graph,
+        {"bond:2-3": AtropBondStereo(planar.atoms, 1)},
+        atom_color="color",
+        bond_color="color",
+    )
+    assert atrop.schema == STEREOGRAPH_SCHEMA
+    assert len(atrop.locus_order) == 1
+
+
+def test_public_canonicalizer_can_skip_full_automorphism_enumeration() -> None:
+    graph = _alkene(("same", "same", "same", "same"))
+    descriptor = PlanarBondStereo((0, 1, 2, 3, 4, 5), 0)
+
+    complete = canonicalize_stereograph(
+        graph,
+        (descriptor,),
+        atom_color="color",
+        bond_color="color",
+    )
+    certificate_only = canonicalize_stereograph(
+        graph,
+        (descriptor,),
+        atom_color="color",
+        bond_color="color",
+        enumerate_automorphism_group=False,
+    )
+
+    assert certificate_only.canonical_code == complete.canonical_code
+    assert certificate_only.auxiliary.orbits == complete.auxiliary.orbits
+    assert not certificate_only.auxiliary.automorphisms_complete
+    assert complete.auxiliary.automorphisms_complete
+    assert len(certificate_only.atom_automorphisms) < len(
+        complete.atom_automorphisms
+    )
 
 
 def test_tetrahedral_compatibility_apis_remain_strict() -> None:
@@ -236,7 +266,7 @@ def test_unknown_and_duplicate_planar_loci_fail_closed() -> None:
     graph = _alkene(("fluorine", "chlorine", "bromine", "iodine"))
     fixed = PlanarBondStereo((0, 1, 2, 3, 4, 5), 0)
 
-    with pytest.raises(ValueError, match="requires fixed planar-bond"):
+    with pytest.raises(ValueError, match="planar_bond must be fixed"):
         _planar(graph, PlanarBondStereo(fixed.atoms, None))
 
     with pytest.raises(ValueError, match="Duplicate configured stereo locus"):

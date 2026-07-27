@@ -106,11 +106,10 @@ def test_geometry_specific_mirror_action_is_involutive() -> None:
     assert mirror_stereo_descriptor(unknown_planar) is unknown_planar
 
 
-def test_mirror_transform_refuses_an_unimplemented_geometry() -> None:
+def test_mirror_transform_covers_atrop_axis_geometry() -> None:
     descriptor = AtropBondStereo((0, 1, 2, 3, 4, 5), 1)
 
-    with pytest.raises(TypeError, match="atrop_bond"):
-        mirror_stereo_descriptor(descriptor)
+    assert mirror_stereo_descriptor(descriptor) == descriptor.invert()
 
 
 def test_distinct_ligand_tetrahedral_center_is_globally_chiral() -> None:
@@ -238,19 +237,19 @@ def test_declared_missing_configuration_returns_incomplete() -> None:
     assert result.descriptor_count == 0
 
 
-def test_unsupported_geometry_takes_precedence_over_incomplete() -> None:
+def test_declared_unsupported_population_takes_precedence_over_incomplete() -> None:
     graph = _alkene(("fluorine", "chlorine", "bromine", "iodine"))
-    descriptor = AtropBondStereo((0, 1, 2, 3, 4, 5), 1)
 
     result = _classify(
         graph,
-        {"bond:2-3": descriptor},
+        {},
         incomplete_loci=("tetrahedral:9",),
+        unsupported_loci=("enhanced_stereo_group:0",),
     )
 
     assert result.status is StereographMirrorStatus.UNSUPPORTED
-    assert result.unsupported_loci == ("bond:2-3",)
-    assert result.unsupported_families == ("atrop_bond",)
+    assert result.unsupported_loci == ("enhanced_stereo_group:0",)
+    assert result.unsupported_families == ()
     assert result.incomplete_loci == ()
     assert result.original is None and result.mirror is None
 
@@ -312,26 +311,31 @@ def test_rdkit_unconfigured_supported_loci_are_incomplete(
 
 
 @pytest.mark.parametrize(
-    ("smiles", "family_or_locus"),
+    ("smiles", "expected", "locus"),
     (
-        ("[H][Pt@SP1](F)(Cl)Br", "square_planar"),
-        ("ClC=C=CCl", "cumulene_axis:1-2-3"),
+        ("[H][Pt@SP1](F)(Cl)Br", StereographMirrorStatus.ACHIRAL, None),
+        (
+            "ClC=C=CCl",
+            StereographMirrorStatus.INCOMPLETE,
+            "cumulene_axis:1-2-3",
+        ),
     ),
 )
-def test_rdkit_later_families_are_unsupported(
+def test_rdkit_extended_families_use_the_unified_model(
     smiles: str,
-    family_or_locus: str,
+    expected: StereographMirrorStatus,
+    locus: str | None,
 ) -> None:
     molecule = Chem.MolFromSmiles(smiles)
     assert molecule is not None
 
     result = classify_rdkit_stereograph_mirror(molecule)
 
-    assert result.status is StereographMirrorStatus.UNSUPPORTED
-    assert (
-        family_or_locus in result.unsupported_families
-        or family_or_locus in result.unsupported_loci
-    )
+    assert result.status is expected
+    if locus is None:
+        assert result.is_definitive
+    else:
+        assert locus in result.incomplete_loci
 
 
 def test_rdkit_enhanced_stereo_group_is_not_flattened_to_one_isomer() -> None:

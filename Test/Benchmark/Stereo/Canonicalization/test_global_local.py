@@ -32,7 +32,7 @@ def test_frozen_selective_global_local_matrix_covers_every_family_and_class() ->
     assert summary["expected_configuration_classes"] == 67
     assert summary["exact_certificate_classes"] == 67
     assert summary["raw_local_arrangements_checked"] == 940
-    assert summary["class_relabelings_checked"] == 134
+    assert summary["class_relabelings_checked"] == 201
     assert summary["representative_relabelings_checked"] == 528
     assert summary["timeouts"] == 0
 

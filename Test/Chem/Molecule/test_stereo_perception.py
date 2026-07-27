@@ -182,6 +182,17 @@ def test_input_configuration_state_is_evidence_not_a_derived_label() -> None:
     assert not hasattr(specified[0], "cip_label")
 
 
+def test_configured_center_can_be_excluded_from_missing_configuration_scan() -> None:
+    molecule = _molecule("F[C@H](Cl)Br")
+
+    elements = detect_potential_stereo_elements(
+        molecule,
+        excluded_tetrahedral_centers=(1,),
+    )
+
+    assert elements == ()
+
+
 def test_perception_is_deterministic_and_does_not_mutate_input() -> None:
     molecule = _molecule("F/C=C/Cl")
     before = Chem.MolToSmiles(molecule, canonical=False, isomericSmiles=True)

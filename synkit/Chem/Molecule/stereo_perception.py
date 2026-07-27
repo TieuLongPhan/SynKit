@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 import hashlib
-from typing import Mapping
+from typing import Iterable, Mapping
 
 import networkx as nx
 from networkx.algorithms.isomorphism import (
@@ -888,6 +888,8 @@ def _element_from_tetrahedral_evidence(
 
 def perceive_tetrahedral_stereo(
     molecule: Chem.Mol,
+    *,
+    excluded_centers: Iterable[int] = (),
 ) -> TetrahedralPerceptionResult:
     """Resolve tetrahedral centers from constitution and local neighbor frames.
 
@@ -898,7 +900,17 @@ def perceive_tetrahedral_stereo(
     if molecule is None:
         raise ValueError("Tetrahedral perception requires a molecule.")
     working = Chem.Mol(molecule)
-    initial = analyze_tetrahedral_carriers(working)
+    excluded = frozenset(int(center) for center in excluded_centers)
+    if any(
+        center < 0 or center >= working.GetNumAtoms()
+        for center in excluded
+    ):
+        raise ValueError("Excluded tetrahedral center is absent.")
+    initial = tuple(
+        canonicalize_tetrahedral_constitution(working, support.center)
+        for support in detect_tetrahedral_carriers(working)
+        if support.center not in excluded
+    )
     evidence_by_center = {evidence.support.center: evidence for evidence in initial}
     elements: dict[int, PotentialStereoElement] = {}
     pending = set(evidence_by_center)
@@ -956,9 +968,14 @@ def perceive_tetrahedral_stereo(
 
 def detect_tetrahedral_elements(
     molecule: Chem.Mol,
+    *,
+    excluded_centers: Iterable[int] = (),
 ) -> tuple[PotentialStereoElement, ...]:
     """Return primary and fixed-point stereo-dependent tetrahedral elements."""
-    return perceive_tetrahedral_stereo(molecule).elements
+    return perceive_tetrahedral_stereo(
+        molecule,
+        excluded_centers=excluded_centers,
+    ).elements
 
 
 def detect_constitutionally_distinct_tetrahedral_centers(
@@ -976,6 +993,7 @@ def detect_potential_stereo_elements(
     molecule: Chem.Mol,
     *,
     include_extended_ring_axes: bool = False,
+    excluded_tetrahedral_centers: Iterable[int] = (),
 ) -> tuple[PotentialStereoElement, ...]:
     """Detect supported atom, bond, and axis stereo carriers.
 
@@ -997,7 +1015,10 @@ def detect_potential_stereo_elements(
     working = Chem.Mol(molecule)
     Chem.AssignStereochemistry(working, cleanIt=False, force=True)
     elements = (
-        *detect_tetrahedral_elements(working),
+        *detect_tetrahedral_elements(
+            working,
+            excluded_centers=excluded_tetrahedral_centers,
+        ),
         *rdkit_double_bond_elements(working),
         *axis_elements(
             working,

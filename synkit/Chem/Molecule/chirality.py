@@ -222,6 +222,7 @@ class MolecularChiralityAssessment:
     representative_isomers: tuple[tuple[str, MolecularChirality], ...] = ()
     configured_alternative_count: int = 0
     configured_population_status: str | None = None
+    decision_method: str = "stereo_completion_enumeration"
 
     @property
     def is_definitive(self) -> bool:
@@ -852,6 +853,186 @@ def clear_molecular_chirality_cache() -> None:
     _cached_isomer_classification.cache_clear()
 
 
+@dataclass(frozen=True)
+class _TetrahedralCompletionAnalysis:
+    """Exact achiral-existence result over unresolved tetrahedral assignments."""
+
+    achiral_witness: str | None
+    baseline_smiles: str
+    baseline_classification: MolecularChirality
+
+
+def _parity_constraint_assignment(
+    descriptors: Mapping[int, TetrahedralStereo],
+    variable_centers: frozenset[int],
+    mapping: Mapping[int, int],
+) -> dict[int, int] | None:
+    """Solve mirror-compatibility XOR constraints for one automorphism."""
+    constraints: dict[int, list[tuple[int, int]]] = {
+        center: [] for center in descriptors
+    }
+    for center, source in descriptors.items():
+        target = descriptors.get(mapping[center])
+        if target is None:
+            return None
+        transported = source.relabel(mapping)
+        if transported == target.invert():
+            relation = 0
+        elif transported == target:
+            relation = 1
+        else:
+            return None
+        constraints[center].append((target.center, relation))
+        constraints[target.center].append((center, relation))
+
+    values = {
+        center: 0 for center in descriptors if center not in variable_centers
+    }
+    for root in descriptors:
+        if root not in values:
+            values[root] = 0
+        pending = [root]
+        while pending:
+            left = pending.pop()
+            for right, relation in constraints[left]:
+                expected = values[left] ^ relation
+                if right in values:
+                    if values[right] != expected:
+                        return None
+                    continue
+                values[right] = expected
+                pending.append(right)
+    return values
+
+
+def _flip_tetrahedral_assignments(
+    baseline: Chem.Mol,
+    variable_centers: frozenset[int],
+    values: Mapping[int, int],
+) -> Chem.Mol | None:
+    """Apply a solved descriptor-parity assignment to an RDKit baseline."""
+    witness = Chem.Mol(baseline)
+    for center in variable_centers:
+        if not values[center]:
+            continue
+        atom = witness.GetAtomWithIdx(center - 1)
+        tag = atom.GetChiralTag()
+        if tag == Chem.ChiralType.CHI_TETRAHEDRAL_CW:
+            atom.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CCW)
+        elif tag == Chem.ChiralType.CHI_TETRAHEDRAL_CCW:
+            atom.SetChiralTag(Chem.ChiralType.CHI_TETRAHEDRAL_CW)
+        else:
+            return None
+    return witness
+
+
+def _analyze_unresolved_tetrahedral_completions(
+    molecule: Chem.Mol,
+    *,
+    stereo_complete: bool,
+    automorphism_limit: int = 4096,
+) -> _TetrahedralCompletionAnalysis | None:
+    """Prove whether any unresolved tetrahedral completion is achiral.
+
+    The raw assignment space grows as ``2**n``.  Achirality, however, only
+    requires one constitutional automorphism whose transported local
+    configurations equal the mirror configurations.  For each automorphism,
+    those requirements are binary XOR constraints.  Exhausting the much
+    smaller automorphism set therefore proves nonexistence without enumerating
+    every stereoisomer.
+
+    ``None`` means this exact shortcut is outside its supported boundary or
+    exceeded its automorphism guard; callers must retain fail-closed capped
+    enumeration semantics.
+    """
+    unresolved = tuple(
+        info
+        for info in Chem.FindPotentialStereo(molecule)
+        if info.specified != Chem.StereoSpecified.Specified
+    )
+    if not unresolved or any(
+        info.type != Chem.StereoType.Atom_Tetrahedral for info in unresolved
+    ):
+        return None
+    variable_centers = frozenset(
+        int(info.centeredOn) + 1 for info in unresolved
+    )
+    options = StereoEnumerationOptions(
+        tryEmbedding=False,
+        onlyUnassigned=True,
+        maxIsomers=1,
+        rand=0x5A17,
+        unique=True,
+    )
+    baseline = next(iter(EnumerateStereoisomers(molecule, options=options)), None)
+    if baseline is None:
+        return None
+    baseline_smiles = _canonical_isomeric_smiles(baseline)
+    baseline_classification = classify_molecular_chirality(
+        baseline,
+        stereo_complete=stereo_complete,
+        require_specified=False,
+    ).classification
+
+    indexed = _indexed_copy(baseline)
+    graph = MolToGraph(attr_profile="minimal").transform(
+        indexed,
+        use_index_as_atom_map=True,
+    )
+    registry = dict(graph.graph.get("stereo_descriptors", {}))
+    if stereo_complete:
+        _complete_tetrahedral_topology(indexed, registry)
+    if any(not isinstance(value, TetrahedralStereo) for value in registry.values()):
+        return None
+    descriptors = {
+        value.center: value for value in registry.values()
+    }
+    if not variable_centers.issubset(descriptors):
+        return None
+
+    graph.graph["stereo_descriptors"] = {}
+    verification_failed = False
+    matcher = _MolecularStereoGraphMatcher(graph, graph)
+    for position, mapping in enumerate(matcher.isomorphisms_iter()):
+        if position >= automorphism_limit:
+            return None
+        values = _parity_constraint_assignment(
+            descriptors,
+            variable_centers,
+            mapping,
+        )
+        if values is None:
+            continue
+        witness = _flip_tetrahedral_assignments(
+            baseline,
+            variable_centers,
+            values,
+        )
+        if witness is None:
+            verification_failed = True
+            continue
+        witness_result = classify_molecular_chirality(
+            witness,
+            stereo_complete=stereo_complete,
+            require_specified=False,
+        )
+        if witness_result.classification is MolecularChirality.ACHIRAL:
+            return _TetrahedralCompletionAnalysis(
+                achiral_witness=_canonical_isomeric_smiles(witness),
+                baseline_smiles=baseline_smiles,
+                baseline_classification=baseline_classification,
+            )
+        verification_failed = True
+
+    if verification_failed or baseline_classification is MolecularChirality.ACHIRAL:
+        return None
+    return _TetrahedralCompletionAnalysis(
+        achiral_witness=None,
+        baseline_smiles=baseline_smiles,
+        baseline_classification=baseline_classification,
+    )
+
+
 def _assessment_configuration_alternatives(
     molecule: Chem.Mol,
     configuration_set: MolecularStereoConfigurationSet | None,
@@ -894,8 +1075,11 @@ def assess_molecular_chirality(
     RDKit-supported unassigned tetrahedral atoms and double bonds are
     enumerated. A mixed chiral/achiral population proves
     ``configuration_dependent`` even when the search cap truncates the full
-    population. A one-sided truncated population is never promoted to a
-    necessary conclusion. Unsupported unresolved stereo types also fail
+    population. For an oversized all-tetrahedral product, exact parity
+    constraints over the constitutional automorphisms can independently prove
+    that no achiral completion exists or construct an achiral witness. A
+    one-sided truncated population without such a proof is never promoted to
+    a necessary conclusion. Unsupported unresolved stereo types also fail
     closed as ``unsupported_or_incomplete``.
     """
     if molecule is None:
@@ -946,6 +1130,7 @@ def assess_molecular_chirality(
                 if stereo_configurations is None
                 else stereo_configurations.population_status.value
             ),
+            decision_method="unsupported_locus_detection",
         )
 
     options = StereoEnumerationOptions(
@@ -959,48 +1144,103 @@ def assess_molecular_chirality(
     covered_binary = _covered_rdkit_binary_loci(working, configurations)
     rdkit_theoretical = max(1, raw_rdkit_theoretical // (2**covered_binary))
     theoretical = rdkit_theoretical * len(configurations)
-    exhaustive = theoretical <= max_isomers
     classifications: set[MolecularChirality] = set()
     representatives: dict[MolecularChirality, str] = {}
     evaluated = 0
     stopped_after_decisive_mixture = False
     stopped_at_cap = False
-    for isomer in EnumerateStereoisomers(working, options=options):
-        isomeric_smiles = _canonical_isomeric_smiles(isomer)
-        for configuration in configurations:
-            if evaluated >= max_isomers:
-                stopped_at_cap = True
-                break
-            classification = (
-                _cached_isomer_classification(isomeric_smiles, stereo_complete)
-                if use_cache and configuration is None
-                else classify_molecular_chirality(
-                    isomer,
-                    stereo_complete=stereo_complete,
-                    stereo_configuration=configuration,
-                ).classification
+    decision_method = "stereo_completion_enumeration"
+
+    tetrahedral_analysis = None
+    if theoretical > max_isomers and configurations == (None,):
+        tetrahedral_analysis = _analyze_unresolved_tetrahedral_completions(
+            working,
+            stereo_complete=stereo_complete,
+        )
+    if tetrahedral_analysis is not None:
+        baseline_classification = tetrahedral_analysis.baseline_classification
+        classifications.add(baseline_classification)
+        representatives[baseline_classification] = (
+            tetrahedral_analysis.baseline_smiles
+        )
+        evaluated = 1
+        if tetrahedral_analysis.achiral_witness is None:
+            decision_method = "automorphism_parity_nonexistence_proof"
+        elif baseline_classification is MolecularChirality.CHIRAL:
+            classifications.add(MolecularChirality.ACHIRAL)
+            representatives[MolecularChirality.ACHIRAL] = (
+                tetrahedral_analysis.achiral_witness
             )
             evaluated += 1
-            classifications.add(classification)
-            representatives.setdefault(classification, isomeric_smiles)
-            if len(classifications) > 1:
-                stopped_after_decisive_mixture = True
+            stopped_after_decisive_mixture = True
+            decision_method = "automorphism_parity_achiral_witness"
+
+    analysis_is_decisive = (
+        tetrahedral_analysis is not None
+        and (
+            tetrahedral_analysis.achiral_witness is None
+            or len(classifications) > 1
+        )
+    )
+    if not analysis_is_decisive:
+        classifications.clear()
+        representatives.clear()
+        evaluated = 0
+        for isomer in EnumerateStereoisomers(working, options=options):
+            isomeric_smiles = _canonical_isomeric_smiles(isomer)
+            for configuration in configurations:
+                if evaluated >= max_isomers:
+                    stopped_at_cap = True
+                    break
+                classification = (
+                    _cached_isomer_classification(isomeric_smiles, stereo_complete)
+                    if use_cache and configuration is None
+                    else classify_molecular_chirality(
+                        isomer,
+                        stereo_complete=stereo_complete,
+                        stereo_configuration=configuration,
+                    ).classification
+                )
+                evaluated += 1
+                classifications.add(classification)
+                representatives.setdefault(classification, isomeric_smiles)
+                if len(classifications) > 1:
+                    stopped_after_decisive_mixture = True
+                    break
+            if stopped_after_decisive_mixture or stopped_at_cap:
                 break
-        if stopped_after_decisive_mixture or stopped_at_cap:
-            break
 
     observed = tuple(sorted(classifications, key=lambda value: value.value))
     evidence = tuple(
         (representatives[classification], classification) for classification in observed
     )
+    enumeration_exhausted = (
+        not analysis_is_decisive
+        and not stopped_after_decisive_mixture
+        and not stopped_at_cap
+        and (
+            theoretical <= max_isomers
+            or evaluated < max_isomers
+        )
+    )
     if len(classifications) > 1:
         outcome = MolecularChiralityOutcome.CONFIGURATION_DEPENDENT
-    elif not exhaustive or not classifications:
+        if decision_method == "stereo_completion_enumeration":
+            decision_method = "enumerated_mixed_population"
+    elif (
+        decision_method == "automorphism_parity_nonexistence_proof"
+        and classifications == {MolecularChirality.CHIRAL}
+    ):
+        outcome = MolecularChiralityOutcome.NECESSARILY_CHIRAL
+    elif not enumeration_exhausted or not classifications:
         outcome = MolecularChiralityOutcome.UNSUPPORTED_OR_INCOMPLETE
+        decision_method = "capped_stereo_completion_enumeration"
     elif MolecularChirality.CHIRAL in classifications:
         outcome = MolecularChiralityOutcome.NECESSARILY_CHIRAL
+        decision_method = "complete_stereo_completion_enumeration"
     else:
         outcome = MolecularChiralityOutcome.NECESSARILY_ACHIRAL
+        decision_method = "complete_stereo_completion_enumeration"
 
     return MolecularChiralityAssessment(
         outcome=outcome,
@@ -1010,7 +1250,7 @@ def assess_molecular_chirality(
         unsupported_stereo_loci=(),
         theoretical_isomer_upper_bound=theoretical,
         evaluated_isomer_count=evaluated,
-        enumeration_complete=(exhaustive and not stopped_after_decisive_mixture),
+        enumeration_complete=enumeration_exhausted,
         max_isomers=max_isomers,
         representative_isomers=evidence,
         configured_alternative_count=(
@@ -1021,4 +1261,5 @@ def assess_molecular_chirality(
             if stereo_configurations is None
             else stereo_configurations.population_status.value
         ),
+        decision_method=decision_method,
     )

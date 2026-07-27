@@ -124,6 +124,7 @@ from .canonical import (
 )
 from .configured import (
     CONFIGURED_STEREOGRAPH_SCHEMA,
+    MirrorIdentityProfile,
     canonicalize_configured_registry,
     canonicalize_configured_stereograph,
     canonicalize_rdkit_configured_stereograph,
@@ -259,6 +260,7 @@ __all__ = [
     "mirror_stereo_descriptor",
     "mirror_stereo_registry",
     "CONFIGURED_STEREOGRAPH_SCHEMA",
+    "MirrorIdentityProfile",
     "canonicalize_configured_registry",
     "canonicalize_configured_stereograph",
     "canonicalize_rdkit_configured_stereograph",

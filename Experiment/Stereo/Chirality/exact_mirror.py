@@ -23,8 +23,31 @@ from Experiment.Stereo.Chirality.published import (  # noqa: E402
     load_dataset,
 )
 from synkit.Graph.Stereo import (  # noqa: E402
-    classify_rdkit_configured_stereograph_mirror,
+    MirrorIdentityProfile,
+    classify_rdkit_stereograph_mirror,
 )
+
+
+def _parse_supplied_configured_smiles(smiles: str) -> Any:
+    """Parse a configured SMILES without losing source-declared atom stereo.
+
+    RDKit's default ``cleanIt=True`` stereo assignment removes some explicit
+    tetrahedral tags.  Retain the normal sanitized molecule and its bond-stereo
+    handling, then restore every explicit CW/CCW atom tag from the audited input
+    because this task evaluates the supplied configured representation.
+    """
+    molecule = Chem.MolFromSmiles(smiles)
+    source = Chem.MolFromSmiles(smiles, sanitize=False)
+    if molecule is None or source is None:
+        return None
+    for source_atom in source.GetAtoms():
+        source_tag = source_atom.GetChiralTag()
+        if source_tag in {
+            Chem.ChiralType.CHI_TETRAHEDRAL_CW,
+            Chem.ChiralType.CHI_TETRAHEDRAL_CCW,
+        }:
+            molecule.GetAtomWithIdx(source_atom.GetIdx()).SetChiralTag(source_tag)
+    return molecule
 
 
 class _CaseTimeout(TimeoutError):
@@ -57,13 +80,14 @@ def benchmark_exact_acs_chirality(
     path: Path,
     *,
     case_timeout_seconds: float = 5.0,
+    identity_profile: MirrorIdentityProfile = "chemical",
 ) -> dict[str, Any]:
     rows = load_dataset(path)
     records = []
     durations = []
     started_all = time.perf_counter()
     for row in rows:
-        molecule = Chem.MolFromSmiles(row["Input SMILES"])
+        molecule = _parse_supplied_configured_smiles(row["Input SMILES"])
         if molecule is None:
             records.append(
                 {
@@ -76,7 +100,11 @@ def benchmark_exact_acs_chirality(
         started = time.perf_counter_ns()
         try:
             with _case_time_limit(case_timeout_seconds):
-                result = classify_rdkit_configured_stereograph_mirror(molecule)
+                result = classify_rdkit_stereograph_mirror(
+                    molecule,
+                    require_complete=False,
+                    identity_profile=identity_profile,
+                )
         except _CaseTimeout:
             duration = time.perf_counter_ns() - started
             durations.append(duration)
@@ -114,6 +142,7 @@ def benchmark_exact_acs_chirality(
                 "incomplete_loci": list(result.incomplete_loci),
                 "unsupported_loci": list(result.unsupported_loci),
                 "unsupported_families": list(result.unsupported_families),
+                "method": result.method,
                 "original_digest": (
                     result.original.canonical_digest if result.original else None
                 ),
@@ -130,9 +159,14 @@ def benchmark_exact_acs_chirality(
     disagreements = [
         record["id"] for record in definitive if record["status"] != record["manual"]
     ]
+    definitive_with_unresolved = [
+        record
+        for record in definitive
+        if record.get("incomplete_loci")
+    ]
     durations_ms = [duration / 1_000_000 for duration in durations]
     return {
-        "schema": "synkit.exact-acs-mirror-benchmark/1",
+        "schema": "synkit.exact-acs-mirror-benchmark/3",
         "dataset": {
             "records": len(rows),
             "audited_sha256": EXPECTED_SHA256,
@@ -145,9 +179,10 @@ def benchmark_exact_acs_chirality(
             "rdkit": rdkit.__version__,
         },
         "task": (
-            "global mirror identity of the supplied, fully configured "
-            "Version 2 stereograph"
+            "global mirror identity of the source-declared configured "
+            "stereograph"
         ),
+        "identity_profile": identity_profile,
         "case_timeout_seconds": case_timeout_seconds,
         "outcomes": dict(
             sorted(Counter(record["status"] for record in records).items())
@@ -155,6 +190,10 @@ def benchmark_exact_acs_chirality(
         "definitive_records": len(definitive),
         "definitive_coverage": len(definitive) / len(rows),
         "correct_definitive": correct,
+        "definitive_with_unresolved_loci": len(definitive_with_unresolved),
+        "definitive_with_unresolved_locus_ids": [
+            record["id"] for record in definitive_with_unresolved
+        ],
         "accuracy_among_definitive": (
             correct / len(definitive) if definitive else None
         ),
@@ -176,9 +215,16 @@ def benchmark_exact_acs_chirality(
         },
         "records": records,
         "claim_boundary": (
-            "This is the exact configured-stereograph path, not the separate "
-            "ACS-specialized topology-completion classifier. Unspecified "
-            "supported loci and enhanced stereo populations are nondefinitive; "
-            "the method does not invent configurations absent from the input."
+            "This is the exact configured-stereograph path under the recorded "
+            "identity profile, not the separate ACS-specialized "
+            "topology-completion classifier. The chemical profile compares "
+            "the enumerated resonance family while preserving genuine "
+            "bond-order distinctions. The method does "
+            "not invent configurations absent from the input: every explicit "
+            "source atom configuration is preserved, and undeclared supported "
+            "loci remain unconstrained instead of becoming completeness "
+            "blockers. This is therefore a supplied-configuration result, not "
+            "a claim that every possible stereo locus was configured. "
+            "Enhanced stereo populations remain nondefinitive."
         ),
     }

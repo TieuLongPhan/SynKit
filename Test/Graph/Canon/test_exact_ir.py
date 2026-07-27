@@ -106,6 +106,57 @@ def test_colours_and_edge_colours_are_semantic() -> None:
     assert _canonical(left).canonical_code != _canonical(right).canonical_code
 
 
+@pytest.mark.parametrize("directed", (False, True))
+def test_sparse_certificate_construction_preserves_dense_wire_order(
+    directed: bool,
+) -> None:
+    graph = nx.DiGraph() if directed else nx.Graph()
+    graph.add_nodes_from(
+        (
+            ("a", {"color": "carbon"}),
+            ("b", {"color": "nitrogen"}),
+            ("c", {"color": "oxygen"}),
+        )
+    )
+    graph.add_edge("a", "a", color="loop")
+    graph.add_edge("a", "c", color="single")
+    if directed:
+        graph.add_edge("c", "a", color="double")
+    canonicalizer = ExactColoredGraphCanonicalizer(
+        graph,
+        node_color="color",
+        edge_color="color",
+    )
+    order = ("c", "a", "b")
+    if directed:
+        pairs = (
+            (left, right)
+            for left in range(len(order))
+            for right in range(len(order))
+        )
+    else:
+        pairs = (
+            (left, right)
+            for left in range(len(order))
+            for right in range(left, len(order))
+        )
+    dense_adjacency = []
+    for left, right in pairs:
+        token = canonicalizer._edge_token(order[left], order[right])
+        dense_adjacency.append(
+            ("absent",) if token is None else ("edge", token)
+        )
+
+    assert canonicalizer._canonical_key(order) == (
+        ("directed", int(directed)),
+        (
+            "nodes",
+            tuple(canonicalizer._node_colors[node] for node in order),
+        ),
+        ("adjacency", tuple(dense_adjacency)),
+    )
+
+
 def test_string_valued_enum_remains_distinct_from_plain_string() -> None:
     class Element(str, Enum):
         CARBON = "C"
@@ -136,6 +187,108 @@ def test_automorphism_orbits_are_exact_for_known_families() -> None:
     assert cycle_result.orbits == (frozenset({0, 1, 2, 3}),)
     assert len(path_result.automorphisms) == 2
     assert len(cycle_result.automorphisms) == 8
+
+
+@pytest.mark.parametrize(
+    "graph",
+    (
+        nx.path_graph(6),
+        nx.cycle_graph(6),
+        nx.star_graph(6),
+        nx.complete_graph(6),
+        nx.complete_bipartite_graph(3, 3),
+        nx.disjoint_union(nx.cycle_graph(4), nx.path_graph(4)),
+    ),
+)
+def test_automorphism_pruning_matches_the_exhaustive_oracle(
+    graph: nx.Graph,
+) -> None:
+    nx.set_node_attributes(graph, "atom", "color")
+    exhaustive = ExactColoredGraphCanonicalizer(graph).canonicalize()
+    pruned = ExactColoredGraphCanonicalizer(
+        graph,
+        prune_automorphisms=True,
+    ).canonicalize()
+
+    assert pruned.canonical_key == exhaustive.canonical_key
+    assert len(pruned.automorphisms) == len(exhaustive.automorphisms)
+    assert set(pruned.orbits) == set(exhaustive.orbits)
+
+
+def test_automorphism_pruning_reduces_a_symmetric_search_tree() -> None:
+    graph = nx.complete_graph(7)
+    nx.set_node_attributes(graph, "atom", "color")
+
+    exhaustive = ExactColoredGraphCanonicalizer(graph).canonicalize()
+    pruned = ExactColoredGraphCanonicalizer(
+        graph,
+        prune_automorphisms=True,
+    ).canonicalize()
+
+    assert pruned.canonical_key == exhaustive.canonical_key
+    assert pruned.statistics.visited_nodes < exhaustive.statistics.visited_nodes
+    assert pruned.statistics.leaves < exhaustive.statistics.leaves
+
+
+def test_generator_only_mode_preserves_exact_identity_and_orbits() -> None:
+    graph = nx.complete_bipartite_graph(3, 4)
+    nx.set_node_attributes(graph, "atom", "color")
+    complete = ExactColoredGraphCanonicalizer(
+        graph,
+        prune_automorphisms=True,
+    ).canonicalize()
+    generators = ExactColoredGraphCanonicalizer(
+        graph,
+        prune_automorphisms=True,
+        enumerate_automorphism_group=False,
+    ).canonicalize()
+
+    assert generators.canonical_key == complete.canonical_key
+    assert generators.orbits == complete.orbits
+    assert len(generators.automorphisms) < len(complete.automorphisms)
+    assert not generators.automorphisms_complete
+    assert complete.automorphisms_complete
+
+
+def test_incremental_refinement_matches_full_refinement() -> None:
+    graph = nx.cycle_graph(8)
+    graph.add_edges_from(((0, 4), (1, 5)))
+    nx.set_node_attributes(graph, "atom", "color")
+    canonicalizer = ExactColoredGraphCanonicalizer(graph)
+    stable = canonicalizer._refine(canonicalizer._initial_partition())
+    cell_index, target = min(
+        ((index, cell) for index, cell in enumerate(stable) if len(cell) > 1),
+        key=lambda item: (len(item[1]), item[0]),
+    )
+    chosen = target[0]
+    child = list(stable)
+    child[cell_index : cell_index + 1] = [
+        (chosen,),
+        tuple(node for node in target if node != chosen),
+    ]
+    individualized = tuple(child)
+
+    assert canonicalizer._refine_incremental(
+        individualized,
+        frozenset(target),
+    ) == canonicalizer._refine(individualized)
+
+
+def test_schreier_stabilizer_finds_composed_generator_orbits() -> None:
+    graph = nx.cycle_graph(4)
+    nx.set_node_attributes(graph, "atom", "color")
+    canonicalizer = ExactColoredGraphCanonicalizer(graph)
+    rotation = {0: 1, 1: 2, 2: 3, 3: 0}
+    edge_reflection = {0: 1, 1: 0, 2: 3, 3: 2}
+
+    stabilizers = canonicalizer._stabilizer_generators(
+        (rotation, edge_reflection),
+        (0,),
+    )
+
+    assert stabilizers
+    assert all(mapping[0] == 0 for mapping in stabilizers)
+    assert canonicalizer._generator_orbit(1, stabilizers) == frozenset({1, 3})
 
 
 def test_canonical_order_is_a_witness_not_a_symmetric_uniqueness_claim() -> None:

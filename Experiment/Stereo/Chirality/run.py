@@ -32,6 +32,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("task", choices=("acs", "relations"))
     parser.add_argument("--dataset", type=Path, default=DATASET)
     parser.add_argument("--case-timeout", type=float, default=5.0)
+    parser.add_argument(
+        "--identity-profile",
+        choices=("chemical", "lewis_state", "acs_topology"),
+        default="chemical",
+    )
     parser.add_argument("--output", type=Path)
     return parser
 
@@ -47,6 +52,7 @@ def main() -> int:
         report = benchmark_exact_acs_chirality(
             arguments.dataset,
             case_timeout_seconds=arguments.case_timeout,
+            identity_profile=arguments.identity_profile,
         )
         default_output = CHIRALITY_DATA_ROOT / "exact_acs_mirror_report.json"
         summary = {

@@ -11,15 +11,16 @@ Experiment/Stereo/
 ├── Diagnostics/       cross-backend comparisons; not headline accuracy
 ├── Data/              sources, licenses, frozen reports, and result tables
 ├── datasets.py        shared integrity-checked dataset loading
-└── run_experiments.sh common entry point
+└── benchmark.sh       single complete benchmark entry point
 ```
 
 ## Benchmark matrix
 
 | Track | Question | Current evidence | Claim boundary |
 | --- | --- | --- | --- |
-| Local canonicalization | Do all equivalent local reference orders yield one exact certificate? | 10 families, 67 configurations, 940/940 local representations | Fixed graph |
-| Global-by-local canonicalization | Does the certificate survive atom relabeling for every local class? | 67 classes, 134 class relabelings, 528 representative relabelings, zero failures/timeouts | Selective Cartesian product |
+| Configuration-free local canonicalization | Do all raw local orders collapse to the exact formal quotient? | 66,468/66,468 representations and 3,476/3,476 carriers over 1,218 rows | One carrier at a time on a fixed constitution |
+| Mixed-family global A/B/C | Do simultaneous carrier configurations compose under whole-graph symmetry? | Formal A/B/C 2,160/2,160; raw A 2,048/2,048; zero failures/timeouts | Full raw B and raw C/VS146 run as final stress stages |
+| Global-by-local canonicalization | Does the certificate survive atom relabeling for every local class? | 67 classes, 201 class relabelings, 528 representative relabelings, zero failures/timeouts | Selective Cartesian product |
 | Multi-element composition | Do several configured elements compose without collisions? | Six designed two/three-element graphs plus selected public records | Separate from single-element accuracy |
 | Molecular chirality | Is the configured molecule identical to its mirror? | ACS 258-case published benchmark plus exact-mirror audit | ACS supplies valid binary truth |
 | Stereoisomer relation | Are pairs identical, enantiomeric, diastereomeric, constitutionally different, or incomplete? | Nine designed conformance cases | Designed matrix |
@@ -65,3 +66,17 @@ questions.
 
 Regression tests remain under `Test`; executable research protocols live here.
 Third-party sources and their notices remain colocated under `Data`.
+
+Run every maintained report with the single benchmark script. It finishes with
+full raw B and the selected raw C case VS146. Those final stress stages can
+take several days:
+
+```bash
+CIP_FILE=/path/to/audited/compounds.smi \
+  bash Experiment/Stereo/benchmark.sh
+```
+
+If `CIP_FILE` is omitted or does not match the pinned checksum, the script
+downloads the pinned CIP validation file to `/tmp`. Run it from an environment
+containing SynKit's benchmark dependencies. Case-parallel tasks use 16 workers
+by default; override that with `SYNKIT_BENCHMARK_JOBS`.

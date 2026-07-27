@@ -1,9 +1,8 @@
 """Exact canonicalization of configured permutation-labelled stereographs.
 
-Version 1 supports fixed tetrahedral and planar-bond descriptors.  It
-faithfully expands each complete local configuration orbit into a coloured
-incidence graph and delegates only graph canonical labeling to SynKit's native
-exact kernel.
+The public entry points in this module cover SynKit's complete configured
+stereo catalogue.  The tetrahedral-specific functions are retained as narrow
+compatibility helpers, not as a separate stereograph model.
 """
 
 from __future__ import annotations
@@ -11,27 +10,25 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-import hashlib
-from typing import Any, Hashable
+from typing import Any, Hashable, Literal
 
 import networkx as nx
 
 from synkit.Graph.Canon.exact import (
     AutomorphismWitness,
     ExactCanonicalResult,
-    ExactColoredGraphCanonicalizer,
 )
 
 from .descriptors import (
-    PlanarBondStereo,
     Reference,
     StereoValue,
     TetrahedralStereo,
-    parse_virtual_reference,
 )
-from .orbits import SHAPE_DEFINITIONS, StereoSpecification
+from .orbits import SHAPE_DEFINITIONS
 
-STEREOGRAPH_SCHEMA = "synkit.canonical-stereograph/1"
+# ``/2`` is the persisted wire-schema revision of the complete configured
+# certificate.  It is deliberately not exposed as a second scientific model.
+STEREOGRAPH_SCHEMA = "synkit.canonical-stereograph/2"
 
 _DEFAULT_ATOM_COLOR_KEYS = (
     "element",
@@ -253,7 +250,7 @@ def _material_port_resource(
 def _add_configuration_orbit(
     auxiliary: nx.Graph,
     locus: StereoLocusVertex,
-    descriptor: TetrahedralStereo | PlanarBondStereo,
+    descriptor: StereoValue,
     locus_index: int,
     targets: Mapping[Reference, Hashable],
     frame_positions: Sequence[int],
@@ -284,159 +281,6 @@ def _add_configuration_orbit(
             auxiliary.add_edge(slot, targets[reference])
 
 
-def _add_tetrahedral_locus(
-    auxiliary: nx.Graph,
-    base: nx.Graph,
-    atom_vertices: Mapping[Hashable, AtomVertex],
-    bond_vertices: Mapping[tuple[Hashable, Hashable], BondVertex],
-    descriptor: TetrahedralStereo,
-    locus_index: int,
-) -> None:
-    if descriptor.specification is not StereoSpecification.FIXED:
-        raise ValueError(
-            "Canonical stereograph Version 1 requires fixed tetrahedral "
-            "configuration."
-        )
-    center = descriptor.center
-    if center not in atom_vertices:
-        raise ValueError(f"Tetrahedral center {center!r} is absent.")
-    locus = StereoLocusVertex(locus_index)
-    _add_coloured_node(
-        auxiliary,
-        locus,
-        ("stereo_locus", descriptor.descriptor_class),
-    )
-    auxiliary.add_edge(locus, atom_vertices[center])
-
-    targets: dict[Reference, Hashable] = {center: atom_vertices[center]}
-    for position, reference in enumerate(descriptor.atoms[1:]):
-        port = StereoPortVertex(locus_index, position)
-        targets[reference] = port
-        _add_coloured_node(
-            auxiliary,
-            port,
-            ("stereo_port", descriptor.descriptor_class),
-        )
-        auxiliary.add_edge(locus, port)
-        virtual = parse_virtual_reference(reference)
-        if virtual is None:
-            resource = _material_port_resource(
-                base,
-                bond_vertices,
-                center,
-                reference,
-                geometry="Tetrahedral",
-            )
-        else:
-            if virtual.center != center:
-                raise ValueError(
-                    f"Virtual ligand {reference!r} does not belong to "
-                    f"center {center!r}."
-                )
-            resource = VirtualResourceVertex(
-                locus_index,
-                position,
-                virtual.kind,
-            )
-            _add_coloured_node(
-                auxiliary,
-                resource,
-                ("virtual_resource", virtual.kind),
-            )
-            auxiliary.add_edge(atom_vertices[center], resource)
-        auxiliary.add_edge(port, resource)
-
-    _add_configuration_orbit(
-        auxiliary,
-        locus,
-        descriptor,
-        locus_index,
-        targets,
-        (1, 2, 3, 4),
-    )
-
-
-def _add_planar_bond_locus(
-    auxiliary: nx.Graph,
-    base: nx.Graph,
-    atom_vertices: Mapping[Hashable, AtomVertex],
-    bond_vertices: Mapping[tuple[Hashable, Hashable], BondVertex],
-    descriptor: PlanarBondStereo,
-    locus_index: int,
-) -> None:
-    if descriptor.specification is not StereoSpecification.FIXED:
-        raise ValueError(
-            "Canonical stereograph Version 1 requires fixed planar-bond "
-            "configuration."
-        )
-    left, right = descriptor.atoms[2:4]
-    if left not in atom_vertices or right not in atom_vertices:
-        raise ValueError(
-            f"Planar-bond locus {left!r}-{right!r} has an absent endpoint."
-        )
-    if not base.has_edge(left, right):
-        raise ValueError(
-            f"Planar-bond locus {left!r}-{right!r} is not a base-graph bond."
-        )
-    locus = StereoLocusVertex(locus_index)
-    _add_coloured_node(
-        auxiliary,
-        locus,
-        ("stereo_locus", descriptor.descriptor_class),
-    )
-    auxiliary.add_edge(locus, bond_vertices[(left, right)])
-    targets: dict[Reference, Hashable] = {
-        left: atom_vertices[left],
-        right: atom_vertices[right],
-    }
-    ligand_positions = ((0, left), (1, left), (4, right), (5, right))
-    for port_position, (frame_position, owner) in enumerate(ligand_positions):
-        reference = descriptor.atoms[frame_position]
-        port = StereoPortVertex(locus_index, port_position)
-        targets[reference] = port
-        _add_coloured_node(
-            auxiliary,
-            port,
-            ("stereo_port", descriptor.descriptor_class),
-        )
-        auxiliary.add_edge(locus, port)
-        virtual = parse_virtual_reference(reference)
-        if virtual is None:
-            resource = _material_port_resource(
-                base,
-                bond_vertices,
-                owner,
-                reference,
-                geometry="Planar-bond",
-            )
-        else:
-            if virtual.center != owner:
-                raise ValueError(
-                    f"Virtual ligand {reference!r} does not belong to "
-                    f"planar-bond endpoint {owner!r}."
-                )
-            resource = VirtualResourceVertex(
-                locus_index,
-                port_position,
-                virtual.kind,
-            )
-            _add_coloured_node(
-                auxiliary,
-                resource,
-                ("virtual_resource", virtual.kind),
-            )
-            auxiliary.add_edge(atom_vertices[owner], resource)
-        auxiliary.add_edge(port, resource)
-    _add_configuration_orbit(
-        auxiliary,
-        locus,
-        descriptor,
-        locus_index,
-        targets,
-        (0, 1, 2, 3, 4, 5),
-    )
-
-
 def expand_tetrahedral_stereograph(
     base_graph: nx.Graph,
     descriptors: Iterable[TetrahedralStereo],
@@ -444,30 +288,32 @@ def expand_tetrahedral_stereograph(
     atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
     bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
 ) -> nx.Graph:
-    """Return the blueprint auxiliary graph for fixed tetrahedral stereo."""
+    """Expand tetrahedral stereo through the unified stereograph engine."""
     fixed = _require_tetrahedral(tuple(descriptors))
-    return _expand(
+    return expand_stereograph(
         base_graph,
         fixed,
         atom_color=atom_color,
         bond_color=bond_color,
-    ).graph
+    )
 
 
 def expand_stereograph(
     base_graph: nx.Graph,
-    descriptors: Iterable[TetrahedralStereo | PlanarBondStereo],
+    descriptors: Iterable[StereoValue],
     *,
     atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
     bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
 ) -> nx.Graph:
-    """Expand a fixed tetrahedral/planar-bond Version 1 stereograph."""
-    return _expand(
+    """Expand a complete configured stereograph."""
+    from .configured import expand_configured_stereograph
+
+    return expand_configured_stereograph(
         base_graph,
         tuple(descriptors),
         atom_color=atom_color,
         bond_color=bond_color,
-    ).graph
+    )
 
 
 def _require_tetrahedral(
@@ -481,9 +327,8 @@ def _require_tetrahedral(
     return descriptors  # type: ignore[return-value]
 
 
-def _expand(
+def _expand_base_graph(
     base_graph: nx.Graph,
-    descriptors: tuple[TetrahedralStereo | PlanarBondStereo, ...],
     *,
     atom_color: AttributeSelector,
     bond_color: AttributeSelector,
@@ -499,13 +344,10 @@ def _expand(
             ("atom", _selected(base.nodes[reference], atom_color)),
         )
 
-    incidence: dict[tuple[Hashable, Hashable], BondVertex] = {}
     endpoints = []
     for index, (left, right, attributes) in enumerate(base.edges(data=True)):
         vertex = BondVertex(index)
         endpoints.append((left, right))
-        incidence[(left, right)] = vertex
-        incidence[(right, left)] = vertex
         _add_coloured_node(
             auxiliary,
             vertex,
@@ -513,39 +355,6 @@ def _expand(
         )
         auxiliary.add_edge(atom_vertices[left], vertex)
         auxiliary.add_edge(vertex, atom_vertices[right])
-
-    seen_loci: set[tuple[str, Hashable]] = set()
-    for locus_index, descriptor in enumerate(descriptors):
-        if isinstance(descriptor, TetrahedralStereo):
-            locus_key = ("tetrahedral", descriptor.center)
-        elif isinstance(descriptor, PlanarBondStereo):
-            locus_key = ("planar_bond", frozenset(descriptor.atoms[2:4]))
-        else:
-            raise TypeError(
-                "Canonical stereograph Version 1 accepts only fixed "
-                "tetrahedral and planar-bond descriptors."
-            )
-        if locus_key in seen_loci:
-            raise ValueError(f"Duplicate configured stereo locus at {locus_key[1]!r}.")
-        seen_loci.add(locus_key)
-        if isinstance(descriptor, TetrahedralStereo):
-            _add_tetrahedral_locus(
-                auxiliary,
-                base,
-                atom_vertices,
-                incidence,
-                descriptor,
-                locus_index,
-            )
-        else:
-            _add_planar_bond_locus(
-                auxiliary,
-                base,
-                atom_vertices,
-                incidence,
-                descriptor,
-                locus_index,
-            )
     return _Expansion(auxiliary, tuple(endpoints))
 
 
@@ -581,7 +390,7 @@ def canonicalize_tetrahedral_stereograph(
     atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
     bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
 ) -> CanonicalStereographResult:
-    """Return exact Version 1 identity for configured tetrahedral stereo."""
+    """Return exact stereograph identity for configured tetrahedral stereo."""
     fixed = _require_tetrahedral(tuple(descriptors))
     return canonicalize_stereograph(
         base_graph,
@@ -593,60 +402,21 @@ def canonicalize_tetrahedral_stereograph(
 
 def canonicalize_stereograph(
     base_graph: nx.Graph,
-    descriptors: Iterable[TetrahedralStereo | PlanarBondStereo],
+    descriptors: Iterable[StereoValue],
     *,
     atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
     bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
+    enumerate_automorphism_group: bool = True,
 ) -> CanonicalStereographResult:
-    """Return exact Version 1 identity for configured organic stereo."""
-    expansion = _expand(
+    """Return exact identity for a complete configured stereograph."""
+    from .configured import canonicalize_configured_stereograph
+
+    return canonicalize_configured_stereograph(
         base_graph,
         tuple(descriptors),
         atom_color=atom_color,
         bond_color=bond_color,
-    )
-    auxiliary = ExactColoredGraphCanonicalizer(
-        expansion.graph,
-        node_color="color",
-        edge_color=None,
-    ).canonicalize()
-    atom_order = tuple(
-        node.reference
-        for node in auxiliary.canonical_order
-        if isinstance(node, AtomVertex)
-    )
-    bond_order = tuple(
-        expansion.bond_endpoints[node.index]
-        for node in auxiliary.canonical_order
-        if isinstance(node, BondVertex)
-    )
-    locus_order = tuple(
-        node.index
-        for node in auxiliary.canonical_order
-        if isinstance(node, StereoLocusVertex)
-    )
-    port_order = tuple(
-        node for node in auxiliary.canonical_order if isinstance(node, StereoPortVertex)
-    )
-    canonical_code = f"{STEREOGRAPH_SCHEMA}\n{auxiliary.canonical_code}"
-    return CanonicalStereographResult(
-        schema=STEREOGRAPH_SCHEMA,
-        canonical_code=canonical_code,
-        canonical_digest=hashlib.sha256(canonical_code.encode("utf-8")).hexdigest(),
-        atom_order=atom_order,
-        bond_order=bond_order,
-        locus_order=locus_order,
-        port_order=port_order,
-        atom_automorphisms=_project_witnesses(auxiliary, AtomVertex),
-        locus_automorphisms=_project_witnesses(
-            auxiliary,
-            StereoLocusVertex,
-        ),
-        port_automorphisms=_project_witnesses(
-            auxiliary,
-            StereoPortVertex,
-        ),
-        auxiliary=auxiliary,
+        enumerate_automorphism_group=enumerate_automorphism_group,
     )
 
 
@@ -689,72 +459,37 @@ def canonicalize_stereo_registry(
     *,
     atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
     bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
+    enumerate_automorphism_group: bool = True,
 ) -> CanonicalStereographResult:
-    """Canonicalize a registry containing only Version 1 stereo families."""
-    descriptors = tuple(registry.values())
-    unsupported = tuple(
-        descriptor.descriptor_class
-        for descriptor in descriptors
-        if not isinstance(descriptor, (TetrahedralStereo, PlanarBondStereo))
-    )
-    if unsupported:
-        families = ", ".join(sorted(set(unsupported)))
-        raise TypeError(
-            "Canonical stereograph Version 1 cannot omit configured stereo "
-            f"families: {families}."
-        )
-    return canonicalize_stereograph(
+    """Canonicalize a registry across the complete configured catalogue."""
+    from .configured import canonicalize_configured_registry
+
+    return canonicalize_configured_registry(
         base_graph,
-        descriptors,
+        registry,
         atom_color=atom_color,
         bond_color=bond_color,
+        enumerate_automorphism_group=enumerate_automorphism_group,
     )
 
 
 def mirror_stereo_descriptor(
     descriptor: StereoValue,
-) -> TetrahedralStereo | PlanarBondStereo:
-    """Apply the Version 1 spatial-reflection action to one descriptor.
+) -> StereoValue:
+    """Apply the geometry-specific spatial-reflection action."""
+    from .configured import mirror_configured_descriptor
 
-    Tetrahedral handedness changes to its binary opposite.  Planar-bond E/Z
-    configuration is retained: reflection does not turn an E alkene into Z.
-    Unknown configurations remain unknown for this standalone transform.
-    """
-    if isinstance(descriptor, TetrahedralStereo):
-        return descriptor.opposite()
-    if isinstance(descriptor, PlanarBondStereo):
-        return descriptor
-    raise TypeError(
-        "Canonical stereograph Version 1 has no mirror action for "
-        f"{descriptor.descriptor_class!r}."
-    )
+    return mirror_configured_descriptor(descriptor)  # type: ignore[arg-type]
 
 
 def mirror_stereo_registry(
     registry: Mapping[str, StereoValue],
-) -> dict[str, TetrahedralStereo | PlanarBondStereo]:
-    """Return a geometry-specific Version 1 mirror without changing loci."""
+) -> dict[str, StereoValue]:
+    """Return the geometry-specific mirror without changing loci."""
     return {
         identifier: mirror_stereo_descriptor(descriptor)
         for identifier, descriptor in registry.items()
     }
-
-
-def _nondefinitive_mirror_result(
-    status: StereographMirrorStatus,
-    descriptor_count: int,
-    *,
-    incomplete_loci: Iterable[str] = (),
-    unsupported_loci: Iterable[str] = (),
-    unsupported_families: Iterable[str] = (),
-) -> StereographMirrorResult:
-    return StereographMirrorResult(
-        status=status,
-        descriptor_count=descriptor_count,
-        incomplete_loci=tuple(sorted(set(incomplete_loci))),
-        unsupported_loci=tuple(sorted(set(unsupported_loci))),
-        unsupported_families=tuple(sorted(set(unsupported_families))),
-    )
 
 
 def classify_stereograph_mirror(
@@ -766,84 +501,29 @@ def classify_stereograph_mirror(
     atom_color: AttributeSelector = _DEFAULT_ATOM_COLOR_KEYS,
     bond_color: AttributeSelector = _DEFAULT_BOND_COLOR_KEYS,
 ) -> StereographMirrorResult:
-    """Compare a complete Version 1 stereograph with its exact mirror.
+    """Compare a complete configured stereograph with its exact mirror.
 
     ``incomplete_loci`` and ``unsupported_loci`` let a perception boundary
     declare missing configured information without inventing descriptors.
     Unsupported evidence takes precedence over incomplete evidence.
     """
-    descriptors = tuple(registry.values())
-    unsupported_entries = tuple(
-        (identifier, descriptor.descriptor_class)
-        for identifier, descriptor in registry.items()
-        if not isinstance(descriptor, (TetrahedralStereo, PlanarBondStereo))
-    )
-    declared_unsupported = tuple(unsupported_loci)
-    if unsupported_entries or declared_unsupported:
-        return _nondefinitive_mirror_result(
-            StereographMirrorStatus.UNSUPPORTED,
-            len(descriptors),
-            unsupported_loci=(
-                *declared_unsupported,
-                *(identifier for identifier, _family in unsupported_entries),
-            ),
-            unsupported_families=(
-                family for _identifier, family in unsupported_entries
-            ),
-        )
-    declared_incomplete = tuple(incomplete_loci)
-    unknown = tuple(
-        identifier
-        for identifier, descriptor in registry.items()
-        if descriptor.specification is StereoSpecification.UNSPECIFIED
-    )
-    if unknown or declared_incomplete:
-        return _nondefinitive_mirror_result(
-            StereographMirrorStatus.INCOMPLETE,
-            len(descriptors),
-            incomplete_loci=(*declared_incomplete, *unknown),
-        )
+    from .configured import classify_configured_stereograph_mirror
 
-    original = canonicalize_stereo_registry(
+    return classify_configured_stereograph_mirror(
         base_graph,
         registry,
+        incomplete_loci=incomplete_loci,
+        unsupported_loci=unsupported_loci,
         atom_color=atom_color,
         bond_color=bond_color,
     )
-    mirrored_registry = mirror_stereo_registry(registry)
-    mirror = canonicalize_stereo_registry(
-        base_graph,
-        mirrored_registry,
-        atom_color=atom_color,
-        bond_color=bond_color,
-    )
-    achiral = original.same_stereograph(mirror)
-    atom_mapping = (
-        tuple(zip(original.atom_order, mirror.atom_order)) if achiral else None
-    )
-    return StereographMirrorResult(
-        status=(
-            StereographMirrorStatus.ACHIRAL
-            if achiral
-            else StereographMirrorStatus.CHIRAL
-        ),
-        descriptor_count=len(descriptors),
-        original=original,
-        mirror=mirror,
-        mirrored_descriptors=tuple(mirrored_registry.values()),
-        atom_mirror_isomorphism=atom_mapping,
-    )
 
 
-def _rdkit_graph_and_registry(
-    molecule: Any,
-) -> tuple[nx.Graph, Mapping[str, StereoValue]]:
-    """Return one defensive RDKit graph/descriptor identifier namespace."""
+def _rdkit_graph(molecule: Any) -> nx.Graph:
+    """Return a defensive attributed graph in the RDKit atom namespace."""
     from rdkit import Chem
 
     from synkit.IO.mol_to_graph import MolToGraph
-
-    from .rdkit_adapter import descriptors_from_rdkit
 
     if not isinstance(molecule, Chem.Mol):
         raise TypeError("RDKit stereograph canonicalization requires Chem.Mol.")
@@ -852,9 +532,25 @@ def _rdkit_graph_and_registry(
     fully_mapped = all(value > 0 for value in atom_maps) and len(set(atom_maps)) == len(
         atom_maps
     )
-    graph = MolToGraph(include_stereo_descriptors=False).transform(
+    return MolToGraph(include_stereo_descriptors=False).transform(
         working,
         use_index_as_atom_map=fully_mapped,
+    )
+
+
+def _rdkit_graph_and_registry(
+    molecule: Any,
+) -> tuple[nx.Graph, Mapping[str, StereoValue]]:
+    """Return one RDKit graph/descriptor identifier namespace."""
+    from rdkit import Chem
+
+    from .rdkit_adapter import descriptors_from_rdkit
+
+    graph = _rdkit_graph(molecule)
+    working = Chem.Mol(molecule)
+    atom_maps = tuple(int(atom.GetAtomMapNum()) for atom in working.GetAtoms())
+    fully_mapped = all(value > 0 for value in atom_maps) and len(set(atom_maps)) == len(
+        atom_maps
     )
     registry = descriptors_from_rdkit(
         working,
@@ -880,52 +576,35 @@ def canonicalize_rdkit_tetrahedral_stereograph(
 def canonicalize_rdkit_stereograph(
     molecule: Any,
 ) -> CanonicalStereographResult:
-    """Canonicalize RDKit constitution plus configured tetrahedral/E/Z stereo."""
-    graph, registry = _rdkit_graph_and_registry(molecule)
-    return canonicalize_stereo_registry(graph, registry)
+    """Canonicalize RDKit constitution plus all supported configured stereo."""
+    from .configured import canonicalize_rdkit_configured_stereograph
+
+    return canonicalize_rdkit_configured_stereograph(molecule)
 
 
 def classify_rdkit_stereograph_mirror(
     molecule: Any,
+    *,
+    require_complete: bool = True,
+    identity_profile: Literal[
+        "chemical",
+        "lewis_state",
+        "acs_topology",
+    ] = "chemical",
 ) -> StereographMirrorResult:
-    """Classify configured RDKit input through exact Version 1 mirror identity.
+    """Classify configured RDKit input through exact molecular mirror identity.
 
-    RDKit and SynKit perception are used only to report supplied-information
-    state.  They do not provide E/Z or CIP labels to the exact certificate.
+    The chemical default compares the exact resonance family while preserving
+    genuine bond-order distinctions. ``lewis_state`` audits one supplied
+    Lewis drawing; ``acs_topology`` is connectivity-only benchmark
+    compatibility.
     """
-    from synkit.Chem.Molecule.stereo_perception import (
-        StereoConfigurationState,
-        StereoElementType,
-        detect_potential_stereo_elements,
-    )
+    from .configured import classify_rdkit_configured_stereograph_mirror
 
-    graph, registry = _rdkit_graph_and_registry(molecule)
-    elements = detect_potential_stereo_elements(molecule)
-    version_one = {
-        StereoElementType.TETRAHEDRAL,
-        StereoElementType.DOUBLE_BOND,
-    }
-    incomplete = tuple(
-        element.identifier
-        for element in elements
-        if element.element_type in version_one
-        and element.configuration_state is StereoConfigurationState.UNSPECIFIED
-    )
-    unsupported = tuple(
-        element.identifier
-        for element in elements
-        if element.element_type not in version_one
-    )
-    stereo_groups = tuple(molecule.GetStereoGroups())
-    enhanced_groups = tuple(
-        f"enhanced_stereo_group:{index}:{group.GetGroupType()}"
-        for index, group in enumerate(stereo_groups)
-    )
-    return classify_stereograph_mirror(
-        graph,
-        registry,
-        incomplete_loci=incomplete,
-        unsupported_loci=(*unsupported, *enhanced_groups),
+    return classify_rdkit_configured_stereograph_mirror(
+        molecule,
+        require_complete=require_complete,
+        identity_profile=identity_profile,
     )
 
 

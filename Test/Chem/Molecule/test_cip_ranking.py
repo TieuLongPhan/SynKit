@@ -59,6 +59,30 @@ def test_multiple_bond_duplicate_nodes_decide_carbonyl_over_alcohol() -> None:
     assert any(node.duplicate_kind == "multiple_bond" for node in carbonyl_nodes)
 
 
+def test_multiple_bond_does_not_repeat_the_parent_core_in_next_sphere() -> None:
+    molecule = Chem.MolFromSmiles("COP(C)(F)=O")
+    assert molecule is not None
+
+    comparison = CIPRanker(molecule).compare(2, 1, 5)
+
+    assert comparison.outcome is CIPComparisonOutcome.LEFT_HIGHER
+    assert comparison.deciding_rule is CIPSequenceRule.RULE_1A_ATOMIC_NUMBER
+    assert comparison.left_witness == (6,)
+    assert comparison.right_witness == (0,)
+
+
+def test_simple_mancude_heterocycle_uses_mean_duplicate_atomic_number() -> None:
+    molecule = Chem.MolFromSmiles("O[C@H](/C=N\\C)C1=NC=CC=C1")
+    assert molecule is not None
+
+    comparison = CIPRanker(molecule).compare(1, 2, 5)
+
+    assert comparison.outcome is CIPComparisonOutcome.LEFT_HIGHER
+    assert comparison.deciding_rule is CIPSequenceRule.RULE_1A_ATOMIC_NUMBER
+    assert comparison.left_witness == (7, 7, 1)
+    assert comparison.right_witness == (7, 6.5, 6)
+
+
 def test_rule_1b_nearer_duplicate_node_has_priority() -> None:
     molecule = Chem.MolFromSmiles("C(F)(Cl)(Br)I")
     assert molecule is not None

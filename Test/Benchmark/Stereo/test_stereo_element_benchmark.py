@@ -138,27 +138,27 @@ def test_frozen_audit_covers_all_300_records_without_promoting_ties() -> None:
     }
     assert report["parse_failures"] == []
     assert report["frame_statuses"] == {
-        "canonical_primary": 660,
-        "canonical_stereo_dependent": 135,
+        "canonical_primary": 695,
+        "canonical_stereo_dependent": 283,
         "neighborhood_key_collision": 0,
-        "symmetry_related": 1892,
+        "symmetry_related": 1753,
     }
     assert report["totals"] == {
-        "broad_carriers": 2687,
-        "canonical_frames": 795,
-        "confirmed_centers": 795,
-        "primary_centers": 660,
-        "reference_rs_canonicalized": 795,
-        "reference_rs_confirmed": 795,
+        "broad_carriers": 2750,
+        "canonical_frames": 695,
+        "confirmed_centers": 997,
+        "primary_centers": 695,
+        "reference_rs_canonicalized": 678,
+        "reference_rs_confirmed": 962,
         "reference_rs_positions": 980,
         "renumbering_checked_records": 300,
         "renumbering_invariant_records": 300,
-        "stereo_dependent_centers": 135,
-        "supplied_configuration_attached": 795,
-        "supplied_constitutionally_unresolved": 132,
+        "stereo_dependent_centers": 283,
+        "supplied_configuration_attached": 676,
+        "supplied_constitutionally_unresolved": 8,
         "supplied_tetrahedral_centers": 943,
         "supplied_unresolved_key_collision": 0,
-        "supplied_unsupported_geometry": 16,
+        "supplied_unsupported_geometry": 0,
     }
     assert report["renumbering_failures"] == []
 

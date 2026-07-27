@@ -42,6 +42,6 @@ def test_dataset_extraction_retains_task_specific_boundaries() -> None:
     assert rota["multi_records_renumbering_invariant"] == 40
 
     assert cip["records_with_multiple_reference_rs_positions"] == 153
-    assert cip["records_with_multiple_attached_configurations"] == 116
-    assert cip["multi_attached_renumbering_invariant"] == 116
+    assert cip["records_with_multiple_attached_configurations"] == 117
+    assert cip["multi_attached_renumbering_invariant"] == 117
     assert not cip["structure_inventory"]["available"]

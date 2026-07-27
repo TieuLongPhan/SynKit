@@ -1,9 +1,9 @@
 """Exact native canonical labeling for finite coloured graphs.
 
-The implementation is intentionally small and unpruned.  It provides the
-correctness oracle for later individualization--refinement optimizations:
-partition refinement reduces the search tree, but every unresolved branch is
-still visited.  Canonical identity is available only after a complete search.
+The default implementation is intentionally small and unpruned.  It provides
+the correctness oracle for an opt-in automorphism-pruned
+individualization--refinement search.  Canonical identity is available only
+after a complete search.
 """
 
 from __future__ import annotations
@@ -20,8 +20,12 @@ from typing import Any, Hashable
 
 import networkx as nx
 
+from .exact_refinement import ExactRefinementMixin
+
 ColorToken = tuple[Any, ...]
 ColorSelector = str | Sequence[str] | Callable[[Mapping[str, Any]], Any] | None
+
+_STABILIZER_WORK_LIMIT = 4096
 
 
 class CanonicalSearchIncomplete(RuntimeError):
@@ -125,6 +129,7 @@ class ExactCanonicalResult:
     automorphisms: tuple[AutomorphismWitness, ...]
     orbits: tuple[frozenset[Hashable], ...]
     statistics: CanonicalSearchStatistics
+    automorphisms_complete: bool = True
     complete: bool = True
     exact: bool = True
 
@@ -177,14 +182,23 @@ class _SearchState:
     best_key: tuple[Any, ...] | None = None
     best_order: tuple[Hashable, ...] | None = None
     equal_orders: list[tuple[Hashable, ...]] = field(default_factory=list)
+    generators: list[dict[Hashable, Hashable]] = field(default_factory=list)
+    generator_signatures: set[tuple[Hashable, ...]] = field(default_factory=set)
+    stabilizer_cache: dict[
+        tuple[int, tuple[Hashable, ...]],
+        tuple[dict[Hashable, Hashable], ...],
+    ] = field(default_factory=dict)
 
 
-class ExactColoredGraphCanonicalizer:
+class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
     """Complete individualization--refinement for finite coloured graphs.
 
     Graph structure and semantic colours are snapshotted during construction.
     Node identifiers are retained only as witness handles and never enter the
-    canonical certificate.
+    canonical certificate. ``prune_automorphisms`` enables verified orbit
+    pruning together with incremental refinement, adaptive stabilizer chains,
+    nonuniform-component recursion, and trace-guided certificate pruning. The
+    unpruned default remains the small exhaustive correctness oracle.
     """
 
     def __init__(
@@ -193,6 +207,8 @@ class ExactColoredGraphCanonicalizer:
         *,
         node_color: ColorSelector = "color",
         edge_color: ColorSelector = "color",
+        prune_automorphisms: bool = False,
+        enumerate_automorphism_group: bool = True,
     ) -> None:
         if not isinstance(graph, (nx.Graph, nx.DiGraph)):
             raise TypeError("Exact canonicalization requires a NetworkX graph.")
@@ -240,6 +256,8 @@ class ExactColoredGraphCanonicalizer:
         }
         self._refinement_rounds = 0
         self._complete_cache: ExactCanonicalResult | None = None
+        self._prune_automorphisms = prune_automorphisms
+        self._enumerate_automorphism_group = enumerate_automorphism_group
 
     @property
     def graph(self) -> nx.Graph:
@@ -336,22 +354,30 @@ class ExactColoredGraphCanonicalizer:
         order: tuple[Hashable, ...],
     ) -> tuple[Any, ...]:
         node_part = tuple(self._node_colors[node] for node in order)
-        adjacency = []
+        absent = ("absent",)
+        size = len(order)
+        positions = {node: index for index, node in enumerate(order)}
         if self._directed:
-            pairs = (
-                (left, right)
-                for left in range(len(order))
-                for right in range(len(order))
-            )
+            adjacency = [absent] * (size * size)
+            for (left, right), token in self._edge_colors.items():
+                adjacency[positions[left] * size + positions[right]] = (
+                    "edge",
+                    token,
+                )
         else:
-            pairs = (
-                (left, right)
-                for left in range(len(order))
-                for right in range(left, len(order))
-            )
-        for left, right in pairs:
-            token = self._edge_token(order[left], order[right])
-            adjacency.append(("absent",) if token is None else ("edge", token))
+            adjacency = [absent] * (size * (size + 1) // 2)
+            for (left, right), token in self._edge_colors.items():
+                left_position, right_position = positions[left], positions[right]
+                if left_position > right_position:
+                    left_position, right_position = right_position, left_position
+                row_start = (
+                    left_position * size
+                    - left_position * (left_position - 1) // 2
+                )
+                adjacency[row_start + right_position - left_position] = (
+                    "edge",
+                    token,
+                )
         return (
             ("directed", int(self._directed)),
             ("nodes", node_part),
@@ -430,7 +456,7 @@ class ExactColoredGraphCanonicalizer:
         self,
         partition: tuple[tuple[Hashable, ...], ...],
         state: _SearchState,
-    ) -> None:
+    ) -> tuple[tuple[Any, ...], tuple[Hashable, ...]]:
         state.leaves += 1
         order = tuple(cell[0] for cell in partition)
         key = self._canonical_key(order)
@@ -440,6 +466,7 @@ class ExactColoredGraphCanonicalizer:
             state.equal_orders = [order]
         elif key == state.best_key:
             state.equal_orders.append(order)
+        return key, order
 
     def _visit_partition(
         self,
@@ -475,6 +502,270 @@ class ExactColoredGraphCanonicalizer:
             if state.termination_reason is not None:
                 return
 
+    def _register_generator(
+        self,
+        left_order: tuple[Hashable, ...],
+        right_order: tuple[Hashable, ...],
+        state: _SearchState,
+    ) -> None:
+        mapping = {
+            left_order[index]: right_order[index] for index in range(len(left_order))
+        }
+        signature = tuple(mapping[node] for node in self._nodes)
+        if signature in state.generator_signatures:
+            return
+        if not self._is_automorphism(mapping):
+            raise RuntimeError(
+                "Equal canonical subtrees did not induce an automorphism."
+            )
+        state.generator_signatures.add(signature)
+        state.generators.append(mapping)
+
+    def _identity_mapping(self) -> dict[Hashable, Hashable]:
+        return {node: node for node in self._nodes}
+
+    def _mapping_signature(
+        self,
+        mapping: Mapping[Hashable, Hashable],
+    ) -> tuple[Hashable, ...]:
+        return tuple(mapping[node] for node in self._nodes)
+
+    def _compose_mappings(
+        self,
+        first: Mapping[Hashable, Hashable],
+        second: Mapping[Hashable, Hashable],
+    ) -> dict[Hashable, Hashable]:
+        """Return ``second`` after ``first``."""
+        return {node: second[first[node]] for node in self._nodes}
+
+    def _inverse_mapping(
+        self,
+        mapping: Mapping[Hashable, Hashable],
+    ) -> dict[Hashable, Hashable]:
+        return {image: source for source, image in mapping.items()}
+
+    def _deduplicate_mappings(
+        self,
+        mappings: Sequence[Mapping[Hashable, Hashable]],
+        *,
+        include_identity: bool = False,
+    ) -> tuple[dict[Hashable, Hashable], ...]:
+        identity_signature = tuple(self._nodes)
+        unique: dict[tuple[Hashable, ...], dict[Hashable, Hashable]] = {}
+        for mapping in mappings:
+            signature = self._mapping_signature(mapping)
+            if not include_identity and signature == identity_signature:
+                continue
+            unique.setdefault(signature, dict(mapping))
+        return tuple(unique.values())
+
+    def _point_stabilizer_generators(
+        self,
+        generators: Sequence[Mapping[Hashable, Hashable]],
+        point: Hashable,
+    ) -> tuple[dict[Hashable, Hashable], ...]:
+        """Return Schreier generators for the subgroup fixing ``point``."""
+        seeds = self._deduplicate_mappings(generators)
+        if not seeds:
+            return ()
+
+        identity = self._identity_mapping()
+        transversals = {point: identity}
+        pending = [point]
+        while pending:
+            current = pending.pop()
+            current_transversal = transversals[current]
+            for generator in seeds:
+                image = generator[current]
+                if image in transversals:
+                    continue
+                transversals[image] = self._compose_mappings(
+                    current_transversal,
+                    generator,
+                )
+                pending.append(image)
+
+        stabilizer_generators = []
+        for current, current_transversal in transversals.items():
+            for generator in seeds:
+                image = generator[current]
+                schreier = self._compose_mappings(
+                    self._compose_mappings(
+                        current_transversal,
+                        generator,
+                    ),
+                    self._inverse_mapping(transversals[image]),
+                )
+                stabilizer_generators.append(schreier)
+        return self._deduplicate_mappings(stabilizer_generators)
+
+    def _stabilizer_generators(
+        self,
+        generators: Sequence[Mapping[Hashable, Hashable]],
+        fixed: tuple[Hashable, ...],
+    ) -> tuple[dict[Hashable, Hashable], ...]:
+        """Return generators for the subgroup fixing every point in ``fixed``."""
+        stabilizers = self._deduplicate_mappings(generators)
+        for point in fixed:
+            stabilizers = self._point_stabilizer_generators(stabilizers, point)
+            if not stabilizers:
+                break
+        return stabilizers
+
+    def _cached_stabilizer_generators(
+        self,
+        state: _SearchState,
+        fixed: tuple[Hashable, ...],
+    ) -> tuple[dict[Hashable, Hashable], ...]:
+        cache_key = (len(state.generators), fixed)
+        cached = state.stabilizer_cache.get(cache_key)
+        if cached is None:
+            cached = self._stabilizer_generators(state.generators, fixed)
+            state.stabilizer_cache[cache_key] = cached
+        return cached
+
+    def _pruning_generators(
+        self,
+        state: _SearchState,
+        fixed: tuple[Hashable, ...],
+        cell_index: Mapping[Hashable, int],
+    ) -> tuple[dict[Hashable, Hashable], ...]:
+        """Choose exact stabilizer generators without excessive group overhead."""
+        direct = tuple(
+            mapping
+            for mapping in state.generators
+            if self._stabilizes_partition(mapping, cell_index)
+        )
+        estimated_work = (
+            len(self._nodes) * max(1, len(state.generators)) * max(1, len(fixed))
+        )
+        # Schreier generators save search only while their construction remains
+        # cheaper than direct filtering of the verified generators.
+        if estimated_work > _STABILIZER_WORK_LIMIT:
+            return direct
+        subgroup = self._cached_stabilizer_generators(state, fixed)
+        return tuple(
+            mapping
+            for mapping in subgroup
+            if self._stabilizes_partition(mapping, cell_index)
+        )
+
+    @staticmethod
+    def _stabilizes_partition(
+        mapping: Mapping[Hashable, Hashable],
+        cell_index: Mapping[Hashable, int],
+    ) -> bool:
+        return all(cell_index[node] == cell_index[mapping[node]] for node in cell_index)
+
+    @staticmethod
+    def _generator_orbit(
+        node: Hashable,
+        generators: Sequence[Mapping[Hashable, Hashable]],
+    ) -> frozenset[Hashable]:
+        orbit = {node}
+        pending = [node]
+        while pending:
+            current = pending.pop()
+            for mapping in generators:
+                image = mapping[current]
+                if image not in orbit:
+                    orbit.add(image)
+                    pending.append(image)
+        return frozenset(orbit)
+
+    def _visit_partition_pruned(
+        self,
+        partition: tuple[tuple[Hashable, ...], ...],
+        depth: int,
+        state: _SearchState,
+        *,
+        fixed: tuple[Hashable, ...] = (),
+        changed_members: frozenset[Hashable] | None = None,
+        active_component: frozenset[Hashable] | None = None,
+        already_refined: bool = False,
+    ) -> tuple[tuple[Any, ...], tuple[Hashable, ...]] | None:
+        """Visit one subtree, pruning only branches joined by a verified orbit."""
+        if state.termination_reason is not None:
+            return None
+        reason = self._stop_reason(state, depth)
+        if reason is not None:
+            state.termination_reason = reason
+            return None
+        state.visited_nodes += 1
+        refined = self._refine_search_partition(
+            partition,
+            changed_members,
+            already_refined,
+        )
+        ambiguous = tuple(
+            (index, cell) for index, cell in enumerate(refined) if len(cell) > 1
+        )
+        if self._certificate_prunes(refined, ambiguous, state.best_key):
+            return None
+        if not ambiguous:
+            return self._record_leaf(refined, state)
+
+        cell_index, target, active_component = (
+            self._select_component_target(
+                refined,
+                ambiguous,
+                active_component,
+            )
+        )
+        partition_cells = {
+            node: index for index, cell in enumerate(refined) for node in cell
+        }
+        explored: list[tuple[Hashable, tuple[Any, ...], tuple[Hashable, ...]]] = []
+        subtree_best: tuple[tuple[Any, ...], tuple[Hashable, ...]] | None = None
+        ordered_children = self._ordered_search_children(
+            refined,
+            cell_index,
+            target,
+        )
+        for _trace, _position, chosen, child_refined in ordered_children:
+            stabilizers = self._pruning_generators(
+                state,
+                fixed,
+                partition_cells,
+            )
+            if self._orbit_already_explored(
+                chosen,
+                explored,
+                stabilizers,
+            ):
+                continue
+
+            if child_refined is None:
+                child_refined = self._individualized_child(
+                    refined,
+                    cell_index,
+                    target,
+                    chosen,
+                )
+            child_best = self._visit_partition_pruned(
+                child_refined,
+                depth + 1,
+                state,
+                fixed=(*fixed, chosen),
+                active_component=active_component,
+                already_refined=True,
+            )
+            if state.termination_reason is not None:
+                return None
+            if child_best is None:
+                continue
+            key, order = child_best
+            self._register_equal_child_generators(
+                explored,
+                key,
+                order,
+                state,
+            )
+            explored.append((chosen, key, order))
+            if subtree_best is None or key < subtree_best[0]:
+                subtree_best = (key, order)
+        return subtree_best
+
     def _verified_witnesses(
         self,
         best_order: tuple[Hashable, ...],
@@ -489,6 +780,78 @@ class ExactColoredGraphCanonicalizer:
                 raise RuntimeError(
                     "Equal canonical leaves did not induce an automorphism."
                 )
+            witnesses.append(AutomorphismWitness(tuple(mapping.items())))
+        return tuple(witnesses)
+
+    def _generated_witnesses(
+        self,
+        best_order: tuple[Hashable, ...],
+        equal_orders: list[tuple[Hashable, ...]],
+        generators: list[dict[Hashable, Hashable]],
+    ) -> tuple[AutomorphismWitness, ...]:
+        """Enumerate the exact group generated by pruned-search witnesses."""
+        seeds = list(generators)
+        for order in equal_orders:
+            seeds.append(
+                {best_order[index]: order[index] for index in range(len(best_order))}
+            )
+        identity = tuple(self._nodes)
+        generator_signatures = {
+            tuple(mapping[node] for node in self._nodes) for mapping in seeds
+        }
+        known = {identity}
+        pending = [identity]
+        while pending:
+            current = pending.pop()
+            current_mapping = dict(zip(self._nodes, current))
+            for generator_signature in generator_signatures:
+                generator = dict(zip(self._nodes, generator_signature))
+                composed = tuple(
+                    generator[current_mapping[node]] for node in self._nodes
+                )
+                if composed not in known:
+                    known.add(composed)
+                    pending.append(composed)
+
+        witnesses = []
+        for signature in sorted(
+            known,
+            key=lambda item: tuple(repr(value) for value in item),
+        ):
+            mapping = dict(zip(self._nodes, signature))
+            if not self._is_automorphism(mapping):
+                raise RuntimeError(
+                    "A generated symmetry witness was not an automorphism."
+                )
+            witnesses.append(AutomorphismWitness(tuple(mapping.items())))
+        return tuple(witnesses)
+
+    def _generator_witnesses(
+        self,
+        best_order: tuple[Hashable, ...],
+        equal_orders: list[tuple[Hashable, ...]],
+        generators: list[dict[Hashable, Hashable]],
+    ) -> tuple[AutomorphismWitness, ...]:
+        """Return verified generators without expanding the generated group."""
+        mappings = list(generators)
+        mappings.extend(
+            {best_order[index]: order[index] for index in range(len(best_order))}
+            for order in equal_orders
+        )
+        identity = {node: node for node in self._nodes}
+        mappings.append(identity)
+        unique = {
+            tuple(mapping[node] for node in self._nodes): mapping
+            for mapping in mappings
+        }
+        witnesses = []
+        for signature in sorted(
+            unique,
+            key=lambda item: tuple(repr(value) for value in item),
+        ):
+            mapping = unique[signature]
+            if not self._is_automorphism(mapping):
+                raise RuntimeError("A symmetry generator was not an automorphism.")
             witnesses.append(AutomorphismWitness(tuple(mapping.items())))
         return tuple(witnesses)
 
@@ -515,7 +878,10 @@ class ExactColoredGraphCanonicalizer:
             max_search_nodes,
             max_depth,
         )
-        self._visit_partition(self._initial_partition(), 0, state)
+        if self._prune_automorphisms:
+            self._visit_partition_pruned(self._initial_partition(), 0, state)
+        else:
+            self._visit_partition(self._initial_partition(), 0, state)
         statistics = CanonicalSearchStatistics(
             visited_nodes=state.visited_nodes,
             leaves=state.leaves,
@@ -530,10 +896,23 @@ class ExactColoredGraphCanonicalizer:
         if state.best_key is None or state.best_order is None:
             raise RuntimeError("Complete canonical search produced no leaf.")
 
-        automorphisms = self._verified_witnesses(
-            state.best_order,
-            state.equal_orders,
-        )
+        if self._prune_automorphisms and self._enumerate_automorphism_group:
+            automorphisms = self._generated_witnesses(
+                state.best_order,
+                state.equal_orders,
+                state.generators,
+            )
+        elif self._prune_automorphisms:
+            automorphisms = self._generator_witnesses(
+                state.best_order,
+                state.equal_orders,
+                state.generators,
+            )
+        else:
+            automorphisms = self._verified_witnesses(
+                state.best_order,
+                state.equal_orders,
+            )
         certificate_text = json.dumps(
             state.best_key,
             separators=(",", ":"),
@@ -552,6 +931,9 @@ class ExactColoredGraphCanonicalizer:
             automorphisms=automorphisms,
             orbits=self._orbits(automorphisms),
             statistics=statistics,
+            automorphisms_complete=(
+                not self._prune_automorphisms or self._enumerate_automorphism_group
+            ),
         )
         if timeout_seconds is None and max_search_nodes is None and max_depth is None:
             self._complete_cache = result

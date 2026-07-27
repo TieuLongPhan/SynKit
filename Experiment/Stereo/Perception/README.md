@@ -20,17 +20,17 @@ Reports must state whether the source provides configuration, handedness,
 stability, negatives, and whole-molecule truth. RotA is positive-only; CIP
 labels are local.
 
-Run the designed check with:
+Run the designed check directly with:
 
 ```bash
-Experiment/Stereo/run_experiments.sh perception-conformance
+python Experiment/Stereo/Perception/conformance.py
 ```
 
 Run the exhaustive empirical benchmark with an integrity-matched checkout of
 the non-vendored CIP Validation Suite:
 
 ```bash
-Experiment/Stereo/run_experiments.sh perception-full \
+python Experiment/Stereo/Perception/full_detection.py \
   --cip-path /path/to/cip-validation-suite-compounds.smi
 ```
 

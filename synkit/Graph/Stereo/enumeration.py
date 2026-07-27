@@ -27,13 +27,13 @@ from .canonical import (
     _DEFAULT_ATOM_COLOR_KEYS,
     _DEFAULT_BOND_COLOR_KEYS,
     _rdkit_graph_and_registry,
+    canonicalize_stereo_registry,
+    classify_stereograph_mirror,
+    expand_stereograph,
 )
 from .configured import (
     CONFIGURED_DESCRIPTOR_TYPES,
     ConfiguredDescriptor,
-    canonicalize_configured_registry,
-    classify_configured_stereograph_mirror,
-    expand_configured_stereograph,
 )
 from .descriptors import (
     AtropBondStereo,
@@ -276,7 +276,7 @@ def focal_stereo_evidence(
         _fixed_seed(value) if position in omitted else value
         for position, (_key, value) in enumerate(items)
     )
-    graph = expand_configured_stereograph(
+    graph = expand_stereograph(
         base_graph,
         seeded,  # type: ignore[arg-type]
         atom_color=atom_color,
@@ -373,13 +373,13 @@ def enumerate_stereograph_assignments(
         assignment_registry = {
             key: value for (key, _source), value in zip(items, values)
         }
-        canonical = canonicalize_configured_registry(
+        canonical = canonicalize_stereo_registry(
             base_graph,
             assignment_registry,
             atom_color=atom_color,
             bond_color=bond_color,
         )
-        mirror = classify_configured_stereograph_mirror(
+        mirror = classify_stereograph_mirror(
             base_graph,
             assignment_registry,
             atom_color=atom_color,

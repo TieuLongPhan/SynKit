@@ -5,6 +5,7 @@ from synkit.Graph.Mech.conversion import (
     ef_smirks_to_epd,
     epd_to_ef_smirks,
     extract_atom_maps_from_smiles,
+    remove_duplicate_atom_maps,
     typed_convert_arrow_code,
 )
 
@@ -21,6 +22,18 @@ class CountingGraph(nx.Graph):
 
 def test_extract_atom_maps_from_smiles():
     assert extract_atom_maps_from_smiles("[CH:10][N+:61]") == [10, 61]
+
+
+def test_remove_duplicate_atom_maps_keeps_one_anchor_per_endpoint():
+    cleaned, removed = remove_duplicate_atom_maps(
+        "[NH:82][CH:1][NH:82]>>[NH:82][CH:1][NH:82]"
+    )
+
+    assert cleaned == "[NH:82][CH:1][NH]>>[NH:82][CH:1][NH]"
+    assert removed == {
+        "reactants": {82: 1},
+        "products": {82: 1},
+    }
 
 
 def test_typed_convert_arrow_code_reuses_atom_map_index():

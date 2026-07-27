@@ -34117,7 +34117,7 @@
         "failures": [],
         "invariant_records": 258
       },
-      "seconds": 98.85396208998282,
+      "seconds": 92.21728508599335,
       "task": "two-setting recovery of supplied configured local loci",
       "two_setting_comparison": {
         "configuration_erased": {
@@ -232974,7 +232974,7 @@
         "failures": [],
         "invariant_records": 650
       },
-      "seconds": 408.72041094099404,
+      "seconds": 361.69415663497057,
       "task": "two-setting positive typed stereo-carrier locus detection",
       "two_setting_comparison": {
         "configuration_erased": {
@@ -273689,7 +273689,7 @@
         "failures": [],
         "invariant_records": 300
       },
-      "seconds": 26.636859101010486,
+      "seconds": 23.527299576962832,
       "structures_vendored": false,
       "task": "strict configuration-neutral and oriented-neighbor-frame-assisted recovery of all local reference positions",
       "two_setting_comparison": {
@@ -273762,5 +273762,5 @@
     }
   },
   "schema": "synkit.full-stereo-carrier-detection/4",
-  "seconds": 534.2716523850104
+  "seconds": 477.4787077929941
 }

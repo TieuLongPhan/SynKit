@@ -1,22 +1,26 @@
 # Mechanism reconstruction failures
 
-This directory retains only the identifiers of unresolved records from the
-completed mechanism-reconstruction run:
+This directory receives locally generated, identifier-only outputs from the
+mechanism-reconstruction rerun. The CSV files are intentionally ignored and
+are not part of the commit tree:
 
-- `polar-failures.csv`: 3,274 source-mapping failures from 95,888 polar cases;
-- `radical-failures.csv`: 10 source-annotation failures from 5,426 radical
-  cases.
+- `polar-failures.csv`: no unresolved records from 95,888 polar cases;
+- `radical-failures.csv`: the one unresolved source-annotation conflict from
+  5,426 radical cases;
+- `radical-arrow-review.csv`: eleven reviewed row IDs with a compact
+  recorded-arrow issue, reviewed action, and outcome.
 
-Both files contain one column, `source_row`, giving the one-based logical row
-in the corresponding source corpus. They intentionally retain no reaction,
-condition, diagnostic-message, or other third-party source field. Detailed
-diagnostics can be regenerated locally with `mech_path/audit.py`.
+The failure files contain one column, `source_row`, giving the one-based logical
+row in the corresponding source corpus.  The review table contains no
+structures, conditions, or other source fields.  Detailed diagnostics can be
+regenerated locally with `mech_path/audit.py`.
 
-For radical data, the fixed baseline is the completed source-annotation audit.
-Newer, stricter event-group grammar findings are reported separately as
-`current_policy_warnings` in the generated summary and do not silently change
-the manuscript denominator.
+Repeated positive maps in a polar endpoint are repaired deterministically:
+retain the first occurrence, remove each later label, and let guarded expansion
+assign fresh maps.  For symmetry-equivalent occurrences, retaining the other
+member produces the same endpoint result.
 
 The source corpora are registered in `Experiment/Lewis/Data/README.md`. The
-completed result was 98,030 reconstructions from 101,314 inputs. Excluding the
-3,284 confirmed source defects, reconstruction was 98,030/98,030.
+completed result is 101,313 reconstructions from 101,314 inputs.  ID 2,207 is
+retained as unresolved because no local electron-flow group matches both its
+hydrogen transfer and declared product radical.

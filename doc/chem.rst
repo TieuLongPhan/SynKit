@@ -150,7 +150,7 @@ atomic number zero), planar bonds use ``E/Z``, and configured axes or helices
 use ``M/P``. Labels are report values only: they never enter stereo descriptor
 IDs, hashes, serialization, reaction rules, or graph identity.
 
-``derive_rdkit_stereo_names`` accepts one exact Version 2
+``derive_rdkit_stereo_names`` accepts one exact configured-stereograph
 ``StereoAssignment`` produced by stereograph enumeration, verifies its
 certificate digest and complete fixed configuration, and binds the local
 assignment reports to that source certificate. This is a one-way dependency:

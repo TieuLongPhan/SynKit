@@ -29,14 +29,14 @@ stability conclusion.
 | ACS supplied global binary | 258/258 | 235/258 | 254/258 live; 258/258 published column |
 | ACS removed versus original label | 223/258 apparent agreement | 94/258 apparent agreement | 220/258 apparent agreement |
 | RotA native axial-locus detection | N/A: no axis detector | N/A: no axis detector | N/A: no axis detector from these SMILES |
-| CIP native local descriptor assignment | 155/300 exact label sets (51.67%); incremental Rules 1a/1b/2 | 245/300 exact label sets (81.67%) | N/A: no CIP-label API |
+| CIP native local descriptor assignment | 175/300 exact label sets (58.33%); Rules 1a/1b/2, simple mancude averaging, Rule 3, one-pair Rules 4c/5 | 245/300 exact label sets (81.67%) | N/A: no CIP-label API |
 
 The ACS removed numbers are not recovery accuracy because stereo information
 was erased. RDKit CIP micro label recall is 90.18% and precision is 99.82%
-over 1,252 reference labels. SynKit recall is 67.33% and precision is 97.80%; its
-145 non-exact rows have one reviewed primary cause each: 15 unsupported class,
-27 missing orientation evidence, 101 ranking defects, and 2 label-projection
-defects. Most missing label sets involve helical,
+over 1,252 reference labels. SynKit recall is 72.04% and precision is 98.80%; its
+125 non-exact rows have one reviewed primary cause each: 10 unsupported class,
+32 missing orientation evidence, and 83 ranking defects. Most missing label
+sets involve helical,
 atropisomeric, extended tetrahedral/cis-trans, pseudoasymmetric, or later
 globally stereogenic validation cases.
 
@@ -44,8 +44,8 @@ Exact-record coverage by every stereo-unit tag present in a row is:
 
 | Unit tag | SynKit | RDKit |
 | --- | ---: | ---: |
-| TH | 124/249 | 214/249 |
-| CT | 41/65 | 54/65 |
+| TH | 144/249 | 214/249 |
+| CT | 50/65 | 54/65 |
 | HE | 0/2 | 0/2 |
 | AT | 0/7 | 0/7 |
 | CT4 | 0/5 | 0/5 |

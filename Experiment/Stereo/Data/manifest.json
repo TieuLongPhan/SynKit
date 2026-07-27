@@ -14,6 +14,8 @@
         "full_configuration_neutral_carrier_detection": true,
         "exact_configured_mirror_audit": true,
         "fixed_graph_local_permutation_audit": true,
+        "configuration_free_local_canonicalization": true,
+        "configuration_free_global_canonicalization": true,
         "multi_element_canonicalization_audit": true
       },
       "exact_mirror_report": "Experiment/Stereo/Data/Chirality/exact_acs_mirror_report.json",
@@ -32,11 +34,14 @@
         "typed_axis_locus_detection": true,
         "full_configuration_neutral_carrier_detection": true,
         "multi_locus_candidate_extraction": true,
+        "configuration_free_local_canonicalization": true,
+        "configuration_free_global_canonicalization": true,
         "supplied_stereo_binary": false,
         "stereo_stripped_four_state": false
       },
       "frozen_report": "Experiment/Stereo/Data/Perception/rota_locus_report.json",
       "full_detection_report": "Experiment/Stereo/Data/Perception/full_detection_report.json",
+      "canonicalization_report": "Experiment/Stereo/Data/Canonicalization/rota_local_canonicalization_report.json",
       "multi_element_report": "Experiment/Stereo/Data/Canonicalization/multi_element_canonicalization_report.json",
       "diagnostics": {
         "supplied_stereo_binary": true,
@@ -57,6 +62,8 @@
         "canonical_neighbor_configuration_assisted_detection": true,
         "multi_center_candidate_extraction": true,
         "fixed_graph_local_permutation_audit": true,
+        "configuration_free_local_canonicalization": true,
+        "configuration_free_global_canonicalization": true,
         "supplied_stereo_binary": false,
         "stereo_stripped_four_state": false
       },
@@ -91,7 +98,7 @@
     "full_configuration_neutral_carrier_detection": {
       "runner": "Experiment/Stereo/Perception/full_detection.py",
       "report": "Experiment/Stereo/Data/Perception/full_detection_report.json",
-      "sha256": "2fd6f7aed4b4e9409e11d25120a4eedc470a450262e357b4f06207a435a05002",
+      "sha256": "12370f7d8e164e19c8f75e6700dc53092851df20f5bd5fca30ed581b7c4717ce",
       "source_rows": 1208,
       "unique_configuration_neutral_constitutions": 903,
       "sampling": "none",
@@ -114,6 +121,38 @@
       "local_permutations": 940,
       "report": "Experiment/Stereo/Data/Canonicalization/internal_local_canonicalization_report.json",
       "table": "Experiment/Stereo/Data/Canonicalization/internal_local_canonicalization_table.csv"
+    },
+    "configuration_free_local_canonicalization": {
+      "runner": "Experiment/Stereo/Canonicalization/configuration_free_local.py",
+      "sampling": "none",
+      "reports": {
+        "internal": "Experiment/Stereo/Data/Canonicalization/internal_local_canonicalization_report.json",
+        "acs": "Experiment/Stereo/Data/Canonicalization/acs_local_canonicalization_report.json",
+        "cip": "Experiment/Stereo/Data/Canonicalization/cip_local_canonicalization_report.json",
+        "rota": "Experiment/Stereo/Data/Canonicalization/rota_local_canonicalization_report.json"
+      },
+      "records": 1218,
+      "carriers": 3476,
+      "raw_local_permutations": 66468,
+      "failures": 0
+    },
+    "configuration_free_global_abc": {
+      "runner": "Experiment/Stereo/Canonicalization/configuration_free_global.py",
+      "reports": {
+        "raw_a": "Experiment/Stereo/Data/Canonicalization/Global/A/global_raw_canonicalization_report.json",
+        "formal_a": "Experiment/Stereo/Data/Canonicalization/Global/A/global_formal_canonicalization_report.json",
+        "formal_b": "Experiment/Stereo/Data/Canonicalization/Global/B/global_formal_canonicalization_report.json",
+        "formal_c": "Experiment/Stereo/Data/Canonicalization/Global/C/global_formal_canonicalization_report.json"
+      },
+      "cases": 30,
+      "formal_assignments": 2160,
+      "raw_a_assignments": 2048,
+      "timeouts": 0,
+      "failures": 0,
+      "excluded_optional_stress_runs": [
+        "raw_b",
+        "raw_c"
+      ]
     },
     "global_by_local_canonicalization": {
       "families": 10,
