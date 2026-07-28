@@ -3,6 +3,9 @@
 *.csv
 !Experiment/Lewis/Data/all.csv
 !Experiment/Lewis/Data/combinatorial_all.csv
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/polar-failures.csv
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-failures.csv
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-arrow-review.csv
 */catboost_info/*
 
 
@@ -64,6 +67,9 @@ synkit/Graph/dev/*
 !Experiment/Lewis/mech_path/Data/MechanismBench/polar.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/radical.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json
+!Experiment/Lewis/mech_path/Data/MechanismBench/evidence/mechanismbench_evidence.json
+!Experiment/Lewis/rule_replay/Data/bidirectional-replay/results.json
+!Experiment/Lewis/rule_replay/Data/relative-lone-pair/results.json
 !Experiment/Stereo/Data/manifest.json
 !Experiment/Stereo/Data/Perception/perception_conformance_cases.json
 !Experiment/Stereo/Data/Perception/full_detection_report.json

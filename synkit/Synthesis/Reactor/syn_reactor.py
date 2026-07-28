@@ -864,11 +864,13 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         rc_n: Dict[str, Any],
         *,
         preserve_unchanged_state: bool = False,
+        relative_resources: frozenset[str] = frozenset(),
     ) -> None:
         _product_state._pair_electron_aware_node_attrs(
             host_n,
             rc_n,
             preserve_unchanged_state=preserve_unchanged_state,
+            relative_resources=relative_resources,
         )
 
     @staticmethod

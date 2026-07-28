@@ -20,6 +20,7 @@ Quick start
 """
 
 from __future__ import annotations
+from numbers import Real
 from typing import Any, Mapping, Optional, Tuple
 
 import networkx as nx
@@ -61,6 +62,7 @@ _WILDCARD_CONTRACT_KEYS = (
     "mapped_identity",
     "materialization",
 )
+_RELATIVE_NODE_RESOURCES = ("lone_pairs",)
 
 
 class SynRule:
@@ -213,6 +215,9 @@ class SynRule:
             left_graph, right_graph = self._decompose(rc_graph, self._format)
         elif self._implicit_h and self._format == "tuple":
             self._strip_explicit_h_tuple(rc_graph, left_graph, right_graph)
+            left_graph, right_graph = self._decompose(rc_graph, self._format)
+        if self._format == "tuple":
+            self._normalize_relative_node_resources(rc_graph)
             left_graph, right_graph = self._decompose(rc_graph, self._format)
         self._project_wildcard_contracts(rc_graph, left_graph, right_graph)
         stereo_sides = rc_graph.graph.get("stereo_descriptors", {})
@@ -442,6 +447,33 @@ class SynRule:
             reverter = ITSReverter(rc)
             return reverter.to_reactant_graph(), reverter.to_product_graph()
         return its_decompose(rc)
+
+    @staticmethod
+    def _normalize_relative_node_resources(rc: nx.Graph) -> None:
+        """Store tuple resource edits as reactant demand and product supply."""
+        normalized_resources: list[str] = []
+        for resource in _RELATIVE_NODE_RESOURCES:
+            normalized = False
+            for _, attrs in rc.nodes(data=True):
+                value = attrs.get(resource)
+                if not (
+                    isinstance(value, tuple)
+                    and len(value) == 2
+                    and all(
+                        isinstance(endpoint, Real) and not isinstance(endpoint, bool)
+                        for endpoint in value
+                    )
+                ):
+                    continue
+                reactant, product = value
+                consumed = max(reactant - product, 0)
+                produced = max(product - reactant, 0)
+                attrs[resource] = (consumed, produced)
+                normalized = True
+            if normalized:
+                normalized_resources.append(resource)
+        if normalized_resources:
+            rc.graph["relative_node_resources"] = tuple(normalized_resources)
 
     @staticmethod
     def _project_wildcard_contracts(

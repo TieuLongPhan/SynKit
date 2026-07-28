@@ -18,6 +18,10 @@ Version 1.6.0
   sigma-bond, and pi-bond resources and derived charge and bond-order fields.
 - Added resource-aware matching and rewriting with explicit availability and
   policy-validity checks.
+- Standardized tuple-rule lone-pair changes as relative resource edits.
+  For example, an extracted ``S(lp2) -> S(lp1)`` endpoint change is stored as
+  ``S(lp1) -> S(lp0)`` (consume one), so matching a host with one, two, or
+  three lone pairs produces a host with zero, one, or two, respectively.
 
 **Arrow-pushing grammar**
 

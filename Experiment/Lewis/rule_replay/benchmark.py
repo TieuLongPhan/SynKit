@@ -290,6 +290,31 @@ def benchmark(
     return report
 
 
+def retained_results(
+    reports: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Return a path- and timing-independent result suitable for versioning."""
+    dataset = reports[0]["dataset"] if reports else {}
+    entries = []
+    for report in reports:
+        representation = str(report["representation"])
+        entries.append(
+            {
+                "name": "llg" if representation == "tuple" else representation,
+                "format": representation,
+                "directions": report["directions"],
+                "selection": report["selection"],
+                "policy": report["policy"],
+                "counts": report["counts"],
+            }
+        )
+    return {
+        "schema": "synkit.bidirectional-rule-replay-results/1",
+        "dataset_sha256": dataset.get("sha256"),
+        "representations": entries,
+    }
+
+
 def main() -> int:
     args = parse_args()
     if not HAS_FORMAT:
@@ -318,6 +343,7 @@ def main() -> int:
             "reports": reports,
         },
     )
+    write_json(args.output_dir / "results.json", retained_results(reports))
     for report in reports:
         print(report["representation"], json.dumps(report["counts"], sort_keys=True))
     return 0

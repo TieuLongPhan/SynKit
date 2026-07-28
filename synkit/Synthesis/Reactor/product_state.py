@@ -27,6 +27,7 @@ def _pair_electron_aware_node_attrs(
     rc_n: Dict[str, Any],
     *,
     preserve_unchanged_state: bool = False,
+    relative_resources: frozenset[str] = frozenset(),
 ) -> None:
     """Store paired attrs, preserving generic relative-query state locally."""
     _, product_types = host_n["typesGH"]
@@ -59,11 +60,14 @@ def _pair_electron_aware_node_attrs(
             left_value = host_n.get(key)
             if left_value is None:
                 left_value = rc_value[0]
-            product_value = (
-                left_value
-                if preserve_unchanged_state and rc_value[0] == rc_value[1]
-                else rc_value[1]
-            )
+            if key in relative_resources:
+                product_value = left_value - rc_value[0] + rc_value[1]
+            else:
+                product_value = (
+                    left_value
+                    if preserve_unchanged_state and rc_value[0] == rc_value[1]
+                    else rc_value[1]
+                )
             host_n[key] = (left_value, product_value)
 
     host_n["template_charge"] = (host_n.get("charge"), product_types[3])

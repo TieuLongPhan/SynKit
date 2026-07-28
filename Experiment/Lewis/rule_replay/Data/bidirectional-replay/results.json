@@ -1,0 +1,58 @@
+{
+  "dataset_sha256": "57bcd1910e24e11d88d31983ae07080585afebae7738dd529a9abae53807b1b4",
+  "representations": [
+    {
+      "counts": {
+        "backward:attempted": 39732,
+        "backward:pass": 39732,
+        "forward:attempted": 39732,
+        "forward:pass": 39732,
+        "rule_extracted": 39732
+      },
+      "directions": [
+        "forward",
+        "backward"
+      ],
+      "format": "tuple",
+      "name": "llg",
+      "policy": {
+        "automorphism": true,
+        "case_timeout_seconds": null,
+        "embedding_threshold": null,
+        "recovery": "canonical full reaction without AAM or stereo"
+      },
+      "selection": {
+        "limit": null,
+        "record_ids": null,
+        "rows": 39732
+      }
+    },
+    {
+      "counts": {
+        "backward:attempted": 39732,
+        "backward:pass": 39732,
+        "forward:attempted": 39732,
+        "forward:pass": 39732,
+        "rule_extracted": 39732
+      },
+      "directions": [
+        "forward",
+        "backward"
+      ],
+      "format": "typesGH",
+      "name": "typesGH",
+      "policy": {
+        "automorphism": true,
+        "case_timeout_seconds": null,
+        "embedding_threshold": null,
+        "recovery": "canonical full reaction without AAM or stereo"
+      },
+      "selection": {
+        "limit": null,
+        "record_ids": null,
+        "rows": 39732
+      }
+    }
+  ],
+  "schema": "synkit.bidirectional-rule-replay-results/1"
+}

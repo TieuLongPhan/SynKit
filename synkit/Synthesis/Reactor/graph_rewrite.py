@@ -243,6 +243,9 @@ def _glue_graph(
     relative_pi_centers = {
         node for edge in (relative_pi_edges or set()) for node in edge
     }
+    relative_node_resources = frozenset(
+        rc.graph.get("relative_node_resources", ())
+    )
 
     # Iterate over remappings --------------------------------------
     reuse_prepared_host = len(mappings) == 1
@@ -291,6 +294,7 @@ def _glue_graph(
                         preserve_unchanged_state=(
                             rc_n in relative_pi_centers or wildcard_context
                         ),
+                        relative_resources=relative_node_resources,
                     )
 
         # merge edges (additive order) ---------------------------

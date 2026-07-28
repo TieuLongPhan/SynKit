@@ -24,6 +24,8 @@ def test_evidence_runner_reports_replay_corruptions_and_resource_scope(tmp_path)
     report = collect_evidence(tmp_path, repetitions=1)
 
     assert report["scope"]["typed_replay_cases"] == 1
+    assert report["scope"]["paper_arrow_mechanism_cases"] == 1
+    assert report["scope"]["typed_stereo_extension_cases"] == 0
     assert report["scope"]["partition_counts"] == {"polar": 1}
     assert report["replay"] == {
         "valid": 1,

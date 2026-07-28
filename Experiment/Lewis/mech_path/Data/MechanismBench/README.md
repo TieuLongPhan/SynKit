@@ -43,3 +43,9 @@ The report currently covers typed `MechanismRecord` fixtures. It records the
 reaction-SMILES, non-tetrahedral, and promoted native-descriptor rewrite
 fixtures that remain outside that shared replay representation instead of
 assigning them fabricated metrics.
+
+The manuscript's arrow-mechanism benchmark remains 160 cases: 80 polar plus 80
+radical. The evidence report's `typed_replay_cases` total is 167 because the
+same executable path also covers seven typed electron-flow/stereo extension
+cases. These counts are reported separately as
+`paper_arrow_mechanism_cases` and `typed_stereo_extension_cases`.

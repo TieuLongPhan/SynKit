@@ -314,6 +314,10 @@ LLG rewrite policy:
    * - Charge
      - Charge is recomputed from valence electrons, lone pairs, hydrogen count,
        radical count, and Kekule bond-order sum.
+   * - Lone-pair rule values
+     - Tuple endpoint counts are normalized to resource demand and supply.
+       ``(2, 1)`` therefore becomes ``(1, 0)`` and consumes one lone pair
+       from the matched host instead of assigning an absolute product count.
    * - Aromaticity
      - Aromatic flags are still useful for matching and display, but aromatic
        ``order=1.5`` is not used as the LLG-authoritative rewrite value.
