@@ -10,6 +10,7 @@ from .fusion_validation import (
 )
 from .rbl_policy import RBLSearchPolicy, SearchScope, TerminationPolicy
 from .assignment import StereoWildcardAssignmentLimitError
+from .serialization_policy import RawITSApplicationSerializationWarning
 
 __all__ = [
     "FusionIssue",
@@ -24,4 +25,5 @@ __all__ = [
     "SearchScope",
     "TerminationPolicy",
     "StereoWildcardAssignmentLimitError",
+    "RawITSApplicationSerializationWarning",
 ]

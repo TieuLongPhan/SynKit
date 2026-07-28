@@ -1,0 +1,3759 @@
+{
+  "assignment_statuses": {
+    "assigned": 829,
+    "unresolved_priority": 2,
+    "unsupported_sequence_rule": 222
+  },
+  "by_stereo_unit": {
+    "AT": {
+      "exact_record_accuracy": 0.5714285714285714,
+      "exact_records": 4,
+      "expected_labels": 15,
+      "micro_label_precision": 1.0,
+      "micro_label_recall": 0.6,
+      "predicted_labels": 9,
+      "records": 7,
+      "true_positive_labels": 9
+    },
+    "CT": {
+      "exact_record_accuracy": 0.7846153846153846,
+      "exact_records": 51,
+      "expected_labels": 298,
+      "micro_label_precision": 1.0,
+      "micro_label_recall": 0.8389261744966443,
+      "predicted_labels": 250,
+      "records": 65,
+      "true_positive_labels": 250
+    },
+    "CT4": {
+      "exact_record_accuracy": 1.0,
+      "exact_records": 5,
+      "expected_labels": 15,
+      "micro_label_precision": 1.0,
+      "micro_label_recall": 1.0,
+      "predicted_labels": 15,
+      "records": 5,
+      "true_positive_labels": 15
+    },
+    "HE": {
+      "exact_record_accuracy": 1.0,
+      "exact_records": 2,
+      "expected_labels": 4,
+      "micro_label_precision": 1.0,
+      "micro_label_recall": 1.0,
+      "predicted_labels": 4,
+      "records": 2,
+      "true_positive_labels": 4
+    },
+    "TH": {
+      "exact_record_accuracy": 0.5903614457831325,
+      "exact_records": 147,
+      "expected_labels": 1118,
+      "micro_label_precision": 0.9868263473053892,
+      "micro_label_recall": 0.7370304114490162,
+      "predicted_labels": 835,
+      "records": 249,
+      "true_positive_labels": 824
+    },
+    "TH3": {
+      "exact_record_accuracy": 0.125,
+      "exact_records": 1,
+      "expected_labels": 24,
+      "micro_label_precision": 1.0,
+      "micro_label_recall": 0.2916666666666667,
+      "predicted_labels": 7,
+      "records": 8,
+      "true_positive_labels": 7
+    },
+    "TH5": {
+      "exact_record_accuracy": 0.0,
+      "exact_records": 0,
+      "expected_labels": 6,
+      "micro_label_precision": 1.0,
+      "micro_label_recall": 0.3333333333333333,
+      "predicted_labels": 2,
+      "records": 2,
+      "true_positive_labels": 2
+    },
+    "none": {
+      "exact_record_accuracy": 1.0,
+      "exact_records": 2,
+      "expected_labels": 0,
+      "micro_label_precision": null,
+      "micro_label_recall": null,
+      "predicted_labels": 0,
+      "records": 2,
+      "true_positive_labels": 0
+    }
+  },
+  "claim_boundary": "This is local CIP-label validation, not whole-molecule chirality accuracy. Non-exact records remain typed limitations.",
+  "comparators": {
+    "rdkit": {
+      "disagreement_ids": [
+        "VS010",
+        "VS011",
+        "VS023",
+        "VS055",
+        "VS057",
+        "VS063",
+        "VS072",
+        "VS073",
+        "VS078",
+        "VS079",
+        "VS086",
+        "VS118",
+        "VS120",
+        "VS132",
+        "VS135",
+        "VS141",
+        "VS144",
+        "VS154",
+        "VS158",
+        "VS164",
+        "VS166",
+        "VS188",
+        "VS189",
+        "VS190",
+        "VS207",
+        "VS214",
+        "VS226",
+        "VS231",
+        "VS232",
+        "VS243",
+        "VS246",
+        "VS247",
+        "VS248",
+        "VS279",
+        "VS280",
+        "VS281",
+        "VS282",
+        "VS283",
+        "VS284",
+        "VS285",
+        "VS286",
+        "VS287",
+        "VS288",
+        "VS289",
+        "VS290",
+        "VS291",
+        "VS292",
+        "VS293",
+        "VS294",
+        "VS295",
+        "VS296",
+        "VS297",
+        "VS298",
+        "VS299",
+        "VS300"
+      ],
+      "exact_record_accuracy": 0.8166666666666667,
+      "exact_records": 245,
+      "expected_labels": 1252,
+      "method": "rdCIPLabeler.AssignCIPLabels",
+      "micro_label_precision": 0.9982316534040672,
+      "micro_label_recall": 0.9017571884984026,
+      "predicted_labels": 1131,
+      "records": 300,
+      "true_positive_labels": 1129
+    },
+    "stereomolgraph": {
+      "applicable": false,
+      "reason": "No local CIP-label assignment API is exposed."
+    }
+  },
+  "dataset": {
+    "audited_sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059",
+    "coordinate_sha256": "28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325",
+    "records": 300,
+    "structures_vendored": false
+  },
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2025.09.3"
+  },
+  "exact_ids": [
+    "VS001",
+    "VS002",
+    "VS003",
+    "VS004",
+    "VS005",
+    "VS006",
+    "VS007",
+    "VS008",
+    "VS009",
+    "VS010",
+    "VS011",
+    "VS012",
+    "VS013",
+    "VS014",
+    "VS015",
+    "VS016",
+    "VS017",
+    "VS018",
+    "VS019",
+    "VS020",
+    "VS021",
+    "VS022",
+    "VS024",
+    "VS025",
+    "VS026",
+    "VS027",
+    "VS028",
+    "VS029",
+    "VS030",
+    "VS031",
+    "VS032",
+    "VS033",
+    "VS034",
+    "VS035",
+    "VS036",
+    "VS037",
+    "VS038",
+    "VS039",
+    "VS040",
+    "VS041",
+    "VS042",
+    "VS043",
+    "VS044",
+    "VS045",
+    "VS046",
+    "VS047",
+    "VS048",
+    "VS049",
+    "VS050",
+    "VS051",
+    "VS052",
+    "VS053",
+    "VS054",
+    "VS056",
+    "VS058",
+    "VS059",
+    "VS060",
+    "VS061",
+    "VS062",
+    "VS063",
+    "VS064",
+    "VS065",
+    "VS066",
+    "VS067",
+    "VS068",
+    "VS069",
+    "VS070",
+    "VS071",
+    "VS072",
+    "VS073",
+    "VS074",
+    "VS075",
+    "VS076",
+    "VS077",
+    "VS080",
+    "VS081",
+    "VS082",
+    "VS083",
+    "VS084",
+    "VS085",
+    "VS086",
+    "VS087",
+    "VS088",
+    "VS089",
+    "VS090",
+    "VS091",
+    "VS092",
+    "VS093",
+    "VS094",
+    "VS095",
+    "VS096",
+    "VS097",
+    "VS098",
+    "VS099",
+    "VS100",
+    "VS101",
+    "VS102",
+    "VS103",
+    "VS104",
+    "VS105",
+    "VS106",
+    "VS107",
+    "VS108",
+    "VS109",
+    "VS110",
+    "VS111",
+    "VS112",
+    "VS113",
+    "VS114",
+    "VS116",
+    "VS117",
+    "VS118",
+    "VS119",
+    "VS121",
+    "VS122",
+    "VS123",
+    "VS124",
+    "VS125",
+    "VS126",
+    "VS127",
+    "VS128",
+    "VS129",
+    "VS130",
+    "VS131",
+    "VS133",
+    "VS134",
+    "VS135",
+    "VS136",
+    "VS137",
+    "VS138",
+    "VS139",
+    "VS140",
+    "VS142",
+    "VS143",
+    "VS144",
+    "VS145",
+    "VS146",
+    "VS147",
+    "VS148",
+    "VS149",
+    "VS150",
+    "VS151",
+    "VS152",
+    "VS153",
+    "VS154",
+    "VS155",
+    "VS156",
+    "VS157",
+    "VS158",
+    "VS159",
+    "VS160",
+    "VS161",
+    "VS162",
+    "VS163",
+    "VS164",
+    "VS165",
+    "VS167",
+    "VS168",
+    "VS169",
+    "VS170",
+    "VS171",
+    "VS173",
+    "VS175",
+    "VS176",
+    "VS177",
+    "VS178",
+    "VS179",
+    "VS180",
+    "VS181",
+    "VS182",
+    "VS183",
+    "VS184",
+    "VS185",
+    "VS186",
+    "VS187",
+    "VS192",
+    "VS193",
+    "VS194",
+    "VS195",
+    "VS227",
+    "VS228",
+    "VS229",
+    "VS234",
+    "VS236",
+    "VS237",
+    "VS244",
+    "VS245"
+  ],
+  "limitation_counts": {
+    "missing_orientation_evidence": 43,
+    "ranking_defect": 86,
+    "unsupported_class": 9
+  },
+  "mean_ms_per_input": 58.965208240000116,
+  "method": "RDKit supplies parsed relative stereo descriptors. For declared AT, HE, CT4, CT, and fully witnessed cumulene carriers, the optional pinned 3D file supplies orientation only when constitutional transport is unambiguous; AT additionally requires one confirmed carrier. SynKit independently ranks ligands with exact nuclide masses and projects local label sets",
+  "nonexact_records": [
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "5M",
+        "6M"
+      ],
+      "extraction_error": null,
+      "id": "VS023",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "AT"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "11P",
+        "3P"
+      ],
+      "extraction_error": null,
+      "id": "VS055",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "AT"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "12M",
+        "4M"
+      ],
+      "extraction_error": null,
+      "id": "VS057",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "AT"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 1
+      },
+      "exact": false,
+      "expected": [
+        "22R",
+        "42P",
+        "44P"
+      ],
+      "extraction_error": null,
+      "id": "VS078",
+      "limitations": [
+        "unsupported_class",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "22R"
+      ],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH",
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2M",
+        "4M"
+      ],
+      "extraction_error": null,
+      "id": "VS079",
+      "limitations": [
+        "unsupported_class",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 5
+      },
+      "exact": false,
+      "expected": [
+        "3S",
+        "4R",
+        "5R",
+        "6S",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS115",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "3S",
+        "4R",
+        "5S",
+        "6S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "26R",
+        "3R",
+        "44P",
+        "46P"
+      ],
+      "extraction_error": null,
+      "id": "VS120",
+      "limitations": [
+        "unsupported_class",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "26R",
+        "3R"
+      ],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH",
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "14S",
+        "6S"
+      ],
+      "extraction_error": null,
+      "id": "VS132",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 1
+      },
+      "exact": false,
+      "expected": [
+        "2Z",
+        "3Z",
+        "4P",
+        "8P"
+      ],
+      "extraction_error": null,
+      "id": "VS141",
+      "limitations": [
+        "unsupported_class",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "2Z",
+        "3Z"
+      ],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH5",
+        "CT"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2P",
+        "6P"
+      ],
+      "extraction_error": null,
+      "id": "VS166",
+      "limitations": [
+        "unsupported_class",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH5"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "6S"
+      ],
+      "extraction_error": null,
+      "id": "VS172",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "2R",
+        "6R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "6R",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS174",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "6S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2E",
+        "3E",
+        "5E",
+        "7E"
+      ],
+      "extraction_error": null,
+      "id": "VS188",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2Z",
+        "3Z",
+        "6Z",
+        "9Z"
+      ],
+      "extraction_error": null,
+      "id": "VS189",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "11E",
+        "2E",
+        "3E",
+        "5E",
+        "7E",
+        "9E"
+      ],
+      "extraction_error": null,
+      "id": "VS190",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 5,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "11Z",
+        "12Z",
+        "15Z",
+        "16Z",
+        "20E",
+        "21E",
+        "2Z",
+        "3Z",
+        "5Z",
+        "6Z",
+        "7S"
+      ],
+      "extraction_error": null,
+      "id": "VS191",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "11Z",
+        "12Z",
+        "15Z",
+        "16Z",
+        "20E",
+        "21E",
+        "2Z",
+        "3Z",
+        "5Z",
+        "6Z"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "3S",
+        "4S",
+        "5R",
+        "6S",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS196",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "3R",
+        "4R",
+        "5R",
+        "6S",
+        "7S"
+      ],
+      "extraction_error": null,
+      "id": "VS197",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 12,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "12S",
+        "14R",
+        "17R",
+        "19R",
+        "23S",
+        "25S",
+        "28R",
+        "2S",
+        "30R",
+        "3S",
+        "5R",
+        "7S",
+        "8R"
+      ],
+      "extraction_error": null,
+      "id": "VS198",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "12S",
+        "14R",
+        "17R",
+        "19R",
+        "23S",
+        "25S",
+        "28R",
+        "2S",
+        "30R",
+        "3S",
+        "7S",
+        "8R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 4,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "3R",
+        "4R",
+        "5R",
+        "6R",
+        "7S"
+      ],
+      "extraction_error": null,
+      "id": "VS199",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "3R",
+        "4R",
+        "6R",
+        "7S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 4,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "6S",
+        "7S",
+        "8R",
+        "9R"
+      ],
+      "extraction_error": null,
+      "id": "VS200",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "2R",
+        "6S",
+        "8R",
+        "9R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 4,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "3R",
+        "4R",
+        "5R",
+        "6S",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS201",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "3R",
+        "4R",
+        "6S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 4,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "12R",
+        "15S",
+        "3R",
+        "5R",
+        "8R"
+      ],
+      "extraction_error": null,
+      "id": "VS202",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "12R",
+        "15S",
+        "5R",
+        "8R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 8,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "15R",
+        "16S",
+        "22R",
+        "23S",
+        "2R",
+        "3S",
+        "6R",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS203",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "15R",
+        "16S",
+        "22R",
+        "23S",
+        "2R",
+        "3S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 8,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "10R",
+        "15R",
+        "16S",
+        "22S",
+        "23S",
+        "2S",
+        "3R",
+        "6S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS204",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10R",
+        "15R",
+        "16S",
+        "22S",
+        "23S",
+        "2S",
+        "3R",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "11r",
+        "14s",
+        "17s",
+        "2s",
+        "5s",
+        "8r"
+      ],
+      "extraction_error": null,
+      "id": "VS205",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "11s",
+        "2s",
+        "5s",
+        "8s"
+      ],
+      "extraction_error": null,
+      "id": "VS206",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "10r",
+        "16r",
+        "2s",
+        "5s",
+        "6r",
+        "7r"
+      ],
+      "extraction_error": null,
+      "id": "VS207",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "15r",
+        "19r",
+        "23r",
+        "9r"
+      ],
+      "extraction_error": null,
+      "id": "VS208",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "2r",
+        "3r",
+        "4r",
+        "5r",
+        "6r",
+        "7r"
+      ],
+      "extraction_error": null,
+      "id": "VS209",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "2s",
+        "3s",
+        "4s",
+        "5s",
+        "6s",
+        "7s"
+      ],
+      "extraction_error": null,
+      "id": "VS210",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2s",
+        "7s"
+      ],
+      "extraction_error": null,
+      "id": "VS211",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2r",
+        "7r"
+      ],
+      "extraction_error": null,
+      "id": "VS212",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2r",
+        "5r"
+      ],
+      "extraction_error": null,
+      "id": "VS213",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "12s",
+        "3s",
+        "6E",
+        "9E"
+      ],
+      "extraction_error": null,
+      "id": "VS214",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "13s",
+        "3s"
+      ],
+      "extraction_error": null,
+      "id": "VS215",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "13R",
+        "3R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "13s",
+        "3s"
+      ],
+      "extraction_error": null,
+      "id": "VS216",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "13S",
+        "3S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "13s",
+        "3s"
+      ],
+      "extraction_error": null,
+      "id": "VS217",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "13R",
+        "3S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "19s",
+        "22s"
+      ],
+      "extraction_error": null,
+      "id": "VS218",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "19S",
+        "22R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2r",
+        "4r"
+      ],
+      "extraction_error": null,
+      "id": "VS219",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "2s",
+        "5s",
+        "6s",
+        "9r"
+      ],
+      "extraction_error": null,
+      "id": "VS220",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2r",
+        "5r"
+      ],
+      "extraction_error": null,
+      "id": "VS221",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2s",
+        "5s"
+      ],
+      "extraction_error": null,
+      "id": "VS222",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "15r",
+        "19r",
+        "23r",
+        "9r"
+      ],
+      "extraction_error": null,
+      "id": "VS223",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "12s",
+        "18r",
+        "21r",
+        "9s"
+      ],
+      "extraction_error": null,
+      "id": "VS224",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2s",
+        "9s"
+      ],
+      "extraction_error": null,
+      "id": "VS225",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 8
+      },
+      "exact": false,
+      "expected": [
+        "11r",
+        "12r",
+        "15r",
+        "19s",
+        "22s",
+        "28s",
+        "2r",
+        "31s",
+        "5r",
+        "8r"
+      ],
+      "extraction_error": null,
+      "id": "VS226",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "3S",
+        "5r"
+      ],
+      "extraction_error": null,
+      "id": "VS230",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "2R",
+        "3S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2p",
+        "4p",
+        "7s"
+      ],
+      "extraction_error": null,
+      "id": "VS231",
+      "limitations": [
+        "unsupported_class",
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH",
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "11m",
+        "2m",
+        "4m",
+        "7m"
+      ],
+      "extraction_error": null,
+      "id": "VS232",
+      "limitations": [
+        "unsupported_class",
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 14,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "13S",
+        "18r",
+        "23S",
+        "26R",
+        "29R",
+        "2R",
+        "32R",
+        "34r",
+        "35S",
+        "38R",
+        "3r",
+        "41S",
+        "4S",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS233",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "13S",
+        "23S",
+        "26R",
+        "29R",
+        "2R",
+        "32R",
+        "34r",
+        "35S",
+        "38R",
+        "3r",
+        "41S",
+        "4S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 3,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "12S",
+        "3S",
+        "5r",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS235",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "12S",
+        "3S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "2s",
+        "3S",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS238",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "3S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 8,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "15R",
+        "16R",
+        "20S",
+        "21R",
+        "2s",
+        "4R",
+        "5S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS239",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "15R",
+        "16R",
+        "20S",
+        "21R",
+        "4R",
+        "5S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2,
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "11E",
+        "12E",
+        "2s",
+        "4E",
+        "5E",
+        "8s"
+      ],
+      "extraction_error": null,
+      "id": "VS240",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "11E",
+        "12E",
+        "4E",
+        "5E"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "2s",
+        "4S",
+        "6R"
+      ],
+      "extraction_error": null,
+      "id": "VS241",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "4S",
+        "6R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 5
+      },
+      "exact": false,
+      "expected": [
+        "15s",
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "26R",
+        "2R",
+        "30s",
+        "31R",
+        "33R",
+        "36S",
+        "38S",
+        "42r",
+        "43S",
+        "45R",
+        "48R",
+        "4R",
+        "50S",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS242",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "2R",
+        "31R",
+        "33R",
+        "36S",
+        "38S",
+        "43S",
+        "45R",
+        "48R",
+        "4R",
+        "50S",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "2m",
+        "4m",
+        "5R",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS243",
+      "limitations": [
+        "unsupported_class",
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "5R",
+        "9S"
+      ],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH",
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2z",
+        "3z",
+        "6R"
+      ],
+      "extraction_error": null,
+      "id": "VS246",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2z",
+        "3z",
+        "6R"
+      ],
+      "extraction_error": null,
+      "id": "VS247",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "4S",
+        "6z",
+        "8z"
+      ],
+      "extraction_error": null,
+      "id": "VS248",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "13S",
+        "16R",
+        "19s",
+        "22S",
+        "24S",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "6R",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS249",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "13S",
+        "16R",
+        "22S",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "13S",
+        "16S",
+        "19r",
+        "22R",
+        "24S",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "6R",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS250",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "13S",
+        "16S",
+        "22R",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 5,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "13S",
+        "2R",
+        "3s",
+        "4S",
+        "6R",
+        "9R"
+      ],
+      "extraction_error": null,
+      "id": "VS251",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "13S",
+        "2R",
+        "3s",
+        "6R",
+        "9R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "3S",
+        "4s",
+        "5R",
+        "6r"
+      ],
+      "extraction_error": null,
+      "id": "VS252",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "3s",
+        "4S",
+        "5S",
+        "6s",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS253",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "2S",
+        "3r",
+        "4R",
+        "5S",
+        "6r",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS254",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 6
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "3s",
+        "4S",
+        "5S",
+        "6r",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS255",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "2S",
+        "3s",
+        "4R",
+        "5r"
+      ],
+      "extraction_error": null,
+      "id": "VS256",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 1,
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2S",
+        "3r",
+        "6S"
+      ],
+      "extraction_error": null,
+      "id": "VS257",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "2S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 1,
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "3r",
+        "6R"
+      ],
+      "extraction_error": null,
+      "id": "VS258",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "2R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 2,
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "13E",
+        "14E",
+        "15r",
+        "18S",
+        "2S",
+        "7r"
+      ],
+      "extraction_error": null,
+      "id": "VS259",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "13E",
+        "14E",
+        "2S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 3,
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "11S",
+        "13S",
+        "2R",
+        "5s",
+        "8S"
+      ],
+      "extraction_error": null,
+      "id": "VS260",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "11S",
+        "13S",
+        "8S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 18,
+        "unsupported_sequence_rule": 7
+      },
+      "exact": false,
+      "expected": [
+        "13S",
+        "15s",
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "29s",
+        "2R",
+        "33S",
+        "35s",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "47r",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "58S",
+        "61R",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS261",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "2R",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "58S",
+        "61R",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 14,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "13R",
+        "18S",
+        "20r",
+        "21R",
+        "24S",
+        "27R",
+        "2R",
+        "30R",
+        "33R",
+        "36R",
+        "38r",
+        "39R",
+        "42S",
+        "5R",
+        "8S"
+      ],
+      "extraction_error": null,
+      "id": "VS262",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "18S",
+        "20r",
+        "21R",
+        "24S",
+        "27R",
+        "2R",
+        "30R",
+        "33R",
+        "36R",
+        "38r",
+        "39R",
+        "42S",
+        "5R",
+        "8S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 18,
+        "unsupported_sequence_rule": 7
+      },
+      "exact": false,
+      "expected": [
+        "13S",
+        "15s",
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "29s",
+        "2R",
+        "33S",
+        "35s",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "47r",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "58S",
+        "61R",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS263",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "2R",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "58S",
+        "61R",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 18,
+        "unsupported_sequence_rule": 5
+      },
+      "exact": false,
+      "expected": [
+        "15s",
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "29s",
+        "2R",
+        "35s",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "47r",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "58S",
+        "61R",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS264",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "2R",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "58S",
+        "61R",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 17,
+        "unsupported_sequence_rule": 7
+      },
+      "exact": false,
+      "expected": [
+        "13S",
+        "15s",
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "29S",
+        "2R",
+        "33S",
+        "35s",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "47r",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "60R",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS265",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "2R",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "60R",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 17,
+        "unsupported_sequence_rule": 5
+      },
+      "exact": false,
+      "expected": [
+        "15s",
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "29S",
+        "2R",
+        "35s",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "47r",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "60R",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS266",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "16S",
+        "18R",
+        "21R",
+        "23S",
+        "2R",
+        "36R",
+        "38R",
+        "41S",
+        "43S",
+        "48S",
+        "4R",
+        "50R",
+        "53R",
+        "55S",
+        "60R",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 18,
+        "unsupported_sequence_rule": 5
+      },
+      "exact": false,
+      "expected": [
+        "16r",
+        "21r",
+        "22R",
+        "24S",
+        "27S",
+        "29R",
+        "2R",
+        "33s",
+        "34S",
+        "36S",
+        "39R",
+        "41R",
+        "44R",
+        "47S",
+        "4R",
+        "51s",
+        "52R",
+        "54S",
+        "57S",
+        "59R",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS267",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "22R",
+        "24S",
+        "27S",
+        "29R",
+        "2R",
+        "34S",
+        "36S",
+        "39R",
+        "41R",
+        "44R",
+        "47S",
+        "4R",
+        "52R",
+        "54S",
+        "57S",
+        "59R",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 18,
+        "unsupported_sequence_rule": 7
+      },
+      "exact": false,
+      "expected": [
+        "13S",
+        "16S",
+        "19R",
+        "21r",
+        "22R",
+        "24S",
+        "27S",
+        "29R",
+        "2R",
+        "33s",
+        "34S",
+        "36S",
+        "39R",
+        "41R",
+        "44R",
+        "47S",
+        "4R",
+        "51s",
+        "52R",
+        "54S",
+        "57S",
+        "59R",
+        "6r",
+        "7S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS268",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "22R",
+        "24S",
+        "27S",
+        "29R",
+        "2R",
+        "34S",
+        "36S",
+        "39R",
+        "41R",
+        "44R",
+        "47S",
+        "4R",
+        "52R",
+        "54S",
+        "57S",
+        "59R",
+        "7S",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "13S",
+        "16R",
+        "19S",
+        "22R",
+        "24S",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "6R",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS269",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "13S",
+        "16R",
+        "22R",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "13S",
+        "16S",
+        "19R",
+        "22S",
+        "24S",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "6R",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS270",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "13S",
+        "16S",
+        "22S",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36r",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 8,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "12R",
+        "13S",
+        "18S",
+        "19R",
+        "2S",
+        "3R",
+        "4r",
+        "5S",
+        "6S",
+        "7S",
+        "8S"
+      ],
+      "extraction_error": null,
+      "id": "VS271",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "12R",
+        "13S",
+        "18S",
+        "19R",
+        "2S",
+        "3R",
+        "7S",
+        "8S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 14,
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "10Z",
+        "11R",
+        "13S",
+        "16S",
+        "20S",
+        "22s",
+        "23S",
+        "26R",
+        "29R",
+        "2R",
+        "31S",
+        "34S",
+        "37S",
+        "3r",
+        "41S",
+        "4R",
+        "5Z",
+        "6Z",
+        "7R",
+        "9Z"
+      ],
+      "extraction_error": null,
+      "id": "VS272",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "11R",
+        "13S",
+        "16S",
+        "20S",
+        "22s",
+        "23S",
+        "26R",
+        "2R",
+        "31S",
+        "34S",
+        "37S",
+        "3r",
+        "41S",
+        "4R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "11S",
+        "14r",
+        "15S",
+        "18R",
+        "21s",
+        "22S",
+        "25R",
+        "2R",
+        "30S",
+        "33S",
+        "36s",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "4R",
+        "6R",
+        "8S"
+      ],
+      "extraction_error": null,
+      "id": "VS273",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "11S",
+        "14r",
+        "15S",
+        "18R",
+        "21s",
+        "22S",
+        "25R",
+        "2R",
+        "30S",
+        "33S",
+        "36s",
+        "37S",
+        "3r",
+        "40R",
+        "43S",
+        "8S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "11R",
+        "15R",
+        "18R",
+        "21r",
+        "22R",
+        "25S",
+        "29s",
+        "2R",
+        "30R",
+        "33S",
+        "37S",
+        "3r",
+        "40S",
+        "43S",
+        "4S",
+        "5s",
+        "6R",
+        "7s",
+        "8S"
+      ],
+      "extraction_error": null,
+      "id": "VS274",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "11R",
+        "15R",
+        "18R",
+        "21r",
+        "22R",
+        "25S",
+        "29s",
+        "2R",
+        "30R",
+        "33S",
+        "37S",
+        "3r",
+        "40S",
+        "43S",
+        "7s",
+        "8S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 18,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "10R",
+        "13S",
+        "16R",
+        "19S",
+        "22R",
+        "24s",
+        "25R",
+        "27s",
+        "28S",
+        "2R",
+        "31R",
+        "34S",
+        "36s",
+        "37R",
+        "3r",
+        "40S",
+        "43S",
+        "4S",
+        "6s",
+        "7R",
+        "9r"
+      ],
+      "extraction_error": null,
+      "id": "VS275",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10R",
+        "13S",
+        "16R",
+        "22R",
+        "25R",
+        "27s",
+        "28S",
+        "2R",
+        "31R",
+        "34S",
+        "36s",
+        "37R",
+        "3r",
+        "40S",
+        "43S",
+        "4S",
+        "7R",
+        "9r"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 6,
+        "unsupported_sequence_rule": 1
+      },
+      "exact": false,
+      "expected": [
+        "13S",
+        "2R",
+        "3s",
+        "4R",
+        "5r",
+        "6R",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS276",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "13S",
+        "2R",
+        "3s",
+        "5r",
+        "6R",
+        "9S"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 16,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "13S",
+        "16S",
+        "19S",
+        "22R",
+        "24S",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36s",
+        "37R",
+        "3r",
+        "40S",
+        "43S",
+        "4S",
+        "6R",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS277",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10S",
+        "13S",
+        "16S",
+        "22R",
+        "25S",
+        "28R",
+        "2R",
+        "31R",
+        "34R",
+        "36s",
+        "37R",
+        "3r",
+        "40S",
+        "43S",
+        "4S",
+        "7R"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 18,
+        "unsupported_sequence_rule": 3
+      },
+      "exact": false,
+      "expected": [
+        "10R",
+        "13S",
+        "16R",
+        "19R",
+        "22R",
+        "24S",
+        "25R",
+        "27r",
+        "28R",
+        "2R",
+        "31S",
+        "34S",
+        "36s",
+        "37R",
+        "3r",
+        "40S",
+        "43S",
+        "4S",
+        "6s",
+        "7R",
+        "9r"
+      ],
+      "extraction_error": null,
+      "id": "VS278",
+      "limitations": [
+        "ranking_defect"
+      ],
+      "predicted": [
+        "10R",
+        "13S",
+        "16R",
+        "22R",
+        "25R",
+        "27r",
+        "28R",
+        "2R",
+        "31S",
+        "34S",
+        "36s",
+        "37R",
+        "3r",
+        "40S",
+        "43S",
+        "4S",
+        "7R",
+        "9r"
+      ],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 4
+      },
+      "exact": false,
+      "expected": [
+        "12s",
+        "15S",
+        "2R",
+        "4r",
+        "7S"
+      ],
+      "extraction_error": null,
+      "id": "VS279",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "11R",
+        "15R",
+        "19R",
+        "3R",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS280",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3S"
+      ],
+      "extraction_error": null,
+      "id": "VS281",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3R"
+      ],
+      "extraction_error": null,
+      "id": "VS282",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3S"
+      ],
+      "extraction_error": null,
+      "id": "VS283",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3R"
+      ],
+      "extraction_error": null,
+      "id": "VS284",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3R"
+      ],
+      "extraction_error": null,
+      "id": "VS285",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unresolved_priority": 2
+      },
+      "exact": false,
+      "expected": [
+        "2S"
+      ],
+      "extraction_error": null,
+      "id": "VS286",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2M",
+        "9M"
+      ],
+      "extraction_error": null,
+      "id": "VS287",
+      "limitations": [
+        "unsupported_class",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3S"
+      ],
+      "extraction_error": null,
+      "id": "VS288",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3R"
+      ],
+      "extraction_error": null,
+      "id": "VS289",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3S"
+      ],
+      "extraction_error": null,
+      "id": "VS290",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2R"
+      ],
+      "extraction_error": null,
+      "id": "VS291",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3S"
+      ],
+      "extraction_error": null,
+      "id": "VS292",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 3
+      },
+      "exact": false,
+      "expected": [
+        "11Z",
+        "12Z",
+        "14S",
+        "3Z",
+        "4Z",
+        "7Z",
+        "8Z"
+      ],
+      "extraction_error": null,
+      "id": "VS293",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "11Z",
+        "12Z",
+        "3Z",
+        "4Z",
+        "7Z",
+        "8Z"
+      ],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 4
+      },
+      "exact": false,
+      "expected": [
+        "10S",
+        "2S",
+        "4R",
+        "6R",
+        "9R"
+      ],
+      "extraction_error": null,
+      "id": "VS294",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "10S",
+        "2S",
+        "6R",
+        "9R"
+      ],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 4
+      },
+      "exact": false,
+      "expected": [
+        "10R",
+        "2S",
+        "4S",
+        "6R",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS295",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "10R",
+        "2S",
+        "6R",
+        "9S"
+      ],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "14S",
+        "2S",
+        "9S"
+      ],
+      "extraction_error": null,
+      "id": "VS296",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "13S",
+        "2R",
+        "5S"
+      ],
+      "extraction_error": null,
+      "id": "VS297",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "unsupported_sequence_rule": 2
+      },
+      "exact": false,
+      "expected": [
+        "2R",
+        "4S",
+        "7R"
+      ],
+      "extraction_error": null,
+      "id": "VS298",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2z",
+        "3z",
+        "5S",
+        "7z",
+        "9z"
+      ],
+      "extraction_error": null,
+      "id": "VS299",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "CT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "18S",
+        "2s",
+        "4R"
+      ],
+      "extraction_error": null,
+      "id": "VS300",
+      "limitations": [
+        "ranking_defect",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "ranking_defect",
+      "stereo_units": [
+        "TH"
+      ]
+    }
+  ],
+  "overall": {
+    "exact_record_accuracy": 0.6233333333333333,
+    "exact_records": 187,
+    "expected_labels": 1252,
+    "micro_label_precision": 0.9882604055496265,
+    "micro_label_recall": 0.7396166134185304,
+    "predicted_labels": 937,
+    "records": 300,
+    "true_positive_labels": 926
+  },
+  "parse_failures": [],
+  "primary_limitation_counts": {
+    "disputed_reference": 0,
+    "label_projection_defect": 0,
+    "missing_orientation_evidence": 21,
+    "ranking_defect": 83,
+    "unsupported_class": 9
+  },
+  "schema": "synkit.cip-native-validation/3",
+  "seconds": 17.689562472000034
+}

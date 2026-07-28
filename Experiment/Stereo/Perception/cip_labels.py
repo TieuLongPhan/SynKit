@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -21,8 +22,20 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Experiment.Stereo.datasets import (  # noqa: E402
+    CIP_3D_SHA256,
     CIP_SHA256,
     load_cip,
+)
+from synkit.Chem.Molecule.coordinate_stereo import (  # noqa: E402
+    atrop_stereo_from_geometry,
+    cumulene_axis_stereo_from_geometry,
+    extended_cis_trans_from_geometry,
+    helical_stereo_from_geometry,
+    planar_bond_stereo_from_geometry,
+)
+from synkit.Chem.Molecule._stereo_axis_evidence import (  # noqa: E402
+    StereoCarrierStatus,
+    cumulene_terminal_references,
 )
 from synkit.Chem.Molecule.cip_assignment import (  # noqa: E402
     CIPAssignment,
@@ -31,12 +44,17 @@ from synkit.Chem.Molecule.cip_assignment import (  # noqa: E402
 )
 from synkit.Graph.Stereo import (  # noqa: E402
     AtropBondStereo,
+    AxisStereoSupport,
     CumuleneAxisStereo,
     ExtendedCisTransStereo,
     HelicalStereo,
     PlanarBondStereo,
     TetrahedralStereo,
     descriptors_from_rdkit,
+)
+from synkit.Chem.Molecule.stereo_perception import (  # noqa: E402
+    StereoElementType,
+    detect_potential_stereo_elements,
 )
 
 _LABEL_PATTERN = re.compile(r"^(\d+)([A-Za-z]+)$")
@@ -89,7 +107,7 @@ def _descriptor_positions(descriptor: Any) -> tuple[int, ...]:
     if isinstance(descriptor, (PlanarBondStereo, AtropBondStereo)):
         return tuple(int(value) for value in descriptor.atoms[2:4])
     if isinstance(descriptor, CumuleneAxisStereo):
-        return descriptor.axis_path
+        return descriptor.axis_path[0], descriptor.axis_path[-1]
     if isinstance(descriptor, ExtendedCisTransStereo):
         return descriptor.path[0], descriptor.path[-1]
     if isinstance(descriptor, HelicalStereo):
@@ -162,15 +180,22 @@ def _record_limitations(
 def _record_result(
     record: dict[str, Any],
     molecule: Chem.Mol,
+    *,
+    additional_descriptors: Iterable[Any] = (),
 ) -> dict[str, Any]:
     expected = set(record["recommended_labels"])
     extraction_error = None
     try:
         descriptors = tuple(
-            descriptors_from_rdkit(
-                molecule,
-                require_atom_maps=False,
-            ).values()
+            dict.fromkeys(
+                tuple(
+                    descriptors_from_rdkit(
+                        molecule,
+                        require_atom_maps=False,
+                    ).values()
+                )
+                + tuple(additional_descriptors)
+            )
         )
         reference_to_index = {
             index + 1: index for index in range(molecule.GetNumAtoms())
@@ -210,6 +235,243 @@ def _record_result(
         ),
         "extraction_error": extraction_error,
     }
+
+
+def _load_coordinate_molecules(path: Path) -> dict[str, Chem.Mol]:
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != CIP_3D_SHA256:
+        raise ValueError(f"Unexpected CIP 3D Validation Suite SHA-256: {digest}")
+    supplier = Chem.SDMolSupplier(
+        str(path),
+        removeHs=True,
+        sanitize=True,
+    )
+    molecules = {}
+    for position, molecule in enumerate(supplier, start=1):
+        if molecule is None or not molecule.HasProp("STRUCTURE_ID"):
+            raise ValueError(f"Invalid CIP 3D record {position}.")
+        record_id = molecule.GetProp("STRUCTURE_ID")
+        if record_id in molecules:
+            raise ValueError(f"Duplicate CIP 3D record {record_id}.")
+        molecules[record_id] = molecule
+    if len(molecules) != 300:
+        raise ValueError(f"Expected 300 CIP 3D records, found {len(molecules)}.")
+    return molecules
+
+
+def _coordinate_atrop_descriptors(
+    record: dict[str, Any],
+    molecule: Chem.Mol,
+    coordinate: Chem.Mol | None,
+) -> tuple[AtropBondStereo, ...]:
+    """Transport one declared AT configuration without choosing an isomorphism."""
+    if coordinate is None or "AT" not in _unit_categories(record):
+        return ()
+    elements = tuple(
+        element
+        for element in detect_potential_stereo_elements(coordinate)
+        if element.element_type is StereoElementType.ATROP_AXIS
+        and element.carrier_status is StereoCarrierStatus.CONFIRMED
+    )
+    if len(elements) != 1:
+        return ()
+    try:
+        source = atrop_stereo_from_geometry(
+            coordinate,
+            elements[0].support,
+        )
+    except ValueError:
+        return ()
+    matches = coordinate.GetSubstructMatches(
+        molecule,
+        uniquify=False,
+        useChirality=False,
+        maxMatches=10000,
+    )
+    candidates = {
+        source.relabel(
+            {
+                source_index: target_index + 1
+                for target_index, source_index in enumerate(match)
+            }
+        )
+        for match in matches
+    }
+    return tuple(candidates) if len(candidates) == 1 else ()
+
+
+def _transport_unique_registry(
+    sources: Iterable[Any],
+    molecule: Chem.Mol,
+    coordinate: Chem.Mol,
+) -> tuple[Any, ...]:
+    """Transport geometry only when every constitutional map agrees."""
+    source_values = tuple(sources)
+    if not source_values:
+        return ()
+    matches = coordinate.GetSubstructMatches(
+        molecule,
+        uniquify=False,
+        useChirality=False,
+        maxMatches=10000,
+    )
+    registries = tuple(
+        tuple(
+            source.relabel(
+                {
+                    source_index: target_index + 1
+                    for target_index, source_index in enumerate(match)
+                }
+            )
+            for source in source_values
+        )
+        for match in matches
+    )
+    if not registries:
+        return ()
+
+    def key(descriptor: Any) -> tuple[Any, ...]:
+        reported = (
+            tuple(sorted(descriptor.reported_positions))
+            if isinstance(descriptor, HelicalStereo)
+            else ()
+        )
+        return descriptor.canonical_form(), reported
+
+    registry_keys = {
+        frozenset(key(descriptor) for descriptor in registry)
+        for registry in registries
+    }
+    if len(registry_keys) != 1:
+        return ()
+    return tuple(
+        sorted(
+            set(registries[0]),
+            key=lambda descriptor: repr(key(descriptor)),
+        )
+    )
+
+
+def _coordinate_source_descriptor(
+    element_type: StereoElementType,
+    support: Any,
+    coordinate: Chem.Mol,
+) -> Any:
+    if element_type is StereoElementType.DOUBLE_BOND:
+        left, right = support.endpoints
+        left_frame = cumulene_terminal_references(
+            coordinate,
+            left,
+            right,
+        )
+        right_frame = cumulene_terminal_references(
+            coordinate,
+            right,
+            left,
+        )
+        if left_frame is None or right_frame is None:
+            raise ValueError("Double-bond terminal frames are unavailable.")
+        return planar_bond_stereo_from_geometry(
+            coordinate,
+            AxisStereoSupport(
+                (left, right),
+                (left_frame, right_frame),
+            ),
+        )
+    if element_type is StereoElementType.EXTENDED_CIS_TRANS:
+        return extended_cis_trans_from_geometry(
+            coordinate,
+            support,
+        )
+    if element_type is StereoElementType.CUMULENE_AXIS:
+        return cumulene_axis_stereo_from_geometry(
+            coordinate,
+            support,
+        )
+    if element_type is StereoElementType.HELICAL:
+        return helical_stereo_from_geometry(
+            coordinate,
+            support,
+        )
+    raise ValueError("Coordinate stereo class is not supported.")
+
+
+def _coordinate_cumulene_is_witnessed(
+    coordinate: Chem.Mol,
+    support: AxisStereoSupport,
+) -> bool:
+    material_frames = all(
+        type(reference) is int
+        for frame in support.terminal_frames
+        for reference in frame
+    )
+    center = support.path[len(support.path) // 2]
+    center_tag = coordinate.GetAtomWithIdx(center).GetChiralTag()
+    tagged_center = center_tag in {
+        Chem.ChiralType.CHI_TETRAHEDRAL_CW,
+        Chem.ChiralType.CHI_TETRAHEDRAL_CCW,
+    }
+    return material_frames or tagged_center
+
+
+def _coordinate_path_descriptors(
+    record: dict[str, Any],
+    molecule: Chem.Mol,
+    coordinate: Chem.Mol | None,
+) -> tuple[Any, ...]:
+    """Configure declared carriers from unambiguous pinned geometry."""
+    if coordinate is None:
+        return ()
+    units = set(_unit_categories(record))
+    requested = set()
+    if "CT" in units:
+        requested.add(StereoElementType.DOUBLE_BOND)
+    if "CT4" in units:
+        requested.add(StereoElementType.EXTENDED_CIS_TRANS)
+    if "HE" in units:
+        requested.add(StereoElementType.HELICAL)
+    if units & {"TH3", "TH5"}:
+        requested.add(StereoElementType.CUMULENE_AXIS)
+    if not requested:
+        return ()
+    matches = coordinate.GetSubstructMatches(
+        molecule,
+        uniquify=False,
+        useChirality=False,
+        maxMatches=10000,
+    )
+    if not matches:
+        return ()
+    target_to_source = {
+        target_index: source_index
+        for target_index, source_index in enumerate(matches[0])
+    }
+    sources = []
+    for element in detect_potential_stereo_elements(molecule):
+        if (
+            element.element_type not in requested
+            or element.carrier_status is not StereoCarrierStatus.CONFIRMED
+        ):
+            continue
+        source_support = element.support.relabel(target_to_source)
+        if (
+            element.element_type is StereoElementType.CUMULENE_AXIS
+            and not _coordinate_cumulene_is_witnessed(
+                coordinate,
+                source_support,
+            )
+        ):
+            continue
+        try:
+            source = _coordinate_source_descriptor(
+                element.element_type,
+                source_support,
+                coordinate,
+            )
+        except (AttributeError, TypeError, ValueError):
+            continue
+        sources.append(source)
+    return _transport_unique_registry(sources, molecule, coordinate)
 
 
 def _rdkit_labels(molecule: Chem.Mol) -> set[str]:
@@ -261,9 +523,18 @@ def _category_scores(results: Iterable[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def benchmark_cip_native(path: Path) -> dict[str, Any]:
+def benchmark_cip_native(
+    path: Path,
+    *,
+    coordinate_path: Path | None = None,
+) -> dict[str, Any]:
     """Evaluate exact local label sets and type every non-exact record."""
     records = load_cip(path)
+    coordinate_molecules = (
+        {}
+        if coordinate_path is None
+        else _load_coordinate_molecules(coordinate_path)
+    )
     results = []
     rdkit_results = []
     parse_failures = []
@@ -273,7 +544,23 @@ def benchmark_cip_native(path: Path) -> dict[str, Any]:
         if molecule is None:
             parse_failures.append(str(record["ID"]))
             continue
-        results.append(_record_result(record, molecule))
+        coordinate = coordinate_molecules.get(str(record["ID"]))
+        additional = _coordinate_atrop_descriptors(
+            record,
+            molecule,
+            coordinate,
+        ) + _coordinate_path_descriptors(
+            record,
+            molecule,
+            coordinate,
+        )
+        results.append(
+            _record_result(
+                record,
+                molecule,
+                additional_descriptors=additional,
+            )
+        )
         expected = sorted(set(record["recommended_labels"]))
         rdkit_predicted = sorted(_rdkit_labels(molecule))
         rdkit_results.append(
@@ -297,20 +584,27 @@ def benchmark_cip_native(path: Path) -> dict[str, Any]:
         for _ in range(count)
     )
     return {
-        "schema": "synkit.cip-native-validation/2",
+        "schema": "synkit.cip-native-validation/3",
         "dataset": {
             "records": len(records),
             "audited_sha256": CIP_SHA256,
             "structures_vendored": False,
+            "coordinate_sha256": (
+                CIP_3D_SHA256 if coordinate_path is not None else None
+            ),
         },
         "environment": {
             "python": sys.version.split()[0],
             "rdkit": rdkit.__version__,
         },
         "method": (
-            "RDKit supplies parsed relative stereo descriptors only; SynKit "
-            "independently ranks ligands with exact nuclide masses and "
-            "projects local label sets"
+            "RDKit supplies parsed relative stereo descriptors. For declared "
+            "AT, HE, CT4, CT, and fully witnessed cumulene carriers, the "
+            "optional pinned 3D file "
+            "supplies orientation only when constitutional transport is "
+            "unambiguous; AT additionally requires one confirmed carrier. "
+            "SynKit independently ranks ligands with exact nuclide masses "
+            "and projects local label sets"
         ),
         "parse_failures": parse_failures,
         "overall": _score_records(results),
@@ -347,10 +641,14 @@ def benchmark_cip_native(path: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cip-path", type=Path, required=True)
+    parser.add_argument("--cip-3d-path", type=Path)
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
     RDLogger.DisableLog("rdApp.*")
-    report = benchmark_cip_native(arguments.cip_path)
+    report = benchmark_cip_native(
+        arguments.cip_path,
+        coordinate_path=arguments.cip_3d_path,
+    )
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if arguments.output is not None:
         arguments.output.write_text(rendered, encoding="utf-8")

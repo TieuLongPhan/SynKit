@@ -166,23 +166,23 @@ label sets (81.67%). Across 1,252 reference labels its micro recall is 90.18%
 and precision is 99.82%; one frozen pass takes 0.710 s (2.37 ms/input), while
 11 independent passes have a 0.682 s median. StereoMolGraph represents
 relative configurations but exposes no CIP assignment API, so its native CIP
-accuracy is N/A. SynKit's incremental independent assigner exactly reproduces
-175/300 complete label sets (58.33%). It recovers 902/1,252 reference labels
-while emitting 913, with 72.04% recall and 98.80% precision. Rules 1a/1b/2,
+accuracy is N/A. With the pinned 3D orientation input, SynKit's incremental
+independent assigner exactly reproduces 187/300 complete label sets (62.33%).
+It recovers 926/1,252 reference labels while emitting 937, with 73.96% recall
+and 98.83% precision. The SMILES-only baseline remains 175/300. Rules 1a/1b/2,
 simple mancude-ring averaging, Rule 3, and the reference-independent one-pair
 subset of Rules 4c/5 are active; multi-unit Rule 4b remains fail-closed. Rule
 2 uses exact nuclide masses rather than integer mass numbers. RDKit supplies parsed relative stereo
 descriptors at the input boundary, but its ``_CIPCode``/``_CIPRank`` values are
-not inputs to SynKit ranking or projection. The 125 non-exact rows are frozen
-as 10 unsupported-class, 32 missing-orientation, and 83 ranking-defect primary
+not inputs to SynKit ranking or projection. The 113 non-exact rows are frozen
+as 9 unsupported-class, 21 missing-orientation, and 83 ranking-defect primary
 limitations in ``cip_native_report.json``.
 
 The current SynKit typed detector is now scored against RotA's supplied
-undirected atom-pair and expanded-path annotations. It recovers 380/698 loci
-(54.44% recall) while emitting 765 candidates (49.67% annotation precision),
-including 313/347 biaryl, 51/51 C--N heterobiaryl, and 15/15 allene-like loci.
-All 650 records are invariant under reverse atom renumbering. The detector does
-not recover the annotated C--B, nonbiaryl, chiral-atom-pair, or spiral families.
-Because RotA is positive-only and its 2D input generally lacks orientation,
+undirected atom-pair and expanded-path annotations. It recovers all 698/698
+annotated loci and 15/15 expanded cumulene paths, while retaining 1,562
+additional broad typed projections. All 650 records are invariant under
+reverse atom renumbering. Because RotA is positive-only and its 2D input
+generally lacks orientation,
 ``rota_locus_report.json`` is evidence for typed locus scope only, not
 handedness, stability, true-negative specificity, or global chirality.

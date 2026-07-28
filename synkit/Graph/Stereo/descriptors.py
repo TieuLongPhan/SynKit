@@ -104,6 +104,7 @@ CONFIGURED_STEREO_DESCRIPTOR_CLASSES = SUPPORTED_STEREO_DESCRIPTOR_CLASSES | {
     "extended_cis_trans",
     "helical",
     "planar_chirality",
+    "framework",
 }
 RDKIT_STEREO_DESCRIPTOR_CLASSES = frozenset(
     {
@@ -1000,6 +1001,7 @@ class ExtendedCisTransStereo(_OrbitDescriptorMixin, PathStereo):
 
 
 from .extended_descriptors import HelicalStereo, PlanarChiralityStereo  # noqa: E402
+from .global_stereo import FrameworkStereo  # noqa: E402
 
 StereoValue = (
     TetrahedralStereo
@@ -1012,6 +1014,7 @@ StereoValue = (
     | ExtendedCisTransStereo
     | HelicalStereo
     | PlanarChiralityStereo
+    | FrameworkStereo
 )
 
 

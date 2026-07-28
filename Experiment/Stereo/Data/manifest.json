@@ -64,6 +64,7 @@
         "fixed_graph_local_permutation_audit": true,
         "configuration_free_local_canonicalization": true,
         "configuration_free_global_canonicalization": true,
+        "pinned_3d_orientation": true,
         "supplied_stereo_binary": false,
         "stereo_stripped_four_state": false
       },
@@ -79,6 +80,28 @@
     }
   ],
   "designed_datasets": {
+    "rota_synthetic_negative_controls": {
+      "path": "Experiment/Stereo/Data/RotA-Synthetic/negative_axes.json",
+      "sha256": "87ff2d8cbf696b031e6c4a7ece9e4a36eb6fc125df1a3fa6124024631b884fe7",
+      "records": 24,
+      "axis_fixed_automorphism_negatives": 13,
+      "no_supported_axis_negatives": 11,
+      "confirmed_axis_false_positives": 0,
+      "claim_boundary": "constitutional_specificity_not_rotational_stability"
+    },
+    "cip_input_contract_audit": {
+      "path": "Experiment/Stereo/Data/CIP/input_contract_audit.json",
+      "sha256": "9fc9cffda285affeafacfe9829e2416f321ef420ed0caf6037064453ab9c2dec",
+      "records": 300,
+      "maximum_exact_records_from_supplied_smiles": 299,
+      "complete_input_identifiable_with_pinned_3d_coordinates": true,
+      "conflicting_record_ids": [
+        "VS010",
+        "VS011"
+      ],
+      "coordinate_sha256": "28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325",
+      "structures_vendored": false
+    },
     "stereo_perception_conformance": {
       "path": "Experiment/Stereo/Data/Perception/perception_conformance_cases.json",
       "sha256": "c2e34fb4b493aec0a41b467d6f7865ffcce211e09d2e916bdd616e66ad8cb457",
@@ -108,6 +131,14 @@
     }
   },
   "synthetic_benchmarks": {
+    "rota_synthetic_negative_controls": {
+      "runner": "Experiment/Stereo/Perception/rota_synthetic_negatives.py",
+      "report": "Experiment/Stereo/Data/RotA-Synthetic/negative_axes.json",
+      "records": 24,
+      "passed": 24,
+      "failed": 0,
+      "renumbering_invariant": true
+    },
     "stereo_perception_conformance": {
       "scored_records": 40,
       "not_applicable_records": 0,

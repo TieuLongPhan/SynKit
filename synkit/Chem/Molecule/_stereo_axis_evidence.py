@@ -115,15 +115,15 @@ def cumulene_terminal_references(
     return references[0], references[1]
 
 
-def _axis_fixed_references_are_equivalent(
+def _axis_fixed_reference_symmetry_witness(
     graph: nx.Graph,
     support: AxisStereoSupport,
     left: Reference,
     right: Reference,
-) -> bool:
-    """Test a terminal-reference orbit while fixing every ordered axis atom."""
+) -> tuple[tuple[int, int], ...] | None:
+    """Return an exact terminal-reference automorphism witness, if one exists."""
     if type(left) is not int or type(right) is not int:
-        return False
+        return None
     left_rooted = graph.copy()
     right_rooted = graph.copy()
     for rooted, probe in ((left_rooted, left), (right_rooted, right)):
@@ -135,7 +135,7 @@ def _axis_fixed_references_are_equivalent(
     if _refinement_fingerprint(left_rooted) != _refinement_fingerprint(
         right_rooted
     ):
-        return False
+        return None
     matcher = GraphMatcher(
         left_rooted,
         right_rooted,
@@ -148,7 +148,32 @@ def _axis_fixed_references_are_equivalent(
             _EDGE_DEFAULTS,
         ),
     )
-    return matcher.is_isomorphic()
+    mapping = next(matcher.isomorphisms_iter(), None)
+    if mapping is None:
+        return None
+    return tuple(sorted((int(source), int(target)) for source, target in mapping.items()))
+
+
+def axis_terminal_symmetry_witnesses(
+    graph: nx.Graph,
+    support: AxisStereoSupport,
+) -> tuple[tuple[tuple[int, int], ...] | None, ...]:
+    """Return one exact symmetry witness for each terminal reference pair.
+
+    Axis atoms are fixed in path order and one terminal ligand probe is mapped
+    to the other. A non-``None`` witness therefore proves that terminal frame
+    constitution cannot support a configured axis. This is a constitutional
+    result only; it says nothing about rotational barriers.
+    """
+    return tuple(
+        _axis_fixed_reference_symmetry_witness(
+            graph,
+            support,
+            frame[0],
+            frame[1],
+        )
+        for frame in support.terminal_frames
+    )
 
 
 def axis_carrier_status(
@@ -158,13 +183,8 @@ def axis_carrier_status(
 ) -> tuple[StereoCarrierStatus, str | None]:
     """Return exact terminal-symmetry evidence for a broad axis candidate."""
     if any(
-        _axis_fixed_references_are_equivalent(
-            graph,
-            support,
-            frame[0],
-            frame[1],
-        )
-        for frame in support.terminal_frames
+        witness is not None
+        for witness in axis_terminal_symmetry_witnesses(graph, support)
     ):
         reason = (
             "symmetry_related_terminal_paths"
@@ -178,6 +198,7 @@ def axis_carrier_status(
 __all__ = [
     "StereoCarrierStatus",
     "axis_carrier_status",
+    "axis_terminal_symmetry_witnesses",
     "cumulene_terminal_references",
     "validated_carrier_status",
 ]

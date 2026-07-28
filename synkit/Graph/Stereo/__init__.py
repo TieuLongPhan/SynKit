@@ -57,6 +57,12 @@ from .extended_descriptors import (
     HelicalStereoSidecar,
     PlanarChiralityStereo,
 )
+from .global_stereo import (
+    FrameworkFrame,
+    FrameworkStereo,
+    GlobalStereoCertificate,
+    GlobalStereoInformationState,
+)
 from .rdkit_adapter import apply_stereo_to_rdkit, descriptors_from_rdkit
 from .matching import (
     candidate_mapping_stereo_matches,
@@ -166,6 +172,10 @@ __all__ = [
     "HelicalStereo",
     "HelicalStereoSidecar",
     "PlanarChiralityStereo",
+    "FrameworkFrame",
+    "FrameworkStereo",
+    "GlobalStereoCertificate",
+    "GlobalStereoInformationState",
     "StereoValue",
     "VirtualReferenceKind",
     "VirtualStereoReference",

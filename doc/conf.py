@@ -183,10 +183,14 @@ def setup(app):
     app.connect("autodoc-process-docstring", _strip_legacy_autodoc_bodies)
 
 
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "networkx": ("https://networkx.org/documentation/stable/", None),
-}
+intersphinx_mapping = (
+    {}
+    if os.environ.get("SYNKIT_DOCS_OFFLINE")
+    else {
+        "python": ("https://docs.python.org/3", None),
+        "networkx": ("https://networkx.org/documentation/stable/", None),
+    }
+)
 
 extlinks = {
     "gh": ("https://github.com/TieuLongPhan/SynKit/%s", "%s"),

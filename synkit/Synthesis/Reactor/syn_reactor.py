@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
@@ -25,6 +26,9 @@ from synkit.Synthesis.Reactor import graph_rewrite as _graph_rewrite
 from synkit.Synthesis.Reactor import deduplication as _deduplication
 from synkit.Synthesis.Reactor.reactor_matching import ReactorMatchingMixin
 from synkit.Synthesis.Reactor.reactor_stereo import ReactorStereoMixin
+from synkit.Synthesis.Reactor.serialization_policy import (
+    RawITSApplicationSerializationWarning,
+)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Typing aliases
@@ -121,6 +125,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         while still finalizing electron fields and validating stereo state.
         This policy is independent of mapping-level ``automorphism`` pruning.
     :type dedup_its: bool
+    :param serialization_errors: Raw ITS serialization policy. ``"raise"``
+        preserves the compatibility behavior; ``"skip"`` returns all
+        serializable results in their original order and reports omitted raw
+        application indices.
+    :type serialization_errors: str
     :param stereo_assignment_limit: Optional hard cap on admissible injective
         typed stereo-port assignments. Exceeding it raises instead of silently
         truncating the search.
@@ -160,6 +169,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     preserve_mapped_hydrogens: bool = False
     dedup_its: bool = True
     stereo_assignment_limit: int | None = None
+    serialization_errors: str = "raise"
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -167,6 +177,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     _mappings: List[MappingDict] | None = field(init=False, default=None, repr=False)
     _its: List[nx.Graph] | None = field(init=False, default=None, repr=False)
     _smarts: List[str] | None = field(init=False, default=None, repr=False)
+    _serialization_failure_indices: Tuple[int, ...] = field(
+        init=False,
+        default=(),
+        repr=False,
+    )
     _host_for_matching: nx.Graph | None = field(init=False, default=None, repr=False)
     _stereo_semantic_diagnostics: List[Any] = field(
         init=False,
@@ -206,6 +221,8 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             )
         if not isinstance(self.dedup_its, bool):
             raise TypeError("dedup_its must be a bool.")
+        if self.serialization_errors not in {"raise", "skip"}:
+            raise ValueError("serialization_errors must be 'raise' or 'skip'.")
         if self.stereo_assignment_limit is not None and (
             type(self.stereo_assignment_limit) is not int
             or self.stereo_assignment_limit < 1
@@ -235,6 +252,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         stereo_semantics: str = "orbit",
         preserve_mapped_hydrogens: bool = False,
         dedup_its: bool = True,
+        serialization_errors: str = "raise",
         stereo_assignment_limit: int | None = None,
     ) -> "SynReactor":
         """
@@ -277,6 +295,9 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         :param dedup_its: Consolidate equivalent post-rewrite ITS graphs while
             preserving all correctness finalization and validation steps.
         :type dedup_its: bool
+        :param serialization_errors: Raw ITS serialization policy, either
+            ``"raise"`` (default) or ``"skip"``.
+        :type serialization_errors: str
         :param stereo_assignment_limit: Optional hard cap on exhaustive typed
             stereo-port assignments.
         :type stereo_assignment_limit: Optional[int]
@@ -300,6 +321,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             stereo_semantics=stereo_semantics,
             preserve_mapped_hydrogens=preserve_mapped_hydrogens,
             dedup_its=dedup_its,
+            serialization_errors=serialization_errors,
             stereo_assignment_limit=stereo_assignment_limit,
         )
 
@@ -315,6 +337,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     def stereo_morphism_issues(self) -> tuple[Any, ...]:
         """Return structured reasons rejected typed stereo mappings failed."""
         return tuple(self._stereo_morphism_issues)
+
+    @property
+    def serialization_failure_indices(self) -> Tuple[int, ...]:
+        """Return raw ITS indices omitted or rejected during serialization."""
+        return self._serialization_failure_indices
 
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
@@ -447,20 +474,27 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         :rtype: list of str
         """
         if self._smarts is None:
-            self._smarts = [self._to_smarts(g) for g in self.its_list]
-            if not self.dedup_its and any(value is None for value in self._smarts):
-                failed = [
-                    index for index, value in enumerate(self._smarts) if value is None
-                ]
-                raise ValueError(
-                    "Could not serialize raw ITS application(s): "
-                    + ", ".join(map(str, failed))
+            serialized = [self._to_smarts(g) for g in self.its_list]
+            failed = tuple(
+                index for index, value in enumerate(serialized) if value is None
+            )
+            self._serialization_failure_indices = failed if not self.dedup_its else ()
+            if not self.dedup_its and failed:
+                if self.serialization_errors == "raise":
+                    raise ValueError(
+                        "Could not serialize raw ITS application(s): "
+                        + ", ".join(map(str, failed))
+                    )
+                warnings.warn(
+                    RawITSApplicationSerializationWarning(failed),
+                    stacklevel=2,
                 )
-            self._smarts = [value for value in self._smarts if value]
+            smarts = [value for value in serialized if value]
             if self.invert:
-                self._smarts = [reverse_reaction(rsmi) for rsmi in self._smarts]
+                smarts = [reverse_reaction(rsmi) for rsmi in smarts]
             if self.dedup_its:
-                self._smarts = list(dict.fromkeys(self._smarts))
+                smarts = list(dict.fromkeys(smarts))
+            self._smarts = smarts
         return self._smarts
 
     @property

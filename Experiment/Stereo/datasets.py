@@ -38,6 +38,7 @@ ROTA = STEREO_ROOT / "ChiralFinder-RotA" / "RotA.xlsx"
 ROTA_SHA256 = "141ae5281c034f8d08b900454fc387556b5c8702b3e2347d7141ddbd69c4daff"
 CIP_METADATA = STEREO_ROOT / "CIPValidationSuite" / "metadata.json"
 CIP_SHA256 = "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059"
+CIP_3D_SHA256 = "28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325"
 XLSX_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 

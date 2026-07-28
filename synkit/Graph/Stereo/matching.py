@@ -25,6 +25,7 @@ from .descriptors import (
     virtual_reference,
 )
 from .identity import mapped_stereo_registries_match
+from .global_stereo import FrameworkStereo
 from .legacy import (
     StereoSemanticComparison,
     StereoSemanticsMode,
@@ -75,6 +76,19 @@ def _stereo_reference_owners(
     descriptor: StereoValue,
     by_map: Mapping[int, Any],
 ) -> tuple[tuple[tuple[int, tuple[Any, ...]], ...], tuple[str, ...]]:
+    if isinstance(descriptor, FrameworkStereo):
+        absent = tuple(
+            atom for atom in descriptor.support_atoms if atom not in by_map
+        )
+        if absent:
+            return (), (
+                "framework support atoms are absent: "
+                + ", ".join(map(str, sorted(absent))),
+            )
+        return tuple(
+            (frame.center, tuple(frame.references))
+            for frame in descriptor.frames
+        ), ()
     atom_centered = descriptor.descriptor_class in {
         "tetrahedral",
         "square_planar",

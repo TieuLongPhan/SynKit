@@ -32,6 +32,8 @@ PERCEPTION_CONFORMANCE="${REPOSITORY_ROOT}/Experiment/Stereo/Data/Perception"
 PERCEPTION_FULL="${REPOSITORY_ROOT}/Experiment/Stereo/Data/Perception"
 PERCEPTION_CIP="${REPOSITORY_ROOT}/Experiment/Stereo/Data/Perception"
 PERCEPTION_ELEMENTS="${REPOSITORY_ROOT}/Experiment/Stereo/Data/Perception"
+PERCEPTION_ROTA_NEGATIVE="${REPOSITORY_ROOT}/Experiment/Stereo/Data/RotA-Synthetic"
+PERCEPTION_CIP_CONTRACT="${REPOSITORY_ROOT}/Experiment/Stereo/Data/CIP"
 DIAGNOSTICS="${REPOSITORY_ROOT}/Experiment/Stereo/Data/Diagnostics"
 
 mkdir -p \
@@ -39,17 +41,26 @@ mkdir -p \
   "${CANON_ABC}/A" "${CANON_ABC}/B" "${CANON_ABC}/C" \
   "${CHIRALITY_PUBLISHED}" "${CHIRALITY_EXACT}" "${CHIRALITY_RELATIONS}" \
   "${PERCEPTION_AXIS}" "${PERCEPTION_CONFORMANCE}" "${PERCEPTION_FULL}" \
-  "${PERCEPTION_CIP}" "${PERCEPTION_ELEMENTS}" "${DIAGNOSTICS}"
+  "${PERCEPTION_CIP}" "${PERCEPTION_ELEMENTS}" \
+  "${PERCEPTION_ROTA_NEGATIVE}" "${PERCEPTION_CIP_CONTRACT}" "${DIAGNOSTICS}"
 CIP_FILE="${CIP_FILE:-/tmp/cip-validation-suite-compounds.smi}"
+CIP_3D_FILE="${CIP_3D_FILE:-/tmp/cip-validation-suite-compounds-3d.sdf}"
 CIP_SHA256="df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059"
+CIP_3D_SHA256="28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325"
 CIP_REVISION="6b9f9db46dadc6749da8234b05164e1e0fb413b9"
 CIP_URL="https://raw.githubusercontent.com/CIPValidationSuite/ValidationSuite/${CIP_REVISION}/compounds.smi"
+CIP_3D_URL="https://raw.githubusercontent.com/CIPValidationSuite/ValidationSuite/${CIP_REVISION}/compounds_3d.sdf"
 
 if [[ ! -f "${CIP_FILE}" ]] ||
    [[ "$(sha256sum "${CIP_FILE}" | cut -d' ' -f1)" != "${CIP_SHA256}" ]]; then
     curl -fL "${CIP_URL}" -o "${CIP_FILE}"
 fi
 echo "${CIP_SHA256}  ${CIP_FILE}" | sha256sum -c -
+if [[ ! -f "${CIP_3D_FILE}" ]] ||
+   [[ "$(sha256sum "${CIP_3D_FILE}" | cut -d' ' -f1)" != "${CIP_3D_SHA256}" ]]; then
+    curl -fL "${CIP_3D_URL}" -o "${CIP_3D_FILE}"
+fi
+echo "${CIP_3D_SHA256}  ${CIP_3D_FILE}" | sha256sum -c -
 
 LOCAL_RUNNER="Experiment/Stereo/Canonicalization/configuration_free_local.py"
 GLOBAL_ABC_RUNNER="Experiment/Stereo/Canonicalization/configuration_free_global.py"
@@ -119,7 +130,16 @@ python Experiment/Stereo/Perception/full_detection.py \
 
 python Experiment/Stereo/Perception/cip_labels.py \
   --cip-path "${CIP_FILE}" \
+  --cip-3d-path "${CIP_3D_FILE}" \
   --output "${PERCEPTION_CIP}/cip_native_report.json"
+
+python Experiment/Stereo/Perception/rota_synthetic_negatives.py \
+  --output "${PERCEPTION_ROTA_NEGATIVE}/negative_axes.json"
+
+python Experiment/Stereo/Perception/cip_input_contract.py \
+  --cip-path "${CIP_FILE}" \
+  --cip-3d-path "${CIP_3D_FILE}" \
+  --output "${PERCEPTION_CIP_CONTRACT}/input_contract_audit.json"
 
 python Experiment/Stereo/Perception/stereo_elements.py \
   --cip-path "${CIP_FILE}" \

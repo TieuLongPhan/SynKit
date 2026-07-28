@@ -117,22 +117,25 @@ def test_frozen_native_report_covers_all_300_records() -> None:
         "audited_sha256": (
             "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059"
         ),
+        "coordinate_sha256": (
+            "28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325"
+        ),
         "records": 300,
         "structures_vendored": False,
     }
     assert report["parse_failures"] == []
-    assert report["schema"] == "synkit.cip-native-validation/2"
-    assert report["overall"]["exact_records"] == 175
-    assert report["overall"]["true_positive_labels"] == 902
-    assert len(report["nonexact_records"]) == 125
+    assert report["schema"] == "synkit.cip-native-validation/3"
+    assert report["overall"]["exact_records"] == 187
+    assert report["overall"]["true_positive_labels"] == 926
+    assert len(report["nonexact_records"]) == 113
     assert report["primary_limitation_counts"] == {
         "disputed_reference": 0,
         "label_projection_defect": 0,
-        "missing_orientation_evidence": 32,
+        "missing_orientation_evidence": 21,
         "ranking_defect": 83,
-        "unsupported_class": 10,
+        "unsupported_class": 9,
     }
-    assert sum(report["primary_limitation_counts"].values()) == 125
+    assert sum(report["primary_limitation_counts"].values()) == 113
 
 
 def test_frozen_native_report_contains_no_benchmark_structures() -> None:

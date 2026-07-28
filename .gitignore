@@ -60,6 +60,10 @@ synkit/Graph/dev/*
 !Data/Mech/polar.json
 !Data/Mech/radical.json
 !Data/Mech/stereo.json
+# Canonical reviewed MechanismBench partitions are executable test data.
+!Experiment/Lewis/mech_path/Data/MechanismBench/polar.json
+!Experiment/Lewis/mech_path/Data/MechanismBench/radical.json
+!Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json
 !Experiment/Stereo/Data/manifest.json
 !Experiment/Stereo/Data/Perception/perception_conformance_cases.json
 !Experiment/Stereo/Data/Perception/full_detection_report.json

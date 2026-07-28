@@ -114,6 +114,40 @@ zero-based RDKit atom indices. Orientation, evidence source, stability, and
 population remain separate values; a descriptor whose parity is unspecified
 is rejected as configuration evidence.
 
+Coupled framework evidence follows the same information rule. Use
+``analyze_global_stereo_support`` to obtain a map-independent
+``GlobalStereoCertificate``. Two-dimensional topology may prove a
+``necessarily_chiral`` molecular outcome, but its ``FrameworkStereo`` remains
+orientation-unspecified. ``configured_framework_from_certificate`` requires
+explicit positive/negative orientation and non-empty provenance; it never
+derives handedness from the ACS label, atom maps, CIP, or a common arbitrary
+probe parity.
+
+The analyzer fails closed when coupled frames span disconnected components,
+when support exceeds 256 atoms, or when more than 64 frames would be coupled.
+Those bounds limit exact auxiliary-graph growth; they are unsupported outcomes,
+not achiral classifications.
+
+.. code-block:: python
+   :caption: Separating necessary chirality from configured orientation
+
+   from rdkit import Chem
+   from synkit.Chem.Molecule.global_stereo import (
+       analyze_global_stereo_support,
+       configured_framework_from_certificate,
+   )
+
+   cage = Chem.MolFromSmiles("C1C2(OCC1)OCCC2")
+   certificate = analyze_global_stereo_support(cage)
+   assert certificate.necessarily_chiral
+   assert certificate.descriptor.orientation is None
+
+   configured_framework = configured_framework_from_certificate(
+       certificate,
+       1,
+       provenance="declared_sidecar",
+   )
+
 .. code-block:: python
    :caption: Classifying a declared cumulene configuration
 
@@ -175,12 +209,11 @@ the resulting names cannot change the assignment or its canonical code.
       S assigned
 
 The independent ranking kernel currently implements witnessed Sequence Rules
-1a, 1b, and 2, including exact nuclide masses for isotope comparisons. Ties
-that require Rules 3--5, a complete aromatic duplicate-node
-model, or a relabel-invariant axis direction return a typed unsupported or
-unresolved result instead of an atom-index tiebreak. Coordination geometries
-also return structured unsupported results. Unspecified configurations never
-emit a label.
+1a, 1b, and 2, including exact nuclide masses for isotope comparisons, simple
+mancude-ring averaging, Rule 3, and the reference-independent one-pair subset
+of Rules 4c/5. Multi-unit Rule 4b, the complete hierarchical ring digraph, and
+coordination geometries return typed unsupported or unresolved results instead
+of an atom-index tiebreak. Unspecified configurations never emit a label.
 
 For supported unassigned tetrahedral atoms and double bonds,
 ``assess_molecular_chirality`` enumerates unique configurations and returns one
@@ -202,12 +235,31 @@ Validation Suite is a local descriptor-assignment suite; neither contributes
 to global chiral/achiral accuracy. RotA is vendored under MIT. The CIP fixture
 remains external-only because its repository did not provide a redistribution
 license at the audited revision. At the pinned 300-record revision, SynKit's
-independent incremental label layer exactly reproduces 155 complete record
-sets and 843 of 1,252 individual reference labels (67.33% recall, 97.80%
-precision). The 145 non-exact records remain explicitly classified as 15
-unsupported-class, 27 missing-orientation, 101 ranking-defect, and 2
-label-projection primary limitations. This is native local-label validation,
+independent incremental label layer, with the pinned 3D orientation input,
+exactly reproduces 187 complete record sets and 926 of 1,252 individual
+reference labels while emitting 937 (73.96% recall, 98.83% precision). The 113
+non-exact records remain explicitly classified as 9 unsupported-class, 21
+missing-orientation, and 83 ranking-defect primary limitations. The
+SMILES-only baseline remains 175/300. This is native local-label validation,
 not global molecular-chirality accuracy.
+
+The supplied SMILES contract has a proven ceiling of 299 exact records:
+``VS010`` and ``VS011`` have byte-identical input but opposite helical labels.
+The pinned external 3D file distinguishes the pair by a reflection-sensitive
+signed-coordinate witness, so a 300-record input contract is identifiable only
+when coordinates or an equivalent declared orientation sidecar are supplied.
+That witness removes the information obstruction. The coordinate protocol now
+completes both helical records, all five CT4 records, four of seven AT records,
+and the fully material-framed VS144 cumulene; it does not complete the
+remaining CIP sequence rules.
+
+RotA's positive-only source is supplemented by 24 synthetic constitutional
+negative controls. Thirteen axis-like controls carry exact axis-fixed
+automorphisms that exchange a terminal ligand pair, and eleven have no
+supported axis topology. All 24 are atom-renumbering invariant and none is a
+confirmed-axis false positive. These controls validate constitutional
+specificity only, not rotational barriers, isolation timescales, stability, or
+handedness.
 
 .. raw:: html
 

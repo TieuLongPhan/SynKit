@@ -15,19 +15,18 @@ The public, executable MechanismBench layout has exactly three partitions:
   source SHA-256, CC BY 4.0 provenance, eight top-level POLAR strata, and strict
   replay/reapplication evidence for every selected record. The full source pool
   is intentionally not copied here.
-- `stereo.json` — 72 positive transformations: the original 40 reaction-SMILES
+- `stereo.json` — 80 positive transformations: the original 40 reaction-SMILES
   cases, four reviewed non-tetrahedral/atrop rewrite fixtures, seven Phase 2R
-  electron-flow × stereo fixtures, and 21 reviewed native-descriptor rewrites.
-  Its eight negative assertions are retained as corruption/specification
-  fixtures and do not count as positive cases.
+  electron-flow × stereo fixtures, 21 reviewed native-descriptor rewrites, and
+  eight reviewed final promotions. Its eight negative assertions are retained
+  as corruption/specification fixtures and do not count as positive cases.
 
 The compact nine-case rewrite conformance suite is development-only data at
 `Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json`. It deliberately
 does not define a MechanismBench partition.
 
-The current stereo baseline is 72 positives, not 80. Any future claim of an
-80-positive stereo partition requires eight further independently reviewed
-positive cases; negative fixtures must never be counted to fill that gap.
+The current stereo baseline is 80 independently reviewed positives. Negative
+fixtures remain outside that count.
 
 Raw candidate pools, audit summaries, and release-owner checklists do not belong
 in this directory. They should be regenerated from source data or kept as project

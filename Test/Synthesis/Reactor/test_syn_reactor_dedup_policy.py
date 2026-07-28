@@ -1,9 +1,11 @@
 import inspect
+import warnings
 
 import pytest
 
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule import SynRule
+from synkit.Synthesis.Reactor import RawITSApplicationSerializationWarning
 from synkit.Synthesis.Reactor.batch_reactor import BatchReactor
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
@@ -253,6 +255,142 @@ def test_raw_smarts_raises_instead_of_silently_losing_its_alignment(monkeypatch)
         _ = reactor.smarts_list
 
 
+def _install_serialization_results(monkeypatch, reactor, failed_indices):
+    graphs = reactor.its_list
+    by_graph = {
+        id(graph): None if index in failed_indices else f"raw-{index}"
+        for index, graph in enumerate(graphs)
+    }
+    monkeypatch.setattr(
+        SynReactor,
+        "_to_smarts",
+        staticmethod(lambda graph: by_graph[id(graph)]),
+    )
+    return [f"raw-{index}" for index in range(len(graphs)) if index not in failed_indices]
+
+
+def test_raw_serialization_skip_preserves_valid_order_and_reports_all_indices(
+    monkeypatch,
+):
+    reactor = SynReactor(
+        "CC",
+        ETHANE_DEHYDROGENATION,
+        template_format="tuple",
+        explicit_h=False,
+        dedup_its=False,
+        serialization_errors="skip",
+    )
+    failed = (1, 4, 17)
+    expected = _install_serialization_results(monkeypatch, reactor, failed)
+
+    with pytest.warns(RawITSApplicationSerializationWarning) as caught:
+        assert reactor.smarts_list == expected
+
+    assert len(caught) == 1
+    assert caught[0].message.indices == failed
+    assert reactor.serialization_failure_indices == failed
+    assert len(reactor.its_list) == 18
+
+    with warnings.catch_warnings(record=True) as repeated:
+        warnings.simplefilter("always")
+        assert reactor.smarts_list is reactor._smarts
+    assert repeated == []
+
+
+def test_raw_serialization_skip_returns_empty_for_all_invalid(monkeypatch):
+    reactor = SynReactor(
+        "C=CC=C.C=CC=O",
+        DIELS_ALDER,
+        template_format="tuple",
+        explicit_h=False,
+        automorphism=False,
+        dedup_its=False,
+        serialization_errors="skip",
+    )
+    failed = tuple(range(len(reactor.its_list)))
+    _install_serialization_results(monkeypatch, reactor, failed)
+
+    with pytest.warns(RawITSApplicationSerializationWarning) as caught:
+        assert reactor.smarts_list == []
+
+    assert len(caught) == 1
+    assert caught[0].message.indices == failed
+    assert reactor.serialization_failure_indices == failed
+
+
+def test_raw_serialization_skip_emits_no_warning_without_failures(monkeypatch):
+    reactor = SynReactor(
+        "C=CC=C.C=CC=O",
+        DIELS_ALDER,
+        template_format="tuple",
+        explicit_h=False,
+        automorphism=False,
+        dedup_its=False,
+        serialization_errors="skip",
+    )
+    expected = _install_serialization_results(monkeypatch, reactor, ())
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert reactor.smarts_list == expected
+
+    assert caught == []
+    assert reactor.serialization_failure_indices == ()
+
+
+def test_raw_serialization_raise_default_is_retryable_and_diagnostic(monkeypatch):
+    reactor = SynReactor(
+        "C=CC=C.C=CC=O",
+        DIELS_ALDER,
+        template_format="tuple",
+        explicit_h=False,
+        automorphism=False,
+        dedup_its=False,
+    )
+    _install_serialization_results(monkeypatch, reactor, (0,))
+
+    for _ in range(2):
+        with pytest.raises(
+            ValueError,
+            match=r"Could not serialize raw ITS application\(s\): 0",
+        ):
+            _ = reactor.smarts_list
+        assert reactor._smarts is None
+        assert reactor.serialization_failure_indices == (0,)
+
+
+def test_raw_serialization_skip_does_not_catch_programming_errors(monkeypatch):
+    reactor = SynReactor(
+        "C=CC=C.C=CC=O",
+        DIELS_ALDER,
+        template_format="tuple",
+        explicit_h=False,
+        dedup_its=False,
+        serialization_errors="skip",
+    )
+
+    def fail_serialization(_graph):
+        raise RuntimeError("unrelated failure")
+
+    monkeypatch.setattr(SynReactor, "_to_smarts", staticmethod(fail_serialization))
+    with pytest.raises(RuntimeError, match="unrelated failure"):
+        _ = reactor.smarts_list
+
+
+def test_consolidated_serialization_is_unchanged_by_raw_skip_policy():
+    kwargs = {
+        "substrate": "C=CC=C.C=CC=O",
+        "template": DIELS_ALDER,
+        "template_format": "tuple",
+        "explicit_h": False,
+    }
+    baseline = SynReactor(**kwargs)
+    opted_in = SynReactor(**kwargs, serialization_errors="skip")
+
+    assert opted_in.smarts_list == baseline.smarts_list
+    assert opted_in.serialization_failure_indices == ()
+
+
 def test_from_smiles_forwards_policy_and_rejects_non_boolean_values():
     reactor = SynReactor.from_smiles(
         "C=CC=C.C=CC=O",
@@ -260,8 +398,10 @@ def test_from_smiles_forwards_policy_and_rejects_non_boolean_values():
         template_format="tuple",
         explicit_h=False,
         dedup_its=False,
+        serialization_errors="skip",
     )
     assert reactor.dedup_its is False
+    assert reactor.serialization_errors == "skip"
     assert len(reactor.its_list) == 2
 
     with pytest.raises(TypeError, match="dedup_its must be a bool"):
@@ -270,6 +410,14 @@ def test_from_smiles_forwards_policy_and_rejects_non_boolean_values():
             ETHANE_DEHYDROGENATION,
             explicit_h=False,
             dedup_its="false",
+        )
+
+    with pytest.raises(ValueError, match="serialization_errors"):
+        SynReactor(
+            "CC",
+            ETHANE_DEHYDROGENATION,
+            explicit_h=False,
+            serialization_errors="ignore",
         )
 
 

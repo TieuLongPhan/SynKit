@@ -83,11 +83,19 @@ Molecule
    :members:
    :show-inheritance:
 
+.. automodule:: synkit.Chem.Molecule.global_stereo
+   :members:
+   :show-inheritance:
+
 .. automodule:: synkit.Chem.Molecule.cip_ranking
    :members:
    :show-inheritance:
 
 .. automodule:: synkit.Chem.Molecule.cip_assignment
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Molecule.coordinate_stereo
    :members:
    :show-inheritance:
 

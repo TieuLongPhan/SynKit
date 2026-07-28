@@ -4,6 +4,14 @@ Changelog
 Version 1.6.0
 -------------
 
+**Synthesis**
+
+- Added an opt-in ``serialization_errors="skip"`` policy to
+  ``SynReactor`` raw ITS mode. Valid serializations retain their application
+  order, while one structured warning and a cached diagnostic expose every
+  omitted raw-application index. The compatibility default remains
+  ``"raise"``.
+
 **Lewis-labelled graphs**
 
 - Added Lewis-labelled graph states with explicit lone-pair, radical,

@@ -88,6 +88,13 @@ Reactor parameters
        Electron finalization and stereo validation still run. This option is
        available only on ``SynReactor``; ``BatchReactor`` always uses the
        default consolidated behavior.
+   * - ``serialization_errors``
+     - str
+     - ``'raise'``
+     - Raw ITS serialization policy. ``'raise'`` preserves compatibility and
+       aborts ``smarts_list`` if any raw application cannot be serialized.
+       ``'skip'`` retains every serializable result in its original order and
+       reports the omitted indices. This affects only ``dedup_its=False``.
 
 Raw ITS applications and multiplicity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,8 +118,38 @@ graphs afterward. Disable both to inspect every raw application:
        print(its.graph["application_provenance"])
 
 In raw mode, ``its_list``, ``smarts_list``, and optional diagnostics remain
-aligned one-to-one. Raw multiplicity counts graph applications and stereo
-branches; it is not a kinetic weight or predicted product distribution.
+aligned one-to-one when every ITS graph is serializable. Raw multiplicity
+counts graph applications and stereo branches; it is not a kinetic weight or
+predicted product distribution.
+
+For exploratory batches where valid serializations should survive isolated
+failures, select the skip policy:
+
+.. code-block:: python
+
+   import warnings
+
+   from synkit.Synthesis.Reactor import RawITSApplicationSerializationWarning
+
+   reactor = SynReactor(
+       substrate,
+       rule,
+       explicit_h=False,
+       dedup_its=False,
+       serialization_errors="skip",
+   )
+   with warnings.catch_warnings(record=True) as caught:
+       warnings.simplefilter("always")
+       serializable_smarts = reactor.smarts_list
+
+   print(reactor.serialization_failure_indices)
+
+Exactly one ``RawITSApplicationSerializationWarning`` is emitted for a
+computed batch with failures. Its ``indices`` attribute and
+``serialization_failure_indices`` both contain every omitted zero-based raw
+application index. ``its_list`` remains the complete raw graph batch, whereas
+``smarts_list`` contains only the valid serializations. Exceptions raised by
+matching, rewriting, or unrelated code are never converted into skips.
 
 Example: Forward Prediction (NetworkX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,7 +255,7 @@ while keeping ``explicit_h=False``.
       ]
 
 Lewis-labelled graph templates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The NetworkX reactor can consume Lewis-labelled graph (LLG) templates. This is
 the SynKit-native path for transformations where valence-state information

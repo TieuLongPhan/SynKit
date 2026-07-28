@@ -22,6 +22,9 @@ from Experiment.Stereo.Chirality.published import load_dataset  # noqa: E402
 from synkit.Graph.Stereo import (  # noqa: E402
     classify_rdkit_stereograph_mirror,
 )
+from synkit.Chem.Molecule.global_stereo import (  # noqa: E402
+    analyze_global_stereo_support,
+)
 
 REVIEW_IDS = ("VS170", "VS215", "VS216", "VS300")
 EXPECTED_CHEMICAL = {
@@ -147,9 +150,24 @@ def main() -> int:
         highlights.append(configured)
         colors.append({index: HIGHLIGHT for index in configured})
         radii.append({index: 0.32 for index in configured})
-        legends.append(
-            f"{record_id}    reference: {manual} | certificate: {exact}"
-        )
+        if record_id == "VS300":
+            sanitized = Chem.MolFromSmiles(row["Input SMILES"])
+            if sanitized is None:
+                raise ValueError("Cannot parse sanitized VS300")
+            global_certificate = analyze_global_stereo_support(sanitized)
+            global_text = (
+                "chiral, orientation unspecified"
+                if global_certificate.necessarily_chiral
+                else global_certificate.state.value
+            )
+            legends.append(
+                f"{record_id}    reference: {manual} | source: {exact} | "
+                f"global: {global_text}"
+            )
+        else:
+            legends.append(
+                f"{record_id}    reference: {manual} | certificate: {exact}"
+            )
 
     OUTPUT_STEM.parent.mkdir(parents=True, exist_ok=True)
     drawer = rdMolDraw2D.MolDraw2DSVG(1800, 1200, 900, 600)

@@ -53,9 +53,10 @@ The next independent benchmark tracks should be:
    `UNSPECIFIED` effects under forward and reverse rule replay.
 2. **Interchange round trips:** RDKit/GML/JSON import-export identity for every
    descriptor family, including unsupported/fail-closed cases.
-3. **Negative perception controls:** achiral/non-axis controls and stability
-   labels for precision/specificity. RotA is positive-only, so it cannot supply
-   this by itself.
+3. **Experimental axis stability:** the maintained 24-case synthetic negative
+   suite now covers constitutional specificity. Barrier, isolation-timescale,
+   stability, and handedness truth still require an external annotated source
+   because RotA is positive-only.
 4. **Scalability evidence:** runtime and peak memory versus atom count,
    automorphism count, stereo-element count, and local-class product size,
    with timeout coverage reported explicitly.
@@ -73,10 +74,12 @@ take several days:
 
 ```bash
 CIP_FILE=/path/to/audited/compounds.smi \
+CIP_3D_FILE=/path/to/audited/compounds_3d.sdf \
   bash Experiment/Stereo/benchmark.sh
 ```
 
-If `CIP_FILE` is omitted or does not match the pinned checksum, the script
-downloads the pinned CIP validation file to `/tmp`. Run it from an environment
-containing SynKit's benchmark dependencies. Case-parallel tasks use 16 workers
-by default; override that with `SYNKIT_BENCHMARK_JOBS`.
+If either CIP path is omitted or does not match its pinned checksum, the script
+downloads the corresponding validation file to `/tmp`. The structures remain
+external and are not redistributed by SynKit. Run the benchmark from an
+environment containing SynKit's dependencies. Case-parallel tasks use 16
+workers by default; override that with `SYNKIT_BENCHMARK_JOBS`.

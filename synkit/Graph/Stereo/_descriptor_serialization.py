@@ -19,8 +19,23 @@ def stereo_from_dict(value: Mapping[str, Any]) -> Any:
         TrigonalBipyramidalStereo,
     )
     from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
+    from .global_stereo import FrameworkFrame, FrameworkStereo
 
     descriptor_class = value["descriptor_class"]
+    if descriptor_class == "framework":
+        return FrameworkStereo(
+            frozenset(value["support_atoms"]),
+            tuple(
+                FrameworkFrame(
+                    int(frame["center"]),
+                    tuple(frame["references"]),
+                    int(frame["relation"]),
+                )
+                for frame in value["frames"]
+            ),
+            value.get("orientation"),
+            value.get("provenance"),
+        )
     if descriptor_class == "cumulene_axis":
         return CumuleneAxisStereo(
             tuple(value["axis_path"]),
@@ -84,6 +99,11 @@ def descriptor_id(descriptor: Any) -> str:
         TrigonalBipyramidalStereo,
     )
     from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
+    from .global_stereo import FrameworkStereo
+
+    if isinstance(descriptor, FrameworkStereo):
+        support = "-".join(str(atom) for atom in sorted(descriptor.support_atoms))
+        return f"global:{support}"
 
     if isinstance(descriptor, PlanarChiralityStereo):
         plane = "-".join(str(atom) for atom in descriptor.canonical_plane)

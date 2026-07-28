@@ -49,6 +49,8 @@ from .descriptors import (
     parse_virtual_reference,
 )
 from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
+from .global_configured import add_framework as _add_framework
+from .global_stereo import FrameworkStereo
 from .orbits import StereoSpecification
 
 # Compatibility alias for callers that adopted the former configured-prefixed
@@ -74,6 +76,7 @@ CONFIGURED_DESCRIPTOR_TYPES = (
     ExtendedCisTransStereo,
     HelicalStereo,
     PlanarChiralityStereo,
+    FrameworkStereo,
 )
 
 MirrorIdentityProfile = Literal["chemical", "lewis_state", "acs_topology"]
@@ -433,6 +436,8 @@ def _add_planar_chirality(
 
 
 def _locus_key(descriptor: ConfiguredDescriptor) -> tuple[str, Hashable]:
+    if isinstance(descriptor, FrameworkStereo):
+        return "global", descriptor.support_atoms
     if isinstance(
         descriptor,
         (
@@ -469,12 +474,18 @@ def _expanded(
 ) -> _Expansion:
     prepared = _prepare(base_graph, atom_color, bond_color)
     seen: set[tuple[str, Hashable]] = set()
+    global_supports: list[frozenset[int]] = []
     for index, descriptor in enumerate(descriptors):
         key = _locus_key(descriptor)
         if key in seen:
             raise ValueError(f"Duplicate configured stereo locus at {key[1]!r}.")
         seen.add(key)
-        if isinstance(
+        if isinstance(descriptor, FrameworkStereo):
+            if any(descriptor.support_atoms & support for support in global_supports):
+                raise ValueError("Overlapping framework stereo supports are invalid.")
+            global_supports.append(descriptor.support_atoms)
+            _add_framework(prepared, descriptor, index)
+        elif isinstance(
             descriptor,
             (
                 TetrahedralStereo,
@@ -596,6 +607,8 @@ def canonicalize_configured_registry(
 def mirror_configured_descriptor(
     descriptor: ConfiguredDescriptor,
 ) -> ConfiguredDescriptor:
+    if isinstance(descriptor, FrameworkStereo):
+        return descriptor.invert()
     if isinstance(descriptor, TetrahedralStereo):
         return descriptor.opposite()
     if isinstance(
