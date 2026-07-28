@@ -37,7 +37,7 @@ Canonical internal electron loci are `lp`, `σ`, `π`, and `∙`; adapters accep
 documented ASCII and legacy spellings. Curved arrows carry two electrons and
 fishhooks carry one electron. Coupled radical events commit atomically.
 
-The current package version is `1.6.0`.
+The current package version is `1.6.1b1`.
 
 For more details on each utility within the repository, please refer to the documentation provided in the respective folders.
 
