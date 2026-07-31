@@ -330,6 +330,34 @@ def summarize_by_hcount(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return table
 
 
+def reuse_reference_artifacts(
+    source_dir: Path,
+    dataset_path: Path,
+    eligible_rows: int,
+    repetitions: int,
+    rb_target: Path,
+    gmapache_target: Path,
+    environment_target: Path,
+) -> list[dict[str, Any]]:
+    """Validate and copy reference artifacts from a completed run."""
+    source_aggregate = json.loads((source_dir / "aggregate.json").read_text())
+    if source_aggregate["dataset"]["sha256"] != sha256(dataset_path):
+        raise ValueError("Reused references use a different dataset")
+    if source_aggregate["dataset"]["eligible_rows"] != eligible_rows:
+        raise ValueError("Reused references use a different eligible subset")
+    if source_aggregate["execution"]["repetitions"] != repetitions:
+        raise ValueError("Reused references use a different repetition count")
+
+    rb_rows = read_jsonl(source_dir / "rb-nx-reference-runs.jsonl.gz")
+    gmapache_rows = read_jsonl(source_dir / "gmapache-reference-runs.jsonl.gz")
+    write_jsonl(rb_target, rb_rows)
+    write_jsonl(gmapache_target, gmapache_rows)
+    environment_target.write_text(
+        (source_dir / "gmapache-environment.json").read_text()
+    )
+    return rb_rows + gmapache_rows
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=DATASET)
@@ -338,6 +366,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--case-timeout", type=float, default=60.0)
     parser.add_argument("--gmapache-env", default="aam")
+    parser.add_argument(
+        "--reuse-reference-dir",
+        type=Path,
+        help="Reuse completed RB/GM artifacts and rerun only SynKit HExtend",
+    )
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()
 
@@ -367,48 +400,61 @@ def main() -> int:
     targets[4].write_text(json.dumps(excluded, indent=2, sort_keys=True) + "\n")
     hextend_rows = run_hextend(dataset, args.repetitions, args.case_timeout)
     write_jsonl(targets[0], hextend_rows)
-    reference_rows = run_reference(
-        dataset,
-        args.repetitions,
-        args.case_timeout,
-        backend="rb_nx",
-    )
-    write_jsonl(targets[1], reference_rows)
+    reference_source = None
+    if args.reuse_reference_dir is not None:
+        reference_source = args.reuse_reference_dir.resolve()
+        reference_rows = reuse_reference_artifacts(
+            reference_source,
+            dataset_path,
+            len(dataset),
+            args.repetitions,
+            targets[1],
+            targets[2],
+            targets[3],
+        )
+    else:
+        reference_rows = run_reference(
+            dataset,
+            args.repetitions,
+            args.case_timeout,
+            backend="rb_nx",
+        )
+        write_jsonl(targets[1], reference_rows)
 
-    child_env = os.environ.copy()
-    child_env.update(
-        {
-            "PYTHONPATH": str(ROOT),
-            "PYTHONNOUSERSITE": "1",
-            "OMP_NUM_THREADS": "1",
-            "OPENBLAS_NUM_THREADS": "1",
-            "MKL_NUM_THREADS": "1",
-            "NUMEXPR_NUM_THREADS": "1",
-        }
-    )
-    command = [
-        "conda",
-        "run",
-        "--no-capture-output",
-        "-n",
-        args.gmapache_env,
-        "python",
-        str(HERE / "gmapache_worker.py"),
-        "--dataset",
-        str(dataset_path),
-        "--output",
-        str(targets[2]),
-        "--environment-output",
-        str(targets[3]),
-        "--repetitions",
-        str(args.repetitions),
-        "--case-timeout",
-        str(args.case_timeout),
-    ]
-    if args.limit is not None:
-        command.extend(("--limit", str(args.limit)))
-    subprocess.run(command, cwd=ROOT, env=child_env, check=True)
-    reference_rows.extend(read_jsonl(targets[2]))
+        child_env = os.environ.copy()
+        child_env.update(
+            {
+                "PYTHONPATH": str(ROOT),
+                "PYTHONNOUSERSITE": "1",
+                "OMP_NUM_THREADS": "1",
+                "OPENBLAS_NUM_THREADS": "1",
+                "MKL_NUM_THREADS": "1",
+                "NUMEXPR_NUM_THREADS": "1",
+            }
+        )
+        command = [
+            "conda",
+            "run",
+            "--no-capture-output",
+            "-n",
+            args.gmapache_env,
+            "python",
+            str(HERE / "gmapache_worker.py"),
+            "--dataset",
+            str(dataset_path),
+            "--output",
+            str(targets[2]),
+            "--environment-output",
+            str(targets[3]),
+            "--repetitions",
+            str(args.repetitions),
+            "--case-timeout",
+            str(args.case_timeout),
+        ]
+        if args.limit is not None:
+            command.extend(("--limit", str(args.limit)))
+        subprocess.run(command, cwd=ROOT, env=child_env, check=True)
+        reference_rows.extend(read_jsonl(targets[2]))
 
     hcounts = {
         row["record_id"]: row["unmatched_hydrogens"]
@@ -491,6 +537,9 @@ def main() -> int:
             "thread_limits": 1,
             "repetitions": args.repetitions,
             "gmapache_environment": args.gmapache_env,
+            "reference_source": (
+                str(reference_source) if reference_source is not None else None
+            ),
         },
         "method_contracts": {
             "hextend_legacy": (

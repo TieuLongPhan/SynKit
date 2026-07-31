@@ -11,6 +11,14 @@ bash Experiment/Lewis/hydrogen_expand/run_comparison.sh
 Use `--limit 3 --repetitions 1` for a pilot. Results are written under
 `Experiment/Lewis/Runs` by default.
 
+After changing only HExtend, reuse a completed reference run instead of
+rerunning the six external reference columns:
+
+```bash
+bash Experiment/Lewis/hydrogen_expand/run_comparison.sh \
+  --reuse-reference-dir Experiment/Lewis/Runs/<completed-run>
+```
+
 The runner compares hydrogen-extension implementations on the same 104
 reactions accepted by the published analysis:
 

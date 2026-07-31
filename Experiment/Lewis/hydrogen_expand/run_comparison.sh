@@ -7,6 +7,7 @@ REPETITIONS=5
 LIMIT=""
 CASE_TIMEOUT=60
 GMAPACHE_ENV=aam
+REUSE_REFERENCE_DIR=""
 OUTPUT_DIR=""
 FORCE=0
 
@@ -22,6 +23,8 @@ Options:
   --limit N             Pilot source limit; omit for all 109 (104 eligible)
   --case-timeout SEC    Per-case timeout (default: 60)
   --gmapache-env NAME   Conda env containing GranMapache (default: aam)
+  --reuse-reference-dir DIR
+                        Rerun HExtend and reuse completed RB/GM artifacts
   --output-dir DIR      Output directory (default: timestamp under Lewis/Runs)
   --force               Permit overwrite in an explicit output directory
   -h, --help            Show this help
@@ -34,6 +37,7 @@ while [[ $# -gt 0 ]]; do
         --limit) LIMIT="${2:?missing limit}"; shift 2 ;;
         --case-timeout) CASE_TIMEOUT="${2:?missing timeout}"; shift 2 ;;
         --gmapache-env) GMAPACHE_ENV="${2:?missing environment}"; shift 2 ;;
+        --reuse-reference-dir) REUSE_REFERENCE_DIR="${2:?missing directory}"; shift 2 ;;
         --output-dir) OUTPUT_DIR="${2:?missing output directory}"; shift 2 ;;
         --force) FORCE=1; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -54,6 +58,9 @@ ARGS=(
 )
 if [[ -n "${LIMIT}" ]]; then
     ARGS+=(--limit "${LIMIT}")
+fi
+if [[ -n "${REUSE_REFERENCE_DIR}" ]]; then
+    ARGS+=(--reuse-reference-dir "${REUSE_REFERENCE_DIR}")
 fi
 if [[ "${FORCE}" -eq 1 ]]; then
     ARGS+=(--force)
