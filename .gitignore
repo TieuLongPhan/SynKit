@@ -57,6 +57,7 @@ synkit/Graph/dev/*
 !Data/Mech/polar.json
 !Data/Mech/radical.json
 !Data/Mech/stereo.json
+!Experiment/Lewis/Data/hydrogen.pkl.gz
 # Canonical reviewed MechanismBench partitions are executable test data.
 !Experiment/Lewis/mech_path/Data/MechanismBench/polar.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/radical.json

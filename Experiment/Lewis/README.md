@@ -7,6 +7,8 @@ benchmarks and their retained data. Unit and regression tests remain under
 - `Data` contains the shared input corpora and their provenance registry.
 - `partial_expand`: minimal partial atom-mapping expansion and reproducible
   reaction-level runtime metadata for current LWG, RB1, RB2, and GM.
+- `hydrogen_expand`: single-process comparison of legacy/new HExtend, with
+  explicit GM/RB1/RB2 capability controls and Method A/B contract metadata.
 - `rule_replay`: forward/backward graph-rule replay for the tuple and
   `typesGH` representations, with retained case evidence.
 - `FLOWER`: the portable 425,517-reaction full-corpus replay payload and its
