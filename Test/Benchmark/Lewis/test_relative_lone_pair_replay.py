@@ -84,6 +84,29 @@ def _apply_lone_pair_pair(
     return host["lone_pairs"]
 
 
+def _apply_radical_pair(
+    host_radicals: int,
+    rule_pair: tuple[int, int],
+) -> tuple[int, int]:
+    host = {
+        "element": "C",
+        "aromatic": False,
+        "hcount": 0,
+        "charge": 0,
+        "radical": host_radicals,
+        "typesGH": (
+            ("C", False, 0, 0, []),
+            ("C", False, 0, 0, []),
+        ),
+    }
+    _pair_electron_aware_node_attrs(
+        host,
+        {"radical": rule_pair},
+        relative_resources=frozenset({"radical"}),
+    )
+    return host["radical"]
+
+
 def test_lone_pair_rule_is_normalized_to_consumption_and_supply() -> None:
     rule = _lone_pair_rule((2, 1))
 
@@ -125,6 +148,13 @@ def test_relative_lone_pair_rule_reverses_and_preserves_unchanged_state() -> Non
     assert _apply_lone_pair_pair(3, (0, 0)) == (3, 3)
 
 
+def test_lower_bound_radical_rewrite_applies_the_template_delta() -> None:
+    """A lower-bound match must not replace the host's radical inventory."""
+    assert _apply_radical_pair(2, (1, 1)) == (2, 2)
+    assert _apply_radical_pair(2, (1, 0)) == (2, 1)
+    assert _apply_radical_pair(2, (1, 2)) == (2, 3)
+
+
 def test_record_886_lwg_and_legacy_rules_recover_the_same_two_products() -> None:
     reactants, _ = RECORD_886.split(">>", 1)
     host = canonical_unmapped_side(reactants)
@@ -135,8 +165,7 @@ def test_record_886_lwg_and_legacy_rules_recover_the_same_two_products() -> None
         rule = extract_rule(RECORD_886, representation)
         reactor = make_reactor(host, rule, representation, "forward", None)
         generated[representation] = {
-            canonical_unmapped_reaction(reaction)
-            for reaction in reactor.smarts_list
+            canonical_unmapped_reaction(reaction) for reaction in reactor.smarts_list
         }
         assert reactor.mapping_count == 2
         assert len(reactor.its_list) == 2

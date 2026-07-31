@@ -23,9 +23,7 @@ from Experiment.Lewis.rule_replay.benchmark import (  # noqa: E402
 
 def test_record_2110_minimal_lwg_rule_matches_legacy_products() -> None:
     reaction = next(
-        row["reaction"]
-        for row in load_rows(POLAR_DATASET)
-        if row["record_id"] == 2110
+        row["reaction"] for row in load_rows(POLAR_DATASET) if row["record_id"] == 2110
     )
     host = canonical_unmapped_side(reaction.split(">>", 1)[0])
     generated: dict[str, set[str]] = {}
@@ -40,8 +38,7 @@ def test_record_2110_minimal_lwg_rule_matches_legacy_products() -> None:
             None,
         )
         generated[representation] = {
-            canonical_unmapped_reaction(product)
-            for product in reactor.smarts_list
+            canonical_unmapped_reaction(product) for product in reactor.smarts_list
         }
         assert reactor.mapping_count == 8
         assert len(generated[representation]) == 8

@@ -62,23 +62,41 @@ def timing_summary(values: list[float]) -> dict[str, float | int]:
 
 
 def canonical_unmapped_side(side: str) -> str:
-    """Canonicalize one endpoint without atom maps or stereochemistry."""
+    """Canonicalize an unordered molecular multiset without maps or stereo."""
     molecule = Chem.MolFromSmiles(side)
     if molecule is None:
         raise ValueError(f"RDKit rejected endpoint: {side!r}")
     for atom in molecule.GetAtoms():
         atom.SetAtomMapNum(0)
     Chem.RemoveStereochemistry(molecule)
-    return Chem.MolToSmiles(molecule, canonical=True, isomericSmiles=False)
+    components = [
+        Chem.MolToSmiles(
+            fragment,
+            canonical=True,
+            isomericSmiles=False,
+        )
+        for fragment in Chem.GetMolFrags(
+            molecule,
+            asMols=True,
+            sanitizeFrags=False,
+        )
+    ]
+    return ".".join(sorted(components))
 
 
 def canonical_unmapped_reaction(reaction: str) -> str:
-    """Canonicalize a reaction without atom maps or stereochemistry."""
+    """Canonicalize both unordered endpoints without maps or stereo."""
     standardized = STANDARDIZER.fit(
         reaction,
         remove_aam=True,
         ignore_stereo=True,
+        remove_invalid=False,
     )
     if standardized is None:
         raise ValueError(f"SynKit could not standardize reaction: {reaction!r}")
-    return standardized
+    reactants, separator, products = standardized.partition(">>")
+    if not separator or ">>" in products:
+        raise ValueError(f"Malformed standardized reaction: {standardized!r}")
+    return (
+        f"{canonical_unmapped_side(reactants)}" f">>{canonical_unmapped_side(products)}"
+    )

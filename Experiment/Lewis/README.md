@@ -9,6 +9,8 @@ benchmarks and their retained data. Unit and regression tests remain under
   and comparison figures.
 - `rule_replay`: forward/backward graph-rule replay for the tuple and
   `typesGH` representations, with retained case evidence.
+- `FLOWER`: the portable 425,517-reaction full-corpus replay payload and its
+  resource-configurable bidirectional launcher.
 - `mech_path`: reviewed MechanismBench partitions, corpus-reconstruction audit
   failures, and the evidence runner.
 

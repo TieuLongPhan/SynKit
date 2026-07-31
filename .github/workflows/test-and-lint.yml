@@ -2,7 +2,7 @@ name: Test & Lint
 
 on:
   push:
-    branches: [ "main", "staging", "mech", "stereo" ]
+    branches: [ "main", "staging", "mech", "stereo", "lwg" ]
   pull_request:
     branches: [ "main" ]
 
@@ -44,7 +44,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate synkit-env
-          bash lint.sh
+          bash scripts/lint.sh
 
       # 3b) Lint on Windows
       - name: Lint (Windows)
@@ -52,7 +52,7 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate synkit-env
-          bash lint.sh
+          bash scripts/lint.sh
 
 
       # 4) Test
@@ -60,4 +60,4 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate synkit-env
-          bash pytest.sh
+          bash scripts/pytest.sh

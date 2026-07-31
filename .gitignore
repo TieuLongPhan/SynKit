@@ -14,12 +14,6 @@
 
 .coverage
 dev/*
-# Local development, audit, and debugging helpers.
-/tools/
-!/tools/
-/tools/*
-!/tools/stereo_conformance.py
-!/tools/check_python_file_size.py
 /debug/
 /Test/Conformance/
 *.rdf
@@ -92,6 +86,15 @@ paper/*
 # Fresh benchmark runs are reproducible and can be large. Retained reference
 # outputs live inside each experiment's Data directory.
 Experiment/Lewis/Runs/
+
+# Generated FLOWER intermediates and long-run evidence. The portable
+# full-reaction batch payload is intentionally retained in Git.
+Experiment/Lewis/FLOWER/batches/
+Experiment/Lewis/FLOWER/full_reactions/
+Experiment/Lewis/FLOWER/replay-debug/
+Experiment/Lewis/FLOWER/replay-runs/
+Experiment/Lewis/FLOWER/replay-results*/
+!Experiment/Lewis/FLOWER/full-reaction-batches/manifest.json
 
 # Keep generated Python bytecode ignored after directory re-inclusions above.
 **/__pycache__/

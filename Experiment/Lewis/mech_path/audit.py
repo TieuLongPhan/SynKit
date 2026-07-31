@@ -66,8 +66,18 @@ RADICAL_REVIEW_ROWS = (
     (279, "duplicate fishhook", "deduplicate the coupled group", "corrected"),
     (404, "5 to bond (5,21)", "5 to bond (5,22)", "corrected"),
     (540, "one-electron 1 to bond (1,2)", "two-electron 1 to bond (1,2)", "corrected"),
-    (1_310, "literal endpoint maps", "retain flow after endpoint-orbit alignment", "corrected"),
-    (1_317, "literal endpoint maps", "retain flow after endpoint-orbit alignment", "corrected"),
+    (
+        1_310,
+        "literal endpoint maps",
+        "retain flow after endpoint-orbit alignment",
+        "corrected",
+    ),
+    (
+        1_317,
+        "literal endpoint maps",
+        "retain flow after endpoint-orbit alignment",
+        "corrected",
+    ),
     (2_046, "21 to 10", "10 to 21", "corrected"),
     (2_207, "H transfer to map 13", "no local endpoint-consistent group", "unresolved"),
     (2_300, "four fishhooks", "two fishhooks plus two paired moves", "corrected"),
@@ -292,9 +302,7 @@ def _reviewed_radical_record(
         row = _replace_radical_flow(row, RADICAL_FLOW_CORRECTIONS[source_row])
         repair_kind = "flow_correction"
     elif source_row in RADICAL_PRODUCT_MAP_PERMUTATIONS:
-        row = _permute_product_maps(
-            row, RADICAL_PRODUCT_MAP_PERMUTATIONS[source_row]
-        )
+        row = _permute_product_maps(row, RADICAL_PRODUCT_MAP_PERMUTATIONS[source_row])
         repair_kind = "endpoint_orbit_alignment"
     else:
         repair_kind = "none"
@@ -328,7 +336,9 @@ def audit_radical(
             try:
                 mechanism, repair_kind = _reviewed_radical_record(row, source_row)
                 if mechanism is None:
-                    raise ValueError("No local endpoint-consistent electron-flow group.")
+                    raise ValueError(
+                        "No local endpoint-consistent electron-flow group."
+                    )
                 if repair_kind != "none":
                     repairs[repair_kind] += 1
                     certificate = mechanism.verify()

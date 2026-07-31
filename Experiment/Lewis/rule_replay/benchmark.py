@@ -155,11 +155,16 @@ def replay_direction(
     direction: str,
     embedding_threshold: int | None,
     case_timeout: float | None,
+    failure_sample_limit: int = 0,
 ) -> dict[str, Any]:
     previous_handler = signal.signal(signal.SIGALRM, _raise_timeout)
     if case_timeout is not None:
         signal.setitimer(signal.ITIMER_REAL, case_timeout)
     started = time.perf_counter()
+    stage = "reactor_construction"
+    mappings = None
+    rewritten = None
+    reactions = None
     try:
         reactor = make_reactor(
             host,
@@ -168,12 +173,16 @@ def replay_direction(
             direction,
             embedding_threshold,
         )
+        stage = "matching"
         mappings = reactor.mappings
+        stage = "rewriting"
         rewritten = reactor.its_list
+        stage = "serialization"
         reactions = reactor.smarts_list
+        stage = "canonicalization"
         generated = {canonical_unmapped_reaction(item) for item in reactions}
         recovered = expected in generated
-        return {
+        result = {
             "status": "PASS" if recovered else "FAIL",
             "reference_recovered": recovered,
             "mapping_count": len(mappings),
@@ -182,14 +191,29 @@ def replay_direction(
             "unique_reaction_count": len(generated),
             "seconds": time.perf_counter() - started,
         }
+        if not recovered and failure_sample_limit:
+            ordered = sorted(generated)
+            result.update(
+                expected_reaction=expected,
+                generated_sample=ordered[:failure_sample_limit],
+                generated_sample_truncated=(len(ordered) > failure_sample_limit),
+            )
+        return result
     except Exception as exc:
-        return {
+        result = {
             "status": "ERROR",
-            "stage": getattr(exc, "stage", None),
+            "stage": getattr(exc, "stage", None) or stage,
             "error_type": type(exc).__name__,
             "message": str(exc),
             "seconds": time.perf_counter() - started,
         }
+        if mappings is not None:
+            result["mapping_count"] = len(mappings)
+        if rewritten is not None:
+            result["rewrite_count"] = len(rewritten)
+        if reactions is not None:
+            result["serialized_count"] = len(reactions)
+        return result
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0.0)
         signal.signal(signal.SIGALRM, previous_handler)
@@ -347,7 +371,10 @@ def main() -> int:
     )
     write_json(args.output_dir / "results.json", retained_results(reports))
     for report in reports:
-        print(report["representation"], json.dumps(report["counts"], sort_keys=True))
+        print(
+            report["representation"],
+            json.dumps(report["counts"], sort_keys=True),
+        )
     return 0
 
 

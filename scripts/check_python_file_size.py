@@ -10,9 +10,9 @@ from pathlib import Path
 import sys
 from typing import Iterable
 
-DEFAULT_PATHS = ("synkit", "Test", "tools")
+DEFAULT_PATHS = ("synkit", "Test", "scripts")
 DEFAULT_MAX_LINES = 1000
-DEFAULT_BASELINE = Path("tools/python_file_size_baseline.json")
+DEFAULT_BASELINE = Path("scripts/python_file_size_baseline.json")
 DOCSTRING_OWNERS = (
     ast.Module,
     ast.ClassDef,

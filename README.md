@@ -123,8 +123,8 @@ git pull
    Before finalizing your feature, run the following commands to ensure your code meets our formatting standards and passes all tests:
 
    ```bash
-   ./lint.sh # Check lint and the 1,000-line Python-file limit
-   pytest Test # Run tests
+   ./scripts/lint.sh # Check lint and the 1,000-line Python-file limit
+   ./scripts/pytest.sh # Run tests
    ```
 
    Fix any issues or errors highlighted by these checks.
