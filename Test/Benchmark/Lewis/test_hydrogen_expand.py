@@ -14,6 +14,7 @@ from Experiment.Lewis.hydrogen_expand.benchmark import (
     summarize_by_hcount,
 )
 from Experiment.Lewis.hydrogen_expand.reference_methods import run_reference_methods
+from synkit.Graph.Hyrogen.hextend import HExtend
 
 
 def test_hydrogen_corpus_is_the_official_109_reaction_payload() -> None:
@@ -57,6 +58,26 @@ def test_new_hextend_uses_the_same_full_its_class_contract() -> None:
 
     assert new_row["completed_its"] == 3
     assert new_row["unique_classes"] == 3
+
+
+def test_ambiguous_two_hydrogen_transfer_does_not_collapse() -> None:
+    """R-50548 exposes legacy relabeling instead of transfer enumeration."""
+    reaction = next(
+        item for item in load_pickle(DATASET) if item["R-id"] == "R-50548"
+    )
+
+    rows = run_hextend([reaction], repetitions=1, timeout=10)
+    by_method = {row["method"]: row for row in rows}
+
+    assert by_method["hextend_legacy"]["completed_its"] == 2
+    assert by_method["hextend_legacy"]["unique_classes"] == 1
+    assert by_method["hextend_new"]["completed_its"] == 2
+    assert by_method["hextend_new"]["unique_classes"] == 2
+
+    unique_rc, unique_its, signatures = HExtend.extend_unique_full_its(
+        reaction["ITS"]
+    )
+    assert len(unique_rc) == len(unique_its) == len(signatures) == 2
 
 
 def test_summary_keeps_capability_failures_separate_from_outputs() -> None:

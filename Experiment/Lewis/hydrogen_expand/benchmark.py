@@ -90,21 +90,15 @@ def run_hextend(
 ) -> list[dict[str, Any]]:
     from synkit.Graph.Hyrogen.hextend import HExtend
     from synkit.Graph.Hyrogen.hextend_legacy import LegacyHExtend
-    from synkit.Graph.Matcher.graph_cluster import GraphCluster
 
     implementations = {
         "hextend_legacy": LegacyHExtend,
         "hextend_new": HExtend,
     }
-    full_its_cluster = GraphCluster()
 
     def extend_and_classify(implementation, its):
-        _, completed_its, _ = implementation.extend_its(its)
-        clusters, _ = full_its_cluster.iterative_cluster(
-            completed_its,
-            nodeMatch=full_its_cluster.nodeMatch,
-            edgeMatch=full_its_cluster.edgeMatch,
-        )
+        _, completed_its, signatures = implementation.extend_its(its)
+        clusters, _ = HExtend.cluster_full_its(completed_its, signatures)
         return completed_its, clusters
 
     rows = []
@@ -484,7 +478,7 @@ def main() -> int:
     import synkit
 
     aggregate = {
-        "schema": "synkit.hydrogen-expansion-comparison/3",
+        "schema": "synkit.hydrogen-expansion-comparison/4",
         "dataset": {
             "path": str(dataset_path),
             "sha256": sha256(dataset_path),
@@ -519,6 +513,10 @@ def main() -> int:
             "rb_gm": "anchor-relabeling GranMapache",
             "rb_nx": "anchor-relabeling NetworkX",
         },
+        "hextend_classification": (
+            "RC-invariant-signature prefilter followed by exact full-ITS "
+            "stereo-aware isomorphism"
+        ),
         "local_environment": {
             "python": platform.python_version(),
             "networkx": importlib.metadata.version("networkx"),

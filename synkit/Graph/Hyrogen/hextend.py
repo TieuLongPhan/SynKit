@@ -142,6 +142,53 @@ class HExtend(HComplete):
         )
 
     @staticmethod
+    def cluster_full_its(
+        its_list: List[nx.Graph],
+        signatures: List[str],
+    ) -> Tuple[List[set], Dict[int, int]]:
+        """Cluster complete ITS graphs with an RC-invariant prefilter.
+
+        Full-ITS isomorphism implies reaction-centre isomorphism, so unequal
+        RC-invariant signatures conclusively rule out equivalence.  Equal
+        signatures remain only a prefilter: the final decision is made by
+        chemistry- and stereo-aware full-graph isomorphism.
+        """
+        if len(its_list) != len(signatures):
+            raise ValueError("ITS graphs and signatures must have equal lengths.")
+        if not its_list:
+            return [], {}
+        return cluster.iterative_cluster(
+            its_list,
+            signatures,
+            nodeMatch=cluster.nodeMatch,
+            edgeMatch=cluster.edgeMatch,
+        )
+
+    @staticmethod
+    def extend_unique_full_its(
+        its: nx.Graph,
+        ignore_aromaticity: bool = False,
+        balance_its: bool = True,
+        format: ITSFormatInput = "auto",
+        max_candidates: Optional[int] = None,
+    ) -> Tuple[List[nx.Graph], List[nx.Graph], List[str]]:
+        """Return one representative per exact complete-ITS class."""
+        rc_list, its_list, signatures = HExtend.extend_its(
+            its,
+            ignore_aromaticity=ignore_aromaticity,
+            balance_its=balance_its,
+            format=format,
+            max_candidates=max_candidates,
+        )
+        clusters, _ = HExtend.cluster_full_its(its_list, signatures)
+        indices = [min(items) for items in clusters if items]
+        return (
+            [rc_list[index] for index in indices],
+            [its_list[index] for index in indices],
+            [signatures[index] for index in indices],
+        )
+
+    @staticmethod
     def iter_unique_completions(
         its: nx.Graph,
         ignore_aromaticity: bool = False,
