@@ -49,3 +49,11 @@ The five source records rejected by the reference filters are retained in
 `excluded-records.json`. The aggregate records class-count agreement between
 each HExtend implementation and Method A, plus Table-2-style mean and
 population-standard-deviation timings grouped by unmatched hydrogen count.
+
+The second prefilter is the exact rooted-distance multiset
+`I_H(G) = multiset_h multiset_{v in C_G(h)} (colour(v), distance_G(h, v))`,
+where `h` ranges over hydrogen vertices and `C_G(h)` is its connected
+component. A colour-preserving isomorphism maps hydrogen vertices and their
+components bijectively and preserves both colour and graph distance, so
+unequal values prove non-isomorphism. Equal values do not prove equivalence
+and always fall through to the exact stereo-aware full-ITS check.

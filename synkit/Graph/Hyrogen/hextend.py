@@ -1,5 +1,5 @@
 from collections import Counter
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import networkx as nx
 from joblib import Parallel, delayed
@@ -10,6 +10,22 @@ from synkit.Graph.Hyrogen.hcomplete import HComplete, ITSFormatInput
 from synkit.Graph.Hyrogen._misc import check_hcount_change
 
 cluster = GraphCluster()
+
+ColourDistance = Tuple[Any, int]
+RootedDistanceProfile = Tuple[Tuple[ColourDistance, int], ...]
+HydrogenDistanceInvariant = Tuple[RootedDistanceProfile, ...]
+
+
+def _invariant_order_key(value: Any) -> Tuple[Any, ...]:
+    """Totally order supported frozen comparison values without coercion."""
+    if isinstance(value, tuple):
+        return ("tuple", tuple(_invariant_order_key(item) for item in value))
+    return (
+        "atom",
+        type(value).__module__,
+        type(value).__qualname__,
+        repr(value),
+    )
 
 
 class HExtend(HComplete):
@@ -161,31 +177,63 @@ class HExtend(HComplete):
             raise ValueError("ITS graphs and signatures must have equal lengths.")
         if not its_list:
             return [], {}
+
         signature_counts = Counter(signatures)
-        full_signatures = [
-            (
-                signature
+        invariant_blocks: Dict[
+            Tuple[str, HydrogenDistanceInvariant],
+            List[int],
+        ] = {}
+        for index, (its, signature) in enumerate(zip(its_list, signatures)):
+            # A unique RC invariant already forms a singleton block. Compute
+            # the more expensive rooted-distance invariant only on collisions.
+            distance_invariant = (
+                ()
                 if signature_counts[signature] == 1
-                else (
-                    f"{signature}|H:"
-                    f"{HExtend.hydrogen_distance_signature(its)}"
-                )
+                else HExtend.hydrogen_distance_invariant(its)
             )
-            for its, signature in zip(its_list, signatures)
-        ]
-        return cluster.iterative_cluster(
-            its_list,
-            full_signatures,
-            nodeMatch=cluster.nodeMatch,
-            edgeMatch=cluster.edgeMatch,
-        )
+            invariant_blocks.setdefault(
+                (signature, distance_invariant),
+                [],
+            ).append(index)
+
+        exact_clusters = []
+        for indices in invariant_blocks.values():
+            if len(indices) == 1:
+                exact_clusters.append({indices[0]})
+                continue
+            local_clusters, _ = cluster.iterative_cluster(
+                [its_list[index] for index in indices],
+                nodeMatch=cluster.nodeMatch,
+                edgeMatch=cluster.edgeMatch,
+            )
+            exact_clusters.extend(
+                {indices[local_index] for local_index in local_cluster}
+                for local_cluster in local_clusters
+            )
+
+        exact_clusters.sort(key=min)
+        rule_to_cluster = {
+            index: cluster_index
+            for cluster_index, indices in enumerate(exact_clusters)
+            for index in indices
+        }
+        return exact_clusters, rule_to_cluster
 
     @staticmethod
-    def hydrogen_distance_signature(its: nx.Graph) -> str:
-        """Return a map-independent hydrogen-distance invariant for an ITS."""
+    def hydrogen_distance_invariant(its: nx.Graph) -> HydrogenDistanceInvariant:
+        r"""Return the exact hydrogen-rooted distance multiset ``I_H(G)``.
+
+        For every hydrogen vertex ``h``, its profile is
+        ``D_G(h) = multiset((colour(v), distance(h, v)) for v in C_G(h))``,
+        where ``C_G(h)`` is the connected component containing ``h``.
+        ``I_H(G)`` is the multiset of all ``D_G(h)``. Any colour-preserving
+        graph isomorphism preserves connected components, vertex colours,
+        shortest-path distances, and the hydrogen vertex set, hence preserves
+        this value exactly.
+        """
         resolved_format = HComplete._resolve_format(its, "auto")
         comparison = HComplete._comparison_graph(its, resolved_format)
-        fingerprints = []
+        profiles: List[RootedDistanceProfile] = []
         for hydrogen, attributes in comparison.nodes(data=True):
             if attributes["cmp_element"] != "H":
                 continue
@@ -197,8 +245,15 @@ class HExtend(HComplete):
                 (comparison.nodes[node]["cmp_node"], distance)
                 for node, distance in distances.items()
             )
-            fingerprints.append(tuple(sorted(histogram.items(), key=repr)))
-        return repr(tuple(sorted(fingerprints, key=repr)))
+            profiles.append(
+                tuple(sorted(histogram.items(), key=_invariant_order_key))
+            )
+        return tuple(sorted(profiles, key=_invariant_order_key))
+
+    @staticmethod
+    def hydrogen_distance_signature(its: nx.Graph) -> HydrogenDistanceInvariant:
+        """Compatibility alias for :meth:`hydrogen_distance_invariant`."""
+        return HExtend.hydrogen_distance_invariant(its)
 
     @staticmethod
     def extend_unique_full_its(

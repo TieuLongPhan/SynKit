@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import networkx as nx
+
 from Experiment.Lewis.hydrogen_expand.benchmark import (
     DATASET,
     load_pickle,
@@ -88,7 +90,7 @@ def test_hydrogen_distance_invariant_splits_symmetric_rc_collision() -> None:
 
     _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
     distance_signatures = {
-        HExtend.hydrogen_distance_signature(its) for its in completed_its
+        HExtend.hydrogen_distance_invariant(its) for its in completed_its
     }
     clusters, _ = HExtend.cluster_full_its(completed_its, signatures)
 
@@ -96,6 +98,29 @@ def test_hydrogen_distance_invariant_splits_symmetric_rc_collision() -> None:
     assert len(set(signatures)) == 1
     assert len(distance_signatures) == 2
     assert len(clusters) == 2
+
+
+def test_hydrogen_distance_invariant_is_map_independent() -> None:
+    reaction = next(
+        item for item in load_pickle(DATASET) if item["R-id"] == "R-16362"
+    )
+    _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
+    original = completed_its[0]
+    relabeled = nx.relabel_nodes(
+        original,
+        {node: f"vertex-{index}" for index, node in enumerate(original)},
+        copy=True,
+    )
+
+    assert HExtend.hydrogen_distance_invariant(
+        original
+    ) == HExtend.hydrogen_distance_invariant(relabeled)
+    clusters, mapping = HExtend.cluster_full_its(
+        [original, relabeled],
+        [signatures[0], signatures[0]],
+    )
+    assert clusters == [{0, 1}]
+    assert mapping == {0: 0, 1: 0}
 
 
 def test_summary_keeps_capability_failures_separate_from_outputs() -> None:
