@@ -7,10 +7,12 @@ from pathlib import Path
 from Experiment.Lewis.hydrogen_expand.benchmark import (
     DATASET,
     load_pickle,
-    prepare_partial_cases,
+    run_hextend,
+    select_reference_cases,
     sha256,
     summarize,
 )
+from Experiment.Lewis.hydrogen_expand.reference_methods import run_reference_methods
 
 
 def test_hydrogen_corpus_is_the_official_109_reaction_payload() -> None:
@@ -21,20 +23,43 @@ def test_hydrogen_corpus_is_the_official_109_reaction_payload() -> None:
     assert len(load_pickle(DATASET)) == 109
 
 
-def test_partial_control_input_materializes_unmapped_hydrogens() -> None:
-    prepared = prepare_partial_cases(load_pickle(DATASET)[:1])[0]
+def test_reference_filters_reproduce_the_published_104_reactions() -> None:
+    accepted, excluded = select_reference_cases(load_pickle(DATASET))
 
-    assert prepared["record_id"] == "R-39789"
-    assert prepared["hcount_change"] == 3
-    assert prepared["materialized_hydrogens"] == 3
-    assert "[H]" in prepared["partial"]
-    assert ">>" in prepared["partial"]
+    assert len(accepted) == 104
+    assert {item["reason"] for item in excluded} == {
+        "uneven_aam",
+        "no_unmatched_hydrogens",
+    }
+
+
+def test_reference_methods_reproduce_known_class_count() -> None:
+    reaction = next(
+        item for item in load_pickle(DATASET) if item["R-id"] == "R-3666"
+    )
+
+    result = run_reference_methods(reaction["ITS"])
+
+    assert result["method_a_classes"] == 3
+    assert result["method_b_classes"] == 3
+
+
+def test_new_hextend_uses_the_same_full_its_class_contract() -> None:
+    reaction = next(
+        item for item in load_pickle(DATASET) if item["R-id"] == "R-3666"
+    )
+
+    rows = run_hextend([reaction], repetitions=1, timeout=10)
+    new_row = next(row for row in rows if row["method"] == "hextend_new")
+
+    assert new_row["completed_its"] == 3
+    assert new_row["unique_classes"] == 3
 
 
 def test_summary_keeps_capability_failures_separate_from_outputs() -> None:
     rows = [
-        {"method": "gm", "status": "ERROR", "seconds": 0.01},
-        {"method": "gm", "status": "OUTPUT", "seconds": 0.03},
+        {"method": "method_a", "status": "ERROR", "seconds": 0.01},
+        {"method": "method_a", "status": "OUTPUT", "seconds": 0.03},
         {
             "method": "hextend_new",
             "status": "OUTPUT",
@@ -45,8 +70,8 @@ def test_summary_keeps_capability_failures_separate_from_outputs() -> None:
 
     by_method = {item["method"]: item for item in summarize(rows)}
 
-    assert by_method["gm"]["success_rate"] == 0.5
-    assert by_method["gm"]["errors"] == 1
+    assert by_method["method_a"]["success_rate"] == 0.5
+    assert by_method["method_a"]["errors"] == 1
     assert by_method["hextend_new"]["mean_unique_classes"] == 3
 
 
