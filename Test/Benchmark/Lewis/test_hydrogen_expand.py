@@ -80,6 +80,24 @@ def test_ambiguous_two_hydrogen_transfer_does_not_collapse() -> None:
     assert len(unique_rc) == len(unique_its) == len(signatures) == 2
 
 
+def test_hydrogen_distance_invariant_splits_symmetric_rc_collision() -> None:
+    """R-16362 avoids an expensive exact match after its RC hash collision."""
+    reaction = next(
+        item for item in load_pickle(DATASET) if item["R-id"] == "R-16362"
+    )
+
+    _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
+    distance_signatures = {
+        HExtend.hydrogen_distance_signature(its) for its in completed_its
+    }
+    clusters, _ = HExtend.cluster_full_its(completed_its, signatures)
+
+    assert len(completed_its) == 2
+    assert len(set(signatures)) == 1
+    assert len(distance_signatures) == 2
+    assert len(clusters) == 2
+
+
 def test_summary_keeps_capability_failures_separate_from_outputs() -> None:
     rows = [
         {"method": "method_a", "status": "ERROR", "seconds": 0.01},

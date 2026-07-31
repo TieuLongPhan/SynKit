@@ -1,6 +1,8 @@
+from collections import Counter
+from typing import Dict, Iterator, List, Optional, Tuple
+
 import networkx as nx
 from joblib import Parallel, delayed
-from typing import Dict, Iterator, List, Optional, Tuple
 
 from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Hyrogen.hcomplete import HComplete, ITSFormatInput
@@ -146,23 +148,57 @@ class HExtend(HComplete):
         its_list: List[nx.Graph],
         signatures: List[str],
     ) -> Tuple[List[set], Dict[int, int]]:
-        """Cluster complete ITS graphs with an RC-invariant prefilter.
+        """Cluster complete ITS graphs with necessary-condition prefilters.
 
         Full-ITS isomorphism implies reaction-centre isomorphism, so unequal
-        RC-invariant signatures conclusively rule out equivalence.  Equal
-        signatures remain only a prefilter: the final decision is made by
-        chemistry- and stereo-aware full-graph isomorphism.
+        RC-invariant signatures conclusively rule out equivalence. Candidates
+        that collide on that signature receive a second invariant describing
+        distances from hydrogen atoms to coloured atoms. Equal signatures
+        remain only prefilters: the final decision is made by chemistry- and
+        stereo-aware full-graph isomorphism.
         """
         if len(its_list) != len(signatures):
             raise ValueError("ITS graphs and signatures must have equal lengths.")
         if not its_list:
             return [], {}
+        signature_counts = Counter(signatures)
+        full_signatures = [
+            (
+                signature
+                if signature_counts[signature] == 1
+                else (
+                    f"{signature}|H:"
+                    f"{HExtend.hydrogen_distance_signature(its)}"
+                )
+            )
+            for its, signature in zip(its_list, signatures)
+        ]
         return cluster.iterative_cluster(
             its_list,
-            signatures,
+            full_signatures,
             nodeMatch=cluster.nodeMatch,
             edgeMatch=cluster.edgeMatch,
         )
+
+    @staticmethod
+    def hydrogen_distance_signature(its: nx.Graph) -> str:
+        """Return a map-independent hydrogen-distance invariant for an ITS."""
+        resolved_format = HComplete._resolve_format(its, "auto")
+        comparison = HComplete._comparison_graph(its, resolved_format)
+        fingerprints = []
+        for hydrogen, attributes in comparison.nodes(data=True):
+            if attributes["cmp_element"] != "H":
+                continue
+            distances = nx.single_source_shortest_path_length(
+                comparison,
+                hydrogen,
+            )
+            histogram = Counter(
+                (comparison.nodes[node]["cmp_node"], distance)
+                for node, distance in distances.items()
+            )
+            fingerprints.append(tuple(sorted(histogram.items(), key=repr)))
+        return repr(tuple(sorted(fingerprints, key=repr)))
 
     @staticmethod
     def extend_unique_full_its(

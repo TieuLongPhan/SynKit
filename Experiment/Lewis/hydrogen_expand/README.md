@@ -26,8 +26,9 @@ reactions accepted by the published analysis:
   enumeration, followed by full-ITS classification.
 - `hextend_new` uses provenance-aware hydrogen-transfer enumeration, followed
   by the same full-ITS classification used for the reference comparison. Its
-  RC-invariant signatures are used only as a necessary-condition prefilter
-  before the final full-graph isomorphism decision.
+  RC-invariant and hydrogen-distance signatures are used only as
+  necessary-condition prefilters before the final full-graph isomorphism
+  decision.
 - `method_a` enumerates every hydrogen permutation and classifies the complete
   ITS graphs.
 - `method_b` computes heavy-atom ITS automorphisms and uses them as anchors for
