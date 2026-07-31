@@ -1,69 +1,69 @@
 {
   "assignment_statuses": {
-    "assigned": 829,
+    "assigned": 817,
     "unresolved_priority": 2,
     "unsupported_sequence_rule": 222
   },
   "by_stereo_unit": {
     "AT": {
-      "exact_record_accuracy": 0.5714285714285714,
-      "exact_records": 4,
+      "exact_record_accuracy": 0.0,
+      "exact_records": 0,
       "expected_labels": 15,
       "micro_label_precision": 1.0,
-      "micro_label_recall": 0.6,
-      "predicted_labels": 9,
+      "micro_label_recall": 0.06666666666666667,
+      "predicted_labels": 1,
       "records": 7,
-      "true_positive_labels": 9
+      "true_positive_labels": 1
     },
     "CT": {
-      "exact_record_accuracy": 0.7846153846153846,
-      "exact_records": 51,
+      "exact_record_accuracy": 0.7692307692307693,
+      "exact_records": 50,
       "expected_labels": 298,
       "micro_label_precision": 1.0,
-      "micro_label_recall": 0.8389261744966443,
-      "predicted_labels": 250,
+      "micro_label_recall": 0.8322147651006712,
+      "predicted_labels": 248,
       "records": 65,
-      "true_positive_labels": 250
+      "true_positive_labels": 248
     },
     "CT4": {
-      "exact_record_accuracy": 1.0,
-      "exact_records": 5,
+      "exact_record_accuracy": 0.0,
+      "exact_records": 0,
       "expected_labels": 15,
       "micro_label_precision": 1.0,
-      "micro_label_recall": 1.0,
-      "predicted_labels": 15,
+      "micro_label_recall": 0.3333333333333333,
+      "predicted_labels": 5,
       "records": 5,
-      "true_positive_labels": 15
+      "true_positive_labels": 5
     },
     "HE": {
-      "exact_record_accuracy": 1.0,
-      "exact_records": 2,
+      "exact_record_accuracy": 0.0,
+      "exact_records": 0,
       "expected_labels": 4,
-      "micro_label_precision": 1.0,
-      "micro_label_recall": 1.0,
-      "predicted_labels": 4,
+      "micro_label_precision": null,
+      "micro_label_recall": 0.0,
+      "predicted_labels": 0,
       "records": 2,
-      "true_positive_labels": 4
+      "true_positive_labels": 0
     },
     "TH": {
-      "exact_record_accuracy": 0.5903614457831325,
-      "exact_records": 147,
+      "exact_record_accuracy": 0.5783132530120482,
+      "exact_records": 144,
       "expected_labels": 1118,
-      "micro_label_precision": 0.9868263473053892,
-      "micro_label_recall": 0.7370304114490162,
-      "predicted_labels": 835,
+      "micro_label_precision": 0.9867310012062727,
+      "micro_label_recall": 0.7316636851520573,
+      "predicted_labels": 829,
       "records": 249,
-      "true_positive_labels": 824
+      "true_positive_labels": 818
     },
     "TH3": {
-      "exact_record_accuracy": 0.125,
-      "exact_records": 1,
+      "exact_record_accuracy": 0.0,
+      "exact_records": 0,
       "expected_labels": 24,
       "micro_label_precision": 1.0,
-      "micro_label_recall": 0.2916666666666667,
-      "predicted_labels": 7,
+      "micro_label_recall": 0.20833333333333334,
+      "predicted_labels": 5,
       "records": 8,
-      "true_positive_labels": 7
+      "true_positive_labels": 5
     },
     "TH5": {
       "exact_record_accuracy": 0.0,
@@ -163,13 +163,12 @@
   },
   "dataset": {
     "audited_sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059",
-    "coordinate_sha256": "28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325",
     "records": 300,
     "structures_vendored": false
   },
   "environment": {
     "python": "3.11.0",
-    "rdkit": "2025.09.3"
+    "rdkit": "2026.03.4"
   },
   "exact_ids": [
     "VS001",
@@ -181,8 +180,6 @@
     "VS007",
     "VS008",
     "VS009",
-    "VS010",
-    "VS011",
     "VS012",
     "VS013",
     "VS014",
@@ -231,7 +228,6 @@
     "VS060",
     "VS061",
     "VS062",
-    "VS063",
     "VS064",
     "VS065",
     "VS066",
@@ -240,8 +236,6 @@
     "VS069",
     "VS070",
     "VS071",
-    "VS072",
-    "VS073",
     "VS074",
     "VS075",
     "VS076",
@@ -252,7 +246,6 @@
     "VS083",
     "VS084",
     "VS085",
-    "VS086",
     "VS087",
     "VS088",
     "VS089",
@@ -283,7 +276,6 @@
     "VS114",
     "VS116",
     "VS117",
-    "VS118",
     "VS119",
     "VS121",
     "VS122",
@@ -298,7 +290,6 @@
     "VS131",
     "VS133",
     "VS134",
-    "VS135",
     "VS136",
     "VS137",
     "VS138",
@@ -306,7 +297,6 @@
     "VS140",
     "VS142",
     "VS143",
-    "VS144",
     "VS145",
     "VS146",
     "VS147",
@@ -316,17 +306,14 @@
     "VS151",
     "VS152",
     "VS153",
-    "VS154",
     "VS155",
     "VS156",
     "VS157",
-    "VS158",
     "VS159",
     "VS160",
     "VS161",
     "VS162",
     "VS163",
-    "VS164",
     "VS165",
     "VS167",
     "VS168",
@@ -361,13 +348,49 @@
     "VS245"
   ],
   "limitation_counts": {
-    "missing_orientation_evidence": 43,
+    "missing_orientation_evidence": 55,
     "ranking_defect": 86,
-    "unsupported_class": 9
+    "unsupported_class": 10
   },
-  "mean_ms_per_input": 58.965208240000116,
-  "method": "RDKit supplies parsed relative stereo descriptors. For declared AT, HE, CT4, CT, and fully witnessed cumulene carriers, the optional pinned 3D file supplies orientation only when constitutional transport is unambiguous; AT additionally requires one confirmed carrier. SynKit independently ranks ligands with exact nuclide masses and projects local label sets",
+  "mean_ms_per_input": 35.87280113666566,
+  "method": "RDKit supplies parsed relative stereo descriptors only; SynKit independently ranks ligands with exact nuclide masses and projects local label sets",
   "nonexact_records": [
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "19P",
+        "26P"
+      ],
+      "extraction_error": null,
+      "id": "VS010",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "HE"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "19M",
+        "26M"
+      ],
+      "extraction_error": null,
+      "id": "VS011",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "HE"
+      ]
+    },
     {
       "assignment_statuses": {},
       "exact": false,
@@ -424,6 +447,74 @@
     },
     {
       "assignment_statuses": {
+        "assigned": 2
+      },
+      "exact": false,
+      "expected": [
+        "26R",
+        "28E",
+        "2S",
+        "31E"
+      ],
+      "extraction_error": null,
+      "id": "VS063",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "26R",
+        "2S"
+      ],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT4",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 1
+      },
+      "exact": false,
+      "expected": [
+        "17S",
+        "3M",
+        "4M"
+      ],
+      "extraction_error": null,
+      "id": "VS072",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "17S"
+      ],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "AT",
+        "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "3M",
+        "4M"
+      ],
+      "extraction_error": null,
+      "id": "VS073",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "AT"
+      ]
+    },
+    {
+      "assignment_statuses": {
         "assigned": 1
       },
       "exact": false,
@@ -467,6 +558,24 @@
       ]
     },
     {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "4P",
+        "5P"
+      ],
+      "extraction_error": null,
+      "id": "VS086",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "AT"
+      ]
+    },
+    {
       "assignment_statuses": {
         "assigned": 5
       },
@@ -493,6 +602,24 @@
       "primary_limitation": "ranking_defect",
       "stereo_units": [
         "TH"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2E",
+        "5E"
+      ],
+      "extraction_error": null,
+      "id": "VS118",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT4"
       ]
     },
     {
@@ -541,6 +668,24 @@
       ]
     },
     {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2Z",
+        "5Z"
+      ],
+      "extraction_error": null,
+      "id": "VS135",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT4"
+      ]
+    },
+    {
       "assignment_statuses": {
         "assigned": 1
       },
@@ -565,6 +710,93 @@
       "stereo_units": [
         "TH5",
         "CT"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "2P",
+        "4P"
+      ],
+      "extraction_error": null,
+      "id": "VS144",
+      "limitations": [
+        "unsupported_class",
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "unsupported_class",
+      "stereo_units": [
+        "TH3"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 1
+      },
+      "exact": false,
+      "expected": [
+        "2E",
+        "5E",
+        "6E",
+        "7E"
+      ],
+      "extraction_error": null,
+      "id": "VS154",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "6E",
+        "7E"
+      ],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT",
+        "CT4"
+      ]
+    },
+    {
+      "assignment_statuses": {},
+      "exact": false,
+      "expected": [
+        "10P",
+        "3P"
+      ],
+      "extraction_error": null,
+      "id": "VS158",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "AT"
+      ]
+    },
+    {
+      "assignment_statuses": {
+        "assigned": 1
+      },
+      "exact": false,
+      "expected": [
+        "21R",
+        "23Z",
+        "26Z"
+      ],
+      "extraction_error": null,
+      "id": "VS164",
+      "limitations": [
+        "missing_orientation_evidence"
+      ],
+      "predicted": [
+        "21R"
+      ],
+      "primary_limitation": "missing_orientation_evidence",
+      "stereo_units": [
+        "CT4",
+        "TH"
       ]
     },
     {
@@ -3737,23 +3969,23 @@
     }
   ],
   "overall": {
-    "exact_record_accuracy": 0.6233333333333333,
-    "exact_records": 187,
+    "exact_record_accuracy": 0.5833333333333334,
+    "exact_records": 175,
     "expected_labels": 1252,
-    "micro_label_precision": 0.9882604055496265,
-    "micro_label_recall": 0.7396166134185304,
-    "predicted_labels": 937,
+    "micro_label_precision": 0.9879518072289156,
+    "micro_label_recall": 0.7204472843450479,
+    "predicted_labels": 913,
     "records": 300,
-    "true_positive_labels": 926
+    "true_positive_labels": 902
   },
   "parse_failures": [],
   "primary_limitation_counts": {
     "disputed_reference": 0,
     "label_projection_defect": 0,
-    "missing_orientation_evidence": 21,
+    "missing_orientation_evidence": 32,
     "ranking_defect": 83,
-    "unsupported_class": 9
+    "unsupported_class": 10
   },
-  "schema": "synkit.cip-native-validation/3",
-  "seconds": 17.689562472000034
+  "schema": "synkit.cip-native-validation/2",
+  "seconds": 10.761840340999697
 }

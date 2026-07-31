@@ -1,0 +1,3410 @@
+{
+  "budget": "B",
+  "claim_boundary": "Formal mode canonicalizes one representative of every joint formal configuration. Raw mode canonicalizes the complete raw representation Cartesian product and verifies its collapse into the same formal tuples.",
+  "enumeration_mode": "raw",
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2026.03.4"
+  },
+  "protocol": {
+    "all_carriers_configured_simultaneously": true,
+    "enumeration_mode": "raw",
+    "fixed_molecular_constitution": true,
+    "joint_formal_assignment_product": "exhaustive",
+    "known_input_supports_retained": true,
+    "local_raw_orbits_factorized": true,
+    "max_assignments_per_case": 4096,
+    "mixed_family_cases_only": true,
+    "neutral_potential_supports_merged": true,
+    "progress_interval_seconds": 60.0,
+    "raw_representation_cartesian_product_enumerated": true,
+    "supplied_configurations_used": false,
+    "timeout_seconds_per_assignment": 10.0,
+    "worker_processes": 16
+  },
+  "records": [
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 24.077796599998692,
+      "carrier_composition": "planar_bond:2;tetrahedral:1",
+      "carriers": [
+        {
+          "carrier_id": "atom:7",
+          "carrier_status": "supplied_support",
+          "configuration_dependent_support": true,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:11-12",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "planar_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:2-3",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "planar_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 1,
+      "enumerated_assignments_completed": 1536,
+      "enumerated_assignments_expected": 1536,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 8,
+      "formal_assignment_tuples_invariant": 8,
+      "formal_assignments_per_global_class": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "full_raw_representation_product": 1536,
+      "global_classes": [
+        {
+          "canonical_digest": "26b8fab99ff156693485af3000bfe84525356a762f144b091e7b04b9d5f0d656",
+          "enumerated_assignment_multiplicity": 384,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 384
+        },
+        {
+          "canonical_digest": "e1be71b789704e4d94a4b7077a47f9bbc736f62a62c7877ce21092f3ef450ad6",
+          "enumerated_assignment_multiplicity": 384,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 384
+        },
+        {
+          "canonical_digest": "e49a1ff404e7f4aa2cc9fdcabc8390c8c8b0a780e9f41980ce0abf2f45d8a53f",
+          "enumerated_assignment_multiplicity": 384,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 384
+        },
+        {
+          "canonical_digest": "e61b31c34944c203dd2dfc3776af51d16858eb68dfbea584e192aa4ebf5fd4ae",
+          "enumerated_assignment_multiplicity": 384,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 384
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 2,
+        "supplied_supports": 3
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 8,
+      "observed_global_canonical_classes": 4,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        384,
+        384,
+        384,
+        384
+      ],
+      "record_id": "VS192",
+      "representation_invariance_passed": true,
+      "seconds": 24.17037863400037,
+      "source": "acs",
+      "status": "passed",
+      "stereo_carriers": 3,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 24.260467240968865,
+      "carrier_composition": "atrop_bond:2;tetrahedral:1",
+      "carriers": [
+        {
+          "carrier_id": "atom:31",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:11-12",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:37-38",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 1536,
+      "enumerated_assignments_expected": 1536,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 8,
+      "formal_assignment_tuples_invariant": 8,
+      "formal_assignments_per_global_class": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "full_raw_representation_product": 1536,
+      "global_classes": [
+        {
+          "canonical_digest": "2689b42261f6118db7af2619c7c92d88b52f57f3d5825d0397dc682c393575f0",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 192
+        },
+        {
+          "canonical_digest": "3eaebc78d32c6ec057dcaf40c6e256c504f5ac6a60f6a0e6bee2300033afb916",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 192
+        },
+        {
+          "canonical_digest": "61c6fe0eb9ee5fe5d3e441888376efa5310206b38e696b6c825f84b3d0d060ff",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 192
+        },
+        {
+          "canonical_digest": "7ea075c55e6e53c2d128568a4d4636fc92288056745730c204a0e94f6482edfc",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 192
+        },
+        {
+          "canonical_digest": "878c0aca6d60874ac343f087b76335ba05aebcdc9321f8cd69bad1613b179405",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 4,
+          "represented_raw_assignment_multiplicity": 192
+        },
+        {
+          "canonical_digest": "adde4583c15086f6942f0312e05063ad9edd65ea9a03edee8c60bcc3fa37223a",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 5,
+          "represented_raw_assignment_multiplicity": 192
+        },
+        {
+          "canonical_digest": "c0398c306a73719ca50b675217bad72c1b82839536d97d2c6be514d71e43cb06",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 6,
+          "represented_raw_assignment_multiplicity": 192
+        },
+        {
+          "canonical_digest": "fa37c949d090b3b1c412e7d9b9b304f5598888ef1f93024cc1091164465e5aea",
+          "enumerated_assignment_multiplicity": 192,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 7,
+          "represented_raw_assignment_multiplicity": 192
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 3,
+        "supplied_supports": 0
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 8,
+      "observed_global_canonical_classes": 8,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192,
+        192
+      ],
+      "record_id": "RotA-0551",
+      "representation_invariance_passed": true,
+      "seconds": 24.430452306000007,
+      "source": "rota",
+      "status": "passed",
+      "stereo_carriers": 3,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 70.62794620101067,
+      "carrier_composition": "planar_bond:1;tetrahedral:2",
+      "carriers": [
+        {
+          "carrier_id": "atom:2",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "atom:5",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:12-13",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "planar_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 4608,
+      "enumerated_assignments_expected": 4608,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 8,
+      "formal_assignment_tuples_invariant": 8,
+      "formal_assignments_per_global_class": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "full_raw_representation_product": 4608,
+      "global_classes": [
+        {
+          "canonical_digest": "0d34016ad0e79ae8a8b40c5e824a83179e128d9c9898d85d14f1106383868699",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "1e62fb0b5f41c3648369490b2d253af8f50529a871efa76781dbd3d3501200ce",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "6b237d276c5511f5675601e7772d5bb6c140ec6fa49e954634257e996e340c75",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "7bc03a88e9cdc904cec4a5a9349b5a7817824cfa80585a1b9c86a450d235163c",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "925c54f1805bbfd6665755e8fb472253014cf6170c8b7c3c60fcf6ca63ae78a9",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 4,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "9273d5b32182dc1ca459998278396b6e58b0a1ac18930023c09c969dc934d2f9",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 5,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "cbe0ffe9bfbdaefa173c061cc67d8e221d2d1d6b9fe6526784f69d186863cab4",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 6,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "e54c65505f9e7cad14129845a6908acea294408a775657e242408b4c901cb33a",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 7,
+          "represented_raw_assignment_multiplicity": 576
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 3,
+        "supplied_supports": 3
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 8,
+      "observed_global_canonical_classes": 8,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        576,
+        576,
+        576,
+        576,
+        576,
+        576,
+        576,
+        576
+      ],
+      "record_id": "VS018",
+      "representation_invariance_passed": true,
+      "seconds": 70.89267768299942,
+      "source": "acs",
+      "status": "passed",
+      "stereo_carriers": 3,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 174.53698390899535,
+      "carrier_composition": "extended_cis_trans:1;tetrahedral:2",
+      "carriers": [
+        {
+          "carrier_id": "atom:2",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "atom:26",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "extended_bond:28-29-30-31",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "extended_cis_trans",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 4608,
+      "enumerated_assignments_expected": 4608,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 8,
+      "formal_assignment_tuples_invariant": 8,
+      "formal_assignments_per_global_class": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "full_raw_representation_product": 4608,
+      "global_classes": [
+        {
+          "canonical_digest": "447af90a0b653953654030c552cd22b99321a36b23c6e14a7e58bab5fc216f0f",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "61aad443864526cca9ebbd5c87262811d18f01af7702e4ad70567512a394a8e8",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "67bb8bb53c3c79e0e594712d188cf138efa9048c30b6d511cfe478dd7bd43db5",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "729b76de6cefb8c94b3b08c9101472f581ceba48a41ed62c7f0037351c79e410",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "aea63628e42115fc17a0891cec906425d9dd9eb034b85fa7e0f02c66ce49f7e6",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 4,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "cdd9293292c8e7f763ffe2f890b466d7ea01ed7bd1391d220946c1826c0a33e8",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 5,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "d6fadd1318d3520f8099aab147d06c8dddb4de890fc4aa6f81415be2df32f234",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 6,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "e20ae38d631f6142372a0bd23af417339b9dd78a90a5e98ae3beb72813db3788",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 7,
+          "represented_raw_assignment_multiplicity": 576
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 3,
+        "supplied_supports": 2
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 8,
+      "observed_global_canonical_classes": 8,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        576,
+        576,
+        576,
+        576,
+        576,
+        576,
+        576,
+        576
+      ],
+      "record_id": "VS063",
+      "representation_invariance_passed": true,
+      "seconds": 175.21350478400018,
+      "source": "cip",
+      "status": "passed",
+      "stereo_carriers": 3,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 169.4844695520178,
+      "carrier_composition": "cumulene_axis:1;tetrahedral:2",
+      "carriers": [
+        {
+          "carrier_id": "atom:26",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "atom:3",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "axis:44-45-46",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "cumulene_axis",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 4608,
+      "enumerated_assignments_expected": 4608,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 8,
+      "formal_assignment_tuples_invariant": 8,
+      "formal_assignments_per_global_class": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "full_raw_representation_product": 4608,
+      "global_classes": [
+        {
+          "canonical_digest": "06115f36ec73520b23655064a8545b47684f6945ea68e481f1ea73c6ab1b670c",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "4732cbf6b887c442536a800d635327dea2f1006d64521bd8579caef8694a8b8e",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "57042e9a3d0e044089ff7a52523303ad6d3aa9763967edd1cef5212d455f8d2a",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "617e01de2fdc81a33844331201f0f7d8aed1ab3a1ff0c5732fbb004af8c35bde",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "660cc261b57b194ef0da033d80e6340cecbef40e9d534e34b53dd81851243bdf",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 4,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "6c3fcad8c146546fb4159d61e9d39005e240dd031b92ac702c625052c6972ed9",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 5,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "c1ff793473e22b1473be1dd36260f6b6bd72838ba4f8cdf8cceb0afae4c29853",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 6,
+          "represented_raw_assignment_multiplicity": 576
+        },
+        {
+          "canonical_digest": "c2742f92d92095dc5eb7293d09637a98cbbbecf98edb399dda4dc504e94edf65",
+          "enumerated_assignment_multiplicity": 576,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 7,
+          "represented_raw_assignment_multiplicity": 576
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 3,
+        "supplied_supports": 2
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 8,
+      "observed_global_canonical_classes": 8,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        576,
+        576,
+        576,
+        576,
+        576,
+        576,
+        576,
+        576
+      ],
+      "record_id": "VS120",
+      "representation_invariance_passed": true,
+      "seconds": 170.15588166399993,
+      "source": "cip",
+      "status": "passed",
+      "stereo_carriers": 3,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 71.84258401701572,
+      "carrier_composition": "cumulene_axis:1;tetrahedral:2",
+      "carriers": [
+        {
+          "carrier_id": "atom:5",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "atom:9",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "axis:2-3-4",
+          "carrier_status": "symmetry_related",
+          "configuration_dependent_support": false,
+          "family": "cumulene_axis",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 4608,
+      "enumerated_assignments_expected": 4608,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 8,
+      "formal_assignment_tuples_invariant": 8,
+      "formal_assignments_per_global_class": [
+        2,
+        2,
+        2,
+        2
+      ],
+      "full_raw_representation_product": 4608,
+      "global_classes": [
+        {
+          "canonical_digest": "08853bdcaede65c64040706ecd8b166463c04c06de76a971a01bdfae2ceef3c7",
+          "enumerated_assignment_multiplicity": 1152,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 1152
+        },
+        {
+          "canonical_digest": "70923bd72d582aacee3cadd3bf03acde8e120aa6b3a3a08c885383501efcda22",
+          "enumerated_assignment_multiplicity": 1152,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 1152
+        },
+        {
+          "canonical_digest": "74303edb3b3a9bae5126e58d1f3f440e116c9a67f624c397291164c75789e8f1",
+          "enumerated_assignment_multiplicity": 1152,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 1152
+        },
+        {
+          "canonical_digest": "8c5f84bfa73c2457542f317fbef3eb7be82e0bbb7757eac65b4c8e3347893e23",
+          "enumerated_assignment_multiplicity": 1152,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 1152
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 3,
+        "supplied_supports": 2
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 8,
+      "observed_global_canonical_classes": 4,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        1152,
+        1152,
+        1152,
+        1152
+      ],
+      "record_id": "VS243",
+      "representation_invariance_passed": true,
+      "seconds": 72.0765186409999,
+      "source": "cip",
+      "status": "passed",
+      "stereo_carriers": 3,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 644.0586159180293,
+      "carrier_composition": "atrop_bond:3;tetrahedral:1",
+      "carriers": [
+        {
+          "carrier_id": "atom:35",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:14-43",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:21-25",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:5-6",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 12288,
+      "enumerated_assignments_expected": 12288,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 16,
+      "formal_assignment_tuples_invariant": 16,
+      "formal_assignments_per_global_class": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "full_raw_representation_product": 12288,
+      "global_classes": [
+        {
+          "canonical_digest": "01ec6e17c6b160d7d273c7ec46ced784e91c92493996fa70270cc9510bdf8a49",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 1536
+        },
+        {
+          "canonical_digest": "07c4292936de8aa692e4640736ed7fbe67209765b31ca76c03aa2edc28909555",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 1536
+        },
+        {
+          "canonical_digest": "0db09e0cfd31c0e639fa0f483c1b68a28645eaa045e8daf88c4a05d750528e75",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 1536
+        },
+        {
+          "canonical_digest": "31601d76b789d7e7aad30d71e64a74e0835b913fbf6dd671c11e3ed91cff1c6a",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 1536
+        },
+        {
+          "canonical_digest": "45e86756180a1d353b0ec28983843b48e4d4344691416b6ee34e9063190312bf",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 4,
+          "represented_raw_assignment_multiplicity": 1536
+        },
+        {
+          "canonical_digest": "baf7fe94b3232d372020c4f3847857b3d3f74d0d38ee897cd0898bb169794fb4",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 5,
+          "represented_raw_assignment_multiplicity": 1536
+        },
+        {
+          "canonical_digest": "d24217f86df50fb7ec7698f67feeabd3a2ba12b521fe7f65d47fdb7bf7deffd3",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 6,
+          "represented_raw_assignment_multiplicity": 1536
+        },
+        {
+          "canonical_digest": "fbe725c649918a52a234726749aad59f634cb0d5410dd6697c057fa381c0e369",
+          "enumerated_assignment_multiplicity": 1536,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 7,
+          "represented_raw_assignment_multiplicity": 1536
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 4,
+        "supplied_supports": 0
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 16,
+      "observed_global_canonical_classes": 8,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        1536,
+        1536,
+        1536,
+        1536,
+        1536,
+        1536,
+        1536,
+        1536
+      ],
+      "record_id": "RotA-0262",
+      "representation_invariance_passed": true,
+      "seconds": 647.5391822379997,
+      "source": "rota",
+      "status": "passed",
+      "stereo_carriers": 4,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 2189.4909947211036,
+      "carrier_composition": "atrop_bond:2;tetrahedral:2",
+      "carriers": [
+        {
+          "carrier_id": "atom:10",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "atom:2",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:21-47",
+          "carrier_status": "symmetry_related",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:38-41",
+          "carrier_status": "symmetry_related",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 36864,
+      "enumerated_assignments_expected": 36864,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 16,
+      "formal_assignment_tuples_invariant": 16,
+      "formal_assignments_per_global_class": [
+        4,
+        4,
+        8
+      ],
+      "full_raw_representation_product": 36864,
+      "global_classes": [
+        {
+          "canonical_digest": "590bdc2685eb3660ac042ff7ba51f57e91eea03fca9cf36ff79a197d46281c6f",
+          "enumerated_assignment_multiplicity": 9216,
+          "formal_assignment_multiplicity": 4,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 9216
+        },
+        {
+          "canonical_digest": "8fcd2bd931850c44b9b798487652b7381c85ddbf26a018f97e58154dbf0d1a0c",
+          "enumerated_assignment_multiplicity": 9216,
+          "formal_assignment_multiplicity": 4,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 9216
+        },
+        {
+          "canonical_digest": "f2f6b6be27b973c87d26864b41fe046c1e3022f081f015096d59e575ce889a7e",
+          "enumerated_assignment_multiplicity": 18432,
+          "formal_assignment_multiplicity": 8,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              1,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 18432
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 4,
+        "supplied_supports": 2
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 16,
+      "observed_global_canonical_classes": 3,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        9216,
+        9216,
+        18432
+      ],
+      "record_id": "RotA-0195",
+      "representation_invariance_passed": true,
+      "seconds": 2200.5425859439993,
+      "source": "rota",
+      "status": "passed",
+      "stereo_carriers": 4,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 1618.8405223539994,
+      "carrier_composition": "atrop_bond:2;tetrahedral:2",
+      "carriers": [
+        {
+          "carrier_id": "atom:26",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "atom:44",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:10-9",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:4-5",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 36864,
+      "enumerated_assignments_expected": 36864,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 16,
+      "formal_assignment_tuples_invariant": 16,
+      "formal_assignments_per_global_class": [
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "full_raw_representation_product": 36864,
+      "global_classes": [
+        {
+          "canonical_digest": "0aa00d90656b10b669c32ececf69ba81001fb7b56b32fb524aa624a08b0ee450",
+          "enumerated_assignment_multiplicity": 2304,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 2304
+        },
+        {
+          "canonical_digest": "3395cbfcfe3435c360b168df878c0bed2c24d503b1addfe05d25a71e22f232b5",
+          "enumerated_assignment_multiplicity": 4608,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 4608
+        },
+        {
+          "canonical_digest": "3ed89bf09367476bf6ca60fee237b0be2385faf0a5490bdabe1192d710529c00",
+          "enumerated_assignment_multiplicity": 4608,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 4608
+        },
+        {
+          "canonical_digest": "4cd15491284d5f3e253cd9228e5c041a9975b55d1c2904313bfc743367578052",
+          "enumerated_assignment_multiplicity": 4608,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 4608
+        },
+        {
+          "canonical_digest": "5d5224ae589a6f911ec5fa8859944e7b1467d425304adf0934e1e1889445fbb3",
+          "enumerated_assignment_multiplicity": 2304,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 4,
+          "represented_raw_assignment_multiplicity": 2304
+        },
+        {
+          "canonical_digest": "7a327b485d8d4991d811573a3d841d66adfdfced80098631bacd6ec3586d2810",
+          "enumerated_assignment_multiplicity": 4608,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 5,
+          "represented_raw_assignment_multiplicity": 4608
+        },
+        {
+          "canonical_digest": "bcae7a7cb16837cc920bd9d50cd08d3a09571b19f26d63d404e66d930bec8b3f",
+          "enumerated_assignment_multiplicity": 2304,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 6,
+          "represented_raw_assignment_multiplicity": 2304
+        },
+        {
+          "canonical_digest": "d0d0d00daea456ee1c27f29c535c4b699f7634baebd93561377a8c36b7b601ed",
+          "enumerated_assignment_multiplicity": 4608,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 7,
+          "represented_raw_assignment_multiplicity": 4608
+        },
+        {
+          "canonical_digest": "d62c4accc120a15651752a162357c85bcb32dc30a7eae0e5a2fa3534a61d022b",
+          "enumerated_assignment_multiplicity": 2304,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 8,
+          "represented_raw_assignment_multiplicity": 2304
+        },
+        {
+          "canonical_digest": "eff7493543b04188c3617b4b9a725a1dd312a55c64fa54f499a38f6d1b94fd1d",
+          "enumerated_assignment_multiplicity": 4608,
+          "formal_assignment_multiplicity": 2,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 9,
+          "represented_raw_assignment_multiplicity": 4608
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 4,
+        "supplied_supports": 0
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 16,
+      "observed_global_canonical_classes": 10,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        2304,
+        2304,
+        2304,
+        2304,
+        4608,
+        4608,
+        4608,
+        4608,
+        4608,
+        4608
+      ],
+      "record_id": "RotA-0497",
+      "representation_invariance_passed": true,
+      "seconds": 1629.0632467680007,
+      "source": "rota",
+      "status": "passed",
+      "stereo_carriers": 4,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 2168.8839926028904,
+      "carrier_composition": "planar_bond:4;tetrahedral:1",
+      "carriers": [
+        {
+          "carrier_id": "atom:10",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:14-15",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "planar_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:16-17",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "planar_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:2-3",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "planar_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        },
+        {
+          "carrier_id": "bond:4-5",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "planar_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception",
+            "supplied_input"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 98304,
+      "enumerated_assignments_expected": 98304,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 32,
+      "formal_assignment_tuples_invariant": 32,
+      "formal_assignments_per_global_class": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "full_raw_representation_product": 98304,
+      "global_classes": [
+        {
+          "canonical_digest": "081a658c4221cb513024bceaeaeb68e297ab33afb56ba45e3e877c7763530546",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "0824b5cb443978cd9f329234cad6914a1f34ae3fc0580c96bb560e29acdec3d4",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "09c78df4845fe122066541a3c5f4bcea310824bf6db302a5c5259ff8d52c936e",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 2,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "102d3f024369c8091a004bec8a4dc21a636c75f0ce90e7cebfd9a13dc33d6614",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 3,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "1690b3528f620dcbd0d190757e4120886839df016fb19d25f7df462bbd782615",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 4,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "174c5bd372990234b421a0d282ebeb1de0345e9247756233b1a4c1450127dd93",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 5,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "1ac07fe38b85d1660e93e5ebf017a39451b5f1fcf0714940da863d31c40f0d4d",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 6,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "28e7a6d3b1e9a4293be2e8e14c1489e7d6a4ea1bb6eb98261d69fa557ed7696c",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 7,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "2c7c91b88a6a93f603e65656b21ed0c43e20fd0e3674ad3828dd54a5092d19ec",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 8,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "305be7b73f77f9894366403e6ee7150bbcdd426abe23e7a75878b74cffe65667",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 9,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "41bd4c670ab86cfba6039f54a62b79e4ea8289fcfdd8ea71d86c5bc857515456",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 10,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "47142bb72a5df87f6e8a090023cef486677d4b25f4d7810382fa1c5457881f7c",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 11,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "4e86696f92c01fcf0f91ec1a0832b393578e1179919d765f48ef86b5fcf27ebf",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 12,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "58fb94979e09dd396a80bbf09455200847a4a4825408d974bf056cfacbba0c89",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 13,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "5e05770406da34cddc0f74b305b4c946f5f6330ca667339126e6936d36bb9cd2",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 14,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "6611c008f3309fea634e9fcfeab95b16ca9ba26d9e7efd9107f5af6f395bfab0",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 15,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "69e13a88969027a2f25076fe3c40000a45c8604a17b22588d3b9bcaeab2e6b1a",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 16,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "771dbffcd45e97ea7b0c6cdc1b782c6500d8b5cd6c4d19abc6333701f91849cd",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 17,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "818d66152f755da3f0605a959b270f38a09bb19578484834df82098f80e77a1d",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 18,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "8bcba699a3b3e1d7b13bb224a0b499a5da9b271b3c9e1eedbe15b769181964a3",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 19,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "9de65856a6b2774023e3fed09e320d5825eec7d15284cf29523b45cece036449",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 20,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "a1ea0528eacb027d36e196d207272cdb32c6e2a32c0b1356f68f321c72f5551d",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 21,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "a3a13f0bbe1e687739ae49ca1ae0e7e2c2e2bcb2f1df42e6d125f50096f7e50f",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              1,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 22,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "b46bc49cea7b3e3b24286007837aca1adac70bec2b5b56097147bdebffb234d6",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 23,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "b965c778e7a987c415681c3e4a8f92a34d9ed5e6bb7bce9072a2bbb4ee5e4b5c",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              0,
+              0
+            ]
+          ],
+          "global_class_index": 24,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "ba292d11b11cd5dbd224ded2ec56df64322985dccd4330a4079fb914c8d54181",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              0,
+              0,
+              1
+            ]
+          ],
+          "global_class_index": 25,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "c791b5eadcd16b3d54777a257491a7fc0f5525feac4b7e809c21d4d28bc1787a",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 26,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "d26b19ce2dbb5f6a89c299bf0fc85c1d969a7f0dd77ade1bc3d2a5e4bf3c9b86",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 27,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "dc112c0bffa292490fdb9737c94b21a0d13e7290dba39cfe46a96c16284a8489",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 28,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "e15244596c807347338682dd37e3ab307b8055a93a921befac6c0d2e0df8e95a",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 29,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "e47f1d71ee410e0d78b18e6cb0f75c2931b9b2c046f45a404ce675b494db1ffa",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0,
+              1,
+              0
+            ]
+          ],
+          "global_class_index": 30,
+          "represented_raw_assignment_multiplicity": 3072
+        },
+        {
+          "canonical_digest": "e671543c7d0c2d04142310c09837c802af1e02e7b28077f18bdef3f7ca5cd885",
+          "enumerated_assignment_multiplicity": 3072,
+          "formal_assignment_multiplicity": 1,
+          "formal_assignments": [
+            [
+              0,
+              1,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 31,
+          "represented_raw_assignment_multiplicity": 3072
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 5,
+        "supplied_supports": 5
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 32,
+      "observed_global_canonical_classes": 32,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072,
+        3072
+      ],
+      "record_id": "VS053",
+      "representation_invariance_passed": true,
+      "seconds": 2175.6865497259996,
+      "source": "acs",
+      "status": "passed",
+      "stereo_carriers": 5,
+      "timeouts": 0
+    },
+    {
+      "assignment_issues": [],
+      "budget": "B",
+      "canonicalization_seconds": 60535.232828162945,
+      "carrier_composition": "atrop_bond:5;tetrahedral:1",
+      "carriers": [
+        {
+          "carrier_id": "atom:37",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "tetrahedral",
+          "formal_class_multiplicities": [
+            12,
+            12
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 24,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:14-45",
+          "carrier_status": "symmetry_related",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:21-25",
+          "carrier_status": "symmetry_related",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:28-31",
+          "carrier_status": "symmetry_related",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:48-51",
+          "carrier_status": "symmetry_related",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        },
+        {
+          "carrier_id": "bond:5-6",
+          "carrier_status": "confirmed",
+          "configuration_dependent_support": false,
+          "family": "atrop_bond",
+          "formal_class_multiplicities": [
+            4,
+            4
+          ],
+          "formal_configuration_classes": 2,
+          "raw_local_permutations": 8,
+          "support_sources": [
+            "neutral_perception"
+          ]
+        }
+      ],
+      "configuration_dependent_supports": 0,
+      "enumerated_assignments_completed": 786432,
+      "enumerated_assignments_expected": 786432,
+      "enumeration_mode": "raw",
+      "formal_assignment_tuples_covered": 64,
+      "formal_assignment_tuples_invariant": 64,
+      "formal_assignments_per_global_class": [
+        32,
+        32
+      ],
+      "full_raw_representation_product": 786432,
+      "global_classes": [
+        {
+          "canonical_digest": "33e0f897a2a93f89ee1dc8c113f7d002110a04e4e3f1403fb0c752a806b7a234",
+          "enumerated_assignment_multiplicity": 393216,
+          "formal_assignment_multiplicity": 32,
+          "formal_assignments": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1,
+              1,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              1,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              1,
+              0,
+              1
+            ],
+            [
+              0,
+              0,
+              1,
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              1,
+              1,
+              1
+            ],
+            [
+              0,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              0,
+              1,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              0,
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            [
+              0,
+              1,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              1,
+              0,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              1,
+              1,
+              0,
+              1,
+              1
+            ],
+            [
+              0,
+              1,
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              1,
+              1,
+              0,
+              1
+            ],
+            [
+              0,
+              1,
+              1,
+              1,
+              1,
+              0
+            ],
+            [
+              0,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 0,
+          "represented_raw_assignment_multiplicity": 393216
+        },
+        {
+          "canonical_digest": "959e48a4ffa4439adbcb709ec2aaf68145a593feb62461bb678f5f80ac53e804",
+          "enumerated_assignment_multiplicity": 393216,
+          "formal_assignment_multiplicity": 32,
+          "formal_assignments": [
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              0,
+              1,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              1,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              0,
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              0,
+              1,
+              1,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              1,
+              1,
+              1
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              1,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              0,
+              1,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              0,
+              1,
+              1,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              0,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              0,
+              1,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              1,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              1,
+              0,
+              1
+            ],
+            [
+              1,
+              1,
+              1,
+              1,
+              1,
+              0
+            ],
+            [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          ],
+          "global_class_index": 1,
+          "represented_raw_assignment_multiplicity": 393216
+        }
+      ],
+      "inventory": {
+        "configurations_after_erasure": 0,
+        "neutral_potential_supports": 6,
+        "supplied_supports": 0
+      },
+      "issues": [],
+      "joint_formal_assignments_expected": 64,
+      "observed_global_canonical_classes": 2,
+      "passed": true,
+      "raw_assignments_per_global_class": [
+        393216,
+        393216
+      ],
+      "record_id": "RotA-0273",
+      "representation_invariance_passed": true,
+      "seconds": 60782.728711362,
+      "source": "rota",
+      "status": "passed",
+      "stereo_carriers": 6,
+      "timeouts": 0
+    }
+  ],
+  "schema": "synkit.configuration-free-global-abc/1",
+  "seconds": 60782.782934041,
+  "source_integrity": {
+    "acs": {
+      "audited_sha256": "b90d64bba99d36f0be2429cad255e7836b244dfc26e7c9b4281b36d9ed51fff0",
+      "path": "/home/labhhc4/Documents/Workspace/Long/SynKit/Experiment/Stereo/Data/ACS-StereoMolGraph/ci5c02523_si_002.csv"
+    },
+    "cip": {
+      "audited_sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059",
+      "path": "/tmp/cip-validation-suite-compounds.smi"
+    },
+    "rota": {
+      "audited_sha256": "141ae5281c034f8d08b900454fc387556b5c8702b3e2347d7141ddbd69c4daff",
+      "path": "/home/labhhc4/Documents/Workspace/Long/SynKit/Experiment/Stereo/Data/ChiralFinder-RotA/RotA.xlsx"
+    }
+  },
+  "summary": {
+    "cases_failed": 0,
+    "cases_passed": 11,
+    "cases_selected": 11,
+    "complete": true,
+    "configuration_dependent_supports": 1,
+    "enumerated_assignments_completed": 992256,
+    "enumerated_assignments_expected": 992256,
+    "formal_assignment_tuples_invariant": 192,
+    "joint_formal_assignments_expected": 192,
+    "largest_full_raw_representation_product": 786432,
+    "observed_global_canonical_classes": 95,
+    "record_statuses": {
+      "passed": 11
+    },
+    "stereo_carriers": 41,
+    "timeouts": 0
+  }
+}

@@ -1,0 +1,6007 @@
+{
+  "acs_configured_whole_molecules": {
+    "inventory": {
+      "configured_element_distribution": {
+        "0": 30,
+        "1": 64,
+        "10": 2,
+        "11": 1,
+        "13": 1,
+        "15": 2,
+        "18": 2,
+        "19": 6,
+        "2": 50,
+        "21": 3,
+        "22": 1,
+        "23": 2,
+        "24": 1,
+        "25": 3,
+        "3": 32,
+        "4": 27,
+        "5": 12,
+        "6": 13,
+        "7": 1,
+        "8": 2,
+        "9": 3
+      },
+      "dataset": {
+        "audited_sha256": "b90d64bba99d36f0be2429cad255e7836b244dfc26e7c9b4281b36d9ed51fff0",
+        "records": 258
+      },
+      "max_configured_elements": 25,
+      "multi_element_candidates": [
+        {
+          "atoms": 9,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 2
+          },
+          "id": "VS013",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS016",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS017",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 2
+          },
+          "id": "VS018",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS024",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 4,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 2
+          },
+          "id": "VS026",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS027",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS028",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS029",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS030",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 11,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 1
+          },
+          "id": "VS032",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 11,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 1
+          },
+          "id": "VS033",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS034",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS035",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 35,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS040",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 15,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS043",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS046",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS047",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS048",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 15,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 3
+          },
+          "id": "VS049",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS050",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 31,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS051",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 17,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS052",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 22,
+          "configured_elements": 5,
+          "families": {
+            "planar_bond": 4,
+            "tetrahedral": 1
+          },
+          "id": "VS053",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 29,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS056",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 2
+          },
+          "id": "VS058",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS065",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 6,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS066",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 6,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS067",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 7,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS069",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 25,
+          "configured_elements": 8,
+          "families": {
+            "tetrahedral": 8
+          },
+          "id": "VS070",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS075",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS080",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 15,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS082",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS084",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 27,
+          "configured_elements": 4,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 2
+          },
+          "id": "VS087",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 27,
+          "configured_elements": 4,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 2
+          },
+          "id": "VS088",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 20,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS091",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 2
+          },
+          "id": "VS093",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 11,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS098",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 2
+          },
+          "id": "VS100",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 2
+          },
+          "id": "VS101",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 15,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS102",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS103",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 18,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS105",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS106",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 3
+          },
+          "id": "VS107",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS108",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS111",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS112",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS113",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 18,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS115",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 11,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS116",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 17,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 2
+          },
+          "id": "VS125",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 55,
+          "configured_elements": 10,
+          "families": {
+            "planar_bond": 4,
+            "tetrahedral": 6
+          },
+          "id": "VS126",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 55,
+          "configured_elements": 10,
+          "families": {
+            "planar_bond": 4,
+            "tetrahedral": 6
+          },
+          "id": "VS127",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 11,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS128",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 11,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS129",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS131",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS136",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS143",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 24,
+          "configured_elements": 6,
+          "families": {
+            "planar_bond": 4,
+            "tetrahedral": 2
+          },
+          "id": "VS146",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 11,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS150",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS152",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 2
+          },
+          "id": "VS153",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 28,
+          "configured_elements": 4,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 2
+          },
+          "id": "VS157",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS159",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS160",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 1
+          },
+          "id": "VS161",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 7,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS163",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 7,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS168",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 7,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS169",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 6,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS172",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 26,
+          "configured_elements": 4,
+          "families": {
+            "planar_bond": 3,
+            "tetrahedral": 1
+          },
+          "id": "VS173",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS174",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 22,
+          "configured_elements": 6,
+          "families": {
+            "planar_bond": 5,
+            "tetrahedral": 1
+          },
+          "id": "VS191",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 1
+          },
+          "id": "VS192",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 1
+          },
+          "id": "VS193",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 1
+          },
+          "id": "VS194",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 1
+          },
+          "id": "VS195",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS196",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS197",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 34,
+          "configured_elements": 13,
+          "families": {
+            "tetrahedral": 13
+          },
+          "id": "VS198",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS199",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS200",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS201",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 18,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS202",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 28,
+          "configured_elements": 9,
+          "families": {
+            "tetrahedral": 9
+          },
+          "id": "VS203",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 28,
+          "configured_elements": 9,
+          "families": {
+            "tetrahedral": 9
+          },
+          "id": "VS204",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 20,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS205",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS206",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 21,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS207",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 72,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS208",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS209",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS210",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS211",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS212",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS213",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS215",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS216",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS217",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 24,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS218",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 6,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS219",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 25,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS220",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS221",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS222",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 40,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS223",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 24,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS224",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS225",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 34,
+          "configured_elements": 8,
+          "families": {
+            "tetrahedral": 8
+          },
+          "id": "VS226",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS227",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS228",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 2
+          },
+          "id": "VS229",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS230",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 44,
+          "configured_elements": 15,
+          "families": {
+            "tetrahedral": 15
+          },
+          "id": "VS233",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 20,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS234",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 21,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS235",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 8,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS236",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS237",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS238",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 24,
+          "configured_elements": 9,
+          "families": {
+            "tetrahedral": 9
+          },
+          "id": "VS239",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 4,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 2
+          },
+          "id": "VS240",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS241",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 52,
+          "configured_elements": 21,
+          "families": {
+            "tetrahedral": 21
+          },
+          "id": "VS242",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 15,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS244",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 14,
+          "configured_elements": 5,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 4
+          },
+          "id": "VS245",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 19,
+          "families": {
+            "tetrahedral": 19
+          },
+          "id": "VS249",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 19,
+          "families": {
+            "tetrahedral": 19
+          },
+          "id": "VS250",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS251",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS252",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS253",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS254",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 6,
+          "families": {
+            "tetrahedral": 6
+          },
+          "id": "VS255",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 12,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS256",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS257",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 10,
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS258",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 26,
+          "configured_elements": 6,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 5
+          },
+          "id": "VS259",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 15,
+          "configured_elements": 5,
+          "families": {
+            "tetrahedral": 5
+          },
+          "id": "VS260",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 63,
+          "configured_elements": 25,
+          "families": {
+            "tetrahedral": 25
+          },
+          "id": "VS261",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 44,
+          "configured_elements": 15,
+          "families": {
+            "tetrahedral": 15
+          },
+          "id": "VS262",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 63,
+          "configured_elements": 25,
+          "families": {
+            "tetrahedral": 25
+          },
+          "id": "VS263",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 63,
+          "configured_elements": 23,
+          "families": {
+            "tetrahedral": 23
+          },
+          "id": "VS264",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 62,
+          "configured_elements": 24,
+          "families": {
+            "tetrahedral": 24
+          },
+          "id": "VS265",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 62,
+          "configured_elements": 22,
+          "families": {
+            "tetrahedral": 22
+          },
+          "id": "VS266",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 61,
+          "configured_elements": 23,
+          "families": {
+            "tetrahedral": 23
+          },
+          "id": "VS267",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 61,
+          "configured_elements": 25,
+          "families": {
+            "tetrahedral": 25
+          },
+          "id": "VS268",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 19,
+          "families": {
+            "tetrahedral": 19
+          },
+          "id": "VS269",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 19,
+          "families": {
+            "tetrahedral": 19
+          },
+          "id": "VS270",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 24,
+          "configured_elements": 11,
+          "families": {
+            "tetrahedral": 11
+          },
+          "id": "VS271",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 44,
+          "configured_elements": 18,
+          "families": {
+            "planar_bond": 2,
+            "tetrahedral": 16
+          },
+          "id": "VS272",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 18,
+          "families": {
+            "tetrahedral": 18
+          },
+          "id": "VS273",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 19,
+          "families": {
+            "tetrahedral": 19
+          },
+          "id": "VS274",
+          "manual": "achiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 21,
+          "families": {
+            "tetrahedral": 21
+          },
+          "id": "VS275",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 7,
+          "families": {
+            "tetrahedral": 7
+          },
+          "id": "VS276",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 19,
+          "families": {
+            "tetrahedral": 19
+          },
+          "id": "VS277",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 46,
+          "configured_elements": 21,
+          "families": {
+            "tetrahedral": 21
+          },
+          "id": "VS278",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 18,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS279",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 17,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS286",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 16,
+          "configured_elements": 3,
+          "families": {
+            "planar_bond": 3
+          },
+          "id": "VS293",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS294",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 13,
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS295",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 21,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS296",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 19,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS297",
+          "manual": "chiral"
+        },
+        {
+          "atoms": 9,
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS298",
+          "manual": "chiral"
+        }
+      ],
+      "multi_element_records": 164
+    },
+    "selected_exact_audit": {
+      "passed": true,
+      "records": [
+        {
+          "atoms": 6,
+          "baseline_issue": null,
+          "configured_certificate_digest": "d302feb7c535a85c393496ad9396fd2752b473223c21eb91e85a3c27733a1188",
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS066",
+          "manual_global_label": "chiral",
+          "mirror_issue": null,
+          "mirror_matches_manual": true,
+          "mirror_status": "chiral",
+          "passed": true,
+          "relabeling_failures": [],
+          "relabelings_checked": 2,
+          "seconds": 0.09418714699859265,
+          "timeouts": 0
+        },
+        {
+          "atoms": 6,
+          "baseline_issue": null,
+          "configured_certificate_digest": "923733ea058b2271bda76a840020d8d5a315807b3e5d801b3fc220be544b203e",
+          "configured_elements": 2,
+          "families": {
+            "tetrahedral": 2
+          },
+          "id": "VS219",
+          "manual_global_label": "achiral",
+          "mirror_issue": null,
+          "mirror_matches_manual": true,
+          "mirror_status": "achiral",
+          "passed": true,
+          "relabeling_failures": [],
+          "relabelings_checked": 2,
+          "seconds": 0.12124280399984855,
+          "timeouts": 0
+        },
+        {
+          "atoms": 8,
+          "baseline_issue": null,
+          "configured_certificate_digest": "093a814c5c801fc67989a3be67322f666fcc5ac32c51718195948bda3dea63c4",
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 2
+          },
+          "id": "VS058",
+          "manual_global_label": "achiral",
+          "mirror_issue": null,
+          "mirror_matches_manual": true,
+          "mirror_status": "achiral",
+          "passed": true,
+          "relabeling_failures": [],
+          "relabelings_checked": 2,
+          "seconds": 0.08395170000039798,
+          "timeouts": 0
+        },
+        {
+          "atoms": 8,
+          "baseline_issue": null,
+          "configured_certificate_digest": "0c325bfea5a53308d38d1d3d3e058c07ec7a7ca7eef8960d0667a6cbd97cc3b4",
+          "configured_elements": 2,
+          "families": {
+            "planar_bond": 1,
+            "tetrahedral": 1
+          },
+          "id": "VS161",
+          "manual_global_label": "chiral",
+          "mirror_issue": null,
+          "mirror_matches_manual": true,
+          "mirror_status": "chiral",
+          "passed": true,
+          "relabeling_failures": [],
+          "relabelings_checked": 2,
+          "seconds": 0.08838025300065055,
+          "timeouts": 0
+        },
+        {
+          "atoms": 8,
+          "baseline_issue": null,
+          "configured_certificate_digest": "f790719ea726779f589ae299363985c83f8f5f22e6c7f58bdd17cfd6c68f7a6d",
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS230",
+          "manual_global_label": "achiral",
+          "mirror_issue": null,
+          "mirror_matches_manual": true,
+          "mirror_status": "achiral",
+          "passed": true,
+          "relabeling_failures": [],
+          "relabelings_checked": 2,
+          "seconds": 0.1538819400002467,
+          "timeouts": 0
+        },
+        {
+          "atoms": 9,
+          "baseline_issue": null,
+          "configured_certificate_digest": "4616563c5f0ccd488b6b19162d9e46b694d1de8b4ffabea05b6ff02b82a6ba71",
+          "configured_elements": 3,
+          "families": {
+            "tetrahedral": 3
+          },
+          "id": "VS034",
+          "manual_global_label": "chiral",
+          "mirror_issue": null,
+          "mirror_matches_manual": true,
+          "mirror_status": "chiral",
+          "passed": true,
+          "relabeling_failures": [],
+          "relabelings_checked": 2,
+          "seconds": 0.17750710600012098,
+          "timeouts": 0
+        },
+        {
+          "atoms": 8,
+          "baseline_issue": null,
+          "configured_certificate_digest": "37337121ef6c7152842354555f8e4f93e7c84dc12e040876fe1e6456ec5e1f5a",
+          "configured_elements": 4,
+          "families": {
+            "tetrahedral": 4
+          },
+          "id": "VS084",
+          "manual_global_label": "chiral",
+          "mirror_issue": null,
+          "mirror_matches_manual": true,
+          "mirror_status": "chiral",
+          "passed": true,
+          "relabeling_failures": [],
+          "relabelings_checked": 2,
+          "seconds": 0.17740817999947467,
+          "timeouts": 0
+        }
+      ],
+      "seconds": 0.9076105889998871,
+      "selected_ids": [
+        "VS066",
+        "VS219",
+        "VS058",
+        "VS161",
+        "VS230",
+        "VS034",
+        "VS084"
+      ],
+      "selection_rule": "seven small public cases spanning two to four configured elements, same-family and mixed-family composition, and both global labels",
+      "totals": {
+        "cases": 7,
+        "configured_elements": 18,
+        "failed_cases": 0,
+        "mirror_matches_manual": 7,
+        "relabeling_failures": 0,
+        "relabelings_checked": 14,
+        "timeouts": 0
+      }
+    }
+  },
+  "cip_multi_center_extraction": {
+    "attached_configuration_distribution": {
+      "0": 115,
+      "1": 68,
+      "12": 6,
+      "14": 7,
+      "16": 1,
+      "17": 2,
+      "18": 5,
+      "2": 51,
+      "3": 14,
+      "4": 19,
+      "5": 4,
+      "6": 3,
+      "8": 5
+    },
+    "canonicalization_role": "local multi-carrier and label-projection evidence; CIP labels are not independent whole-molecule chirality truth",
+    "dataset": {
+      "audited_sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059",
+      "records": 300,
+      "structures_vendored": false
+    },
+    "max_attached_configurations": 18,
+    "multi_attached_renumbering_invariant": 117,
+    "multi_center_candidates": [
+      {
+        "attached_configurations": [
+          3,
+          5
+        ],
+        "id": "VS016",
+        "reference_rs_positions": [
+          3,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          5
+        ],
+        "id": "VS017",
+        "reference_rs_positions": [
+          3,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          5
+        ],
+        "id": "VS018",
+        "reference_rs_positions": [
+          2,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "id": "VS024",
+        "reference_rs_positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          9
+        ],
+        "id": "VS026",
+        "reference_rs_positions": [
+          2,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS027",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          8
+        ],
+        "id": "VS028",
+        "reference_rs_positions": [
+          2,
+          6,
+          8
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          5,
+          6
+        ],
+        "id": "VS029",
+        "reference_rs_positions": [
+          4,
+          5,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          5,
+          6
+        ],
+        "id": "VS030",
+        "reference_rs_positions": [
+          4,
+          5,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          5
+        ],
+        "id": "VS034",
+        "reference_rs_positions": [
+          2,
+          3,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          7,
+          8
+        ],
+        "id": "VS035",
+        "reference_rs_positions": [
+          2,
+          7,
+          8
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          9,
+          14,
+          16,
+          19,
+          25
+        ],
+        "id": "VS040",
+        "reference_rs_positions": [
+          9,
+          14,
+          16,
+          19,
+          25
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4
+        ],
+        "id": "VS043",
+        "reference_rs_positions": [
+          2,
+          4
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          4
+        ],
+        "id": "VS046",
+        "reference_rs_positions": [
+          3,
+          4
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          5
+        ],
+        "id": "VS047",
+        "reference_rs_positions": [
+          4,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          5
+        ],
+        "id": "VS048",
+        "reference_rs_positions": [
+          4,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "id": "VS050",
+        "reference_rs_positions": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          6,
+          18,
+          22
+        ],
+        "id": "VS051",
+        "reference_rs_positions": [
+          6,
+          18,
+          22
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7
+        ],
+        "id": "VS052",
+        "reference_rs_positions": [
+          2,
+          4,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          5
+        ],
+        "id": "VS056",
+        "reference_rs_positions": [
+          4,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          26
+        ],
+        "id": "VS063",
+        "reference_rs_positions": [
+          2,
+          26
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT4",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "id": "VS065",
+        "reference_rs_positions": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS066",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS067",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          5
+        ],
+        "id": "VS069",
+        "reference_rs_positions": [
+          2,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          4,
+          7,
+          12,
+          13,
+          14,
+          19
+        ],
+        "id": "VS070",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          7,
+          12,
+          13,
+          14,
+          19
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          5,
+          7,
+          8
+        ],
+        "id": "VS075",
+        "reference_rs_positions": [
+          2,
+          3,
+          5,
+          7,
+          8
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS080",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          7
+        ],
+        "id": "VS082",
+        "reference_rs_positions": [
+          2,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "id": "VS084",
+        "reference_rs_positions": [
+          2,
+          3,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          18
+        ],
+        "id": "VS087",
+        "reference_rs_positions": [
+          2,
+          18
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          18
+        ],
+        "id": "VS088",
+        "reference_rs_positions": [
+          2,
+          18
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          7,
+          8,
+          9,
+          15
+        ],
+        "id": "VS091",
+        "reference_rs_positions": [
+          2,
+          6,
+          7,
+          8,
+          9,
+          15
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          6
+        ],
+        "id": "VS098",
+        "reference_rs_positions": [
+          2,
+          3,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          6,
+          12
+        ],
+        "id": "VS102",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          12
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          4,
+          6,
+          7
+        ],
+        "id": "VS103",
+        "reference_rs_positions": [
+          3,
+          4,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "id": "VS105",
+        "reference_rs_positions": [
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          5
+        ],
+        "id": "VS106",
+        "reference_rs_positions": [
+          4,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS108",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "id": "VS111",
+        "reference_rs_positions": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          4
+        ],
+        "id": "VS112",
+        "reference_rs_positions": [
+          3,
+          4
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS113",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "id": "VS115",
+        "reference_rs_positions": [
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4
+        ],
+        "id": "VS116",
+        "reference_rs_positions": [
+          2,
+          4
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS119",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          26
+        ],
+        "id": "VS120",
+        "reference_rs_positions": [
+          3,
+          26
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH",
+          "TH3"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          19
+        ],
+        "id": "VS124",
+        "reference_rs_positions": [
+          2,
+          19
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          12,
+          13
+        ],
+        "id": "VS125",
+        "reference_rs_positions": [
+          12,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          5,
+          6,
+          24,
+          25,
+          27
+        ],
+        "id": "VS126",
+        "reference_rs_positions": [
+          3,
+          5,
+          6,
+          24,
+          25,
+          27
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          5,
+          6,
+          24,
+          25,
+          27
+        ],
+        "id": "VS127",
+        "reference_rs_positions": [
+          3,
+          5,
+          6,
+          24,
+          25,
+          27
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          9
+        ],
+        "id": "VS128",
+        "reference_rs_positions": [
+          2,
+          6,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          9
+        ],
+        "id": "VS129",
+        "reference_rs_positions": [
+          2,
+          6,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          5
+        ],
+        "id": "VS131",
+        "reference_rs_positions": [
+          2,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS132",
+        "reference_rs_positions": [
+          6,
+          14
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          10
+        ],
+        "id": "VS136",
+        "reference_rs_positions": [
+          4,
+          10
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          7,
+          10
+        ],
+        "id": "VS143",
+        "reference_rs_positions": [
+          2,
+          7,
+          10
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          9,
+          16
+        ],
+        "id": "VS146",
+        "reference_rs_positions": [
+          9,
+          16
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          7
+        ],
+        "id": "VS150",
+        "reference_rs_positions": [
+          2,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          6,
+          9
+        ],
+        "id": "VS152",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          18
+        ],
+        "id": "VS157",
+        "reference_rs_positions": [
+          2,
+          18
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "id": "VS159",
+        "reference_rs_positions": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          5,
+          7,
+          9
+        ],
+        "id": "VS160",
+        "reference_rs_positions": [
+          5,
+          7,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS163",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS168",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS169",
+        "reference_rs_positions": [
+          2,
+          3
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6
+        ],
+        "id": "VS172",
+        "reference_rs_positions": [
+          2,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          6,
+          7
+        ],
+        "id": "VS174",
+        "reference_rs_positions": [
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS196",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS197",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          7,
+          8,
+          12,
+          14,
+          17,
+          19,
+          23,
+          25,
+          28,
+          30
+        ],
+        "id": "VS198",
+        "reference_rs_positions": [
+          2,
+          3,
+          5,
+          7,
+          8,
+          12,
+          14,
+          17,
+          19,
+          23,
+          25,
+          28,
+          30
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          4,
+          6,
+          7
+        ],
+        "id": "VS199",
+        "reference_rs_positions": [
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          8,
+          9
+        ],
+        "id": "VS200",
+        "reference_rs_positions": [
+          2,
+          6,
+          7,
+          8,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          4,
+          6,
+          7
+        ],
+        "id": "VS201",
+        "reference_rs_positions": [
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          5,
+          8,
+          12,
+          15
+        ],
+        "id": "VS202",
+        "reference_rs_positions": [
+          3,
+          5,
+          8,
+          12,
+          15
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          9,
+          10,
+          15,
+          16,
+          22,
+          23
+        ],
+        "id": "VS203",
+        "reference_rs_positions": [
+          2,
+          3,
+          6,
+          9,
+          10,
+          15,
+          16,
+          22,
+          23
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          9,
+          10,
+          15,
+          16,
+          22,
+          23
+        ],
+        "id": "VS204",
+        "reference_rs_positions": [
+          2,
+          3,
+          6,
+          9,
+          10,
+          15,
+          16,
+          22,
+          23
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS205",
+        "reference_rs_positions": [
+          2,
+          5,
+          8,
+          11,
+          14,
+          17
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS206",
+        "reference_rs_positions": [
+          2,
+          5,
+          8,
+          11
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS207",
+        "reference_rs_positions": [
+          2,
+          5,
+          6,
+          7,
+          10,
+          16
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS208",
+        "reference_rs_positions": [
+          9,
+          15,
+          19,
+          23
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS209",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS210",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS211",
+        "reference_rs_positions": [
+          2,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS212",
+        "reference_rs_positions": [
+          2,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS213",
+        "reference_rs_positions": [
+          2,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS214",
+        "reference_rs_positions": [
+          3,
+          12
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          13
+        ],
+        "id": "VS215",
+        "reference_rs_positions": [
+          3,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          13
+        ],
+        "id": "VS216",
+        "reference_rs_positions": [
+          3,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          13
+        ],
+        "id": "VS217",
+        "reference_rs_positions": [
+          3,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          19,
+          22
+        ],
+        "id": "VS218",
+        "reference_rs_positions": [
+          19,
+          22
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS219",
+        "reference_rs_positions": [
+          2,
+          4
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS220",
+        "reference_rs_positions": [
+          2,
+          5,
+          6,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS221",
+        "reference_rs_positions": [
+          2,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS222",
+        "reference_rs_positions": [
+          2,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS223",
+        "reference_rs_positions": [
+          9,
+          15,
+          19,
+          23
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS224",
+        "reference_rs_positions": [
+          9,
+          12,
+          18,
+          21
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS225",
+        "reference_rs_positions": [
+          2,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS226",
+        "reference_rs_positions": [
+          2,
+          5,
+          8,
+          11,
+          12,
+          15,
+          19,
+          22,
+          28,
+          31
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          5
+        ],
+        "id": "VS227",
+        "reference_rs_positions": [
+          3,
+          4,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          5
+        ],
+        "id": "VS228",
+        "reference_rs_positions": [
+          3,
+          4,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          7
+        ],
+        "id": "VS229",
+        "reference_rs_positions": [
+          4,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3
+        ],
+        "id": "VS230",
+        "reference_rs_positions": [
+          2,
+          3,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          23,
+          26,
+          29,
+          32,
+          35,
+          38,
+          41
+        ],
+        "id": "VS233",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          7,
+          10,
+          13,
+          18,
+          23,
+          26,
+          29,
+          32,
+          34,
+          35,
+          38,
+          41
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          9,
+          18
+        ],
+        "id": "VS234",
+        "reference_rs_positions": [
+          2,
+          9,
+          18
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          7,
+          12
+        ],
+        "id": "VS235",
+        "reference_rs_positions": [
+          3,
+          5,
+          7,
+          12
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4
+        ],
+        "id": "VS236",
+        "reference_rs_positions": [
+          2,
+          3,
+          4
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          7
+        ],
+        "id": "VS237",
+        "reference_rs_positions": [
+          2,
+          5,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          7
+        ],
+        "id": "VS238",
+        "reference_rs_positions": [
+          2,
+          3,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          5,
+          9,
+          10,
+          15,
+          16,
+          20,
+          21
+        ],
+        "id": "VS239",
+        "reference_rs_positions": [
+          2,
+          4,
+          5,
+          9,
+          10,
+          15,
+          16,
+          20,
+          21
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS240",
+        "reference_rs_positions": [
+          2,
+          8
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          4,
+          6
+        ],
+        "id": "VS241",
+        "reference_rs_positions": [
+          2,
+          4,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          16,
+          18,
+          21,
+          23,
+          31,
+          33,
+          36,
+          38,
+          43,
+          45,
+          48,
+          50
+        ],
+        "id": "VS242",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          15,
+          16,
+          18,
+          21,
+          23,
+          26,
+          30,
+          31,
+          33,
+          36,
+          38,
+          42,
+          43,
+          45,
+          48,
+          50
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          5,
+          9
+        ],
+        "id": "VS243",
+        "reference_rs_positions": [
+          5,
+          9
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH",
+          "TH3"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          8,
+          12
+        ],
+        "id": "VS244",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          8,
+          12
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          3,
+          6,
+          9,
+          12
+        ],
+        "id": "VS245",
+        "reference_rs_positions": [
+          3,
+          6,
+          9,
+          12
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          16,
+          22,
+          25,
+          28,
+          31,
+          34,
+          37,
+          40,
+          43
+        ],
+        "id": "VS249",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          10,
+          13,
+          16,
+          19,
+          22,
+          24,
+          25,
+          28,
+          31,
+          34,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          16,
+          22,
+          25,
+          28,
+          31,
+          34,
+          37,
+          40,
+          43
+        ],
+        "id": "VS250",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          10,
+          13,
+          16,
+          19,
+          22,
+          24,
+          25,
+          28,
+          31,
+          34,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          9,
+          13
+        ],
+        "id": "VS251",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          9,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS252",
+        "reference_rs_positions": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS253",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS254",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS255",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS256",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2
+        ],
+        "id": "VS257",
+        "reference_rs_positions": [
+          2,
+          3,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2
+        ],
+        "id": "VS258",
+        "reference_rs_positions": [
+          2,
+          3,
+          6
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2
+        ],
+        "id": "VS259",
+        "reference_rs_positions": [
+          2,
+          7,
+          10,
+          15,
+          18
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          8,
+          11,
+          13
+        ],
+        "id": "VS260",
+        "reference_rs_positions": [
+          2,
+          5,
+          8,
+          11,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          16,
+          18,
+          21,
+          23,
+          36,
+          38,
+          41,
+          43,
+          48,
+          50,
+          53,
+          55,
+          58,
+          61
+        ],
+        "id": "VS261",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          13,
+          15,
+          16,
+          18,
+          21,
+          23,
+          29,
+          33,
+          35,
+          36,
+          38,
+          41,
+          43,
+          47,
+          48,
+          50,
+          53,
+          55,
+          58,
+          61
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          5,
+          8,
+          18,
+          21,
+          24,
+          27,
+          30,
+          33,
+          36,
+          39,
+          42
+        ],
+        "id": "VS262",
+        "reference_rs_positions": [
+          2,
+          5,
+          8,
+          13,
+          18,
+          20,
+          21,
+          24,
+          27,
+          30,
+          33,
+          36,
+          38,
+          39,
+          42
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          16,
+          18,
+          21,
+          23,
+          36,
+          38,
+          41,
+          43,
+          48,
+          50,
+          53,
+          55,
+          58,
+          61
+        ],
+        "id": "VS263",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          13,
+          15,
+          16,
+          18,
+          21,
+          23,
+          29,
+          33,
+          35,
+          36,
+          38,
+          41,
+          43,
+          47,
+          48,
+          50,
+          53,
+          55,
+          58,
+          61
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          16,
+          18,
+          21,
+          23,
+          36,
+          38,
+          41,
+          43,
+          48,
+          50,
+          53,
+          55,
+          58,
+          61
+        ],
+        "id": "VS264",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          15,
+          16,
+          18,
+          21,
+          23,
+          29,
+          35,
+          36,
+          38,
+          41,
+          43,
+          47,
+          48,
+          50,
+          53,
+          55,
+          58,
+          61
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          16,
+          18,
+          21,
+          23,
+          36,
+          38,
+          41,
+          43,
+          48,
+          50,
+          53,
+          55,
+          60
+        ],
+        "id": "VS265",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          13,
+          15,
+          16,
+          18,
+          21,
+          23,
+          29,
+          33,
+          35,
+          36,
+          38,
+          41,
+          43,
+          47,
+          48,
+          50,
+          53,
+          55,
+          60
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          16,
+          18,
+          21,
+          23,
+          36,
+          38,
+          41,
+          43,
+          48,
+          50,
+          53,
+          55,
+          60
+        ],
+        "id": "VS266",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          15,
+          16,
+          18,
+          21,
+          23,
+          29,
+          35,
+          36,
+          38,
+          41,
+          43,
+          47,
+          48,
+          50,
+          53,
+          55,
+          60
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          22,
+          24,
+          27,
+          29,
+          34,
+          36,
+          39,
+          41,
+          44,
+          47,
+          52,
+          54,
+          57,
+          59
+        ],
+        "id": "VS267",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          16,
+          21,
+          22,
+          24,
+          27,
+          29,
+          33,
+          34,
+          36,
+          39,
+          41,
+          44,
+          47,
+          51,
+          52,
+          54,
+          57,
+          59
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          9,
+          22,
+          24,
+          27,
+          29,
+          34,
+          36,
+          39,
+          41,
+          44,
+          47,
+          52,
+          54,
+          57,
+          59
+        ],
+        "id": "VS268",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          7,
+          9,
+          13,
+          16,
+          19,
+          21,
+          22,
+          24,
+          27,
+          29,
+          33,
+          34,
+          36,
+          39,
+          41,
+          44,
+          47,
+          51,
+          52,
+          54,
+          57,
+          59
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          16,
+          22,
+          25,
+          28,
+          31,
+          34,
+          37,
+          40,
+          43
+        ],
+        "id": "VS269",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          10,
+          13,
+          16,
+          19,
+          22,
+          24,
+          25,
+          28,
+          31,
+          34,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          16,
+          22,
+          25,
+          28,
+          31,
+          34,
+          37,
+          40,
+          43
+        ],
+        "id": "VS270",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          10,
+          13,
+          16,
+          19,
+          22,
+          24,
+          25,
+          28,
+          31,
+          34,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          3,
+          7,
+          8,
+          12,
+          13,
+          18,
+          19
+        ],
+        "id": "VS271",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          12,
+          13,
+          18,
+          19
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          11,
+          13,
+          16,
+          20,
+          23,
+          26,
+          31,
+          34,
+          37,
+          41
+        ],
+        "id": "VS272",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          7,
+          11,
+          13,
+          16,
+          20,
+          22,
+          23,
+          26,
+          29,
+          31,
+          34,
+          37,
+          41
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "CT",
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          8,
+          11,
+          15,
+          18,
+          22,
+          25,
+          30,
+          33,
+          37,
+          40,
+          43
+        ],
+        "id": "VS273",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          8,
+          11,
+          14,
+          15,
+          18,
+          21,
+          22,
+          25,
+          30,
+          33,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          8,
+          11,
+          15,
+          18,
+          22,
+          25,
+          30,
+          33,
+          37,
+          40,
+          43
+        ],
+        "id": "VS274",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          11,
+          15,
+          18,
+          21,
+          22,
+          25,
+          29,
+          30,
+          33,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          16,
+          22,
+          25,
+          28,
+          31,
+          34,
+          37,
+          40,
+          43
+        ],
+        "id": "VS275",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          10,
+          13,
+          16,
+          19,
+          22,
+          24,
+          25,
+          27,
+          28,
+          31,
+          34,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          9,
+          13
+        ],
+        "id": "VS276",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          9,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          16,
+          22,
+          25,
+          28,
+          31,
+          34,
+          37,
+          40,
+          43
+        ],
+        "id": "VS277",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          10,
+          13,
+          16,
+          19,
+          22,
+          24,
+          25,
+          28,
+          31,
+          34,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          4,
+          7,
+          10,
+          13,
+          16,
+          22,
+          25,
+          28,
+          31,
+          34,
+          37,
+          40,
+          43
+        ],
+        "id": "VS278",
+        "reference_rs_positions": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          10,
+          13,
+          16,
+          19,
+          22,
+          24,
+          25,
+          27,
+          28,
+          31,
+          34,
+          36,
+          37,
+          40,
+          43
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS279",
+        "reference_rs_positions": [
+          2,
+          4,
+          7,
+          12,
+          15
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS280",
+        "reference_rs_positions": [
+          3,
+          7,
+          11,
+          15,
+          19
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          9,
+          10
+        ],
+        "id": "VS294",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          9,
+          10
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [
+          2,
+          6,
+          9,
+          10
+        ],
+        "id": "VS295",
+        "reference_rs_positions": [
+          2,
+          4,
+          6,
+          9,
+          10
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS296",
+        "reference_rs_positions": [
+          2,
+          9,
+          14
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS297",
+        "reference_rs_positions": [
+          2,
+          5,
+          13
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS298",
+        "reference_rs_positions": [
+          2,
+          4,
+          7
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      },
+      {
+        "attached_configurations": [],
+        "id": "VS300",
+        "reference_rs_positions": [
+          2,
+          4,
+          18
+        ],
+        "renumbering_invariant": true,
+        "stereo_units": [
+          "TH"
+        ]
+      }
+    ],
+    "records_with_multiple_attached_configurations": 117,
+    "records_with_multiple_reference_rs_positions": 153,
+    "reference_rs_position_distribution": {
+      "0": 60,
+      "1": 87,
+      "10": 1,
+      "11": 1,
+      "13": 1,
+      "15": 2,
+      "16": 1,
+      "18": 1,
+      "19": 6,
+      "2": 53,
+      "21": 3,
+      "22": 1,
+      "23": 2,
+      "24": 1,
+      "25": 3,
+      "3": 26,
+      "4": 18,
+      "5": 15,
+      "6": 13,
+      "7": 1,
+      "8": 1,
+      "9": 3
+    },
+    "structure_inventory": {
+      "available": false,
+      "reason": "The audited compounds.smi checkout is not present. Structures are external-only and are not redistributed."
+    }
+  },
+  "claim_boundary": "Synthetic assignments prove composition behavior on six designed two- and three-element graphs. The selected ACS tier tests configured public whole molecules and may use its manual global labels. RotA contributes only positive axial support annotations. CIP contributes local carrier/R/S evidence and an ID-only manifest unless the audited external checkout is provided; neither RotA nor CIP is treated as global chirality truth.",
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2026.03.4"
+  },
+  "passed": true,
+  "protocol": {
+    "acs_relabelings_per_case": 2,
+    "acs_selected_ids": [
+      "VS066",
+      "VS219",
+      "VS058",
+      "VS161",
+      "VS230",
+      "VS034",
+      "VS084"
+    ],
+    "case_timeout_seconds": 10.0,
+    "cip_structures_supplied": false,
+    "synthetic_cases": [
+      "asymmetric_two_tetrahedral",
+      "symmetric_two_tetrahedral",
+      "tetrahedral_plus_planar_bond",
+      "two_planar_bonds",
+      "three_asymmetric_tetrahedral",
+      "tetrahedral_plus_two_planar_bonds"
+    ],
+    "synthetic_relabelings_per_case_representative": 1
+  },
+  "rota_multi_locus_extraction": {
+    "canonicalization_role": "multi-support extraction and relabeling stress only; RotA does not generally supply a fixed axial configuration",
+    "dataset": {
+      "audited_sha256": "141ae5281c034f8d08b900454fc387556b5c8702b3e2347d7141ddbd69c4daff",
+      "positive_only": true,
+      "records": 650
+    },
+    "multi_locus_candidates": [
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 24,
+        "chiral_type": "Nonbiaryl",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0000",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 52,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0203",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 49,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0205",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 45,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0251",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 52,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0262",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 60,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0263",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 52,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0281",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 61,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0290",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 119,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0292",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 17,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0301",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 46,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0302",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 50,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0309",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 42,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0313",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 47,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0327",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 42,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": true,
+        "id": "RotA-0333",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 31,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0365",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 30,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0366",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 29,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0367",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 28,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0368",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 27,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0369",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 24,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0370",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 25,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0371",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 27,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0372",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 29,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0373",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 39,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0374",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 47,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0375",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 26,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0376",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 33,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0377",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 27,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0378",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 33,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0379",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 30,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0380",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 59,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0382",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 30,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0383",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 39,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0384",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 39,
+        "chiral_type": "Chiral atom pair",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0385",
+        "reference_loci": 3,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 64,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0400",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 74,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0401",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 82,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0403",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": true,
+        "atoms": 74,
+        "chiral_type": "Biaryl structure",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0404",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      },
+      {
+        "all_reference_loci_recovered": false,
+        "atoms": 52,
+        "chiral_type": "Heterobiaryl (C-B)",
+        "exact_predicted_locus_set": false,
+        "id": "RotA-0497",
+        "reference_loci": 2,
+        "renumbering_invariant": true
+      }
+    ],
+    "multi_locus_records": 40,
+    "multi_records_all_loci_recovered": 15,
+    "multi_records_exact_predicted_set": 10,
+    "multi_records_renumbering_invariant": 40,
+    "multi_reference_loci": 88,
+    "reference_locus_distribution": {
+      "1": 610,
+      "2": 32,
+      "3": 8
+    }
+  },
+  "schema": "synkit.multi-element-canonicalization-benchmark/1",
+  "seconds": 1.8121327569997447,
+  "synthetic_composition": {
+    "cases": [
+      {
+        "atoms": 6,
+        "classes": [
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "90c20ddd5564eb39c15658c61c3eee15436f43669f41abc1588da7d87dc0caaa",
+            "class_index": 0,
+            "double_mirror_invariant": true,
+            "mirror_digest": "4d43ba47beff74b7940d645b6c4abff5f4df3b40d4c0d50987927eb0c72d1ee3",
+            "mirror_fixed": false,
+            "registry_order_invariant": true,
+            "relabeling_failures": [],
+            "relabelings_checked": 1,
+            "representative_bits": [
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "27013d715f076450d11ab7b9486daa06411ba79e3ef51c369ebb548d001601be",
+            "class_index": 1,
+            "double_mirror_invariant": null,
+            "mirror_digest": "f4cb905a9ac75b618097a62d2ccc9e6096e5cd8526e3734f404f448e04e71889",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "f4cb905a9ac75b618097a62d2ccc9e6096e5cd8526e3734f404f448e04e71889",
+            "class_index": 2,
+            "double_mirror_invariant": null,
+            "mirror_digest": "27013d715f076450d11ab7b9486daa06411ba79e3ef51c369ebb548d001601be",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "4d43ba47beff74b7940d645b6c4abff5f4df3b40d4c0d50987927eb0c72d1ee3",
+            "class_index": 3,
+            "double_mirror_invariant": null,
+            "mirror_digest": "90c20ddd5564eb39c15658c61c3eee15436f43669f41abc1588da7d87dc0caaa",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              1
+            ]
+          }
+        ],
+        "configured_elements": 2,
+        "diastereomer_pairs": 4,
+        "double_mirror_checks": 1,
+        "enantiomer_pairs": 2,
+        "exact_canonicalizations": 11,
+        "expected_diastereomer_pairs": 4,
+        "expected_enantiomer_pairs": 2,
+        "expected_global_classes": 4,
+        "expected_mirror_fixed_classes": 0,
+        "failures": [],
+        "families": {
+          "tetrahedral": 2
+        },
+        "global_classes": 4,
+        "mirror_closed_over_global_classes": true,
+        "mirror_fixed_classes": 0,
+        "name": "asymmetric_two_tetrahedral",
+        "passed": true,
+        "raw_assignments": 4,
+        "registry_order_checks": 1,
+        "relabelings_checked": 1,
+        "seconds": 0.08432248600001913,
+        "timeouts": 0
+      },
+      {
+        "atoms": 6,
+        "classes": [
+          {
+            "assignment_multiplicity": 2,
+            "canonical_digest": "4c6ed74a91ed14c18db6e683b5ebf131f9235c99a728274383d1fb7cc3d889cb",
+            "class_index": 0,
+            "double_mirror_invariant": true,
+            "mirror_digest": "4c6ed74a91ed14c18db6e683b5ebf131f9235c99a728274383d1fb7cc3d889cb",
+            "mirror_fixed": true,
+            "registry_order_invariant": true,
+            "relabeling_failures": [],
+            "relabelings_checked": 1,
+            "representative_bits": [
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "2786780dce9ab0c2e55644ecd3894be5917c1cd135798beb8c35b11d81bf1d7d",
+            "class_index": 1,
+            "double_mirror_invariant": null,
+            "mirror_digest": "8741d11d16afc3babb06239d3d653ff7497230919554dd36ae95db9002e3c8e8",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "8741d11d16afc3babb06239d3d653ff7497230919554dd36ae95db9002e3c8e8",
+            "class_index": 2,
+            "double_mirror_invariant": null,
+            "mirror_digest": "2786780dce9ab0c2e55644ecd3894be5917c1cd135798beb8c35b11d81bf1d7d",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0
+            ]
+          }
+        ],
+        "configured_elements": 2,
+        "diastereomer_pairs": 2,
+        "double_mirror_checks": 1,
+        "enantiomer_pairs": 1,
+        "exact_canonicalizations": 10,
+        "expected_diastereomer_pairs": 2,
+        "expected_enantiomer_pairs": 1,
+        "expected_global_classes": 3,
+        "expected_mirror_fixed_classes": 1,
+        "failures": [],
+        "families": {
+          "tetrahedral": 2
+        },
+        "global_classes": 3,
+        "mirror_closed_over_global_classes": true,
+        "mirror_fixed_classes": 1,
+        "name": "symmetric_two_tetrahedral",
+        "passed": true,
+        "raw_assignments": 4,
+        "registry_order_checks": 1,
+        "relabelings_checked": 1,
+        "seconds": 0.0891973819998384,
+        "timeouts": 0
+      },
+      {
+        "atoms": 7,
+        "classes": [
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "6b704ccb2876750362af49694a95b4ab96220d634978246fa0141356e9c92e7a",
+            "class_index": 0,
+            "double_mirror_invariant": true,
+            "mirror_digest": "a1cffef2e74a48c906558e719fe9461ee415a7d27866d33e81fe4b782d2fcd59",
+            "mirror_fixed": false,
+            "registry_order_invariant": true,
+            "relabeling_failures": [],
+            "relabelings_checked": 1,
+            "representative_bits": [
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "5c0bf2b78800cd1ef031edf28c2db1723c12356967daee18cef4e57f1148cde7",
+            "class_index": 1,
+            "double_mirror_invariant": null,
+            "mirror_digest": "1aee2167c297540d81dc74f16e19b515478a4a11681ba791af0d64d8907cefca",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "a1cffef2e74a48c906558e719fe9461ee415a7d27866d33e81fe4b782d2fcd59",
+            "class_index": 2,
+            "double_mirror_invariant": null,
+            "mirror_digest": "6b704ccb2876750362af49694a95b4ab96220d634978246fa0141356e9c92e7a",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "1aee2167c297540d81dc74f16e19b515478a4a11681ba791af0d64d8907cefca",
+            "class_index": 3,
+            "double_mirror_invariant": null,
+            "mirror_digest": "5c0bf2b78800cd1ef031edf28c2db1723c12356967daee18cef4e57f1148cde7",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              1
+            ]
+          }
+        ],
+        "configured_elements": 2,
+        "diastereomer_pairs": 4,
+        "double_mirror_checks": 1,
+        "enantiomer_pairs": 2,
+        "exact_canonicalizations": 11,
+        "expected_diastereomer_pairs": 4,
+        "expected_enantiomer_pairs": 2,
+        "expected_global_classes": 4,
+        "expected_mirror_fixed_classes": 0,
+        "failures": [],
+        "families": {
+          "planar_bond": 1,
+          "tetrahedral": 1
+        },
+        "global_classes": 4,
+        "mirror_closed_over_global_classes": true,
+        "mirror_fixed_classes": 0,
+        "name": "tetrahedral_plus_planar_bond",
+        "passed": true,
+        "raw_assignments": 4,
+        "registry_order_checks": 1,
+        "relabelings_checked": 1,
+        "seconds": 0.07063786299931962,
+        "timeouts": 0
+      },
+      {
+        "atoms": 6,
+        "classes": [
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "b81cb1da0ca7640d031662f86129f164cab55c69014643b23ea170a48b6994b9",
+            "class_index": 0,
+            "double_mirror_invariant": true,
+            "mirror_digest": "b81cb1da0ca7640d031662f86129f164cab55c69014643b23ea170a48b6994b9",
+            "mirror_fixed": true,
+            "registry_order_invariant": true,
+            "relabeling_failures": [],
+            "relabelings_checked": 1,
+            "representative_bits": [
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "bf727a8851a0f9ccd8a04c6a571a0b95215927d78eef3e6f9501f5c3cbaccfdb",
+            "class_index": 1,
+            "double_mirror_invariant": null,
+            "mirror_digest": "bf727a8851a0f9ccd8a04c6a571a0b95215927d78eef3e6f9501f5c3cbaccfdb",
+            "mirror_fixed": true,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "2a9735086c28af3319a95bd4c0dba614cebdb4b7fc6d6a3860571d67d577628b",
+            "class_index": 2,
+            "double_mirror_invariant": null,
+            "mirror_digest": "2a9735086c28af3319a95bd4c0dba614cebdb4b7fc6d6a3860571d67d577628b",
+            "mirror_fixed": true,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "e343d39cab2541c17b41a02c3cbd2d17125a334f68c6661f94844f24b5ad07b2",
+            "class_index": 3,
+            "double_mirror_invariant": null,
+            "mirror_digest": "e343d39cab2541c17b41a02c3cbd2d17125a334f68c6661f94844f24b5ad07b2",
+            "mirror_fixed": true,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              1
+            ]
+          }
+        ],
+        "configured_elements": 2,
+        "diastereomer_pairs": 6,
+        "double_mirror_checks": 1,
+        "enantiomer_pairs": 0,
+        "exact_canonicalizations": 11,
+        "expected_diastereomer_pairs": 6,
+        "expected_enantiomer_pairs": 0,
+        "expected_global_classes": 4,
+        "expected_mirror_fixed_classes": 4,
+        "failures": [],
+        "families": {
+          "planar_bond": 2
+        },
+        "global_classes": 4,
+        "mirror_closed_over_global_classes": true,
+        "mirror_fixed_classes": 4,
+        "name": "two_planar_bonds",
+        "passed": true,
+        "raw_assignments": 4,
+        "registry_order_checks": 1,
+        "relabelings_checked": 1,
+        "seconds": 0.04285383400019782,
+        "timeouts": 0
+      },
+      {
+        "atoms": 8,
+        "classes": [
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "9ba7b708e9a1854d59763b3f2c2f56cfae17db54ac7b796c1210a0f3e64bb802",
+            "class_index": 0,
+            "double_mirror_invariant": true,
+            "mirror_digest": "9e935213c7be4a984661bf2550d0f307c98173f0ffefb287947d32ac56869e20",
+            "mirror_fixed": false,
+            "registry_order_invariant": true,
+            "relabeling_failures": [],
+            "relabelings_checked": 1,
+            "representative_bits": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "4c0fec0b322b0e7203b303f635b18c691b22bc19d0c3f866aa147322d25f76e2",
+            "class_index": 1,
+            "double_mirror_invariant": null,
+            "mirror_digest": "39847be3e5b8b2c0f7d707b841d99eb92c7f9481ddfc167528dde4795b290476",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "405304947cbe284de3faa46c62cf83b7b6f9055410fd6a69c251b23f55f7db80",
+            "class_index": 2,
+            "double_mirror_invariant": null,
+            "mirror_digest": "d641ed71cd64c48991bb2d58daabba37ca8af62367009d3ad142aa84eae587f2",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "a7eadb60c2aa62fa7e037e1f78da6b575a49fc0e13e5bbc0f2028bcef2f85be2",
+            "class_index": 3,
+            "double_mirror_invariant": null,
+            "mirror_digest": "c54f395ca631717d52c94af3676917875d14a1a4cc13fdb7952db3254700c9db",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "c54f395ca631717d52c94af3676917875d14a1a4cc13fdb7952db3254700c9db",
+            "class_index": 4,
+            "double_mirror_invariant": null,
+            "mirror_digest": "a7eadb60c2aa62fa7e037e1f78da6b575a49fc0e13e5bbc0f2028bcef2f85be2",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "d641ed71cd64c48991bb2d58daabba37ca8af62367009d3ad142aa84eae587f2",
+            "class_index": 5,
+            "double_mirror_invariant": null,
+            "mirror_digest": "405304947cbe284de3faa46c62cf83b7b6f9055410fd6a69c251b23f55f7db80",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "39847be3e5b8b2c0f7d707b841d99eb92c7f9481ddfc167528dde4795b290476",
+            "class_index": 6,
+            "double_mirror_invariant": null,
+            "mirror_digest": "4c0fec0b322b0e7203b303f635b18c691b22bc19d0c3f866aa147322d25f76e2",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "9e935213c7be4a984661bf2550d0f307c98173f0ffefb287947d32ac56869e20",
+            "class_index": 7,
+            "double_mirror_invariant": null,
+            "mirror_digest": "9ba7b708e9a1854d59763b3f2c2f56cfae17db54ac7b796c1210a0f3e64bb802",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              1,
+              1
+            ]
+          }
+        ],
+        "configured_elements": 3,
+        "diastereomer_pairs": 24,
+        "double_mirror_checks": 1,
+        "enantiomer_pairs": 4,
+        "exact_canonicalizations": 19,
+        "expected_diastereomer_pairs": 24,
+        "expected_enantiomer_pairs": 4,
+        "expected_global_classes": 8,
+        "expected_mirror_fixed_classes": 0,
+        "failures": [],
+        "families": {
+          "tetrahedral": 3
+        },
+        "global_classes": 8,
+        "mirror_closed_over_global_classes": true,
+        "mirror_fixed_classes": 0,
+        "name": "three_asymmetric_tetrahedral",
+        "passed": true,
+        "raw_assignments": 8,
+        "registry_order_checks": 1,
+        "relabelings_checked": 1,
+        "seconds": 0.2357755149996592,
+        "timeouts": 0
+      },
+      {
+        "atoms": 9,
+        "classes": [
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "20dc1ea47997acce5cec3ee610a765919f56881b97d570668412a2af5f4f5913",
+            "class_index": 0,
+            "double_mirror_invariant": true,
+            "mirror_digest": "50269b11f89eee69cd8246322f2f61f45f4c210c4e124324d44889c451639dee",
+            "mirror_fixed": false,
+            "registry_order_invariant": true,
+            "relabeling_failures": [],
+            "relabelings_checked": 1,
+            "representative_bits": [
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "bd5e1187ef440899152836bb5e00cb8073492d232370dad87e235865d4e799ce",
+            "class_index": 1,
+            "double_mirror_invariant": null,
+            "mirror_digest": "8533b18c5d940278424e75e01815faed6c2d674153f9beaa4177c2658588e7c1",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "a7ca55fa494e2ce08e55eeef02877ff636c509a87418d06d5722ed5046eb7011",
+            "class_index": 2,
+            "double_mirror_invariant": null,
+            "mirror_digest": "aef4b11d8d76c2a16a334e2765ef97fd38cd0db90b3474c1c603d9515889dd08",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "f5f6217b926adb3c02c1856eef1f219667afb578b7b1d339b7bd03efc34b6c38",
+            "class_index": 3,
+            "double_mirror_invariant": null,
+            "mirror_digest": "581090dd8a075e30fa40369b33fb10a3a77235ddbd83c75d80c241847a19e92d",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              0,
+              1,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "50269b11f89eee69cd8246322f2f61f45f4c210c4e124324d44889c451639dee",
+            "class_index": 4,
+            "double_mirror_invariant": null,
+            "mirror_digest": "20dc1ea47997acce5cec3ee610a765919f56881b97d570668412a2af5f4f5913",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "8533b18c5d940278424e75e01815faed6c2d674153f9beaa4177c2658588e7c1",
+            "class_index": 5,
+            "double_mirror_invariant": null,
+            "mirror_digest": "bd5e1187ef440899152836bb5e00cb8073492d232370dad87e235865d4e799ce",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              0,
+              1
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "aef4b11d8d76c2a16a334e2765ef97fd38cd0db90b3474c1c603d9515889dd08",
+            "class_index": 6,
+            "double_mirror_invariant": null,
+            "mirror_digest": "a7ca55fa494e2ce08e55eeef02877ff636c509a87418d06d5722ed5046eb7011",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              1,
+              0
+            ]
+          },
+          {
+            "assignment_multiplicity": 1,
+            "canonical_digest": "581090dd8a075e30fa40369b33fb10a3a77235ddbd83c75d80c241847a19e92d",
+            "class_index": 7,
+            "double_mirror_invariant": null,
+            "mirror_digest": "f5f6217b926adb3c02c1856eef1f219667afb578b7b1d339b7bd03efc34b6c38",
+            "mirror_fixed": false,
+            "registry_order_invariant": null,
+            "relabeling_failures": [],
+            "relabelings_checked": 0,
+            "representative_bits": [
+              1,
+              1,
+              1
+            ]
+          }
+        ],
+        "configured_elements": 3,
+        "diastereomer_pairs": 24,
+        "double_mirror_checks": 1,
+        "enantiomer_pairs": 4,
+        "exact_canonicalizations": 19,
+        "expected_diastereomer_pairs": 24,
+        "expected_enantiomer_pairs": 4,
+        "expected_global_classes": 8,
+        "expected_mirror_fixed_classes": 0,
+        "failures": [],
+        "families": {
+          "planar_bond": 2,
+          "tetrahedral": 1
+        },
+        "global_classes": 8,
+        "mirror_closed_over_global_classes": true,
+        "mirror_fixed_classes": 0,
+        "name": "tetrahedral_plus_two_planar_bonds",
+        "passed": true,
+        "raw_assignments": 8,
+        "registry_order_checks": 1,
+        "relabelings_checked": 1,
+        "seconds": 0.15744368099967687,
+        "timeouts": 0
+      }
+    ],
+    "passed": true,
+    "totals": {
+      "cases": 6,
+      "diastereomer_pairs": 64,
+      "double_mirror_checks": 6,
+      "enantiomer_pairs": 13,
+      "exact_canonicalizations": 81,
+      "failed_cases": 0,
+      "global_classes": 31,
+      "mirror_fixed_classes": 5,
+      "raw_assignments": 32,
+      "registry_order_checks": 6,
+      "relabelings_checked": 6,
+      "timeouts": 0
+    }
+  },
+  "task": "exact composition of multiple configured stereo elements and task-scoped extraction of public multi-element records"
+}

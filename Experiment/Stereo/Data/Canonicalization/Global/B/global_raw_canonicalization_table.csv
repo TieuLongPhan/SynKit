@@ -1,0 +1,12 @@
+budget,enumeration_mode,source,record_id,carrier_composition,stereo_carriers,configuration_dependent_supports,full_raw_representation_product,joint_formal_assignments_expected,enumerated_assignments_expected,enumerated_assignments_completed,formal_assignment_tuples_covered,formal_assignment_tuples_invariant,observed_global_canonical_classes,formal_assignments_per_global_class,raw_assignments_per_global_class,representation_invariance_passed,timeouts,passed,seconds,issues
+B,raw,acs,VS192,planar_bond:2;tetrahedral:1,3,1,1536,8,1536,1536,8,8,4,2;2;2;2,384;384;384;384,true,0,true,24.17037863400037,
+B,raw,rota,RotA-0551,atrop_bond:2;tetrahedral:1,3,0,1536,8,1536,1536,8,8,8,1;1;1;1;1;1;1;1,192;192;192;192;192;192;192;192,true,0,true,24.430452306000007,
+B,raw,acs,VS018,planar_bond:1;tetrahedral:2,3,0,4608,8,4608,4608,8,8,8,1;1;1;1;1;1;1;1,576;576;576;576;576;576;576;576,true,0,true,70.89267768299942,
+B,raw,cip,VS063,extended_cis_trans:1;tetrahedral:2,3,0,4608,8,4608,4608,8,8,8,1;1;1;1;1;1;1;1,576;576;576;576;576;576;576;576,true,0,true,175.21350478400018,
+B,raw,cip,VS120,cumulene_axis:1;tetrahedral:2,3,0,4608,8,4608,4608,8,8,8,1;1;1;1;1;1;1;1,576;576;576;576;576;576;576;576,true,0,true,170.15588166399993,
+B,raw,cip,VS243,cumulene_axis:1;tetrahedral:2,3,0,4608,8,4608,4608,8,8,4,2;2;2;2,1152;1152;1152;1152,true,0,true,72.0765186409999,
+B,raw,rota,RotA-0262,atrop_bond:3;tetrahedral:1,4,0,12288,16,12288,12288,16,16,8,2;2;2;2;2;2;2;2,1536;1536;1536;1536;1536;1536;1536;1536,true,0,true,647.5391822379997,
+B,raw,rota,RotA-0195,atrop_bond:2;tetrahedral:2,4,0,36864,16,36864,36864,16,16,3,4;4;8,9216;9216;18432,true,0,true,2200.5425859439993,
+B,raw,rota,RotA-0497,atrop_bond:2;tetrahedral:2,4,0,36864,16,36864,36864,16,16,10,1;1;1;1;2;2;2;2;2;2,2304;2304;2304;2304;4608;4608;4608;4608;4608;4608,true,0,true,1629.0632467680007,
+B,raw,acs,VS053,planar_bond:4;tetrahedral:1,5,0,98304,32,98304,98304,32,32,32,1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1;1,3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072;3072,true,0,true,2175.6865497259996,
+B,raw,rota,RotA-0273,atrop_bond:5;tetrahedral:1,6,0,786432,64,786432,786432,64,64,2,32;32,393216;393216,true,0,true,60782.728711362,

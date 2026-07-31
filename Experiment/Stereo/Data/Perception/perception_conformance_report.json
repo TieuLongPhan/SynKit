@@ -1,0 +1,1169 @@
+{
+  "by_family": {
+    "atrop_axis": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "current_topology_detector",
+      "scored": 4
+    },
+    "cumulene_axis": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "current_topology_detector",
+      "scored": 4
+    },
+    "double_bond": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "current_topology_detector",
+      "scored": 4
+    },
+    "extended_cis_trans": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "current_topology_detector",
+      "scored": 4
+    },
+    "helical": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "sidecar_only",
+      "scored": 4
+    },
+    "octahedral": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "configured_adapter_only",
+      "scored": 4
+    },
+    "planar_chirality": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "sidecar_only",
+      "scored": 4
+    },
+    "square_planar": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "configured_adapter_only",
+      "scored": 4
+    },
+    "tetrahedral": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "current_topology_detector",
+      "scored": 4
+    },
+    "trigonal_bipyramidal": {
+      "conformance": 1.0,
+      "failed": 0,
+      "passed": 4,
+      "records": 4,
+      "scope": "configured_adapter_only",
+      "scored": 4
+    }
+  },
+  "claim_boundary": "This is designed API conformance, not empirical chemical accuracy. Connectivity, configured-adapter, and formal-sidecar results are separate executor contracts. Configuration evidence is removed or ignored before every carrier decision. Formal graphs marked chemical_validation=false do not establish chemical truth. Unconfigured non-tetrahedral geometry is not inferred from connectivity alone. Atrop candidates carry no stability claim.",
+  "dataset": {
+    "families": 10,
+    "path": "Experiment/Stereo/Data/Perception/perception_conformance_cases.json",
+    "records": 40,
+    "schema": "synkit.stereo-perception-conformance/1"
+  },
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2026.03.4"
+  },
+  "failure_ids": [],
+  "protocol": {
+    "configuration_evidence": "removed_before_perception",
+    "not_applicable_scopes": [],
+    "reason_codes_scored": "when_structured_evidence_is_emitted",
+    "scored_scopes": [
+      "current_topology_detector",
+      "configured_adapter_only",
+      "sidecar_only"
+    ]
+  },
+  "records": [
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "tetrahedral",
+      "id": "PER-TH-001",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "tetrahedral",
+          "source_identifier": "Atom_Tetrahedral:1",
+          "support": {
+            "center": 1,
+            "kind": "atom"
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "tetrahedral",
+      "id": "PER-TH-002",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "tetrahedral",
+          "source_identifier": "Atom_Tetrahedral:1",
+          "support": {
+            "center": 1,
+            "kind": "atom"
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "symmetry_related_ligands",
+      "family": "tetrahedral",
+      "id": "PER-TH-003",
+      "observed": [],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "ambiguous",
+      "expected_reason_code": "duplicate_ligand_configuration",
+      "family": "tetrahedral",
+      "id": "PER-TH-004",
+      "observed": [],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "double_bond",
+      "id": "PER-DB-001",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "double_bond",
+          "source_identifier": "Bond_Double:2",
+          "support": {
+            "bond": [
+              1,
+              3
+            ],
+            "kind": "bond"
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "double_bond",
+      "id": "PER-DB-002",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "double_bond",
+          "source_identifier": "Bond_Double:2",
+          "support": {
+            "bond": [
+              1,
+              3
+            ],
+            "kind": "bond"
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "duplicate_terminal_ligands",
+      "family": "double_bond",
+      "id": "PER-DB-003",
+      "observed": [],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "unsupported",
+      "expected_reason_code": "insufficient_terminal_references",
+      "family": "double_bond",
+      "id": "PER-DB-004",
+      "observed": [],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "cumulene_axis",
+      "id": "PER-CA-001",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "cumulene_axis",
+          "source_identifier": "cumulene_axis:1-3-4",
+          "support": {
+            "kind": "axis",
+            "path": [
+              1,
+              3,
+              4
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                5,
+                6
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "cumulene_axis",
+      "id": "PER-CA-002",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "cumulene_axis",
+          "source_identifier": "cumulene_axis:1-3-4",
+          "support": {
+            "kind": "axis",
+            "path": [
+              1,
+              3,
+              4
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                5,
+                6
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "duplicate_terminal_ligands",
+      "family": "cumulene_axis",
+      "id": "PER-CA-003",
+      "observed": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "family": "cumulene_axis",
+          "source_identifier": "cumulene_axis:1-3-4",
+          "support": {
+            "kind": "axis",
+            "path": [
+              1,
+              3,
+              4
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                5,
+                6
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "unsupported",
+      "expected_reason_code": "insufficient_terminal_references",
+      "family": "cumulene_axis",
+      "id": "PER-CA-004",
+      "observed": [],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "extended_cis_trans",
+      "id": "PER-EC-001",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "extended_cis_trans",
+          "source_identifier": "Extended_CisTrans:1-3-4-5",
+          "support": {
+            "kind": "path",
+            "path": [
+              1,
+              3,
+              4,
+              5
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                6,
+                7
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "extended_cis_trans",
+      "id": "PER-EC-002",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "extended_cis_trans",
+          "source_identifier": "Extended_CisTrans:1-3-4-5",
+          "support": {
+            "kind": "path",
+            "path": [
+              1,
+              3,
+              4,
+              5
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                6,
+                7
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "duplicate_terminal_ligands",
+      "family": "extended_cis_trans",
+      "id": "PER-EC-003",
+      "observed": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "family": "extended_cis_trans",
+          "source_identifier": "Extended_CisTrans:1-3-4-5",
+          "support": {
+            "kind": "path",
+            "path": [
+              1,
+              3,
+              4,
+              5
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                6,
+                7
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "unsupported",
+      "expected_reason_code": "insufficient_terminal_references",
+      "family": "extended_cis_trans",
+      "id": "PER-EC-004",
+      "observed": [],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "atrop_axis",
+      "id": "PER-AT-001",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "atrop_axis",
+          "source_identifier": "atrop_axis:5-7",
+          "support": {
+            "kind": "axis",
+            "path": [
+              5,
+              7
+            ],
+            "terminal_frames": [
+              [
+                4,
+                6
+              ],
+              [
+                8,
+                13
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "atrop_axis",
+      "id": "PER-AT-002",
+      "observed": [
+        {
+          "carrier_reason": null,
+          "carrier_status": "confirmed",
+          "family": "atrop_axis",
+          "source_identifier": "atrop_axis:5-7",
+          "support": {
+            "kind": "axis",
+            "path": [
+              5,
+              7
+            ],
+            "terminal_frames": [
+              [
+                4,
+                6
+              ],
+              [
+                8,
+                13
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "no_direct_inter_ring_axis",
+      "family": "atrop_axis",
+      "id": "PER-AT-003",
+      "observed": [],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "current_topology_detector",
+      "expected_outcome": "ambiguous",
+      "expected_reason_code": "symmetry_related_terminal_paths",
+      "family": "atrop_axis",
+      "id": "PER-AT-004",
+      "observed": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "family": "atrop_axis",
+          "source_identifier": "atrop_axis:5-6",
+          "support": {
+            "kind": "axis",
+            "path": [
+              5,
+              6
+            ],
+            "terminal_frames": [
+              [
+                4,
+                0
+              ],
+              [
+                7,
+                11
+              ]
+            ]
+          }
+        }
+      ],
+      "perception_scope": "current_topology_detector",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "square_planar",
+      "id": "PER-SP-001",
+      "observed": [
+        {
+          "family": "square_planar",
+          "support": {
+            "center": 1,
+            "kind": "atom",
+            "references": [
+              0,
+              2,
+              3,
+              4
+            ]
+          }
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": "shape_declared_configuration_unknown",
+      "family": "square_planar",
+      "id": "PER-SP-002",
+      "observed": [
+        {
+          "family": "square_planar",
+          "support": {
+            "center": 1,
+            "kind": "atom",
+            "references": [
+              0,
+              2,
+              3,
+              4
+            ]
+          }
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "not_applicable",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "all_ligands_symmetry_related",
+      "family": "square_planar",
+      "id": "PER-SP-003",
+      "observed": [],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "unsupported",
+      "expected_reason_code": "wrong_coordination_number",
+      "family": "square_planar",
+      "id": "PER-SP-004",
+      "observed": [
+        {
+          "adapter_error": "Square-planar center 2 requires exactly 4 represented or hydrogen ligands; vacant or otherwise missing coordination sites cannot be inferred safely.",
+          "reason": "wrong_coordination_number"
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "trigonal_bipyramidal",
+      "id": "PER-TB-001",
+      "observed": [
+        {
+          "family": "trigonal_bipyramidal",
+          "support": {
+            "center": 1,
+            "kind": "atom",
+            "references": [
+              0,
+              2,
+              3,
+              4,
+              5
+            ]
+          }
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": "shape_declared_configuration_unknown",
+      "family": "trigonal_bipyramidal",
+      "id": "PER-TB-002",
+      "observed": [
+        {
+          "family": "trigonal_bipyramidal",
+          "support": {
+            "center": 1,
+            "kind": "atom",
+            "references": [
+              0,
+              2,
+              3,
+              4,
+              5
+            ]
+          }
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "not_applicable",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "all_ligands_symmetry_related",
+      "family": "trigonal_bipyramidal",
+      "id": "PER-TB-003",
+      "observed": [],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "unsupported",
+      "expected_reason_code": "wrong_coordination_number",
+      "family": "trigonal_bipyramidal",
+      "id": "PER-TB-004",
+      "observed": [
+        {
+          "adapter_error": "Trigonal-bipyramidal center 2 requires exactly 5 represented or hydrogen ligands; vacant or otherwise missing coordination sites cannot be inferred safely.",
+          "reason": "wrong_coordination_number"
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": null,
+      "family": "octahedral",
+      "id": "PER-OH-001",
+      "observed": [
+        {
+          "family": "octahedral",
+          "support": {
+            "center": 1,
+            "kind": "atom",
+            "references": [
+              0,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "not_evaluated",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": "shape_declared_configuration_unknown",
+      "family": "octahedral",
+      "id": "PER-OH-002",
+      "observed": [
+        {
+          "family": "octahedral",
+          "support": {
+            "center": 1,
+            "kind": "atom",
+            "references": [
+              0,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "not_applicable",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "all_ligands_symmetry_related",
+      "family": "octahedral",
+      "id": "PER-OH-003",
+      "observed": [],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "ignored",
+      "executor": "configured_adapter_only",
+      "expected_outcome": "unsupported",
+      "expected_reason_code": "wrong_coordination_number",
+      "family": "octahedral",
+      "id": "PER-OH-004",
+      "observed": [
+        {
+          "adapter_error": "Octahedral center 2 requires exactly 6 represented or hydrogen ligands; vacant or otherwise missing coordination sites cannot be inferred safely.",
+          "reason": "wrong_coordination_number"
+        }
+      ],
+      "perception_scope": "configured_adapter_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "sidecar_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": "formal_graph_carrier",
+      "family": "helical",
+      "id": "PER-HE-001",
+      "observed": [
+        {
+          "family": "helical",
+          "reason": "formal_graph_carrier",
+          "support": {
+            "kind": "path",
+            "path": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        }
+      ],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "sidecar_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": "formal_graph_carrier",
+      "family": "helical",
+      "id": "PER-HE-002",
+      "observed": [
+        {
+          "family": "helical",
+          "reason": "formal_graph_carrier",
+          "support": {
+            "kind": "path",
+            "path": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ]
+          }
+        }
+      ],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "not_applicable",
+      "executor": "sidecar_only",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "flexible_open_chain",
+      "family": "helical",
+      "id": "PER-HE-003",
+      "observed": [],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "not_applicable",
+      "executor": "sidecar_only",
+      "expected_outcome": "ambiguous",
+      "expected_reason_code": "multiple_shortest_carrier_paths",
+      "family": "helical",
+      "id": "PER-HE-004",
+      "observed": [],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "configured_positive",
+      "configuration_check": "ignored",
+      "executor": "sidecar_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": "formal_graph_carrier",
+      "family": "planar_chirality",
+      "id": "PER-PC-001",
+      "observed": [
+        {
+          "family": "planar_chirality",
+          "reason": "formal_graph_carrier",
+          "support": {
+            "kind": "plane",
+            "pilot": 4,
+            "plane_atoms": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      ],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unconfigured_positive",
+      "configuration_check": "ignored",
+      "executor": "sidecar_only",
+      "expected_outcome": "carrier_present",
+      "expected_reason_code": "formal_graph_carrier",
+      "family": "planar_chirality",
+      "id": "PER-PC-002",
+      "observed": [
+        {
+          "family": "planar_chirality",
+          "reason": "formal_graph_carrier",
+          "support": {
+            "kind": "plane",
+            "pilot": 4,
+            "plane_atoms": [
+              0,
+              1,
+              2,
+              3
+            ]
+          }
+        }
+      ],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "negative_near_miss",
+      "configuration_check": "not_applicable",
+      "executor": "sidecar_only",
+      "expected_outcome": "carrier_absent",
+      "expected_reason_code": "missing_pilot_reference",
+      "family": "planar_chirality",
+      "id": "PER-PC-003",
+      "observed": [],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    },
+    {
+      "carrier_check": "passed",
+      "case_type": "unsupported_or_ambiguous",
+      "configuration_check": "not_applicable",
+      "executor": "sidecar_only",
+      "expected_outcome": "ambiguous",
+      "expected_reason_code": "plane_symmetry_unresolved",
+      "family": "planar_chirality",
+      "id": "PER-PC-004",
+      "observed": [],
+      "perception_scope": "sidecar_only",
+      "reason_check": "passed",
+      "status": "passed",
+      "status_reason": null
+    }
+  ],
+  "schema": "synkit.stereo-perception-conformance-report/1",
+  "seconds": 0.03333133399974031,
+  "summary": {
+    "configuration_checks": 0,
+    "configuration_checks_passed": 0,
+    "configuration_conformance": null,
+    "errors": 0,
+    "failed": 0,
+    "not_applicable": 0,
+    "passed": 40,
+    "reason_checks": 20,
+    "reason_checks_passed": 20,
+    "reason_conformance": 1.0,
+    "records": 40,
+    "scored_records": 40,
+    "strict_conformance": 1.0
+  }
+}
