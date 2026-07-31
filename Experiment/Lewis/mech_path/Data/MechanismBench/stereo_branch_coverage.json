@@ -1,0 +1,178 @@
+{
+  "schema": "MechanismBench-stereo-branch-coverage-v1",
+  "canonical_path": "Experiment/Lewis/mech_path/Data/MechanismBench/stereo_branch_coverage.json",
+  "status": "reviewed_claim_index",
+  "generated": "2026-07-29",
+  "description": "RX12 claim-to-witness index. It references chemistry-shaped cases and executable graph tests; serialization variants are explicitly excluded from coverage counts.",
+  "claim_boundary": "A coverage entry proves representation or declared execution only at the named route. It does not establish mechanism selection, reaction preference, yield, rate, stability, or experimental selectivity.",
+  "review": {
+    "reviewer": "SynKit project chemistry/software review",
+    "review_date": "2026-07-29",
+    "decision": "ACCEPT_WITH_CLAIM_BOUNDARIES",
+    "license": "project-owned index; referenced source licenses remain authoritative",
+    "chemical_rationale": "Each accepted witness is a named chemical transformation or a graph-native geometry fixture with explicit support.",
+    "mathematical_rationale": "Each branch is tied to one accepted witness and one boundary/refusal witness; normalized enum sets are checked exhaustively.",
+    "independence_boundary": "Automated gates validate schema, execution, and completeness. The review record does not claim an external experimental re-review."
+  },
+  "test_evidence": {
+    "reaction_semantics": "Test/Graph/Stereo/test_reaction_semantics.py",
+    "outcome": "Test/Synthesis/Reactor/test_syn_reactor_stereo_outcomes.py",
+    "its_stereo": "Test/Graph/ITS/test_stereo_layers.py",
+    "composition": "Test/Graph/Stereo/test_reaction_composition.py",
+    "transport": "Test/Graph/Stereo/test_reaction_transport_calculus.py",
+    "interchange": "Test/Graph/Stereo/test_reaction_interchange.py",
+    "mechanism": "Test/Mechanism/test_stereo_workflow.py",
+    "rule": "Test/Rule/test_generic_stereo_contract.py",
+    "reactor": "Test/Synthesis/Reactor/test_stereo_branch_algebra.py",
+    "fusion": "Test/Graph/Fusion/test_proof_document_digest.py",
+    "wire": "Test/Graph/Stereo/test_reaction_wire.py"
+  },
+  "excluded_from_case_count": [
+    "SER-01",
+    "SER-02",
+    "SER-03",
+    "SER-04",
+    "SER-05",
+    "SER-06",
+    "SER-07",
+    "SER-08",
+    "SER-09",
+    "SER-10",
+    "SER-11",
+    "SER-12",
+    "SER-13",
+    "SER-14"
+  ],
+  "coverage": {
+    "lifecycle": {
+      "RETAINED": ["stereo:ST-08", "stereo:ST-45"],
+      "INVERTED": ["stereo:ST-02", "test:reaction_semantics:missing_relation"],
+      "FORMED": ["stereo:ST-15", "stereo:ST-43"],
+      "BROKEN": ["stereo:ST-13", "test:its_stereo:missing_support"],
+      "FLEETING": ["stereo:ST-73", "test:composition:irreversible_loss"],
+      "UNSPECIFIED": ["stereo:ST-76", "stereo:ST-46"]
+    },
+    "population": {
+      "SINGLE": ["stereo:ST-02", "stereo:ST-45"],
+      "RACEMIC": ["stereo:ST-01", "stereo:ST-46"],
+      "ENANTIOMERIC_MIXTURE": ["stereo:ST-55", "test:outcome:equal_weights"],
+      "DIASTEREOMER_SET": ["coverage:COV-DS-01", "test:outcome:not_executable"],
+      "MESO": ["stereo:ST-05", "coupling:SC-01"],
+      "ACHIRAL": ["stereo:ST-13", "stereo:ST-43"],
+      "UNKNOWN": ["stereo:ST-76", "stereo:ST-46"]
+    },
+    "determinacy": {
+      "STEREOSPECIFIC": ["stereo:ST-02", "stereo:ST-42"],
+      "STEREOSELECTIVE": ["stereo:ST-15", "stereo:ST-45"],
+      "NON_STEREOSPECIFIC": ["stereo:ST-01", "stereo:ST-46"],
+      "UNDERDETERMINED": ["stereo:ST-76", "electrocyclic:EC-N02"]
+    },
+    "evidence": {
+      "SOURCE_DECLARED": ["stereo:ST-02", "stereo:ST-46"],
+      "RULE_DECLARED": ["coupling:SC-01", "coupling:SC-N03"],
+      "MECHANISM_CONSTRAINED": ["electrocyclic:EC-01", "electrocyclic:EC-N01"],
+      "CONTEXT_REQUIRED": ["stereo:ST-42", "electrocyclic:EC-N02"],
+      "UNSUPPORTED": ["stereo:ST-43", "stereo:ST-48"]
+    },
+    "descriptor_family": {
+      "tetrahedral": ["stereo:ST-02", "test:its_stereo:missing_support"],
+      "planar_bond": ["stereo:ST-34", "stereo:ST-43"],
+      "atrop_bond": ["stereo:nt-atrop-biaryl-radical-coupling", "test:interchange:unsupported_carrier"],
+      "square_planar": ["stereo:nt-sp-stereomutation", "test:its_stereo:missing_support"],
+      "trigonal_bipyramidal": ["stereo:nt-tbp-inversion", "test:its_stereo:missing_support"],
+      "octahedral": ["stereo:nt-oh-inversion", "test:its_stereo:missing_support"],
+      "cumulene_axis": ["test:transport:all_families", "test:its_stereo:broken_path"],
+      "extended_cis_trans": ["test:transport:all_families", "test:its_stereo:broken_path"],
+      "helical": ["test:transport:all_families", "test:its_stereo:broken_path"],
+      "planar_chirality": ["test:transport:all_families", "test:its_stereo:broken_path"],
+      "framework": ["test:transport:all_families", "test:its_stereo:overlap"]
+    },
+    "coupling_kind": {
+      "VICINAL_ADDITION": ["coupling:SC-01", "coupling:SC-N03"],
+      "VICINAL_ELIMINATION": ["coupling:SC-01:reverse", "coupling:SC-N04"]
+    },
+    "coupling_relation": {
+      "SYN": ["coupling:SC-01", "coupling:SC-N01"],
+      "ANTI": ["coupling:SC-02", "coupling:SC-N02"]
+    },
+    "verification_mode": {
+      "off": ["mechanism:polar", "test:mechanism:mode_disclosed"],
+      "endpoint": ["electrocyclic:EC-N01:endpoint", "electrocyclic:EC-N01:stepwise"],
+      "stepwise": ["electrocyclic:EC-01", "electrocyclic:EC-N01"]
+    },
+    "route": {
+      "forward": ["stereo:ST-02", "stereo:ST-43"],
+      "reverse": ["coupling:SC-01:reverse", "test:composition:noninvertible"],
+      "exact_rule": ["stereo:ST-02", "test:rule:invalid_support"],
+      "generic_rule": ["stereo:ST-75", "test:rule:context_leak"],
+      "its": ["stereo:ST-73", "test:its_stereo:missing_support"],
+      "reactor": ["coupling:SC-01", "coupling:SC-N03"],
+      "fusion": ["test:composition:two_sn2", "test:fusion:tamper"],
+      "mechanism": ["electrocyclic:EC-01", "electrocyclic:EC-N01"],
+      "interchange": ["test:interchange:sidecar", "test:interchange:unsupported_carrier"]
+    },
+    "refusal_code": {
+      "INVALID_REFERENCE": ["test:wire:wrong_owner", "stereo:ST-02"],
+      "UNSUPPORTED_GEOMETRY": ["stereo:ST-43", "stereo:ST-34"],
+      "AMBIGUOUS_ALIGNMENT": ["test:transport:ambiguous", "stereo:ST-02"],
+      "LOSSY_PROJECTION": ["test:interchange:unsupported_carrier", "test:interchange:sidecar"],
+      "MISSING_CONTEXT": ["electrocyclic:EC-N02", "electrocyclic:EC-01"],
+      "ASSIGNMENT_LIMIT": ["test:reactor:assignment_limit", "coupling:SC-01"],
+      "BRANCH_LIMIT": ["test:reactor:branch_limit", "coupling:SC-01"],
+      "IRREVERSIBLE_INFORMATION_LOSS": ["test:composition:irreversible_loss", "test:composition:two_sn2"],
+      "CONTRADICTORY_ASSERTION": ["stereo:ST-48", "stereo:ST-02"],
+      "INVALID_COUPLING": ["coupling:SC-N02", "coupling:SC-02"]
+    }
+  },
+  "cases": [
+    {
+      "case_id": "COV-DS-01",
+      "name": "Nonselective reduction of an enantiopure substituted cyclohexanone",
+      "status": "specification_only",
+      "assertion": {
+        "descriptor_class": "tetrahedral",
+        "lifecycle": "FORMED",
+        "relation": null,
+        "population": "DIASTEREOMER_SET",
+        "determinacy": "NON_STEREOSPECIFIC",
+        "evidence": "SOURCE_DECLARED",
+        "context": ["pre-existing stereocentre", "nonselective carbonyl reduction"],
+        "provenance": "RX12 coverage review"
+      },
+      "forward_expectation": "Both facial additions create products diastereomeric to one another.",
+      "reverse_expectation": "Not executable: a population assertion is not an invertible local rule.",
+      "chemical_rationale": "A pre-existing stereocentre makes the two newly formed alcohol configurations diastereomeric rather than enantiomeric.",
+      "mathematical_rationale": "The assertion occupies DIASTEREOMER_SET without assigning branch weights or independent local-centre products.",
+      "limitations": "Specification evidence only; no yield, ratio, substrate preference, or executable branching claim.",
+      "reviewer_decision": "ACCEPT_WITH_CLAIM_BOUNDARY",
+      "license": "project-owned synthetic conformance case"
+    }
+  ],
+  "deferred_families": [
+    {
+      "family": "isotope_pseudoasymmetry",
+      "blocker": "No complete isotope-aware CIP Rules 4b-5 reaction ranking oracle.",
+      "required_to_promote": "Pinned isotope/CIP oracle plus forward/reverse descriptor validation."
+    },
+    {
+      "family": "enhanced_stereo_population",
+      "blocker": "CXSMILES/V3000 ABS/AND/OR groups do not normatively encode reaction product populations.",
+      "required_to_promote": "A versioned population mapping with cross-reader agreement."
+    },
+    {
+      "family": "ring_relative_locked_elimination",
+      "blocker": "No ring-relative coupling schema or independent conformational oracle.",
+      "required_to_promote": "Ring-frame support, conformation witness, and reverse replay oracle."
+    },
+    {
+      "family": "facial_pericyclic_selectivity",
+      "blocker": "Electrocyclic mode verification does not predict facial selectivity or conditions.",
+      "required_to_promote": "Declared facial frame and reviewed experimental or computational oracle."
+    },
+    {
+      "family": "advanced_allene_spiro_coordination",
+      "blocker": "No graph-native reaction executor for these coupled supports.",
+      "required_to_promote": "Executable support transport, rule extraction, and reactor reconstruction."
+    }
+  ]
+}

@@ -61,6 +61,9 @@ synkit/Graph/dev/*
 !Experiment/Lewis/mech_path/Data/MechanismBench/polar.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/radical.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json
+!Experiment/Lewis/mech_path/Data/MechanismBench/electrocyclic_machinery.json
+!Experiment/Lewis/mech_path/Data/MechanismBench/stereo_branch_coverage.json
+!Experiment/Lewis/mech_path/Data/MechanismBench/stereo_couplings.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/evidence/mechanismbench_evidence.json
 !Experiment/Lewis/rule_replay/Data/bidirectional-replay/results.json
 !Experiment/Lewis/rule_replay/Data/relative-lone-pair/results.json

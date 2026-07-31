@@ -1,0 +1,122 @@
+{
+  "schema": "MechanismBench-stereo-coupling-v1",
+  "canonical_path": "Experiment/Lewis/mech_path/Data/MechanismBench/stereo_couplings.json",
+  "status": "reviewed",
+  "generated": "2026-07-29",
+  "description": "Reviewed software-semantic fixtures for correlated vicinal SYN/ANTI addition and exact reverse elimination. These are chemistry-shaped conformance cases, not experimental selectivity measurements.",
+  "review": {
+    "scope": "local relative stereochemical correlation",
+    "review_basis": [
+      "mapped mass-balanced reaction",
+      "explicit coupling declaration",
+      "independent RDKit CIP verification",
+      "forward and reverse executable replay",
+      "manual claim-boundary review"
+    ],
+    "claim_boundary": "SYN and ANTI denote the declared correlation of the two mapped delivered or eliminated ligands. The fixtures do not claim a reagent preference, yield, rate, enantiomeric excess, facial selectivity, or pericyclic/ring selectivity."
+  },
+  "positive_case_count": 4,
+  "negative_fixture_count": 4,
+  "cases": [
+    {
+      "case_id": "SC-01",
+      "name": "SYN bromination of E-2-butene and paired reverse elimination",
+      "kind": "positive",
+      "relation": "SYN",
+      "mapped_reaction": "[CH3:1][CH:2]=[CH:3][CH3:4].[Br:5][Br:6]>>[CH3:1][CH:2]([Br:5])[CH:3]([Br:6])[CH3:4]",
+      "coupling_target": "bond:2-3",
+      "substrate": "C/C=C/C.BrBr",
+      "reactant_geometry": "E",
+      "expected_product_cip_sets": [["R", "R"], ["S", "S"]],
+      "expected_raw_branch_count": 2,
+      "expected_unique_product_count": 2,
+      "reverse_expected_geometry": "E"
+    },
+    {
+      "case_id": "SC-02",
+      "name": "ANTI bromination of E-2-butene and paired reverse elimination",
+      "kind": "positive",
+      "relation": "ANTI",
+      "mapped_reaction": "[CH3:1][CH:2]=[CH:3][CH3:4].[Br:5][Br:6]>>[CH3:1][CH:2]([Br:5])[CH:3]([Br:6])[CH3:4]",
+      "coupling_target": "bond:2-3",
+      "substrate": "C/C=C/C.BrBr",
+      "reactant_geometry": "E",
+      "expected_product_cip_sets": [["R", "S"]],
+      "expected_raw_branch_count": 2,
+      "expected_unique_product_count": 1,
+      "reverse_expected_geometry": "E"
+    },
+    {
+      "case_id": "SC-03",
+      "name": "SYN bromination of Z-2-butene and paired reverse elimination",
+      "kind": "positive",
+      "relation": "SYN",
+      "mapped_reaction": "[CH3:1][CH:2]=[CH:3][CH3:4].[Br:5][Br:6]>>[CH3:1][CH:2]([Br:5])[CH:3]([Br:6])[CH3:4]",
+      "coupling_target": "bond:2-3",
+      "substrate": "C/C=C\\C.BrBr",
+      "reactant_geometry": "Z",
+      "expected_product_cip_sets": [["R", "S"]],
+      "expected_raw_branch_count": 2,
+      "expected_unique_product_count": 1,
+      "reverse_expected_geometry": "Z"
+    },
+    {
+      "case_id": "SC-04",
+      "name": "ANTI bromination of Z-2-butene and paired reverse elimination",
+      "kind": "positive",
+      "relation": "ANTI",
+      "mapped_reaction": "[CH3:1][CH:2]=[CH:3][CH3:4].[Br:5][Br:6]>>[CH3:1][CH:2]([Br:5])[CH:3]([Br:6])[CH3:4]",
+      "coupling_target": "bond:2-3",
+      "substrate": "C/C=C\\C.BrBr",
+      "reactant_geometry": "Z",
+      "expected_product_cip_sets": [["R", "R"], ["S", "S"]],
+      "expected_raw_branch_count": 2,
+      "expected_unique_product_count": 2,
+      "reverse_expected_geometry": "Z"
+    },
+    {
+      "case_id": "SC-N01",
+      "name": "Wrong center arity",
+      "kind": "negative",
+      "error": "INVALID_CENTER_ARITY",
+      "coupling": {
+        "kind": "VICINAL_ADDITION",
+        "relation": "SYN",
+        "centers": [2, 3, 4],
+        "ligands": [5, 6]
+      }
+    },
+    {
+      "case_id": "SC-N02",
+      "name": "Center reused as transferred ligand",
+      "kind": "negative",
+      "error": "OVERLAPPING_SUPPORT",
+      "coupling": {
+        "kind": "VICINAL_ADDITION",
+        "relation": "ANTI",
+        "centers": [2, 3],
+        "ligands": [3, 6]
+      }
+    },
+    {
+      "case_id": "SC-N03",
+      "name": "Absent alkene geometry",
+      "kind": "negative",
+      "error": "INSUFFICIENT_ADDITION_CONTEXT",
+      "relation": "SYN",
+      "mapped_reaction": "[CH3:1][CH:2]=[CH:3][CH3:4].[Br:5][Br:6]>>[CH3:1][CH:2]([Br:5])[CH:3]([Br:6])[CH3:4]",
+      "coupling_target": "bond:2-3",
+      "substrate": "CC=CC.BrBr"
+    },
+    {
+      "case_id": "SC-N04",
+      "name": "Absent paired tetrahedral input",
+      "kind": "negative",
+      "error": "INSUFFICIENT_ELIMINATION_CONTEXT",
+      "relation": "ANTI",
+      "mapped_reaction": "[CH3:1][CH:2]=[CH:3][CH3:4].[Br:5][Br:6]>>[CH3:1][CH:2]([Br:5])[CH:3]([Br:6])[CH3:4]",
+      "coupling_target": "bond:2-3",
+      "substrate": "CC(Br)C(Br)C"
+    }
+  ]
+}
