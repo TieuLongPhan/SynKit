@@ -97,6 +97,37 @@ isomorphic graphs :cite:`weisfeiler1968reduction`.
       False
       True
 
+Coupled global stereographs
+---------------------------
+
+``FrameworkStereo`` represents a configured whole-framework orientation as a
+coupled set of local frames over one connected ``GlobalStereoSupport``. The
+exact coloured auxiliary stereograph quotients atom, support, frame, and
+descriptor ordering. Spatial reflection changes the global orientation once;
+it does not reinterpret source ``@``/``@@`` tags or use CIP labels.
+
+An orientation-unspecified framework is a retained information state, not an
+arbitrary configuration. Configured mirror comparison returns ``incomplete``
+until authorized evidence selects positive or negative orientation. Dict/JSON
+round trips are exact, while RDKit projection raises explicitly because RDKit
+has no faithful whole-framework wire representation.
+
+.. code-block:: python
+
+   from synkit.Graph.Stereo import (
+       FrameworkFrame,
+       FrameworkStereo,
+       stereo_from_dict,
+   )
+
+   configured = FrameworkStereo(
+       frozenset({1, 2, 3, 4, 5}),
+       (FrameworkFrame(1, (2, 3, 4, "@H:1"), 1),),
+       orientation=1,
+       provenance="declared_sidecar",
+   )
+   assert stereo_from_dict(configured.to_dict()) == configured
+
 Matcher
 -------
 
@@ -190,7 +221,7 @@ The ``synkit.Graph.ITS`` package supports the construction and decomposition of
 - :py:func:`~synkit.Graph.ITS.its_decompose.its_decompose` — split an ITS graph into reactant/product graphs
 
 Lewis-labelled graph fields
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SynKit 1.4 introduced the representation now called the Lewis-labelled graph
 (LLG) framework for the

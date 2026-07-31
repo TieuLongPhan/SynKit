@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.5-baseline1",
+  "public_v2_acronym": "LLG",
+  "previous_public_acronym": "LSG",
+  "legacy_acronym": "LWG",
+  "compatible_acronyms": ["LLG", "LSG", "LWG"],
+  "columns": [
+    "rdkit_read",
+    "molecular_graph",
+    "its",
+    "rule",
+    "matching",
+    "rdkit_write",
+    "serialization",
+    "visualization"
+  ],
+  "attributes": {
+    "element": [true, true, true, true, true, true, true, true],
+    "atom_map": [true, true, true, true, true, true, true, true],
+    "charge": [true, true, true, true, true, true, true, true],
+    "hcount": [true, true, true, true, "lower_bound", true, true, true],
+    "lone_pairs": ["estimated", true, true, true, "lower_bound", false, true, true],
+    "radical": [true, true, true, true, "strict_when_selected", true, true, "partial"],
+    "valence_electrons": ["periodic_table", true, true, true, false, false, true, false],
+    "sigma_order": ["derived", true, true, true, true, "via_kekule", true, "bond_order"],
+    "pi_order": ["derived", true, true, true, true, "via_kekule", true, "bond_order"],
+    "kekule_order": [true, true, true, true, true, true, true, "bond_order"],
+    "atom_stereo": ["legacy_isomer", "legacy", false, false, false, false, false, false],
+    "bond_stereo": ["legacy_ez_isomer", "legacy", "legacy", false, false, false, false, false]
+  }
+}

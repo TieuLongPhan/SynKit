@@ -34,6 +34,31 @@ class ConversionLossReport:
         }
 
 
+def _record_projection_losses(
+    record: MechanismRecord,
+    *,
+    include_fishhook: bool,
+) -> list[str]:
+    """Return fields omitted by a flattened mechanism projection."""
+    discarded = ["event_groups", "provenance"]
+    optional_fields = (
+        ("metadata", bool(record.metadata)),
+        ("endpoint_stereo", bool(record.endpoint_stereo)),
+        ("stereo_effects", any(step.stereo_effects for step in record.steps)),
+        ("stereo_motions", any(step.stereo_motions for step in record.steps)),
+    )
+    discarded.extend(name for name, present in optional_fields if present)
+    has_fishhook = include_fishhook and any(
+        move.electron_count == 1
+        for step in record.steps
+        for group in step.groups
+        for move in group.moves
+    )
+    if has_fishhook:
+        discarded.extend(("fishhook_events", "fishhook_coupling"))
+    return discarded
+
+
 def project_record(
     record: MechanismRecord, target_format: str
 ) -> tuple[Any, ConversionLossReport]:
@@ -41,16 +66,7 @@ def project_record(
     if target_format == "json":
         return record.to_dict(), ConversionLossReport("MechanismRecord", "json")
     if target_format == "mapped_reaction_smiles":
-        discarded = ["event_groups", "provenance"]
-        if any(step.stereo_effects for step in record.steps):
-            discarded.append("stereo_effects")
-        if any(
-            move.electron_count == 1
-            for step in record.steps
-            for group in step.groups
-            for move in group.moves
-        ):
-            discarded.extend(("fishhook_events", "fishhook_coupling"))
+        discarded = _record_projection_losses(record, include_fishhook=True)
         return record.mapped_reaction, ConversionLossReport(
             "MechanismRecord", target_format, tuple(discarded)
         )
@@ -61,9 +77,7 @@ def project_record(
         for step in record.steps:
             for group in step.groups:
                 rows.extend(legacy_epd_from_group(group))
-        discarded = ["event_groups", "provenance"]
-        if any(step.stereo_effects for step in record.steps):
-            discarded.append("stereo_effects")
+        discarded = _record_projection_losses(record, include_fishhook=False)
         return rows, ConversionLossReport(
             "MechanismRecord", target_format, tuple(discarded)
         )
@@ -78,6 +92,9 @@ def stereo_graph_to_gml(graph: nx.Graph) -> tuple[str, ConversionLossReport]:
     """Serialize graph-level descriptors through a JSON-valued GML attribute."""
     serializable = nx.Graph(graph)
     registry = graph.graph.get("stereo_descriptors", {})
+    discarded = tuple(
+        f"graph.{key}" for key in sorted(graph.graph) if key != "stereo_descriptors"
+    )
     serializable.graph.clear()
     serializable.graph["stereo_descriptors_json"] = json.dumps(
         {key: value.to_dict() for key, value in registry.items()},
@@ -85,7 +102,7 @@ def stereo_graph_to_gml(graph: nx.Graph) -> tuple[str, ConversionLossReport]:
         sort_keys=True,
     )
     return "\n".join(nx.generate_gml(serializable)), ConversionLossReport(
-        "networkx", "gml"
+        "networkx", "gml", discarded
     )
 
 

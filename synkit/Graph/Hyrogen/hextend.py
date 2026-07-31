@@ -1,6 +1,6 @@
 import networkx as nx
 from joblib import Parallel, delayed
-from typing import List, Tuple, Dict, Optional
+from typing import Dict, Iterator, List, Optional, Tuple
 
 from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Hyrogen.hcomplete import HComplete, ITSFormatInput
@@ -125,9 +125,33 @@ class HExtend(HComplete):
         format: ITSFormatInput = "auto",
         max_candidates: Optional[int] = None,
     ) -> Tuple[List[nx.Graph], List[nx.Graph], List[str]]:
-        """Extend an ITS graph and construct only unique cluster representatives."""
+        """Extend an ITS graph and retain exact RC-class representatives."""
+        representatives = list(
+            HExtend.iter_unique_completions(
+                its,
+                ignore_aromaticity=ignore_aromaticity,
+                balance_its=balance_its,
+                format=format,
+                max_candidates=max_candidates,
+            )
+        )
+        return (
+            [item[0] for item in representatives],
+            [item[1] for item in representatives],
+            [item[2] for item in representatives],
+        )
+
+    @staticmethod
+    def iter_unique_completions(
+        its: nx.Graph,
+        ignore_aromaticity: bool = False,
+        balance_its: bool = True,
+        format: ITSFormatInput = "auto",
+        max_candidates: Optional[int] = None,
+    ) -> Iterator[Tuple[nx.Graph, nx.Graph, str]]:
+        """Yield one completed ``(RC, ITS, signature)`` per exact RC class."""
         if not isinstance(its, nx.Graph) or its.number_of_nodes() == 0:
-            return [], [], []
+            return
 
         resolved_format = HComplete._resolve_format(its, format)
         react_graph, prod_graph = HComplete._decompose_its(its, resolved_format)
@@ -135,70 +159,43 @@ class HExtend(HComplete):
         if hcount_change == 0:
             rc = HComplete._extract_rc(its, resolved_format)
             if not HComplete._valid_rc(rc):
-                return [], [], []
-            return [rc], [its], [HComplete._rc_signature(rc, resolved_format)]
+                return
+            yield rc, its, HComplete._rc_signature(rc, resolved_format)
+            return
 
-        side_candidates = []
-        cluster_graphs = []
-        candidate_sigs = []
-        static_tuple_nodes = (
-            HComplete._tuple_static_node_changes(react_graph, prod_graph)
-            if resolved_format == "tuple"
-            else None
-        )
-
+        representatives = []
         for (
-            current_react_graph,
-            current_prod_graph,
-        ) in HComplete._iter_hydrogen_side_graph_completions(
+            _,
+            _,
+            completed_its,
+            rc,
+            signature,
+        ) in HComplete._iter_hydrogen_node_completions(
             react_graph,
             prod_graph,
+            ignore_aromaticity,
+            balance_its,
+            format=resolved_format,
             max_candidates=max_candidates,
         ):
-            comparison_graph = HComplete._candidate_comparison_graph(
-                current_react_graph,
-                current_prod_graph,
-                resolved_format,
-                ignore_aromaticity=ignore_aromaticity,
-                static_tuple_nodes=static_tuple_nodes,
-            )
-            if comparison_graph.number_of_nodes() == 0:
-                continue
-
-            side_candidates.append((current_react_graph, current_prod_graph))
-            cluster_graphs.append(comparison_graph)
-            candidate_sigs.append(
-                HComplete._comparison_graph_signature(comparison_graph)
-            )
-
-        if not cluster_graphs:
-            return [], [], []
-
-        cls, _ = cluster.iterative_cluster(cluster_graphs, candidate_sigs)
-
-        rc_list, its_list, rc_sig = [], [], []
-        for cluster_indices in cls:
-            if not cluster_indices:
-                continue
-
-            candidate_index = min(cluster_indices)
-            current_react_graph, current_prod_graph = side_candidates[candidate_index]
-            completed_its = HComplete._construct_its(
-                current_react_graph,
-                current_prod_graph,
-                ignore_aromaticity,
-                balance_its,
-                resolved_format,
-            )
-            rc = HComplete._extract_rc(completed_its, resolved_format)
             if not HComplete._valid_rc(rc):
                 continue
 
-            rc_list.append(rc)
-            its_list.append(completed_its)
-            rc_sig.append(HComplete._rc_signature(rc, resolved_format))
-
-        return rc_list, its_list, rc_sig
+            duplicate = False
+            for representative_rc, representative_signature in representatives:
+                if signature != representative_signature:
+                    continue
+                if (
+                    HComplete._equivariant_count(
+                        [representative_rc, rc], resolved_format
+                    )
+                    == 1
+                ):
+                    duplicate = True
+                    break
+            if not duplicate:
+                representatives.append((rc, signature))
+                yield rc, completed_its, signature
 
     @staticmethod
     def _process(

@@ -5,7 +5,7 @@ intentionally outside descriptor identity.  The non-tetrahedral permutation
 groups are adapted from StereoMolGraph commit
 ``2189f610f23eaaf992e2e01a12ea4d0532496601`` (MIT, copyright (c) 2025
 Maxim Papusha); the corresponding notice is shipped in
-``LICENSES/StereoMolGraph-MIT.txt``.
+``synkit/Graph/Stereo/LICENSES/StereoMolGraph-MIT.txt``.
 
 SynKit keeps its own descriptor values because they participate in executable
 reaction rules and retain Lewis/electron state in the surrounding graph.
@@ -15,18 +15,31 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Any, Literal, Mapping, Sequence
 
+from ._descriptor_core import (
+    OrbitDescriptorMixin as _OrbitDescriptorMixin,
+    descriptor_dict as _descriptor_dict,
+    permutation_sign as _permutation_sign,
+    permuted_canonical_form as _permuted_canonical_form,
+    reference_sort_key as _reference_sort_key,
+    unknown_atom_form as _unknown_atom_form,
+    unknown_bond_form as _unknown_bond_form,
+)
 from .orbits import (
-    Permutation,
-    StereoConfiguration,
     StereoRelation,
-    StereoSpecification,
+    StereoRelationKind,
+)
+from .supports import (
+    AtomCenteredStereo,
+    AxisStereo,
+    AxisStereoSupport,
+    BondCenteredStereo,
+    PathStereo,
+    Reference,
 )
 
 VirtualReferenceKind = Literal["H", "LP"]
-Reference = int | str
 
 _VIRTUAL_REFERENCE_PATTERN = re.compile(r"^@(H|LP):(-?\d+)$")
 
@@ -75,9 +88,7 @@ def parse_virtual_reference(value: object) -> VirtualStereoReference | None:
     return VirtualStereoReference(parsed_kind, int(center))
 
 
-# Public capability boundaries. ``SUPPORTED`` means graph storage, relative
-# identity, relabeling, rule matching/rewriting, and JSON/GML serialization.
-# RDKit and coordinate inference are deliberately narrower adapters.
+# ``SUPPORTED`` includes graph identity, rules, and JSON/GML; adapters may be narrower.
 SUPPORTED_STEREO_DESCRIPTOR_CLASSES = frozenset(
     {
         "tetrahedral",
@@ -88,6 +99,13 @@ SUPPORTED_STEREO_DESCRIPTOR_CLASSES = frozenset(
         "atrop_bond",
     }
 )
+CONFIGURED_STEREO_DESCRIPTOR_CLASSES = SUPPORTED_STEREO_DESCRIPTOR_CLASSES | {
+    "cumulene_axis",
+    "extended_cis_trans",
+    "helical",
+    "planar_chirality",
+    "framework",
+}
 RDKIT_STEREO_DESCRIPTOR_CLASSES = frozenset(
     {
         "tetrahedral",
@@ -150,192 +168,8 @@ def _validate_bond_references(atoms: Sequence[Reference]) -> None:
         _validate_reference(value, owner=right, position=position)
 
 
-def _reference_sort_key(value: Reference) -> tuple[str, str]:
-    return type(value).__name__, repr(value)
-
-
-def _tuple_sort_key(values: Sequence[Reference]) -> tuple[tuple[str, str], ...]:
-    return tuple(_reference_sort_key(value) for value in values)
-
-
-def _permuted_canonical_form(
-    descriptor_class: str,
-    atoms: Sequence[Reference],
-    parity: int,
-    permutations: Sequence[Sequence[int]],
-    inversion: Sequence[int] | None = None,
-) -> tuple[Any, ...]:
-    """Return a canonical relative form under a descriptor symmetry group."""
-    working = tuple(atoms)
-    canonical_parity = parity
-    if parity == -1:
-        if inversion is None:
-            raise ValueError(f"{descriptor_class} does not define an inverse.")
-        working = tuple(working[index] for index in inversion)
-        canonical_parity = 1
-    forms = tuple(
-        tuple(working[index] for index in permutation) for permutation in permutations
-    )
-    return (
-        descriptor_class,
-        canonical_parity,
-        min(forms, key=_tuple_sort_key),
-    )
-
-
-def _unknown_atom_form(
-    descriptor_class: str,
-    atoms: Sequence[Reference],
-) -> tuple[Any, ...]:
-    """Keep an unknown orientation attached to its atom locus and ligands."""
-    return (
-        descriptor_class,
-        atoms[0],
-        tuple(sorted(atoms[1:], key=_reference_sort_key)),
-        None,
-    )
-
-
-def _unknown_bond_form(
-    descriptor_class: str,
-    atoms: Sequence[Reference],
-) -> tuple[Any, ...]:
-    """Keep an unknown orientation attached to its bond and endpoint groups."""
-    left = (atoms[2], tuple(sorted(atoms[:2], key=_reference_sort_key)))
-    right = (atoms[3], tuple(sorted(atoms[4:], key=_reference_sort_key)))
-    return (
-        descriptor_class,
-        None,
-        tuple(sorted((left, right), key=repr)),
-    )
-
-
-def _descriptor_dict(descriptor: Any) -> dict[str, Any]:
-    return {
-        "descriptor_class": descriptor.descriptor_class,
-        "atoms": list(descriptor.atoms),
-        "parity": descriptor.parity,
-        "provenance": descriptor.provenance,
-    }
-
-
-def _permutation_sign(values: Sequence[Reference], ordered: Sequence[Reference]) -> int:
-    positions = {value: index for index, value in enumerate(ordered)}
-    permutation = [positions[value] for value in values]
-    inversions = sum(
-        permutation[i] > permutation[j]
-        for i in range(len(permutation))
-        for j in range(i + 1, len(permutation))
-    )
-    return -1 if inversions % 2 else 1
-
-
-_NEGATIVE_ORBIT_IMAGES = {
-    "tetrahedral": (0, 2, 1, 3, 4),
-    "trigonal_bipyramidal": (0, 1, 2, 3, 5, 4),
-    "octahedral": (0, 2, 1, 3, 4, 5, 6),
-    "atrop_bond": (1, 0, 2, 3, 4, 5),
-}
-
-
-class _OrbitDescriptorMixin:
-    """Adapt the stable descriptor wire model to finite-orbit semantics."""
-
-    descriptor_class: str
-    atoms: tuple[Reference, ...]
-    parity: int | None
-    provenance: str | None
-
-    @property
-    def specification(self) -> StereoSpecification:
-        """Return whether orientation is fixed or intentionally unspecified."""
-        return (
-            StereoSpecification.UNSPECIFIED
-            if self.parity is None
-            else StereoSpecification.FIXED
-        )
-
-    @cached_property
-    def configuration(self) -> StereoConfiguration:
-        """Return the authoritative permutation-orbit configuration."""
-        frame = tuple(self.atoms)
-        if self.parity == -1:
-            image = _NEGATIVE_ORBIT_IMAGES[self.descriptor_class]
-            frame = Permutation(image).apply(frame)
-        return StereoConfiguration(
-            self.descriptor_class,
-            frame,
-            self.specification,
-        )
-
-    def same_configuration(
-        self,
-        other: object,
-        *,
-        semantics: str = "orbit",
-        diagnostics: list[Any] | None = None,
-    ) -> bool:
-        """Test relative stereo identity, optionally auditing Beta-2."""
-        from .legacy import (  # Independent oracle; kept lazy at this boundary.
-            StereoSemanticComparison,
-            StereoSemanticsMode,
-            legacy_same_configuration,
-        )
-
-        mode = StereoSemanticsMode(semantics)
-        if mode is StereoSemanticsMode.LEGACY:
-            return legacy_same_configuration(self, other)
-        orbit_result = (
-            type(self) is type(other)
-            and isinstance(other, _OrbitDescriptorMixin)
-            and self.configuration.same_configuration(other.configuration)
-        )
-        if mode is StereoSemanticsMode.ORBIT:
-            return orbit_result
-        legacy_result = legacy_same_configuration(self, other)
-        if diagnostics is not None:
-            diagnostics.append(
-                StereoSemanticComparison.create(
-                    "descriptor_identity",
-                    orbit_result,
-                    legacy_result,
-                )
-            )
-        return orbit_result
-
-    def relation_to(self, other: object) -> StereoRelation:
-        """Classify and witness the geometric relation to another descriptor."""
-        configuration = (
-            other.configuration
-            if type(self) is type(other) and isinstance(other, _OrbitDescriptorMixin)
-            else other
-        )
-        return self.configuration.relation_to(configuration)
-
-    def replace_reference(self, old: Reference, new: Reference) -> Any:
-        """Replace one peripheral reference without changing orientation."""
-        return self.replace_references({old: new})
-
-    def replace_references(
-        self,
-        replacements: Mapping[Reference, Reference],
-    ) -> Any:
-        """Replace peripheral references after formal locus validation."""
-        self.configuration.replace_references(replacements)
-        atoms = tuple(replacements.get(value, value) for value in self.atoms)
-        return type(self)(atoms, self.parity, self.provenance)
-
-    def opposite(self) -> Any:
-        """Return the binary opposite when the geometry defines one."""
-        opposite = self.configuration.opposite()
-        if self.specification is StereoSpecification.UNSPECIFIED:
-            return self
-        parity = 0 if self.descriptor_class == "planar_bond" else 1
-        return type(self)(opposite.frame, parity, self.provenance)
-
-
 @dataclass(frozen=True, eq=False)
-class TetrahedralStereo(_OrbitDescriptorMixin):
+class TetrahedralStereo(_OrbitDescriptorMixin, AtomCenteredStereo):
     atoms: tuple[Reference, Reference, Reference, Reference, Reference]
     parity: int | None
     provenance: str | None = None
@@ -394,7 +228,7 @@ class TetrahedralStereo(_OrbitDescriptorMixin):
 
 
 @dataclass(frozen=True, eq=False)
-class SquarePlanarStereo(_OrbitDescriptorMixin):
+class SquarePlanarStereo(_OrbitDescriptorMixin, AtomCenteredStereo):
     """Relative square-planar atom stereo (center plus four cyclic ligands)."""
 
     atoms: tuple[Reference, Reference, Reference, Reference, Reference]
@@ -461,7 +295,7 @@ class SquarePlanarStereo(_OrbitDescriptorMixin):
 
 
 @dataclass(frozen=True, eq=False)
-class TrigonalBipyramidalStereo(_OrbitDescriptorMixin):
+class TrigonalBipyramidalStereo(_OrbitDescriptorMixin, AtomCenteredStereo):
     """Relative trigonal-bipyramidal atom stereo."""
 
     atoms: tuple[
@@ -539,7 +373,7 @@ class TrigonalBipyramidalStereo(_OrbitDescriptorMixin):
 
 
 @dataclass(frozen=True, eq=False)
-class OctahedralStereo(_OrbitDescriptorMixin):
+class OctahedralStereo(_OrbitDescriptorMixin, AtomCenteredStereo):
     """Relative octahedral atom stereo."""
 
     atoms: tuple[
@@ -634,7 +468,7 @@ class OctahedralStereo(_OrbitDescriptorMixin):
 
 
 @dataclass(frozen=True, eq=False)
-class PlanarBondStereo(_OrbitDescriptorMixin):
+class PlanarBondStereo(_OrbitDescriptorMixin, BondCenteredStereo):
     atoms: tuple[Reference, Reference, Reference, Reference, Reference, Reference]
     parity: int | None = 0
     provenance: str | None = None
@@ -704,7 +538,7 @@ class PlanarBondStereo(_OrbitDescriptorMixin):
 
 
 @dataclass(frozen=True, eq=False)
-class AtropBondStereo(_OrbitDescriptorMixin):
+class AtropBondStereo(_OrbitDescriptorMixin, AxisStereo):
     """Relative axial orientation around an atropisomeric bond."""
 
     atoms: tuple[
@@ -739,6 +573,13 @@ class AtropBondStereo(_OrbitDescriptorMixin):
     @property
     def bond(self) -> frozenset[Reference]:
         return frozenset(self.atoms[2:4])
+
+    @property
+    def support(self) -> AxisStereoSupport:
+        return AxisStereoSupport(
+            (self.atoms[2], self.atoms[3]),  # type: ignore[arg-type]
+            (self.atoms[:2], self.atoms[4:]),  # type: ignore[arg-type]
+        )
 
     @property
     def dependencies(self) -> frozenset[int]:
@@ -779,6 +620,389 @@ class AtropBondStereo(_OrbitDescriptorMixin):
         return _descriptor_dict(self)
 
 
+AtropAxisStereo = AtropBondStereo
+
+
+@dataclass(frozen=True, eq=False)
+class CumuleneAxisStereo(_OrbitDescriptorMixin, AxisStereo):
+    """Configured axial stereo over an even-cumulene path.
+
+    ``axis_path`` retains every cumulene atom.  ``terminal_frames`` contains
+    two ordered two-reference frames owned by the first and last path atoms.
+    Stability evidence and CIP labels are intentionally not descriptor fields.
+    """
+
+    axis_path: tuple[int, ...]
+    terminal_frames: tuple[tuple[Reference, Reference], tuple[Reference, Reference]]
+    parity: int | None
+    provenance: str | None = None
+
+    descriptor_class = "cumulene_axis"
+    _INVERSION = (1, 0, 2, 3, 4, 5)
+    _PERMUTATIONS = AtropBondStereo._PERMUTATIONS
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "axis_path", tuple(self.axis_path))
+        frames = tuple(tuple(frame) for frame in self.terminal_frames)
+        object.__setattr__(self, "terminal_frames", frames)
+        if len(self.axis_path) < 3:
+            raise ValueError("Cumulene-axis stereo requires at least three atoms.")
+        if (len(self.axis_path) - 1) % 2:
+            raise ValueError("Cumulene-axis stereo requires an even number of bonds.")
+        if any(type(atom) is not int for atom in self.axis_path):
+            raise TypeError("Cumulene-axis paths require integer atom IDs.")
+        if len(set(self.axis_path)) != len(self.axis_path):
+            raise ValueError("Cumulene-axis paths must not repeat atoms.")
+        if len(self.terminal_frames) != 2 or any(
+            len(frame) != 2 for frame in self.terminal_frames
+        ):
+            raise ValueError("Cumulene-axis stereo requires two two-reference frames.")
+        owners = self.axis_path[0], self.axis_path[-1]
+        for frame, owner in zip(self.terminal_frames, owners):
+            for position, reference in enumerate(frame):
+                _validate_reference(reference, owner=owner, position=position)
+            if len(set(frame)) != 2:
+                raise ValueError("Cumulene terminal references must be distinct.")
+            on_axis = any(
+                type(reference) is int and reference in self.axis_path
+                for reference in frame
+            )
+            if on_axis:
+                raise ValueError("Cumulene terminal references cannot lie on the axis.")
+        if self.parity not in (-1, 1, None):
+            raise ValueError("Cumulene-axis parity must be -1, 1, or None.")
+
+    @property
+    def support(self) -> AxisStereoSupport:
+        return AxisStereoSupport(self.axis_path, self.terminal_frames)
+
+    @property
+    def atoms(self) -> tuple[Reference, Reference, int, int, Reference, Reference]:
+        """Return the compatible six-position local orbit frame."""
+        left, right = self.terminal_frames
+        return (*left, self.axis_path[0], self.axis_path[-1], *right)
+
+    @property
+    def dependencies(self) -> frozenset[int]:
+        return self.support.dependencies
+
+    def _canonical_axis_form(self) -> tuple[Any, ...]:
+        if self.parity is None:
+            left = tuple(sorted(self.terminal_frames[0], key=_reference_sort_key))
+            right = tuple(sorted(self.terminal_frames[1], key=_reference_sort_key))
+            reversed_path = tuple(reversed(self.axis_path))
+            candidates = ((self.axis_path, left, right), (reversed_path, right, left))
+            return self.descriptor_class, None, min(candidates, key=repr)
+
+        atoms: tuple[Reference, ...] = self.atoms
+        if self.parity == -1:
+            atoms = tuple(atoms[index] for index in self._INVERSION)
+        candidates = []
+        for permutation in self._PERMUTATIONS:
+            frame = tuple(atoms[index] for index in permutation)
+            path = (
+                tuple(reversed(self.axis_path))
+                if permutation[2] == 3
+                else self.axis_path
+            )
+            candidates.append((path, frame))
+        return self.descriptor_class, 1, min(candidates, key=repr)
+
+    def canonical_form(self) -> tuple[Any, ...]:
+        return self._canonical_axis_form()
+
+    def same_configuration(
+        self,
+        other: object,
+        *,
+        semantics: str = "orbit",
+        diagnostics: list[Any] | None = None,
+    ) -> bool:
+        del semantics, diagnostics
+        return (
+            isinstance(other, CumuleneAxisStereo)
+            and self.canonical_form() == other.canonical_form()
+        )
+
+    def relation_to(self, other: object) -> StereoRelation:
+        if not isinstance(other, CumuleneAxisStereo):
+            return StereoRelation(StereoRelationKind.UNRELATED, None)
+        paths_match = self.axis_path in (
+            other.axis_path,
+            tuple(reversed(other.axis_path)),
+        )
+        if not paths_match:
+            return StereoRelation(StereoRelationKind.UNRELATED, None)
+        return self.configuration.relation_to(other.configuration)
+
+    def invert(self) -> "CumuleneAxisStereo":
+        return (
+            self
+            if self.parity is None
+            else CumuleneAxisStereo(
+                self.axis_path,
+                self.terminal_frames,
+                -self.parity,
+                self.provenance,
+            )
+        )
+
+    def opposite(self) -> "CumuleneAxisStereo":
+        return self.invert()
+
+    def reversed(self) -> "CumuleneAxisStereo":
+        """Reverse the axis using the preserving endpoint-frame convention."""
+        left, right = self.terminal_frames
+        return CumuleneAxisStereo(
+            tuple(reversed(self.axis_path)),
+            (right, tuple(reversed(left))),
+            self.parity,
+            self.provenance,
+        )
+
+    def relabel(self, mapping: Mapping[int, int]) -> "CumuleneAxisStereo":
+        return CumuleneAxisStereo(
+            tuple(mapping.get(atom, atom) for atom in self.axis_path),
+            tuple(
+                tuple(_relabel_reference(reference, mapping) for reference in frame)
+                for frame in self.terminal_frames
+            ),  # type: ignore[arg-type]
+            self.parity,
+            self.provenance,
+        )
+
+    def replace_references(
+        self,
+        replacements: Mapping[Reference, Reference],
+    ) -> "CumuleneAxisStereo":
+        known = set(self.axis_path) | {
+            reference for frame in self.terminal_frames for reference in frame
+        }
+        unknown = set(replacements) - known
+        if unknown:
+            raise ValueError(
+                f"Replacement sources are absent: {sorted(map(repr, unknown))}."
+            )
+        protected = set(self.axis_path) & set(replacements)
+        if protected:
+            raise ValueError("Reference replacement cannot replace descriptor loci.")
+        frames = tuple(
+            tuple(replacements.get(reference, reference) for reference in frame)
+            for frame in self.terminal_frames
+        )
+        return CumuleneAxisStereo(
+            self.axis_path,
+            frames,  # type: ignore[arg-type]
+            self.parity,
+            self.provenance,
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return self.same_configuration(other)
+
+    def __hash__(self) -> int:
+        return hash(self.canonical_form())
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "descriptor_class": self.descriptor_class,
+            "axis_path": list(self.axis_path),
+            "terminal_frames": [list(frame) for frame in self.terminal_frames],
+            "parity": self.parity,
+            "provenance": self.provenance,
+        }
+
+
+@dataclass(frozen=True, eq=False)
+class ExtendedCisTransStereo(_OrbitDescriptorMixin, PathStereo):
+    """Extended E/Z stereo over an odd-bond cumulene path.
+
+    Unlike :class:`CumuleneAxisStereo`, this geometry is mirror-fixed.  The
+    complete cumulene path is the carrier; no individual double bond owns the
+    configuration.
+    """
+
+    path: tuple[int, ...]
+    terminal_frames: tuple[tuple[Reference, Reference], tuple[Reference, Reference]]
+    parity: int | None = 0
+    provenance: str | None = None
+
+    descriptor_class = "extended_cis_trans"
+    _PERMUTATIONS = PlanarBondStereo._PERMUTATIONS
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "path", tuple(self.path))
+        frames = tuple(tuple(frame) for frame in self.terminal_frames)
+        object.__setattr__(self, "terminal_frames", frames)
+        if len(self.path) < 4:
+            raise ValueError(
+                "Extended cis/trans stereo requires at least four cumulene atoms."
+            )
+        if (len(self.path) - 1) % 2 != 1:
+            raise ValueError(
+                "Extended cis/trans stereo requires an odd number of bonds."
+            )
+        if any(type(atom) is not int for atom in self.path):
+            raise TypeError("Extended cis/trans paths require integer atom IDs.")
+        if len(set(self.path)) != len(self.path):
+            raise ValueError("Extended cis/trans paths must not repeat atoms.")
+        if len(self.terminal_frames) != 2 or any(
+            len(frame) != 2 for frame in self.terminal_frames
+        ):
+            raise ValueError(
+                "Extended cis/trans stereo requires two two-reference frames."
+            )
+        owners = self.path[0], self.path[-1]
+        for frame, owner in zip(self.terminal_frames, owners):
+            for position, reference in enumerate(frame):
+                _validate_reference(reference, owner=owner, position=position)
+            if len(set(frame)) != 2:
+                raise ValueError(
+                    "Extended cis/trans terminal references must be distinct."
+                )
+            if any(
+                type(reference) is int and reference in self.path for reference in frame
+            ):
+                raise ValueError(
+                    "Extended cis/trans terminal references cannot lie on the path."
+                )
+        if self.parity not in (0, None):
+            raise ValueError("Extended cis/trans parity must be 0 or None.")
+
+    @property
+    def support(self) -> AxisStereoSupport:
+        """Return the path plus its two terminal reference frames."""
+        return AxisStereoSupport(self.path, self.terminal_frames)
+
+    @property
+    def atoms(self) -> tuple[Reference, Reference, int, int, Reference, Reference]:
+        """Return the compatible six-position terminal-frame orbit."""
+        left, right = self.terminal_frames
+        return (*left, self.path[0], self.path[-1], *right)
+
+    @property
+    def dependencies(self) -> frozenset[int]:
+        return self.support.dependencies
+
+    def canonical_form(self) -> tuple[Any, ...]:
+        if self.parity is None:
+            left = tuple(sorted(self.terminal_frames[0], key=_reference_sort_key))
+            right = tuple(sorted(self.terminal_frames[1], key=_reference_sort_key))
+            candidates = (
+                (self.path, left, right),
+                (tuple(reversed(self.path)), right, left),
+            )
+            return self.descriptor_class, None, min(candidates, key=repr)
+
+        candidates = []
+        for permutation in self._PERMUTATIONS:
+            frame = tuple(self.atoms[index] for index in permutation)
+            path = tuple(reversed(self.path)) if permutation[2] == 3 else self.path
+            candidates.append((path, frame))
+        return self.descriptor_class, 0, min(candidates, key=repr)
+
+    def same_configuration(
+        self,
+        other: object,
+        *,
+        semantics: str = "orbit",
+        diagnostics: list[Any] | None = None,
+    ) -> bool:
+        del semantics, diagnostics
+        return (
+            isinstance(other, ExtendedCisTransStereo)
+            and self.canonical_form() == other.canonical_form()
+        )
+
+    def relation_to(self, other: object) -> StereoRelation:
+        if not isinstance(other, ExtendedCisTransStereo):
+            return StereoRelation(StereoRelationKind.UNRELATED, None)
+        paths_match = self.path in (
+            other.path,
+            tuple(reversed(other.path)),
+        )
+        if not paths_match:
+            return StereoRelation(StereoRelationKind.UNRELATED, None)
+        return self.configuration.relation_to(other.configuration)
+
+    def invert(self) -> "ExtendedCisTransStereo":
+        if self.parity is None:
+            return self
+        left, right = self.terminal_frames
+        return ExtendedCisTransStereo(
+            self.path,
+            ((left[1], left[0]), right),
+            0,
+            self.provenance,
+        )
+
+    def opposite(self) -> "ExtendedCisTransStereo":
+        return self.invert()
+
+    def reversed(self) -> "ExtendedCisTransStereo":
+        left, right = self.terminal_frames
+        return ExtendedCisTransStereo(
+            tuple(reversed(self.path)),
+            (right, left),
+            self.parity,
+            self.provenance,
+        )
+
+    def relabel(self, mapping: Mapping[int, int]) -> "ExtendedCisTransStereo":
+        return ExtendedCisTransStereo(
+            tuple(mapping.get(atom, atom) for atom in self.path),
+            tuple(
+                tuple(_relabel_reference(reference, mapping) for reference in frame)
+                for frame in self.terminal_frames
+            ),  # type: ignore[arg-type]
+            self.parity,
+            self.provenance,
+        )
+
+    def replace_references(
+        self,
+        replacements: Mapping[Reference, Reference],
+    ) -> "ExtendedCisTransStereo":
+        known = set(self.path) | {
+            reference for frame in self.terminal_frames for reference in frame
+        }
+        unknown = set(replacements) - known
+        if unknown:
+            raise ValueError(
+                "Replacement sources are absent: " f"{sorted(map(repr, unknown))}."
+            )
+        if set(self.path) & set(replacements):
+            raise ValueError("Reference replacement cannot replace descriptor loci.")
+        frames = tuple(
+            tuple(replacements.get(reference, reference) for reference in frame)
+            for frame in self.terminal_frames
+        )
+        return ExtendedCisTransStereo(
+            self.path,
+            frames,  # type: ignore[arg-type]
+            self.parity,
+            self.provenance,
+        )
+
+    def __eq__(self, other: object) -> bool:
+        return self.same_configuration(other)
+
+    def __hash__(self) -> int:
+        return hash(self.canonical_form())
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "descriptor_class": self.descriptor_class,
+            "path": list(self.path),
+            "terminal_frames": [list(frame) for frame in self.terminal_frames],
+            "parity": self.parity,
+            "provenance": self.provenance,
+        }
+
+
+from .extended_descriptors import HelicalStereo, PlanarChiralityStereo  # noqa: E402
+from .global_stereo import FrameworkStereo  # noqa: E402
+
 StereoValue = (
     TetrahedralStereo
     | SquarePlanarStereo
@@ -786,43 +1010,21 @@ StereoValue = (
     | OctahedralStereo
     | PlanarBondStereo
     | AtropBondStereo
+    | CumuleneAxisStereo
+    | ExtendedCisTransStereo
+    | HelicalStereo
+    | PlanarChiralityStereo
+    | FrameworkStereo
 )
 
 
 def stereo_from_dict(value: Mapping[str, Any]) -> StereoValue:
-    descriptor_class = value["descriptor_class"]
-    descriptor_types = {
-        "tetrahedral": TetrahedralStereo,
-        "square_planar": SquarePlanarStereo,
-        "trigonal_bipyramidal": TrigonalBipyramidalStereo,
-        "octahedral": OctahedralStereo,
-        "planar_bond": PlanarBondStereo,
-        "atrop_bond": AtropBondStereo,
-    }
-    descriptor_type = descriptor_types.get(descriptor_class)
-    if descriptor_type is not None:
-        return descriptor_type(  # type: ignore[call-arg,return-value]
-            tuple(value["atoms"]),
-            value.get("parity"),
-            value.get("provenance"),
-        )
-    deferred = descriptor_class in DEFERRED_STEREO_DESCRIPTOR_CLASSES
-    suffix = " (known but not implemented)" if deferred else ""
-    raise ValueError(
-        f"Unsupported stereo descriptor class: {descriptor_class!r}{suffix}"
-    )
+    from ._descriptor_serialization import stereo_from_dict as restore
+
+    return restore(value)
 
 
 def descriptor_id(descriptor: StereoValue) -> str:
-    if isinstance(
-        descriptor,
-        (
-            TetrahedralStereo,
-            SquarePlanarStereo,
-            TrigonalBipyramidalStereo,
-            OctahedralStereo,
-        ),
-    ):
-        return f"atom:{descriptor.center}"
-    center = sorted(descriptor.bond, key=str)
-    return f"bond:{center[0]}-{center[1]}"
+    from ._descriptor_serialization import descriptor_id as identify
+
+    return identify(descriptor)

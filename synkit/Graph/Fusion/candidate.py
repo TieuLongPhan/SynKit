@@ -46,6 +46,7 @@ class FusionProofDocument:
     schema: str
     payload: Mapping[str, Any] = field(compare=False, repr=False)
     stereo_evidence: tuple[Mapping[str, Any], ...] = ()
+    document_digest_verified: bool = False
 
     @property
     def compatibility_projection(self) -> dict[str, Any]:
@@ -54,6 +55,19 @@ class FusionProofDocument:
 
     def to_dict(self) -> dict[str, Any]:
         return copy.deepcopy(dict(self.payload))
+
+
+def _document_digest(payload: Mapping[str, Any]) -> str:
+    """Bind every serialized proof-v2 field to one document checksum."""
+    normalized = copy.deepcopy(dict(payload))
+    normalized.pop("document_digest", None)
+    encoded = json.dumps(
+        normalized,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode()
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _proof_configuration(evidence: Mapping[str, Any], name: str) -> StereoConfiguration:
@@ -250,7 +264,21 @@ def read_fusion_proof(
     if schema == FUSION_PROOF_SCHEMA:
         for item in evidence:
             _validate_v2_stereo_evidence(item)
-    return FusionProofDocument(schema, payload, evidence)
+    digest_verified = False
+    if schema == FUSION_PROOF_SCHEMA and "document_digest" in payload:
+        expected_digest = _document_digest(payload)
+        if payload["document_digest"] != expected_digest:
+            raise FusionProofError(
+                "FUSION_PROOF_DOCUMENT_DIGEST_MISMATCH",
+                "A serialized fusion-proof field was changed.",
+            )
+        digest_verified = True
+    return FusionProofDocument(
+        schema,
+        payload,
+        evidence,
+        digest_verified,
+    )
 
 
 @dataclass(frozen=True, order=True)
@@ -298,7 +326,7 @@ class FusionCandidate:
         return self.provenance.stereo_evidence
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "proof_schema": self.proof_schema,
             "rsmi": self.rsmi,
             "interface": self.interface.to_dict(),
@@ -313,6 +341,9 @@ class FusionCandidate:
             "proof_digest": self.proof_digest,
             "score": self.score.to_dict() if self.score is not None else None,
         }
+        if self.proof_schema == FUSION_PROOF_SCHEMA:
+            payload["document_digest"] = _document_digest(payload)
+        return payload
 
 
 def _proof_digest(

@@ -7,6 +7,14 @@ and wildcard-aware graph workflows.
 Core
 ----
 
+.. automodule:: synkit.Graph.Stereo.global_stereo
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Graph.Stereo.configured
+   :members:
+   :show-inheritance:
+
 .. automodule:: synkit.Graph.syn_graph
    :members:
    :show-inheritance:

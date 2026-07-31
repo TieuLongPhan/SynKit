@@ -47,6 +47,8 @@ class GenericStereoExtractionIssueCode(str, Enum):
     DOMAIN_REQUIRED = "GENERIC_STEREO_DOMAIN_REQUIRED"
     SOURCE_REPLAY_FAILED = "GENERIC_STEREO_SOURCE_REPLAY_FAILED"
     REVERSE_REPLAY_FAILED = "GENERIC_STEREO_REVERSE_REPLAY_FAILED"
+    INVALID_STEREO_SUPPORT = "GENERIC_STEREO_INVALID_SUPPORT"
+    CERTIFICATE_INVALID = "GENERIC_STEREO_CERTIFICATE_INVALID"
 
 
 @dataclass(frozen=True)
@@ -171,6 +173,39 @@ class ExtractedStereoPort:
             },
         }
 
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, Any],
+    ) -> "ExtractedStereoPort":
+        """Read one typed port contract from certificate JSON."""
+        constraint = value["constraint"]
+        return cls(
+            reference=int(value["reference"]),
+            target=str(value["target"]),
+            owner=int(value["owner"]),
+            stereo_slot=int(value["stereo_slot"]),
+            constraint=WildcardConstraint(
+                role=constraint["role"],
+                elements=constraint.get("elements"),
+                charges=constraint.get("charges"),
+                radicals=constraint.get("radicals"),
+                bond_orders=constraint.get("bond_orders"),
+                side=constraint.get("side", "any"),
+                owner=constraint.get("owner"),
+                capacity=int(constraint.get("capacity", 1)),
+                resource_budget=constraint.get("resource_budget"),
+                stereo_slot=constraint.get("stereo_slot"),
+                virtual_kind=constraint.get("virtual_kind"),
+                mapped_identity=constraint.get("mapped_identity"),
+                materialization=constraint.get("materialization"),
+            ),
+            domain_source=GenericStereoDomainSource(value["domain_source"]),
+            domain_evidence=tuple(
+                str(item) for item in value.get("domain_evidence", ())
+            ),
+        )
+
 
 @dataclass(frozen=True)
 class RuleExtractionCertificate:
@@ -188,7 +223,7 @@ class RuleExtractionCertificate:
 
     def to_dict(self) -> dict[str, Any]:
         """Return stable certificate payload."""
-        return {
+        payload = {
             "schema": self.schema,
             "source_rule_digest": self.source_rule_digest,
             "generic_rule_digest": self.generic_rule_digest,
@@ -203,6 +238,8 @@ class RuleExtractionCertificate:
                 "mapping_count": self.reverse_mapping_count,
             },
         }
+        payload["digest"] = self.digest
+        return payload
 
     @property
     def digest(self) -> str:
@@ -236,6 +273,59 @@ class RuleExtractionCertificate:
             separators=(",", ":"),
         )
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, Any],
+    ) -> "RuleExtractionCertificate":
+        """Read and verify one extraction certificate."""
+        if value.get("schema") != EXTRACTION_SCHEMA:
+            raise GenericStereoExtractionError(
+                GenericStereoExtractionIssue(
+                    GenericStereoExtractionIssueCode.CERTIFICATE_INVALID,
+                    "Unsupported stereo-rule extraction certificate schema.",
+                    {"schema": value.get("schema")},
+                )
+            )
+        source = value.get("source_replay", {})
+        reverse = value.get("reverse_replay", {})
+        certificate = cls(
+            source_rule_digest=str(value["source_rule_digest"]),
+            generic_rule_digest=str(value["generic_rule_digest"]),
+            ports=tuple(
+                ExtractedStereoPort.from_dict(item) for item in value.get("ports", ())
+            ),
+            source_mapping_count=int(source.get("mapping_count", 0)),
+            source_unique_products=int(source.get("unique_products", 0)),
+            source_replay_exact=bool(source.get("exact", False)),
+            reverse_status=str(reverse.get("status", "not_checked")),
+            reverse_mapping_count=int(reverse.get("mapping_count", 0)),
+        )
+        declared = value.get("digest")
+        if declared is not None and declared != certificate.digest:
+            raise GenericStereoExtractionError(
+                GenericStereoExtractionIssue(
+                    GenericStereoExtractionIssueCode.CERTIFICATE_INVALID,
+                    "Stereo-rule extraction certificate digest mismatch.",
+                    {
+                        "declared": declared,
+                        "computed": certificate.digest,
+                    },
+                )
+            )
+        references = [port.reference for port in certificate.ports]
+        contracts = [(port.target, port.stereo_slot) for port in certificate.ports]
+        if len(references) != len(set(references)) or len(contracts) != len(
+            set(contracts)
+        ):
+            raise GenericStereoExtractionError(
+                GenericStereoExtractionIssue(
+                    GenericStereoExtractionIssueCode.CERTIFICATE_INVALID,
+                    "Extraction certificate contains duplicate port bindings.",
+                )
+            )
+        return certificate
 
 
 @dataclass(frozen=True)
@@ -648,6 +738,29 @@ class GenericStereoRuleExtractor:
             if isinstance(reaction, str)
             else reaction.copy()
         )
+        from synkit.Graph.ITS.stereo import (
+            StereoITSValidationError,
+            validate_stereo_support,
+        )
+
+        reverter = ITSReverter(concrete_its)
+        try:
+            validate_stereo_support(
+                reverter.to_reactant_graph(),
+                side="reactant",
+            )
+            validate_stereo_support(
+                reverter.to_product_graph(),
+                side="product",
+            )
+        except StereoITSValidationError as error:
+            raise GenericStereoExtractionError(
+                GenericStereoExtractionIssue(
+                    GenericStereoExtractionIssueCode.INVALID_STEREO_SUPPORT,
+                    "Generic extraction requires valid endpoint stereo " "supports.",
+                    {"refusals": [refusal.to_dict() for refusal in error.refusals]},
+                )
+            ) from error
         concrete_rule = SynRule(concrete_its, format="tuple", implicit_h=False)
         if not concrete_rule.stereo_guards and not concrete_rule.stereo_effects:
             raise GenericStereoExtractionError(

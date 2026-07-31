@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Test.Chem.Molecule.benchmark_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.Chirality.published import (  # noqa: E402
     load_dataset,
 )
 from synkit.Chem.Molecule.chirality import (  # noqa: E402
@@ -33,6 +33,33 @@ def test_strict_binary_mode_rejects_unassigned_stereo() -> None:
         "Atom_Tetrahedral:1",
         "Atom_Tetrahedral:3",
     )
+
+
+@pytest.mark.parametrize(
+    ("smiles", "identifier"),
+    [
+        ("ClC=C=CCl", "cumulene_axis:1-2-3"),
+        (
+            "O=C(O)c1cccc(Br)c1-c1c(Br)cccc1C(=O)O",
+            "atrop_axis:9-10",
+        ),
+    ],
+)
+def test_unconfigured_axial_loci_fail_closed(
+    smiles: str,
+    identifier: str,
+) -> None:
+    molecule = Chem.MolFromSmiles(smiles)
+    assert molecule is not None
+
+    with pytest.raises(UnspecifiedMolecularStereoError) as error:
+        classify_molecular_chirality(molecule, require_specified=True)
+    assessment = assess_molecular_chirality(molecule)
+
+    assert identifier in error.value.loci
+    assert assessment.outcome is MolecularChiralityOutcome.UNSUPPORTED_OR_INCOMPLETE
+    assert identifier in assessment.unsupported_stereo_loci
+    assert assessment.evaluated_isomer_count == 0
 
 
 @pytest.mark.parametrize(
@@ -90,8 +117,8 @@ def test_stereo_free_constitution_can_be_configuration_dependent() -> None:
     assert len(assessment.representative_isomers) == 2
 
 
-def test_cap_never_promotes_one_sample_to_necessary_conclusion() -> None:
-    molecule = Chem.MolFromSmiles("FC(Cl)C(Br)I")
+def test_cap_without_an_exact_proof_remains_incomplete() -> None:
+    molecule = Chem.MolFromSmiles("FC=CCl")
     assert molecule is not None
 
     assessment = assess_molecular_chirality(
@@ -101,10 +128,103 @@ def test_cap_never_promotes_one_sample_to_necessary_conclusion() -> None:
     )
 
     assert assessment.outcome is MolecularChiralityOutcome.UNSUPPORTED_OR_INCOMPLETE
-    assert assessment.theoretical_isomer_upper_bound == 4
+    assert assessment.theoretical_isomer_upper_bound == 2
     assert assessment.evaluated_isomer_count == 1
     assert not assessment.enumeration_complete
     assert not assessment.is_definitive
+    assert assessment.decision_method == "capped_stereo_completion_enumeration"
+
+
+def test_automorphism_parity_can_prove_a_one_sided_population() -> None:
+    molecule = Chem.MolFromSmiles("FC(Cl)C(Br)I")
+    assert molecule is not None
+
+    assessment = assess_molecular_chirality(
+        molecule,
+        max_isomers=1,
+        use_cache=False,
+    )
+
+    assert assessment.outcome is MolecularChiralityOutcome.NECESSARILY_CHIRAL
+    assert assessment.observed_classifications == (MolecularChirality.CHIRAL,)
+    assert assessment.evaluated_isomer_count == 1
+    assert not assessment.enumeration_complete
+    assert assessment.is_definitive
+    assert assessment.decision_method == "automorphism_parity_nonexistence_proof"
+
+
+@pytest.mark.parametrize(
+    (
+        "identifier",
+        "outcome",
+        "observed",
+        "evaluated",
+        "enumeration_complete",
+        "decision_method",
+    ),
+    [
+        (
+            "VS226",
+            MolecularChiralityOutcome.NECESSARILY_ACHIRAL,
+            (MolecularChirality.ACHIRAL,),
+            6,
+            True,
+            "complete_stereo_completion_enumeration",
+        ),
+        (
+            "VS265",
+            MolecularChiralityOutcome.NECESSARILY_CHIRAL,
+            (MolecularChirality.CHIRAL,),
+            1,
+            False,
+            "automorphism_parity_nonexistence_proof",
+        ),
+        (
+            "VS266",
+            MolecularChiralityOutcome.NECESSARILY_CHIRAL,
+            (MolecularChirality.CHIRAL,),
+            1,
+            False,
+            "automorphism_parity_nonexistence_proof",
+        ),
+        (
+            "VS268",
+            MolecularChiralityOutcome.CONFIGURATION_DEPENDENT,
+            (
+                MolecularChirality.ACHIRAL,
+                MolecularChirality.CHIRAL,
+            ),
+            2,
+            False,
+            "automorphism_parity_achiral_witness",
+        ),
+    ],
+)
+def test_large_acs_populations_are_definitive_without_raw_exhaustion(
+    identifier: str,
+    outcome: MolecularChiralityOutcome,
+    observed: tuple[MolecularChirality, ...],
+    evaluated: int,
+    enumeration_complete: bool,
+    decision_method: str,
+) -> None:
+    rows = {row["ID"]: row for row in load_dataset()}
+    molecule = Chem.MolFromSmiles(rows[identifier]["Input SMILES"])
+    assert molecule is not None
+    Chem.RemoveStereochemistry(molecule)
+
+    assessment = assess_molecular_chirality(
+        molecule,
+        max_isomers=256,
+        use_cache=False,
+    )
+
+    assert assessment.outcome is outcome
+    assert assessment.observed_classifications == observed
+    assert assessment.evaluated_isomer_count == evaluated
+    assert assessment.enumeration_complete is enumeration_complete
+    assert assessment.decision_method == decision_method
+    assert assessment.is_definitive
 
 
 @pytest.mark.parametrize("max_isomers", [0, -1, 1.5, True])

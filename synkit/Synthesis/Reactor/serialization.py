@@ -212,7 +212,11 @@ def _ensure_tuple_atom_maps(graph: nx.Graph) -> None:
 
 # --------------------- SMARTS serialisation -----------------------
 def _tuple_preserved_hydrogen_maps(its: nx.Graph) -> List[int]:
-    """Collect reaction-centre H maps without extracting an RC subgraph."""
+    """Collect non-implicitizable H maps without extracting an RC graph."""
+
+    def is_hydrogen(attrs: Dict[str, Any]) -> bool:
+        element = attrs.get("element")
+        return element == "H" or (isinstance(element, (tuple, list)) and "H" in element)
 
     def pair_changed(value: Any) -> bool:
         return (
@@ -247,7 +251,13 @@ def _tuple_preserved_hydrogen_maps(its: nx.Graph) -> List[int]:
         reaction_center_nodes.update(stereo_complete_reaction_center_nodes(its))
 
     atom_maps = set()
-    for node in reaction_center_nodes:
+    preserved_nodes = reaction_center_nodes | {
+        node
+        for node, attrs in its.nodes(data=True)
+        if is_hydrogen(attrs)
+        and all(is_hydrogen(its.nodes[neighbor]) for neighbor in its.neighbors(node))
+    }
+    for node in preserved_nodes:
         attrs = its.nodes[node]
         element = attrs.get("element")
         elements = (

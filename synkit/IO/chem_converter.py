@@ -179,6 +179,37 @@ def _extract_scalar(value: object) -> object:
     return value
 
 
+def _local_charge_model_consistent(graph: nx.Graph, node: object) -> bool:
+    """Test the local ``VE - NBE - B`` formal-charge identity."""
+    if node not in graph:
+        return False
+    attrs = graph.nodes[node]
+    required = ("valence_electrons", "lone_pairs", "radical", "hcount", "charge")
+    if any(attrs.get(name) is None for name in required):
+        return False
+
+    bond_sum = 0.0
+    for _, _, edge_attrs in graph.edges(node, data=True):
+        sigma = edge_attrs.get("sigma_order")
+        pi = edge_attrs.get("pi_order")
+        if sigma is not None and pi is not None:
+            bond_sum += float(sigma) + float(pi)
+            continue
+        order = edge_attrs.get("kekule_order", edge_attrs.get("order"))
+        if order is None:
+            return False
+        bond_sum += float(order)
+
+    modeled_charge = (
+        float(attrs["valence_electrons"])
+        - 2.0 * float(attrs["lone_pairs"])
+        - float(attrs["radical"])
+        - float(attrs["hcount"])
+        - bond_sum
+    )
+    return modeled_charge == float(attrs["charge"])
+
+
 def _extract_atom_map(attrs: dict) -> Optional[int]:
     """
     Extract atom-map value from a node attribute dictionary.
@@ -264,7 +295,11 @@ def _get_preserved_hydrogen_maps(
     format: ITSFormat,
 ) -> list[int]:
     """
-    Collect atom maps of RC hydrogens that should remain explicit.
+    Collect atom maps of hydrogens that cannot be implicitized.
+
+    Reaction-centre hydrogens retain explicit identity. Hydrogen-only
+    components also remain explicit because there is no heavy-atom neighbour
+    onto which their multiplicity can be projected.
 
     :param its: ITS graph.
     :type its: nx.Graph
@@ -278,6 +313,16 @@ def _get_preserved_hydrogen_maps(
 
     for _, attrs in rc_graph.nodes(data=True):
         if not _is_hydrogen_node(attrs):
+            continue
+        atom_map = _extract_atom_map(attrs)
+        if atom_map is not None:
+            atom_maps.add(atom_map)
+
+    for node, attrs in its.nodes(data=True):
+        if not _is_hydrogen_node(attrs) or any(
+            not _is_hydrogen_node(its.nodes[neighbor])
+            for neighbor in its.neighbors(node)
+        ):
             continue
         atom_map = _extract_atom_map(attrs)
         if atom_map is not None:
@@ -573,6 +618,7 @@ def rsmi_to_its(
     edge_attrs: Optional[Sequence[str]] = None,
     explicit_hydrogen: bool = False,
     format: ITSFormat = "typesGH",
+    include_context_edges: bool = True,
 ) -> nx.Graph:
     """
     Convert a reaction SMILES into an ITS graph.
@@ -602,6 +648,10 @@ def rsmi_to_its(
     :type explicit_hydrogen: bool
     :param format: ITS format.
     :type format: ITSFormat
+    :param include_context_edges: For tuple-format reaction centers, include
+        unchanged edges between reaction-center nodes when ``True``. Set to
+        ``False`` for a minimal changed-edge reaction center.
+    :type include_context_edges: bool
     :return: ITS graph or RC graph.
     :rtype: nx.Graph
     :raises ValueError: If graph construction fails.
@@ -640,6 +690,11 @@ def rsmi_to_its(
         node_attrs=resolved_node_attrs,
         edge_attrs=resolved_edge_attrs,
     )
+    for node in its_graph:
+        its_graph.nodes[node]["charge_model_consistent"] = (
+            _local_charge_model_consistent(reactant_graph, node),
+            _local_charge_model_consistent(product_graph, node),
+        )
     if explicit_hydrogen:
         from synkit.Graph.Hyrogen._misc import h_to_explicit
 
@@ -649,7 +704,10 @@ def rsmi_to_its(
             node_attrs=resolved_node_attrs,
             edge_attrs=resolved_edge_attrs,
             preserve_full_attrs=False,
-        ).extract(its_graph)
+        ).extract(
+            its_graph,
+            include_context_edges=include_context_edges,
+        )
     return its_graph
 
 

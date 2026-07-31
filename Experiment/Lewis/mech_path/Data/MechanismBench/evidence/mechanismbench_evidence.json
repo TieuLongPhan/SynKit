@@ -1,0 +1,150 @@
+{
+  "benchmark_fingerprints": {
+    "polar.json": "311d03c189abba37aa200872858a11e608969ca65fea998a554fcca19387f7ca",
+    "radical.json": "dc3b2706bc39b00819dd4986864bbccea8f921c03c94d0deb8c8c1b606a47072",
+    "stereo.json": "99c7794d16eb6e07504fa6987915e6d384f253a8b6878e51345129a40c851426"
+  },
+  "corruption_detection": {
+    "clean_invalid": 0,
+    "clean_valid": 167,
+    "corrupted_total": 1670,
+    "detected": 1670,
+    "expected_issue_matched": 1670,
+    "issue_code_accuracy": 1.0,
+    "macro_f1": 1.0,
+    "per_corruption": {
+      "illegal_stereo_preservation": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "incorrect_radical_count": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "mismatched_final_product": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "missing_fishhook_partner": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "overconsumed_locus": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "wrong_alkene_references": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "wrong_electron_count": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "wrong_source_or_target_locus": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "wrong_step_order": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      },
+      "wrong_tetrahedral_parity": {
+        "count": 167,
+        "detected": 167,
+        "detection_recall": 1.0,
+        "expected_issue_matched": 167,
+        "issue_code_accuracy": 1.0,
+        "issue_code_mismatch_examples": []
+      }
+    },
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "environment": {
+    "implementation": "CPython",
+    "platform": "Linux-6.19.14-108.fc42.x86_64-x86_64-with-glibc2.41",
+    "python": "3.11.0"
+  },
+  "limitations": {
+    "first_failing_step_localization": "Not scored: the current corruption generator does not encode a ground-truth failing step.",
+    "memory": "Python allocations measured by tracemalloc; this is not process RSS.",
+    "unsupported_ablations": [
+      "no_grouping",
+      "no_radical_state",
+      "no_stereo_references"
+    ]
+  },
+  "replay": {
+    "endpoint_stepwise_status_disagreements": 0,
+    "final_product_matches": 167,
+    "total": 167,
+    "valid": 167
+  },
+  "runtime": {
+    "python_tracemalloc_peak_bytes": {
+      "count": 501,
+      "max": 2012779,
+      "median": 151629,
+      "min": 41126
+    },
+    "repetitions_per_case": 3,
+    "stepwise_replay_ns": {
+      "count": 501,
+      "max": 111631322,
+      "median": 11763079,
+      "min": 4599408
+    }
+  },
+  "schema": "SynKit-MechanismBench-evidence-v1",
+  "scope": {
+    "excluded_fixture_representations": [
+      "reaction_smiles",
+      "non_tetrahedral_rewrite"
+    ],
+    "paper_arrow_mechanism_cases": 160,
+    "partition_counts": {
+      "polar": 80,
+      "radical": 80,
+      "stereo": 7
+    },
+    "typed_replay_cases": 167,
+    "typed_stereo_extension_cases": 7
+  }
+}

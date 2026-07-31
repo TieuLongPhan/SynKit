@@ -243,6 +243,46 @@ def duplicate_atom_maps_in_side(smiles: str) -> dict[int, int]:
     return {atom_map: count for atom_map, count in counts.items() if count > 1}
 
 
+def remove_duplicate_atom_maps(rsmi: str) -> tuple[str, dict[str, dict[int, int]]]:
+    """Make each endpoint map-injective before partial-map expansion.
+
+    The first occurrence of a positive map on each endpoint is retained and
+    the label is removed from every later occurrence.  The now-unmapped atoms
+    can then receive fresh labels during guarded AAM expansion.
+
+    :param rsmi: Reaction text in ``reactants>>products`` format.
+    :type rsmi: str
+    :returns: Cleaned reaction and removed occurrence counts by endpoint.
+    :rtype: tuple[str, dict[str, dict[int, int]]]
+    :raises ValueError: If the reaction does not contain exactly one arrow.
+    """
+    if rsmi.count(">>") != 1:
+        raise ValueError("RSMI must contain exactly one '>>'")
+
+    removed_by_side: dict[str, dict[int, int]] = {}
+    cleaned_sides: list[str] = []
+    for side_name, side in zip(("reactants", "products"), rsmi.split(">>", 1)):
+        seen: set[int] = set()
+        removed: Counter[int] = Counter()
+
+        def clean_bracket_atom(match: re.Match) -> str:
+            token = match.group(0)
+            map_match = ATOM_MAP_RE.search(token)
+            if map_match is None:
+                return token
+            atom_map = int(map_match.group(1))
+            if atom_map not in seen:
+                seen.add(atom_map)
+                return token
+            removed[atom_map] += 1
+            return ATOM_MAP_RE.sub("", token)
+
+        cleaned_sides.append(BRACKET_ATOM_RE.sub(clean_bracket_atom, side))
+        removed_by_side[side_name] = dict(sorted(removed.items()))
+
+    return ">>".join(cleaned_sides), removed_by_side
+
+
 def validate_arrow_maps(
     rsmi: str,
     arrow_code: str,

@@ -179,6 +179,51 @@ def test_conversion_reports_grouping_loss():
     assert "event_groups" in report.discarded_fields
 
 
+def test_conversion_reports_electrocyclic_motion_and_sidecar_loss():
+    from synkit.Mechanism import ElectrocyclicStereoMotion
+
+    motion = ElectrocyclicStereoMotion(
+        "CONROTATORY",
+        "RING_OPENING",
+        (1, 4),
+        (5, 6),
+        (1, 1),
+        4,
+        "THERMAL",
+    )
+    descriptor = StereoDescriptor(
+        "tetrahedral",
+        (1, 2, 3, 4, "@H:1"),
+        1,
+    )
+    record = MechanismRecord(
+        "[C:1]1[C:2]=[C:3][C:4]1>>[C:1]=[C:2][C:3]=[C:4]",
+        (MechanisticStep("s1", (), (), (motion,)),),
+        metadata={"figure": 11},
+        endpoint_stereo={"reactant": {"atom:1": descriptor}},
+    )
+
+    _payload, report = project_record(record, "mapped_reaction_smiles")
+
+    assert {
+        "stereo_motions",
+        "endpoint_stereo",
+        "metadata",
+    }.issubset(report.discarded_fields)
+
+
+def test_gml_writer_reports_unserialized_graph_metadata():
+    graph = nx.Graph()
+    graph.add_node(1, element="C")
+    graph.graph["stereo_descriptors"] = {}
+    graph.graph["event_groups"] = ["g1"]
+
+    _text, report = stereo_graph_to_gml(graph)
+
+    assert not report.lossless
+    assert report.discarded_fields == ("graph.event_groups",)
+
+
 def test_illegal_stereo_transition_is_stepwise_error():
     descriptor = StereoDescriptor("tetrahedral", (99, 1, 3, 4, "@H:99"), 1)
     effect = StereoEffect(("atom", 99), "INVERT", before=descriptor)

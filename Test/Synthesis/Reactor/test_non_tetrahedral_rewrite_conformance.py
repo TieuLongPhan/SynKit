@@ -24,7 +24,15 @@ from synkit.Mechanism.audit import audit_local_electron_state
 from synkit.Rule import SynRule
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
-DATA_PATH = Path(__file__).parents[3] / "Data" / "Mech" / "stereo.json"
+DATA_PATH = (
+    Path(__file__).parents[3]
+    / "Experiment"
+    / "Lewis"
+    / "mech_path"
+    / "Data"
+    / "MechanismBench"
+    / "stereo.json"
+)
 PAYLOAD = json.loads(DATA_PATH.read_text())
 MANIFEST = PAYLOAD["non_tetrahedral_fixture_metadata"]
 CASES = tuple(

@@ -621,12 +621,9 @@ class ElectronMoveGroup:
         requested: dict[ElectronLocus, int] = {}
         for move in self.moves:
             requested[move.source] = requested.get(move.source, 0) + move.electron_count
-            if (
-                move.source.kind == move.target.kind == LONE_PAIR
-                and all(
-                    atom_map in by_map
-                    for atom_map in move.source.atom_maps + move.target.atom_maps
-                )
+            if move.source.kind == move.target.kind == LONE_PAIR and all(
+                atom_map in by_map
+                for atom_map in move.source.atom_maps + move.target.atom_maps
             ):
                 source_node = by_map[move.source.atom_maps[0]]
                 target_node = by_map[move.target.atom_maps[0]]
@@ -637,9 +634,7 @@ class ElectronMoveGroup:
                             "Lone-pair relocation requires adjacent donor and acceptor atoms.",
                             group_id=self.group_id,
                             atom_maps=tuple(
-                                sorted(
-                                    move.source.atom_maps + move.target.atom_maps
-                                )
+                                sorted(move.source.atom_maps + move.target.atom_maps)
                             ),
                         )
                     )

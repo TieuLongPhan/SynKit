@@ -202,6 +202,7 @@ def _glue_graph(
     restore_unmatched_explicit_h: bool = True,
     refresh_electrons: bool = True,
     electron_aware: bool | None = None,
+    relative_match_resources: frozenset[str] = frozenset(),
 ) -> List[nx.Graph]:
     list_its: List[nx.Graph] = []
     # NetworkX copies node/edge attribute dictionaries.  Rewrite values
@@ -243,6 +244,10 @@ def _glue_graph(
     relative_pi_centers = {
         node for edge in (relative_pi_edges or set()) for node in edge
     }
+    relative_node_resources = (
+        frozenset(rc.graph.get("relative_node_resources", ()))
+        | relative_match_resources
+    )
 
     # Iterate over remappings --------------------------------------
     reuse_prepared_host = len(mappings) == 1
@@ -251,7 +256,7 @@ def _glue_graph(
         its = host_g if reuse_prepared_host else host_g.copy()
         if pattern_has_explicit_H and restore_unmatched_explicit_h:
             _restore_unmatched_pattern_hydrogens(its, m)
-        # This should only work for implict cases
+        # Materialize wildcard nodes for partial mappings.
         if len(m.keys()) < rc.number_of_nodes():
             its, m = add_wildcard_subgraph_for_unmapped(
                 its,
@@ -291,6 +296,7 @@ def _glue_graph(
                         preserve_unchanged_state=(
                             rc_n in relative_pi_centers or wildcard_context
                         ),
+                        relative_resources=relative_node_resources,
                     )
 
         # merge edges (additive order) ---------------------------
@@ -346,12 +352,8 @@ def _glue_graph(
                         )
                     host_attr["standard_order"] += rc_attr.get("standard_order", 0.0)
                 else:
-                    # The host is the authoritative reactant endpoint.
-                    # Independently parsed aromatic graphs may have an
-                    # equivalent but different Kekule phase from the rule.
-                    # Replacing the complete rule tuple here used to copy
-                    # that phase onto the host half and could serialize the
-                    # unchanged substrate as spurious [C]/[CH] radicals.
+                    # Preserve the host reactant phase; independently parsed
+                    # aromatic graphs may use an equivalent Kekule assignment.
                     for key, rule_value in rc_attr.items():
                         if isinstance(rule_value, tuple) and len(rule_value) == 2:
                             host_value = host_attr.get(key)

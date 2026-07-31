@@ -18,6 +18,11 @@ from synkit.Graph.Matcher.subgraph_matcher import (
 )
 from synkit.IO import setup_logging
 from synkit.Synthesis.Reactor.assignment import StereoWildcardAssignmentLimitError
+from synkit.Synthesis.Reactor.matching_policy import (
+    contextual_electron_pattern_graph,
+    deduplicate_joint_rule_mappings,
+    has_heavy_cross_component_correlation,
+)
 from synkit.Synthesis.Reactor.strategy import Strategy
 
 NodeId = Any
@@ -56,6 +61,11 @@ class ReactorMatchingMixin:
         if self._mappings is None:
             log.debug("Finding sub‑graph mappings (strategy=%s)", self.strategy)
             full_pattern_graph = self._relative_pi_pattern_graph(self.rule.left.raw)
+            full_pattern_graph = contextual_electron_pattern_graph(
+                full_pattern_graph,
+                reaction_center=self.rule.rc.raw,
+                template_format=getattr(self.rule, "_format", None),
+            )
             # Handle explicit‑H constraints
             if has_XH(full_pattern_graph):
                 self._flag_pattern_has_explicit_H = True
@@ -127,6 +137,11 @@ class ReactorMatchingMixin:
             if self.stereo_mode in {"require", "strict"}:
                 from synkit.Graph.Stereo import candidate_mapping_stereo_matches
 
+                presence_mode = (
+                    "require"
+                    if self.stereo_mode == "strict" and self.rule.stereo_couplings
+                    else self.stereo_mode
+                )
                 raw_maps = [
                     mapping
                     for mapping in raw_maps
@@ -134,7 +149,7 @@ class ReactorMatchingMixin:
                         full_pattern_graph,
                         matching_host,
                         mapping,
-                        mode=self.stereo_mode,
+                        mode=presence_mode,
                         unknown_policy=self.stereo_query_mode,
                         query_policies=self.rule.stereo_query_policies,
                         substitutions=stereo_substitutions,
@@ -186,12 +201,27 @@ class ReactorMatchingMixin:
                         )
                     ]
 
-            # --- Automorphism pruning ----------------------------------------
+            if self.rule.stereo_couplings and self.stereo_mode != "ignore":
+                raw_maps = [
+                    mapping
+                    for mapping in raw_maps
+                    if self._coupling_mapping_inputs_match(
+                        matching_host,
+                        mapping,
+                        strict=self.stereo_mode == "strict",
+                    )
+                ]
+
             stereo_sensitive = bool(
                 self.rule.stereo_guards
                 or self.rule.stereo_effects
                 or self.rule.stereo_outcomes
                 or self.rule.stereo_couplings
+            )
+            automorphism_pattern = (
+                self._automorphism_pattern_graph(pattern_graph)
+                if self.automorphism and not stereo_sensitive
+                else None
             )
             if len(raw_maps) < 2:
                 self._mappings = raw_maps
@@ -206,8 +236,29 @@ class ReactorMatchingMixin:
                     "Certified generic stereo rule retained %d exhaustive mapping(s)",
                     len(raw_maps),
                 )
+            elif (
+                automorphism_pattern is not None
+                and has_heavy_cross_component_correlation(
+                    automorphism_pattern,
+                    self.rule.rc.raw,
+                )
+            ):
+                self._mappings = deduplicate_joint_rule_mappings(
+                    raw_maps,
+                    automorphism_pattern,
+                    self.rule.rc.raw,
+                    node_attrs=self._automorphism_node_attrs(
+                        automorphism_pattern,
+                        node_attrs,
+                    ),
+                )
+                log.debug(
+                    "Joint rule symmetry: %d → %d mapping(s)",
+                    len(raw_maps),
+                    len(self._mappings),
+                )
             elif self.automorphism and not stereo_sensitive:
-                automorphism_pattern = self._automorphism_pattern_graph(pattern_graph)
+                assert automorphism_pattern is not None
                 auto = Automorphism(
                     automorphism_pattern,
                     node_attr_keys=self._automorphism_node_attrs(
@@ -216,28 +267,10 @@ class ReactorMatchingMixin:
                     ),
                     edge_attr_keys=edge_attrs,
                 )
-                host_orbits = None
-                host_anchor = None
-                # Exact host-group enumeration can dominate the entire
-                # reaction for a large symmetric scaffold even when only a
-                # handful of embeddings exist. Pattern pruning plus exact
-                # post-rewrite clustering is cheaper in that regime. Retain
-                # host pruning when it materially protects a large mapping
-                # population from rewrite expansion.
-                if len(raw_maps) > 256:
-                    host_auto = Automorphism(
-                        matching_host,
-                        node_attr_keys=node_attrs,
-                        edge_attr_keys=edge_attrs,
-                    )
-                    host_orbits = host_auto.orbits
-                    host_anchor = host_auto.anchor_component
                 self._mappings = deduplicate_matches_with_anchor(
                     raw_maps,
                     pattern_orbits=auto.orbits,
                     pattern_anchor=auto.anchor_component,
-                    host_orbits=host_orbits,
-                    host_anchor=host_anchor,
                 )
                 self._mappings = self._deduplicate_equivalent_free_components(
                     self._mappings,
@@ -573,8 +606,15 @@ class ReactorMatchingMixin:
             if minimum_pi < 1.0:
                 continue
             attrs["_minimum_pi_order"] = minimum_pi
-            decorated.nodes[left]["_coupled_pi_center_query"] = True
-            decorated.nodes[right]["_coupled_pi_center_query"] = True
+            for node in (left, right):
+                policies = dict(
+                    decorated.nodes[node].get(
+                        "_query_attribute_policies",
+                        {},
+                    )
+                )
+                policies["radical"] = "unknown"
+                decorated.nodes[node]["_query_attribute_policies"] = policies
         return decorated
 
     @staticmethod
@@ -584,7 +624,12 @@ class ReactorMatchingMixin:
     ) -> List[str]:
         """Keep pruning at least as role-aware as the stored template data."""
         attrs = list(node_attrs)
-        for attr in ("aromatic", "neighbors", "_rewrite_role"):
+        for attr in (
+            "aromatic",
+            "neighbors",
+            "_query_attribute_policies",
+            "_rewrite_role",
+        ):
             if attr not in attrs and any(
                 attr in data for _, data in pattern.nodes(data=True)
             ):

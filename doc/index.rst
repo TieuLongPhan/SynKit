@@ -120,6 +120,12 @@ Documentation quick links
 
       Molecule, reaction, ITS, and diagnostic graph rendering.
 
+   .. grid-item-card:: :octicon:`git-compare` Reaction Stereochemistry
+      :link: stereo_reactions
+      :link-type: doc
+
+      Typed semantics, rules, couplings, replay, and loss-aware interchange.
+
    .. grid-item-card:: :octicon:`terminal` API Reference
       :link: api/index
       :link-type: doc
@@ -178,7 +184,6 @@ Funded by the European Union Horizon Europe Doctoral Network
    :hidden:
 
    getting_started
-   mechanism
    io
    chem
    graph
@@ -186,6 +191,7 @@ Funded by the European Union Horizon Europe Doctoral Network
    synthesis
    crn
    vis
+   stereo_reactions
    api/index
    reference
    changelog

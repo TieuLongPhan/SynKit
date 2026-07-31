@@ -135,7 +135,9 @@ def test_optional_pinned_upstream_replay_matches_the_permanent_report():
     if not (repository / "src" / "stereomolgraph").is_dir():
         pytest.skip("pinned StereoMolGraph checkout is unavailable")
 
-    from tools.stereo_conformance import run_conformance
+    from Experiment.Stereo.Diagnostics.stereomolgraph_conformance import (
+        run_conformance,
+    )
 
     observed = run_conformance(repository)
 

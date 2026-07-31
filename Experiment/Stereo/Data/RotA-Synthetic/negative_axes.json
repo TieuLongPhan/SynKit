@@ -1,0 +1,1408 @@
+{
+  "claim_boundary": "Synthetic controls validate constitutional axis specificity and invariance. They do not validate rotational barriers, isolation timescales, experimental stability, or configured handedness.",
+  "records": [
+    {
+      "axes": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "element_type": "atrop_axis",
+          "identifier": "atrop_axis:5-6",
+          "path": [
+            5,
+            6
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                4
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                1
+              ],
+              [
+                4,
+                0
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                11
+              ],
+              [
+                8,
+                10
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                8
+              ],
+              [
+                11,
+                7
+              ]
+            ],
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                11
+              ],
+              [
+                8,
+                10
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                8
+              ],
+              [
+                11,
+                7
+              ]
+            ]
+          ],
+          "terminal_frames": [
+            [
+              4,
+              0
+            ],
+            [
+              7,
+              11
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "c1ccc(-c2ccccc2)cc1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-biaryl-01",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "c1ccccc1-c2ccccc2"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "element_type": "atrop_axis",
+          "identifier": "atrop_axis:4-5",
+          "path": [
+            4,
+            5
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                13
+              ],
+              [
+                3,
+                12
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                11
+              ],
+              [
+                7,
+                10
+              ],
+              [
+                8,
+                8
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                7
+              ],
+              [
+                11,
+                6
+              ],
+              [
+                12,
+                3
+              ],
+              [
+                13,
+                2
+              ]
+            ],
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                11
+              ],
+              [
+                7,
+                10
+              ],
+              [
+                8,
+                8
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                7
+              ],
+              [
+                11,
+                6
+              ],
+              [
+                12,
+                12
+              ],
+              [
+                13,
+                13
+              ]
+            ]
+          ],
+          "terminal_frames": [
+            [
+              3,
+              12
+            ],
+            [
+              6,
+              11
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "Fc1ccc(-c2ccc(F)cc2)cc1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-biaryl-02",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "Fc1ccc(-c2ccc(F)cc2)cc1"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "element_type": "atrop_axis",
+          "identifier": "atrop_axis:4-5",
+          "path": [
+            4,
+            5
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                13
+              ],
+              [
+                3,
+                12
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                11
+              ],
+              [
+                7,
+                10
+              ],
+              [
+                8,
+                8
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                7
+              ],
+              [
+                11,
+                6
+              ],
+              [
+                12,
+                3
+              ],
+              [
+                13,
+                2
+              ]
+            ],
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                11
+              ],
+              [
+                7,
+                10
+              ],
+              [
+                8,
+                8
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                7
+              ],
+              [
+                11,
+                6
+              ],
+              [
+                12,
+                12
+              ],
+              [
+                13,
+                13
+              ]
+            ]
+          ],
+          "terminal_frames": [
+            [
+              3,
+              12
+            ],
+            [
+              6,
+              11
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "Clc1ccc(-c2ccc(Cl)cc2)cc1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-biaryl-03",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "Clc1ccc(-c2ccc(Cl)cc2)cc1"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "element_type": "atrop_axis",
+          "identifier": "atrop_axis:4-5",
+          "path": [
+            4,
+            5
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                13
+              ],
+              [
+                3,
+                12
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                11
+              ],
+              [
+                7,
+                10
+              ],
+              [
+                8,
+                8
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                7
+              ],
+              [
+                11,
+                6
+              ],
+              [
+                12,
+                3
+              ],
+              [
+                13,
+                2
+              ]
+            ],
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                11
+              ],
+              [
+                7,
+                10
+              ],
+              [
+                8,
+                8
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                7
+              ],
+              [
+                11,
+                6
+              ],
+              [
+                12,
+                12
+              ],
+              [
+                13,
+                13
+              ]
+            ]
+          ],
+          "terminal_frames": [
+            [
+              3,
+              12
+            ],
+            [
+              6,
+              11
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "Cc1ccc(-c2ccc(C)cc2)cc1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-biaryl-04",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "Cc1ccc(-c2ccc(C)cc2)cc1"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "element_type": "atrop_axis",
+          "identifier": "atrop_axis:5-6",
+          "path": [
+            5,
+            6
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                15
+              ],
+              [
+                4,
+                14
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                13
+              ],
+              [
+                8,
+                12
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                10
+              ],
+              [
+                11,
+                11
+              ],
+              [
+                12,
+                8
+              ],
+              [
+                13,
+                7
+              ],
+              [
+                14,
+                4
+              ],
+              [
+                15,
+                3
+              ]
+            ],
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                13
+              ],
+              [
+                8,
+                12
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                10
+              ],
+              [
+                11,
+                11
+              ],
+              [
+                12,
+                8
+              ],
+              [
+                13,
+                7
+              ],
+              [
+                14,
+                14
+              ],
+              [
+                15,
+                15
+              ]
+            ]
+          ],
+          "terminal_frames": [
+            [
+              4,
+              14
+            ],
+            [
+              7,
+              13
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "COc1ccc(-c2ccc(OC)cc2)cc1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-biaryl-05",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "COc1ccc(-c2ccc(OC)cc2)cc1"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "element_type": "atrop_axis",
+          "identifier": "atrop_axis:5-6",
+          "path": [
+            5,
+            6
+          ],
+          "symmetry_witnesses": [
+            null,
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                11
+              ],
+              [
+                8,
+                10
+              ],
+              [
+                9,
+                9
+              ],
+              [
+                10,
+                8
+              ],
+              [
+                11,
+                7
+              ]
+            ]
+          ],
+          "terminal_frames": [
+            [
+              4,
+              0
+            ],
+            [
+              7,
+              11
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "c1cncc(-c2ccncc2)c1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-biaryl-06",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "c1ccncc1-c2ccncc2"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "symmetry_related_terminal_paths",
+          "carrier_status": "symmetry_related",
+          "element_type": "atrop_axis",
+          "identifier": "atrop_axis:7-8",
+          "path": [
+            7,
+            8
+          ],
+          "symmetry_witnesses": [
+            null,
+            [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                7
+              ],
+              [
+                8,
+                8
+              ],
+              [
+                9,
+                14
+              ],
+              [
+                10,
+                15
+              ],
+              [
+                11,
+                13
+              ],
+              [
+                12,
+                12
+              ],
+              [
+                13,
+                11
+              ],
+              [
+                14,
+                9
+              ],
+              [
+                15,
+                10
+              ]
+            ]
+          ],
+          "terminal_frames": [
+            [
+              6,
+              1
+            ],
+            [
+              9,
+              14
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "Cc1cccc(-c2c(C)cccc2C)c1C",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-biaryl-07",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "Cc1c(C)cccc1-c2c(C)cccc2C"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "element_type": "cumulene_axis",
+          "identifier": "cumulene_axis:1-3-4",
+          "path": [
+            1,
+            3,
+            4
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            null
+          ],
+          "terminal_frames": [
+            [
+              0,
+              2
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "FC(F)=C=C(Cl)Br",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-cumulene-01",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "FC(F)=C=C(Cl)Br"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "element_type": "cumulene_axis",
+          "identifier": "cumulene_axis:1-3-4",
+          "path": [
+            1,
+            3,
+            4
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            null
+          ],
+          "terminal_frames": [
+            [
+              0,
+              2
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "FC(Br)=C=C(Cl)Cl",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-cumulene-02",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "ClC(Cl)=C=C(F)Br"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "element_type": "cumulene_axis",
+          "identifier": "cumulene_axis:1-3-4",
+          "path": [
+            1,
+            3,
+            4
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            null
+          ],
+          "terminal_frames": [
+            [
+              0,
+              2
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "FC(Cl)=C=C(Br)Br",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-cumulene-03",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "BrC(Br)=C=C(F)Cl"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "element_type": "extended_cis_trans",
+          "identifier": "extended_cis_trans:1-3-4-5",
+          "path": [
+            1,
+            3,
+            4,
+            5
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                7
+              ]
+            ],
+            null
+          ],
+          "terminal_frames": [
+            [
+              0,
+              2
+            ],
+            [
+              6,
+              7
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "FC(F)=C=C=C(Cl)Br",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-extended-01",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "FC(F)=C=C=C(Cl)Br"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "element_type": "extended_cis_trans",
+          "identifier": "extended_cis_trans:1-3-4-5",
+          "path": [
+            1,
+            3,
+            4,
+            5
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                7
+              ]
+            ],
+            null
+          ],
+          "terminal_frames": [
+            [
+              0,
+              2
+            ],
+            [
+              6,
+              7
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "FC(Br)=C=C=C(Cl)Cl",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-extended-02",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "ClC(Cl)=C=C=C(F)Br"
+    },
+    {
+      "axes": [
+        {
+          "carrier_reason": "duplicate_terminal_ligands",
+          "carrier_status": "symmetry_related",
+          "element_type": "extended_cis_trans",
+          "identifier": "extended_cis_trans:1-3-4-5",
+          "path": [
+            1,
+            3,
+            4,
+            5
+          ],
+          "symmetry_witnesses": [
+            [
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                7
+              ]
+            ],
+            null
+          ],
+          "terminal_frames": [
+            [
+              0,
+              2
+            ],
+            [
+              6,
+              7
+            ]
+          ]
+        }
+      ],
+      "canonical_smiles": "FC(Cl)=C=C=C(Br)Br",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "sym-extended-03",
+      "proof_kind": "axis_fixed_automorphism",
+      "smiles": "BrC(Br)=C=C=C(F)Cl"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "C=C=C",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-01",
+      "proof_kind": "no_supported_axis",
+      "smiles": "C=C=C"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "F/C=C/F",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-02",
+      "proof_kind": "no_supported_axis",
+      "smiles": "F/C=C/F"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "CCCC",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-03",
+      "proof_kind": "no_supported_axis",
+      "smiles": "CCCC"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "c1ccccc1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-04",
+      "proof_kind": "no_supported_axis",
+      "smiles": "c1ccccc1"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "c1ccc2ccccc2c1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-05",
+      "proof_kind": "no_supported_axis",
+      "smiles": "c1ccc2ccccc2c1"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "C1CCC2(CC1)CCCCC2",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-06",
+      "proof_kind": "no_supported_axis",
+      "smiles": "C1CCC2(CC1)CCCCC2"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "C1CCC2CCCCC2C1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-07",
+      "proof_kind": "no_supported_axis",
+      "smiles": "C1CCC2CCCCC2C1"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "FC#CCl",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-08",
+      "proof_kind": "no_supported_axis",
+      "smiles": "FC#CCl"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "C1CCCCC1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-09",
+      "proof_kind": "no_supported_axis",
+      "smiles": "C1CCCCC1"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "c1ccc(CCc2ccccc2)cc1",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-10",
+      "proof_kind": "no_supported_axis",
+      "smiles": "c1ccccc1CCc2ccccc2"
+    },
+    {
+      "axes": [],
+      "canonical_smiles": "CC#CC",
+      "expected": "constitutionally_nonstereogenic_axis",
+      "fixture_id": "no-axis-11",
+      "proof_kind": "no_supported_axis",
+      "smiles": "CC#CC"
+    }
+  ],
+  "schema": "synkit.rota-synthetic-negative-controls/1",
+  "summary": {
+    "axis_fixed_automorphism_negatives": 13,
+    "confirmed_axis_false_positives": 0,
+    "no_supported_axis_negatives": 11,
+    "records": 24
+  }
+}

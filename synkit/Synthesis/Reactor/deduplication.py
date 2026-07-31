@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from copy import deepcopy
 from typing import Any, Dict, List, Tuple
 
 import networkx as nx
@@ -31,11 +32,69 @@ ITS_STRUCTURAL_NODE_ATTRS = [
 ITS_STRUCTURAL_EDGE_ATTRS = ["order", "kekule_order", "sigma_order", "pi_order"]
 
 
+def _freeze_identity(value: Any) -> Any:
+    """Convert nested attribute values into a stable, hashable identity."""
+    if isinstance(value, dict):
+        return tuple(
+            sorted(
+                (
+                    (_freeze_identity(key), _freeze_identity(item))
+                    for key, item in value.items()
+                ),
+                key=repr,
+            )
+        )
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_identity(item) for item in value)
+    if isinstance(value, set):
+        return tuple(
+            sorted(
+                (_freeze_identity(item) for item in value),
+                key=repr,
+            )
+        )
+    try:
+        hash(value)
+    except TypeError:
+        return repr(value)
+    return value
+
+
 def _merge_application_orbits(
     representative: nx.Graph,
     members: List[nx.Graph],
 ) -> None:
     """Retain every application contributing to one exact product orbit."""
+    contributions = []
+    aggregate_weight = 0.0
+    aggregate_multiplicity = 0
+    for member in members:
+        aggregate_weight += float(
+            member.graph.get(
+                "stereo_aggregate_weight",
+                member.graph.get("stereo_branch_weight", 1.0),
+            )
+        )
+        aggregate_multiplicity += int(member.graph.get("stereo_branch_multiplicity", 1))
+        existing = member.graph.get("stereo_branch_contributions")
+        if existing is not None:
+            contributions.extend(deepcopy(existing))
+            continue
+        contributions.append(
+            {
+                "weight": float(member.graph.get("stereo_branch_weight", 1.0)),
+                "branch_path": deepcopy(member.graph.get("stereo_branch_path", ())),
+                "branch": deepcopy(member.graph.get("stereo_branch", {})),
+                "coupling_branch": deepcopy(
+                    member.graph.get("stereo_coupling_branch", {})
+                ),
+                "application": deepcopy(member.graph.get("application_provenance")),
+            }
+        )
+    representative.graph["stereo_aggregate_weight"] = aggregate_weight
+    representative.graph["stereo_branch_multiplicity"] = aggregate_multiplicity
+    representative.graph["stereo_branch_contributions"] = contributions
+
     applications = []
     for member in members:
         orbit = member.graph.get("application_orbit")
@@ -146,6 +205,97 @@ def _prepare_its_for_structural_cluster(
     return ordered
 
 
+def _component_inventory(
+    graphs: List[nx.Graph],
+    cluster: GraphCluster,
+) -> List[Tuple[int, ...]]:
+    """Classify disconnected non-stereo ITS components exactly."""
+    representatives: Dict[Any, List[Tuple[int, nx.Graph]]] = defaultdict(list)
+    literal_classes: Dict[Any, int] = {}
+    inventories: List[Tuple[int, ...]] = []
+    next_class = 0
+    for graph in graphs:
+        components = (
+            nx.weakly_connected_components(graph)
+            if graph.is_directed()
+            else nx.connected_components(graph)
+        )
+        classes = []
+        for nodes in components:
+            component = graph.subgraph(nodes)
+            node_records = tuple(
+                sorted(
+                    [
+                        (
+                            node,
+                            tuple(
+                                _freeze_identity(attrs.get(name))
+                                for name in (
+                                    *ITS_STRUCTURAL_NODE_ATTRS,
+                                    "_its_wl_node_sig",
+                                )
+                            ),
+                        )
+                        for node, attrs in component.nodes(data=True)
+                    ],
+                    key=lambda record: repr(record[0]),
+                )
+            )
+            edge_records = tuple(
+                sorted(
+                    [
+                        (
+                            tuple(sorted((left, right), key=repr)),
+                            _freeze_identity(attrs["_its_edge_sig"]),
+                        )
+                        for left, right, attrs in component.edges(data=True)
+                    ],
+                    key=repr,
+                )
+            )
+            literal_signature = (node_records, edge_records)
+            component_class = literal_classes.get(literal_signature)
+            if component_class is not None:
+                classes.append(component_class)
+                continue
+            fingerprint = (
+                component.number_of_nodes(),
+                component.number_of_edges(),
+                tuple(
+                    sorted(
+                        attrs["_its_wl_node_sig"]
+                        for _, attrs in component.nodes(data=True)
+                    )
+                ),
+                tuple(
+                    sorted(
+                        (
+                            attrs["_its_edge_sig"]
+                            for _, _, attrs in component.edges(data=True)
+                        ),
+                        key=repr,
+                    )
+                ),
+            )
+            for class_id, representative in representatives[fingerprint]:
+                if nx.is_isomorphic(
+                    component,
+                    representative,
+                    node_match=cluster.nodeMatch,
+                    edge_match=cluster.edgeMatch,
+                ):
+                    component_class = class_id
+                    break
+            if component_class is None:
+                component_class = next_class
+                next_class += 1
+                representatives[fingerprint].append((component_class, component))
+            literal_classes[literal_signature] = component_class
+            classes.append(component_class)
+        inventories.append(tuple(sorted(classes)))
+    return inventories
+
+
 def _cluster_structural_its(
     its_graphs: List[nx.Graph],
     *,
@@ -180,13 +330,24 @@ def _cluster_structural_its(
         node_label_default=["*", False, 0, 0, 0, 0, 0, (), (), ""],
         edge_attribute="_its_edge_sig",
     )
+
     representative_indices: List[int] = []
-    for bucket in buckets.values():
+    for (_, stereo_signature), bucket in buckets.items():
         if len(bucket) == 1:
             representative_indices.append(bucket[0][0])
             continue
         prepared = [prepared for _, prepared in bucket]
-        classes, _ = cluster.iterative_cluster(prepared)
+        if stereo_signature is None:
+            by_inventory: Dict[Tuple[int, ...], set[int]] = defaultdict(set)
+            for index, inventory in enumerate(_component_inventory(prepared, cluster)):
+                by_inventory[inventory].add(index)
+            classes = list(by_inventory.values())
+        else:
+            classes, _ = cluster.iterative_cluster(
+                prepared,
+                nodeMatch=cluster.nodeMatch,
+                edgeMatch=cluster.edgeMatch,
+            )
         for cls in classes:
             member_indices = [bucket[index][0] for index in sorted(cls)]
             representative_index = member_indices[0]
@@ -203,22 +364,28 @@ def _cluster_structural_its(
 def _finalize_product_electron_fields(
     its_graphs: List[nx.Graph],
 ) -> List[nx.Graph]:
-    """Finalize every deferred tuple product without changing multiplicity."""
+    """Finalize deferred tuple products and reject unperceivable candidates."""
+    finalized: List[nx.Graph] = []
     for its in its_graphs:
-        if its.graph.get("electron_aware_rewrite", False) and not its.graph.get(
-            "_product_electron_fields_current", False
-        ):
-            _product_state._refresh_product_electron_fields(its)
-    return its_graphs
+        try:
+            if its.graph.get("electron_aware_rewrite", False) and not its.graph.get(
+                "_product_electron_fields_current", False
+            ):
+                _product_state._refresh_product_electron_fields(its)
+        except _product_state.ProductStatePerceptionError:
+            # Reject only this application; other embeddings may remain valid.
+            continue
+        finalized.append(its)
+    return finalized
 
 
 def _deduplicate_structural_its(its_graphs: List[nx.Graph]) -> List[nx.Graph]:
     """Keep one representative per exact structural/stereo ITS identity.
 
-    Stable-Kekule tuple candidates use cheap direct electron reconstruction
-    followed by one authoritative clustering pass.  Rewrites needing full
-    aromatic re-perception retain a pre-refresh pass so only structural
-    representatives pay that chemistry cost, then a final refreshed pass.
+    Electron state is finalized before quotienting. This guarantees that the
+    deduplication relation is a congruence of endpoint serialization: two
+    provisional candidates may not be merged before every state field that
+    affects their serialized endpoints has been materialized.
     """
     if not its_graphs:
         return its_graphs
@@ -234,30 +401,11 @@ def _deduplicate_structural_its(its_graphs: List[nx.Graph]) -> List[nx.Graph]:
             refresh_electrons=False,
         )
 
-    # Most tuple rewrites retain a valid Kekule phase. Their derived
-    # product fields can be refreshed directly on the ITS, making one
-    # post-refresh clustering pass cheaper than hashing every candidate
-    # and then hashing all representatives again.
-    if all(
-        not its.graph.get("_product_kekule_phase_dirty", True)
-        for its in its_graphs
-        if its.graph.get("electron_aware_rewrite", False)
-        and not its.graph.get("_product_electron_fields_current", False)
-    ):
-        _finalize_product_electron_fields(its_graphs)
-        return _cluster_structural_its(
-            its_graphs,
-            refresh_electrons=False,
-        )
-
-    representatives = _cluster_structural_its(
-        its_graphs,
-        refresh_electrons=False,
-    )
-    _finalize_product_electron_fields(representatives)
-
+    its_graphs = _finalize_product_electron_fields(its_graphs)
+    if not its_graphs:
+        return []
     return _cluster_structural_its(
-        representatives,
+        its_graphs,
         refresh_electrons=False,
         hash_iterations=3,
     )

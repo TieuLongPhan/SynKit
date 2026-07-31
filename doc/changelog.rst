@@ -1,8 +1,36 @@
 Changelog
 =========
 
+Version 1.6.1b1
+---------------
+
+**Synthesis**
+
+- Standardized tuple-rule lone-pair changes as relative resource edits, so
+  matching consumes or supplies the rule delta instead of assigning an
+  absolute product resource count.
+- Added the record 886 LLG-versus-legacy regression and completed the uncapped
+  39,732-record bidirectional replay with full reference recovery.
+
+**Packaging and diagnostics**
+
+- Included the reviewed MechanismBench partitions and identifier-only
+  reconstruction-audit registries required by fresh-clone test collection.
+- Added path- and timing-independent retained benchmark summaries suitable for
+  version control.
+- Clarified that the 167 typed evidence cases comprise the manuscript's 160
+  polar/radical mechanisms plus seven typed stereo extensions.
+
 Version 1.6.0
 -------------
+
+**Synthesis**
+
+- Added an opt-in ``serialization_errors="skip"`` policy to
+  ``SynReactor`` raw ITS mode. Valid serializations retain their application
+  order, while one structured warning and a cached diagnostic expose every
+  omitted raw-application index. The compatibility default remains
+  ``"raise"``.
 
 **Lewis-labelled graphs**
 
@@ -10,6 +38,10 @@ Version 1.6.0
   sigma-bond, and pi-bond resources and derived charge and bond-order fields.
 - Added resource-aware matching and rewriting with explicit availability and
   policy-validity checks.
+- Standardized tuple-rule lone-pair changes as relative resource edits.
+  For example, an extracted ``S(lp2) -> S(lp1)`` endpoint change is stored as
+  ``S(lp1) -> S(lp0)`` (consume one), so matching a host with one, two, or
+  three lone pairs produces a host with zero, one, or two, respectively.
 
 **Arrow-pushing grammar**
 
@@ -19,6 +51,14 @@ Version 1.6.0
   integrality, locality, resource-availability, and endpoint replay checks.
 - Added deterministic mechanism verification with structured diagnostics for
   invalid or inconsistent supplied electron-flow annotations.
+
+**Native graph backend**
+
+- Removed the external MØD-backed reactor, rule-composition, CRN,
+  visualization, and persistence adapters.
+- Standardized supported execution paths on the native NetworkX graph stack.
+- Retained GML as a supported serialization format through the native readers
+  and writers.
 
 Version 1.5.0
 -------------

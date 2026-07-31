@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
@@ -25,6 +26,9 @@ from synkit.Synthesis.Reactor import graph_rewrite as _graph_rewrite
 from synkit.Synthesis.Reactor import deduplication as _deduplication
 from synkit.Synthesis.Reactor.reactor_matching import ReactorMatchingMixin
 from synkit.Synthesis.Reactor.reactor_stereo import ReactorStereoMixin
+from synkit.Synthesis.Reactor.serialization_policy import (
+    RawITSApplicationSerializationWarning,
+)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Typing aliases
@@ -121,10 +125,19 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         while still finalizing electron fields and validating stereo state.
         This policy is independent of mapping-level ``automorphism`` pruning.
     :type dedup_its: bool
+    :param serialization_errors: Raw ITS serialization policy. ``"raise"``
+        preserves the compatibility behavior; ``"skip"`` returns all
+        serializable results in their original order and reports omitted raw
+        application indices.
+    :type serialization_errors: str
     :param stereo_assignment_limit: Optional hard cap on admissible injective
         typed stereo-port assignments. Exceeding it raises instead of silently
         truncating the search.
     :type stereo_assignment_limit: Optional[int]
+    :param stereo_branch_limit: Optional hard cap on stereo product branches
+        across all accepted applications. Exceeding it raises a typed error
+        before a partial result can be returned.
+    :type stereo_branch_limit: Optional[int]
     :ivar _graph: Cached SynGraph for the substrate.
     :vartype _graph: Optional[SynGraph]
     :ivar _rule: Cached SynRule for the template.
@@ -160,6 +173,8 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     preserve_mapped_hydrogens: bool = False
     dedup_its: bool = True
     stereo_assignment_limit: int | None = None
+    stereo_branch_limit: int | None = None
+    serialization_errors: str = "raise"
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
@@ -167,6 +182,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     _mappings: List[MappingDict] | None = field(init=False, default=None, repr=False)
     _its: List[nx.Graph] | None = field(init=False, default=None, repr=False)
     _smarts: List[str] | None = field(init=False, default=None, repr=False)
+    _serialization_failure_indices: Tuple[int, ...] = field(
+        init=False,
+        default=(),
+        repr=False,
+    )
     _host_for_matching: nx.Graph | None = field(init=False, default=None, repr=False)
     _stereo_semantic_diagnostics: List[Any] = field(
         init=False,
@@ -179,6 +199,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         repr=False,
     )
     _flag_pattern_has_explicit_H: bool = field(init=False, default=False, repr=False)
+    _stereo_branch_count: int = field(init=False, default=0, repr=False)
 
     def __post_init__(self) -> None:
         """Validate and enforce consistency of `explicit_h` and
@@ -206,11 +227,17 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             )
         if not isinstance(self.dedup_its, bool):
             raise TypeError("dedup_its must be a bool.")
+        if self.serialization_errors not in {"raise", "skip"}:
+            raise ValueError("serialization_errors must be 'raise' or 'skip'.")
         if self.stereo_assignment_limit is not None and (
             type(self.stereo_assignment_limit) is not int
             or self.stereo_assignment_limit < 1
         ):
             raise ValueError("stereo_assignment_limit must be a positive integer.")
+        if self.stereo_branch_limit is not None and (
+            type(self.stereo_branch_limit) is not int or self.stereo_branch_limit < 1
+        ):
+            raise ValueError("stereo_branch_limit must be a positive integer.")
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -235,7 +262,9 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         stereo_semantics: str = "orbit",
         preserve_mapped_hydrogens: bool = False,
         dedup_its: bool = True,
+        serialization_errors: str = "raise",
         stereo_assignment_limit: int | None = None,
+        stereo_branch_limit: int | None = None,
     ) -> "SynReactor":
         """
         Alternate constructor: build a SynReactor directly from SMILES.
@@ -277,9 +306,15 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         :param dedup_its: Consolidate equivalent post-rewrite ITS graphs while
             preserving all correctness finalization and validation steps.
         :type dedup_its: bool
+        :param serialization_errors: Raw ITS serialization policy, either
+            ``"raise"`` (default) or ``"skip"``.
+        :type serialization_errors: str
         :param stereo_assignment_limit: Optional hard cap on exhaustive typed
             stereo-port assignments.
         :type stereo_assignment_limit: Optional[int]
+        :param stereo_branch_limit: Optional hard cap on generated stereo
+            product branches.
+        :type stereo_branch_limit: Optional[int]
         :returns: A new `SynReactor` instance.
         :rtype: SynReactor
         """
@@ -300,7 +335,9 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             stereo_semantics=stereo_semantics,
             preserve_mapped_hydrogens=preserve_mapped_hydrogens,
             dedup_its=dedup_its,
+            serialization_errors=serialization_errors,
             stereo_assignment_limit=stereo_assignment_limit,
+            stereo_branch_limit=stereo_branch_limit,
         )
 
     # ------------------------------------------------------------------
@@ -315,6 +352,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     def stereo_morphism_issues(self) -> tuple[Any, ...]:
         """Return structured reasons rejected typed stereo mappings failed."""
         return tuple(self._stereo_morphism_issues)
+
+    @property
+    def serialization_failure_indices(self) -> Tuple[int, ...]:
+        """Return raw ITS indices omitted or rejected during serialization."""
+        return self._serialization_failure_indices
 
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
@@ -360,6 +402,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                 self.rule.rc.raw.graph.get("generic_stereo_extraction")
             )
             self._its = []
+            self._stereo_branch_count = 0
             raw_application_index = 0
             for mapping_index, m in enumerate(self.mappings):
                 retain_provenance = not self.dedup_its or certified_generic
@@ -400,6 +443,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     restore_unmatched_explicit_h=not self.explicit_h,
                     refresh_electrons=False,
                     electron_aware=electron_aware,
+                    relative_match_resources=(
+                        frozenset({"radical"})
+                        if self.radical_policy == "lower_bound"
+                        else frozenset()
+                    ),
                 )
                 stereo_batch: List[nx.Graph] = []
                 for rewrite_index, candidate in enumerate(its_batch):
@@ -447,20 +495,27 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         :rtype: list of str
         """
         if self._smarts is None:
-            self._smarts = [self._to_smarts(g) for g in self.its_list]
-            if not self.dedup_its and any(value is None for value in self._smarts):
-                failed = [
-                    index for index, value in enumerate(self._smarts) if value is None
-                ]
-                raise ValueError(
-                    "Could not serialize raw ITS application(s): "
-                    + ", ".join(map(str, failed))
+            serialized = [self._to_smarts(g) for g in self.its_list]
+            failed = tuple(
+                index for index, value in enumerate(serialized) if value is None
+            )
+            self._serialization_failure_indices = failed if not self.dedup_its else ()
+            if not self.dedup_its and failed:
+                if self.serialization_errors == "raise":
+                    raise ValueError(
+                        "Could not serialize raw ITS application(s): "
+                        + ", ".join(map(str, failed))
+                    )
+                warnings.warn(
+                    RawITSApplicationSerializationWarning(failed),
+                    stacklevel=2,
                 )
-            self._smarts = [value for value in self._smarts if value]
+            smarts = [value for value in serialized if value]
             if self.invert:
-                self._smarts = [reverse_reaction(rsmi) for rsmi in self._smarts]
+                smarts = [reverse_reaction(rsmi) for rsmi in smarts]
             if self.dedup_its:
-                self._smarts = list(dict.fromkeys(self._smarts))
+                smarts = list(dict.fromkeys(smarts))
+            self._smarts = smarts
         return self._smarts
 
     @property
@@ -733,6 +788,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         restore_unmatched_explicit_h: bool = True,
         refresh_electrons: bool = True,
         electron_aware: bool | None = None,
+        relative_match_resources: frozenset[str] = frozenset(),
     ) -> List[nx.Graph]:
         return _graph_rewrite._glue_graph(
             host,
@@ -747,6 +803,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             restore_unmatched_explicit_h,
             refresh_electrons,
             electron_aware,
+            relative_match_resources,
         )
 
     @staticmethod
@@ -830,11 +887,13 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         rc_n: Dict[str, Any],
         *,
         preserve_unchanged_state: bool = False,
+        relative_resources: frozenset[str] = frozenset(),
     ) -> None:
         _product_state._pair_electron_aware_node_attrs(
             host_n,
             rc_n,
             preserve_unchanged_state=preserve_unchanged_state,
+            relative_resources=relative_resources,
         )
 
     @staticmethod

@@ -108,16 +108,17 @@ def electron_aware_node_match(
 
     - ``hcount``: host must be greater than or equal to pattern
     - ``lone_pairs``: host must be greater than or equal to pattern
-    ``radical`` therefore remains exact whenever the caller includes it in
-    ``node_attrs``.
+    - an attribute explicitly marked ``unknown`` by the typed query policy is
+      omitted because the template's local context cannot determine it
+
+    ``radical`` otherwise remains exact whenever the caller includes it.
     """
     for attr in node_attrs:
-        # A compact coupled pi-addition rule may use a deliberately
-        # under-valenced atom (for example ``[C:1]=[C:2]``) to state only the
-        # reaction locus. RDKit represents that notation with placeholder
-        # radical electrons. They are a parser consequence, not a radical
-        # query; the reactor marks only those inferred coupling centers.
-        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+        policy = pattern_data.get("_query_attribute_policies", {}).get(
+            attr,
+            "exact",
+        )
+        if policy == "unknown":
             continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
@@ -180,7 +181,11 @@ def explain_node_mismatch(
     """Return node-level mismatch reasons using matcher semantics."""
     reasons: list[str] = []
     for attr in node_attrs:
-        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+        policy = pattern_data.get("_query_attribute_policies", {}).get(
+            attr,
+            "exact",
+        )
+        if policy == "unknown":
             continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None

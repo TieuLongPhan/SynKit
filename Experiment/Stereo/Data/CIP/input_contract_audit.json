@@ -1,0 +1,83 @@
+{
+  "claim_boundary": "This is an information-theoretic input audit. It does not assess the correctness or completeness of the CIP ranking algorithm.",
+  "complete_300_record_assignment_identifiable": false,
+  "complete_300_record_input_identifiable_with_coordinates": true,
+  "conflicting_input_groups": [
+    {
+      "expected_label_sets": [
+        {
+          "labels": [
+            "19M",
+            "26M"
+          ],
+          "record_ids": [
+            "VS011"
+          ]
+        },
+        {
+          "labels": [
+            "19P",
+            "26P"
+          ],
+          "record_ids": [
+            "VS010"
+          ]
+        }
+      ],
+      "reason": "Byte-identical molecular input has mutually exclusive configured label sets.",
+      "record_ids": [
+        "VS010",
+        "VS011"
+      ],
+      "stereo_units": [
+        "HE"
+      ]
+    }
+  ],
+  "conflicting_records": 2,
+  "coordinate_contract_extension": {
+    "all_smiles_conflicts_distinguished": true,
+    "audited_sha256": "28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325",
+    "claim_boundary": "Signed coordinate volumes prove that the external 3D input distinguishes the conflicting configured structures. They do not perform helical perception or CIP ranking.",
+    "conflict_orientation_witnesses": [
+      {
+        "atom_positions_one_based": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "distinguished": true,
+        "invariance": "translation_rotation_and_positive_scale",
+        "orientations": [
+          {
+            "orientation": "positive",
+            "record_id": "VS010"
+          },
+          {
+            "orientation": "negative",
+            "record_id": "VS011"
+          }
+        ],
+        "record_ids": [
+          "VS010",
+          "VS011"
+        ],
+        "reflection_sensitive": true
+      }
+    ],
+    "provided": true,
+    "records": 300,
+    "structures_vendored": false
+  },
+  "dataset": {
+    "audited_sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059",
+    "records": 300,
+    "structures_vendored": false
+  },
+  "deterministic_input_contract": "supplied_smiles_only",
+  "maximum_exact_records_from_supplied_smiles": 299,
+  "required_contract_extension": "A declared helical/axial orientation sidecar or coordinates that distinguish every configured input with identical constitution.",
+  "schema": "synkit.cip-input-contract-audit/2",
+  "unique_input_strings": 298
+}

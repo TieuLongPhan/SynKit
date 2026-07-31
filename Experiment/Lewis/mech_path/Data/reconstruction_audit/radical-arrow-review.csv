@@ -1,0 +1,12 @@
+source_row,recorded_arrow,reviewed_arrow,outcome
+279,duplicate fishhook,deduplicate the coupled group,corrected
+404,"5 to bond (5,21)","5 to bond (5,22)",corrected
+540,"one-electron 1 to bond (1,2)","two-electron 1 to bond (1,2)",corrected
+1310,literal endpoint maps,retain flow after endpoint-orbit alignment,corrected
+1317,literal endpoint maps,retain flow after endpoint-orbit alignment,corrected
+2046,21 to 10,10 to 21,corrected
+2207,H transfer to map 13,no local endpoint-consistent group,unresolved
+2300,four fishhooks,two fishhooks plus two paired moves,corrected
+2516,"9 to bond (4,8)","8 to bond (4,8)",corrected
+3970,"bond (20,21) to 2","bond (20,21) to 21",corrected
+4852,"bond (20,21) to 2","bond (20,21) to 21",corrected

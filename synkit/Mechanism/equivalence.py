@@ -335,6 +335,61 @@ def _group_dependencies(group: Any, references: ReferenceMap) -> frozenset[Hasha
     )
 
 
+def _stereo_motion_signature(
+    motion: Any,
+    references: ReferenceMap,
+) -> tuple[Any, ...]:
+    def resolve(reference: Any) -> Hashable:
+        if type(reference) is int:
+            return _resolve_atom(reference, references)
+        virtual = parse_virtual_reference(reference)
+        if virtual is None:
+            return ("invalid", repr(reference))
+        return (
+            "virtual",
+            virtual.kind,
+            _resolve_atom(virtual.center, references),
+        )
+
+    terminals = tuple(
+        sorted(
+            (
+                (
+                    _resolve_atom(terminus, references),
+                    resolve(substituent),
+                    rotation,
+                )
+                for terminus, substituent, rotation in zip(
+                    motion.termini,
+                    motion.substituents,
+                    motion.terminal_motion,
+                )
+            ),
+            key=repr,
+        )
+    )
+    return (
+        motion.mode,
+        motion.direction,
+        terminals,
+        motion.pi_electrons,
+        motion.activation,
+    )
+
+
+def _stereo_motion_dependencies(
+    motion: Any,
+    references: ReferenceMap,
+) -> frozenset[Hashable]:
+    return frozenset(
+        _resolve_atom(atom_map, references) for atom_map in motion.termini
+    ) | frozenset(
+        _resolve_atom(reference, references)
+        for reference in motion.substituents
+        if type(reference) is int
+    )
+
+
 def _event_signature(
     record: MechanismRecord,
     references: ReferenceMap,
@@ -359,7 +414,16 @@ def _event_signature(
                 key=repr,
             )
         )
-        entry = (groups, stereo)
+        motions = tuple(
+            sorted(
+                (
+                    _stereo_motion_signature(motion, references)
+                    for motion in step.stereo_motions
+                ),
+                key=repr,
+            )
+        )
+        entry = (groups, stereo, motions)
         if trajectory:
             steps.append(entry)
         else:
@@ -381,6 +445,16 @@ def _event_signature(
                     (
                         ("stereo", _stereo_effect_signature(effect, references)),
                         _stereo_effect_dependencies(effect, references),
+                    )
+                )
+            for motion in step.stereo_motions:
+                event_entries.append(
+                    (
+                        (
+                            "stereo_motion",
+                            _stereo_motion_signature(motion, references),
+                        ),
+                        _stereo_motion_dependencies(motion, references),
                     )
                 )
     if trajectory:
