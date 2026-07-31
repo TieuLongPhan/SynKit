@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run single-process hydrogen-extension and partial-AAM capability checks."""
+"""Run single-process hydrogen-extension and exact reference comparisons."""
 
 from __future__ import annotations
 
@@ -7,11 +7,15 @@ import argparse
 from collections import Counter, defaultdict
 import gzip
 import hashlib
+import importlib.metadata
 import json
+import os
 from pathlib import Path
 import pickle
+import platform
 import signal
 import statistics
+import subprocess
 import sys
 import time
 from typing import Any, Iterable
@@ -22,7 +26,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 DATASET = ROOT / "Experiment" / "Lewis" / "Data" / "hydrogen.pkl.gz"
 HEXTEND_METHODS = ("hextend_legacy", "hextend_new")
-REFERENCE_METHODS = ("method_a", "method_b")
+REFERENCE_BACKENDS = ("an_gm", "rb_gm", "rb_nx")
 
 
 class CaseTimeout(TimeoutError):
@@ -58,6 +62,11 @@ def write_jsonl(path: Path, rows: Iterable[dict[str, Any]]) -> None:
     with gzip.open(path, "wt", encoding="utf-8") as handle:
         for row in rows:
             handle.write(json.dumps(row, sort_keys=True) + "\n")
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle]
 
 
 def timed_call(function, timeout: float) -> tuple[float, Any, Exception | None]:
@@ -195,8 +204,9 @@ def run_reference(
     dataset: list[dict[str, Any]],
     repetitions: int,
     timeout: float,
+    backend: str = "rb_nx",
 ) -> list[dict[str, Any]]:
-    """Run the published NetworkX Method A/B definitions."""
+    """Run one published Method A/B backend."""
     from Experiment.Lewis.hydrogen_expand.reference_methods import (
         run_reference_methods,
     )
@@ -205,7 +215,8 @@ def run_reference(
     for repetition in range(1, repetitions + 1):
         for index, entry in enumerate(dataset):
             elapsed, result, error = timed_call(
-                lambda entry=entry: run_reference_methods(entry["ITS"]), timeout
+                lambda entry=entry: run_reference_methods(entry["ITS"], backend),
+                timeout,
             )
             base = {
                 "repetition": repetition,
@@ -213,11 +224,12 @@ def run_reference(
                 "record_id": str(entry["R-id"]),
             }
             if error is not None:
-                for method in REFERENCE_METHODS:
+                for method in ("a", "b"):
                     rows.append(
                         base
                         | {
-                            "method": method,
+                            "method": f"method_{method}_{backend}",
+                            "backend": backend,
                             "status": "ERROR",
                             "seconds": elapsed,
                             "error_type": type(error).__name__,
@@ -230,12 +242,14 @@ def run_reference(
                 "automorphisms": result["automorphisms"],
                 "automorphism_seconds": result["automorphism_seconds"],
                 "permutations": result["permutations"],
+                "unmatched_hydrogens": result["unmatched_hydrogens"],
+                "backend": backend,
             }
             rows.append(
                 base
                 | common
                 | {
-                    "method": "method_a",
+                    "method": f"method_a_{backend}",
                     "seconds": result["method_a_seconds"],
                     "unique_classes": result["method_a_classes"],
                 }
@@ -244,7 +258,7 @@ def run_reference(
                 base
                 | common
                 | {
-                    "method": "method_b",
+                    "method": f"method_b_{backend}",
                     "seconds": result["method_b_seconds"],
                     "unique_classes": result["method_b_classes"],
                 }
@@ -288,6 +302,40 @@ def summarize(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return summaries
 
 
+def summarize_by_hcount(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Build Table-2-style mean and population std from reaction means."""
+    grouped: dict[tuple[str, int, str], list[float]] = defaultdict(list)
+    for row in rows:
+        if row["status"] != "OUTPUT" or "unmatched_hydrogens" not in row:
+            continue
+        key = (
+            str(row["method"]),
+            int(row["unmatched_hydrogens"]),
+            str(row["record_id"]),
+        )
+        grouped[key].append(float(row["seconds"]) * 1000)
+
+    reaction_means: dict[tuple[str, int], list[float]] = defaultdict(list)
+    repetitions: dict[tuple[str, int], set[int]] = defaultdict(set)
+    for (method, hcount, _), durations in grouped.items():
+        reaction_means[(method, hcount)].append(statistics.mean(durations))
+        repetitions[(method, hcount)].add(len(durations))
+
+    table = []
+    for (method, hcount), durations in sorted(reaction_means.items()):
+        table.append(
+            {
+                "method": method,
+                "unmatched_hydrogens": hcount,
+                "reactions": len(durations),
+                "repetitions_per_reaction": sorted(repetitions[(method, hcount)]),
+                "mean_ms": statistics.mean(durations),
+                "population_std_ms": statistics.pstdev(durations),
+            }
+        )
+    return table
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=DATASET)
@@ -295,6 +343,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repetitions", type=int, default=5)
     parser.add_argument("--limit", type=int)
     parser.add_argument("--case-timeout", type=float, default=60.0)
+    parser.add_argument("--gmapache-env", default="aam")
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()
 
@@ -307,7 +356,9 @@ def main() -> int:
     output_dir = args.output_dir.resolve()
     targets = (
         output_dir / "hextend-runs.jsonl.gz",
-        output_dir / "reference-method-runs.jsonl.gz",
+        output_dir / "rb-nx-reference-runs.jsonl.gz",
+        output_dir / "gmapache-reference-runs.jsonl.gz",
+        output_dir / "gmapache-environment.json",
         output_dir / "excluded-records.json",
         output_dir / "aggregate.json",
     )
@@ -319,16 +370,66 @@ def main() -> int:
     if args.limit is not None:
         dataset = dataset[: args.limit]
     dataset, excluded = select_reference_cases(dataset)
-    targets[2].write_text(json.dumps(excluded, indent=2, sort_keys=True) + "\n")
+    targets[4].write_text(json.dumps(excluded, indent=2, sort_keys=True) + "\n")
     hextend_rows = run_hextend(dataset, args.repetitions, args.case_timeout)
     write_jsonl(targets[0], hextend_rows)
-    reference_rows = run_reference(dataset, args.repetitions, args.case_timeout)
+    reference_rows = run_reference(
+        dataset,
+        args.repetitions,
+        args.case_timeout,
+        backend="rb_nx",
+    )
     write_jsonl(targets[1], reference_rows)
+
+    child_env = os.environ.copy()
+    child_env.update(
+        {
+            "PYTHONPATH": str(ROOT),
+            "PYTHONNOUSERSITE": "1",
+            "OMP_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+            "NUMEXPR_NUM_THREADS": "1",
+        }
+    )
+    command = [
+        "conda",
+        "run",
+        "--no-capture-output",
+        "-n",
+        args.gmapache_env,
+        "python",
+        str(HERE / "gmapache_worker.py"),
+        "--dataset",
+        str(dataset_path),
+        "--output",
+        str(targets[2]),
+        "--environment-output",
+        str(targets[3]),
+        "--repetitions",
+        str(args.repetitions),
+        "--case-timeout",
+        str(args.case_timeout),
+    ]
+    if args.limit is not None:
+        command.extend(("--limit", str(args.limit)))
+    subprocess.run(command, cwd=ROOT, env=child_env, check=True)
+    reference_rows.extend(read_jsonl(targets[2]))
+
+    hcounts = {
+        row["record_id"]: row["unmatched_hydrogens"]
+        for row in reference_rows
+        if row["status"] == "OUTPUT"
+    }
+    for row in hextend_rows:
+        if row["record_id"] in hcounts:
+            row["unmatched_hydrogens"] = hcounts[row["record_id"]]
+    write_jsonl(targets[0], hextend_rows)
 
     reference_classes = {
         (row["repetition"], row["record_id"]): row["unique_classes"]
         for row in reference_rows
-        if row["method"] == "method_a" and row["status"] == "OUTPUT"
+        if row["method"] == "method_a_rb_nx" and row["status"] == "OUTPUT"
     }
     agreement = {}
     for method in HEXTEND_METHODS:
@@ -354,8 +455,36 @@ def main() -> int:
             ),
         }
 
+    expected_reference_methods = {
+        f"method_{method}_{backend}"
+        for method in ("a", "b")
+        for backend in REFERENCE_BACKENDS
+    }
+    reference_groups: dict[tuple[int, str], list[dict[str, Any]]] = defaultdict(list)
+    for row in reference_rows:
+        reference_groups[(row["repetition"], row["record_id"])].append(row)
+    reference_matches = {}
+    for key, rows in reference_groups.items():
+        outputs = [row for row in rows if row["status"] == "OUTPUT"]
+        reference_matches[key] = (
+            {row["method"] for row in outputs} == expected_reference_methods
+            and len({int(row["unique_classes"]) for row in outputs}) == 1
+        )
+    reference_agreement = {
+        "comparisons": len(reference_matches),
+        "matches": sum(reference_matches.values()),
+        "mismatched_record_ids": sorted(
+            {
+                record_id
+                for (_, record_id), matches in reference_matches.items()
+                if not matches
+            }
+        ),
+    }
+    import synkit
+
     aggregate = {
-        "schema": "synkit.hydrogen-expansion-comparison/2",
+        "schema": "synkit.hydrogen-expansion-comparison/3",
         "dataset": {
             "path": str(dataset_path),
             "sha256": sha256(dataset_path),
@@ -367,6 +496,7 @@ def main() -> int:
             "processes_per_method": 1,
             "thread_limits": 1,
             "repetitions": args.repetitions,
+            "gmapache_environment": args.gmapache_env,
         },
         "method_contracts": {
             "hextend_legacy": (
@@ -384,14 +514,28 @@ def main() -> int:
                 "classify by base-ITS automorphisms plus anchored co-extension"
             ),
         },
-        "reference_backend": "NetworkX anchor relabeling",
+        "reference_backends": {
+            "an_gm": "native GranMapache stable extension",
+            "rb_gm": "anchor-relabeling GranMapache",
+            "rb_nx": "anchor-relabeling NetworkX",
+        },
+        "local_environment": {
+            "python": platform.python_version(),
+            "networkx": importlib.metadata.version("networkx"),
+            "rdkit": importlib.metadata.version("rdkit"),
+            "synkit": getattr(synkit, "__version__", "unknown"),
+            "synkit_source": str(Path(synkit.__file__).resolve()),
+        },
+        "gmapache_environment": json.loads(targets[3].read_text()),
         "summaries": summarize(hextend_rows + reference_rows),
+        "table_by_hcount": summarize_by_hcount(hextend_rows + reference_rows),
+        "reference_class_count_agreement": reference_agreement,
         "class_count_agreement": agreement,
         "exclusions": excluded,
         "artifacts": [path.name for path in targets[:-1]],
     }
-    targets[3].write_text(json.dumps(aggregate, indent=2, sort_keys=True) + "\n")
-    print(f"Wrote hydrogen comparison: {targets[3]}")
+    targets[5].write_text(json.dumps(aggregate, indent=2, sort_keys=True) + "\n")
+    print(f"Wrote hydrogen comparison: {targets[5]}")
     return 0
 
 

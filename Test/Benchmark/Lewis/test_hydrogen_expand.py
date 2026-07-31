@@ -11,6 +11,7 @@ from Experiment.Lewis.hydrogen_expand.benchmark import (
     select_reference_cases,
     sha256,
     summarize,
+    summarize_by_hcount,
 )
 from Experiment.Lewis.hydrogen_expand.reference_methods import run_reference_methods
 
@@ -42,6 +43,8 @@ def test_reference_methods_reproduce_known_class_count() -> None:
 
     assert result["method_a_classes"] == 3
     assert result["method_b_classes"] == 3
+    assert result["backend"] == "rb_nx"
+    assert result["unmatched_hydrogens"] == 3
 
 
 def test_new_hextend_uses_the_same_full_its_class_contract() -> None:
@@ -82,3 +85,29 @@ def test_runner_is_executable() -> None:
 
     assert runner.is_file()
     assert runner.stat().st_mode & 0o111
+
+
+def test_table_summary_groups_reaction_means_by_hcount() -> None:
+    rows = [
+        {
+            "method": "method_a_rb_nx",
+            "record_id": "R-1",
+            "unmatched_hydrogens": 2,
+            "status": "OUTPUT",
+            "seconds": 0.001,
+        },
+        {
+            "method": "method_a_rb_nx",
+            "record_id": "R-1",
+            "unmatched_hydrogens": 2,
+            "status": "OUTPUT",
+            "seconds": 0.003,
+        },
+    ]
+
+    summary = summarize_by_hcount(rows)[0]
+
+    assert summary["reactions"] == 1
+    assert summary["repetitions_per_reaction"] == [2]
+    assert summary["mean_ms"] == 2
+    assert summary["population_std_ms"] == 0

@@ -17,6 +17,8 @@ import networkx as nx
 
 from synkit.Graph.Hyrogen.hcomplete import HComplete
 
+REFERENCE_BACKENDS = ("an_gm", "rb_gm", "rb_nx")
+
 
 def _clean_graph(graph: nx.Graph) -> nx.Graph:
     cleaned = deepcopy(graph)
@@ -152,21 +154,38 @@ def _reference_inputs(its: nx.Graph) -> tuple[
     )
 
 
+def _gm_isomorphic(left: nx.Graph, right: nx.Graph) -> bool:
+    try:
+        import gmapache as gm
+    except ImportError as error:
+        raise RuntimeError("GranMapache backend requires gmapache") from error
+    _, isomorphic = gm.search_isomorphisms(
+        nx_G=left,
+        nx_H=right,
+        node_labels=True,
+        edge_labels=True,
+        all_isomorphisms=False,
+    )
+    return bool(isomorphic)
+
+
 def _classify_full(
     reactant: nx.Graph,
     product: nx.Graph,
     base_map: list[tuple[Any, Any]],
     sources: list[str],
     targets: list[str],
+    backend: str,
 ) -> int:
     representatives: list[nx.Graph] = []
+    isomorphic = _isomorphic if backend == "rb_nx" else _gm_isomorphic
     for permutation in permutations(sources):
         candidate = _its_graph(
             reactant,
             product,
             base_map + list(zip(permutation, targets)),
         )
-        if not any(_isomorphic(candidate, representative) for representative in representatives):
+        if not any(isomorphic(candidate, representative) for representative in representatives):
             representatives.append(candidate)
     return len(representatives)
 
@@ -174,8 +193,10 @@ def _classify_full(
 def _anchored_isomorphic(
     left: nx.Graph,
     right: nx.Graph,
-    anchor: dict[Any, Any],
+    anchor: dict[Any, Any] | list[tuple[Any, Any]],
+    backend: str,
 ) -> bool:
+    anchor = dict(anchor)
     left_copy = deepcopy(left)
     right_copy = deepcopy(right)
     left_anchor = set(anchor)
@@ -197,6 +218,8 @@ def _anchored_isomorphic(
         for left_node, right_node in right_copy.edges
         if left_node in right_anchor and right_node in right_anchor
     )
+    if backend == "rb_gm":
+        return _gm_isomorphic(left_copy, right_copy)
     return nx.is_isomorphic(
         left_copy,
         right_copy,
@@ -207,6 +230,59 @@ def _anchored_isomorphic(
     )
 
 
+def _automorphisms(
+    base: nx.Graph,
+    backend: str,
+) -> list[dict[Any, Any] | list[tuple[Any, Any]]]:
+    if backend == "rb_nx":
+        matcher = nx.algorithms.isomorphism.GraphMatcher(
+            base,
+            base,
+            node_match=_node_match,
+            edge_match=_edge_match,
+        )
+        return list(matcher.isomorphisms_iter())
+
+    try:
+        import gmapache as gm
+    except ImportError as error:
+        raise RuntimeError("GranMapache backend requires gmapache") from error
+    automorphisms, _ = gm.search_isomorphisms(
+        nx_G=base,
+        nx_H=base,
+        node_labels=True,
+        edge_labels=True,
+        all_isomorphisms=True,
+    )
+    return automorphisms
+
+
+def _stable_extension_isomorphic(
+    left: nx.Graph,
+    right: nx.Graph,
+    anchor: dict[Any, Any] | list[tuple[Any, Any]],
+) -> bool:
+    try:
+        import gmapache as gm
+    except ImportError as error:
+        raise RuntimeError("GranMapache backend requires gmapache") from error
+    anchor_pairs = list(anchor.items()) if isinstance(anchor, dict) else anchor
+    extension_search = getattr(
+        gm,
+        "search_stable_extension",
+        gm.search_complete_induced_extension,
+    )
+    _, isomorphic = extension_search(
+        nx_G=left,
+        nx_H=right,
+        input_anchor=anchor_pairs,
+        node_labels=True,
+        edge_labels=True,
+        all_extensions=False,
+    )
+    return bool(isomorphic)
+
+
 def _classify_anchored(
     base: nx.Graph,
     reactant: nx.Graph,
@@ -214,15 +290,10 @@ def _classify_anchored(
     base_map: list[tuple[Any, Any]],
     sources: list[str],
     targets: list[str],
+    backend: str,
 ) -> tuple[int, int, float]:
     started = time.perf_counter()
-    matcher = nx.algorithms.isomorphism.GraphMatcher(
-        base,
-        base,
-        node_match=_node_match,
-        edge_match=_edge_match,
-    )
-    automorphisms = list(matcher.isomorphisms_iter())
+    automorphisms = _automorphisms(base, backend)
     automorphism_seconds = time.perf_counter() - started
     representatives: list[nx.Graph] = []
     for permutation in permutations(sources):
@@ -231,34 +302,49 @@ def _classify_anchored(
             product,
             base_map + list(zip(permutation, targets)),
         )
-        equivalent = any(
-            _anchored_isomorphic(candidate, representative, anchor)
-            for representative in representatives
-            for anchor in automorphisms
-        )
+        if backend == "an_gm":
+            equivalent = any(
+                _stable_extension_isomorphic(candidate, representative, anchor)
+                for representative in representatives
+                for anchor in automorphisms
+            )
+        else:
+            equivalent = any(
+                _anchored_isomorphic(candidate, representative, anchor, backend)
+                for representative in representatives
+                for anchor in automorphisms
+            )
         if not equivalent:
             representatives.append(candidate)
     return len(representatives), len(automorphisms), automorphism_seconds
 
 
-def run_reference_methods(its: nx.Graph) -> dict[str, float | int]:
+def run_reference_methods(
+    its: nx.Graph,
+    backend: str = "rb_nx",
+) -> dict[str, float | int | str]:
     """Run one reaction through reference Method A and Method B."""
+    if backend not in REFERENCE_BACKENDS:
+        raise ValueError(
+            f"Unknown reference backend {backend!r}; expected {REFERENCE_BACKENDS}"
+        )
     base, reactant, product, base_map, sources, targets = _reference_inputs(its)
     if not sources:
         raise ValueError("Reaction has no unmatched hydrogens")
 
     started = time.perf_counter()
     method_a_classes = _classify_full(
-        reactant, product, base_map, sources, targets
+        reactant, product, base_map, sources, targets, backend
     )
     method_a_seconds = time.perf_counter() - started
 
     started = time.perf_counter()
     method_b_classes, automorphisms, automorphism_seconds = _classify_anchored(
-        base, reactant, product, base_map, sources, targets
+        base, reactant, product, base_map, sources, targets, backend
     )
     method_b_seconds = time.perf_counter() - started
     return {
+        "backend": backend,
         "method_a_seconds": method_a_seconds,
         "method_a_classes": method_a_classes,
         "method_b_seconds": method_b_seconds,
@@ -266,4 +352,5 @@ def run_reference_methods(its: nx.Graph) -> dict[str, float | int]:
         "automorphisms": automorphisms,
         "automorphism_seconds": automorphism_seconds,
         "permutations": math.factorial(len(sources)),
+        "unmatched_hydrogens": len(sources),
     }
