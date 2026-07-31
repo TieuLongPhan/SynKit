@@ -5,8 +5,8 @@ benchmarks and their retained data. Unit and regression tests remain under
 `Test`.
 
 - `Data` contains the shared input corpora and their provenance registry.
-- `partial_expand`: minimal partial atom-mapping expansion, retained reports,
-  and comparison figures.
+- `partial_expand`: minimal partial atom-mapping expansion and reproducible
+  reaction-level runtime metadata for current LWG, RB1, RB2, and GM.
 - `rule_replay`: forward/backward graph-rule replay for the tuple and
   `typesGH` representations, with retained case evidence.
 - `FLOWER`: the portable 425,517-reaction full-corpus replay payload and its

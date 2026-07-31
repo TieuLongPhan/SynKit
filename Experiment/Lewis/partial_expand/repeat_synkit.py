@@ -15,6 +15,13 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 BENCHMARK = HERE / "benchmark.py"
 ROOT = HERE.parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from Experiment.Lewis.partial_expand.timing_artifacts import (  # noqa: E402
+    write_timing_artifact,
+)
+
 RESULTS_ROOT = HERE / "Data"
 
 
@@ -32,6 +39,11 @@ def parse_args() -> argparse.Namespace:
             "Default: Experiment/Lewis/partial_expand/Data/"
             "synkit-<suite>-expansion-5x"
         ),
+    )
+    parser.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="Delete detailed evaluated case files after timing extraction",
     )
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()
@@ -123,17 +135,23 @@ def run_repetitions(
     limit: int | None,
     case_timeout: float,
     progress_every: int,
+    metadata_only: bool,
     force: bool,
 ) -> Path:
     if repetitions < 1:
         raise ValueError("repetitions must be positive")
     output_dir.mkdir(parents=True, exist_ok=True)
     reports: list[Path] = []
+    timing_files: list[Path] = []
     for repetition in range(1, repetitions + 1):
         stem = f"synkit-run-{repetition:02d}"
         report = output_dir / f"{stem}.json"
         cases = output_dir / f"{stem}-cases.jsonl.gz"
-        if not force and (report.exists() or cases.exists()):
+        timings = (
+            output_dir
+            / f"{suite}-synkit-run-{repetition:02d}-timings.json.gz"
+        )
+        if not force and any(path.exists() for path in (report, cases, timings)):
             raise FileExistsError(f"Refusing to overwrite {stem}; pass --force")
         command = [
             sys.executable,
@@ -155,11 +173,38 @@ def run_repetitions(
             command.extend(["--limit", str(limit)])
         print(f"Running SynKit repetition {repetition}/{repetitions}", flush=True)
         subprocess.run(command, cwd=ROOT, env=os.environ.copy(), check=True)
+        report_payload = json.loads(report.read_text())
+        write_timing_artifact(
+            source=cases,
+            output=timings,
+            dataset=Path(report_payload["dataset"]["path"]),
+            method="synkit",
+            repetition=repetition,
+            normalize_status=lambda status: (
+                "ERROR" if status == "ERROR" else "OUTPUT"
+            ),
+        )
+        report_payload["timing_file"] = str(timings.resolve())
+        report_payload["case_file_retained"] = not metadata_only
+        if metadata_only:
+            report_payload["case_file"] = None
+        report.write_text(json.dumps(report_payload, indent=2, sort_keys=True) + "\n")
         reports.append(report)
+        timing_files.append(timings)
+        if metadata_only:
+            cases.unlink()
     aggregate = output_dir / "aggregate.json"
     if aggregate.exists() and not force:
         raise FileExistsError(f"Refusing to overwrite {aggregate}; pass --force")
     aggregate_reports(reports, aggregate)
+    payload = json.loads(aggregate.read_text())
+    payload["reaction_timing_artifacts"] = {
+        "schema": "synkit.partial-aam-reaction-timing-set/1",
+        "methods": ["synkit"],
+        "repetitions": repetitions,
+        "files": [path.name for path in timing_files],
+    }
+    aggregate.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     print(f"Wrote aggregate report: {aggregate}")
     return aggregate
 
@@ -174,6 +219,7 @@ def main() -> int:
         limit=args.limit,
         case_timeout=args.case_timeout,
         progress_every=args.progress_every,
+        metadata_only=args.metadata_only,
         force=args.force,
     )
     return 0

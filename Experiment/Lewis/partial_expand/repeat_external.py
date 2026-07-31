@@ -5,8 +5,6 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
-import gzip
-import hashlib
 import importlib.metadata
 import json
 import os
@@ -17,7 +15,7 @@ import statistics
 import subprocess
 import sys
 import time
-from typing import Any, TextIO
+from typing import Any
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -26,6 +24,11 @@ if str(ROOT) not in sys.path:
 
 from Experiment.Lewis.partial_expand.repeat_synkit import (  # noqa: E402
     aggregate_reports,
+)
+from Experiment.Lewis.partial_expand.timing_artifacts import (  # noqa: E402
+    open_text,
+    sha256,
+    write_timing_artifact,
 )
 
 GENERAL_DATASET = ROOT / "Experiment" / "Lewis" / "Data" / "benchmark.json.gz"
@@ -40,14 +43,6 @@ def raise_timeout(_signum, _frame) -> None:
     raise CaseTimeout("External partial-AAM generation exceeded the case timeout")
 
 
-def open_text(path: Path, mode: str) -> TextIO:
-    compressed = (
-        path.suffix == ".gz" if "w" in mode else path.read_bytes()[:2] == b"\x1f\x8b"
-    )
-    opener = gzip.open if compressed else open
-    return opener(path, mode, encoding="utf-8")
-
-
 def load_sources(path: Path) -> list[dict[str, Any]]:
     with open_text(path, "rt") as handle:
         return [
@@ -60,12 +55,24 @@ def load_sources(path: Path) -> list[dict[str, Any]]:
         ]
 
 
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+def isolate_historical_imports() -> None:
+    """Keep the active SynKit checkout out of the historical worker.
+
+    The worker is executed from this repository, so both an explicit ``ROOT``
+    entry and the empty current-directory entry can otherwise make Python load
+    today's source tree instead of SynKit 0.0.6 from the selected conda env.
+    """
+    repo_root = ROOT.resolve()
+    isolated = []
+    for entry in sys.path:
+        try:
+            resolved = Path(entry or os.getcwd()).resolve()
+        except (OSError, RuntimeError):
+            isolated.append(entry)
+            continue
+        if resolved != repo_root:
+            isolated.append(entry)
+    sys.path[:] = isolated
 
 
 def worker_main(arguments: list[str]) -> int:
@@ -81,7 +88,9 @@ def worker_main(arguments: list[str]) -> int:
     parser.add_argument("--summary", type=Path, required=True)
     args = parser.parse_args(arguments)
 
-    # Imported only in the conda worker. PYTHONPATH selects the April checkout.
+    # Imported only in the conda worker. PYTHONPATH selects the April checkout,
+    # while SynKit itself must come from the historical conda environment.
+    isolate_historical_imports()
     from partialaams.aam_expand import partial_aam_extension_from_smiles
     import partialaams
     import synkit
@@ -89,6 +98,13 @@ def worker_main(arguments: list[str]) -> int:
     synkit_version = importlib.metadata.version("synkit")
     if synkit_version != "0.0.6":
         raise RuntimeError(f"Expected SynKit 0.0.6 in aam, found {synkit_version}")
+    synkit_source = Path(synkit.__file__).resolve()
+    environment_prefix = Path(sys.prefix).resolve()
+    if not synkit_source.is_relative_to(environment_prefix):
+        raise RuntimeError(
+            "Historical worker imported SynKit outside its conda environment: "
+            f"{synkit_source} (environment prefix: {environment_prefix})"
+        )
 
     rows = load_sources(args.dataset.resolve())
     if args.limit is not None:
@@ -155,8 +171,9 @@ def worker_main(arguments: list[str]) -> int:
         "rows": len(rows),
         "environment": {
             "python": platform.python_version(),
+            "python_prefix": str(environment_prefix),
             "synkit": synkit_version,
-            "synkit_source": synkit.__file__,
+            "synkit_source": str(synkit_source),
             "gmapache": importlib.metadata.version("gmapache"),
             "rdkit": importlib.metadata.version("rdkit"),
             "networkx": importlib.metadata.version("networkx"),
@@ -319,7 +336,12 @@ def git_commit(path: Path) -> str | None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--conda-env", default="aam")
+    parser.add_argument(
+        "--conda-env",
+        help="Compatibility option: use one environment for GM, RB1, and RB2",
+    )
+    parser.add_argument("--gm-conda-env", default="aam")
+    parser.add_argument("--rb-conda-env", default="aam")
     parser.add_argument("--repetitions", type=int, default=5)
     parser.add_argument("--limit", type=int, help="Pilot only; omit for full datasets")
     parser.add_argument("--progress-every", type=int, default=500)
@@ -333,13 +355,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--gmapache",
         type=Path,
-        default=Path("/tmp/GranMapache-4c8"),
-        help="GranMapache checkout at 4c8f292 (last revision before 5 May 2025)",
+        help=(
+            "Optional GranMapache checkout for commit provenance; generation "
+            "uses the gmapache package installed in the selected conda environment"
+        ),
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
         default=RESULTS_ROOT / "gm-rb-normal-expansion-5x",
+    )
+    parser.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="Delete bulky generated candidates and evaluated case files",
     )
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()
@@ -350,24 +379,31 @@ def main() -> int:
     if args.repetitions < 1:
         raise ValueError("repetitions must be positive")
     partialaams = args.partialaams.resolve()
-    gmapache = args.gmapache.resolve()
-    for path in (partialaams, gmapache):
-        if not path.exists():
-            raise FileNotFoundError(path)
+    if not partialaams.exists():
+        raise FileNotFoundError(partialaams)
+    gmapache = args.gmapache.resolve() if args.gmapache is not None else None
+    if gmapache is not None and not gmapache.exists():
+        raise FileNotFoundError(gmapache)
+    gm_conda_env = args.conda_env or args.gm_conda_env
+    rb_conda_env = args.conda_env or args.rb_conda_env
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     child_env = os.environ.copy()
     child_env["PYTHONPATH"] = str(partialaams)
+    child_env["PYTHONNOUSERSITE"] = "1"
     reports = []
+    timing_files = []
 
     for repetition in range(1, args.repetitions + 1):
         for method in ("gm", "rb1", "rb2"):
+            method_conda_env = gm_conda_env if method == "gm" else rb_conda_env
             stem = f"general-{method}-run-{repetition:02d}"
             generated = output_dir / f"{stem}-generated.jsonl.gz"
             generation_summary = output_dir / f"{stem}-generation.json"
             report = output_dir / f"{stem}.json"
             cases = output_dir / f"{stem}-cases.jsonl.gz"
-            targets = (generated, generation_summary, report, cases)
+            timings = output_dir / f"{stem}-timings.json.gz"
+            targets = (generated, generation_summary, report, cases, timings)
             if not args.force and any(path.exists() for path in targets):
                 raise FileExistsError(f"Refusing to overwrite {stem}; pass --force")
             command = [
@@ -375,7 +411,7 @@ def main() -> int:
                 "run",
                 "--no-capture-output",
                 "-n",
-                args.conda_env,
+                method_conda_env,
                 "python",
                 str(Path(__file__).resolve()),
                 "--worker",
@@ -399,7 +435,14 @@ def main() -> int:
                 f"{repetition}/{args.repetitions}",
                 flush=True,
             )
-            subprocess.run(command, cwd=ROOT, env=child_env, check=True)
+            subprocess.run(command, cwd=partialaams, env=child_env, check=True)
+            write_timing_artifact(
+                source=generated,
+                output=timings,
+                dataset=GENERAL_DATASET,
+                method=method,
+                repetition=repetition,
+            )
             evaluate_generation(
                 dataset=GENERAL_DATASET,
                 generated=generated,
@@ -407,18 +450,42 @@ def main() -> int:
                 report_path=report,
                 cases_path=cases,
             )
+            report_payload = json.loads(report.read_text())
+            report_payload["timing_file"] = str(timings.resolve())
+            report_payload["case_file_retained"] = not args.metadata_only
+            report_payload["generated_file_retained"] = not args.metadata_only
+            if args.metadata_only:
+                report_payload["case_file"] = None
+            report.write_text(
+                json.dumps(report_payload, indent=2, sort_keys=True) + "\n"
+            )
             reports.append(report)
+            timing_files.append(timings)
+            if args.metadata_only:
+                generated.unlink()
+                cases.unlink()
 
     aggregate = output_dir / "aggregate.json"
     aggregate_reports(reports, aggregate)
     payload = json.loads(aggregate.read_text())
     payload["external_environment"] = {
-        "conda_env": args.conda_env,
+        "conda_envs": {
+            "gm": gm_conda_env,
+            "rb1": rb_conda_env,
+            "rb2": rb_conda_env,
+        },
         "partialaams_path": str(partialaams),
         "partialaams_commit": git_commit(partialaams),
-        "gmapache_path": str(gmapache),
-        "gmapache_commit": git_commit(gmapache),
+        "gmapache_path": str(gmapache) if gmapache is not None else None,
+        "gmapache_commit": git_commit(gmapache) if gmapache is not None else None,
         "historical_csv_container_commit": "edfbcbec2f2ea635f2148236599a14a59b1f1710",
+    }
+    payload["reaction_timing_artifacts"] = {
+        "schema": "synkit.partial-aam-reaction-timing-set/1",
+        "methods": ["gm", "rb1", "rb2"],
+        "repetitions": args.repetitions,
+        "reduction_recommendation": "median per record across repetitions",
+        "files": [path.name for path in timing_files],
     }
     aggregate.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     print(f"Wrote aggregate report: {aggregate}")

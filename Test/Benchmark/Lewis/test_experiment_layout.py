@@ -25,6 +25,9 @@ def test_lewis_experiments_are_split_by_workflow() -> None:
     assert (EXPERIMENT_ROOT / "mech_path" / "evidence.py").is_file()
     assert (EXPERIMENT_ROOT / "mech_path" / "audit.py").is_file()
     assert (EXPERIMENT_ROOT / "run_experiments.sh").is_file()
+    assert (
+        EXPERIMENT_ROOT / "partial_expand" / "run_runtime_metadata.sh"
+    ).is_file()
 
 
 def test_data_are_collocated_without_python_modules() -> None:
