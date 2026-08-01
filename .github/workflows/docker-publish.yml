@@ -3,12 +3,8 @@ name: Publish SynKit Docker Package
 
 on:
   push:
-    # Fire on semver tags for real releases…
     tags:
       - 'v*.*.*'
-    # …and on any push to the refractor branch for testing
-    branches:
-      - 'staging'
 
 jobs:
   build-and-push:
