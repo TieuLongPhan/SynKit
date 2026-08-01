@@ -22,7 +22,7 @@ attributed-graph model.
 SynKit verifies mechanisms supplied by the user; it does not claim to predict
 the kinetically or thermodynamically preferred mechanism.
 
-![SynKit](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit.png)
+![SynKit graphical abstract](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit_graphical_abstract.svg)
 
 ## Highlights
 

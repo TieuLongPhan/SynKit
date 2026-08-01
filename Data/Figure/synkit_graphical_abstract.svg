@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="940" viewBox="0 0 1680 940" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<rect width="1680" height="940" fill="#FBFAF7"/>
+<defs>
+<radialGradient id="hubg" cx="50%" cy="45%" r="60%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#F2F4F1"/></radialGradient>
+<marker id="ah-io" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0072B2" fill-opacity="0.55"/></marker>
+<marker id="ah-chem" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#009E73" fill-opacity="0.55"/></marker>
+<marker id="ah-graph" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#E69F00" fill-opacity="0.55"/></marker>
+<marker id="ah-rule" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B0559A" fill-opacity="0.55"/></marker>
+<marker id="ah-synth" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#D55E00" fill-opacity="0.55"/></marker>
+<marker id="ah-crn" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#B8860B" fill-opacity="0.55"/></marker>
+<marker id="ah-vis" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#3D8FC4" fill-opacity="0.55"/></marker>
+</defs>
+<g id="flow">
+  <path d="M 1039.48 193.23 A 345 300 0 0 1 1080.42 222.84" fill="none" stroke="#0072B2" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" marker-end="url(#ah-io)"/>
+  <path d="M 1170.49 351.92 A 345 300 0 0 1 1183.22 407.55" fill="none" stroke="#009E73" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" marker-end="url(#ah-chem)"/>
+  <path d="M 1156.81 556.78 A 345 300 0 0 1 1132.02 597.75" fill="none" stroke="#E69F00" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" marker-end="url(#ah-graph)"/>
+  <path d="M 1005.55 701.21 A 345 300 0 0 1 687.81 707.23" fill="none" stroke="#B0559A" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" marker-end="url(#ah-rule)"/>
+  <path d="M 556.28 608.68 A 345 300 0 0 1 508.08 519.81" fill="none" stroke="#D55E00" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" marker-end="url(#ah-synth)"/>
+  <path d="M 504.29 368.86 A 345 300 0 0 1 547.98 278.25" fill="none" stroke="#B8860B" stroke-opacity="0.42" stroke-width="3.2" stroke-linecap="round" marker-end="url(#ah-crn)"/>
+</g>
+<g id="spokes">
+  <path d="M 910.43 263.69 L 939.32 224.23" stroke="#0072B2" stroke-opacity="0.30" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="910.43" cy="263.69" r="4" fill="#0072B2" fill-opacity="0.45"/>
+  <path d="M 1002.81 344.00 L 1075.33 319.86" stroke="#009E73" stroke-opacity="0.30" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="1002.81" cy="344.00" r="4" fill="#009E73" fill-opacity="0.45"/>
+  <path d="M 1025.14 470.65 L 1109.58 479.33" stroke="#E69F00" stroke-opacity="0.30" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="1025.14" cy="470.65" r="4" fill="#E69F00" fill-opacity="0.45"/>
+  <path d="M 965.80 577.71 L 1019.78 611.62" stroke="#B0559A" stroke-opacity="0.30" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="965.80" cy="577.71" r="4" fill="#B0559A" fill-opacity="0.45"/>
+  <path d="M 714.20 577.71 L 660.22 611.62" stroke="#D55E00" stroke-opacity="0.30" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="714.20" cy="577.71" r="4" fill="#D55E00" fill-opacity="0.45"/>
+  <path d="M 652.00 438.00 L 566.00 438.00" stroke="#B8860B" stroke-opacity="0.30" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="652.00" cy="438.00" r="4" fill="#B8860B" fill-opacity="0.45"/>
+  <path d="M 714.20 298.29 L 660.22 264.38" stroke="#3D8FC4" stroke-opacity="0.30" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="714.20" cy="298.29" r="4" fill="#3D8FC4" fill-opacity="0.45"/>
+</g>
+<circle cx="840" cy="438" r="194" fill="none" stroke="#D9DBD6" stroke-width="1.4" stroke-dasharray="2 7"/>
+<circle cx="840" cy="438" r="178" fill="url(#hubg)" stroke="#0E5C63" stroke-opacity="0.22" stroke-width="2"/>
+<text x="840" y="422" text-anchor="middle" font-size="76" font-weight="800" fill="#0E5C63" letter-spacing="-1.5">SynKit</text>
+<line x1="784" y1="446" x2="896" y2="446" stroke="#0E5C63" stroke-opacity="0.35" stroke-width="2"/>
+<text x="840" y="476" text-anchor="middle" font-size="20.5" fill="#5A5F63">Graph-based framework for</text>
+<text x="840" y="502" text-anchor="middle" font-size="20.5" fill="#5A5F63">rule-based reaction modeling</text>
+<g id="mod-io">
+  <circle cx="969.24" cy="159.84" r="67" fill="#0072B2" fill-opacity="0.10"/>
+  <circle cx="969.24" cy="159.84" r="62" fill="#E3EEF7" stroke="#0072B2" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="translate(969.24,159.84) scale(0.86)">
+      <path d="M -26 -34 L 12 -34 L 26 -20 L 26 34 L -26 34 Z" stroke="#0072B2" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 12 -34 L 12 -20 L 26 -20" stroke="#0072B2" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="-12" cy="0" r="6.5" stroke="#0072B2" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -3 0 L 6 0" stroke="#0072B2" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 3 -3.6 L 7.5 0 L 3 3.6 Z" fill="#0072B2" stroke="none"/>
+      <rect x="11" y="-6.5" width="13" height="13" rx="2.5" stroke="#0072B2" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -16 17 L 16 17 M -16 25 L 6 25" stroke="#0072B2" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <circle cx="929.65" cy="120.25" r="15" fill="#0072B2"/>
+  <text x="929.65" y="126.25" text-anchor="middle" font-size="16.5" font-weight="700" fill="#ffffff">1</text>
+  <text x="1057.24" y="157.84" text-anchor="start" font-size="38" font-weight="800" fill="#1A1A1A" letter-spacing="-0.5">IO</text>
+  <text x="1057.24" y="187.84" text-anchor="start" font-size="21" fill="#5A5F63">Parsing &amp; conversion</text>
+</g>
+<g id="mod-chem">
+  <circle cx="1138.78" cy="288.00" r="67" fill="#009E73" fill-opacity="0.10"/>
+  <circle cx="1138.78" cy="288.00" r="62" fill="#DCF0E8" stroke="#009E73" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="translate(1138.78,288.00) scale(0.86)">
+      <path d="M -9 -32 L -9 -6 L -25 24 Q -28 31 -21 31 L 21 31 Q 28 31 25 24 L 9 -6 L 9 -32" stroke="#009E73" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -14 -32 L 14 -32" stroke="#009E73" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -18.5 12 L 18.5 12 L 25 24 Q 28 31 21 31 L -21 31 Q -28 31 -25 24 Z" fill="#009E73" fill-opacity="0.28" stroke="none"/>
+      <circle cx="21" cy="-24" r="11" stroke="#009E73" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 16 -24 L 19.6 -20 L 26 -28.5" stroke="#009E73" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <circle cx="1099.19" cy="248.41" r="15" fill="#009E73"/>
+  <text x="1099.19" y="254.41" text-anchor="middle" font-size="16.5" font-weight="700" fill="#ffffff">2</text>
+  <text x="1226.78" y="286.00" text-anchor="start" font-size="38" font-weight="800" fill="#1A1A1A" letter-spacing="-0.5">Chem</text>
+  <text x="1226.78" y="316.00" text-anchor="start" font-size="21" fill="#5A5F63">Standardize &amp; validate</text>
+</g>
+<g id="mod-graph">
+  <circle cx="1179.76" cy="490.09" r="67" fill="#E69F00" fill-opacity="0.10"/>
+  <circle cx="1179.76" cy="490.09" r="62" fill="#FBEBD2" stroke="#E69F00" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="translate(1179.76,490.09) scale(0.86)">
+      <path d="M 0 -27 L 26 -8" stroke="#E69F00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 16 25 L -16 25" stroke="#E69F00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -16 25 L -26 -8" stroke="#E69F00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -26 -8 L 0 -27" stroke="#E69F00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 23.4 -8.8 L 13.4 24.2" stroke="#E69F00" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <path d="M 28.6 -7.2 L 18.6 25.8" stroke="#E69F00" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <path d="M 0 0 L 0 -27" stroke="#E69F00" stroke-width="2.6" stroke-dasharray="4 4.5" stroke-linecap="round" fill="none"/>
+      <path d="M 0 0 L 26 -8" stroke="#E69F00" stroke-opacity="0.35" stroke-width="2.1" fill="none"/>
+      <path d="M 0 0 L 16 25" stroke="#E69F00" stroke-opacity="0.35" stroke-width="2.1" fill="none"/>
+      <path d="M 0 0 L -16 25" stroke="#E69F00" stroke-opacity="0.35" stroke-width="2.1" fill="none"/>
+      <path d="M 0 0 L -26 -8" stroke="#E69F00" stroke-opacity="0.35" stroke-width="2.1" fill="none"/>
+      <circle cx="0" cy="-27" r="6.5" fill="#FBFAF7" stroke="#E69F00" stroke-width="2.6"/>
+      <circle cx="26" cy="-8" r="6.5" fill="#FBFAF7" stroke="#E69F00" stroke-width="2.6"/>
+      <circle cx="16" cy="25" r="6.5" fill="#FBFAF7" stroke="#E69F00" stroke-width="2.6"/>
+      <circle cx="-16" cy="25" r="6.5" fill="#FBFAF7" stroke="#E69F00" stroke-width="2.6"/>
+      <circle cx="-26" cy="-8" r="6.5" fill="#FBFAF7" stroke="#E69F00" stroke-width="2.6"/>
+      <circle cx="0" cy="0" r="9" fill="#E69F00" stroke="none"/>
+  </g>
+  <circle cx="1140.17" cy="450.50" r="15" fill="#E69F00"/>
+  <text x="1140.17" y="456.50" text-anchor="middle" font-size="16.5" font-weight="700" fill="#ffffff">3</text>
+  <text x="1267.76" y="488.09" text-anchor="start" font-size="38" font-weight="800" fill="#1A1A1A" letter-spacing="-0.5">Graph</text>
+  <text x="1267.76" y="518.09" text-anchor="start" font-size="21" fill="#5A5F63">ITS / MTG &amp; canonicalization</text>
+</g>
+<g id="mod-rule">
+  <circle cx="1070.85" cy="660.94" r="67" fill="#B0559A" fill-opacity="0.10"/>
+  <circle cx="1070.85" cy="660.94" r="62" fill="#F1E5EE" stroke="#B0559A" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="translate(1070.85,660.94) scale(0.86)">
+      <rect x="-42" y="-12" width="26" height="26" rx="5" stroke="#B0559A" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="-33.5" cy="-1" r="3.2" fill="#B0559A" stroke="none"/>
+      <circle cx="-24.5" cy="-1" r="3.2" fill="#B0559A" stroke="none"/>
+      <rect x="-13" y="-12" width="26" height="26" rx="5" stroke="#B0559A" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="-4.5" cy="-1" r="3.2" fill="#B0559A" stroke="none"/>
+      <circle cx="4.5" cy="-1" r="3.2" fill="#B0559A" stroke="none"/>
+      <rect x="16" y="-12" width="26" height="26" rx="5" stroke="#B0559A" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="24.5" cy="-1" r="3.2" fill="#B0559A" stroke="none"/>
+      <circle cx="33.5" cy="-1" r="3.2" fill="#B0559A" stroke="none"/>
+      <path d="M -13.5 -1 L -4.5 -1 M 15.5 -1 L 24.5 -1" stroke="#B0559A" stroke-width="2.2" fill="none"/>
+      <path d="M -6 -24 L -18 -24" stroke="#B0559A" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -15 -27.8 L -20 -24 L -15 -20.2 Z" fill="#B0559A" stroke="none"/>
+      <path d="M 6 -24 L 18 -24" stroke="#B0559A" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 15 -27.8 L 20 -24 L 15 -20.2 Z" fill="#B0559A" stroke="none"/>
+      <path d="M -29 22 L -6 22 M 6 22 L 29 22" stroke="#B0559A" stroke-opacity="0.4" stroke-width="2" fill="none"/>
+      <path d="M 0 18 L 0 26" stroke="#B0559A" stroke-opacity="0.4" stroke-width="2" fill="none"/>
+  </g>
+  <circle cx="1031.26" cy="621.35" r="15" fill="#B0559A"/>
+  <text x="1031.26" y="627.35" text-anchor="middle" font-size="16.5" font-weight="700" fill="#ffffff">4</text>
+  <text x="1158.85" y="658.94" text-anchor="start" font-size="38" font-weight="800" fill="#1A1A1A" letter-spacing="-0.5">Rule</text>
+  <text x="1158.85" y="688.94" text-anchor="start" font-size="21" fill="#5A5F63">Compose reaction rules</text>
+</g>
+<g id="mod-synth">
+  <circle cx="609.15" cy="660.94" r="67" fill="#D55E00" fill-opacity="0.10"/>
+  <circle cx="609.15" cy="660.94" r="62" fill="#FADFD1" stroke="#D55E00" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="translate(609.15,660.94) scale(0.86)">
+      <path d="M -28 0 L -10 0" stroke="#D55E00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -10 0 C 0 0 0 -22 10 -22" stroke="#D55E00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -10 0 C 0 0 0 22 10 22" stroke="#D55E00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 8 -25.6 L 14 -22 L 8 -18.4 Z" fill="#D55E00" stroke="none"/>
+      <path d="M 8 18.4 L 14 22 L 8 25.6 Z" fill="#D55E00" stroke="none"/>
+      <circle cx="-28" cy="0" r="5.5" fill="#D55E00" stroke="none"/>
+      <circle cx="22" cy="-22" r="10" stroke="#D55E00" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="22" cy="-22" r="3.5" fill="#D55E00" stroke="none"/>
+      <circle cx="22" cy="22" r="5.5" fill="#FBFAF7" stroke="#D55E00" stroke-width="2.6"/>
+  </g>
+  <circle cx="648.74" cy="621.35" r="15" fill="#D55E00"/>
+  <text x="648.74" y="627.35" text-anchor="middle" font-size="16.5" font-weight="700" fill="#ffffff">5</text>
+  <text x="521.15" y="658.94" text-anchor="end" font-size="38" font-weight="800" fill="#1A1A1A" letter-spacing="-0.5">Synthesis</text>
+  <text x="521.15" y="688.94" text-anchor="end" font-size="21" fill="#5A5F63">Predict &amp; explore</text>
+</g>
+<g id="mod-crn">
+  <circle cx="495.00" cy="438.00" r="67" fill="#B8860B" fill-opacity="0.10"/>
+  <circle cx="495.00" cy="438.00" r="62" fill="#F7EDCF" stroke="#B8860B" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="translate(495.00,438.00) scale(0.86)">
+      <rect x="-3" y="-17" width="10" height="10" rx="1.5" fill="#B8860B" stroke="none"/>
+      <rect x="-3" y="9" width="10" height="10" rx="1.5" fill="#B8860B" stroke="none"/>
+      <path d="M -26 -22 L 2 -12" stroke="#B8860B" stroke-width="2.1" fill="none"/>
+      <path d="M -26 0 L 2 -12" stroke="#B8860B" stroke-width="2.1" fill="none"/>
+      <path d="M -26 0 L 2 14" stroke="#B8860B" stroke-width="2.1" fill="none"/>
+      <path d="M -26 22 L 2 14" stroke="#B8860B" stroke-width="2.1" fill="none"/>
+      <path d="M 2 -12 L 28 -22" stroke="#B8860B" stroke-width="2.1" fill="none"/>
+      <path d="M 2 14 L 28 12" stroke="#B8860B" stroke-width="2.1" fill="none"/>
+      <path d="M 2 -12 L 28 12" stroke="#B8860B" stroke-width="2.1" fill="none"/>
+      <circle cx="-26" cy="-22" r="6" fill="#FBFAF7" stroke="#B8860B" stroke-width="2.6"/>
+      <circle cx="-26" cy="0" r="6" fill="#FBFAF7" stroke="#B8860B" stroke-width="2.6"/>
+      <circle cx="-26" cy="22" r="6" fill="#FBFAF7" stroke="#B8860B" stroke-width="2.6"/>
+      <circle cx="28" cy="-22" r="6" fill="#FBFAF7" stroke="#B8860B" stroke-width="2.6"/>
+      <circle cx="28" cy="12" r="6" fill="#FBFAF7" stroke="#B8860B" stroke-width="2.6"/>
+      <path d="M -18 29 L -23 29 L -23 41 L -18 41 M 18 29 L 23 29 L 23 41 L 18 41" stroke="#B8860B" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -13 33 L -6 33 M 4 33 L 11 33 M -13 39 L -6 39 M 4 39 L 11 39" stroke="#B8860B" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  </g>
+  <circle cx="534.59" cy="398.41" r="15" fill="#B8860B"/>
+  <text x="534.59" y="404.41" text-anchor="middle" font-size="16.5" font-weight="700" fill="#ffffff">6</text>
+  <text x="407.00" y="436.00" text-anchor="end" font-size="38" font-weight="800" fill="#1A1A1A" letter-spacing="-0.5">CRN</text>
+  <text x="407.00" y="466.00" text-anchor="end" font-size="21" fill="#5A5F63">Networks &amp; properties</text>
+</g>
+<g id="mod-vis">
+  <circle cx="609.15" cy="215.06" r="67" fill="#3D8FC4" fill-opacity="0.10"/>
+  <circle cx="609.15" cy="215.06" r="62" fill="#DDEEF9" stroke="#3D8FC4" stroke-opacity="0.55" stroke-width="2"/>
+  <g transform="translate(609.15,215.06) scale(0.86)">
+      <rect x="-30" y="-26" width="60" height="52" rx="5" stroke="#3D8FC4" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M -30 -13 L 30 -13" stroke="#3D8FC4" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="-24" cy="-19.5" r="2.1" fill="#3D8FC4" stroke="none"/>
+      <circle cx="-18" cy="-19.5" r="2.1" fill="#3D8FC4" stroke="none"/>
+      <circle cx="-12" cy="-19.5" r="2.1" fill="#3D8FC4" stroke="none"/>
+      <path d="M 0 -8 L 0 21" stroke="#3D8FC4" stroke-width="2" stroke-dasharray="3 4" fill="none"/>
+      <path d="M -16 0.5 L -10 -3 L -4 0.5 L -4 7.5 L -10 11 L -16 7.5 Z" stroke="#3D8FC4" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 10 -4 L 22 -6" stroke="#3D8FC4" stroke-width="2.1" fill="none"/>
+      <path d="M 10 -4 L 16 6" stroke="#3D8FC4" stroke-width="2.1" fill="none"/>
+      <path d="M 16 6 L 24 12" stroke="#3D8FC4" stroke-width="2.1" fill="none"/>
+      <path d="M 16 6 L 9 10" stroke="#3D8FC4" stroke-width="2.1" fill="none"/>
+      <circle cx="10" cy="-4" r="3.4" fill="#3D8FC4" stroke="none"/>
+      <circle cx="22" cy="-6" r="3.4" fill="#3D8FC4" stroke="none"/>
+      <circle cx="16" cy="6" r="3.4" fill="#3D8FC4" stroke="none"/>
+      <circle cx="24" cy="12" r="3.4" fill="#3D8FC4" stroke="none"/>
+      <circle cx="9" cy="10" r="3.4" fill="#3D8FC4" stroke="none"/>
+  </g>
+  <circle cx="648.74" cy="175.46" r="15" fill="#3D8FC4"/>
+  <text x="648.74" y="181.46" text-anchor="middle" font-size="16.5" font-weight="700" fill="#ffffff">7</text>
+  <text x="521.15" y="213.06" text-anchor="end" font-size="38" font-weight="800" fill="#1A1A1A" letter-spacing="-0.5">Vis</text>
+  <text x="521.15" y="243.06" text-anchor="end" font-size="21" fill="#5A5F63">Molecule &amp; CRN views</text>
+</g>
+<line x1="380" y1="864" x2="1300" y2="864" stroke="#D9DBD6" stroke-width="1.6"/>
+<g font-size="21" text-anchor="middle">
+  <text x="840" y="896" fill="#5A5F63"><tspan fill="#0E5C63" font-weight="700">Open source · MIT</tspan><tspan fill="#D9DBD6">   ·   </tspan><tspan>pip install synkit</tspan><tspan fill="#D9DBD6">   ·   </tspan><tspan>github.com/TieuLongPhan/SynKit</tspan></text>
+</g>
+</svg>

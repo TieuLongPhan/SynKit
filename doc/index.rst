@@ -29,8 +29,8 @@ rule manipulation, and lightweight chemical reaction network (CRN) exploration.
 It is designed to be modular, extensible, and friendly for both research and
 production workflows.
 
-.. image:: ../Data/Figure/synkit.png
-   :alt: SynKit overview
+.. image:: ../Data/Figure/synkit_graphical_abstract.svg
+   :alt: SynKit graphical abstract
    :align: center
    :width: 100%
 
