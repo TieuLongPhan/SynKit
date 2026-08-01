@@ -37,6 +37,13 @@ def raise_timeout(_signum, _frame) -> None:
     raise CaseTimeout("Hydrogen extension exceeded the per-case timeout")
 
 
+def _supports_interval_timer() -> bool:
+    return all(
+        hasattr(signal, name)
+        for name in ("SIGALRM", "ITIMER_REAL", "setitimer")
+    )
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -70,8 +77,11 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def timed_call(function, timeout: float) -> tuple[float, Any, Exception | None]:
-    previous_handler = signal.signal(signal.SIGALRM, raise_timeout)
-    signal.setitimer(signal.ITIMER_REAL, timeout)
+    supported = _supports_interval_timer()
+    previous_handler = None
+    if supported:
+        previous_handler = signal.signal(signal.SIGALRM, raise_timeout)
+        signal.setitimer(signal.ITIMER_REAL, timeout)
     started = time.perf_counter()
     try:
         result = function()
@@ -79,8 +89,9 @@ def timed_call(function, timeout: float) -> tuple[float, Any, Exception | None]:
     except Exception as exc:
         return time.perf_counter() - started, None, exc
     finally:
-        signal.setitimer(signal.ITIMER_REAL, 0.0)
-        signal.signal(signal.SIGALRM, previous_handler)
+        if supported:
+            signal.setitimer(signal.ITIMER_REAL, 0.0)
+            signal.signal(signal.SIGALRM, previous_handler)
 
 
 def run_hextend(

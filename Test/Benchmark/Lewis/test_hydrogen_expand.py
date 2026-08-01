@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import networkx as nx
 
+from Experiment.Lewis.hydrogen_expand import benchmark as benchmark_module
 from Experiment.Lewis.hydrogen_expand.benchmark import (
     DATASET,
     load_pickle,
@@ -200,13 +202,28 @@ def test_summary_keeps_capability_failures_separate_from_outputs() -> None:
     assert by_method["hextend_new"]["mean_unique_classes"] == 3
 
 
+def test_timed_call_runs_without_posix_interval_timers(monkeypatch) -> None:
+    monkeypatch.setattr(
+        benchmark_module,
+        "_supports_interval_timer",
+        lambda: False,
+    )
+
+    _elapsed, result, error = benchmark_module.timed_call(lambda: "ok", 1.0)
+
+    assert result == "ok"
+    assert error is None
+
+
 def test_runner_is_executable() -> None:
     runner = Path(
         "Experiment/Lewis/hydrogen_expand/run_comparison.sh"
     ).resolve()
 
     assert runner.is_file()
-    assert runner.stat().st_mode & 0o111
+    assert runner.read_text(encoding="utf-8").startswith("#!/usr/bin/env bash")
+    if os.name != "nt":
+        assert runner.stat().st_mode & 0o111
 
 
 def test_table_summary_groups_reaction_means_by_hcount() -> None:

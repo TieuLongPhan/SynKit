@@ -58,6 +58,18 @@ def _raise_timeout(_signum, _frame) -> None:
     raise CaseTimeout("Replay direction exceeded the case timeout")
 
 
+def _supports_interval_timer() -> bool:
+    return all(
+        hasattr(signal, name)
+        for name in ("SIGALRM", "ITIMER_REAL", "setitimer")
+    )
+
+
+def _set_timeout(seconds: float | None) -> None:
+    if seconds is not None and _supports_interval_timer():
+        signal.setitimer(signal.ITIMER_REAL, seconds)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=POLAR_DATASET)
@@ -157,9 +169,10 @@ def replay_direction(
     case_timeout: float | None,
     failure_sample_limit: int = 0,
 ) -> dict[str, Any]:
-    previous_handler = signal.signal(signal.SIGALRM, _raise_timeout)
-    if case_timeout is not None:
-        signal.setitimer(signal.ITIMER_REAL, case_timeout)
+    previous_handler = None
+    if case_timeout is not None and _supports_interval_timer():
+        previous_handler = signal.signal(signal.SIGALRM, _raise_timeout)
+    _set_timeout(case_timeout)
     started = time.perf_counter()
     stage = "reactor_construction"
     stage_started = started
@@ -178,20 +191,18 @@ def replay_direction(
         stage_seconds[stage] = time.perf_counter() - stage_started
         stage = "matching"
         stage_started = time.perf_counter()
-        if case_timeout is not None:
-            signal.setitimer(signal.ITIMER_REAL, case_timeout)
+        _set_timeout(case_timeout)
         mappings = reactor.mappings
         stage_seconds[stage] = time.perf_counter() - stage_started
         stage = "rewriting"
         stage_started = time.perf_counter()
-        if case_timeout is not None:
-            signal.setitimer(signal.ITIMER_REAL, case_timeout)
+        _set_timeout(case_timeout)
         rewritten = reactor.its_list
         stage_seconds[stage] = time.perf_counter() - stage_started
         # The timeout measures reaction expansion, not benchmark-only string
         # conversion and endpoint canonicalization. Keep those costs visible
         # below without misclassifying a completed reactor application.
-        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        _set_timeout(0.0)
         stage = "serialization"
         stage_started = time.perf_counter()
         reactions = reactor.smarts_list
@@ -241,8 +252,9 @@ def replay_direction(
             result["serialized_count"] = len(reactions)
         return result
     finally:
-        signal.setitimer(signal.ITIMER_REAL, 0.0)
-        signal.signal(signal.SIGALRM, previous_handler)
+        _set_timeout(0.0)
+        if previous_handler is not None:
+            signal.signal(signal.SIGALRM, previous_handler)
 
 
 def benchmark(

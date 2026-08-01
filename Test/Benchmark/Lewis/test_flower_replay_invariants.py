@@ -501,21 +501,20 @@ def test_replay_timeout_excludes_evidence_postprocessing(monkeypatch) -> None:
 
         @property
         def smarts_list(self):
-            assert timer_calls[-1] == (replay_benchmark.signal.ITIMER_REAL, 0.0)
+            assert timer_calls[-1] == 0.0
             return ["C>>C"]
 
     monkeypatch.setattr(replay_benchmark, "make_reactor", lambda *_args: FakeReactor())
     monkeypatch.setattr(
         replay_benchmark,
+        "_set_timeout",
+        timer_calls.append,
+    )
+    monkeypatch.setattr(
+        replay_benchmark,
         "canonical_unmapped_reaction",
         lambda reaction: reaction,
     )
-    monkeypatch.setattr(
-        replay_benchmark.signal,
-        "setitimer",
-        lambda *args: timer_calls.append(args),
-    )
-    monkeypatch.setattr(replay_benchmark.signal, "signal", lambda *_args: None)
 
     result = replay_benchmark.replay_direction(
         host="C",
@@ -536,3 +535,34 @@ def test_replay_timeout_excludes_evidence_postprocessing(monkeypatch) -> None:
         "serialization",
         "canonicalization",
     }
+
+
+def test_replay_runs_when_interval_timers_are_unavailable(monkeypatch) -> None:
+    class FakeReactor:
+        mappings = [{1: 1}]
+        its_list = [nx.Graph()]
+        smarts_list = ["C>>C"]
+
+    monkeypatch.setattr(replay_benchmark, "make_reactor", lambda *_args: FakeReactor())
+    monkeypatch.setattr(
+        replay_benchmark,
+        "canonical_unmapped_reaction",
+        lambda reaction: reaction,
+    )
+    monkeypatch.setattr(
+        replay_benchmark,
+        "_supports_interval_timer",
+        lambda: False,
+    )
+
+    result = replay_benchmark.replay_direction(
+        host="C",
+        expected="C>>C",
+        rule=object(),
+        representation="tuple",
+        direction="forward",
+        embedding_threshold=None,
+        case_timeout=30.0,
+    )
+
+    assert result["status"] == "PASS"

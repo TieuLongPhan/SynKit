@@ -49,7 +49,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_row(line: str, row_number: int) -> tuple[str, str, str]:
-    text = line.rstrip("\n")
+    text = line.rstrip("\r\n")
     reaction, separator, label = text.rpartition("|")
     if not separator or reaction.count(">>") != 1:
         raise ValueError(f"Malformed FLOWER row {row_number}")
@@ -63,7 +63,7 @@ def iter_label_blocks(
     occurrences: Counter[str] = Counter()
     current_label: str | None = None
     edges: list[tuple[str, str]] = []
-    with path.open(encoding="utf-8", newline="") as handle:
+    with path.open(encoding="utf-8", newline=None) as handle:
         for row_number, line in enumerate(handle, start=1):
             label, reactants, products = parse_row(line, row_number)
             if current_label is not None and label != current_label:

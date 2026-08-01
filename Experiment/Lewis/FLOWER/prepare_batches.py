@@ -50,7 +50,9 @@ def input_text(path: Path) -> Iterator[TextIO]:
     with path.open("rb") as probe:
         compressed = probe.read(2) == b"\x1f\x8b"
     opener = gzip.open if compressed else open
-    with opener(path, "rt", encoding="utf-8", newline="") as handle:
+    # Universal-newline input makes content digests and generated gzip bytes
+    # independent of the platform that created the source split.
+    with opener(path, "rt", encoding="utf-8", newline=None) as handle:
         yield handle
 
 

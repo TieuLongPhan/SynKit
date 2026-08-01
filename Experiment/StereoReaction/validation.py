@@ -62,16 +62,29 @@ def _windows_peak_rss_mib() -> float:
             ("PeakPagefileUsage", ctypes.c_size_t),
         ]
 
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    psapi = ctypes.WinDLL("psapi", use_last_error=True)
+    get_current_process = kernel32.GetCurrentProcess
+    get_current_process.argtypes = []
+    get_current_process.restype = wintypes.HANDLE
+    get_process_memory_info = psapi.GetProcessMemoryInfo
+    get_process_memory_info.argtypes = [
+        wintypes.HANDLE,
+        ctypes.POINTER(ProcessMemoryCounters),
+        wintypes.DWORD,
+    ]
+    get_process_memory_info.restype = wintypes.BOOL
+
     counters = ProcessMemoryCounters()
     counters.cb = ctypes.sizeof(counters)
-    process = ctypes.windll.kernel32.GetCurrentProcess()
-    succeeded = ctypes.windll.psapi.GetProcessMemoryInfo(
+    process = get_current_process()
+    succeeded = get_process_memory_info(
         process,
         ctypes.byref(counters),
         counters.cb,
     )
     if not succeeded:
-        raise OSError("GetProcessMemoryInfo failed")
+        raise ctypes.WinError(ctypes.get_last_error())
     return counters.PeakWorkingSetSize / (1024 * 1024)
 
 

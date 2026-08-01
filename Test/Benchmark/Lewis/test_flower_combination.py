@@ -61,3 +61,15 @@ def test_combine_mechanisms_writes_split_and_manifest(tmp_path: Path) -> None:
     with gzip.open(report["output"]["path"], "rt", encoding="utf-8") as handle:
         reactions = [line.rsplit("|", 1)[0] for line in handle]
     assert reactions == ["A>>C", "A>>D", "X>>Y"]
+
+
+def test_combine_mechanisms_normalizes_windows_line_endings(tmp_path: Path) -> None:
+    source = tmp_path / "train.txt"
+    source.write_bytes(b"A>>B|1\r\nB>>C|1\r\nX>>Y|PC\r\n")
+
+    manifest = combine_mechanisms([source], tmp_path / "full")
+
+    assert manifest["splits"][0]["rows_by_category"] == {
+        "PC": 1,
+        "numeric": 1,
+    }

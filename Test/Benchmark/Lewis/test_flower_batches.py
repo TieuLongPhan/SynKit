@@ -126,3 +126,18 @@ def test_prepare_batches_accepts_gzip_input(tmp_path: Path) -> None:
     assert report["rows"] == 2
     expected_digest = hashlib.sha256(rows.encode()).hexdigest()
     assert report["content_sha256"] == expected_digest
+
+
+def test_prepare_batches_normalizes_crlf_content_digest(tmp_path: Path) -> None:
+    source = tmp_path / "windows.txt"
+    source.write_bytes(b"[C:1]>>[C:1]|one\r\n[C:2]>>[C:2]|two\r\n")
+
+    manifest = prepare_batches([source], tmp_path / "batches", 1)
+
+    canonical = b"[C:1]>>[C:1]|one\n[C:2]>>[C:2]|two\n"
+    assert manifest["inputs"][0]["content_sha256"] == hashlib.sha256(
+        canonical
+    ).hexdigest()
+    assert manifest["combined_content_sha256"] == hashlib.sha256(
+        canonical
+    ).hexdigest()
