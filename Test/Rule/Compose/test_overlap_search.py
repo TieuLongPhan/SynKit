@@ -14,6 +14,7 @@ from synkit.Rule.Compose import (
     OverlapSearchLimits,
     canonical_rule_identity,
     extended_component_match_matrix,
+    quotient_composition_witnesses,
     rule_spans_isomorphic,
     search_compositions,
 )
@@ -86,6 +87,23 @@ def test_repeated_component_witnesses_survive_exact_quotienting() -> None:
     assert {len(witness.overlap.interface.node_ids) for witness in shared.witnesses} == {
         1
     }
+
+
+def test_exact_quotient_is_available_as_a_separate_proof_stage() -> None:
+    result = search_compositions(
+        _identity_two((1, 2), (10, 20)),
+        _update_two(("a", "b"), ("x", "y")),
+    )
+    witnesses = tuple(
+        witness for group in result.classes for witness in group.witnesses
+    )
+
+    quotient = quotient_composition_witnesses(witnesses)
+
+    assert tuple(group.canonical_id for group in quotient) == tuple(
+        group.canonical_id for group in result.classes
+    )
+    assert sum(len(group.witnesses) for group in quotient) == 7
 
 
 def test_automorphic_partial_injections_are_all_material_witnesses() -> None:

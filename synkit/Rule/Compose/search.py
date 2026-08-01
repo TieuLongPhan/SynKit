@@ -636,10 +636,18 @@ def _rule_bucket(rule: RuleSpan) -> tuple[Any, ...]:
     return _rule_metadata_key(rule), len(graph), graph.number_of_edges(), digest
 
 
-def _quotient_witnesses(
+def quotient_composition_witnesses(
     witnesses: Iterable[CompositionWitness],
-    limits: OverlapSearchLimits,
+    *,
+    limits: OverlapSearchLimits | None = None,
 ) -> tuple[CompositionClass, ...]:
+    """Quotient accepted witnesses by exact labelled-rule isomorphism.
+
+    This is public so validation can time exact quotienting separately from
+    overlap enumeration and composite construction.  It never chooses one
+    material witness: every witness remains attached to its exact class.
+    """
+    active = limits or OverlapSearchLimits()
     buckets: dict[tuple[Any, ...], list[list[CompositionWitness]]] = {}
     for witness in witnesses:
         rule = witness.composition.rule
@@ -656,7 +664,7 @@ def _quotient_witnesses(
             representative = group[0].composition.rule
             canonical_id = canonical_rule_identity(
                 representative,
-                permutation_limit=limits.max_canonical_permutations,
+                permutation_limit=active.max_canonical_permutations,
             )
             classes.append(
                 CompositionClass(
@@ -700,7 +708,7 @@ def search_compositions(
             rejected.append(RejectedOverlap(overlap, digest, error.issues))
         else:
             accepted.append(CompositionWitness(overlap, digest, composition))
-    classes = _quotient_witnesses(accepted, active)
+    classes = quotient_composition_witnesses(accepted, limits=active)
     return CompositionSearchResult(
         overlaps,
         classes,
@@ -726,6 +734,7 @@ __all__ = [
     "enumerate_overlaps",
     "extended_component_match_matrix",
     "find_rule_span_isomorphism",
+    "quotient_composition_witnesses",
     "rule_spans_isomorphic",
     "search_compositions",
 ]

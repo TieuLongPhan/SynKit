@@ -29,6 +29,7 @@ from .search import (
     enumerate_overlaps,
     extended_component_match_matrix,
     find_rule_span_isomorphism,
+    quotient_composition_witnesses,
     rule_spans_isomorphic,
     search_compositions,
 )
@@ -93,6 +94,7 @@ __all__ = [
     "enumerate_overlaps",
     "extended_component_match_matrix",
     "find_rule_span_isomorphism",
+    "quotient_composition_witnesses",
     "find_llg_isomorphism",
     "identity_rule",
     "rule_objects_isomorphic",
