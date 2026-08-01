@@ -31,6 +31,7 @@ class OverlapSearchIssueCode(str, Enum):
     STATE_LIMIT = "OVERLAP_SEARCH_STATE_LIMIT"
     OVERLAP_LIMIT = "OVERLAP_SEARCH_OVERLAP_LIMIT"
     NODE_LIMIT = "OVERLAP_SEARCH_NODE_LIMIT"
+    MATRIX_LIMIT = "OVERLAP_SEARCH_MATRIX_LIMIT"
     CANONICAL_LIMIT = "OVERLAP_SEARCH_CANONICAL_LIMIT"
 
 
@@ -69,12 +70,14 @@ class OverlapSearchLimits:
     max_states: int = 1_000_000
     max_overlaps: int = 100_000
     max_overlap_nodes: int | None = None
+    max_component_embeddings: int = 100_000
     max_canonical_permutations: int = 1_000_000
 
     def __post_init__(self) -> None:
         positive = {
             "max_states": self.max_states,
             "max_overlaps": self.max_overlaps,
+            "max_component_embeddings": self.max_component_embeddings,
             "max_canonical_permutations": self.max_canonical_permutations,
         }
         if any(value <= 0 for value in positive.values()):
@@ -117,6 +120,7 @@ class CompositionSearchResult:
     overlaps: tuple[RuleOverlap, ...]
     classes: tuple[CompositionClass, ...]
     rejected: tuple[RejectedOverlap, ...]
+    match_matrix: "ExtendedMatchMatrix"
     explored_states: int
 
     @property
@@ -130,6 +134,42 @@ class CompositionSearchResult:
     @property
     def exact_class_count(self) -> int:
         return len(self.classes)
+
+
+@dataclass(frozen=True)
+class ExtendedMatchMatrix:
+    """Full-component embedding counts plus one explicit empty column."""
+
+    second_components: tuple[frozenset[Hashable], ...]
+    first_components: tuple[frozenset[Hashable], ...]
+    counts: tuple[tuple[int, ...], ...]
+
+    @property
+    def empty_column(self) -> int:
+        return len(self.first_components)
+
+
+@dataclass(frozen=True)
+class RuleSpanIsomorphism:
+    """Replayable layerwise isomorphism between two complete rule spans."""
+
+    source: RuleSpan
+    target: RuleSpan
+    left_map: tuple[tuple[Hashable, Hashable], ...]
+    interface_map: tuple[tuple[Hashable, Hashable], ...]
+    right_map: tuple[tuple[Hashable, Hashable], ...]
+
+    def replay(self) -> bool:
+        mapping = {
+            **{("L", left): ("L", right) for left, right in self.left_map},
+            **{("K", left): ("K", right) for left, right in self.interface_map},
+            **{("R", left): ("R", right) for left, right in self.right_map},
+        }
+        return _rule_metadata_key(self.source) == _rule_metadata_key(
+            self.target
+        ) and _mapping_is_colored_isomorphism(
+            _rule_graph(self.source), _rule_graph(self.target), mapping
+        )
 
 
 def _labels(graph: LewisLabelledGraph, node: Hashable) -> tuple[tuple[str, Any], ...]:
@@ -153,6 +193,95 @@ def _node_order_key(
         )
     )
     return repr(_labels(graph, node)), len(incident), incident, repr(node)
+
+
+def _component_order_key(
+    graph: LewisLabelledGraph, component: frozenset[Hashable]
+) -> tuple[Any, ...]:
+    edges = tuple(edge for edge in graph.edge_keys if edge <= component)
+    return (
+        len(component),
+        len(edges),
+        tuple(sorted(repr(_labels(graph, node)) for node in component)),
+        tuple(sorted(repr(_edge_labels(graph, edge)) for edge in edges)),
+        tuple(sorted(map(repr, component))),
+    )
+
+
+def _component_embedding_count(
+    first: LewisLabelledGraph,
+    first_component: frozenset[Hashable],
+    second: LewisLabelledGraph,
+    second_component: frozenset[Hashable],
+    limit: int,
+) -> int:
+    first_graph = first.to_networkx().subgraph(first_component).copy()
+    second_graph = second.to_networkx().subgraph(second_component).copy()
+    node_keys = first.schema.semantic_node_keys
+    edge_keys = first.schema.semantic_edge_keys
+    matcher = nx.algorithms.isomorphism.GraphMatcher(
+        first_graph,
+        second_graph,
+        node_match=lambda left, right: all(left[key] == right[key] for key in node_keys),
+        edge_match=lambda left, right: all(left[key] == right[key] for key in edge_keys),
+    )
+    count = 0
+    for _ in matcher.subgraph_monomorphisms_iter():
+        count += 1
+        if count > limit:
+            raise OverlapSearchError(
+                OverlapSearchIssue(
+                    OverlapSearchIssueCode.MATRIX_LIMIT,
+                    "Extended match-matrix construction exceeded its embedding bound.",
+                    {"limit": limit},
+                )
+            )
+    return count
+
+
+def extended_component_match_matrix(
+    first_right: LewisLabelledGraph,
+    second_left: LewisLabelledGraph,
+    *,
+    max_embeddings: int = 100_000,
+) -> ExtendedMatchMatrix:
+    """Build the native extended match matrix used to order exhaustive search."""
+    if first_right.schema != second_left.schema:
+        raise OverlapSearchError(
+            OverlapSearchIssue(
+                OverlapSearchIssueCode.SCHEMA_MISMATCH,
+                "Match-matrix endpoints must use the same LLG schema.",
+            )
+        )
+    first_components = tuple(
+        sorted(
+            (frozenset(part) for part in nx.connected_components(first_right.to_networkx())),
+            key=lambda part: _component_order_key(first_right, part),
+        )
+    )
+    second_components = tuple(
+        sorted(
+            (frozenset(part) for part in nx.connected_components(second_left.to_networkx())),
+            key=lambda part: _component_order_key(second_left, part),
+        )
+    )
+    remaining = max_embeddings
+    rows = []
+    for second_component in second_components:
+        row = []
+        for first_component in first_components:
+            count = _component_embedding_count(
+                first_right,
+                first_component,
+                second_left,
+                second_component,
+                remaining,
+            )
+            remaining -= count
+            row.append(count)
+        rows.append(tuple(row) + (1,))
+    counts = tuple(rows)
+    return ExtendedMatchMatrix(second_components, first_components, counts)
 
 
 def _extension_is_compatible(
@@ -185,6 +314,7 @@ def enumerate_overlaps(
     second_left: LewisLabelledGraph,
     *,
     limits: OverlapSearchLimits | None = None,
+    _match_matrix: ExtendedMatchMatrix | None = None,
 ) -> tuple[tuple[RuleOverlap, ...], int]:
     """Enumerate every admitted partial injective overlap within hard bounds."""
     active = limits or OverlapSearchLimits()
@@ -205,9 +335,26 @@ def enumerate_overlaps(
             )
         )
     max_nodes = maximum
-    source_nodes = sorted(
-        first_right.node_ids, key=lambda node: _node_order_key(first_right, node)
+    matrix = _match_matrix or extended_component_match_matrix(
+        first_right,
+        second_left,
+        max_embeddings=active.max_component_embeddings,
     )
+    first_component = {
+        node: index
+        for index, component in enumerate(matrix.first_components)
+        for node in component
+    }
+    second_component = {
+        node: index
+        for index, component in enumerate(matrix.second_components)
+        for node in component
+    }
+
+    def target_key(source: Hashable, target: Hashable) -> tuple[Any, ...]:
+        count = matrix.counts[second_component[target]][first_component[source]]
+        return -count, _node_order_key(second_left, target)
+
     compatible_targets = {
         node: tuple(
             sorted(
@@ -216,11 +363,18 @@ def enumerate_overlaps(
                     for target in second_left.node_ids
                     if _labels(first_right, node) == _labels(second_left, target)
                 ),
-                key=lambda target: _node_order_key(second_left, target),
+                key=lambda target: target_key(node, target),
             )
         )
-        for node in source_nodes
+        for node in first_right.node_ids
     }
+    source_nodes = sorted(
+        first_right.node_ids,
+        key=lambda node: (
+            len(compatible_targets[node]),
+            _node_order_key(first_right, node),
+        ),
+    )
     state = _EnumerationState()
 
     def visit(
@@ -333,21 +487,84 @@ def _rule_metadata_key(rule: RuleSpan) -> tuple[Any, ...]:
     return repr(rule.left.schema), _boundary_key(rule)
 
 
-def _graphs_isomorphic(left: nx.Graph, right: nx.Graph) -> bool:
+def _mapping_is_colored_isomorphism(
+    left: nx.Graph,
+    right: nx.Graph,
+    mapping: Mapping[Hashable, Hashable],
+) -> bool:
+    if set(mapping) != set(left) or set(mapping.values()) != set(right):
+        return False
+    if len(set(mapping.values())) != len(mapping):
+        return False
+    for node, image in mapping.items():
+        if left.nodes[node].get("color") != right.nodes[image].get("color"):
+            return False
+    if left.number_of_edges() != right.number_of_edges():
+        return False
+    for source, target, attrs in left.edges(data=True):
+        image = (mapping[source], mapping[target])
+        if not right.has_edge(*image):
+            return False
+        if attrs.get("color") != right.edges[image].get("color"):
+            return False
+    return True
+
+
+def find_rule_span_isomorphism(
+    left: RuleSpan, right: RuleSpan
+) -> RuleSpanIsomorphism | None:
+    """Return an exact replayable witness, or ``None`` when none exists."""
+    if _rule_metadata_key(left) != _rule_metadata_key(right):
+        return None
     matcher = nx.algorithms.isomorphism.GraphMatcher(
-        left,
-        right,
+        _rule_graph(left),
+        _rule_graph(right),
         node_match=nx.algorithms.isomorphism.categorical_node_match("color", None),
         edge_match=nx.algorithms.isomorphism.categorical_edge_match("color", None),
     )
-    return matcher.is_isomorphic()
+    if not matcher.is_isomorphic():
+        return None
+    mapping = matcher.mapping
+    witness = RuleSpanIsomorphism(
+        left,
+        right,
+        tuple(
+            sorted(
+                (
+                    (source[1], target[1])
+                    for source, target in mapping.items()
+                    if source[0] == "L"
+                ),
+                key=repr,
+            )
+        ),
+        tuple(
+            sorted(
+                (
+                    (source[1], target[1])
+                    for source, target in mapping.items()
+                    if source[0] == "K"
+                ),
+                key=repr,
+            )
+        ),
+        tuple(
+            sorted(
+                (
+                    (source[1], target[1])
+                    for source, target in mapping.items()
+                    if source[0] == "R"
+                ),
+                key=repr,
+            )
+        ),
+    )
+    return witness if witness.replay() else None
 
 
 def rule_spans_isomorphic(left: RuleSpan, right: RuleSpan) -> bool:
     """Decide exact rule-span isomorphism, including arms and resource policy."""
-    return _rule_metadata_key(left) == _rule_metadata_key(right) and _graphs_isomorphic(
-        _rule_graph(left), _rule_graph(right)
-    )
+    return find_rule_span_isomorphism(left, right) is not None
 
 
 def _canonical_code(graph: nx.Graph, permutation_limit: int) -> str:
@@ -459,8 +676,16 @@ def search_compositions(
 ) -> CompositionSearchResult:
     """Enumerate, construct, retain, and exactly quotient all bounded overlaps."""
     active = limits or OverlapSearchLimits()
+    match_matrix = extended_component_match_matrix(
+        first.right,
+        second.left,
+        max_embeddings=active.max_component_embeddings,
+    )
     overlaps, explored = enumerate_overlaps(
-        first.right, second.left, limits=active
+        first.right,
+        second.left,
+        limits=active,
+        _match_matrix=match_matrix,
     )
     accepted: list[CompositionWitness] = []
     rejected: list[RejectedOverlap] = []
@@ -480,6 +705,7 @@ def search_compositions(
         overlaps,
         classes,
         tuple(sorted(rejected, key=lambda item: item.overlap_digest)),
+        match_matrix,
         explored,
     )
 
@@ -488,14 +714,18 @@ __all__ = [
     "CompositionClass",
     "CompositionSearchResult",
     "CompositionWitness",
+    "ExtendedMatchMatrix",
     "OverlapSearchError",
     "OverlapSearchIssue",
     "OverlapSearchIssueCode",
     "OverlapSearchLimits",
     "RejectedOverlap",
+    "RuleSpanIsomorphism",
     "canonical_overlap_digest",
     "canonical_rule_identity",
     "enumerate_overlaps",
+    "extended_component_match_matrix",
+    "find_rule_span_isomorphism",
     "rule_spans_isomorphic",
     "search_compositions",
 ]

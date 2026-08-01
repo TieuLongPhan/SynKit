@@ -13,6 +13,7 @@ from synkit.Rule.Compose import (
     OverlapSearchIssueCode,
     OverlapSearchLimits,
     canonical_rule_identity,
+    extended_component_match_matrix,
     rule_spans_isomorphic,
     search_compositions,
 )
@@ -97,6 +98,22 @@ def test_automorphic_partial_injections_are_all_material_witnesses() -> None:
     assert result.accepted_count == 7
     assert result.exact_class_count == 3
     assert sorted(len(group.witnesses) for group in result.classes) == [1, 2, 4]
+
+
+def test_extended_component_matrix_counts_embeddings_and_empty_choices() -> None:
+    first = _llg(
+        [(1, 0), (2, 0), (3, 0)],
+        ((1, 2, 1),),
+    )
+    second = _llg(
+        [("a", 0), ("b", 0), ("c", 0)],
+        (("b", "c", 1),),
+    )
+
+    matrix = extended_component_match_matrix(first, second)
+
+    assert matrix.counts == ((1, 2, 1), (0, 2, 1))
+    assert matrix.empty_column == 2
 
 
 def test_counts_and_class_identities_ignore_insertion_order_and_carrier_names() -> None:
@@ -185,6 +202,10 @@ def test_composition_refusals_are_retained_with_their_failed_premise() -> None:
         (
             OverlapSearchLimits(max_overlap_nodes=0),
             OverlapSearchIssueCode.NODE_LIMIT,
+        ),
+        (
+            OverlapSearchLimits(max_component_embeddings=1),
+            OverlapSearchIssueCode.MATRIX_LIMIT,
         ),
         (
             OverlapSearchLimits(max_canonical_permutations=1),

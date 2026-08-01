@@ -916,6 +916,51 @@ class SynRule:
     # ================================================================== #
     # Public API                                                         #
     # ================================================================== #
+    def to_rule_span(
+        self,
+        *,
+        electron_complete: bool | None = None,
+        boundary: str = "abstract",
+        environment: Any = None,
+    ) -> Any:
+        """Return the native non-stereo LLG/DPO view of this rule."""
+        from synkit.Rule.Compose import synrule_to_span
+        return synrule_to_span(
+            self,
+            electron_complete=electron_complete,
+            boundary=boundary,
+            environment=environment,
+        )
+
+    def compose(
+        self,
+        other: "SynRule",
+        overlap: Mapping[Any, Any],
+        *,
+        overlap_edges: set[frozenset[Any]] | None = None,
+        electron_complete: bool | None = None,
+    ) -> Any:
+        """Natively compose with ``other`` along one explicit overlap map."""
+        from synkit.Rule.Compose import compose_synrules
+        options = {"overlap_edges": overlap_edges, "electron_complete": electron_complete}
+        return compose_synrules(self, other, overlap, **options)
+
+    def composition_candidates(
+        self,
+        other: "SynRule",
+        *,
+        limits: Any = None,
+        electron_complete: bool | None = None,
+    ) -> Any:
+        """Return every bounded native composition class and witness."""
+        from synkit.Rule.Compose import search_synrule_compositions
+        return search_synrule_compositions(
+            self,
+            other,
+            limits=limits,
+            electron_complete=electron_complete,
+        )
+
     def non_invertible_stereo_targets(self) -> tuple[str, ...]:
         """Return targets whose stereo relation has no unique inverse."""
         return tuple(

@@ -927,6 +927,7 @@ def rule_from_its(
 def rule_from_synrule(
     rule: Any,
     *,
+    electron_complete: bool = False,
     boundary: SystemBoundary | str = SystemBoundary.ABSTRACT,
     environment: EnvironmentToken | None = None,
 ) -> RuleSpan:
@@ -939,7 +940,7 @@ def rule_from_synrule(
     its = ITSConstruction.construct(rule.left.raw, rule.right.raw)
     return rule_from_its(
         its,
-        electron_complete=False,
+        electron_complete=electron_complete,
         boundary=boundary,
         environment=environment,
         name=getattr(rule, "_name", "rule"),
