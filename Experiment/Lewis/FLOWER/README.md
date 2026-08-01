@@ -3,6 +3,8 @@
 This directory retains the portable full-reaction replay payload:
 
 - `full-reaction-batches/`: ten gzip batches plus their SHA-256 manifest;
+- `full-reaction-replay-summary.json`: portable aggregate results from the
+  retained full-corpus replay;
 - `replay.py`: the streaming forward/backward replay driver;
 - `run_bidirectional_replay.sh`: the single full-corpus launcher;
 
@@ -10,6 +12,7 @@ The batches contain 425,517 full reactions and 851,034 directional replays.
 They are already compressed and must not be unpacked: `replay.py` streams gzip
 directly. The original 3.4 GB elementary-step splits, intermediate combined
 files, and prior run outputs are reproducible and are intentionally not kept.
+The compact replay summary is retained without machine-specific output paths.
 
 Run from a SynKit checkout with RDKit and SynKit available to Python:
 

@@ -1,0 +1,54 @@
+{
+  "schema": "synkit.flower-bidirectional-rule-replay-summary/1",
+  "source_manifest": "full-reaction-batches/manifest.json",
+  "manifest_schema": "synkit.flower-rule-replay-batches/1",
+  "manifest_combined_content_sha256": "d62e4ab18b3af620e89174e90339202471d5186a9c7d55ab36d65d510aae440f",
+  "run": {
+    "started_utc": "2026-07-31T09:29:49Z",
+    "finished_utc": "2026-08-01T04:30:47Z",
+    "elapsed_seconds": 68458,
+    "jobs": 8,
+    "case_timeout_seconds": 30,
+    "failure_sample_limit": 0,
+    "progress_every": 250,
+    "directions": [
+      "forward",
+      "backward"
+    ],
+    "representation": "tuple",
+    "reaction_center_edge_policy": "changed",
+    "exit_status": 0
+  },
+  "aggregate": {
+    "batch_count": 10,
+    "rows_attempted": 425517,
+    "rule_extracted": 425517,
+    "rows_pass": 423700,
+    "rows_incomplete": 1817,
+    "row_pass_rate": 0.9957299003330067,
+    "forward": {
+      "attempted": 425517,
+      "pass": 423904,
+      "error": 1613,
+      "timeout": 1612,
+      "pass_rate": 0.9962093171365657
+    },
+    "backward": {
+      "attempted": 425517,
+      "pass": 425242,
+      "error": 275,
+      "timeout": 274,
+      "pass_rate": 0.9993537273481435
+    },
+    "error_types": {
+      "forward": {
+        "CaseTimeout": 1612,
+        "ValueError": 1
+      },
+      "backward": {
+        "CaseTimeout": 274,
+        "ValueError": 1
+      }
+    }
+  }
+}

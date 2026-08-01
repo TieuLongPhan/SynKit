@@ -99,6 +99,7 @@ Experiment/Lewis/FLOWER/replay-debug/
 Experiment/Lewis/FLOWER/replay-runs/
 Experiment/Lewis/FLOWER/replay-results*/
 !Experiment/Lewis/FLOWER/full-reaction-batches/manifest.json
+!Experiment/Lewis/FLOWER/full-reaction-replay-summary.json
 
 # Keep generated Python bytecode ignored after directory re-inclusions above.
 **/__pycache__/
