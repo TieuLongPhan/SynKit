@@ -21,6 +21,7 @@ from synkit.Graph.Stereo import (
     reaction_stereo_from_graph,
 )
 from synkit.Synthesis.Reactor import StereoBranchLimitError
+from Experiment.StereoReaction import validation as validation_module
 from Experiment.StereoReaction.validation import validation_report
 
 ROOT = Path(__file__).parents[2]
@@ -155,6 +156,19 @@ def test_validation_report_is_deterministic_bounded_and_schema_stable():
     assert report["observed"]["branch_count"] <= 2
     assert report["observed"]["assignment_count"] <= 2
     assert json.dumps(replay, sort_keys=True) == normalized
+
+
+def test_validation_memory_units_are_platform_portable(monkeypatch):
+    assert validation_module._posix_rss_mib(64 * 1024, "linux") == 64
+    assert validation_module._posix_rss_mib(64 * 1024 * 1024, "darwin") == 64
+
+    monkeypatch.setattr(validation_module, "resource", None)
+    monkeypatch.setattr(
+        validation_module,
+        "_windows_peak_rss_mib",
+        lambda: 64.0,
+    )
+    assert validation_module._max_rss_mib() == 64.0
 
 
 def test_generated_validation_evidence_is_machine_readable_and_passing(

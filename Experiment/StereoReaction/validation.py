@@ -8,9 +8,13 @@ import json
 import os
 from pathlib import Path
 import platform
-import resource
 import sys
 from time import perf_counter, process_time
+
+try:
+    import resource
+except ModuleNotFoundError:  # Windows
+    resource = None
 
 from rdkit import rdBase
 
@@ -37,6 +41,50 @@ BUDGETS = {
     "branch_count": 2,
     "assignment_count": 2,
 }
+
+
+def _windows_peak_rss_mib() -> float:
+    """Read the peak working set without adding a runtime dependency."""
+    import ctypes
+    from ctypes import wintypes
+
+    class ProcessMemoryCounters(ctypes.Structure):
+        _fields_ = [
+            ("cb", wintypes.DWORD),
+            ("PageFaultCount", wintypes.DWORD),
+            ("PeakWorkingSetSize", ctypes.c_size_t),
+            ("WorkingSetSize", ctypes.c_size_t),
+            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+            ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+            ("PagefileUsage", ctypes.c_size_t),
+            ("PeakPagefileUsage", ctypes.c_size_t),
+        ]
+
+    counters = ProcessMemoryCounters()
+    counters.cb = ctypes.sizeof(counters)
+    process = ctypes.windll.kernel32.GetCurrentProcess()
+    succeeded = ctypes.windll.psapi.GetProcessMemoryInfo(
+        process,
+        ctypes.byref(counters),
+        counters.cb,
+    )
+    if not succeeded:
+        raise OSError("GetProcessMemoryInfo failed")
+    return counters.PeakWorkingSetSize / (1024 * 1024)
+
+
+def _posix_rss_mib(maximum: float, platform_name: str) -> float:
+    divisor = 1024 * 1024 if platform_name == "darwin" else 1024
+    return maximum / divisor
+
+
+def _max_rss_mib() -> float:
+    if resource is None:
+        return _windows_peak_rss_mib()
+    maximum = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return _posix_rss_mib(maximum, sys.platform)
 
 
 def _value() -> StereoReactionValue:
@@ -72,7 +120,7 @@ def validation_report() -> dict:
             raise RuntimeError("Reaction-stereo sidecar round trip failed.")
     elapsed = perf_counter() - start
     cpu_elapsed = process_time() - cpu_start
-    rss_mib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+    rss_mib = _max_rss_mib()
     proof_bytes = len(payload.encode("utf-8"))
     observed_values = {
         "wall_seconds": round(elapsed, 6),

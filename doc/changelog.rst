@@ -2,24 +2,12 @@ Changelog
 =========
 
 Version 1.6.1
----------------
+-------------
 
-**Synthesis**
-
-- Standardized tuple-rule lone-pair changes as relative resource edits, so
-  matching consumes or supplies the rule delta instead of assigning an
-  absolute product resource count.
-- Added the record 886 LLG-versus-legacy regression and completed the uncapped
-  39,732-record bidirectional replay with full reference recovery.
-
-**Packaging and diagnostics**
-
-- Included the reviewed MechanismBench partitions and identifier-only
-  reconstruction-audit registries required by fresh-clone test collection.
-- Added path- and timing-independent retained benchmark summaries suitable for
-  version control.
-- Clarified that the 167 typed evidence cases comprise the manuscript's 160
-  polar/radical mechanisms plus seven typed stereo extensions.
+- Fixed relative lone-pair updates in tuple rules and added replay regressions.
+- Reduced duplicate work in hydrogen extension, matching, and graph rewriting.
+- Added retained stereo, MechanismBench, and FLOWER benchmark metadata.
+- Made validation and replay diagnostics portable across supported platforms.
 
 Version 1.6.0
 -------------
