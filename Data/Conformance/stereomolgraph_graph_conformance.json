@@ -1,7 +1,7 @@
 {
   "schema": "SynKit-StereoMolGraph-graph-isomorphism-conformance-v1",
   "generated": "2026-07-16",
-  "runner": "tools/stereo_conformance.py",
+  "runner": "Experiment/Stereo/Diagnostics/stereomolgraph_conformance.py",
   "oracle": "StereoMolGraph",
   "expected_commit": "2189f610f23eaaf992e2e01a12ea4d0532496601",
   "observed_commit": "2189f610f23eaaf992e2e01a12ea4d0532496601",

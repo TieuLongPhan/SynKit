@@ -1,0 +1,209 @@
+{
+  "schema": "synkit.stereo-benchmark-registry/1",
+  "datasets": [
+    {
+      "id": "acs_stereomolgraph_molecular_chirality",
+      "records": 258,
+      "task": "whole_molecule_chiral_achiral",
+      "path": "ACS-StereoMolGraph/ci5c02523_si_002.csv",
+      "vendored": true,
+      "license": "CC BY-NC 4.0",
+      "protocols": {
+        "supplied_stereo_binary": true,
+        "stereo_stripped_four_state": true,
+        "full_configuration_neutral_carrier_detection": true,
+        "exact_configured_mirror_audit": true,
+        "fixed_graph_local_permutation_audit": true,
+        "configuration_free_local_canonicalization": true,
+        "configuration_free_global_canonicalization": true,
+        "multi_element_canonicalization_audit": true
+      },
+      "exact_mirror_report": "Experiment/Stereo/Data/Chirality/exact_acs_mirror_report.json",
+      "canonicalization_report": "Experiment/Stereo/Data/Canonicalization/acs_local_canonicalization_report.json",
+      "full_detection_report": "Experiment/Stereo/Data/Perception/full_detection_report.json",
+      "multi_element_report": "Experiment/Stereo/Data/Canonicalization/multi_element_canonicalization_report.json"
+    },
+    {
+      "id": "chiralfinder_rota",
+      "records": 650,
+      "task": "axial_stereo_locus_detection",
+      "path": "ChiralFinder-RotA/RotA.xlsx",
+      "vendored": true,
+      "license": "MIT",
+      "protocols": {
+        "typed_axis_locus_detection": true,
+        "full_configuration_neutral_carrier_detection": true,
+        "multi_locus_candidate_extraction": true,
+        "configuration_free_local_canonicalization": true,
+        "configuration_free_global_canonicalization": true,
+        "supplied_stereo_binary": false,
+        "stereo_stripped_four_state": false
+      },
+      "frozen_report": "Experiment/Stereo/Data/Perception/rota_locus_report.json",
+      "full_detection_report": "Experiment/Stereo/Data/Perception/full_detection_report.json",
+      "canonicalization_report": "Experiment/Stereo/Data/Canonicalization/rota_local_canonicalization_report.json",
+      "multi_element_report": "Experiment/Stereo/Data/Canonicalization/multi_element_canonicalization_report.json",
+      "diagnostics": {
+        "supplied_stereo_binary": true,
+        "stereo_stripped_four_state": true
+      }
+    },
+    {
+      "id": "cip_validation_suite",
+      "records": 300,
+      "task": "local_cip_descriptor_assignment",
+      "path": null,
+      "vendored": false,
+      "license": null,
+      "protocols": {
+        "native_local_cip_label_assignment": true,
+        "configuration_neutral_stereo_element_audit": true,
+        "full_configuration_neutral_carrier_detection": true,
+        "canonical_neighbor_configuration_assisted_detection": true,
+        "multi_center_candidate_extraction": true,
+        "fixed_graph_local_permutation_audit": true,
+        "configuration_free_local_canonicalization": true,
+        "configuration_free_global_canonicalization": true,
+        "pinned_3d_orientation": true,
+        "supplied_stereo_binary": false,
+        "stereo_stripped_four_state": false
+      },
+      "frozen_report": "Experiment/Stereo/Data/Perception/cip_native_report.json",
+      "full_detection_report": "Experiment/Stereo/Data/Perception/full_detection_report.json",
+      "stereo_element_report": "Experiment/Stereo/Data/Perception/stereo_element_report.json",
+      "canonicalization_report": "Experiment/Stereo/Data/Canonicalization/cip_local_canonicalization_report.json",
+      "multi_element_report": "Experiment/Stereo/Data/Canonicalization/multi_element_canonicalization_report.json",
+      "diagnostics": {
+        "supplied_stereo_binary": true,
+        "stereo_stripped_four_state": true
+      }
+    }
+  ],
+  "designed_datasets": {
+    "rota_synthetic_negative_controls": {
+      "path": "Experiment/Stereo/Data/RotA-Synthetic/negative_axes.json",
+      "sha256": "87ff2d8cbf696b031e6c4a7ece9e4a36eb6fc125df1a3fa6124024631b884fe7",
+      "records": 24,
+      "axis_fixed_automorphism_negatives": 13,
+      "no_supported_axis_negatives": 11,
+      "confirmed_axis_false_positives": 0,
+      "claim_boundary": "constitutional_specificity_not_rotational_stability"
+    },
+    "cip_input_contract_audit": {
+      "path": "Experiment/Stereo/Data/CIP/input_contract_audit.json",
+      "sha256": "9fc9cffda285affeafacfe9829e2416f321ef420ed0caf6037064453ab9c2dec",
+      "records": 300,
+      "maximum_exact_records_from_supplied_smiles": 299,
+      "complete_input_identifiable_with_pinned_3d_coordinates": true,
+      "conflicting_record_ids": [
+        "VS010",
+        "VS011"
+      ],
+      "coordinate_sha256": "28a000b36506dabe5a45f6d7672451c61c6e34f3e0f027f2599000d850273325",
+      "structures_vendored": false
+    },
+    "stereo_perception_conformance": {
+      "path": "Experiment/Stereo/Data/Perception/perception_conformance_cases.json",
+      "sha256": "c2e34fb4b493aec0a41b467d6f7865ffcce211e09d2e916bdd616e66ad8cb457",
+      "records": 40,
+      "families": 10,
+      "cases_per_family": 4,
+      "case_types": [
+        "configured_positive",
+        "unconfigured_positive",
+        "negative_near_miss",
+        "unsupported_or_ambiguous"
+      ],
+      "benchmark_status": "data_contract_only"
+    }
+  },
+  "empirical_benchmarks": {
+    "full_configuration_neutral_carrier_detection": {
+      "runner": "Experiment/Stereo/Perception/full_detection.py",
+      "report": "Experiment/Stereo/Data/Perception/full_detection_report.json",
+      "sha256": "40762d6efa7d99d0727b999c027e28e6c1328e9553ab37489676011003a003ae",
+      "status": "generated_by_benchmark_runner",
+      "source_rows": 1208,
+      "unique_configuration_neutral_constitutions": 903,
+      "sampling": "none",
+      "pooled_accuracy": false,
+      "secondary_protocol": "all_datasets_oriented_neighbor_frame_retained"
+    }
+  },
+  "synthetic_benchmarks": {
+    "rota_synthetic_negative_controls": {
+      "runner": "Experiment/Stereo/Perception/rota_synthetic_negatives.py",
+      "report": "Experiment/Stereo/Data/RotA-Synthetic/negative_axes.json",
+      "records": 24,
+      "passed": 24,
+      "failed": 0,
+      "renumbering_invariant": true
+    },
+    "stereo_perception_conformance": {
+      "scored_records": 40,
+      "not_applicable_records": 0,
+      "passed": 40,
+      "failed": 0,
+      "runner": "Experiment/Stereo/Perception/conformance.py",
+      "report": "Experiment/Stereo/Data/Perception/perception_conformance_report.json"
+    },
+    "local_stereo_canonicalization": {
+      "families": 10,
+      "configurations": 67,
+      "local_permutations": 940,
+      "report": "Experiment/Stereo/Data/Canonicalization/internal_local_canonicalization_report.json",
+      "table": "Experiment/Stereo/Data/Canonicalization/internal_local_canonicalization_table.csv"
+    },
+    "configuration_free_local_canonicalization": {
+      "runner": "Experiment/Stereo/Canonicalization/configuration_free_local.py",
+      "sampling": "none",
+      "reports": {
+        "internal": "Experiment/Stereo/Data/Canonicalization/internal_local_canonicalization_report.json",
+        "acs": "Experiment/Stereo/Data/Canonicalization/acs_local_canonicalization_report.json",
+        "cip": "Experiment/Stereo/Data/Canonicalization/cip_local_canonicalization_report.json",
+        "rota": "Experiment/Stereo/Data/Canonicalization/rota_local_canonicalization_report.json"
+      },
+      "records": 1218,
+      "carriers": 3476,
+      "raw_local_permutations": 66468,
+      "failures": 0
+    },
+    "configuration_free_global_abc": {
+      "runner": "Experiment/Stereo/Canonicalization/configuration_free_global.py",
+      "reports": {
+        "raw_a": "Experiment/Stereo/Data/Canonicalization/Global/A/global_raw_canonicalization_report.json",
+        "formal_a": "Experiment/Stereo/Data/Canonicalization/Global/A/global_formal_canonicalization_report.json",
+        "raw_b": "Experiment/Stereo/Data/Canonicalization/Global/B/global_raw_canonicalization_report.json",
+        "formal_b": "Experiment/Stereo/Data/Canonicalization/Global/B/global_formal_canonicalization_report.json",
+        "raw_c_vs146": "Experiment/Stereo/Data/Canonicalization/Global/C/global_raw_vs146_canonicalization_report.json",
+        "formal_c": "Experiment/Stereo/Data/Canonicalization/Global/C/global_formal_canonicalization_report.json"
+      },
+      "cases": 30,
+      "formal_assignments": 2160,
+      "raw_a_assignments": 2048,
+      "supplemental_raw_stress": {
+        "cases": 12,
+        "raw_b_assignments": 992256,
+        "raw_c_vs146_assignments": 2359296,
+        "timeouts": 0,
+        "failures": 0
+      },
+      "timeouts": 0,
+      "failures": 0,
+      "excluded_optional_stress_runs": [
+        "remaining_raw_c_cases"
+      ]
+    },
+    "global_by_local_canonicalization": {
+      "families": 10,
+      "configurations": 67,
+      "global_policy": "exhaustive_small_fixtures_and_deterministic_large_samples",
+      "runner": "Experiment/Stereo/Canonicalization/atom_relabel.py",
+      "report": "Experiment/Stereo/Data/Canonicalization/global_local_canonicalization_report.json"
+    },
+    "stereoisomer_relations": {
+      "cases": 9,
+      "report": "Experiment/Stereo/Data/Chirality/stereoisomer_relation_report.json"
+    }
+  }
+}

@@ -370,6 +370,8 @@ class ITSConstruction:
         edge_attrs: Optional[List[str]] = None,
         attributes_defaults: Optional[Dict[str, Any]] = None,
         stereo_reference_mappings: Optional[Dict[str, Dict[Any, Any]]] = None,
+        transition_graph: Optional[nx.Graph] = None,
+        stereo_validation: str = "preserve",
     ) -> nx.Graph:
         """
         Construct an ITS graph from two input graphs.
@@ -410,6 +412,14 @@ class ITSConstruction:
             A unique single replacement is inferred when omitted; multiple
             replacements require this mapping.
         :type stereo_reference_mappings: Optional[Dict[str, Dict[Any, Any]]]
+        :param transition_graph:
+            Optional graph carrying transition-only/fleeting descriptors.
+        :type transition_graph: Optional[nx.Graph]
+        :param stereo_validation:
+            ``"preserve"`` keeps graph-only descriptors for compatibility.
+            ``"strict"`` validates endpoint/transition support before ITS
+            construction and rejects dangling or stale references.
+        :type stereo_validation: str
 
         :returns:
             ITS graph with merged nodes, paired node/edge annotations, and
@@ -451,6 +461,19 @@ class ITSConstruction:
             print(its.edges[12, 30]["bond_type"])
             print(its.edges[12, 30]["standard_order"])
         """
+        if stereo_validation not in {"preserve", "strict"}:
+            raise ValueError("stereo_validation must be 'preserve' or 'strict'.")
+        if stereo_validation == "strict":
+            from synkit.Graph.ITS.stereo import validate_stereo_support
+
+            validate_stereo_support(G, side="reactant")
+            validate_stereo_support(H, side="product")
+            if transition_graph is not None:
+                validate_stereo_support(
+                    transition_graph,
+                    side="transition",
+                )
+
         node_attrs = node_attrs or [
             "element",
             "aromatic",
@@ -493,10 +516,12 @@ class ITSConstruction:
                 its,
                 G,
                 H,
+                transition_graph,
                 reference_mappings=stereo_reference_mappings,
             )
         except ImportError:
             pass
+        its.graph["stereo_validation"] = stereo_validation
 
         return its
 
@@ -508,6 +533,9 @@ class ITSConstruction:
         attributes_defaults: Optional[Dict[str, Any]] = None,
         balance_its: bool = False,
         store: bool = False,
+        stereo_reference_mappings: Optional[Dict[str, Dict[Any, Any]]] = None,
+        transition_graph: Optional[nx.Graph] = None,
+        stereo_validation: str = "preserve",
     ) -> nx.Graph:
         """
         Backward-compatible wrapper around :meth:`construct`.
@@ -530,6 +558,15 @@ class ITSConstruction:
         :param store:
             If ``True``, node attributes are stored as paired tuples.
         :type store: bool
+        :param stereo_reference_mappings:
+            Optional target-specific endpoint reference transports.
+        :type stereo_reference_mappings: Optional[Dict[str, Dict[Any, Any]]]
+        :param transition_graph:
+            Optional graph carrying transition-only/fleeting descriptors.
+        :type transition_graph: Optional[nx.Graph]
+        :param stereo_validation:
+            ``"preserve"`` or strict support validation.
+        :type stereo_validation: str
 
         :returns:
             Constructed ITS graph using legacy node and edge attribute defaults.
@@ -544,6 +581,9 @@ class ITSConstruction:
             node_attrs=["element", "aromatic", "hcount", "charge", "neighbors"],
             edge_attrs=["order"],
             attributes_defaults=attributes_defaults,
+            stereo_reference_mappings=stereo_reference_mappings,
+            transition_graph=transition_graph,
+            stereo_validation=stereo_validation,
         )
 
     @staticmethod

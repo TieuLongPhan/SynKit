@@ -472,13 +472,20 @@ class RCExtractor:
                 collected[edge_key] = selected
         return collected
 
-    def extract(self, its: nx.Graph) -> nx.Graph:
+    def extract(
+        self,
+        its: nx.Graph,
+        include_context_edges: bool = True,
+    ) -> nx.Graph:
         """
         Extract the reaction-center subgraph from an ITS graph.
 
-        The returned graph is the induced subgraph on all reaction-center nodes.
-        All original node and edge attributes are preserved. Additional
-        reaction-center metadata is stored in ``graph.graph["rc"]``.
+        By default, the returned graph is the induced subgraph on all
+        reaction-center nodes. Set ``include_context_edges=False`` to retain
+        the same nodes but only the edges explicitly classified as
+        reaction-center edges. All original node and retained edge attributes
+        are preserved. Additional reaction-center metadata is stored in
+        ``graph.graph["rc"]``.
 
         The metadata dictionary contains:
 
@@ -493,8 +500,11 @@ class RCExtractor:
 
         :param its: ITS graph containing paired node and edge attributes.
         :type its: nx.Graph
-        :return: Induced subgraph on reaction-center nodes, with all original
-            ITS attributes preserved and RC metadata stored in
+        :param include_context_edges: If ``True``, include unchanged edges
+            between reaction-center nodes. If ``False``, include only edges
+            explicitly classified as reaction-center edges.
+        :type include_context_edges: bool
+        :return: Reaction-center subgraph with RC metadata stored in
             ``graph.graph["rc"]``.
         :rtype: nx.Graph
 
@@ -563,7 +573,13 @@ class RCExtractor:
         except ImportError:
             pass
 
-        rc_graph = its.subgraph(rc_nodes).copy()
+        if include_context_edges:
+            rc_graph = its.subgraph(rc_nodes).copy()
+        else:
+            rc_graph = its.__class__()
+            rc_graph.graph.update(its.graph)
+            rc_graph.add_nodes_from((node, dict(its.nodes[node])) for node in rc_nodes)
+            rc_graph.add_edges_from((u, v, dict(its.edges[u, v])) for u, v in rc_edges)
         rc_graph.graph["rc"] = {
             "nodes": sorted(rc_nodes),
             "edges": sorted(rc_edges),

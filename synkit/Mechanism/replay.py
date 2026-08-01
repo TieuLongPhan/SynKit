@@ -27,6 +27,7 @@ from .model import (
     StereoDescriptor,
 )
 from .stereo_state import (
+    StereoStateTimeline,
     apply_stereo_effects,
     descriptor_support_errors,
     stereo_timeline,
@@ -58,6 +59,11 @@ class MechanismReplayResult:
     intermediates: tuple[nx.Graph, ...]
     certificate: VerificationCertificate
     mtg: nx.DiGraph
+
+    @property
+    def stereo_timeline(self) -> StereoStateTimeline:
+        """Return the typed proof carried by the replay MTG."""
+        return self.mtg.graph["stereo_timeline_proof"]
 
 
 class MechanismReplayer:
@@ -92,6 +98,7 @@ class MechanismReplayer:
         self._select_endpoint_stereo(expected, record, side="product")
         intermediates: list[nx.Graph] = []
         reports: list[GroupReplayReport] = []
+        canonical_neighbor_changes: list[dict[str, Any]] = []
         issues: list[VerificationIssue] = list(record.grammar_issues())
         issues.extend(self._graph_mapping_issues(current, side="reactant"))
         issues.extend(self._graph_mapping_issues(expected, side="product"))
@@ -133,6 +140,28 @@ class MechanismReplayer:
                         event_signature=group.canonical_signature(),
                     )
                 if not step_failed:
+                    motion_evidence = tuple(
+                        motion.verification_evidence(
+                            step_id=step.step_id,
+                            before_graph=step_start,
+                            graph=current,
+                        )
+                        for motion in step.stereo_motions
+                    )
+                    step_neighbor_changes = [
+                        change.to_dict()
+                        for changes, _motion_issues in motion_evidence
+                        for change in changes
+                    ]
+                    motion_issues = tuple(
+                        issue
+                        for _changes, result_issues in motion_evidence
+                        for issue in result_issues
+                    )
+                    if self.verify_stereo == "stepwise":
+                        issues.extend(motion_issues)
+                        if motion_issues and self.validation == "strict":
+                            step_failed = True
                     before_stereo = dict(
                         current.graph.get("mechanism_stereo_descriptors", {})
                     )
@@ -146,6 +175,8 @@ class MechanismReplayer:
                         if stereo_issues and self.validation == "strict":
                             step_failed = True
                     after_stereo = current.graph.get("mechanism_stereo_descriptors", {})
+                    if not step_failed:
+                        canonical_neighbor_changes.extend(step_neighbor_changes)
                     if not step_failed and state_index > step_state_index:
                         intermediates[-1] = deepcopy(current)
                         mtg.nodes[state_index]["graph"] = deepcopy(current)
@@ -153,8 +184,18 @@ class MechanismReplayer:
                             mtg.edges[state_index - 1, state_index][
                                 "stereo_effects"
                             ] = [effect.to_dict() for effect in step.stereo_effects]
+                        if step.stereo_motions:
+                            mtg.edges[state_index - 1, state_index][
+                                "stereo_motions"
+                            ] = [motion.to_dict() for motion in step.stereo_motions]
+                        if step_neighbor_changes:
+                            mtg.edges[state_index - 1, state_index][
+                                "canonical_neighbor_changes"
+                            ] = step_neighbor_changes
                     elif not step_failed and (
-                        step.stereo_effects or before_stereo != after_stereo
+                        step.stereo_effects
+                        or step.stereo_motions
+                        or before_stereo != after_stereo
                     ):
                         intermediates.append(deepcopy(current))
                         state_index += 1
@@ -171,6 +212,10 @@ class MechanismReplayer:
                             stereo_effects=[
                                 effect.to_dict() for effect in step.stereo_effects
                             ],
+                            stereo_motions=[
+                                motion.to_dict() for motion in step.stereo_motions
+                            ],
+                            canonical_neighbor_changes=step_neighbor_changes,
                         )
                 if step_failed and self.validation == "strict":
                     current = step_start
@@ -186,6 +231,9 @@ class MechanismReplayer:
             expected,
             include_stereo=self.verify_stereo in {"endpoint", "stepwise"},
         )
+        final_match["stereo_verification"] = self.verify_stereo
+        final_match["stereo_verification_performed"] = self.verify_stereo != "off"
+        final_match["canonical_neighbor_changes"] = canonical_neighbor_changes
         if not issues and not final_match["matches"]:
             issues.append(
                 VerificationIssue(
@@ -211,6 +259,10 @@ class MechanismReplayer:
         ordered_states = [mtg.nodes[node]["graph"] for node in sorted(mtg.nodes)]
         mtg.graph["stereo_timeline"] = stereo_timeline(ordered_states)
         mtg.graph["verify_stereo"] = self.verify_stereo
+        mtg.graph["stereo_timeline_proof"] = StereoStateTimeline.create(
+            ordered_states,
+            verification_mode=self.verify_stereo,
+        )
         return MechanismReplayResult(current, tuple(intermediates), certificate, mtg)
 
     def _apply_group(

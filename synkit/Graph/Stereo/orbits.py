@@ -574,6 +574,34 @@ _ATROP_BOND_ALL = _generated_group(
     ),
 )
 
+_CUMULENE_AXIS_FIXED = _group_from_images(
+    "cumulene_axis:V4",
+    tuple(permutation.image for permutation in _ATROP_BOND_FIXED.elements),
+)
+_CUMULENE_AXIS_ALL = _generated_group(
+    "cumulene_axis:unknown",
+    6,
+    (
+        Permutation((1, 0, 2, 3, 5, 4)),
+        Permutation((4, 5, 3, 2, 1, 0)),
+        Permutation((1, 0, 2, 3, 4, 5)),
+    ),
+)
+
+_EXTENDED_CIS_TRANS_FIXED = _group_from_images(
+    "extended_cis_trans:V4",
+    tuple(permutation.image for permutation in _PLANAR_BOND_FIXED.elements),
+)
+_EXTENDED_CIS_TRANS_ALL = _generated_group(
+    "extended_cis_trans:unknown",
+    6,
+    (
+        Permutation((1, 0, 2, 3, 5, 4)),
+        Permutation((4, 5, 3, 2, 0, 1)),
+        Permutation((1, 0, 2, 3, 4, 5)),
+    ),
+)
+
 
 SHAPE_DEFINITIONS: Mapping[str, ShapeDefinition] = {
     "tetrahedral": ShapeDefinition(
@@ -602,6 +630,22 @@ SHAPE_DEFINITIONS: Mapping[str, ShapeDefinition] = {
         frozenset({2, 3}),
         _ATROP_BOND_FIXED,
         _ATROP_BOND_ALL,
+        _BOND_OPPOSITE,
+    ),
+    "cumulene_axis": ShapeDefinition(
+        "cumulene_axis",
+        6,
+        frozenset({2, 3}),
+        _CUMULENE_AXIS_FIXED,
+        _CUMULENE_AXIS_ALL,
+        _BOND_OPPOSITE,
+    ),
+    "extended_cis_trans": ShapeDefinition(
+        "extended_cis_trans",
+        6,
+        frozenset({2, 3}),
+        _EXTENDED_CIS_TRANS_FIXED,
+        _EXTENDED_CIS_TRANS_ALL,
         _BOND_OPPOSITE,
     ),
 }

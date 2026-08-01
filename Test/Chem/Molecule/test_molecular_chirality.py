@@ -5,35 +5,39 @@ import json
 from pathlib import Path
 import sys
 
+import pytest
 from rdkit import Chem
 
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Test.Chem.Molecule.benchmark_molecular_chirality import (  # noqa: E402
+from Experiment.Stereo.Chirality.published import (  # noqa: E402
     DATASET,
     load_dataset,
 )
 from synkit.Chem.Molecule.chirality import (  # noqa: E402
     MolecularChirality,
+    PotentialStereoLocusType,
     classify_molecular_chirality,
+    detect_potential_stereo_loci,
     is_molecular_chiral,
 )
+from synkit.Graph.Stereo import AxisStereoSupport  # noqa: E402
 
 METADATA = (
     ROOT
-    / "Data"
-    / "Benchmark"
+    / "Experiment"
     / "Stereo"
+    / "Data"
     / "ACS-StereoMolGraph"
     / "ci5c02523_si_002.metadata.json"
 )
 REPORT = (
     ROOT
-    / "Data"
-    / "Benchmark"
+    / "Experiment"
     / "Stereo"
+    / "Data"
     / "ACS-StereoMolGraph"
     / "published_chirality_benchmark.json"
 )
@@ -101,7 +105,7 @@ def test_isotope_is_part_of_molecular_identity() -> None:
     assert isotope_result.identity_profile == ("element-isotope-hydrogen-connectivity")
 
 
-def test_even_cumulene_axis_is_completed_without_rdkit_extended_tag() -> None:
+def test_even_cumulene_axis_is_potential_not_invented_configuration() -> None:
     molecule = Chem.MolFromSmiles("ClC=C=CCl")
     achiral_control = Chem.MolFromSmiles("C=C=CCl")
     assert molecule is not None and achiral_control is not None
@@ -109,13 +113,20 @@ def test_even_cumulene_axis_is_completed_without_rdkit_extended_tag() -> None:
     result = classify_molecular_chirality(molecule)
     control_result = classify_molecular_chirality(achiral_control)
 
-    assert result.classification is MolecularChirality.CHIRAL
-    assert result.completed_extended_tetrahedral_axes == ((2, 4),)
+    assert result.classification is MolecularChirality.ACHIRAL
+    assert result.completed_extended_tetrahedral_axes == ()
+    assert len(result.potential_stereo_loci) == 1
+    locus = result.potential_stereo_loci[0]
+    assert locus.locus_type is PotentialStereoLocusType.CUMULENE_AXIS
+    assert locus.support == AxisStereoSupport((1, 2, 3), ((0, "@H:1"), (4, "@H:3")))
+    assert locus.atom_indices == (1, 2, 3)
+    assert locus.orientation_state.value == "unspecified"
+    assert locus.stability_status.value == "unassessed"
     assert control_result.classification is MolecularChirality.ACHIRAL
-    assert control_result.completed_extended_tetrahedral_axes == ()
+    assert control_result.potential_stereo_loci == ()
 
 
-def test_biaryl_axis_completion_respects_global_symmetry() -> None:
+def test_biaryl_axis_detection_does_not_assign_handedness_or_stability() -> None:
     atropisomer = Chem.MolFromSmiles("O=C(O)c1cccc(Br)c1-c1c(Br)cccc1C(=O)O")
     symmetric_control = Chem.MolFromSmiles("c1ccccc1-c1ccccc1")
     assert atropisomer is not None and symmetric_control is not None
@@ -123,9 +134,28 @@ def test_biaryl_axis_completion_respects_global_symmetry() -> None:
     atrop_result = classify_molecular_chirality(atropisomer)
     control_result = classify_molecular_chirality(symmetric_control)
 
-    assert atrop_result.classification is MolecularChirality.CHIRAL
-    assert atrop_result.completed_biaryl_atrop_axes
+    assert atrop_result.classification is MolecularChirality.ACHIRAL
+    assert atrop_result.completed_biaryl_atrop_axes == ()
+    assert len(atrop_result.potential_stereo_loci) == 1
+    locus = atrop_result.potential_stereo_loci[0]
+    assert locus.locus_type is PotentialStereoLocusType.ATROP_AXIS
+    assert locus.orientation_state.value == "unspecified"
+    assert locus.evidence_provenance == "two_dimensional_connectivity"
+    assert locus.stability_status.value == "unassessed"
     assert control_result.classification is MolecularChirality.ACHIRAL
+
+
+def test_potential_locus_detection_is_deterministic_and_non_mutating() -> None:
+    molecule = Chem.MolFromSmiles("ClC=C=CCl")
+    assert molecule is not None
+    before = Chem.MolToSmiles(molecule, canonical=False, isomericSmiles=True)
+
+    first = detect_potential_stereo_loci(molecule)
+    second = detect_potential_stereo_loci(molecule)
+
+    assert first == second
+    assert tuple(locus.identifier for locus in first) == ("cumulene_axis:1-2-3",)
+    assert Chem.MolToSmiles(molecule, canonical=False, isomericSmiles=True) == before
 
 
 def test_removing_stereo_flags_makes_chiral_and_achiral_inputs_indistinguishable() -> (
@@ -150,6 +180,10 @@ def test_removing_stereo_flags_makes_chiral_and_achiral_inputs_indistinguishable
     assert achiral_result.unspecified_stereo_loci
 
 
+@pytest.mark.skipif(
+    not REPORT.is_file(),
+    reason="generated published-chirality report is absent; run benchmark.sh",
+)
 def test_frozen_benchmark_separates_published_labels_from_live_reproduction() -> None:
     report = json.loads(REPORT.read_text(encoding="utf-8"))
 

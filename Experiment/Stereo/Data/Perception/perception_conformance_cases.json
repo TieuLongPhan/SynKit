@@ -1,0 +1,817 @@
+{
+  "schema": "synkit.stereo-perception-conformance/1",
+  "title": "Designed stereo-element perception conformance cases",
+  "version": 1,
+  "records": 40,
+  "claim_scope": "Designed API conformance data; not empirical chemical accuracy or configurational-stability evidence.",
+  "license": "SynKit project license",
+  "provenance": {
+    "kind": "maintainer_designed",
+    "external_truth_source": null,
+    "stability_claims": false,
+    "whole_molecule_chirality_claims": false,
+    "notes": [
+      "SMILES cases are small designed inputs used only for carrier and configuration-state conformance.",
+      "Formal graph cases exercise sidecar contracts that cannot currently be represented by RDKit molecular stereo.",
+      "No case claims that a topological atropisomer candidate is configurationally stable."
+    ]
+  },
+  "case_types": {
+    "configured_positive": "A carrier is present and the input supplies a configuration.",
+    "unconfigured_positive": "A carrier is present but orientation is deliberately unspecified.",
+    "negative_near_miss": "A structurally related input must not be promoted to a confirmed stereo carrier.",
+    "unsupported_or_ambiguous": "The input must fail closed with a typed reason."
+  },
+  "families": {
+    "tetrahedral": {
+      "support_kind": "atom",
+      "perception_scope": "current_topology_detector"
+    },
+    "double_bond": {
+      "support_kind": "bond",
+      "perception_scope": "current_topology_detector"
+    },
+    "cumulene_axis": {
+      "support_kind": "axis",
+      "perception_scope": "current_topology_detector"
+    },
+    "extended_cis_trans": {
+      "support_kind": "path",
+      "perception_scope": "current_topology_detector"
+    },
+    "atrop_axis": {
+      "support_kind": "axis",
+      "perception_scope": "current_topology_detector"
+    },
+    "square_planar": {
+      "support_kind": "atom",
+      "perception_scope": "configured_adapter_only"
+    },
+    "trigonal_bipyramidal": {
+      "support_kind": "atom",
+      "perception_scope": "configured_adapter_only"
+    },
+    "octahedral": {
+      "support_kind": "atom",
+      "perception_scope": "configured_adapter_only"
+    },
+    "helical": {
+      "support_kind": "path",
+      "perception_scope": "sidecar_only"
+    },
+    "planar_chirality": {
+      "support_kind": "plane",
+      "perception_scope": "sidecar_only"
+    }
+  },
+  "structures": {
+    "th_configured": {
+      "format": "smiles",
+      "value": "F[C@H](Cl)Br"
+    },
+    "th_unconfigured": {
+      "format": "smiles",
+      "value": "FC(Cl)(Br)I"
+    },
+    "th_symmetric": {
+      "format": "smiles",
+      "value": "CC(C)C"
+    },
+    "th_invalid_tag": {
+      "format": "smiles",
+      "value": "F[C@H](F)Cl"
+    },
+    "db_configured": {
+      "format": "smiles",
+      "value": "F/C(Cl)=C(/Br)I"
+    },
+    "db_unconfigured": {
+      "format": "smiles",
+      "value": "FC(Cl)=C(Br)I"
+    },
+    "db_symmetric_end": {
+      "format": "smiles",
+      "value": "FC(F)=C(Br)I"
+    },
+    "db_incomplete": {
+      "format": "smiles",
+      "value": "C=C"
+    },
+    "ca_distinct": {
+      "format": "smiles",
+      "value": "FC(Cl)=C=C(Br)I"
+    },
+    "ca_symmetric_end": {
+      "format": "smiles",
+      "value": "FC(F)=C=C(Br)I"
+    },
+    "ca_incomplete": {
+      "format": "smiles",
+      "value": "C=C=C"
+    },
+    "ect_distinct": {
+      "format": "smiles",
+      "value": "FC(Cl)=C=C=C(Br)I"
+    },
+    "ect_symmetric_end": {
+      "format": "smiles",
+      "value": "FC(F)=C=C=C(Br)I"
+    },
+    "ect_incomplete": {
+      "format": "smiles",
+      "value": "C=C=C=C"
+    },
+    "at_substituted_biaryl": {
+      "format": "smiles",
+      "value": "Fc1cccc(c1)-c1c(Br)cccc1Cl"
+    },
+    "at_flexible_linker": {
+      "format": "smiles",
+      "value": "c1ccccc1Cc1ccccc1"
+    },
+    "at_symmetric_biaryl": {
+      "format": "smiles",
+      "value": "c1ccccc1-c1ccccc1"
+    },
+    "sp_configured": {
+      "format": "smiles",
+      "value": "F[Pt@SP1](Cl)(Br)I"
+    },
+    "sp_unconfigured": {
+      "format": "smiles",
+      "value": "F[Pt@SP](Cl)(Br)I"
+    },
+    "sp_symmetric": {
+      "format": "smiles",
+      "value": "[Pt](Cl)(Cl)(Cl)Cl"
+    },
+    "sp_wrong_coordination": {
+      "format": "smiles",
+      "value": "F[Pt@SP1](Cl)Br"
+    },
+    "tbp_configured": {
+      "format": "smiles",
+      "value": "F[P@TB1](Cl)(Br)(I)N"
+    },
+    "tbp_unconfigured": {
+      "format": "smiles",
+      "value": "F[P@TB](Cl)(Br)(I)N"
+    },
+    "tbp_symmetric": {
+      "format": "smiles",
+      "value": "[P](F)(F)(F)(F)F"
+    },
+    "tbp_wrong_coordination": {
+      "format": "smiles",
+      "value": "F[P@TB1](Cl)(Br)I"
+    },
+    "oh_configured": {
+      "format": "smiles",
+      "value": "F[Co@OH1](Cl)(Br)(I)(N)P"
+    },
+    "oh_unconfigured": {
+      "format": "smiles",
+      "value": "F[Co@OH](Cl)(Br)(I)(N)P"
+    },
+    "oh_symmetric": {
+      "format": "smiles",
+      "value": "[Co](F)(F)(F)(F)(F)F"
+    },
+    "oh_wrong_coordination": {
+      "format": "smiles",
+      "value": "F[Co@OH1](Cl)(Br)(I)N"
+    },
+    "helical_formal": {
+      "format": "formal_graph",
+      "nodes": [
+        {"id": 0, "element": "C", "aromatic": true},
+        {"id": 1, "element": "C", "aromatic": true},
+        {"id": 2, "element": "C", "aromatic": true},
+        {"id": 3, "element": "C", "aromatic": true},
+        {"id": 4, "element": "C", "aromatic": true},
+        {"id": 5, "element": "C", "aromatic": true},
+        {"id": 6, "element": "C", "aromatic": true}
+      ],
+      "edges": [
+        [0, 1, "aromatic"],
+        [1, 2, "aromatic"],
+        [2, 3, "aromatic"],
+        [3, 4, "aromatic"],
+        [4, 5, "aromatic"],
+        [5, 6, "aromatic"]
+      ],
+      "chemical_validation": false
+    },
+    "helical_flexible_chain": {
+      "format": "formal_graph",
+      "nodes": [
+        {"id": 0, "element": "C", "aromatic": false},
+        {"id": 1, "element": "C", "aromatic": false},
+        {"id": 2, "element": "C", "aromatic": false},
+        {"id": 3, "element": "C", "aromatic": false},
+        {"id": 4, "element": "C", "aromatic": false}
+      ],
+      "edges": [
+        [0, 1, "single"],
+        [1, 2, "single"],
+        [2, 3, "single"],
+        [3, 4, "single"]
+      ],
+      "chemical_validation": false
+    },
+    "helical_ambiguous_cycle": {
+      "format": "formal_graph",
+      "nodes": [
+        {"id": 0, "element": "C", "aromatic": true},
+        {"id": 1, "element": "C", "aromatic": true},
+        {"id": 2, "element": "C", "aromatic": true},
+        {"id": 3, "element": "C", "aromatic": true},
+        {"id": 4, "element": "C", "aromatic": true},
+        {"id": 5, "element": "C", "aromatic": true}
+      ],
+      "edges": [
+        [0, 1, "aromatic"],
+        [1, 2, "aromatic"],
+        [2, 3, "aromatic"],
+        [3, 4, "aromatic"],
+        [4, 5, "aromatic"],
+        [5, 0, "aromatic"]
+      ],
+      "chemical_validation": false
+    },
+    "planar_formal": {
+      "format": "formal_graph",
+      "nodes": [
+        {"id": 0, "element": "C", "role": "plane"},
+        {"id": 1, "element": "N", "role": "plane"},
+        {"id": 2, "element": "O", "role": "plane"},
+        {"id": 3, "element": "S", "role": "plane"},
+        {"id": 4, "element": "Fe", "role": "pilot"}
+      ],
+      "edges": [
+        [0, 1, "plane"],
+        [1, 2, "plane"],
+        [2, 3, "plane"],
+        [3, 0, "plane"],
+        [4, 0, "pilot"]
+      ],
+      "chemical_validation": false
+    },
+    "planar_without_pilot": {
+      "format": "formal_graph",
+      "nodes": [
+        {"id": 0, "element": "C", "role": "plane"},
+        {"id": 1, "element": "N", "role": "plane"},
+        {"id": 2, "element": "O", "role": "plane"},
+        {"id": 3, "element": "S", "role": "plane"}
+      ],
+      "edges": [
+        [0, 1, "plane"],
+        [1, 2, "plane"],
+        [2, 3, "plane"],
+        [3, 0, "plane"]
+      ],
+      "chemical_validation": false
+    },
+    "planar_symmetric": {
+      "format": "formal_graph",
+      "nodes": [
+        {"id": 0, "element": "C", "role": "plane"},
+        {"id": 1, "element": "C", "role": "plane"},
+        {"id": 2, "element": "C", "role": "plane"},
+        {"id": 3, "element": "C", "role": "plane"},
+        {"id": 4, "element": "Fe", "role": "pilot"}
+      ],
+      "edges": [
+        [0, 1, "plane"],
+        [1, 2, "plane"],
+        [2, 3, "plane"],
+        [3, 0, "plane"],
+        [4, 0, "pilot"]
+      ],
+      "chemical_validation": false
+    }
+  },
+  "cases": [
+    {
+      "id": "PER-TH-001",
+      "family": "tetrahedral",
+      "case_type": "configured_positive",
+      "structure": "th_configured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, "@H:1"]},
+        "configured_descriptor": {"descriptor_class": "tetrahedral", "atoms": [1, 0, 2, 3, "@H:1"], "parity": 1},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-TH-002",
+      "family": "tetrahedral",
+      "case_type": "unconfigured_positive",
+      "structure": "th_unconfigured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, 4]},
+        "configured_descriptor": null,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-TH-003",
+      "family": "tetrahedral",
+      "case_type": "negative_near_miss",
+      "structure": "th_symmetric",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "symmetry_related_ligands"
+      }
+    },
+    {
+      "id": "PER-TH-004",
+      "family": "tetrahedral",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "th_invalid_tag",
+      "expected": {
+        "outcome": "ambiguous",
+        "configuration_state": "invalid",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "duplicate_ligand_configuration"
+      }
+    },
+    {
+      "id": "PER-DB-001",
+      "family": "double_bond",
+      "case_type": "configured_positive",
+      "structure": "db_configured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "bond", "bond": [1, 3], "terminal_frames": [[0, 2], [4, 5]]},
+        "configured_descriptor": {"descriptor_class": "planar_bond", "atoms": [0, 2, 1, 3, 4, 5], "parity": 0},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-DB-002",
+      "family": "double_bond",
+      "case_type": "unconfigured_positive",
+      "structure": "db_unconfigured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "bond", "bond": [1, 3], "terminal_frames": [[0, 2], [4, 5]]},
+        "configured_descriptor": null,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-DB-003",
+      "family": "double_bond",
+      "case_type": "negative_near_miss",
+      "structure": "db_symmetric_end",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "duplicate_terminal_ligands"
+      }
+    },
+    {
+      "id": "PER-DB-004",
+      "family": "double_bond",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "db_incomplete",
+      "expected": {
+        "outcome": "unsupported",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "insufficient_terminal_references"
+      }
+    },
+    {
+      "id": "PER-CA-001",
+      "family": "cumulene_axis",
+      "case_type": "configured_positive",
+      "structure": "ca_distinct",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "axis", "path": [1, 3, 4], "terminal_frames": [[0, 2], [5, 6]]},
+        "configured_descriptor": {"descriptor_class": "cumulene_axis", "axis_path": [1, 3, 4], "terminal_frames": [[0, 2], [5, 6]], "parity": 1},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-CA-002",
+      "family": "cumulene_axis",
+      "case_type": "unconfigured_positive",
+      "structure": "ca_distinct",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "axis", "path": [1, 3, 4], "terminal_frames": [[0, 2], [5, 6]]},
+        "configured_descriptor": null,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-CA-003",
+      "family": "cumulene_axis",
+      "case_type": "negative_near_miss",
+      "structure": "ca_symmetric_end",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "duplicate_terminal_ligands"
+      }
+    },
+    {
+      "id": "PER-CA-004",
+      "family": "cumulene_axis",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "ca_incomplete",
+      "expected": {
+        "outcome": "unsupported",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "insufficient_terminal_references"
+      }
+    },
+    {
+      "id": "PER-EC-001",
+      "family": "extended_cis_trans",
+      "case_type": "configured_positive",
+      "structure": "ect_distinct",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "path", "path": [1, 3, 4, 5], "terminal_frames": [[0, 2], [6, 7]]},
+        "configured_descriptor": {"descriptor_class": "extended_cis_trans", "path": [1, 3, 4, 5], "terminal_frames": [[0, 2], [6, 7]], "parity": 0},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-EC-002",
+      "family": "extended_cis_trans",
+      "case_type": "unconfigured_positive",
+      "structure": "ect_distinct",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "path", "path": [1, 3, 4, 5], "terminal_frames": [[0, 2], [6, 7]]},
+        "configured_descriptor": null,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-EC-003",
+      "family": "extended_cis_trans",
+      "case_type": "negative_near_miss",
+      "structure": "ect_symmetric_end",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "duplicate_terminal_ligands"
+      }
+    },
+    {
+      "id": "PER-EC-004",
+      "family": "extended_cis_trans",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "ect_incomplete",
+      "expected": {
+        "outcome": "unsupported",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "insufficient_terminal_references"
+      }
+    },
+    {
+      "id": "PER-AT-001",
+      "family": "atrop_axis",
+      "case_type": "configured_positive",
+      "structure": "at_substituted_biaryl",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "axis", "path": [5, 7], "terminal_frames": [[4, 6], [8, 13]]},
+        "configured_descriptor": {"descriptor_class": "atrop_bond", "atoms": [4, 6, 5, 7, 8, 13], "parity": 1},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-AT-002",
+      "family": "atrop_axis",
+      "case_type": "unconfigured_positive",
+      "structure": "at_substituted_biaryl",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "axis", "path": [5, 7], "terminal_frames": [[4, 6], [8, 13]]},
+        "configured_descriptor": null,
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-AT-003",
+      "family": "atrop_axis",
+      "case_type": "negative_near_miss",
+      "structure": "at_flexible_linker",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "no_direct_inter_ring_axis"
+      }
+    },
+    {
+      "id": "PER-AT-004",
+      "family": "atrop_axis",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "at_symmetric_biaryl",
+      "expected": {
+        "outcome": "ambiguous",
+        "configuration_state": "unspecified",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "symmetry_related_terminal_paths"
+      }
+    },
+    {
+      "id": "PER-SP-001",
+      "family": "square_planar",
+      "case_type": "configured_positive",
+      "structure": "sp_configured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, 4]},
+        "configured_descriptor": {"descriptor_class": "square_planar", "atoms": [1, 0, 2, 3, 4], "parity": 0},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-SP-002",
+      "family": "square_planar",
+      "case_type": "unconfigured_positive",
+      "structure": "sp_unconfigured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, 4]},
+        "configured_descriptor": null,
+        "reason_code": "shape_declared_configuration_unknown"
+      }
+    },
+    {
+      "id": "PER-SP-003",
+      "family": "square_planar",
+      "case_type": "negative_near_miss",
+      "structure": "sp_symmetric",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "all_ligands_symmetry_related"
+      }
+    },
+    {
+      "id": "PER-SP-004",
+      "family": "square_planar",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "sp_wrong_coordination",
+      "expected": {
+        "outcome": "unsupported",
+        "configuration_state": "invalid",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "wrong_coordination_number"
+      }
+    },
+    {
+      "id": "PER-TB-001",
+      "family": "trigonal_bipyramidal",
+      "case_type": "configured_positive",
+      "structure": "tbp_configured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, 4, 5]},
+        "configured_descriptor": {"descriptor_class": "trigonal_bipyramidal", "atoms": [1, 0, 5, 2, 3, 4], "parity": 1},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-TB-002",
+      "family": "trigonal_bipyramidal",
+      "case_type": "unconfigured_positive",
+      "structure": "tbp_unconfigured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, 4, 5]},
+        "configured_descriptor": null,
+        "reason_code": "shape_declared_configuration_unknown"
+      }
+    },
+    {
+      "id": "PER-TB-003",
+      "family": "trigonal_bipyramidal",
+      "case_type": "negative_near_miss",
+      "structure": "tbp_symmetric",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "all_ligands_symmetry_related"
+      }
+    },
+    {
+      "id": "PER-TB-004",
+      "family": "trigonal_bipyramidal",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "tbp_wrong_coordination",
+      "expected": {
+        "outcome": "unsupported",
+        "configuration_state": "invalid",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "wrong_coordination_number"
+      }
+    },
+    {
+      "id": "PER-OH-001",
+      "family": "octahedral",
+      "case_type": "configured_positive",
+      "structure": "oh_configured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, 4, 5, 6]},
+        "configured_descriptor": {"descriptor_class": "octahedral", "atoms": [1, 0, 6, 2, 3, 4, 5], "parity": 1},
+        "reason_code": null
+      }
+    },
+    {
+      "id": "PER-OH-002",
+      "family": "octahedral",
+      "case_type": "unconfigured_positive",
+      "structure": "oh_unconfigured",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "atom", "center": 1, "references": [0, 2, 3, 4, 5, 6]},
+        "configured_descriptor": null,
+        "reason_code": "shape_declared_configuration_unknown"
+      }
+    },
+    {
+      "id": "PER-OH-003",
+      "family": "octahedral",
+      "case_type": "negative_near_miss",
+      "structure": "oh_symmetric",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "all_ligands_symmetry_related"
+      }
+    },
+    {
+      "id": "PER-OH-004",
+      "family": "octahedral",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "oh_wrong_coordination",
+      "expected": {
+        "outcome": "unsupported",
+        "configuration_state": "invalid",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "wrong_coordination_number"
+      }
+    },
+    {
+      "id": "PER-HE-001",
+      "family": "helical",
+      "case_type": "configured_positive",
+      "structure": "helical_formal",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "path", "path": [0, 1, 2, 3, 4, 5, 6]},
+        "configured_descriptor": {"descriptor_class": "helical", "path": [0, 1, 2, 3, 4, 5, 6], "parity": 1, "cyclic": false},
+        "reason_code": "formal_graph_carrier"
+      }
+    },
+    {
+      "id": "PER-HE-002",
+      "family": "helical",
+      "case_type": "unconfigured_positive",
+      "structure": "helical_formal",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "path", "path": [0, 1, 2, 3, 4, 5, 6]},
+        "configured_descriptor": null,
+        "reason_code": "formal_graph_carrier"
+      }
+    },
+    {
+      "id": "PER-HE-003",
+      "family": "helical",
+      "case_type": "negative_near_miss",
+      "structure": "helical_flexible_chain",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "flexible_open_chain"
+      }
+    },
+    {
+      "id": "PER-HE-004",
+      "family": "helical",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "helical_ambiguous_cycle",
+      "expected": {
+        "outcome": "ambiguous",
+        "configuration_state": "unspecified",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "multiple_shortest_carrier_paths"
+      }
+    },
+    {
+      "id": "PER-PC-001",
+      "family": "planar_chirality",
+      "case_type": "configured_positive",
+      "structure": "planar_formal",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "specified",
+        "support": {"kind": "plane", "plane_atoms": [0, 1, 2, 3], "pilot": 4},
+        "configured_descriptor": {"descriptor_class": "planar_chirality", "plane_atoms": [0, 1, 2, 3], "pilot": 4, "parity": 1},
+        "reason_code": "formal_graph_carrier"
+      }
+    },
+    {
+      "id": "PER-PC-002",
+      "family": "planar_chirality",
+      "case_type": "unconfigured_positive",
+      "structure": "planar_formal",
+      "expected": {
+        "outcome": "carrier_present",
+        "configuration_state": "unspecified",
+        "support": {"kind": "plane", "plane_atoms": [0, 1, 2, 3], "pilot": 4},
+        "configured_descriptor": null,
+        "reason_code": "formal_graph_carrier"
+      }
+    },
+    {
+      "id": "PER-PC-003",
+      "family": "planar_chirality",
+      "case_type": "negative_near_miss",
+      "structure": "planar_without_pilot",
+      "expected": {
+        "outcome": "carrier_absent",
+        "configuration_state": "not_applicable",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "missing_pilot_reference"
+      }
+    },
+    {
+      "id": "PER-PC-004",
+      "family": "planar_chirality",
+      "case_type": "unsupported_or_ambiguous",
+      "structure": "planar_symmetric",
+      "expected": {
+        "outcome": "ambiguous",
+        "configuration_state": "unspecified",
+        "support": null,
+        "configured_descriptor": null,
+        "reason_code": "plane_symmetry_unresolved"
+      }
+    }
+  ]
+}

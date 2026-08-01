@@ -175,6 +175,17 @@ class ITSDestruction:
             G = self._remove_wildcards_from_graph(G, contract_neighbors=False)
             H = self._remove_wildcards_from_graph(H, contract_neighbors=False)
 
+        stereo = self._its.graph.get("stereo_descriptors", {})
+        if isinstance(stereo, dict):
+            if "reactant" in stereo or "product" in stereo:
+                G.graph["stereo_descriptors"] = dict(stereo.get("reactant", {}))
+                H.graph["stereo_descriptors"] = dict(stereo.get("product", {}))
+                G.graph["stereo_projection"] = "reactant"
+                H.graph["stereo_projection"] = "product"
+            else:
+                G.graph["stereo_descriptors"] = dict(stereo)
+                H.graph["stereo_descriptors"] = dict(stereo)
+
         self._G = G
         self._H = H
 

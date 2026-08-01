@@ -17,6 +17,8 @@ from synkit.Graph.Morphism.stereo_morphism import (
 
 from .changes import stereo_registry
 from .descriptors import (
+    CumuleneAxisStereo,
+    ExtendedCisTransStereo,
     PlanarBondStereo,
     StereoValue,
     TetrahedralStereo,
@@ -24,7 +26,9 @@ from .descriptors import (
     parse_virtual_reference,
     virtual_reference,
 )
+from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
 from .identity import mapped_stereo_registries_match
+from .global_stereo import FrameworkStereo
 from .legacy import (
     StereoSemanticComparison,
     StereoSemanticsMode,
@@ -70,11 +74,86 @@ def _unique_stereo_map_lookup(
     return by_map, None
 
 
+def _path_support_errors(
+    graph: nx.Graph,
+    path: tuple[int, ...],
+    by_map: Mapping[int, Any],
+    label: str,
+) -> tuple[str, ...]:
+    """Validate that a descriptor path is present in the graph."""
+    absent = tuple(atom for atom in path if atom not in by_map)
+    if absent:
+        return (
+            f"{label} path atoms are absent: " + ", ".join(map(str, sorted(absent))),
+        )
+    missing_edges = [
+        (left, right)
+        for left, right in zip(path, path[1:])
+        if not graph.has_edge(by_map[left], by_map[right])
+    ]
+    if not missing_edges:
+        return ()
+    return (
+        f"{label} path edges are absent: "
+        + ", ".join(f"{left}-{right}" for left, right in missing_edges),
+    )
+
+
 def _stereo_reference_owners(
     graph: nx.Graph,
     descriptor: StereoValue,
     by_map: Mapping[int, Any],
 ) -> tuple[tuple[tuple[int, tuple[Any, ...]], ...], tuple[str, ...]]:
+    if isinstance(descriptor, FrameworkStereo):
+        absent = tuple(atom for atom in descriptor.support_atoms if atom not in by_map)
+        if absent:
+            return (), (
+                "framework support atoms are absent: "
+                + ", ".join(map(str, sorted(absent))),
+            )
+        return (
+            tuple(
+                (frame.center, tuple(frame.references)) for frame in descriptor.frames
+            ),
+            (),
+        )
+    if isinstance(
+        descriptor,
+        (CumuleneAxisStereo, ExtendedCisTransStereo),
+    ):
+        path = (
+            descriptor.axis_path
+            if isinstance(descriptor, CumuleneAxisStereo)
+            else descriptor.path
+        )
+        owners = (
+            (path[0], tuple(descriptor.terminal_frames[0])),
+            (path[-1], tuple(descriptor.terminal_frames[1])),
+        )
+        return owners, _path_support_errors(graph, path, by_map, "stereo")
+    if isinstance(descriptor, HelicalStereo):
+        return (), _path_support_errors(
+            graph,
+            descriptor.path,
+            by_map,
+            "helical",
+        )
+    if isinstance(descriptor, PlanarChiralityStereo):
+        dependencies = (*descriptor.plane_atoms, descriptor.pilot)
+        absent = tuple(atom for atom in dependencies if atom not in by_map)
+        return (
+            (),
+            (
+                (
+                    (
+                        "planar-chirality support atoms are absent: "
+                        + ", ".join(map(str, sorted(absent)))
+                    ),
+                )
+                if absent
+                else ()
+            ),
+        )
     atom_centered = descriptor.descriptor_class in {
         "tetrahedral",
         "square_planar",

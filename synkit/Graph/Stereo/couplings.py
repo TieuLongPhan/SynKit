@@ -7,6 +7,8 @@ from typing import Any, Mapping
 
 from .descriptors import PlanarBondStereo, Reference, TetrahedralStereo
 
+SUPPORTED_STEREO_COUPLING_KINDS = frozenset({"VICINAL_ADDITION", "VICINAL_ELIMINATION"})
+
 
 @dataclass(frozen=True)
 class StereoCoupling:
@@ -28,8 +30,14 @@ class StereoCoupling:
         relation = self.relation.upper()
         object.__setattr__(self, "kind", kind)
         object.__setattr__(self, "relation", relation)
-        allowed_kinds = {"VICINAL_ADDITION", "VICINAL_ELIMINATION"}
-        if kind not in allowed_kinds:
+        centers = tuple(self.centers)
+        ligands = tuple(self.ligands)
+        if len(centers) == 2 and centers[1] < centers[0]:
+            centers = (centers[1], centers[0])
+            ligands = (ligands[1], ligands[0])
+        object.__setattr__(self, "centers", centers)
+        object.__setattr__(self, "ligands", ligands)
+        if kind not in SUPPORTED_STEREO_COUPLING_KINDS:
             raise ValueError(
                 "Stereo coupling kind must be 'VICINAL_ADDITION' or "
                 "'VICINAL_ELIMINATION'."
@@ -40,6 +48,10 @@ class StereoCoupling:
             raise ValueError("Stereo coupling requires two distinct centers.")
         if len(self.ligands) != 2 or len(set(self.ligands)) != 2:
             raise ValueError("Stereo coupling requires two distinct ligands.")
+        if set(self.centers) & set(self.ligands):
+            raise ValueError(
+                "Stereo coupling centers and transferred ligands must be disjoint."
+            )
         if not all(isinstance(value, int) and value > 0 for value in self.dependencies):
             raise ValueError("Stereo coupling references must be positive atom maps.")
 
@@ -47,6 +59,15 @@ class StereoCoupling:
     def dependencies(self) -> tuple[int, ...]:
         """Return all mapped atoms needed to interpret this relation."""
         return (*self.centers, *self.ligands)
+
+    @classmethod
+    def supported_kinds(cls) -> frozenset[str]:
+        """Return the closed execution modes supported by this release.
+
+        New ring, pericyclic, or facial modes must add an explicit executor
+        and validation contract before entering this set.
+        """
+        return SUPPORTED_STEREO_COUPLING_KINDS
 
     @property
     def target(self) -> str:

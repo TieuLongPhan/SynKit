@@ -22,11 +22,84 @@ from synkit.IO.mol_to_graph import MolToGraph
 ITS_STRUCTURAL_EDGE_ATTRS = ["order", "kekule_order", "sigma_order", "pi_order"]
 
 
+class ProductStatePerceptionError(RuntimeError):
+    """Raised when a dirty aromatic product cannot be safely reperceived."""
+
+
+def _product_value(value: Any) -> Any:
+    """Return the product member of a scalar or endpoint pair."""
+    if isinstance(value, tuple) and len(value) == 2:
+        return value[1]
+    return value
+
+
+def _template_charge_is_authoritative(
+    its: nx.Graph,
+    node: Any,
+    product_attrs: Mapping[str, Any],
+) -> bool:
+    """Return whether the source state lies outside the local Lewis model.
+
+    Product charge is derived only when both parsed template endpoints satisfy
+    the same ``VE - NBE - B`` identity.  An inconsistent endpoint is evidence
+    that the ordinary graph omits electronic context, so its exact charge is
+    retained in either replay direction.  This is a representation invariant
+    and does not classify atoms by element.
+    """
+    if node not in its:
+        return True
+    attrs = its.nodes[node]
+    model_consistent = attrs.get("charge_model_consistent")
+    if (
+        isinstance(model_consistent, tuple)
+        and len(model_consistent) == 2
+        and all(isinstance(value, bool) for value in model_consistent)
+    ):
+        return not all(model_consistent)
+    present = attrs.get("present")
+    if isinstance(present, tuple) and len(present) == 2 and not present[0]:
+        return True
+
+    def reactant_value(value: Any) -> Any:
+        if isinstance(value, tuple) and len(value) == 2:
+            return value[0]
+        return value
+
+    required = ("valence_electrons", "lone_pairs", "radical", "hcount", "charge")
+    values = {name: reactant_value(attrs.get(name)) for name in required}
+    if any(value is None for value in values.values()):
+        return True
+
+    bond_sum = 0.0
+    for _, _, edge_attrs in its.edges(node, data=True):
+        sigma = reactant_value(edge_attrs.get("sigma_order"))
+        pi = reactant_value(edge_attrs.get("pi_order"))
+        if sigma is None or pi is None:
+            order = reactant_value(edge_attrs.get("kekule_order"))
+            if order is None:
+                order = reactant_value(edge_attrs.get("order"))
+            if order is None:
+                return True
+            bond_sum += float(order)
+        else:
+            bond_sum += float(sigma) + float(pi)
+
+    modeled_charge = (
+        float(values["valence_electrons"])
+        - 2.0 * float(values["lone_pairs"])
+        - float(values["radical"])
+        - float(values["hcount"])
+        - bond_sum
+    )
+    return modeled_charge != float(values["charge"])
+
+
 def _pair_electron_aware_node_attrs(
     host_n: Dict[str, Any],
     rc_n: Dict[str, Any],
     *,
     preserve_unchanged_state: bool = False,
+    relative_resources: frozenset[str] = frozenset(),
 ) -> None:
     """Store paired attrs, preserving generic relative-query state locally."""
     _, product_types = host_n["typesGH"]
@@ -40,6 +113,12 @@ def _pair_electron_aware_node_attrs(
         "hcount": product_types[2],
         "neighbors": product_types[4],
     }
+    model_consistent = rc_n.get("charge_model_consistent")
+    if isinstance(model_consistent, tuple) and len(model_consistent) == 2:
+        host_n["charge_model_consistent"] = (
+            bool(model_consistent[0]),
+            bool(model_consistent[1]),
+        )
 
     for key, product_value in legacy_product_values.items():
         left_value = host_n.get(key)
@@ -59,11 +138,14 @@ def _pair_electron_aware_node_attrs(
             left_value = host_n.get(key)
             if left_value is None:
                 left_value = rc_value[0]
-            product_value = (
-                left_value
-                if preserve_unchanged_state and rc_value[0] == rc_value[1]
-                else rc_value[1]
-            )
+            if key in relative_resources:
+                product_value = left_value - rc_value[0] + rc_value[1]
+            else:
+                product_value = (
+                    left_value
+                    if preserve_unchanged_state and rc_value[0] == rc_value[1]
+                    else rc_value[1]
+                )
             host_n[key] = (left_value, product_value)
 
     host_n["template_charge"] = (host_n.get("charge"), product_types[3])
@@ -105,11 +187,7 @@ def _refresh_product_electron_fields(
     its: nx.Graph,
 ) -> None:
     """Refresh product-side electron fields from the scalar product graph."""
-    # In the common case the product Kekule phase is already valid.  The
-    # scalar projection previously built here only supplied values that
-    # are directly derivable from the product half of the ITS tuples.
-    # Computing them in place avoids two graph copies, one ITS traversal,
-    # and explicit-H collapse for every candidate.
+    # Direct refresh is valid while the product Kekule phase is unchanged.
     if not its.graph.get("_product_kekule_phase_dirty", True):
         _refresh_product_electron_fields_direct(its)
         return
@@ -164,20 +242,15 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
     a removed H--X sigma bond becomes one unit of ``hcount``.
     """
 
-    def product_value(value: Any) -> Any:
-        if isinstance(value, tuple) and len(value) == 2:
-            return value[1]
-        return value
-
     def product_node_exists(attrs: Mapping[str, Any]) -> bool:
         present = attrs.get("present")
         if isinstance(present, tuple) and len(present) == 2:
             return bool(present[1])
-        return product_value(attrs.get("element")) not in (None, "")
+        return _product_value(attrs.get("element")) not in (None, "")
 
     def product_edge_exists(attrs: Mapping[str, Any]) -> bool:
         for name in ("order", "kekule_order", "bond_type"):
-            value = product_value(attrs.get(name))
+            value = _product_value(attrs.get(name))
             if value not in (None, "", 0, 0.0):
                 return True
         return False
@@ -195,8 +268,8 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
 
     bond_sums: Dict[Any, float] = defaultdict(float)
     for left, right, attrs in product_edges:
-        sigma = float(product_value(attrs.get("sigma_order", 0.0)) or 0.0)
-        pi = float(product_value(attrs.get("pi_order", 0.0)) or 0.0)
+        sigma = float(_product_value(attrs.get("sigma_order", 0.0)) or 0.0)
+        pi = float(_product_value(attrs.get("pi_order", 0.0)) or 0.0)
         bond_order = sigma + pi
         bond_sums[left] += bond_order
         bond_sums[right] += bond_order
@@ -218,12 +291,12 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
         )
         attrs["bond_order_sum"] = (left_bond_sum, bond_sum)
 
-        valence_electrons = product_value(attrs.get("valence_electrons"))
+        valence_electrons = _product_value(attrs.get("valence_electrons"))
         if valence_electrons is None:
             continue
-        lone_pairs = float(product_value(attrs.get("lone_pairs", 0)) or 0)
-        radical = float(product_value(attrs.get("radical", 0)) or 0)
-        hcount = float(product_value(attrs.get("hcount", 0)) or 0)
+        lone_pairs = float(_product_value(attrs.get("lone_pairs", 0)) or 0)
+        radical = float(_product_value(attrs.get("radical", 0)) or 0)
+        hcount = float(_product_value(attrs.get("hcount", 0)) or 0)
         recomputed_charge = (
             float(valence_electrons) - 2.0 * lone_pairs - radical - hcount - bond_sum
         )
@@ -239,7 +312,7 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
         attrs["recomputed_charge"] = (left_recomputed, recomputed_charge)
 
         template_charge = attrs.get("template_charge")
-        represented_charge = product_value(attrs.get("charge", 0))
+        represented_charge = _product_value(attrs.get("charge", 0))
         mismatch = float(represented_charge or 0) != recomputed_charge
         if isinstance(template_charge, tuple) and len(template_charge) == 2:
             mismatch = template_charge[1] != recomputed_charge
@@ -257,13 +330,14 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
             if isinstance(current_charge, tuple) and len(current_charge) == 2
             else current_charge
         )
-        aromatic = bool(product_value(attrs.get("aromatic", False)))
-        product_charge = (
-            template_charge[1]
-            if aromatic
-            and isinstance(template_charge, tuple)
-            and len(template_charge) == 2
-            else recomputed_charge
+        product_charge = _electron_product_charge(
+            its,
+            node,
+            {
+                "aromatic": bool(_product_value(attrs.get("aromatic", False))),
+                "element": _product_value(attrs.get("element")),
+                "recomputed_charge": recomputed_charge,
+            },
         )
         attrs["charge"] = (left_charge, product_charge)
 
@@ -332,21 +406,22 @@ def _electron_product_charge(
 ) -> Any:
     """Choose the product charge used for electron-aware serialization.
 
-    Non-aromatic tuple products are electron-authoritative and use the
-    recomputed formal charge. Aromatic tuple products are still an open
-    representation boundary: if the template explicitly carries a product
-    charge, preserve it instead of inventing cationic aromatic carbons from
-    an incomplete Kekule phase.
+    Recompute charge when the template endpoints satisfy the local Lewis
+    identity. Preserve explicit template charge for aromatic or
+    model-inconsistent endpoints.
     """
     if node in its:
         template_charge = its.nodes[node].get("template_charge")
         aromatic = product_attrs.get("aromatic", its.nodes[node].get("aromatic"))
-        if (
-            aromatic is True
-            and isinstance(template_charge, tuple)
-            and len(template_charge) == 2
-        ):
-            return template_charge[1]
+        if isinstance(template_charge, tuple) and len(template_charge) == 2:
+            if aromatic is True or _template_charge_is_authoritative(
+                its,
+                node,
+                product_attrs,
+            ):
+                return template_charge[1]
+        else:
+            return _product_value(its.nodes[node].get("charge"))
     return product_attrs.get("recomputed_charge")
 
 
@@ -368,13 +443,16 @@ def _reperceive_product_kekule_phase(product: nx.Graph, its: nx.Graph) -> nx.Gra
             probe,
             sanitize=True,
             use_h_count=True,
+            prefer_kekule_order=False,
         )
         reperceived = MolToGraph(attr_profile="minimal").transform(
             mol,
             use_index_as_atom_map=True,
         )
-    except Exception:
-        return product
+    except Exception as exc:
+        raise ProductStatePerceptionError(
+            "Could not reperceive the dirty aromatic product state."
+        ) from exc
 
     refreshed = product.copy()
     for u, v in refreshed.edges():

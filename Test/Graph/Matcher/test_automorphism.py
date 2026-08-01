@@ -88,8 +88,8 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
         )
         self.assertEqual(unique, [])
 
-    def test_equivalent_mappings_are_merged(self) -> None:
-        """Mappings that only differ by automorphisms should be merged."""
+    def test_joint_mappings_are_not_merged_by_vertex_orbits(self) -> None:
+        """Vertex orbits alone do not certify one joint host automorphism."""
         G = nx.cycle_graph(4)
         auto = Automorphism(G)
 
@@ -105,9 +105,21 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
             mappings, host_anchor=auto.anchor_component, host_orbits=auto.orbits
         )
 
-        # There should be only one representative
-        self.assertEqual(len(unique), 1)
-        self.assertIn(unique[0], original_copy)
+        self.assertEqual(unique, original_copy)
+
+    def test_vertex_transitive_host_keeps_distinct_edge_orbits(self) -> None:
+        """A joint quotient must distinguish inequivalent host edge orbits."""
+        host = nx.cartesian_product(nx.cycle_graph(7), nx.cycle_graph(11))
+        horizontal = {0: (0, 0), 1: (1, 0)}
+        vertical = {0: (0, 0), 1: (0, 1)}
+
+        unique = deduplicate_matches_with_anchor(
+            [horizontal, vertical],
+            pattern_orbits=[frozenset({0, 1})],
+            host_orbits=[frozenset(host)],
+        )
+
+        self.assertEqual(unique, [horizontal, vertical])
 
     def test_inequivalent_mappings_are_kept(self) -> None:
         """Mappings hitting different orbits must not be collapsed."""

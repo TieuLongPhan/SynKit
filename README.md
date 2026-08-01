@@ -1,4 +1,5 @@
 # SynKit
+
 [![PyPI version](https://img.shields.io/pypi/v/synkit.svg)](https://pypi.org/project/synkit/)
 [![Conda version](https://img.shields.io/conda/vn/tieulongphan/synkit.svg)](https://anaconda.org/tieulongphan/synkit)
 [![Docker Pulls](https://img.shields.io/docker/pulls/tieulongphan/synkit.svg)](https://hub.docker.com/r/tieulongphan/synkit)
@@ -8,164 +9,135 @@
 [![Last Commit](https://img.shields.io/github/last-commit/tieulongphan/synkit.svg)](https://github.com/tieulongphan/synkit/commits)
 [![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.15269901.svg)](https://doi.org/10.5281/zenodo.15269901)
 [![CI](https://github.com/tieulongphan/synkit/actions/workflows/test-and-lint.yml/badge.svg?branch=main)](https://github.com/tieulongphan/synkit/actions/workflows/test-and-lint.yml)
-[![Dependency PRs](https://img.shields.io/github/issues-pr-raw/tieulongphan/synkit?label=dependency%20PRs)](https://github.com/tieulongphan/synkit/pulls?q=is%3Apr+label%3Adependencies)
 [![Stars](https://img.shields.io/github/stars/tieulongphan/synkit.svg?style=social&label=Star)](https://github.com/tieulongphan/synkit/stargazers)
 
-**Graph-native reaction informatics and supplied-mechanism verification**
+**Graph-native reaction informatics and executable electron-flow models**
 
-SynKit represents mapped reactions, Lewis-labelled graphs (LLGs), transformation rules,
-and explicitly supplied electron-flow mechanisms. Version 1.6.0 introduces
-resource-aware Lewis graph states and a locus-sorted arrow-pushing grammar for
-curved arrows and coupled fishhooks. It validates supplied annotations; it does
-not predict the chemically preferred mechanism.
+SynKit is a Python toolkit for atom-mapped reactions, chemical graph
+transformations, Lewis-labelled graphs, and explicitly supplied reaction
+mechanisms. It connects reaction representation, rule extraction, graph
+rewriting, stereochemistry, and mechanism verification through a common
+attributed-graph model.
 
-![SynKit](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit.png)
+SynKit verifies mechanisms supplied by the user; it does not claim to predict
+the kinetically or thermodynamically preferred mechanism.
 
-### Mechanism verification quick start
+![SynKit graphical abstract](https://raw.githubusercontent.com/TieuLongPhan/SynKit/main/Data/Figure/synkit_graphical_abstract.svg)
 
-```python
-from synkit.Mechanism import MechanismRecord
+## Highlights
 
-mechanism = MechanismRecord.from_ef_smirks(text)
-certificate = mechanism.verify(electron="strict")
-trajectory = mechanism.to_mtg()
-mechanism.draw(certificate=certificate, path="mechanism.svg")
-mechanism.to_json("mechanism.json")
-```
-
-Canonical internal electron loci are `lp`, `σ`, `π`, and `∙`; adapters accept
-documented ASCII and legacy spellings. Curved arrows carry two electrons and
-fishhooks carry one electron. Coupled radical events commit atomically.
-
-The current package version is `1.6.0`.
-
-For more details on each utility within the repository, please refer to the documentation provided in the respective folders.
-
-## Table of Contents
-- [Installation](#installation)
-- [Contribute to `SynKit`](#contribute)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+- Convert mapped reaction SMILES into ITS and reaction-centre graphs.
+- Extract and apply attributed graph-transformation rules.
+- Represent lone pairs, radicals, and separate sigma and pi occupancies with
+  Lewis-labelled graphs.
+- Execute curved-arrow and atomically coupled fishhook events.
+- Preserve tetrahedral, axial, and extended stereochemical information.
+- Build and analyse mechanism trajectory graphs and chemical reaction
+  networks.
 
 ## Installation
 
-1. **Python Installation:**
-  Ensure that Python 3.11 or later is installed on your system. You can download it from [python.org](https://www.python.org/downloads/).
-
-2. **Creating a Virtual Environment (Optional but Recommended):**
-  It's recommended to use a virtual environment to avoid conflicts with other projects or system-wide packages. Use the following commands to create and activate a virtual environment:
-
-  ```bash
-  python -m venv synkit-env
-  source synkit-env/bin/activate  
-  ```
-  Or Conda
-
-  ```bash
-  conda create --name synkit-env python=3.11
-  conda activate synkit-env
-  ```
-
-3. **Install from PyPi:**
-  The easiest way to use SynTemp is by installing the PyPI package 
-  [synkit](https://pypi.org/project/synkit/).
-
-  ```
-  pip install synkit
-  ```
-  Optional if you want to install full version
-  ```
-  pip install synkit[all]
-  ```
-
-4. **Install via Docker**  
-   Pull the image: 
-
-   ```bash
-   docker pull tieulongphan/synkit:latest
-   # or a specific version:
-   docker pull tieulongphan/synkit:1.0.0
-   ```
-   Run a container (sanity check):
-   ```
-   docker run --rm tieulongphan/synkit:latest
-   ```
-
-## Contribute
-
-We're welcoming new contributors to build this project better. Please not hesitate to inquire me via [email](tieu@bioinf.uni-leipzig.de).
-
-Before you start, ensure your local development environment is set up correctly. Pull the latest version of the `main` branch to start with the most recent stable code.
+SynKit requires Python 3.11 or later.
 
 ```bash
-git checkout main
-git pull
+python -m pip install synkit
 ```
 
-### Working on New Features
+Install the optional dependencies with:
 
-1. **Create a New Branch**:  
-   For every new feature or bug fix, create a new branch from the `main` branch. Name your branch meaningfully, related to the feature or fix you are working on.
+```bash
+python -m pip install "synkit[all]"
+```
 
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+Alternatively, use the published container:
 
-2. **Develop and Commit Changes**:  
-   Make your changes locally, commit them to your branch. Keep your commits small and focused; each should represent a logical unit of work.
+```bash
+docker pull tieulongphan/synkit:latest
+docker run --rm tieulongphan/synkit:latest \
+  python -c "import synkit; print(synkit.__version__)"
+```
 
-   ```bash
-   git commit -m "Describe the change"
-   ```
+## Quick start
 
-3. **Run Quality Checks**:  
-   Before finalizing your feature, run the following commands to ensure your code meets our formatting standards and passes all tests:
+This self-contained example converts an atom-mapped substitution into an
+imaginary transition-state graph and reports its changed bonds:
 
-   ```bash
-   ./lint.sh # Check lint and the 1,000-line Python-file limit
-   pytest Test # Run tests
-   ```
+```python
+from synkit.IO import rsmi_to_its
 
-   Fix any issues or errors highlighted by these checks.
+reaction = "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]"
+its = rsmi_to_its(reaction, core=False, format="tuple")
 
-### Integrating Changes
+changed_bonds = [
+    (source, target, data["order"])
+    for source, target, data in its.edges(data=True)
+    if data["order"][0] != data["order"][1]
+]
+print(changed_bonds)
+```
 
-1. **Rebase onto Staging**:  
-   Once your feature is complete and tests pass, rebase your changes onto the `staging` branch to prepare for integration.
+The output records the broken C-Br bond as `(1.0, 0.0)` and the formed C-O
+bond as `(0.0, 1.0)`. Continue with the
+[graph](https://tieulongphan.github.io/SynKit/graph.html),
+[rule](https://tieulongphan.github.io/SynKit/rule.html), and
+[synthesis](https://tieulongphan.github.io/SynKit/synthesis.html) guides.
 
-   ```bash
-   git fetch origin
-   git rebase origin/staging
-   ```
+## Supplied-mechanism verification
 
-   Carefully resolve any conflicts that arise during the rebase.
+SynKit can parse typed electron-flow annotations, replay their elementary
+steps, and return a verification certificate and mechanism trajectory graph.
+Canonical electron loci distinguish lone pairs, sigma bonds, pi bonds, and
+radical electrons. Curved arrows carry two electrons; fishhooks carry one;
+coupled radical events commit atomically from a common pre-state.
 
-2. **Push to Your Feature Branch**:
-   After successfully rebasing, push your branch to the remote repository.
+See the
+[mechanism documentation](https://tieulongphan.github.io/SynKit/mechanism.html)
+for the supported interchange formats, verification policies, and complete
+examples.
 
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+## Documentation
 
-3. **Create a Pull Request**:
-   Open a pull request from your feature branch to the `staging` branch. Ensure the pull request description clearly describes the changes and any additional context necessary for review.
+- [Documentation](https://tieulongphan.github.io/SynKit/)
+- [API reference](https://tieulongphan.github.io/SynKit/api/index.html)
+- [Issue tracker](https://github.com/TieuLongPhan/SynKit/issues)
+- [Changelog](doc/changelog.rst)
+
+## Publications
+
+- [Lewis-labeled graphs: curly arrows and fishhooks as executable electron
+  transfers](https://arxiv.org/abs/2607.26088), arXiv:2607.26088 (2026).
+- [SynKit: A Graph-Based Python Framework for Rule-Based Reaction Modeling and
+  Analysis](https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02123), *Journal
+  of Chemical Information and Modeling* (2025).
 
 ## Contributing
+
+Contributions and bug reports are welcome. Create a branch from the current
+mainline, make a focused change, and run the repository checks before opening
+a pull request:
+
+```bash
+git switch -c feature/short-description
+bash scripts/lint.sh
+bash scripts/pytest.sh
+```
+
+Questions can be sent to
+[tieu@bioinf.uni-leipzig.de](mailto:tieu@bioinf.uni-leipzig.de).
+
+## Contributors
+
 - [Tieu-Long Phan](https://tieulongphan.github.io/)
 - [Klaus Weinbauer](https://github.com/klausweinbauer)
 - [Phuoc-Chung Nguyen Van](https://github.com/phuocchung123)
 - [Tuyet-Minh Phan](https://github.com/tuyetminhphan)
 
-## Publication
-
-[**SynKit**: A Graph-Based Python Framework for Rule-Based Reaction Modeling and Analysis](https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02123)
-
-
 ## License
 
-This project is licensed under MIT License - see the [License](LICENSE) file for details.
+SynKit is distributed under the MIT License. See [LICENSE](LICENSE).
 
 ## Acknowledgments
 
-This project has received funding from the European Unions Horizon Europe Doctoral Network programme under the Marie-Skłodowska-Curie grant agreement No 101072930 ([TACsy](https://tacsy.eu/) -- Training Alliance for Computational)
+This project received funding from the European Union's Horizon Europe
+Doctoral Network programme under Marie Skłodowska-Curie grant agreement No.
+101072930 ([TACsy](https://tacsy.eu/)).

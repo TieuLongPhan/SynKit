@@ -137,6 +137,37 @@ class TestSubGraphSearchEngine(unittest.TestCase):
         self.assertEqual(capped, [])
         self.assertEqual(len(uncapped), self.gm.DEFAULT_THRESHOLD + 1)
 
+    def test_disconnected_join_equals_whole_vf2_monomorphisms(self):
+        host = nx.path_graph(3)
+        pattern = nx.Graph([(10, 11)])
+        pattern.add_node(12)
+        nx.set_node_attributes(host, "C", "element")
+        nx.set_node_attributes(pattern, "C", "element")
+        nx.set_edge_attributes(host, 1.0, "order")
+        nx.set_edge_attributes(pattern, 1.0, "order")
+
+        expected = self.gm._find_all_subgraph_mappings(
+            host,
+            pattern,
+            ["element"],
+            ["order"],
+            None,
+            None,
+        )
+        actual = self.gm.find_subgraph_mappings(
+            host,
+            pattern,
+            node_attrs=["element"],
+            edge_attrs=["order"],
+            strategy="all",
+            threshold=None,
+        )
+
+        def normalize(mappings):
+            return {tuple(sorted(mapping.items())) for mapping in mappings}
+
+        self.assertEqual(normalize(actual), normalize(expected))
+
     def test_electron_aware_node_matching(self):
         host = nx.Graph()
         host.add_node(1, element="O", lone_pairs=3, radical=0, hcount=1)

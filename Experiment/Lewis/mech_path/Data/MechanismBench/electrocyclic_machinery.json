@@ -1,0 +1,90 @@
+{
+  "schema": "MechanismBench-electrocyclic-machinery-v1",
+  "canonical_path": "Experiment/Lewis/mech_path/Data/MechanismBench/electrocyclic_machinery.json",
+  "status": "reviewed",
+  "generated": "2026-07-29",
+  "description": "Figure 11 conrotatory/disrotatory machinery fixtures. Each case is one correlated terminal-orbital motion attached to a supplied electron-flow path; terminal centers are never expanded independently.",
+  "claim_boundary": "The activation mode and electron count are supplied annotations used to verify the Woodward-Hoffmann correlation. SynKit validates the supplied mechanism and does not select a mechanism, predict conditions, or estimate selectivity.",
+  "positive_case_count": 4,
+  "negative_fixture_count": 3,
+  "cases": [
+    {
+      "case_id": "EC-01",
+      "kind": "positive",
+      "name": "Figure 11 substituted 4-pi thermal ring opening",
+      "pi_electrons": 4,
+      "activation": "THERMAL",
+      "mode": "CONROTATORY",
+      "direction": "RING_OPENING",
+      "terminal_motion": [1, 1],
+      "substituted": true,
+      "reverse_required": true
+    },
+    {
+      "case_id": "EC-02",
+      "kind": "positive",
+      "name": "4-pi photochemical ring opening",
+      "pi_electrons": 4,
+      "activation": "PHOTOCHEMICAL",
+      "mode": "DISROTATORY",
+      "direction": "RING_OPENING",
+      "terminal_motion": [1, -1],
+      "substituted": false,
+      "reverse_required": true
+    },
+    {
+      "case_id": "EC-03",
+      "kind": "positive",
+      "name": "Figure 11 6-pi thermal ring opening",
+      "pi_electrons": 6,
+      "activation": "THERMAL",
+      "mode": "DISROTATORY",
+      "direction": "RING_OPENING",
+      "terminal_motion": [1, -1],
+      "substituted": false,
+      "reverse_required": true
+    },
+    {
+      "case_id": "EC-04",
+      "kind": "positive",
+      "name": "6-pi photochemical ring opening",
+      "pi_electrons": 6,
+      "activation": "PHOTOCHEMICAL",
+      "mode": "CONROTATORY",
+      "direction": "RING_OPENING",
+      "terminal_motion": [1, 1],
+      "substituted": false,
+      "reverse_required": true
+    },
+    {
+      "case_id": "EC-N01",
+      "kind": "negative",
+      "name": "Wrong 4-pi thermal mode",
+      "pi_electrons": 4,
+      "activation": "THERMAL",
+      "mode": "DISROTATORY",
+      "terminal_motion": [1, -1],
+      "expected_issue": "ELECTROCYCLIC_MODE_MISMATCH"
+    },
+    {
+      "case_id": "EC-N02",
+      "kind": "negative",
+      "name": "Missing activation context",
+      "pi_electrons": 4,
+      "activation": null,
+      "mode": "CONROTATORY",
+      "terminal_motion": [1, 1],
+      "expected_issue": "ELECTROCYCLIC_CONTEXT_REQUIRED"
+    },
+    {
+      "case_id": "EC-N03",
+      "kind": "negative",
+      "name": "Terminal motions contradict declared mode",
+      "pi_electrons": 4,
+      "activation": "THERMAL",
+      "mode": "CONROTATORY",
+      "terminal_motion": [1, -1],
+      "expected_issue": "ELECTROCYCLIC_MOTION_INCONSISTENT"
+    }
+  ]
+}

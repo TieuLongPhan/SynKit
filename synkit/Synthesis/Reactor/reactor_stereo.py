@@ -17,6 +17,15 @@ MappingDict = Dict[Any, Any]
 class ReactorStereoMixin:
     """Internal stereo behavior shared by the SynReactor facade."""
 
+    def _check_stereo_branch_budget(self, branch_count: int) -> None:
+        """Refuse an expansion before it can exceed the configured budget."""
+        limit = self.stereo_branch_limit
+        requested = self._stereo_branch_count + branch_count
+        if limit is not None and requested > limit:
+            from synkit.Synthesis.Reactor.assignment import StereoBranchLimitError
+
+            raise StereoBranchLimitError(limit, requested)
+
     def _matching_host_graph(self) -> nx.Graph:
         """Return the host graph normalized to the active rule representation."""
         if self._host_for_matching is None:
@@ -157,7 +166,7 @@ class ReactorStereoMixin:
         """Return product nodes keyed by the application-local atom map."""
         result = {}
         for node, attrs in graph.nodes(data=True):
-            atom_map = attrs.get("atom_map", node)
+            atom_map = attrs.get("atom_map") or node
             if isinstance(atom_map, int) and atom_map > 0:
                 result[atom_map] = node
         return result
@@ -165,8 +174,161 @@ class ReactorStereoMixin:
     @staticmethod
     def _node_reference(graph: nx.Graph, node: Any) -> int | None:
         """Return the stable mapped reference for one product node."""
-        atom_map = graph.nodes[node].get("atom_map", node)
+        atom_map = graph.nodes[node].get("atom_map") or node
         return atom_map if isinstance(atom_map, int) and atom_map > 0 else None
+
+    def _relabeled_stereo_couplings(
+        self,
+        host: nx.Graph,
+        mapping: MappingDict,
+    ) -> tuple[Any, ...]:
+        """Translate every rule coupling into the selected host mapping."""
+        translation: Dict[int, int] = {}
+        pattern = self.rule.left.raw
+        for pattern_node, host_node in mapping.items():
+            pattern_map = pattern.nodes[pattern_node].get("atom_map", pattern_node)
+            if isinstance(pattern_map, tuple) and len(pattern_map) == 2:
+                pattern_map = pattern_map[0]
+            host_map = host.nodes[host_node].get("atom_map") or host_node
+            if isinstance(pattern_map, int) and isinstance(host_map, int):
+                translation[pattern_map] = host_map
+        return tuple(
+            self.rule.stereo_couplings[key].relabel(translation)
+            for key in sorted(self.rule.stereo_couplings)
+        )
+
+    @staticmethod
+    def _coupling_planar_from_tetrahedral_input(
+        coupling: Any,
+        reactant_registry: Mapping[str, Any],
+    ) -> Any:
+        """Recover the unique correlated alkene frame for an elimination."""
+        from synkit.Graph.Stereo import PlanarBondStereo, TetrahedralStereo
+
+        left_center, right_center = coupling.centers
+        left_ligand, right_ligand = coupling.ligands
+        left = reactant_registry.get(f"atom:{left_center}")
+        right = reactant_registry.get(f"atom:{right_center}")
+        if (
+            not isinstance(left, TetrahedralStereo)
+            or not isinstance(right, TetrahedralStereo)
+            or left.parity not in {-1, 1}
+            or right.parity not in {-1, 1}
+        ):
+            return None
+
+        remaining = []
+        for descriptor, other, ligand in (
+            (left, right_center, left_ligand),
+            (right, left_center, right_ligand),
+        ):
+            references = [
+                reference
+                for reference in descriptor.atoms[1:]
+                if reference not in {other, ligand}
+            ]
+            if len(references) != 2:
+                return None
+            remaining.append(tuple(sorted(references, key=repr)))
+
+        candidates = (
+            PlanarBondStereo(
+                (
+                    *remaining[0],
+                    left_center,
+                    right_center,
+                    *remaining[1],
+                ),
+                0,
+                "rule-coupling-reverse",
+            ),
+            PlanarBondStereo(
+                (
+                    *remaining[0],
+                    left_center,
+                    right_center,
+                    *reversed(remaining[1]),
+                ),
+                0,
+                "rule-coupling-reverse",
+            ),
+        )
+        for candidate in candidates:
+            if any(
+                pair[0] == left and pair[1] == right
+                for pair in coupling.tetrahedral_product_pairs(candidate)
+            ):
+                return candidate
+        return None
+
+    def _coupling_mapping_inputs_match(
+        self,
+        host: nx.Graph,
+        mapping: MappingDict,
+        *,
+        strict: bool,
+    ) -> bool:
+        """Validate coupling input geometry and strict descriptor presence."""
+        from synkit.Graph.Stereo import PlanarBondStereo, descriptor_id
+
+        registry = dict(host.graph.get("stereo_descriptors", {}))
+        by_map = self._node_by_atom_map(host)
+        allowed_targets = set()
+        for coupling in self._relabeled_stereo_couplings(host, mapping):
+            if coupling.kind == "VICINAL_ADDITION":
+                descriptor = registry.get(coupling.target)
+                left = by_map.get(coupling.centers[0])
+                right = by_map.get(coupling.centers[1])
+                pi_order = (
+                    float(host.edges[left, right].get("pi_order", 0.0))
+                    if left is not None
+                    and right is not None
+                    and host.has_edge(left, right)
+                    else 0.0
+                )
+                if pi_order < 2.0:
+                    if (
+                        not isinstance(descriptor, PlanarBondStereo)
+                        or descriptor.parity != 0
+                    ):
+                        return False
+                    allowed_targets.add(coupling.target)
+            else:
+                if (
+                    self._coupling_planar_from_tetrahedral_input(
+                        coupling,
+                        registry,
+                    )
+                    is None
+                ):
+                    return False
+                allowed_targets.update(f"atom:{center}" for center in coupling.centers)
+        if not strict:
+            return True
+
+        mapped_nodes = set(mapping.values())
+        mapped_references = {
+            host.nodes[node].get("atom_map") or node for node in mapped_nodes
+        }
+        scoped = {
+            descriptor_id(descriptor)
+            for descriptor in registry.values()
+            if descriptor.dependencies & mapped_references
+        }
+        translation = {}
+        pattern = self.rule.left.raw
+        for pattern_node, host_node in mapping.items():
+            pattern_map = pattern.nodes[pattern_node].get("atom_map", pattern_node)
+            if isinstance(pattern_map, tuple) and len(pattern_map) == 2:
+                pattern_map = pattern_map[0]
+            host_map = host.nodes[host_node].get("atom_map", host_node)
+            if isinstance(pattern_map, int) and isinstance(host_map, int):
+                translation[pattern_map] = host_map
+        translated_guards = {
+            descriptor_id(descriptor.relabel(translation))
+            for descriptor in self.rule.stereo_guards.values()
+        }
+        return scoped <= allowed_targets | translated_guards
 
     def _coupled_planar_product(self, coupling: Any, product: nx.Graph) -> Any:
         """Construct a formed alkene descriptor from a syn/anti coupling."""
@@ -246,7 +408,58 @@ class ReactorStereoMixin:
 
         potential_tetrahedral = self._potential_tetrahedral_atom_maps(product_graph)
         for coupling in couplings:
-            if coupling.kind != "VICINAL_ADDITION":
+            if coupling.kind == "VICINAL_ELIMINATION":
+                planar_product = self._coupling_planar_from_tetrahedral_input(
+                    coupling,
+                    reactant_registry,
+                )
+                if planar_product is None:
+                    return []
+                left_target, right_target = (
+                    f"atom:{center}" for center in coupling.centers
+                )
+                next_states = []
+                for (
+                    product_registry,
+                    relabeled_changes,
+                    branch_metadata,
+                    outcome_metadata,
+                    coupling_branch_metadata,
+                ) in states:
+                    registry = dict(product_registry)
+                    changes = dict(relabeled_changes)
+                    coupling_branches = dict(coupling_branch_metadata)
+                    for target in (left_target, right_target):
+                        descriptor = reactant_registry[target]
+                        registry.pop(target, None)
+                        changes[target] = StereoChange(
+                            "BROKEN",
+                            descriptor,
+                            None,
+                        )
+                    registry[coupling.target] = planar_product
+                    changes[coupling.target] = StereoChange(
+                        "FORMED",
+                        None,
+                        planar_product,
+                    )
+                    coupling_branches[coupling.target] = {
+                        "kind": coupling.kind,
+                        "relation": coupling.relation,
+                        "paired_input": True,
+                        "joint_targets": [left_target, right_target],
+                    }
+                    next_states.append(
+                        (
+                            registry,
+                            changes,
+                            dict(branch_metadata),
+                            dict(outcome_metadata),
+                            coupling_branches,
+                        )
+                    )
+                states = next_states
+                self._check_stereo_branch_budget(len(states))
                 continue
             planar_product = self._coupled_planar_product(coupling, product_graph)
             planar_reactant = reactant_registry.get(coupling.target)
@@ -332,6 +545,9 @@ class ReactorStereoMixin:
                         "kind": coupling.kind,
                         "relation": coupling.relation,
                         "face_branch": face_index,
+                        "joint_targets": [
+                            descriptor_id(descriptor) for descriptor in pair
+                        ],
                     }
                     next_states.append(
                         (
@@ -343,6 +559,7 @@ class ReactorStereoMixin:
                         )
                     )
             states = next_states
+            self._check_stereo_branch_budget(len(states))
         return states
 
     def _apply_stereo_rule_metadata(
@@ -389,7 +606,8 @@ class ReactorStereoMixin:
         }
         relabeled_coupling_values = []
         relabeled_couplings = {}
-        for coupling in self.rule.stereo_couplings.values():
+        for coupling_key in sorted(self.rule.stereo_couplings):
+            coupling = self.rule.stereo_couplings[coupling_key]
             relabeled = coupling.relabel(translation)
             relabeled_coupling_values.append(relabeled)
             relabeled_couplings[relabeled.target] = relabeled.to_dict()
@@ -403,7 +621,8 @@ class ReactorStereoMixin:
             ]
         ] = [(dict(reactant_registry), {}, {}, {}, {})]
 
-        for rule_key, change in self.rule.stereo_effects.items():
+        for rule_key in sorted(self.rule.stereo_effects):
+            change = self.rule.stereo_effects[rule_key]
             applied_effect = change.relabel(translation)
             before = applied_effect.before
             after = applied_effect.after
@@ -433,6 +652,8 @@ class ReactorStereoMixin:
                 for branch_index, (alternative, weight) in enumerate(
                     zip(alternatives, branch_weights)
                 ):
+                    if float(weight) == 0.0:
+                        continue
                     branch_registry = dict(product_registry)
                     branch_changes = dict(relabeled_changes)
                     branch_info = dict(branch_metadata)
@@ -472,6 +693,7 @@ class ReactorStereoMixin:
                         )
                     )
             states = next_states
+            self._check_stereo_branch_budget(len(states))
 
         if relabeled_coupling_values:
             product_graph = ITSReverter(its).to_product_graph()
@@ -510,7 +732,18 @@ class ReactorStereoMixin:
             for metadata in branch_metadata.values():
                 total_weight *= float(metadata["weight"])
             branch.graph["stereo_branch_weight"] = total_weight
+            branch.graph["stereo_aggregate_weight"] = total_weight
+            branch.graph["stereo_branch_multiplicity"] = 1
+            branch.graph["stereo_branch_path"] = tuple(
+                (
+                    target,
+                    metadata["branch_index"],
+                )
+                for target, metadata in sorted(branch_metadata.items())
+            )
             results.append(branch)
+        self._check_stereo_branch_budget(len(results))
+        self._stereo_branch_count += len(results)
         return results
 
     @staticmethod

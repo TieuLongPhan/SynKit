@@ -30,6 +30,8 @@ def _make_host_repr(
     Create a function that maps host node to its representative.
 
     If host orbits are provided, the representative is the host-orbit index.
+    This is sound only for a one-node mapping; callers with joint mappings
+    must supply the identity representation instead.
 
     :param host_orbits:
         Host orbits or None.
@@ -178,10 +180,11 @@ def deduplicate_matches_with_anchor(
     - If ``pattern_orbits`` is provided:
         * Pattern nodes inside ``pattern_anchor`` are fixed when present.
         * Pattern orbits disjoint from the anchor are deduplicated up to
-          permutation, with host-side symmetry optionally collapsed by
-          ``host_orbits``.
+          permutation.
     - If ``pattern_orbits`` is None and ``host_orbits`` is provided:
-        * Deduplicate by the multiset of host orbits hit (mapping values only).
+        * A one-node mapping may be deduplicated by its host vertex orbit.
+        * Joint mappings remain distinct because vertex orbits do not encode
+          the simultaneous action of the host automorphism group.
     - If **both orbit arguments are None**, return matches unchanged.
 
     :param matches:
@@ -208,7 +211,9 @@ def deduplicate_matches_with_anchor(
         return list(matches)
 
     pattern_anchor = pattern_anchor or frozenset()
-    host_repr = _make_host_repr(host_orbits)
+    mappings = list(matches)
+    joint_mapping = any(len(mapping) > 1 for mapping in mappings)
+    host_repr = _make_host_repr(None if joint_mapping else host_orbits)
 
     free_pattern_orbits, anchored_pattern_nodes = _prepare_pattern_orbits(
         pattern_orbits,
@@ -219,7 +224,7 @@ def deduplicate_matches_with_anchor(
     seen: set[Sig] = set()
     unique: List[Dict[int, int]] = []
 
-    for m in matches:
+    for m in mappings:
         if use_pattern:
             free_sig = _free_sig_from_pattern_orbits(
                 m,

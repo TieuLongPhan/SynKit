@@ -9,6 +9,7 @@ import networkx as nx
 
 from .descriptors import (
     OctahedralStereo,
+    SUPPORTED_STEREO_DESCRIPTOR_CLASSES,
     SquarePlanarStereo,
     StereoValue,
     TetrahedralStereo,
@@ -56,6 +57,14 @@ class StereoAlignmentError(ValueError):
 def _peripheral_references(descriptor: StereoValue) -> tuple[Any, ...]:
     if isinstance(descriptor, _ATOM_STEREO_TYPES):
         return descriptor.atoms[1:]
+    from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
+    from .global_stereo import FrameworkStereo
+
+    if isinstance(
+        descriptor,
+        (HelicalStereo, PlanarChiralityStereo, FrameworkStereo),
+    ):
+        return ()
     return (*descriptor.atoms[:2], *descriptor.atoms[4:])
 
 
@@ -107,12 +116,76 @@ class StereoReferenceAlignment:
                 self.issue_code,
                 self.detail,
             )
-        status = "identity" if not self.mapping else "explicit"
+        status = "identity" if not self.mapping else self.status
         return StereoReferenceAlignment(
             tuple((target, source) for source, target in self.mapping),
             status,
             self.added,
             self.removed,
+        )
+
+    def then(
+        self,
+        after: "StereoReferenceAlignment",
+    ) -> "StereoReferenceAlignment":
+        """Compose two endpoint-reference transports."""
+        if not self.accepted:
+            return self
+        if not after.accepted:
+            return after
+        first = dict(self.mapping)
+        second = dict(after.mapping)
+        composed = {
+            source: second.get(target, target) for source, target in first.items()
+        }
+        first_targets = set(first.values())
+        composed.update(
+            {
+                source: target
+                for source, target in second.items()
+                if source not in first_targets
+            }
+        )
+        composed = {
+            source: target for source, target in composed.items() if source != target
+        }
+        if not composed:
+            return StereoReferenceAlignment((), "identity")
+        status = "explicit" if "explicit" in {self.status, after.status} else "inferred"
+        return StereoReferenceAlignment(
+            tuple(composed.items()),
+            status,
+            tuple(composed),
+            tuple(composed.values()),
+        )
+
+    def relabel(
+        self,
+        mapping: Mapping[int, int],
+    ) -> "StereoReferenceAlignment":
+        """Relabel material and owner-qualified virtual references."""
+
+        def translate(reference: Any) -> Any:
+            if type(reference) is int:
+                return mapping.get(reference, reference)
+            virtual = parse_virtual_reference(reference)
+            if virtual is None:
+                return reference
+            return virtual_reference(
+                virtual.kind,
+                mapping.get(virtual.center, virtual.center),
+            )
+
+        return StereoReferenceAlignment(
+            tuple(
+                (translate(source), translate(target))
+                for source, target in self.mapping
+            ),
+            self.status,
+            tuple(translate(value) for value in self.removed),
+            tuple(translate(value) for value in self.added),
+            self.issue_code,
+            self.detail,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -127,6 +200,21 @@ class StereoReferenceAlignment:
         if self.detail is not None:
             result["detail"] = self.detail
         return result
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, Any],
+    ) -> "StereoReferenceAlignment":
+        """Read one serialized endpoint-reference alignment."""
+        return cls(
+            mapping=tuple(tuple(pair) for pair in value.get("mapping", ())),
+            status=str(value.get("status", "identity")),
+            removed=tuple(value.get("removed", ())),
+            added=tuple(value.get("added", ())),
+            issue_code=value.get("issue_code"),
+            detail=value.get("detail"),
+        )
 
 
 def _reference_delta(
@@ -226,7 +314,9 @@ def _relation_after_alignment(
 ) -> StereoRelation | None:
     if not alignment.accepted:
         return None
-    aligned = old.replace_references(dict(alignment.mapping))
+    aligned = (
+        old.replace_references(dict(alignment.mapping)) if alignment.mapping else old
+    )
     return aligned.relation_to(new)
 
 
@@ -274,6 +364,17 @@ def _descriptor_from_configuration(
         )
     )
     return type(prototype)(frame, parity, prototype.provenance)
+
+
+def _unspecified_descriptor(prototype: StereoValue) -> StereoValue:
+    value = prototype.to_dict()
+    if value["descriptor_class"] == "framework":
+        value["orientation"] = None
+    else:
+        value["parity"] = None
+    from .descriptors import stereo_from_dict
+
+    return stereo_from_dict(value)
 
 
 @dataclass(frozen=True)
@@ -404,7 +505,7 @@ class StereoChange:
             and self.after is not None
             and self.before.parity is not None
             and self.after.parity is None
-        )
+        ) or self.alignment.issue_code == "STEREO_COMPOSITION_INFORMATION_LOSS"
 
     def reverse(
         self,
@@ -477,10 +578,25 @@ class StereoChange:
                 self.alignment.issue_code or "STEREO_ALIGNMENT_REFUSED",
                 self.alignment.detail or "",
             )
-        if self.relation is None or self.relation.witness is None:
+        if self.relation is None:
             raise StereoAlignmentError(
                 "STEREO_RELATION_NOT_REPLAYABLE",
-                "The rule effect has no concrete permutation witness.",
+                "The rule effect has no configuration relation.",
+            )
+        if (
+            self.relation.witness is None
+            or self.after.descriptor_class not in SUPPORTED_STEREO_DESCRIPTOR_CLASSES
+        ):
+            source_relation = self.before.relation_to(descriptor)
+            if source_relation.kind is StereoRelationKind.EQUIVALENT:
+                return self.after
+            if source_relation.kind is StereoRelationKind.OPPOSITE:
+                return self.after.invert()
+            if source_relation.kind is StereoRelationKind.UNSPECIFIED:
+                return _unspecified_descriptor(self.after)
+            raise StereoAlignmentError(
+                "STEREO_RELATION_NOT_REPLAYABLE",
+                "The substrate has no transportable relation to the rule guard.",
             )
         aligned = descriptor.replace_references(dict(self.reference_mapping))
         frame = self.relation.witness.apply(aligned.configuration.frame)
@@ -555,11 +671,107 @@ class StereoChange:
             if self.alignment.status == "explicit"
             else None
         )
+        before = self.before.relabel(mapping) if self.before is not None else None
+        after = self.after.relabel(mapping) if self.after is not None else None
+        transition = (
+            self.transition.relabel(mapping) if self.transition is not None else None
+        )
+        if not self.alignment.accepted:
+            return StereoChange(
+                self.change,
+                before,
+                after,
+                transition,
+                alignment=self.alignment.relabel(mapping),
+            )
         return StereoChange.from_endpoints(
-            self.before.relabel(mapping) if self.before is not None else None,
-            self.after.relabel(mapping) if self.after is not None else None,
-            self.transition.relabel(mapping) if self.transition is not None else None,
+            before,
+            after,
+            transition,
             reference_mapping=translated_reference_mapping,
+        )
+
+    def then(self, after: "StereoChange") -> "StereoChange":
+        """Compose two consecutive changes at the same stereo locus."""
+        if self.after != after.before:
+            raise StereoAlignmentError(
+                "STEREO_COMPOSITION_NONCOMPOSABLE",
+                "The first product descriptor must equal the second "
+                "reactant descriptor.",
+            )
+        if self.before is None and after.after is None:
+            transition = self.after or self.transition or after.transition
+            return StereoChange.from_endpoints(None, None, transition)
+        if self.after is None and after.before is None:
+            alignment = StereoReferenceAlignment(
+                (),
+                "refused",
+                issue_code="STEREO_COMPOSITION_INFORMATION_LOSS",
+                detail=(
+                    "A broken descriptor was recreated without a continuous "
+                    "configuration witness."
+                ),
+            )
+            return StereoChange(
+                "UNSPECIFIED",
+                self.before,
+                after.after,
+                alignment=alignment,
+            )
+        alignment = self.alignment.then(after.alignment)
+        reference_mapping = (
+            dict(alignment.mapping)
+            if alignment.status == "explicit" or len(alignment.mapping) > 1
+            else None
+        )
+        return StereoChange.from_endpoints(
+            self.before,
+            after.after,
+            reference_mapping=reference_mapping,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the lossless version-independent value payload."""
+
+        def encode(value: StereoValue | None) -> dict[str, Any] | None:
+            return value.to_dict() if value is not None else None
+
+        return {
+            "change": self.change,
+            "before": encode(self.before),
+            "after": encode(self.after),
+            "transition": encode(self.transition),
+            "alignment": self.alignment.to_dict(),
+            "relation_evidence": self.relation_evidence(),
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "StereoChange":
+        """Read a serialized change and rederive its orbit relation."""
+        from .descriptors import stereo_from_dict
+
+        def decode(item: Any) -> StereoValue | None:
+            return stereo_from_dict(item) if item is not None else None
+
+        alignment = StereoReferenceAlignment.from_dict(value.get("alignment", {}))
+        return cls(
+            change=str(value["change"]),
+            before=decode(value.get("before")),
+            after=decode(value.get("after")),
+            transition=decode(value.get("transition")),
+            reference_mapping=alignment.mapping,
+            alignment=alignment,
+        )
+
+    def signature(self) -> tuple[Any, ...]:
+        """Return a stable, hashable rule-identity signature."""
+        return (
+            self.change,
+            self.before,
+            self.after,
+            self.transition,
+            self.reference_mapping,
+            self.evidence_kind,
         )
 
 

@@ -15,8 +15,8 @@ RUN pip install --upgrade pip setuptools wheel \
 # 3. Set working directory inside builder
 WORKDIR /build
 
-# 4. Copy project metadata (including README so Hatchling can find it)
-COPY pyproject.toml README.md ./
+# 4. Copy the metadata and license files required by Hatchling
+COPY pyproject.toml README.md LICENSE ./
 # If you have a lockfile, uncomment:
 # COPY poetry.lock ./
 

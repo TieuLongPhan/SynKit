@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.6.0"
+version = "1.6.1"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-license-files = ["LICENSE", "LICENSES/*"]
+license-files = ["LICENSE", "synkit/Graph/Stereo/LICENSES/*"]
 authors = [
   { name = "Tieu Long Phan", email = "tieu@bioinf.uni-leipzig.de" }
 ]
@@ -67,12 +67,10 @@ packages = ["synkit"]
 [tool.hatch.build.targets.wheel.force-include]
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
-"Data/Mech" = "synkit/Data/Mech"
 
 [tool.hatch.build.targets.sdist]
 include = [
   "/synkit",
-  "/Data/Mech",
   "/LICENSE",
   "/LICENSES",
   "/README.md",
@@ -82,4 +80,3 @@ include = [
 [tool.hatch.build.targets.sdist.force-include]
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
-"Data/Mech" = "Data/Mech"

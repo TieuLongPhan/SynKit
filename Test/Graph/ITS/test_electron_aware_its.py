@@ -132,6 +132,66 @@ class TestElectronAwareITS(unittest.TestCase):
 
         self.assertEqual(rc.graph["rc"]["node_attrs"][1]["custom_marker"], "kept")
 
+    def test_minimal_rc_excludes_unchanged_edges_between_rc_nodes(self):
+        self.reactant.add_node(
+            3,
+            element="O",
+            aromatic=False,
+            hcount=0,
+            charge=0,
+            neighbors=["N", "C"],
+            lone_pairs=2,
+            radical=0,
+            valence_electrons=6,
+        )
+        self.product.add_node(
+            3,
+            element="O",
+            aromatic=False,
+            hcount=0,
+            charge=0,
+            neighbors=["N"],
+            lone_pairs=2,
+            radical=0,
+            valence_electrons=6,
+        )
+        self.reactant.add_edge(
+            1,
+            3,
+            order=1.0,
+            kekule_order=1.0,
+            sigma_order=1.0,
+            pi_order=0.0,
+        )
+        self.product.add_edge(
+            1,
+            3,
+            order=1.0,
+            kekule_order=1.0,
+            sigma_order=1.0,
+            pi_order=0.0,
+        )
+        self.reactant.add_edge(
+            2,
+            3,
+            order=1.0,
+            kekule_order=1.0,
+            sigma_order=1.0,
+            pi_order=0.0,
+        )
+
+        its = ITSConstruction.construct(self.reactant, self.product)
+        induced = RCExtractor().extract(its)
+        minimal = RCExtractor().extract(its, include_context_edges=False)
+
+        self.assertIn((1, 3), induced.edges)
+        self.assertNotIn((1, 3), induced.graph["rc"]["edges"])
+        self.assertNotIn((1, 3), minimal.edges)
+        self.assertEqual(
+            {frozenset(edge) for edge in minimal.edges},
+            {frozenset(edge) for edge in minimal.graph["rc"]["edges"]},
+        )
+
     def test_reverter_drops_nodes_absent_on_one_side(self):
         self.reactant.add_node(
             3,

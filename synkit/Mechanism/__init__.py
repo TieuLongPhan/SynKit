@@ -26,6 +26,7 @@ from .model import (
     ElectronLocus,
     ElectronMove,
     ElectronMoveGroup,
+    ElectrocyclicStereoMotion,
     MechanismModelError,
     MechanismRecord,
     MechanisticStep,
@@ -34,6 +35,7 @@ from .model import (
     VerificationCertificate,
     VerificationIssue,
 )
+from .neighbor_stereo import RelativeNeighborChange
 from .schema import mechanism_record_schema
 from .equivalence import mechanism_equivalent
 from .interchange import (
@@ -43,7 +45,11 @@ from .interchange import (
     stereo_graph_from_gml,
     stereo_graph_to_gml,
 )
-from .stereo_state import apply_stereo_effects, stereo_timeline
+from .stereo_state import (
+    StereoStateTimeline,
+    apply_stereo_effects,
+    stereo_timeline,
+)
 from .benchmark import (
     BenchmarkCase,
     CorruptedAnnotation,
@@ -83,6 +89,7 @@ __all__ = [
     "ElectronLocus",
     "ElectronMove",
     "ElectronMoveGroup",
+    "ElectrocyclicStereoMotion",
     "MechanismModelError",
     "MechanismRecord",
     "MechanisticStep",
@@ -90,6 +97,7 @@ __all__ = [
     "StereoEffect",
     "VerificationCertificate",
     "VerificationIssue",
+    "RelativeNeighborChange",
     "RadicalStateAudit",
     "LocalElectronStateAudit",
     "audit_local_electron_state",
@@ -133,6 +141,7 @@ __all__ = [
     "stereo_graph_to_gml",
     "apply_stereo_effects",
     "stereo_timeline",
+    "StereoStateTimeline",
     "BenchmarkCase",
     "CorruptedAnnotation",
     "benchmark_release_issues",

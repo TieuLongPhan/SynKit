@@ -1,11 +1,15 @@
-import itertools
 import networkx as nx
 from dataclasses import dataclass
 from copy import copy
 from joblib import Parallel, delayed
-from typing import Any, Dict, Iterator, List, Literal, Tuple, Iterable, Optional
-from operator import eq
-from networkx.algorithms.isomorphism import generic_edge_match, generic_node_match
+from typing import (
+    Any,
+    Dict,
+    List,
+    Tuple,
+    Iterable,
+    Optional,
+)
 
 from synkit.IO.debug import setup_logging
 from synkit.IO.chem_converter import detect_its_format
@@ -15,15 +19,16 @@ from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.ITS.rc_extractor import RCExtractor
 from synkit.Graph.Hyrogen._misc import (
     check_hcount_change,
-    check_explicit_hydrogen,
     get_priority,
-    check_equivariant_graph,
+)
+from synkit.Graph.Hyrogen.hcompletion_algorithms import (
+    HydrogenCompletionAlgorithms,
+    ITSFormat,
+    ITSFormatInput,
+    _HydrogenTransferPlan,
 )
 
 logger = setup_logging()
-
-ITSFormat = Literal["typesGH", "tuple"]
-ITSFormatInput = Literal["auto", "typesGH", "tuple"]
 
 
 @dataclass
@@ -38,6 +43,7 @@ class HCompletionResult:
     candidates: int = 0
     reason: str = ""
     format: str = "typesGH"
+    exhaustive: bool = True
 
     @property
     def ok(self) -> bool:
@@ -48,9 +54,8 @@ class HCompletionResult:
         )
 
 
-class HComplete:
-    """A class for infering hydrogen to complete reaction center or ITS
-    graph."""
+class HComplete(HydrogenCompletionAlgorithms):
+    """Complete reaction-centre hydrogens in ITS graphs."""
 
     TUPLE_NODE_ATTRS = [
         "element",
@@ -286,33 +291,184 @@ class HComplete:
         format: ITSFormat,
         max_candidates: Optional[int] = None,
     ) -> HCompletionResult:
-        candidates = []
-        first = None
-        valid_seen = 0
-
-        for candidate in HComplete._iter_hydrogen_node_completions(
+        if get_priority_graph:
+            return HComplete._complete_priority_from_transfer_plans(
+                react_graph,
+                prod_graph,
+                ignore_aromaticity,
+                balance_its,
+                format,
+                max_candidates,
+            )
+        if format == "typesGH":
+            return HComplete._complete_typesgh_from_transfer_plans(
+                react_graph,
+                prod_graph,
+                ignore_aromaticity,
+                balance_its,
+                max_candidates,
+            )
+        return HComplete._complete_exact_from_transfer_plans(
             react_graph,
             prod_graph,
             ignore_aromaticity,
             balance_its,
-            format=format,
-            max_candidates=max_candidates,
+            format,
+            max_candidates,
+        )
+
+    @staticmethod
+    def _complete_typesgh_from_transfer_plans(
+        react_graph: nx.Graph,
+        prod_graph: nx.Graph,
+        ignore_aromaticity: bool,
+        balance_its: bool,
+        max_candidates: Optional[int],
+    ) -> HCompletionResult:
+        """Decide typesGH completion using an exact necessary RC projection."""
+        first_plan = None
+        first_projection = None
+        first_candidate = None
+        valid_seen = 0
+
+        for candidate_index, plan in enumerate(
+            HComplete._iter_hydrogen_transfer_plans(react_graph, prod_graph)
         ):
-            react, prod, its, rc, sig = candidate
-            if not HComplete._valid_rc(rc):
+            if max_candidates is not None and candidate_index >= max_candidates:
+                return HComplete._candidate_limit_result(
+                    react_graph, prod_graph, valid_seen, "typesGH"
+                )
+
+            projection = HComplete._typesgh_plan_comparison_graph(
+                react_graph,
+                prod_graph,
+                plan,
+                ignore_aromaticity,
+            )
+            if projection.number_of_nodes() == 0:
                 continue
 
             valid_seen += 1
-            if get_priority_graph:
-                candidates.append(candidate)
+            if first_plan is None:
+                first_plan = plan
+                first_projection = projection
                 continue
 
+            # Full typesGH RC isomorphism preserves this labeled projection.
+            # Its non-isomorphism is therefore a conclusive ambiguity witness.
+            if not HComplete._comparison_graphs_isomorphic(
+                first_projection, projection
+            ):
+                return HCompletionResult(
+                    None,
+                    None,
+                    react_graph,
+                    prod_graph,
+                    candidates=valid_seen,
+                    reason="non_equivariant_rc",
+                    format="typesGH",
+                )
+
+            if first_candidate is None:
+                first_candidate = HComplete._materialize_transfer_candidate(
+                    react_graph,
+                    prod_graph,
+                    first_plan,
+                    ignore_aromaticity,
+                    balance_its,
+                    "typesGH",
+                )
+                if not HComplete._valid_rc(first_candidate[3]):
+                    first_candidate = None
+                    continue
+
+            candidate = HComplete._materialize_transfer_candidate(
+                react_graph,
+                prod_graph,
+                plan,
+                ignore_aromaticity,
+                balance_its,
+                "typesGH",
+            )
+            if not HComplete._valid_rc(candidate[3]):
+                continue
+            if (
+                HComplete._equivariant_count(
+                    [first_candidate[3], candidate[3]], "typesGH"
+                )
+                != 1
+            ):
+                return HCompletionResult(
+                    None,
+                    None,
+                    react_graph,
+                    prod_graph,
+                    candidates=valid_seen,
+                    reason="non_equivariant_rc",
+                    format="typesGH",
+                )
+
+        if first_plan is None:
+            return HCompletionResult(
+                None,
+                None,
+                react_graph,
+                prod_graph,
+                candidates=valid_seen,
+                reason="no_valid_candidate",
+                format="typesGH",
+            )
+        if first_candidate is None:
+            first_candidate = HComplete._materialize_transfer_candidate(
+                react_graph,
+                prod_graph,
+                first_plan,
+                ignore_aromaticity,
+                balance_its,
+                "typesGH",
+            )
+        return HComplete._completion_result(
+            first_candidate,
+            react_graph,
+            prod_graph,
+            valid_seen,
+            "typesGH",
+        )
+
+    @staticmethod
+    def _complete_exact_from_transfer_plans(
+        react_graph: nx.Graph,
+        prod_graph: nx.Graph,
+        ignore_aromaticity: bool,
+        balance_its: bool,
+        format: ITSFormat,
+        max_candidates: Optional[int],
+    ) -> HCompletionResult:
+        """Decide completion solely through materialized exact RC isomorphism."""
+        first = None
+        valid_seen = 0
+        for candidate_index, plan in enumerate(
+            HComplete._iter_hydrogen_transfer_plans(react_graph, prod_graph)
+        ):
+            if max_candidates is not None and candidate_index >= max_candidates:
+                return HComplete._candidate_limit_result(
+                    react_graph, prod_graph, valid_seen, format
+                )
+            candidate = HComplete._materialize_transfer_candidate(
+                react_graph,
+                prod_graph,
+                plan,
+                ignore_aromaticity,
+                balance_its,
+                format,
+            )
+            if not HComplete._valid_rc(candidate[3]):
+                continue
+            valid_seen += 1
             if first is None:
                 first = candidate
                 continue
-
-            first_equiv = HComplete._equivariant_count([first[3], rc], format)
-            if sig != first[4] or first_equiv != 1:
+            if HComplete._equivariant_count([first[3], candidate[3]], format) != 1:
                 return HCompletionResult(
                     None,
                     None,
@@ -322,23 +478,112 @@ class HComplete:
                     reason="non_equivariant_rc",
                     format=format,
                 )
+        return HComplete._completion_result(
+            first,
+            react_graph,
+            prod_graph,
+            valid_seen,
+            format,
+        )
 
-        if get_priority_graph:
-            selected = HComplete._select_priority_candidate(candidates, format)
-        else:
-            selected = first
+    @staticmethod
+    def _complete_priority_from_transfer_plans(
+        react_graph: nx.Graph,
+        prod_graph: nx.Graph,
+        ignore_aromaticity: bool,
+        balance_its: bool,
+        format: ITSFormat,
+        max_candidates: Optional[int],
+    ) -> HCompletionResult:
+        candidates = []
+        valid_seen = 0
+        for candidate_index, plan in enumerate(
+            HComplete._iter_hydrogen_transfer_plans(react_graph, prod_graph)
+        ):
+            if max_candidates is not None and candidate_index >= max_candidates:
+                return HComplete._candidate_limit_result(
+                    react_graph, prod_graph, valid_seen, format
+                )
+            candidate = HComplete._materialize_transfer_candidate(
+                react_graph,
+                prod_graph,
+                plan,
+                ignore_aromaticity,
+                balance_its,
+                format,
+            )
+            if not HComplete._valid_rc(candidate[3]):
+                continue
+            valid_seen += 1
+            candidates.append(candidate)
+        selected = HComplete._select_priority_candidate(candidates, format)
+        return HComplete._completion_result(
+            selected,
+            react_graph,
+            prod_graph,
+            valid_seen,
+            format,
+        )
 
-        if selected is None:
+    @staticmethod
+    def _materialize_transfer_candidate(
+        react_graph: nx.Graph,
+        prod_graph: nx.Graph,
+        plan: _HydrogenTransferPlan,
+        ignore_aromaticity: bool,
+        balance_its: bool,
+        format: ITSFormat,
+    ) -> Tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph, str]:
+        react, prod = HComplete._realize_hydrogen_transfer_plan(
+            react_graph, prod_graph, plan
+        )
+        its = HComplete._construct_its(
+            react,
+            prod,
+            ignore_aromaticity,
+            balance_its,
+            format,
+        )
+        rc = HComplete._extract_rc(its, format)
+        signature = HComplete._rc_signature(rc, format)
+        return react, prod, its, rc, signature
+
+    @staticmethod
+    def _candidate_limit_result(
+        react_graph: nx.Graph,
+        prod_graph: nx.Graph,
+        candidates: int,
+        format: ITSFormat,
+    ) -> HCompletionResult:
+        return HCompletionResult(
+            None,
+            None,
+            react_graph,
+            prod_graph,
+            candidates=candidates,
+            reason="max_candidates_reached",
+            format=format,
+            exhaustive=False,
+        )
+
+    @staticmethod
+    def _completion_result(
+        selected: Optional[Tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph, str]],
+        react_graph: nx.Graph,
+        prod_graph: nx.Graph,
+        candidates: int,
+        format: ITSFormat,
+    ) -> HCompletionResult:
+        if selected is None or not HComplete._valid_rc(selected[3]):
             return HCompletionResult(
                 None,
                 None,
                 react_graph,
                 prod_graph,
-                candidates=valid_seen,
+                candidates=candidates,
                 reason="no_valid_candidate",
                 format=format,
             )
-
         react, prod, its, rc, sig = selected
         return HCompletionResult(
             its,
@@ -346,7 +591,7 @@ class HComplete:
             react,
             prod,
             signature=sig,
-            candidates=valid_seen,
+            candidates=candidates,
             format=format,
         )
 
@@ -422,83 +667,17 @@ class HComplete:
             max_candidates=max_candidates,
         ):
             if get_priority_graph is False and updated_graphs:
-                if candidate[-1] != updated_graphs[-1][-1]:
+                previous = updated_graphs[-1]
+                if (
+                    candidate[-1] != previous[-1]
+                    or HComplete._equivariant_count(
+                        [previous[3], candidate[3]], resolved_format
+                    )
+                    != 1
+                ):
                     return []
             updated_graphs.append(candidate)
         return updated_graphs
-
-    @staticmethod
-    def _iter_hydrogen_node_completions(
-        react_graph: nx.Graph,
-        prod_graph: nx.Graph,
-        ignore_aromaticity: bool,
-        balance_its: bool,
-        format: ITSFormat,
-        max_candidates: Optional[int] = None,
-    ) -> Iterator[Tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph, str]]:
-        for (
-            current_react_graph,
-            current_prod_graph,
-        ) in HComplete._iter_hydrogen_side_graph_completions(
-            react_graph,
-            prod_graph,
-            max_candidates=max_candidates,
-        ):
-            its = HComplete._construct_its(
-                current_react_graph,
-                current_prod_graph,
-                ignore_aromaticity,
-                balance_its,
-                format,
-            )
-            rc = HComplete._extract_rc(its, format)
-            sig = HComplete._rc_signature(rc, format)
-            yield ((current_react_graph, current_prod_graph, its, rc, sig))
-
-    @staticmethod
-    def _iter_hydrogen_side_graph_completions(
-        react_graph: nx.Graph,
-        prod_graph: nx.Graph,
-        max_candidates: Optional[int] = None,
-    ) -> Iterator[Tuple[nx.Graph, nx.Graph]]:
-        react_graph_copy = react_graph.copy()
-        prod_graph_copy = prod_graph.copy()
-        _, react_hydrogen_nodes = check_explicit_hydrogen(react_graph_copy)
-        _, prod_hydrogen_nodes = check_explicit_hydrogen(prod_graph_copy)
-        hydrogen_nodes_break, hydrogen_nodes_form = HComplete._hcount_change_atoms(
-            react_graph_copy, prod_graph_copy
-        )
-
-        n_break = len(hydrogen_nodes_break)
-        n_form = len(hydrogen_nodes_form)
-        n_hydrogen_needed = max(n_break, n_form)
-        if n_hydrogen_needed == 0:
-            return
-
-        hydrogen_nodes = HComplete._hydrogen_node_ids(
-            react_graph_copy,
-            prod_graph_copy,
-            sorted(set(react_hydrogen_nodes) | set(prod_hydrogen_nodes)),
-            n_hydrogen_needed,
-        )
-
-        for candidate_index, permutation in enumerate(
-            itertools.permutations(hydrogen_nodes, n_hydrogen_needed)
-        ):
-            if max_candidates is not None and candidate_index >= max_candidates:
-                break
-
-            current_react_graph, current_prod_graph = react_graph_copy, prod_graph_copy
-
-            current_react_graph = HComplete.add_hydrogen_nodes_multiple_utils(
-                current_react_graph,
-                zip(hydrogen_nodes_break, permutation[:n_break]),
-            )
-            current_prod_graph = HComplete.add_hydrogen_nodes_multiple_utils(
-                current_prod_graph,
-                zip(hydrogen_nodes_form, permutation[:n_form]),
-            )
-            yield current_react_graph, current_prod_graph
 
     @staticmethod
     def _hcount_change_atoms(
@@ -519,22 +698,6 @@ class HComplete:
                 hydrogen_nodes_form.extend([node_id] * -hcount_diff)
 
         return hydrogen_nodes_break, hydrogen_nodes_form
-
-    @staticmethod
-    def _hydrogen_node_ids(
-        react_graph: nx.Graph,
-        prod_graph: nx.Graph,
-        existing_hydrogen_nodes: List[int],
-        n_hydrogen_needed: int,
-    ) -> List[int]:
-        used_nodes = set(react_graph.nodes) | set(prod_graph.nodes)
-        hydrogen_nodes = [
-            node_id for node_id in existing_hydrogen_nodes if node_id in used_nodes
-        ]
-        n_new_needed = max(0, n_hydrogen_needed - len(hydrogen_nodes))
-        max_index = max(used_nodes, default=0)
-        hydrogen_nodes.extend(range(max_index + 1, max_index + 1 + n_new_needed))
-        return hydrogen_nodes
 
     @staticmethod
     def _resolve_format(its: nx.Graph, format: ITSFormatInput) -> ITSFormat:
@@ -599,212 +762,6 @@ class HComplete:
     @staticmethod
     def _valid_rc(rc: Optional[nx.Graph]) -> bool:
         return isinstance(rc, nx.Graph) and rc.number_of_nodes() > 0
-
-    @staticmethod
-    def _rc_signature(rc: nx.Graph, format: ITSFormat = "typesGH") -> str:
-        return HComplete._comparison_graph_signature(
-            HComplete._comparison_graph(rc, format)
-        )
-
-    @staticmethod
-    def _comparison_graph_signature(graph: nx.Graph) -> str:
-        return nx.weisfeiler_lehman_graph_hash(
-            graph,
-            node_attr="cmp_node",
-            edge_attr="cmp_order",
-            iterations=3,
-        )
-
-    @staticmethod
-    def _equivariant_count(rc_list: List[nx.Graph], format: ITSFormat) -> int:
-        if format == "typesGH":
-            _, equivariant = check_equivariant_graph(rc_list)
-            return equivariant
-
-        graphs = [HComplete._comparison_graph(rc, format) for rc in rc_list]
-        node_match = generic_node_match(
-            ["cmp_element", "cmp_charge"],
-            ["*", 0],
-            [eq, eq],
-        )
-        edge_match = generic_edge_match("cmp_order", 1, eq)
-        equivariant = 0
-        for graph in graphs[1:]:
-            if nx.is_isomorphic(
-                graphs[0],
-                graph,
-                node_match=node_match,
-                edge_match=edge_match,
-            ):
-                equivariant += 1
-        return equivariant
-
-    @staticmethod
-    def _comparison_graph(rc: nx.Graph, format: ITSFormat) -> nx.Graph:
-        graph = nx.Graph()
-
-        for node, attrs in rc.nodes(data=True):
-            cmp_element = HComplete._comparison_node_value(attrs.get("element"))
-            cmp_charge = HComplete._comparison_pair_value(attrs.get("charge", 0))
-            graph.add_node(
-                node,
-                cmp_element=cmp_element,
-                cmp_charge=cmp_charge,
-                cmp_node=f"{cmp_element}|{cmp_charge}",
-            )
-
-        for u, v, attrs in rc.edges(data=True):
-            graph.add_edge(
-                u,
-                v,
-                cmp_order=HComplete._comparison_pair_value(attrs.get("order", 1)),
-            )
-
-        return graph
-
-    @staticmethod
-    def _comparison_node_value(value):
-        if isinstance(value, (tuple, list)) and len(value) == 2:
-            if "H" in value:
-                return "H"
-            if value[0] == value[1]:
-                return value[0]
-            return tuple(value)
-        return value
-
-    @staticmethod
-    def _comparison_pair_value(value):
-        if isinstance(value, (tuple, list)) and len(value) == 2:
-            if value[0] == value[1]:
-                return value[0]
-            return tuple(value)
-        return value
-
-    @staticmethod
-    def _candidate_comparison_graph(
-        react_graph: nx.Graph,
-        prod_graph: nx.Graph,
-        format: ITSFormat,
-        ignore_aromaticity: bool = False,
-        static_tuple_nodes: Optional[set] = None,
-    ) -> nx.Graph:
-        """Build the RC comparison graph directly from candidate side graphs."""
-        if format == "tuple":
-            return HComplete._tuple_candidate_comparison_graph(
-                react_graph,
-                prod_graph,
-                ignore_aromaticity,
-                static_tuple_nodes=static_tuple_nodes,
-            )
-        return HComplete._typesgh_candidate_comparison_graph(
-            react_graph, prod_graph, ignore_aromaticity
-        )
-
-    @staticmethod
-    def _typesgh_candidate_comparison_graph(
-        react_graph: nx.Graph,
-        prod_graph: nx.Graph,
-        ignore_aromaticity: bool,
-    ) -> nx.Graph:
-        graph = nx.Graph()
-
-        for u, v in HComplete._candidate_edge_keys(react_graph, prod_graph):
-            react_order, prod_order = HComplete._candidate_edge_order_pair(
-                react_graph, prod_graph, u, v
-            )
-            standard_order = HComplete._candidate_standard_order(
-                react_order, prod_order, ignore_aromaticity
-            )
-            if standard_order == 0 and not HComplete._candidate_typesgh_hh_pair(
-                react_graph, u, v
-            ):
-                continue
-
-            HComplete._add_candidate_comparison_node(
-                graph, react_graph, prod_graph, u, "typesGH"
-            )
-            HComplete._add_candidate_comparison_node(
-                graph, react_graph, prod_graph, v, "typesGH"
-            )
-            HComplete._add_candidate_comparison_edge(
-                graph, u, v, react_order, prod_order
-            )
-
-        return graph
-
-    @staticmethod
-    def _tuple_candidate_comparison_graph(
-        react_graph: nx.Graph,
-        prod_graph: nx.Graph,
-        ignore_aromaticity: bool,
-        static_tuple_nodes: Optional[set] = None,
-    ) -> nx.Graph:
-        graph = nx.Graph()
-        rc_nodes = set(static_tuple_nodes or ())
-        edge_keys = HComplete._candidate_edge_keys(react_graph, prod_graph)
-
-        if static_tuple_nodes is None:
-            for node_id in set(react_graph.nodes) | set(prod_graph.nodes):
-                if HComplete._candidate_tuple_node_changed(
-                    react_graph, prod_graph, node_id
-                ):
-                    rc_nodes.add(node_id)
-
-        for u, v in edge_keys:
-            react_order, prod_order = HComplete._candidate_edge_order_pair(
-                react_graph, prod_graph, u, v
-            )
-            standard_order = HComplete._candidate_standard_order(
-                react_order, prod_order, ignore_aromaticity
-            )
-            if standard_order != 0:
-                rc_nodes.add(u)
-                rc_nodes.add(v)
-
-        for node_id in rc_nodes:
-            HComplete._add_candidate_comparison_node(
-                graph, react_graph, prod_graph, node_id, "tuple"
-            )
-
-        for u, v in edge_keys:
-            if u not in rc_nodes or v not in rc_nodes:
-                continue
-            react_order, prod_order = HComplete._candidate_edge_order_pair(
-                react_graph, prod_graph, u, v
-            )
-            HComplete._add_candidate_comparison_edge(
-                graph, u, v, react_order, prod_order
-            )
-
-        return graph
-
-    @staticmethod
-    def _tuple_static_node_changes(
-        react_graph: nx.Graph,
-        prod_graph: nx.Graph,
-    ) -> set:
-        """Return tuple RC node changes that are independent of H assignment."""
-        rc_nodes = set()
-        for node_id in set(react_graph.nodes) | set(prod_graph.nodes):
-            for attr in ("element", "charge", "radical", "valence_electrons"):
-                pair = (
-                    HComplete._candidate_node_attr(react_graph, node_id, attr),
-                    HComplete._candidate_node_attr(prod_graph, node_id, attr),
-                )
-                if RCExtractor._pair_diff(pair):
-                    rc_nodes.add(node_id)
-                    break
-            if node_id in rc_nodes:
-                continue
-
-            lp_pair = (
-                HComplete._candidate_lone_pair_attr(react_graph, node_id),
-                HComplete._candidate_lone_pair_attr(prod_graph, node_id),
-            )
-            if RCExtractor._pair_diff(lp_pair):
-                rc_nodes.add(node_id)
-
-        return rc_nodes
 
     @staticmethod
     def _candidate_edge_keys(
@@ -994,21 +951,12 @@ class HComplete:
                 aromatic=False,
                 element="H",
                 atom_map=atom_map_val,
-                # isomer="N",
-                # partial_charge=0,
-                # hybridization=0,
-                # in_ring=False,
-                # explicit_valence=0,
-                # implicit_hcount=0,
             )
             new_graph.add_edge(
                 node_id,
                 new_hydrogen_node_id,
                 order=1.0,
-                # ez_isomer="N",
                 bond_type="SINGLE",
-                # conjugated=False,
-                # in_ring=False,
             )
             new_graph.nodes[node_id]["hcount"] -= 1
         return new_graph

@@ -97,6 +97,10 @@ def mechanism_record_schema() -> dict[str, Any]:
                         "type": "array",
                         "items": {"$ref": "#/$defs/stereoEffect"},
                     },
+                    "stereo_motions": {
+                        "type": "array",
+                        "items": {"$ref": "#/$defs/electrocyclicStereoMotion"},
+                    },
                     "metadata": {"type": "object"},
                 },
                 "additionalProperties": False,
@@ -139,6 +143,60 @@ def mechanism_record_schema() -> dict[str, Any]:
                         "enum": ["specified", "unknown", "unspecified", "absent"]
                     },
                     "provenance": {"type": ["string", "null"]},
+                },
+                "additionalProperties": False,
+            },
+            "electrocyclicStereoMotion": {
+                "type": "object",
+                "required": [
+                    "kind",
+                    "mode",
+                    "direction",
+                    "termini",
+                    "substituents",
+                    "terminal_motion",
+                    "pi_electrons",
+                    "activation",
+                    "provenance",
+                ],
+                "properties": {
+                    "kind": {"const": "ELECTROCYCLIC"},
+                    "mode": {"enum": ["CONROTATORY", "DISROTATORY"]},
+                    "direction": {"enum": ["RING_CLOSURE", "RING_OPENING"]},
+                    "termini": {
+                        "type": "array",
+                        "items": {"type": "integer", "minimum": 1},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "uniqueItems": True,
+                    },
+                    "substituents": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {"type": "integer", "minimum": 1},
+                                {
+                                    "type": "string",
+                                    "pattern": "^@(H|LP):-?[0-9]+$",
+                                },
+                            ]
+                        },
+                        "minItems": 2,
+                        "maxItems": 2,
+                    },
+                    "terminal_motion": {
+                        "type": "array",
+                        "items": {"enum": [-1, 1]},
+                        "minItems": 2,
+                        "maxItems": 2,
+                    },
+                    "pi_electrons": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "multipleOf": 2,
+                    },
+                    "activation": {"enum": ["THERMAL", "PHOTOCHEMICAL", None]},
+                    "provenance": {"type": "string"},
                 },
                 "additionalProperties": False,
             },

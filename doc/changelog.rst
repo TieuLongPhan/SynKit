@@ -1,8 +1,24 @@
 Changelog
 =========
 
+Version 1.6.1
+-------------
+
+- Fixed relative lone-pair updates in tuple rules and added replay regressions.
+- Reduced duplicate work in hydrogen extension, matching, and graph rewriting.
+- Added retained stereo, MechanismBench, and FLOWER benchmark metadata.
+- Made validation and replay diagnostics portable across supported platforms.
+
 Version 1.6.0
 -------------
+
+**Synthesis**
+
+- Added an opt-in ``serialization_errors="skip"`` policy to
+  ``SynReactor`` raw ITS mode. Valid serializations retain their application
+  order, while one structured warning and a cached diagnostic expose every
+  omitted raw-application index. The compatibility default remains
+  ``"raise"``.
 
 **Lewis-labelled graphs**
 
@@ -10,6 +26,10 @@ Version 1.6.0
   sigma-bond, and pi-bond resources and derived charge and bond-order fields.
 - Added resource-aware matching and rewriting with explicit availability and
   policy-validity checks.
+- Standardized tuple-rule lone-pair changes as relative resource edits.
+  For example, an extracted ``S(lp2) -> S(lp1)`` endpoint change is stored as
+  ``S(lp1) -> S(lp0)`` (consume one), so matching a host with one, two, or
+  three lone pairs produces a host with zero, one, or two, respectively.
 
 **Arrow-pushing grammar**
 

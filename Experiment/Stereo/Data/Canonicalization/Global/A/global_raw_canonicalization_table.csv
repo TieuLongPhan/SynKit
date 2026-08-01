@@ -1,0 +1,11 @@
+budget,enumeration_mode,source,record_id,carrier_composition,stereo_carriers,configuration_dependent_supports,full_raw_representation_product,joint_formal_assignments_expected,enumerated_assignments_expected,enumerated_assignments_completed,formal_assignment_tuples_covered,formal_assignment_tuples_invariant,observed_global_canonical_classes,formal_assignments_per_global_class,raw_assignments_per_global_class,representation_invariance_passed,timeouts,passed,seconds,issues
+A,raw,cip,VS141,cumulene_axis:1;planar_bond:1,2,0,64,4,64,64,4,4,4,1;1;1;1,16;16;16;16,true,0,true,0.3213078869994206,
+A,raw,cip,VS154,extended_cis_trans:1;planar_bond:1,2,0,64,4,64,64,4,4,4,1;1;1;1,16;16;16;16,true,0,true,0.3129661769999075,
+A,raw,rota,RotA-0071,atrop_bond:1;planar_bond:1,2,0,64,4,64,64,4,4,2,2;2,32;32,true,0,true,0.6399963769999886,
+A,raw,rota,RotA-0073,atrop_bond:1;planar_bond:1,2,0,64,4,64,64,4,4,4,1;1;1;1,16;16;16;16,true,0,true,0.4442562080002972,
+A,raw,acs,VS032,planar_bond:1;tetrahedral:1,2,0,192,4,192,192,4,4,4,1;1;1;1,48;48;48;48,true,0,true,1.26585353199971,
+A,raw,cip,VS072,atrop_bond:1;tetrahedral:1,2,0,192,4,192,192,4,4,4,1;1;1;1,48;48;48;48,true,0,true,2.846408180000253,
+A,raw,cip,VS078,cumulene_axis:1;tetrahedral:1,2,0,192,4,192,192,4,4,4,1;1;1;1,48;48;48;48,true,0,true,4.870779818000301,
+A,raw,cip,VS164,extended_cis_trans:1;tetrahedral:1,2,0,192,4,192,192,4,4,4,1;1;1;1,48;48;48;48,true,0,true,5.13288729299984,
+A,raw,rota,RotA-0072,atrop_bond:1;planar_bond:2,3,0,512,8,512,512,8,8,4,2;2;2;2,128;128;128;128,true,0,true,5.923996696999893,
+A,raw,rota,RotA-0468,atrop_bond:2;planar_bond:1,3,0,512,8,512,512,8,8,4,2;2;2;2,128;128;128;128,true,0,true,20.465954968000005,

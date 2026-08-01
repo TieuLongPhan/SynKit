@@ -1,0 +1,11 @@
+source,record_id,carrier_id,family,carrier_status,raw_local_permutations_expected,raw_local_permutations_checked,canonicalizations_completed,theoretical_configuration_classes,theoretical_class_multiplicities,canonical_classes_observed,representation_invariance_passed,formal_class_separation_passed,global_symmetry_quotient,passed,seconds,issues
+internal,tetrahedral,tetrahedral:local:0,tetrahedral,fixture,24,24,24,2,12;12,2,true,true,false,true,0.07800140200015448,
+internal,square_planar,square_planar:local:0,square_planar,fixture,24,24,24,3,8;8;8,3,true,true,false,true,0.05722459200023877,
+internal,trigonal_bipyramidal,trigonal_bipyramidal:local:0,trigonal_bipyramidal,fixture,120,120,120,20,6;6;6;6;6;6;6;6;6;6;6;6;6;6;6;6;6;6;6;6,20,true,true,false,true,0.28514888399968186,
+internal,octahedral,octahedral:local:0,octahedral,fixture,720,720,720,30,24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24;24,30,true,true,false,true,7.294935021999663,
+internal,planar_bond,planar_bond:local:0,planar_bond,fixture,8,8,8,2,4;4,2,true,true,false,true,0.015499088000069605,
+internal,atrop_bond,atrop_bond:local:0,atrop_bond,fixture,8,8,8,2,4;4,2,true,true,false,true,0.015611066999554168,
+internal,cumulene_axis,cumulene_axis:local:0,cumulene_axis,fixture,8,8,8,2,4;4,2,true,true,false,true,0.01759676599976956,
+internal,extended_cis_trans,extended_cis_trans:local:0,extended_cis_trans,fixture,8,8,8,2,4;4,2,true,true,false,true,0.01849438099998224,
+internal,helical,helical:local:0,helical,fixture,4,4,4,2,2;2,2,true,true,false,true,0.003313604000140913,
+internal,planar_chirality,planar_chirality:local:0,planar_chirality,fixture,16,16,16,2,8;8,2,true,true,false,true,0.020737949999784178,

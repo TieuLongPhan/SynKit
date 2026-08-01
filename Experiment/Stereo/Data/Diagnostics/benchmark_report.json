@@ -1,0 +1,5580 @@
+{
+  "datasets": {
+    "acs_stereomolgraph_molecular_chirality": {
+      "normal": {
+        "manual_labels": {
+          "Achiral": 94,
+          "Chiral": 164
+        },
+        "protocol": "supplied_stereo_binary",
+        "published_chython": {
+          "accuracy": 0.813953488372093,
+          "correct": 210,
+          "disagreement_ids": [
+            "VS014",
+            "VS015",
+            "VS019",
+            "VS031",
+            "VS038",
+            "VS039",
+            "VS045",
+            "VS054",
+            "VS059",
+            "VS068",
+            "VS071",
+            "VS074",
+            "VS093",
+            "VS095",
+            "VS104",
+            "VS122",
+            "VS130",
+            "VS138",
+            "VS140",
+            "VS147",
+            "VS165",
+            "VS170",
+            "VS196",
+            "VS197",
+            "VS207",
+            "VS212",
+            "VS215",
+            "VS216",
+            "VS224",
+            "VS252",
+            "VS253",
+            "VS255",
+            "VS256",
+            "VS280",
+            "VS281",
+            "VS282",
+            "VS283",
+            "VS284",
+            "VS285",
+            "VS288",
+            "VS289",
+            "VS290",
+            "VS291",
+            "VS292",
+            "VS294",
+            "VS295",
+            "VS297",
+            "VS300"
+          ],
+          "predictions": {
+            "Achiral": 114,
+            "Chiral": 144
+          }
+        },
+        "published_inchi": {
+          "accuracy": 0.9224806201550387,
+          "correct": 238,
+          "disagreement_ids": [
+            "VS279",
+            "VS280",
+            "VS281",
+            "VS282",
+            "VS283",
+            "VS284",
+            "VS285",
+            "VS286",
+            "VS288",
+            "VS289",
+            "VS290",
+            "VS291",
+            "VS292",
+            "VS293",
+            "VS294",
+            "VS295",
+            "VS296",
+            "VS297",
+            "VS298",
+            "VS300"
+          ],
+          "predictions": {
+            "Achiral": 114,
+            "Chiral": 144
+          }
+        },
+        "published_rdkit_smiles": {
+          "accuracy": 0.9108527131782945,
+          "correct": 235,
+          "disagreement_ids": [
+            "VS170",
+            "VS215",
+            "VS216",
+            "VS279",
+            "VS280",
+            "VS281",
+            "VS282",
+            "VS283",
+            "VS284",
+            "VS285",
+            "VS286",
+            "VS288",
+            "VS289",
+            "VS290",
+            "VS291",
+            "VS292",
+            "VS293",
+            "VS294",
+            "VS295",
+            "VS296",
+            "VS297",
+            "VS298",
+            "VS300"
+          ],
+          "predictions": {
+            "Achiral": 111,
+            "Chiral": 147
+          }
+        },
+        "published_stereomolgraph": {
+          "accuracy": 1.0,
+          "correct": 258,
+          "disagreement_ids": [],
+          "predictions": {
+            "Achiral": 94,
+            "Chiral": 164
+          }
+        },
+        "synkit": {
+          "accuracy": 1.0,
+          "correct": 258,
+          "disagreement_ids": [],
+          "predictions": {
+            "Achiral": 94,
+            "Chiral": 164
+          },
+          "seconds": 1.1160336259999895
+        }
+      },
+      "records": 258,
+      "stereo_removed": {
+        "configuration_dependent_ids": [
+          "VS016",
+          "VS017",
+          "VS050",
+          "VS065",
+          "VS069",
+          "VS080",
+          "VS087",
+          "VS088",
+          "VS103",
+          "VS108",
+          "VS126",
+          "VS127",
+          "VS131",
+          "VS191",
+          "VS192",
+          "VS193",
+          "VS194",
+          "VS195",
+          "VS196",
+          "VS197",
+          "VS198",
+          "VS199",
+          "VS200",
+          "VS201",
+          "VS202",
+          "VS203",
+          "VS204",
+          "VS209",
+          "VS210",
+          "VS227",
+          "VS228",
+          "VS230",
+          "VS233",
+          "VS234",
+          "VS236",
+          "VS237",
+          "VS238",
+          "VS239",
+          "VS240",
+          "VS241",
+          "VS242",
+          "VS245",
+          "VS249",
+          "VS250",
+          "VS251",
+          "VS253",
+          "VS254",
+          "VS255",
+          "VS261",
+          "VS262",
+          "VS263",
+          "VS264",
+          "VS267",
+          "VS268",
+          "VS269",
+          "VS270",
+          "VS271",
+          "VS272",
+          "VS273",
+          "VS274",
+          "VS275",
+          "VS276",
+          "VS277",
+          "VS278",
+          "VS279",
+          "VS294",
+          "VS295"
+        ],
+        "definitive_rows": 258,
+        "incomplete_cases": [],
+        "interpretation": "Coverage asks whether the erased manual label remains among the enumerated possibilities; it is not recovery accuracy.",
+        "manual_label_in_observed_population": 258,
+        "max_isomers": 256,
+        "protocol": "stereo_stripped_four_state",
+        "row_outcomes": {
+          "configuration_dependent": 67,
+          "necessarily_achiral": 66,
+          "necessarily_chiral": 125
+        },
+        "seconds": 7.975050295000074,
+        "unique_constitutions": 214
+      },
+      "task": "whole_molecule_chiral_achiral"
+    },
+    "chiralfinder_rota": {
+      "axis_count_distribution": {
+        "1": 610,
+        "2": 32,
+        "3": 8
+      },
+      "chiral_type_counts": {
+        "Allene-like structure": 15,
+        "Biaryl structure": 325,
+        "Chiral atom pair": 59,
+        "Heterobiaryl (C-B)": 88,
+        "Heterobiaryl (C-C)": 3,
+        "Heterobiaryl (C-N)": 51,
+        "Nonbiaryl": 87,
+        "Spiral atom and chain": 22
+      },
+      "normal": {
+        "case_timeout_seconds": 10.0,
+        "errors": [],
+        "evaluated_records": 650,
+        "executed": true,
+        "input_stereo_status": {
+          "specified": 211,
+          "underspecified": 439
+        },
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "predictions": {
+          "Achiral": 542,
+          "Chiral": 108
+        },
+        "protocol": "supplied_stereo_binary",
+        "reference_accuracy": null,
+        "seconds": 7.146639351999511
+      },
+      "rdkit_parse_failures": [],
+      "records": 650,
+      "reference_accuracy_applicable": false,
+      "rows_changed_by_stereo_removal": 175,
+      "rows_with_rdkit_specified_stereo": 175,
+      "stereo_removed": {
+        "case_timeout_seconds": 10.0,
+        "errors": [],
+        "evaluated_records": 650,
+        "executed": true,
+        "incomplete_cases": [
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0003"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0004"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0005"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0006"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0007"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0008"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0009"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0010"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0011"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0012"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0013"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0014"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0015"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0016"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:8-9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0017"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0018"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:4-5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0019"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0020"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0021"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0022"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0023"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0024"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:4-6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0025"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0026"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0027"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:6-7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0028"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0029"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0030"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0031"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0032"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0033"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0034"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0035"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0036"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0037"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0038"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0039"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0040"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0041"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0042"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0043"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0044"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0045"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0046"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0047"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0048"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0049"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0050"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0051"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0052"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0053"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0054"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0055"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0056"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:24-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0057"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0058"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:32-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0059"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0060"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:38-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0061"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:35-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0062"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:32-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0063"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:26-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0064"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-22"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0065"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0066"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:12-13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0067"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0068"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-22"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0069"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0070"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0071"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0072"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0073"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0074"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0075"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0076"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0077"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13",
+              "atrop_axis:26-5",
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0078"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:21-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0079"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:21-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0080"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:24-5",
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0081"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13",
+              "atrop_axis:26-5",
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0082"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-9",
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0083"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:19-11",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0084"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0085"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11",
+              "atrop_axis:21-15",
+              "atrop_axis:9-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0086"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0087"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:19-20"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0088"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0089"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0090"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:32-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0091"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-23"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0092"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0093"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0094"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0095"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0096"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0097"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:12-13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0098"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0099"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0100"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0101"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0102"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0103"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0104"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0105"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0106"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0107"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0108"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0109"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0110"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0111"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0112"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-23"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0114"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0115"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0116"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0117"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17",
+              "atrop_axis:2-3",
+              "atrop_axis:20-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0118"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0119"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-19"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0120"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0121"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0122"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0123"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0124"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0127"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0128"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0130"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-0-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0131"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-18",
+              "atrop_axis:25-26"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0136"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0137"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0138"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0139"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0140"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0141"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0142"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0143"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0144"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0145"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0146"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0147"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0148"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0151"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0153"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0154"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:26-27"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0156"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:38-39"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0157"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0159"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0160"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0161"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-23"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0162"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0163"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-25"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0164"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0165"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0166"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-27"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0167"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-27"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0168"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0196"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-46",
+              "atrop_axis:37-40"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0204"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:2-11",
+              "atrop_axis:24-33"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0208"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0209"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-6",
+              "atrop_axis:7-8",
+              "atrop_axis:9-39"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0210"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0211"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0212"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:34-27"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0213"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-14",
+              "atrop_axis:29-30",
+              "atrop_axis:3-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0214"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-32",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0215"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-34",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0216"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-18",
+              "atrop_axis:33-34",
+              "atrop_axis:7-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0217"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-16",
+              "atrop_axis:31-32",
+              "atrop_axis:5-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0218"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-35",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0219"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-15",
+              "atrop_axis:30-31",
+              "atrop_axis:5-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0220"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-33",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0221"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-18",
+              "atrop_axis:33-34",
+              "atrop_axis:8-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0222"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-33",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0223"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-39",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0224"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-20",
+              "atrop_axis:3-6",
+              "atrop_axis:35-36",
+              "atrop_axis:39-42",
+              "atrop_axis:9-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0225"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-12",
+              "atrop_axis:27-20",
+              "atrop_axis:3-6",
+              "atrop_axis:35-36",
+              "atrop_axis:38-48",
+              "atrop_axis:40-42",
+              "atrop_axis:8-55"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0226"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-20",
+              "atrop_axis:35-36",
+              "atrop_axis:6-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0227"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-16",
+              "atrop_axis:31-32",
+              "atrop_axis:4-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0228"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-18",
+              "atrop_axis:33-34",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0229"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-18",
+              "atrop_axis:33-34",
+              "atrop_axis:5-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0230"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-16",
+              "atrop_axis:31-24",
+              "atrop_axis:39-40",
+              "atrop_axis:43-46",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0231"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-16",
+              "atrop_axis:31-24",
+              "atrop_axis:39-40",
+              "atrop_axis:43-46",
+              "atrop_axis:5-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0232"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:33-26",
+              "atrop_axis:41-42",
+              "atrop_axis:9-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0233"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-36",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0234"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:29-22",
+              "atrop_axis:37-38"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0235"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-22",
+              "atrop_axis:37-38",
+              "atrop_axis:7-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0236"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-20",
+              "atrop_axis:3-6",
+              "atrop_axis:35-28",
+              "atrop_axis:43-44",
+              "atrop_axis:51-58"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0237"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-41",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0238"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:24-17",
+              "atrop_axis:32-33",
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0239"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0240"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-31",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0241"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-34",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0242"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-18",
+              "atrop_axis:26-33",
+              "atrop_axis:5-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0243"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:28-35",
+              "atrop_axis:7-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0244"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-32",
+              "atrop_axis:5-7",
+              "atrop_axis:9-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0245"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-18",
+              "atrop_axis:26-33",
+              "atrop_axis:4-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0246"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-35",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0247"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-39",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0248"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-26",
+              "atrop_axis:34-41",
+              "atrop_axis:6-16"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0249"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-28",
+              "atrop_axis:36-43",
+              "atrop_axis:9-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0250"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-43",
+              "atrop_axis:20-24",
+              "atrop_axis:26-36",
+              "atrop_axis:28-30",
+              "atrop_axis:4-5",
+              "atrop_axis:45-55",
+              "atrop_axis:47-49"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0251"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-37",
+              "atrop_axis:20-24",
+              "atrop_axis:27-30",
+              "atrop_axis:4-5",
+              "atrop_axis:40-43"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0252"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-35",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0253"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-35",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0254"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-39",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0255"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0257"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0258"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-36"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0259"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-36"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0260"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:2-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0261"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:32-41"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0262"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:45-46"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0263"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-42",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0264"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-46",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0265"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-42",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0266"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-41",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0267"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-42",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0268"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-42",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0269"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-15",
+              "atrop_axis:30-31",
+              "atrop_axis:5-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0270"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-39",
+              "atrop_axis:5-7",
+              "atrop_axis:9-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0271"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-43",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0272"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-18",
+              "atrop_axis:33-34",
+              "atrop_axis:7-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0273"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-12",
+              "atrop_axis:27-20",
+              "atrop_axis:3-6",
+              "atrop_axis:35-36",
+              "atrop_axis:38-48",
+              "atrop_axis:40-42",
+              "atrop_axis:8-62"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0274"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-44",
+              "atrop_axis:20-24",
+              "atrop_axis:27-30",
+              "atrop_axis:4-5",
+              "atrop_axis:47-50"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0275"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-18",
+              "atrop_axis:26-40",
+              "atrop_axis:5-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0276"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-18",
+              "atrop_axis:33-34",
+              "atrop_axis:5-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0277"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-41",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0278"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-20",
+              "atrop_axis:3-6",
+              "atrop_axis:35-36",
+              "atrop_axis:39-42",
+              "atrop_axis:9-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0279"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-16",
+              "atrop_axis:31-32",
+              "atrop_axis:5-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0280"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0282"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-18",
+              "atrop_axis:33-34",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0283"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-46",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0284"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-14",
+              "atrop_axis:29-30",
+              "atrop_axis:3-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0285"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-22",
+              "atrop_axis:37-38",
+              "atrop_axis:7-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0286"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-46",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0287"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-38",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0288"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-20",
+              "atrop_axis:35-36",
+              "atrop_axis:6-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0289"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-46",
+              "atrop_axis:20-24",
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0290"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0291"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-12",
+              "atrop_axis:38-47"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0292"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0293"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:57-80",
+              "atrop_axis:65-66",
+              "atrop_axis:7-105",
+              "atrop_axis:83-91",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0294"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0295"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0296"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0297"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0298"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0299"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0300"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0301"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0304"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-36",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0305"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:33-36",
+              "atrop_axis:4-25",
+              "atrop_axis:6-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0306"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-28",
+              "atrop_axis:4-17",
+              "atrop_axis:6-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0307"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-19",
+              "atrop_axis:21-29",
+              "atrop_axis:5-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0308"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:33-36",
+              "atrop_axis:4-25",
+              "atrop_axis:6-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0309"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0310"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-25",
+              "atrop_axis:27-35",
+              "atrop_axis:7-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0311"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:20-28",
+              "atrop_axis:3-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0312"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-28",
+              "atrop_axis:5-7",
+              "atrop_axis:9-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0313"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:33-36",
+              "atrop_axis:4-25",
+              "atrop_axis:6-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0314"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-21",
+              "atrop_axis:23-31",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0315"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16",
+              "atrop_axis:25-26",
+              "atrop_axis:3-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0316"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0317"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0318"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-21",
+              "atrop_axis:23-31",
+              "atrop_axis:5-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0319"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-23",
+              "atrop_axis:25-33",
+              "atrop_axis:3-6",
+              "atrop_axis:36-39",
+              "atrop_axis:9-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0320"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:24-27",
+              "atrop_axis:6-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0322"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0323"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0324"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-32",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0325"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-32",
+              "atrop_axis:4-21",
+              "atrop_axis:6-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0326"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-18",
+              "atrop_axis:26-29",
+              "atrop_axis:5-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0327"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-31",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0328"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:31-34",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0329"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0330"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-23"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0331"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0332"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-36",
+              "atrop_axis:3-6",
+              "atrop_axis:7-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0333"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-32",
+              "atrop_axis:4-21",
+              "atrop_axis:6-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0334"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-32",
+              "atrop_axis:4-21",
+              "atrop_axis:6-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0335"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0336"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0337"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0338"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0339"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-18",
+              "atrop_axis:20-28",
+              "atrop_axis:5-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0340"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-23",
+              "atrop_axis:25-33",
+              "atrop_axis:6-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0341"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-21",
+              "atrop_axis:23-31",
+              "atrop_axis:7-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0342"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:22-25",
+              "atrop_axis:27-35"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0343"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0344"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0345"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-30"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0346"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0347"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-20",
+              "atrop_axis:7-33",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0356"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0363"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0382"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0392"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0393"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0394"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0395"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0396"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0397"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0398"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0399"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:9-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0400"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:8-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0401"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-35",
+              "atrop_axis:2-11",
+              "atrop_axis:25-26",
+              "atrop_axis:38-46"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0402"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-40",
+              "atrop_axis:2-11",
+              "atrop_axis:25-26",
+              "atrop_axis:43-51"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0403"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16",
+              "atrop_axis:33-41",
+              "atrop_axis:7-30"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0404"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-44",
+              "atrop_axis:2-11",
+              "atrop_axis:25-26",
+              "atrop_axis:28-38",
+              "atrop_axis:30-32",
+              "atrop_axis:47-55",
+              "atrop_axis:57-67",
+              "atrop_axis:59-61"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0405"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:24-33",
+              "atrop_axis:46-18",
+              "atrop_axis:54-55",
+              "atrop_axis:8-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0406"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16",
+              "atrop_axis:33-41",
+              "atrop_axis:7-30"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0407"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16",
+              "atrop_axis:28-36",
+              "atrop_axis:7-25"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0408"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16",
+              "atrop_axis:18-28",
+              "atrop_axis:20-22",
+              "atrop_axis:37-45",
+              "atrop_axis:47-57",
+              "atrop_axis:49-51",
+              "atrop_axis:7-34"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0409"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-23"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0410"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:26-27"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0411"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0413"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-21"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0414"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:22-23"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0415"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0416"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-26"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0417"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0418"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0419"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0420"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0421"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0422"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0423"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0424"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-19"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0425"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0426"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0427"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-22"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0429"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-22"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0430"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0431"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:32-33"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0432"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0433"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-22"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0434"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:27-28"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0435"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0436"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:25-26"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0437"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:38-39"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0438"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:40-41"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0439"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:24-25"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0440"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0441"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0442"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:16-17"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0444"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0445"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-22"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0446"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0447"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0448"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0449"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:23-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0450"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "Atom_TrigonalBipyramidal:1",
+              "Atom_TrigonalBipyramidal:34",
+              "atrop_axis:23-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0451"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0452"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0453"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0454"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0455"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0456"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0457"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0458"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0459"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0460"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0461"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0462"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0463"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0464"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:12-13",
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0465"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0466"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0467"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0468"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0469"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0470"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0471"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0472"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0473"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:27-28",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0484"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0485"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0486"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0487"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0488"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0489"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:7-8"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0490"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0491"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0492"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0493"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0494"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0495"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0496"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0497"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0498"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4",
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0500"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:17-18"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0507"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-30"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0508"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-30"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0509"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-30"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0510"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:29-30"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0511"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:30-31"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0517"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0531"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:35-36"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0532"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0533"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16",
+              "atrop_axis:20-21",
+              "atrop_axis:38-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0534"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0535"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0536"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15",
+              "atrop_axis:19-20",
+              "atrop_axis:37-38"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0537"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0538"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15",
+              "atrop_axis:19-20",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0539"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:18-19",
+              "atrop_axis:23-24",
+              "atrop_axis:6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0540"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15",
+              "atrop_axis:19-20",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0541"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:14-15",
+              "atrop_axis:19-20",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0542"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:23-24",
+              "atrop_axis:28-29"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0543"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11",
+              "atrop_axis:15-16",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0544"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-21",
+              "atrop_axis:3-4",
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0545"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:21-22",
+              "atrop_axis:4-5",
+              "atrop_axis:9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0546"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:37-38"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0547"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11",
+              "atrop_axis:25-26",
+              "atrop_axis:5-6"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0548"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0549"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0550"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0551"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11",
+              "atrop_axis:15-16",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0552"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:10-11",
+              "atrop_axis:36-37"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0553"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:34-35"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0554"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:35-36"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0555"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:30-31"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0556"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:15-16",
+              "atrop_axis:20-21",
+              "atrop_axis:39-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0557"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-21",
+              "atrop_axis:3-4",
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0558"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:20-21",
+              "atrop_axis:3-4",
+              "atrop_axis:8-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0559"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:23-24",
+              "atrop_axis:28-29"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0560"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:11-12",
+              "atrop_axis:23-24"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0561"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:13-14",
+              "atrop_axis:18-19",
+              "atrop_axis:39-40"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "RotA-0626"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:36-37"
+            ]
+          }
+        ],
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "max_isomers": 256,
+        "protocol": "stereo_stripped_four_state",
+        "reference_accuracy": null,
+        "row_outcomes": {
+          "configuration_dependent": 36,
+          "necessarily_achiral": 144,
+          "necessarily_chiral": 44,
+          "unsupported_or_incomplete": 426
+        },
+        "seconds": 6.150427047999983,
+        "unique_constitutions": 650
+      },
+      "task": "axial_stereo_locus_detection",
+      "task_boundary": "RotA labels axial atom-pair/chain loci in a positive-only corpus; its labels are not global chiral/achiral truth."
+    },
+    "cip_validation_suite": {
+      "benchmark_run": true,
+      "normal": {
+        "case_timeout_seconds": 10.0,
+        "errors": [],
+        "evaluated_records": 300,
+        "executed": true,
+        "input_stereo_status": {
+          "specified": 250,
+          "underspecified": 50
+        },
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "predictions": {
+          "Achiral": 119,
+          "Chiral": 181
+        },
+        "protocol": "supplied_stereo_binary",
+        "reference_accuracy": null,
+        "seconds": 1.234211989999494
+      },
+      "rdkit_parse_failures": [],
+      "records": 300,
+      "reference_accuracy_applicable": false,
+      "source_integrity": {
+        "sha256": "df178635c00b6c41fad820d2609fc4ff18403c63dec4e5c3e1756a6db5858059"
+      },
+      "stereo_removed": {
+        "case_timeout_seconds": 10.0,
+        "errors": [],
+        "evaluated_records": 300,
+        "executed": true,
+        "incomplete_cases": [
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS023"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS055"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:2-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS057"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-11"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS072"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS073"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS078"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:41-42-43"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS079"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS086"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:3-4"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS120"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:43-44-45"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS141"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:3-4-5-6-7"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS144"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS158"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "atrop_axis:2-9"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS166"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-2-3-4-5"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS231"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS232"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-2-3",
+              "cumulene_axis:6-9-10"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS243"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-2-3"
+            ]
+          },
+          {
+            "evaluated_isomer_count": 0,
+            "ids": [
+              "VS287"
+            ],
+            "observed_classifications": [],
+            "theoretical_isomer_upper_bound": 0,
+            "unsupported_stereo_loci": [
+              "cumulene_axis:1-0-8"
+            ]
+          }
+        ],
+        "interpretation": "Diagnostic distribution only: this dataset's reference annotations are not whole-molecule chiral/achiral labels, so accuracy is undefined.",
+        "max_isomers": 256,
+        "protocol": "stereo_stripped_four_state",
+        "reference_accuracy": null,
+        "row_outcomes": {
+          "configuration_dependent": 68,
+          "necessarily_achiral": 76,
+          "necessarily_chiral": 139,
+          "unsupported_or_incomplete": 17
+        },
+        "seconds": 8.21656924799936,
+        "unique_constitutions": 254
+      },
+      "stereo_unit_counts": {
+        "AT": 7,
+        "CT": 65,
+        "CT4": 5,
+        "HE": 2,
+        "TH": 249,
+        "TH3": 8,
+        "TH5": 2
+      },
+      "task": "local_cip_descriptor_assignment",
+      "task_boundary": "CIP annotations are local R/S/r/s/M/P/m/p/E/Z assignments, not whole-molecule chiral/achiral truth.",
+      "vendored": false
+    }
+  },
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2026.03.4"
+  },
+  "schema": "synkit.stereo-dataset-benchmark/1"
+}

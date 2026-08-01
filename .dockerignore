@@ -1,0 +1,8 @@
+# The image is built from the wheel. Keep large benchmark and documentation
+# corpora out of the Docker build context.
+*
+!pyproject.toml
+!README.md
+!LICENSE
+!synkit/
+!synkit/**

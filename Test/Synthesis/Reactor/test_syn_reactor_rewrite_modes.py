@@ -5,12 +5,120 @@ from rdkit import Chem
 
 from synkit.IO.chem_converter import detect_its_format, rsmi_to_its
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor.strategy import Strategy
 
 ETHANE_DEHYDROGENATION = "[CH2:1]([H:3])[CH2:2]([H:4])>>" "[CH2:1]=[CH2:2].[H:3][H:4]"
 METHANOL_DEHYDROGENATION = "[O:1]([H:3])[CH2:2]([H:4])>>" "[O+:1]=[CH2:2].[H:3][H:4]"
 
 
 class TestSynReactorRewriteModes(unittest.TestCase):
+    def test_rewrite_mapping_quotient_uses_exact_coloured_components(self):
+        host = nx.Graph()
+        for offset in (10, 20):
+            host.add_nodes_from(
+                (offset + index, {"element": element, "charge": 0})
+                for index, element in enumerate(("C", "C", "C", "O"))
+            )
+            host.add_edges_from(
+                (offset + index, offset + index + 1, {"order": 1.0})
+                for index in range(3)
+            )
+
+        reaction_center = nx.Graph()
+        reaction_center.add_node(
+            1,
+            element=("C", "C"),
+            hcount=(1, 0),
+            charge=(0, 0),
+        )
+        reaction_center.add_node(
+            2,
+            element=("O", "O"),
+            hcount=(0, 0),
+            charge=(0, 0),
+        )
+        mappings = [
+            {1: 10, 2: 13},
+            {1: 20, 2: 23},
+            {1: 11, 2: 13},
+            {1: 21, 2: 23},
+        ]
+
+        unique = SynReactor._deduplicate_rewrite_equivalent_mappings(
+            mappings,
+            host,
+            reaction_center,
+        )
+
+        self.assertEqual(unique, [mappings[0], mappings[2]])
+
+        host.graph["stereo_descriptors"] = {"atom:10": object()}
+        stereo_preserving = SynReactor._deduplicate_rewrite_equivalent_mappings(
+            mappings,
+            host,
+            reaction_center,
+        )
+        self.assertEqual(stereo_preserving, mappings)
+
+    def test_explicit_h_remapping_extends_the_selected_heavy_embedding(self):
+        host = nx.Graph()
+        host.add_node(10, element="C", charge=0, hcount=2)
+        host.add_node(20, element="C", charge=0, hcount=2)
+
+        pattern = nx.Graph()
+        pattern.add_node(1, element="C", charge=0)
+        pattern.add_node(2, element="H", charge=0)
+        pattern.add_edge(1, 2, order=1.0)
+        pattern.add_node(3, element="C", charge=0)
+        pattern.add_node(4, element="H", charge=0)
+        pattern.add_edge(3, 4, order=1.0)
+
+        mappings, expanded_host = SynReactor._get_explicit_map(
+            host,
+            {1: 10, 3: 20},
+            pattern,
+            Strategy.ALL,
+        )
+
+        self.assertEqual(len(mappings), 4)
+        self.assertTrue(
+            all(mapping[1] == 10 and mapping[3] == 20 for mapping in mappings)
+        )
+        self.assertFalse(
+            any(
+                "_synkit_explicit_h_embedding_anchor" in attrs
+                for _, attrs in expanded_host.nodes(data=True)
+            )
+        )
+
+    def test_rewrite_quotient_projects_anchored_explicit_h_roles(self):
+        host = nx.Graph()
+        host.add_node(10, element="C", charge=0, hcount=1)
+        host.add_node(20, element="C", charge=0, hcount=1)
+        reaction_center = nx.Graph()
+        reaction_center.add_node(
+            1,
+            element=("C", "C"),
+            hcount=(1, 0),
+            charge=(0, 0),
+        )
+        reaction_center.add_node(
+            2,
+            element=("H", "H"),
+            present=(True, False),
+            charge=(0, 0),
+        )
+        reaction_center.add_edge(1, 2, order=(1.0, 0.0))
+        mappings = [{1: 10}, {1: 20}]
+
+        unique = SynReactor._deduplicate_rewrite_equivalent_mappings(
+            mappings,
+            host,
+            reaction_center,
+        )
+
+        self.assertEqual(unique, [mappings[0]])
+
     def test_public_templates_conserve_mapped_atoms(self):
         parser = Chem.SmilesParserParams()
         parser.removeHs = False

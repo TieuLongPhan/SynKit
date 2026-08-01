@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import dataclass
+import hashlib
+import json
+from typing import Any, Mapping
 from typing import Iterable
 
 import networkx as nx
@@ -14,6 +18,70 @@ from synkit.Graph.Stereo import (
 )
 
 from .model import StereoDescriptor, StereoEffect, VerificationIssue
+
+
+@dataclass(frozen=True)
+class StereoStateTimeline:
+    """Typed, checksum-bound mechanism stereo-state history."""
+
+    verification_mode: str
+    history: Mapping[str, tuple[Mapping[str, Any] | None, ...]]
+    proof_digest: str
+
+    @staticmethod
+    def _digest(payload: Mapping[str, Any]) -> str:
+        normalized = dict(payload)
+        normalized.pop("proof_digest", None)
+        encoded = json.dumps(
+            normalized,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode()
+        return hashlib.sha256(encoded).hexdigest()
+
+    @classmethod
+    def create(
+        cls,
+        states: Iterable[nx.Graph],
+        *,
+        verification_mode: str,
+    ) -> "StereoStateTimeline":
+        history = {
+            target: tuple(values) for target, values in stereo_timeline(states).items()
+        }
+        payload = {
+            "schema": "synkit.mechanism-stereo-timeline/1",
+            "verification_mode": verification_mode,
+            "history": {target: list(values) for target, values in history.items()},
+        }
+        return cls(
+            verification_mode,
+            history,
+            cls._digest(payload),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema": "synkit.mechanism-stereo-timeline/1",
+            "verification_mode": self.verification_mode,
+            "history": {
+                target: list(values) for target, values in sorted(self.history.items())
+            },
+            "proof_digest": self.proof_digest,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, Any]) -> "StereoStateTimeline":
+        if value.get("schema") != "synkit.mechanism-stereo-timeline/1" or value.get(
+            "proof_digest"
+        ) != cls._digest(value):
+            raise ValueError("MECHANISM_STEREO_TIMELINE_TAMPERED")
+        return cls(
+            str(value["verification_mode"]),
+            {target: tuple(history) for target, history in value["history"].items()},
+            str(value["proof_digest"]),
+        )
 
 
 def descriptor_key(descriptor: StereoDescriptor) -> str:

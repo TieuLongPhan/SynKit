@@ -108,16 +108,17 @@ def electron_aware_node_match(
 
     - ``hcount``: host must be greater than or equal to pattern
     - ``lone_pairs``: host must be greater than or equal to pattern
-    ``radical`` therefore remains exact whenever the caller includes it in
-    ``node_attrs``.
+    - an attribute explicitly marked ``unknown`` by the typed query policy is
+      omitted because the template's local context cannot determine it
+
+    ``radical`` otherwise remains exact whenever the caller includes it.
     """
     for attr in node_attrs:
-        # A compact coupled pi-addition rule may use a deliberately
-        # under-valenced atom (for example ``[C:1]=[C:2]``) to state only the
-        # reaction locus. RDKit represents that notation with placeholder
-        # radical electrons. They are a parser consequence, not a radical
-        # query; the reactor marks only those inferred coupling centers.
-        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+        policy = pattern_data.get("_query_attribute_policies", {}).get(
+            attr,
+            "exact",
+        )
+        if policy == "unknown":
             continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
@@ -180,7 +181,11 @@ def explain_node_mismatch(
     """Return node-level mismatch reasons using matcher semantics."""
     reasons: list[str] = []
     for attr in node_attrs:
-        if pattern_data.get("_coupled_pi_center_query") and attr == "radical":
+        policy = pattern_data.get("_query_attribute_policies", {}).get(
+            attr,
+            "exact",
+        )
+        if policy == "unknown":
             continue
         host_value = host_data.get(
             attr, 0 if attr in {"hcount", "lone_pairs"} else None
@@ -445,9 +450,25 @@ class SubgraphSearchEngine:
 
         # dispatch
         if strat is Strategy.ALL:
-            results = SubgraphSearchEngine._find_all_subgraph_mappings(
-                host, pattern, node_attrs, edge_attrs, max_results, thresh
+            components = list(
+                nx.weakly_connected_components(pattern)
+                if pattern.is_directed()
+                else nx.connected_components(pattern)
             )
+            if len(components) > 1:
+                results = SubgraphSearchEngine._find_disconnected_all_mappings(
+                    host,
+                    pattern,
+                    components,
+                    node_attrs,
+                    edge_attrs,
+                    max_results,
+                    thresh,
+                )
+            else:
+                results = SubgraphSearchEngine._find_all_subgraph_mappings(
+                    host, pattern, node_attrs, edge_attrs, max_results, thresh
+                )
         elif strat is Strategy.COMPONENT:
             results = SubgraphSearchEngine._find_component_aware_subgraph_mappings(
                 host,
@@ -497,6 +518,65 @@ class SubgraphSearchEngine:
                 break
             if threshold is not None and len(results) > threshold:
                 return []
+        return results
+
+    @staticmethod
+    def _find_disconnected_all_mappings(
+        host: nx.Graph,
+        pattern: nx.Graph,
+        components: List[Set[Any]],
+        node_attrs: List[str],
+        edge_attrs: List[str],
+        max_results: Optional[int],
+        threshold: Optional[int],
+    ) -> List[MappingDict]:
+        """Join exact component embeddings with global injectivity.
+
+        VF2's whole-pattern search repeatedly traverses unrelated host context
+        for disconnected queries. Component embeddings are independent except
+        for injectivity, so their disjoint Cartesian join is exactly the same
+        monomorphism set, including placements in one host component.
+        """
+        per_component = []
+        for nodes in components:
+            component = pattern.subgraph(nodes).copy()
+            mappings = SubgraphSearchEngine._find_all_subgraph_mappings(
+                host,
+                component,
+                node_attrs,
+                edge_attrs,
+                None,
+                None,
+            )
+            if not mappings:
+                return []
+            per_component.append((component.number_of_nodes(), mappings))
+        per_component.sort(key=lambda item: (len(item[1]), -item[0]))
+
+        results: List[MappingDict] = []
+
+        def join(level: int, combined: MappingDict, used: Set[Any]) -> None:
+            if max_results is not None and len(results) >= max_results:
+                return
+            if threshold is not None and len(results) > threshold:
+                return
+            if level == len(per_component):
+                results.append(combined.copy())
+                return
+            for mapping in per_component[level][1]:
+                image = set(mapping.values())
+                if image & used:
+                    continue
+                combined.update(mapping)
+                join(level + 1, combined, used | image)
+                for node in mapping:
+                    combined.pop(node)
+                if max_results is not None and len(results) >= max_results:
+                    return
+                if threshold is not None and len(results) > threshold:
+                    return
+
+        join(0, {}, set())
         return results
 
     @staticmethod

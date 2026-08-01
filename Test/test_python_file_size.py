@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from tools.check_python_file_size import check_files, count_non_docstring_lines
+from scripts.check_python_file_size import check_files, count_non_docstring_lines
 
 
 def test_count_excludes_only_recognized_docstrings(tmp_path: Path) -> None:

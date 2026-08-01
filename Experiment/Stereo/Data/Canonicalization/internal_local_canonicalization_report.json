@@ -1,0 +1,1195 @@
+{
+  "claim_boundary": "This tests exhaustive local representation collapse for each known or constitutionally perceived carrier. Supplied descriptors locate supports only; their configurations are discarded. The benchmark neither recovers input labels nor enumerates the joint N-carrier product.",
+  "dataset": {
+    "records_available": 10,
+    "records_selected": 10
+  },
+  "environment": {
+    "python": "3.11.0",
+    "rdkit": "2026.03.4"
+  },
+  "protocol": {
+    "fixed_molecular_constitution": true,
+    "joint_carrier_cartesian_product": false,
+    "known_input_carrier_supports_retained": true,
+    "one_carrier_at_a_time": true,
+    "original_configuration_used": false,
+    "other_carrier_configurations": "omitted",
+    "raw_local_permutations": "exhaustive",
+    "supplied_stereo_removed_before_perception": true,
+    "theoretical_classes": "local_descriptor_group_orbits",
+    "timeout_seconds_per_canonicalization": 10.0,
+    "worker_processes": 16
+  },
+  "records": [
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 2,
+          "canonicalizations_completed": 24,
+          "carrier_id": "tetrahedral:local:0",
+          "carrier_status": "fixture",
+          "family": "tetrahedral",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 24,
+          "raw_local_permutations_expected": 24,
+          "record_id": "tetrahedral",
+          "representation_invariance_passed": true,
+          "seconds": 0.07800140200015448,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            12,
+            12
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "afa5a76a33a1cd785aca053e486c359ae66023fcc5260efb9aba7c7d1b36ce14"
+              ],
+              "canonicalizations_completed": 12,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 12,
+              "seconds": 0.04024209000090195,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "c890b01de0d15255e60b283754b2e47258cf17514ba54e630d3d641b46d9e6cd"
+              ],
+              "canonicalizations_completed": 12,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 12,
+              "seconds": 0.03733506100070372,
+              "theoretical_class_index": 1
+            }
+          ],
+          "theoretical_configuration_classes": 2
+        }
+      ],
+      "id": "tetrahedral",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.07800140200015448,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 3,
+          "canonicalizations_completed": 24,
+          "carrier_id": "square_planar:local:0",
+          "carrier_status": "fixture",
+          "family": "square_planar",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 24,
+          "raw_local_permutations_expected": 24,
+          "record_id": "square_planar",
+          "representation_invariance_passed": true,
+          "seconds": 0.05722459200023877,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            8,
+            8,
+            8
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "4db90a385da3aafde257149db6f2381a35a340863b942c93ad069191a1929f3a"
+              ],
+              "canonicalizations_completed": 8,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 8,
+              "seconds": 0.018355812998379406,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "d8fe4ff932b2b642a651882d825a33a746fdc6048dadb1f886352952ca2574ea"
+              ],
+              "canonicalizations_completed": 8,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 8,
+              "seconds": 0.018798293999680027,
+              "theoretical_class_index": 1
+            },
+            {
+              "canonical_digests": [
+                "c848305a4b1f6b4b298a11eb65243fad0c8a4bc6f136ca98607b1289b9b1cd7f"
+              ],
+              "canonicalizations_completed": 8,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 8,
+              "seconds": 0.01962631500009593,
+              "theoretical_class_index": 2
+            }
+          ],
+          "theoretical_configuration_classes": 3
+        }
+      ],
+      "id": "square_planar",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.05722459200023877,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 20,
+          "canonicalizations_completed": 120,
+          "carrier_id": "trigonal_bipyramidal:local:0",
+          "carrier_status": "fixture",
+          "family": "trigonal_bipyramidal",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 120,
+          "raw_local_permutations_expected": 120,
+          "record_id": "trigonal_bipyramidal",
+          "representation_invariance_passed": true,
+          "seconds": 0.28514888399968186,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "07fe4a467b2bccf688e33283d5866982b8ee7784c8cb421a3400c2d176069b09"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.014781757999116962,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "309827f4a365f10400c97ab8ea8061d23353c425e0e68710dd45789aec40e641"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.014507410999613057,
+              "theoretical_class_index": 1
+            },
+            {
+              "canonical_digests": [
+                "5a22685681651ec7a3372b1c4f7ab95c89afcb9b9c8d6fa6c6ef3ae3c595ccbd"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013289862999044999,
+              "theoretical_class_index": 2
+            },
+            {
+              "canonical_digests": [
+                "a83e3d08b9f9bd76629547e30fa040609aa4fd741021e6a3cbad78439ca15745"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013582674998360744,
+              "theoretical_class_index": 3
+            },
+            {
+              "canonical_digests": [
+                "838ed62e299c6048e954e2e9e0e70f24572ced4a53ac0faee6917ef01877ff02"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013468792998537538,
+              "theoretical_class_index": 4
+            },
+            {
+              "canonical_digests": [
+                "485265af2e8d085d609febd99a7e0bea19153a8409b65d4ee98f3a872c8ed3c4"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.01415699400149606,
+              "theoretical_class_index": 5
+            },
+            {
+              "canonical_digests": [
+                "a0f6b1da67ead4eb5560d88625982d7a72db382bd95da994075ea339f80b34a8"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013385928000388958,
+              "theoretical_class_index": 6
+            },
+            {
+              "canonical_digests": [
+                "47d7ef4f0cd4f24b1e579afd71bcf5d5f4b46c1412f7097ea64a779824b5a9a2"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.022610919998442114,
+              "theoretical_class_index": 7
+            },
+            {
+              "canonical_digests": [
+                "f0942e33b999eeacdde3779fd8d90fb186b46b7a85ac7ea15d7293c76f999a43"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013611469001261867,
+              "theoretical_class_index": 8
+            },
+            {
+              "canonical_digests": [
+                "b2e801fd74d094e2e6cd822692984cd970c4f3fb4712a1dbfc01c78acf21cda6"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013373748999583768,
+              "theoretical_class_index": 9
+            },
+            {
+              "canonical_digests": [
+                "0c3094b8742b2ecf62062454c8a8e354fcd9832d414d80664b00c6617d4be0fc"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013292676999299147,
+              "theoretical_class_index": 10
+            },
+            {
+              "canonical_digests": [
+                "d29f483cd028af51ecb6017a979b108bf054e686d08ecb570a47be1b72d4dc9b"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013515873999494943,
+              "theoretical_class_index": 11
+            },
+            {
+              "canonical_digests": [
+                "14cba051659801e1a8011633bebbc58e8ffede074aa79015baebf6ed097ec1de"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.014009149998855719,
+              "theoretical_class_index": 12
+            },
+            {
+              "canonical_digests": [
+                "fdd104918c6bd5e209d6cc0677f3ab23c4154e3a2a1dfcc49de2a19d888f33e0"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013451957999677688,
+              "theoretical_class_index": 13
+            },
+            {
+              "canonical_digests": [
+                "2b49dfe2c10da9061a0c3b88dcc57406d093f8065e3189f396c18cf2c3360366"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013376945000345586,
+              "theoretical_class_index": 14
+            },
+            {
+              "canonical_digests": [
+                "ed1e0af1c8727fbbd1a3a1fea6a239ea82dd29259eba80b882f31dba384b73aa"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013557625999055745,
+              "theoretical_class_index": 15
+            },
+            {
+              "canonical_digests": [
+                "a81c67e8f8d10b173c945468ba1209813207ff3ce1740bb94124cdd6a85b1f32"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013620562000141945,
+              "theoretical_class_index": 16
+            },
+            {
+              "canonical_digests": [
+                "6db4a4db2707d151549480158a04f2347c1b64e00fc0d5f31d10565f19c1af1e"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013626230999761901,
+              "theoretical_class_index": 17
+            },
+            {
+              "canonical_digests": [
+                "104827fc6e518be42547cf857304fc50fccfe1fb4d5efe3e91f7da8000bad8d6"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.013513662001059856,
+              "theoretical_class_index": 18
+            },
+            {
+              "canonical_digests": [
+                "0d9c4378dd78b5cd49da69c308951219fa67004a6b050fb43db6ebd11350fc6c"
+              ],
+              "canonicalizations_completed": 6,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 6,
+              "seconds": 0.014134267999907024,
+              "theoretical_class_index": 19
+            }
+          ],
+          "theoretical_configuration_classes": 20
+        }
+      ],
+      "id": "trigonal_bipyramidal",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.28514888399968186,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 30,
+          "canonicalizations_completed": 720,
+          "carrier_id": "octahedral:local:0",
+          "carrier_status": "fixture",
+          "family": "octahedral",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 720,
+          "raw_local_permutations_expected": 720,
+          "record_id": "octahedral",
+          "representation_invariance_passed": true,
+          "seconds": 7.294935021999663,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "99aab3f38953cbae122d30e64bb0ae0ec7916e3fbca21d7dcaa0636d6477922f"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23978895699747227,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "977f857cabbffc3518215bea080904d8c41fd71c06cb23b75db70e6590f15ac7"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.237090240998441,
+              "theoretical_class_index": 1
+            },
+            {
+              "canonical_digests": [
+                "9c913f0548c6b11ddc70ac7be544a0d3c6e138d04fb41bbf21c31bd8a2e16388"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23942062799960695,
+              "theoretical_class_index": 2
+            },
+            {
+              "canonical_digests": [
+                "fbfc43bdaf168feaaaad79ff6ade62ea4f7f1c5d0d81059fdb51a2ac7375562e"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23863546600114205,
+              "theoretical_class_index": 3
+            },
+            {
+              "canonical_digests": [
+                "4c466abf43f5f1d86b256966e363413177848fa8101adab1f2d0be3fe9fca89d"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23263473299812176,
+              "theoretical_class_index": 4
+            },
+            {
+              "canonical_digests": [
+                "a1c5c1aeae89e8b333d326618e0346302f6699ca5cb5aac4c74808b294cf0e1a"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.24115467100182286,
+              "theoretical_class_index": 5
+            },
+            {
+              "canonical_digests": [
+                "7960b59707f008f94e3dbadac463a1a27e31f7c6c11d8dc620eff91214f7b1c8"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23660244300026534,
+              "theoretical_class_index": 6
+            },
+            {
+              "canonical_digests": [
+                "eb1e29bc874bb4aad23145d8781dd9b90cf8a446e32fd246f4fd9268c3c12c4f"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.25109563199839613,
+              "theoretical_class_index": 7
+            },
+            {
+              "canonical_digests": [
+                "0bd409ae1c0522b205a14a65495b8a0cbf3343531eaf4683f80797a674ff9d13"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.2344603029987411,
+              "theoretical_class_index": 8
+            },
+            {
+              "canonical_digests": [
+                "a8aad0dec846039adbd88489a40fec401c504fde0e483bd4794cbae86a34e900"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23847117699824594,
+              "theoretical_class_index": 9
+            },
+            {
+              "canonical_digests": [
+                "5aabcbedd1189cc079a571ba5497d3adab0b4f55d1ceb4308c61408b779632ac"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.24210938700252882,
+              "theoretical_class_index": 10
+            },
+            {
+              "canonical_digests": [
+                "2aa8c78968e784b1231c413bd6a185d8c8b686afda8aa048794b05d7326998e1"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.2344748969990178,
+              "theoretical_class_index": 11
+            },
+            {
+              "canonical_digests": [
+                "5d626447618fd0ffb6c0f3a0ae5574448b9c6dafcb9cdc61044fe58d77c60338"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23728378300074837,
+              "theoretical_class_index": 12
+            },
+            {
+              "canonical_digests": [
+                "6906f6f52880979b8ce932636bbf55b58d4e5021690ab64c4fb1112e61ab5973"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.2419048540004951,
+              "theoretical_class_index": 13
+            },
+            {
+              "canonical_digests": [
+                "822f582ade3d7d82b83ca5547b6fe97ffdef3776c06fb49c4f03c06c3b716dfa"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.2447838000016418,
+              "theoretical_class_index": 14
+            },
+            {
+              "canonical_digests": [
+                "fdbfe815d3a5eb074eae843f52d8e333c1b984e844021e7ace83c654eec6cb85"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.24505990900070174,
+              "theoretical_class_index": 15
+            },
+            {
+              "canonical_digests": [
+                "2128c057971fbb0a6cddbae1e7acf4c2b986df07f4ff4e8d112438ceee6ade1f"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23565075100123067,
+              "theoretical_class_index": 16
+            },
+            {
+              "canonical_digests": [
+                "c624f58a1fabb54fa8ede9f9947a07dbd8aecd9495a412a4a9a81267ed72af3d"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.242951272002756,
+              "theoretical_class_index": 17
+            },
+            {
+              "canonical_digests": [
+                "06dc8911e0d84590bef9d9815c374f022b39e2b83a913cdb091b7aae1389d811"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.2528441340018617,
+              "theoretical_class_index": 18
+            },
+            {
+              "canonical_digests": [
+                "f388a9e60228a5bb2a14c42f399e7f15bc0242b087c01ec04bfd9267a9dcecdb"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.24290074999862554,
+              "theoretical_class_index": 19
+            },
+            {
+              "canonical_digests": [
+                "acf21fc4db41e8ff2ca24a27a38a73e9db5e6284820529b373db0ef75d3a3e9d"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23801399700005277,
+              "theoretical_class_index": 20
+            },
+            {
+              "canonical_digests": [
+                "4787d2ba4bacbeff26be2d335b1048d665553ede7f98901c885cb327ac05a4e5"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23926738400132308,
+              "theoretical_class_index": 21
+            },
+            {
+              "canonical_digests": [
+                "a3ecb00ee34738a155ad5e10a30d96ff2b7d588aa1618a73efa70fee3694c348"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.24179707400071493,
+              "theoretical_class_index": 22
+            },
+            {
+              "canonical_digests": [
+                "36eb37d4d0e583767274280b031154c2fb6203ecaa23f4bf2922f2ba9f6df6be"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23921618499844044,
+              "theoretical_class_index": 23
+            },
+            {
+              "canonical_digests": [
+                "5bbe5af43652c0ebf2af23c8a1ae781dee7d37fcf2ab2c4ec9f9b127bc5b3bc9"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.2424036190031984,
+              "theoretical_class_index": 24
+            },
+            {
+              "canonical_digests": [
+                "b0c74c2566d0a50e77113f1b3b1b083ab8b0d0a120f2e2edcbd5b9f7b5b2d93a"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23646618600105285,
+              "theoretical_class_index": 25
+            },
+            {
+              "canonical_digests": [
+                "062a45b28255698cabd2728a3591d4d441ca8d71ecfc4061c1ceb0c76b89964c"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23935975800031883,
+              "theoretical_class_index": 26
+            },
+            {
+              "canonical_digests": [
+                "af3c07637fbd5efa3d06edde30ba559f82981a3cabe0daedb78e4713ec5a4cf1"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23526400099763123,
+              "theoretical_class_index": 27
+            },
+            {
+              "canonical_digests": [
+                "b25490376b074f2244cb865be91fbf3f09a63ff5990b230721b0efd97b3dbb56"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.23983730300187744,
+              "theoretical_class_index": 28
+            },
+            {
+              "canonical_digests": [
+                "04067fc54ab2b6aefd29ec542838286d5022fe7eaa934736cb38dd05a2095e3f"
+              ],
+              "canonicalizations_completed": 24,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 24,
+              "seconds": 0.2523381660002997,
+              "theoretical_class_index": 29
+            }
+          ],
+          "theoretical_configuration_classes": 30
+        }
+      ],
+      "id": "octahedral",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 7.294935021999663,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 2,
+          "canonicalizations_completed": 8,
+          "carrier_id": "planar_bond:local:0",
+          "carrier_status": "fixture",
+          "family": "planar_bond",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 8,
+          "raw_local_permutations_expected": 8,
+          "record_id": "planar_bond",
+          "representation_invariance_passed": true,
+          "seconds": 0.015499088000069605,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            4,
+            4
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "f79ccd985015c00a0ce030cfe78d74fe85a16f783030b479f51a76c647d35392"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.007752537998385378,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "3f8f5454327d8de04571ee8e3811d026a44e53300f57e8ab3b9d908d4cee2746"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.007610344000568148,
+              "theoretical_class_index": 1
+            }
+          ],
+          "theoretical_configuration_classes": 2
+        }
+      ],
+      "id": "planar_bond",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.015499088000069605,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 2,
+          "canonicalizations_completed": 8,
+          "carrier_id": "atrop_bond:local:0",
+          "carrier_status": "fixture",
+          "family": "atrop_bond",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 8,
+          "raw_local_permutations_expected": 8,
+          "record_id": "atrop_bond",
+          "representation_invariance_passed": true,
+          "seconds": 0.015611066999554168,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            4,
+            4
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "05927a7e8446d63bf6a2ced57f12084066eb60e1ab16677e8a9f6da0721e4fd8"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.007813299998815637,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "91e1d18e57b58aad4511726b94361176a17845bb69a79b1dc4d08541f48bf59c"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.00766760999977123,
+              "theoretical_class_index": 1
+            }
+          ],
+          "theoretical_configuration_classes": 2
+        }
+      ],
+      "id": "atrop_bond",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.015611066999554168,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 2,
+          "canonicalizations_completed": 8,
+          "carrier_id": "cumulene_axis:local:0",
+          "carrier_status": "fixture",
+          "family": "cumulene_axis",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 8,
+          "raw_local_permutations_expected": 8,
+          "record_id": "cumulene_axis",
+          "representation_invariance_passed": true,
+          "seconds": 0.01759676599976956,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            4,
+            4
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "6301380d3e8336a91f05c05b10e47d8e220bbf966cf5d98dc3f952eef026440a"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.00859603000117204,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "fac2914af643bd86ea7c602d3aeed2a75e42e6e1d22f930d31036c03ced8de8d"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.008835854000608379,
+              "theoretical_class_index": 1
+            }
+          ],
+          "theoretical_configuration_classes": 2
+        }
+      ],
+      "id": "cumulene_axis",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.01759676599976956,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 2,
+          "canonicalizations_completed": 8,
+          "carrier_id": "extended_cis_trans:local:0",
+          "carrier_status": "fixture",
+          "family": "extended_cis_trans",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 8,
+          "raw_local_permutations_expected": 8,
+          "record_id": "extended_cis_trans",
+          "representation_invariance_passed": true,
+          "seconds": 0.01849438099998224,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            4,
+            4
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "fda9fb33f567366ee4053694a163da64f8d99cea9a42e3e42dfa8425ea31592e"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.009133724999628612,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "eeab3bcd9649fc89537084c9744dba6d5beab25ff9bd8e79b8c999f0641c710a"
+              ],
+              "canonicalizations_completed": 4,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 4,
+              "seconds": 0.00916708499971719,
+              "theoretical_class_index": 1
+            }
+          ],
+          "theoretical_configuration_classes": 2
+        }
+      ],
+      "id": "extended_cis_trans",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.01849438099998224,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 2,
+          "canonicalizations_completed": 4,
+          "carrier_id": "helical:local:0",
+          "carrier_status": "fixture",
+          "family": "helical",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 4,
+          "raw_local_permutations_expected": 4,
+          "record_id": "helical",
+          "representation_invariance_passed": true,
+          "seconds": 0.003313604000140913,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            2,
+            2
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "6dc29fce80c52ab948f0e6401b675eccba46602647f92378af075ff540e6fa35"
+              ],
+              "canonicalizations_completed": 2,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 2,
+              "seconds": 0.0016216390004046843,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "e8c0ecf058e2e35b79c541bf39c1cc110d5c4ed94f8c59b13e69230222c17be4"
+              ],
+              "canonicalizations_completed": 2,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 2,
+              "seconds": 0.0016323040008501266,
+              "theoretical_class_index": 1
+            }
+          ],
+          "theoretical_configuration_classes": 2
+        }
+      ],
+      "id": "helical",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.003313604000140913,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    },
+    {
+      "carriers": [
+        {
+          "canonical_classes_observed": 2,
+          "canonicalizations_completed": 16,
+          "carrier_id": "planar_chirality:local:0",
+          "carrier_status": "fixture",
+          "family": "planar_chirality",
+          "formal_class_separation_passed": true,
+          "global_symmetry_quotient": false,
+          "issues": [],
+          "passed": true,
+          "raw_local_permutations_checked": 16,
+          "raw_local_permutations_expected": 16,
+          "record_id": "planar_chirality",
+          "representation_invariance_passed": true,
+          "seconds": 0.020737949999784178,
+          "source": "internal",
+          "theoretical_class_multiplicities": [
+            8,
+            8
+          ],
+          "theoretical_class_results": [
+            {
+              "canonical_digests": [
+                "5de836eb3630d5111b8b5e227fbdcca3900acfa995225fd52c148ca8bbacbb45"
+              ],
+              "canonicalizations_completed": 8,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 8,
+              "seconds": 0.010430250998069823,
+              "theoretical_class_index": 0
+            },
+            {
+              "canonical_digests": [
+                "0472f91a9884b69eea8bf6e89c2a0b50c46f9ad01cbd8af56823abff81ec4df9"
+              ],
+              "canonicalizations_completed": 8,
+              "collapsed_within_theoretical_class": true,
+              "issues": [],
+              "raw_permutation_multiplicity": 8,
+              "seconds": 0.010062997998829815,
+              "theoretical_class_index": 1
+            }
+          ],
+          "theoretical_configuration_classes": 2
+        }
+      ],
+      "id": "planar_chirality",
+      "parse_failure": false,
+      "perception_issues": [],
+      "potential_carriers_detected": 1,
+      "seconds": 0.020737949999784178,
+      "status": "passed",
+      "supplied_configurations_retained": 0
+    }
+  ],
+  "schema": "synkit.configuration-free-local-canonicalization/1",
+  "seconds": 7.807675334999658,
+  "summary": {
+    "canonical_classes_observed": 67,
+    "canonicalizations_completed": 940,
+    "carrier_accuracy": 1.0,
+    "carriers": 10,
+    "carriers_failed": 0,
+    "carriers_passed": 10,
+    "complete": true,
+    "families": {
+      "atrop_bond": 1,
+      "cumulene_axis": 1,
+      "extended_cis_trans": 1,
+      "helical": 1,
+      "octahedral": 1,
+      "planar_bond": 1,
+      "planar_chirality": 1,
+      "square_planar": 1,
+      "tetrahedral": 1,
+      "trigonal_bipyramidal": 1
+    },
+    "formal_class_separation_passed": 10,
+    "global_symmetry_quotients": 0,
+    "parse_failures": 0,
+    "raw_local_permutations_checked": 940,
+    "raw_local_permutations_expected": 940,
+    "record_statuses": {
+      "passed": 10
+    },
+    "records_evaluated": 10,
+    "records_with_carriers": 10,
+    "theoretical_configuration_classes": 67
+  },
+  "task": "internal"
+}

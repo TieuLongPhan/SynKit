@@ -28,6 +28,7 @@ from .descriptors import (
     TrigonalBipyramidalStereo,
     parse_virtual_reference,
 )
+from .global_stereo import FrameworkStereo
 
 StereoToken = Hashable
 StereoReferenceResolver = Callable[[Reference], StereoToken]
@@ -295,6 +296,42 @@ def descriptor_relative_form(
     resolve_reference: StereoReferenceResolver,
 ) -> tuple[Any, ...]:
     """Canonicalize one descriptor after replacing map-dependent references."""
+    if isinstance(descriptor, FrameworkStereo):
+        support = tuple(
+            sorted(
+                (resolve_reference(atom) for atom in descriptor.support_atoms),
+                key=repr,
+            )
+        )
+        frames = []
+        for coupled_frame in descriptor.frames:
+            center = resolve_reference(coupled_frame.center)
+            references = tuple(
+                resolve_reference(reference) for reference in coupled_frame.references
+            )
+            parity = (
+                None
+                if descriptor.orientation is None
+                else coupled_frame.relation * descriptor.orientation
+            )
+            if parity is None:
+                form = (center, tuple(sorted(references, key=repr)), None)
+            else:
+                frame = (center, *references)
+                if parity == -1:
+                    frame = tuple(frame[index] for index in _TETRAHEDRAL_INVERSION)
+                forms = tuple(
+                    tuple(frame[index] for index in permutation)
+                    for permutation in _TETRAHEDRAL_PERMUTATIONS
+                )
+                form = (min(forms, key=repr), 1)
+            frames.append(form)
+        return (
+            descriptor.descriptor_class,
+            support,
+            tuple(sorted(frames, key=repr)),
+            descriptor.orientation is None,
+        )
     atoms = tuple(resolve_reference(reference) for reference in descriptor.atoms)
     if descriptor.parity is None:
         if isinstance(descriptor, _ATOM_TYPES):

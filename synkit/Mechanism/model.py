@@ -293,10 +293,240 @@ class StereoEffect:
 
 
 @dataclass(frozen=True)
+class ElectrocyclicStereoMotion:
+    """Correlated terminal-orbital motion for a supplied electrocyclic step."""
+
+    mode: Literal["CONROTATORY", "DISROTATORY"]
+    direction: Literal["RING_CLOSURE", "RING_OPENING"]
+    termini: tuple[int, int]
+    substituents: tuple[int | str, int | str]
+    terminal_motion: tuple[int, int]
+    pi_electrons: int
+    activation: Literal["THERMAL", "PHOTOCHEMICAL"] | None
+    provenance: str = "annotated"
+
+    def __post_init__(self) -> None:
+        if self.mode not in {"CONROTATORY", "DISROTATORY"}:
+            raise MechanismModelError("Unsupported electrocyclic rotation mode.")
+        if self.direction not in {"RING_CLOSURE", "RING_OPENING"}:
+            raise MechanismModelError("Unsupported electrocyclic direction.")
+        if (
+            len(self.termini) != 2
+            or len(set(self.termini)) != 2
+            or any(type(value) is not int or value <= 0 for value in self.termini)
+        ):
+            raise MechanismModelError(
+                "Electrocyclic motion requires two distinct mapped termini."
+            )
+        if len(self.substituents) != 2:
+            raise MechanismModelError(
+                "Electrocyclic motion requires one tracked substituent per terminus."
+            )
+        if len(set(self.substituents)) != 2:
+            raise MechanismModelError(
+                "Electrocyclic terminal substituents must be distinct."
+            )
+        from synkit.Graph.Stereo import parse_virtual_reference
+
+        for terminus, substituent in zip(self.termini, self.substituents):
+            if type(substituent) is int:
+                if substituent <= 0 or substituent == terminus:
+                    raise MechanismModelError(
+                        "Mapped terminal substituents must be positive and "
+                        "distinct from their termini."
+                    )
+                continue
+            virtual = parse_virtual_reference(substituent)
+            if virtual is None or virtual.center != terminus:
+                raise MechanismModelError(
+                    "A virtual terminal substituent must belong to its terminus."
+                )
+        if len(self.terminal_motion) != 2 or any(
+            value not in {-1, 1} for value in self.terminal_motion
+        ):
+            raise MechanismModelError(
+                "Terminal motions must be a pair of +1/-1 rotations."
+            )
+        if (
+            type(self.pi_electrons) is not int
+            or self.pi_electrons < 2
+            or self.pi_electrons % 2
+        ):
+            raise MechanismModelError(
+                "Electrocyclic pi_electrons must be a positive even integer."
+            )
+        if self.activation not in {None, "THERMAL", "PHOTOCHEMICAL"}:
+            raise MechanismModelError(
+                "Activation must be THERMAL, PHOTOCHEMICAL, or absent."
+            )
+
+    @property
+    def expected_mode(self) -> str | None:
+        """Return the Woodward-Hoffmann mode for supplied electron/context."""
+        if self.activation is None:
+            return None
+        thermal_conrotatory = self.pi_electrons % 4 == 0
+        conrotatory = (
+            thermal_conrotatory
+            if self.activation == "THERMAL"
+            else not thermal_conrotatory
+        )
+        return "CONROTATORY" if conrotatory else "DISROTATORY"
+
+    def verification_issues(
+        self,
+        *,
+        step_id: str,
+        before_graph: Any | None = None,
+        graph: Any | None = None,
+    ) -> tuple[VerificationIssue, ...]:
+        """Validate context, orbital rule, and correlation as one assertion."""
+        _changes, issues = self.verification_evidence(
+            step_id=step_id,
+            before_graph=before_graph,
+            graph=graph,
+        )
+        return issues
+
+    def verification_evidence(
+        self,
+        *,
+        step_id: str,
+        before_graph: Any | None = None,
+        graph: Any | None = None,
+    ) -> tuple[tuple[Any, ...], tuple[VerificationIssue, ...]]:
+        """Return canonical local-neighbor changes and validation issues."""
+        issues: list[VerificationIssue] = []
+        if self.activation is None:
+            issues.append(
+                VerificationIssue(
+                    "ELECTROCYCLIC_CONTEXT_REQUIRED",
+                    "Electrocyclic mode requires thermal or photochemical context.",
+                    step_id=step_id,
+                )
+            )
+        elif self.mode != self.expected_mode:
+            issues.append(
+                VerificationIssue(
+                    "ELECTROCYCLIC_MODE_MISMATCH",
+                    "Declared rotation mode violates the supplied activation "
+                    "and pi-electron count.",
+                    step_id=step_id,
+                    expected=self.expected_mode,
+                    observed=self.mode,
+                )
+            )
+        changes: tuple[Any, ...] = ()
+        if before_graph is not None and graph is not None:
+            from .neighbor_stereo import derive_relative_neighbor_changes
+
+            changes, neighbor_issues = derive_relative_neighbor_changes(
+                self,
+                before_graph,
+                graph,
+                step_id=step_id,
+            )
+            issues.extend(neighbor_issues)
+        physical_rotations = (
+            tuple(change.physical_rotation for change in changes)
+            if len(changes) == 2
+            else self.terminal_motion
+        )
+        same_sense = physical_rotations[0] == physical_rotations[1]
+        if same_sense != (self.mode == "CONROTATORY"):
+            issues.append(
+                VerificationIssue(
+                    "ELECTROCYCLIC_MOTION_INCONSISTENT",
+                    "Terminal rotations do not realize the declared correlated "
+                    "mode.",
+                    step_id=step_id,
+                    expected=self.mode,
+                    observed=physical_rotations,
+                )
+            )
+        if graph is not None:
+            by_map = {
+                attrs.get("atom_map") or node: node
+                for node, attrs in graph.nodes(data=True)
+            }
+            if not set(self.termini) <= set(by_map):
+                issues.append(
+                    VerificationIssue(
+                        "ELECTROCYCLIC_SUPPORT_INVALID",
+                        "A correlated terminal map is absent after the step.",
+                        step_id=step_id,
+                        expected=self.termini,
+                        observed=tuple(sorted(by_map)),
+                    )
+                )
+            else:
+                left, right = (by_map[value] for value in self.termini)
+                bonded = graph.has_edge(left, right)
+                expected_bonded = self.direction == "RING_CLOSURE"
+                if bonded != expected_bonded:
+                    issues.append(
+                        VerificationIssue(
+                            "ELECTROCYCLIC_SUPPORT_INVALID",
+                            "Terminal bond topology contradicts the declared "
+                            "ring direction.",
+                            step_id=step_id,
+                            expected=expected_bonded,
+                            observed=bonded,
+                        )
+                    )
+        return changes, tuple(issues)
+
+    def reversed(self) -> "ElectrocyclicStereoMotion":
+        """Reverse closure/opening and both physical terminal rotations."""
+        return ElectrocyclicStereoMotion(
+            self.mode,
+            ("RING_OPENING" if self.direction == "RING_CLOSURE" else "RING_CLOSURE"),
+            self.termini,
+            self.substituents,
+            tuple(-value for value in self.terminal_motion),
+            self.pi_electrons,
+            self.activation,
+            self.provenance,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "kind": "ELECTROCYCLIC",
+            "mode": self.mode,
+            "direction": self.direction,
+            "termini": list(self.termini),
+            "substituents": list(self.substituents),
+            "terminal_motion": list(self.terminal_motion),
+            "pi_electrons": self.pi_electrons,
+            "activation": self.activation,
+            "provenance": self.provenance,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, Any],
+    ) -> "ElectrocyclicStereoMotion":
+        if value.get("kind", "ELECTROCYCLIC") != "ELECTROCYCLIC":
+            raise MechanismModelError("Unsupported correlated stereo motion.")
+        return cls(
+            value["mode"],
+            value["direction"],
+            tuple(value["termini"]),
+            tuple(value["substituents"]),
+            tuple(value["terminal_motion"]),
+            int(value["pi_electrons"]),
+            value.get("activation"),
+            value.get("provenance", "annotated"),
+        )
+
+
+@dataclass(frozen=True)
 class MechanisticStep:
     step_id: str
     groups: tuple[ElectronMoveGroup, ...]
     stereo_effects: tuple[StereoEffect, ...] = ()
+    stereo_motions: tuple[ElectrocyclicStereoMotion, ...] = ()
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -309,6 +539,7 @@ class MechanisticStep:
             "step_id": self.step_id,
             "groups": [group.to_dict() for group in self.groups],
             "stereo_effects": [effect.to_dict() for effect in self.stereo_effects],
+            "stereo_motions": [motion.to_dict() for motion in self.stereo_motions],
             "metadata": dict(self.metadata),
         }
 
@@ -319,6 +550,9 @@ class MechanisticStep:
             groups=tuple(group.reversed() for group in reversed(self.groups)),
             stereo_effects=tuple(
                 effect.reversed() for effect in reversed(self.stereo_effects)
+            ),
+            stereo_motions=tuple(
+                motion.reversed() for motion in reversed(self.stereo_motions)
             ),
             metadata=self.metadata,
         )
@@ -333,6 +567,10 @@ class MechanisticStep:
             stereo_effects=tuple(
                 StereoEffect.from_dict(effect)
                 for effect in value.get("stereo_effects", ())
+            ),
+            stereo_motions=tuple(
+                ElectrocyclicStereoMotion.from_dict(motion)
+                for motion in value.get("stereo_motions", ())
             ),
             metadata=value.get("metadata", {}),
         )

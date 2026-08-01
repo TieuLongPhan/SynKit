@@ -28,11 +28,17 @@ class TestHComplete(unittest.TestCase):
         self.assertTrue(isinstance(result.its, nx.Graph))
         self.assertTrue(isinstance(result.rc, nx.Graph))
 
-    def test_process_single_graph_data_reference_valid_case(self):
-        """Test a fixture that is valid under reference-style H expansion."""
+    def test_process_single_graph_data_rejects_ambiguous_transfer(self):
+        """Different heavy-atom H transfers must not collapse to H relabeling."""
         processed_data = HComplete.process_single_graph_data(self.data[16], "ITS", "RC")
-        self.assertTrue(isinstance(processed_data["ITS"], nx.Graph))
-        self.assertTrue(isinstance(processed_data["RC"], nx.Graph))
+        completion = HComplete.complete_its(self.data[16]["ITS"])
+        unique_rc, _, _ = HExtend._extend_unique(self.data[16]["ITS"])
+
+        self.assertIsNone(processed_data["ITS"])
+        self.assertIsNone(processed_data["RC"])
+        self.assertFalse(completion.ok)
+        self.assertEqual(completion.reason, "non_equivariant_rc")
+        self.assertEqual(len(unique_rc), 2)
 
     def test_process_single_graph_data_empty_graph(self):
         """Test that an empty graph results in empty ITSGraph and GraphRules."""
@@ -60,7 +66,87 @@ class TestHComplete(unittest.TestCase):
         )
         result = [value for value in result if value["ITS"]]
         # Check if the result matches the input data structure
-        self.assertEqual(len(result), 50)  # all fixtures match reference expansion
+        self.assertEqual(len(result), 45)
+
+    def test_candidate_limit_does_not_claim_exhaustive_completion(self):
+        """A truncated unique-looking prefix must report an indeterminate result."""
+        result = HComplete.complete_its(self.data[16]["ITS"], max_candidates=1)
+
+        self.assertFalse(result.ok)
+        self.assertFalse(result.exhaustive)
+        self.assertEqual(result.reason, "max_candidates_reached")
+
+    def test_tuple_completion_respects_complete_lewis_state(self):
+        """Ignored electron labels must not make transfer plans equivalent."""
+
+        def side(hcounts):
+            graph = nx.Graph()
+            for node in range(1, 5):
+                graph.add_node(
+                    node,
+                    element="C",
+                    aromatic=False,
+                    hcount=hcounts[node - 1],
+                    charge=0,
+                    lone_pairs=node - 1,
+                    radical=0,
+                    valence_electrons=4,
+                    atom_map=node,
+                )
+            return graph
+
+        result = HComplete._complete_from_side_graphs(
+            side([1, 1, 0, 0]),
+            side([0, 0, 1, 1]),
+            ignore_aromaticity=False,
+            balance_its=True,
+            get_priority_graph=False,
+            format="tuple",
+        )
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.reason, "non_equivariant_rc")
+        self.assertEqual(result.candidates, 2)
+
+    def test_explicit_h2_provenance_is_preserved(self):
+        """Explicit H2 atoms remain distinct from anonymous implicit-H slots."""
+        data = load_from_pickle("./Experiment/Lewis/Data/hydrogen.pkl.gz")
+        for fmt, its in (
+            ("typesGH", data[26]["ITS"]),
+            ("tuple", rsmi_to_its(data[26]["aam"], format="tuple")),
+        ):
+            with self.subTest(format=fmt):
+                result = HComplete.complete_its(its, format=fmt)
+                unique_rc, _, _ = HExtend._extend_unique(its, format=fmt)
+
+                self.assertFalse(result.ok)
+                self.assertEqual(result.reason, "non_equivariant_rc")
+                self.assertEqual(len(unique_rc), 2)
+
+    def test_typesgh_plan_projection_equals_materialized_rc_projection(self):
+        """Plan-native RC projection is definitionally equal after construction."""
+        data = load_from_pickle("./Experiment/Lewis/Data/hydrogen.pkl.gz")
+        for fixture in (self.data[16], data[26]):
+            react_graph, prod_graph = its_decompose(fixture["ITS"])
+            for plan in HComplete._iter_hydrogen_transfer_plans(
+                react_graph, prod_graph
+            ):
+                direct = HComplete._typesgh_plan_comparison_graph(
+                    react_graph,
+                    prod_graph,
+                    plan,
+                    ignore_aromaticity=False,
+                )
+                _, _, _, rc, _ = HComplete._materialize_transfer_candidate(
+                    react_graph,
+                    prod_graph,
+                    plan,
+                    ignore_aromaticity=False,
+                    balance_its=True,
+                    format="typesGH",
+                )
+                materialized = HComplete._comparison_graph(rc, "typesGH")
+                self.assertTrue(nx.utils.graphs_equal(direct, materialized))
 
     def test_process_multiple_hydrogens(self):
         """Test the process_multiple_hydrogens method."""
@@ -168,6 +254,22 @@ class TestHComplete(unittest.TestCase):
 
                 self.assertEqual(len(unique_rc), len(full_clusters))
                 self.assertEqual(len(unique_its), len(full_clusters))
+
+    def test_iter_unique_completions_streams_exact_classes(self):
+        """The streaming API yields the same exact representatives as the wrapper."""
+        its = self.data[16]["ITS"]
+        streamed = list(HExtend.iter_unique_completions(its))
+        unique_rc, unique_its, unique_sig = HExtend._extend_unique(its)
+
+        self.assertEqual(len(streamed), 2)
+        self.assertEqual([item[2] for item in streamed], unique_sig)
+        self.assertTrue(
+            all(
+                nx.is_isomorphic(item[0], rc)
+                and nx.is_isomorphic(item[1], completed_its)
+                for item, rc, completed_its in zip(streamed, unique_rc, unique_its)
+            )
+        )
 
     def test_get_unique_graphs_for_clusters_is_deterministic(self):
         """Test cluster representatives use the smallest index."""

@@ -7,6 +7,13 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import networkx as nx
 
+from synkit.Graph.Canon.exact import (
+    CanonicalSearchIncomplete,
+    ExactCanonicalResult,
+    ExactColoredGraphCanonicalizer,
+    IncompleteCanonicalResult,
+)
+
 from ._common import (
     AutomorphismResult,
     CanonicalResult,
@@ -723,6 +730,91 @@ class IRCanonicalEngine:
             Exact-search internal result.
         :rtype: IRInternalResult
         """
+        if max_count is not None or timeout_sec is not None or stop_after_two:
+            return self._run_bounded_compatibility(
+                max_count=max_count,
+                timeout_sec=timeout_sec,
+                stop_after_two=stop_after_two,
+            )
+        cached = self._reuse_cached_run(
+            max_count=max_count,
+            timeout_sec=timeout_sec,
+            stop_after_two=stop_after_two,
+        )
+        if cached is not None:
+            return cached
+
+        native = ExactColoredGraphCanonicalizer(
+            self.G,
+            node_color=lambda attrs: node_token(attrs, self.config),
+            edge_color=lambda attrs: edge_token(attrs, self.config),
+        ).search(timeout_seconds=timeout_sec)
+        if isinstance(native, IncompleteCanonicalResult):
+            raise CanonicalSearchIncomplete(
+                "CRN canonicalization did not complete: " f"{native.reason}."
+            )
+        if not isinstance(native, ExactCanonicalResult):
+            raise RuntimeError("Native exact canonicalizer returned no result.")
+
+        full_mappings = [witness.as_dict() for witness in native.automorphisms]
+        cap = 2 if stop_after_two else max_count
+        stopped = cap is not None and len(full_mappings) > cap
+        sample_mappings = full_mappings if cap is None else full_mappings[:cap]
+        best_order = list(native.canonical_order)
+        sample_perms = [
+            [mapping[node] for node in best_order] for mapping in sample_mappings
+        ]
+        orbits = orbits_from_mappings(
+            best_order,
+            (
+                sample_mappings
+                if sample_mappings
+                else [{node: node for node in best_order}]
+            ),
+        )
+        result = IRInternalResult(
+            canonical_order=best_order,
+            canonical_key=graph_key_from_order(
+                self.G,
+                best_order,
+                self.config,
+            ),
+            automorphism_count=len(sample_mappings),
+            sample_permutations=sample_perms,
+            sample_mappings=sample_mappings,
+            orbits=orbits,
+            elapsed_seconds=native.statistics.elapsed_seconds,
+            stopped_early=stopped,
+        )
+        if timeout_sec is None:
+            full_result = IRInternalResult(
+                canonical_order=best_order,
+                canonical_key=result.canonical_key,
+                automorphism_count=len(full_mappings),
+                sample_permutations=[
+                    [mapping[node] for node in best_order] for mapping in full_mappings
+                ],
+                sample_mappings=full_mappings,
+                orbits=[set(cell) for cell in native.orbits],
+                elapsed_seconds=native.statistics.elapsed_seconds,
+                stopped_early=False,
+            )
+            self._exact_full_cache = full_result
+        return result
+
+    def _run_bounded_compatibility(
+        self,
+        *,
+        max_count: Optional[int],
+        timeout_sec: Optional[float],
+        stop_after_two: bool,
+    ) -> IRInternalResult:
+        """Run the historical bounded diagnostic IR traversal.
+
+        This path preserves CRN automorphism-count and timeout diagnostics.
+        ``stopped_early`` is authoritative: callers may inspect the partial
+        evidence, but :meth:`canonical_result` refuses to promote it.
+        """
         cached = self._reuse_cached_run(
             max_count=max_count,
             timeout_sec=timeout_sec,
@@ -742,7 +834,12 @@ class IRCanonicalEngine:
             nonlocal best_key, best_order, sample_perms, count, stopped
             if stopped:
                 return
-            if should_stop(start, timeout_sec, count=count, max_count=max_count):
+            if should_stop(
+                start,
+                timeout_sec,
+                count=count,
+                max_count=max_count,
+            ):
                 stopped = True
                 return
 
@@ -770,18 +867,25 @@ class IRCanonicalEngine:
 
             target = self._target_cell(refined)
             ordered_candidates = sorted(
-                target, key=lambda v: self._candidate_order_key(v, refined)
+                target,
+                key=lambda value: self._candidate_order_key(
+                    value,
+                    refined,
+                ),
             )
-            for v in ordered_candidates:
-                child = self._build_child_partition(refined, target, v)
+            for value in ordered_candidates:
+                child = self._build_child_partition(
+                    refined,
+                    target,
+                    value,
+                )
                 dfs(child)
                 if stopped:
                     return
 
         dfs(init)
         assert best_key is not None and best_order is not None
-
-        result = self._assemble_result(
+        return self._assemble_result(
             start=start,
             best_key=best_key,
             best_order=best_order,
@@ -789,9 +893,6 @@ class IRCanonicalEngine:
             count=count,
             stopped=stopped,
         )
-        if timeout_sec is None and not result.stopped_early and not stop_after_two:
-            self._exact_full_cache = result
-        return result
 
     def canonical_result(
         self, *, timeout_sec: Optional[float] = None
@@ -808,6 +909,10 @@ class IRCanonicalEngine:
         :rtype: CanonicalResult
         """
         res = self.run(timeout_sec=timeout_sec)
+        if res.stopped_early:
+            raise CanonicalSearchIncomplete(
+                "CRN canonical identity requires a complete search."
+            )
         return CanonicalResult(
             canonical_order=res.canonical_order,
             canonical_key=res.canonical_key,

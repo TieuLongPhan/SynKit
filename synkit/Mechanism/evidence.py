@@ -189,6 +189,10 @@ def collect_evidence(
         }
         for name, count in sorted(corruption_totals.items())
     }
+    partition_counts = {
+        partition: counters["typed_records"]
+        for partition, counters in sorted(per_partition.items())
+    }
     return {
         "schema": "SynKit-MechanismBench-evidence-v1",
         "benchmark_fingerprints": _manifest_fingerprints(directory),
@@ -199,10 +203,11 @@ def collect_evidence(
         },
         "scope": {
             "typed_replay_cases": len(cases),
-            "partition_counts": {
-                partition: counters["typed_records"]
-                for partition, counters in sorted(per_partition.items())
-            },
+            "paper_arrow_mechanism_cases": (
+                partition_counts.get("polar", 0) + partition_counts.get("radical", 0)
+            ),
+            "typed_stereo_extension_cases": partition_counts.get("stereo", 0),
+            "partition_counts": partition_counts,
             "excluded_fixture_representations": [
                 "reaction_smiles",
                 "non_tetrahedral_rewrite",
