@@ -132,6 +132,16 @@ def read_row_numbers(path: Path) -> set[int]:
     return rows
 
 
+def case_identity(batch: Path, row_number: int) -> dict[str, Any]:
+    """Return portable provenance for one row, including aggregate bug logs."""
+    batch_file = batch.name
+    return {
+        "case_id": f"{batch_file}:{row_number}",
+        "batch_file": batch_file,
+        "batch_row": row_number,
+    }
+
+
 def run_replay(args: argparse.Namespace) -> dict[str, Any]:  # noqa: C901
     batch = args.batch.resolve()
     if not batch.is_file():
@@ -185,7 +195,7 @@ def run_replay(args: argparse.Namespace) -> dict[str, Any]:  # noqa: C901
             start=1,
         ):
             case: dict[str, Any] = {
-                "batch_row": row_number,
+                **case_identity(batch, row_number),
                 "source_label": source_label,
                 "directions": {},
             }
@@ -278,6 +288,7 @@ def run_replay(args: argparse.Namespace) -> dict[str, Any]:  # noqa: C901
         "directions": args.directions,
         "policy": {
             "case_timeout_seconds": args.case_timeout,
+            "timeout_scope": "each expansion stage",
             "embedding_threshold": args.embedding_threshold,
             "failure_sample_limit": args.failure_sample_limit,
             "reaction_center_edge_policy": "changed",

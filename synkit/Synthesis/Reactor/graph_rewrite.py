@@ -17,6 +17,7 @@ from synkit.Synthesis.Reactor import product_state as _product_state
 from synkit.Synthesis.Reactor.strategy import Strategy
 
 MappingDict = Dict[Any, Any]
+_EMBEDDING_ANCHOR = "_synkit_explicit_h_embedding_anchor"
 
 
 def _implicit_heavy_hydrogens(
@@ -106,17 +107,72 @@ def _get_explicit_map(
     strategy: Strategy = Strategy.ALL,
     embed_threshold: float = None,
     embed_pre_filter: bool = False,
+    anchor_embedding: bool = True,
+    expanded_host_cache: Dict[frozenset[Any], nx.Graph] | None = None,
 ):
+    """Expand implicit H only within, and consistently with, one embedding.
+
+    In deduplicated mode, ``mapping`` was already accepted against the
+    implicit-H pattern, so the explicit-H search needs only extensions of
+    that embedding. Unique temporary anchor colours enforce this condition
+    inside VF2 and avoid repeating every heavy-atom permutation. Raw mode can
+    disable anchoring to retain its historical exhaustive multiplicity.
+    """
     expand_nodes = [v for _, v in mapping.items()]
     original_nodes = set(host)
-    host_explicit = h_to_explicit(host, expand_nodes)
-    for node in set(host_explicit) - original_nodes:
-        if not host_explicit.nodes[node].get("_restored_mapped_h"):
-            host_explicit.nodes[node]["_pattern_expanded_h"] = True
+    cache_key = frozenset(expand_nodes)
+    cached_host = (
+        expanded_host_cache.get(cache_key)
+        if expanded_host_cache is not None
+        else None
+    )
+    if cached_host is None:
+        host_explicit = h_to_explicit(host, expand_nodes)
+        for node in set(host_explicit) - original_nodes:
+            if not host_explicit.nodes[node].get("_restored_mapped_h"):
+                host_explicit.nodes[node]["_pattern_expanded_h"] = True
+        if expanded_host_cache is not None:
+            expanded_host_cache[cache_key] = host_explicit.copy()
+    else:
+        host_explicit = cached_host.copy()
+    anchored_pattern = (pattern_explicit or nx.Graph()).copy()
+    if anchor_embedding:
+        for anchor, (pattern_node, host_node) in enumerate(
+            sorted(mapping.items(), key=lambda item: repr(item[0])),
+            start=1,
+        ):
+            if pattern_node not in anchored_pattern or host_node not in host_explicit:
+                continue
+            anchored_pattern.nodes[pattern_node][_EMBEDDING_ANCHOR] = anchor
+            host_explicit.nodes[host_node][_EMBEDDING_ANCHOR] = anchor
+
+    search_host = host_explicit
+    missing_pattern_nodes = set(anchored_pattern) - set(mapping)
+    local_h_extension = bool(anchor_embedding) and all(
+        anchored_pattern.nodes[node].get("element") == "H"
+        and all(neighbor in mapping for neighbor in anchored_pattern.neighbors(node))
+        and any(neighbor in mapping for neighbor in anchored_pattern.neighbors(node))
+        for node in missing_pattern_nodes
+    )
+    if local_h_extension:
+        # Heavy nodes are pointwise anchored. Every omitted pattern H came
+        # from implicitization and is adjacent only to those anchors, so no
+        # node outside their closed H-neighbourhood can extend this mapping.
+        # Restricting VF2 to that induced subgraph preserves the exact
+        # extension set while avoiding traversal of unrelated host context.
+        local_nodes = set(mapping.values())
+        for host_node in tuple(local_nodes):
+            local_nodes.update(
+                neighbor
+                for neighbor in host_explicit.neighbors(host_node)
+                if host_explicit.nodes[neighbor].get("element") == "H"
+            )
+        search_host = host_explicit.subgraph(local_nodes).copy()
+
     mappings = SubgraphSearchEngine.find_subgraph_mappings(
-        host=host_explicit,
-        pattern=pattern_explicit or nx.Graph(),
-        node_attrs=["element", "charge"],
+        host=search_host,
+        pattern=anchored_pattern,
+        node_attrs=["element", "charge", _EMBEDDING_ANCHOR],
         edge_attrs=["order"],
         strategy=strategy,
         threshold=embed_threshold,
@@ -128,12 +184,14 @@ def _get_explicit_map(
     # tie-breaker between symmetry-equivalent explicit hydrogens.
     mappings.sort(
         key=lambda candidate: _mapping_atom_map_alignment(
-            pattern_explicit,
+            anchored_pattern,
             host_explicit,
             candidate,
         ),
         reverse=True,
     )
+    for _, attrs in host_explicit.nodes(data=True):
+        attrs.pop(_EMBEDDING_ANCHOR, None)
     return mappings, host_explicit
 
 
@@ -189,6 +247,47 @@ def _restore_unmatched_pattern_hydrogens(
         graph.remove_node(hydrogen)
 
 
+def _prepare_rewrite_host(host: nx.Graph, *, electron_aware: bool) -> nx.Graph:
+    """Materialize mapping-invariant host state once for a rewrite batch."""
+    prepared = host.copy()
+    for _, data in prepared.nodes(data=True):
+        tpl = (
+            data.get("element", "*"),
+            data.get("aromatic", False),
+            data.get("hcount", 0),
+            data.get("charge", 0),
+            data.get("neighbors", []),
+        )
+        data.setdefault("typesGH", (tpl, tpl))
+    if electron_aware:
+        _product_state._ensure_host_atom_maps(prepared)
+    for _, _, data in prepared.edges(data=True):
+        order = data.get("order", 1.0)
+        data["order"] = (order, order)
+        if electron_aware:
+            sigma = data.get("sigma_order", 1.0 if order else 0.0)
+            pi = data.get("pi_order", max(0.0, float(order) - 1.0))
+            data["sigma_order"] = (sigma, sigma)
+            data["pi_order"] = (pi, pi)
+        data.setdefault("standard_order", 0.0)
+    return prepared
+
+
+def _prepare_rewrite_batch_host(
+    host: nx.Graph,
+    mappings: List[MappingDict],
+    reaction_center: nx.Graph,
+    pattern_has_explicit_h: bool,
+    electron_aware: bool,
+) -> Tuple[nx.Graph, bool]:
+    """Return a reusable prepared host when every application is total."""
+    if pattern_has_explicit_h or any(
+        not set(reaction_center).issubset(mapping) for mapping in mappings
+    ):
+        return host, False
+    return _prepare_rewrite_host(host, electron_aware=electron_aware), True
+
+
 def _glue_graph(
     host: nx.Graph,
     rc: nx.Graph,
@@ -203,6 +302,9 @@ def _glue_graph(
     refresh_electrons: bool = True,
     electron_aware: bool | None = None,
     relative_match_resources: frozenset[str] = frozenset(),
+    anchor_explicit_embedding: bool = True,
+    host_prepared: bool = False,
+    expanded_host_cache: Dict[frozenset[Any], nx.Graph] | None = None,
 ) -> List[nx.Graph]:
     list_its: List[nx.Graph] = []
     # NetworkX copies node/edge attribute dictionaries.  Rewrite values
@@ -222,10 +324,11 @@ def _glue_graph(
         )
         return tpl, tpl
 
-    for _, data in host_g.nodes(data=True):
-        data.setdefault("typesGH", _default_tg(data))
-    if electron_aware:
-        _product_state._ensure_host_atom_maps(host_g)
+    if not host_prepared:
+        for _, data in host_g.nodes(data=True):
+            data.setdefault("typesGH", _default_tg(data))
+        if electron_aware:
+            _product_state._ensure_host_atom_maps(host_g)
 
     if pattern_has_explicit_H:
         mappings, host_g = _get_explicit_map(
@@ -235,6 +338,8 @@ def _glue_graph(
             strategy,
             embed_threshold,
             embed_pre_filter,
+            anchor_explicit_embedding,
+            expanded_host_cache,
         )
         if electron_aware:
             _product_state._ensure_host_atom_maps(host_g)
@@ -266,15 +371,16 @@ def _glue_graph(
                 tuple_mode=electron_aware,
             )
 
-        for _, _, data in its.edges(data=True):
-            o = data.get("order", 1.0)
-            data["order"] = (o, o)
-            if electron_aware:
-                sigma = data.get("sigma_order", 1.0 if o else 0.0)
-                pi = data.get("pi_order", max(0.0, float(o) - 1.0))
-                data["sigma_order"] = (sigma, sigma)
-                data["pi_order"] = (pi, pi)
-            data.setdefault("standard_order", 0.0)
+        if not host_prepared:
+            for _, _, data in its.edges(data=True):
+                o = data.get("order", 1.0)
+                data["order"] = (o, o)
+                if electron_aware:
+                    sigma = data.get("sigma_order", 1.0 if o else 0.0)
+                    pi = data.get("pi_order", max(0.0, float(o) - 1.0))
+                    data["sigma_order"] = (sigma, sigma)
+                    data["pi_order"] = (pi, pi)
+                data.setdefault("standard_order", 0.0)
 
         for _, data in rc.nodes(data=True):
             data.setdefault("typesGH", _default_tg(data))

@@ -162,6 +162,8 @@ def replay_direction(
         signal.setitimer(signal.ITIMER_REAL, case_timeout)
     started = time.perf_counter()
     stage = "reactor_construction"
+    stage_started = started
+    stage_seconds: dict[str, float] = {}
     mappings = None
     rewritten = None
     reactions = None
@@ -173,14 +175,31 @@ def replay_direction(
             direction,
             embedding_threshold,
         )
+        stage_seconds[stage] = time.perf_counter() - stage_started
         stage = "matching"
+        stage_started = time.perf_counter()
+        if case_timeout is not None:
+            signal.setitimer(signal.ITIMER_REAL, case_timeout)
         mappings = reactor.mappings
+        stage_seconds[stage] = time.perf_counter() - stage_started
         stage = "rewriting"
+        stage_started = time.perf_counter()
+        if case_timeout is not None:
+            signal.setitimer(signal.ITIMER_REAL, case_timeout)
         rewritten = reactor.its_list
+        stage_seconds[stage] = time.perf_counter() - stage_started
+        # The timeout measures reaction expansion, not benchmark-only string
+        # conversion and endpoint canonicalization. Keep those costs visible
+        # below without misclassifying a completed reactor application.
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
         stage = "serialization"
+        stage_started = time.perf_counter()
         reactions = reactor.smarts_list
+        stage_seconds[stage] = time.perf_counter() - stage_started
         stage = "canonicalization"
+        stage_started = time.perf_counter()
         generated = {canonical_unmapped_reaction(item) for item in reactions}
+        stage_seconds[stage] = time.perf_counter() - stage_started
         recovered = expected in generated
         result = {
             "status": "PASS" if recovered else "FAIL",
@@ -190,6 +209,11 @@ def replay_direction(
             "serialized_count": len(reactions),
             "unique_reaction_count": len(generated),
             "seconds": time.perf_counter() - started,
+            "expansion_seconds": sum(
+                stage_seconds[name]
+                for name in ("reactor_construction", "matching", "rewriting")
+            ),
+            "stage_seconds": stage_seconds,
         }
         if not recovered and failure_sample_limit:
             ordered = sorted(generated)
@@ -200,12 +224,14 @@ def replay_direction(
             )
         return result
     except Exception as exc:
+        stage_seconds[stage] = time.perf_counter() - stage_started
         result = {
             "status": "ERROR",
             "stage": getattr(exc, "stage", None) or stage,
             "error_type": type(exc).__name__,
             "message": str(exc),
             "seconds": time.perf_counter() - started,
+            "stage_seconds": stage_seconds,
         }
         if mappings is not None:
             result["mapping_count"] = len(mappings)
@@ -297,6 +323,7 @@ def benchmark(
         },
         "policy": {
             "case_timeout_seconds": args.case_timeout,
+            "timeout_scope": "each expansion stage",
             "embedding_threshold": args.embedding_threshold,
             "automorphism": True,
             "reaction_center_edge_policy": "changed",

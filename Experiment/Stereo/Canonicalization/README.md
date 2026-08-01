@@ -5,7 +5,8 @@ This track has four maintained exact protocols:
 1. `configuration_free_local.py`: exhaustive raw local representations after
    supplied configuration is erased;
 2. `configuration_free_global.py`: simultaneous mixed-family formal products
-   for A/B/C plus the complete raw-A quotient;
+   for A/B/C, complete raw-A/raw-B quotients, and the raw-C/VS146 stress
+   quotient;
 3. `atom_relabel.py global-local`: selective global-by-local certificate
    invariance, backed by `global_local.py`;
 4. `multi_element.py`: composition of multiple configured stereo elements.

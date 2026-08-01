@@ -1,17 +1,26 @@
 from collections import Counter
+from operator import eq
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import networkx as nx
 from joblib import Parallel, delayed
+from networkx.algorithms.isomorphism import generic_node_match
 
 from synkit.Graph.Matcher.graph_cluster import GraphCluster
 from synkit.Graph.Hyrogen.hcomplete import HComplete, ITSFormatInput
+from synkit.Graph.Stereo.matching import stereo_isomorphic
 
 from synkit.Graph.Hyrogen._misc import check_hcount_change
 
 cluster = GraphCluster()
+_ANCHOR_ATTRIBUTE = "_synkit_hextend_anchor"
+_anchored_node_match = generic_node_match(
+    ["element", "charge", _ANCHOR_ATTRIBUTE],
+    ["*", 0, None],
+    [eq, eq, eq],
+)
 
-ColourDistance = Tuple[Any, int]
+ColourDistance = Tuple[int, int]
 RootedDistanceProfile = Tuple[Tuple[ColourDistance, int], ...]
 HydrogenDistanceInvariant = Tuple[RootedDistanceProfile, ...]
 
@@ -198,17 +207,11 @@ class HExtend(HComplete):
 
         exact_clusters = []
         for indices in invariant_blocks.values():
-            if len(indices) == 1:
-                exact_clusters.append({indices[0]})
-                continue
-            local_clusters, _ = cluster.iterative_cluster(
-                [its_list[index] for index in indices],
-                nodeMatch=cluster.nodeMatch,
-                edgeMatch=cluster.edgeMatch,
-            )
             exact_clusters.extend(
-                {indices[local_index] for local_index in local_cluster}
-                for local_cluster in local_clusters
+                HExtend._cluster_invariant_block(
+                    indices,
+                    its_list,
+                )
             )
 
         exact_clusters.sort(key=min)
@@ -218,6 +221,112 @@ class HExtend(HComplete):
             for index in indices
         }
         return exact_clusters, rule_to_cluster
+
+    @staticmethod
+    def _cluster_invariant_block(
+        indices: List[int],
+        its_list: List[nx.Graph],
+    ) -> List[set]:
+        """Exactly quotient one necessary-invariant block."""
+        exact_clusters: List[set] = []
+        for index in indices:
+            for exact_cluster in exact_clusters:
+                representative = min(exact_cluster)
+                if HExtend._anchored_full_its_isomorphic(
+                    its_list[representative],
+                    its_list[index],
+                ):
+                    exact_cluster.add(index)
+                    break
+            else:
+                exact_clusters.append({index})
+        return exact_clusters
+
+    @staticmethod
+    def _anchored_full_its_isomorphic(
+        left: nx.Graph,
+        right: nx.Graph,
+    ) -> bool:
+        """Decide full ITS isomorphism by changed-core anchor extension.
+
+        Every full ITS isomorphism restricts to an isomorphism of the subgraph
+        induced by changed bonds, because the full edge matcher preserves the
+        paired bond-order attribute. Conversely, a full isomorphism extending
+        any enumerated core isomorphism is a valid witness. Exhaustive anchor
+        extension is therefore equivalent to unconstrained full isomorphism.
+        """
+        left_rc = HExtend._changed_bond_core(left)
+        right_rc = HExtend._changed_bond_core(right)
+        if (
+            left_rc.is_directed() != right_rc.is_directed()
+            or left_rc.is_multigraph() != right_rc.is_multigraph()
+        ):
+            return False
+        if (
+            left_rc.number_of_nodes() != right_rc.number_of_nodes()
+            or left_rc.number_of_edges() != right_rc.number_of_edges()
+        ):
+            return False
+        if left_rc.number_of_nodes() == 0:
+            return stereo_isomorphic(
+                left,
+                right,
+                node_match=cluster.nodeMatch,
+                edge_match=cluster.edgeMatch,
+            )
+        if left_rc.is_directed():
+            matcher_type = (
+                nx.algorithms.isomorphism.MultiDiGraphMatcher
+                if left_rc.is_multigraph()
+                else nx.algorithms.isomorphism.DiGraphMatcher
+            )
+        else:
+            matcher_type = (
+                nx.algorithms.isomorphism.MultiGraphMatcher
+                if left_rc.is_multigraph()
+                else nx.algorithms.isomorphism.GraphMatcher
+            )
+        matcher = matcher_type(
+            left_rc,
+            right_rc,
+            node_match=cluster.nodeMatch,
+            edge_match=cluster.edgeMatch,
+        )
+        anchored_left = left.copy()
+        anchored_right = right.copy()
+        nx.set_node_attributes(anchored_left, None, _ANCHOR_ATTRIBUTE)
+        nx.set_node_attributes(anchored_right, None, _ANCHOR_ATTRIBUTE)
+        for rc_mapping in matcher.isomorphisms_iter():
+            for anchor, (left_node, right_node) in enumerate(rc_mapping.items()):
+                anchored_left.nodes[left_node][_ANCHOR_ATTRIBUTE] = anchor
+                anchored_right.nodes[right_node][_ANCHOR_ATTRIBUTE] = anchor
+            if stereo_isomorphic(
+                anchored_left,
+                anchored_right,
+                node_match=_anchored_node_match,
+                edge_match=cluster.edgeMatch,
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _changed_bond_core(its: nx.Graph) -> nx.Graph:
+        """Return the isomorphism-invariant subgraph of changed ITS bonds."""
+        core = its.__class__()
+        for left, right, attributes in its.edges(data=True):
+            order = attributes.get("order")
+            if (
+                not isinstance(order, (tuple, list))
+                or len(order) != 2
+                or order[0] == order[1]
+            ):
+                continue
+            if left not in core:
+                core.add_node(left, **its.nodes[left])
+            if right not in core:
+                core.add_node(right, **its.nodes[right])
+            core.add_edge(left, right, **attributes)
+        return core
 
     @staticmethod
     def hydrogen_distance_invariant(its: nx.Graph) -> HydrogenDistanceInvariant:
@@ -233,6 +342,16 @@ class HExtend(HComplete):
         """
         resolved_format = HComplete._resolve_format(its, "auto")
         comparison = HComplete._comparison_graph(its, resolved_format)
+        ordered_colours = sorted(
+            {
+                attributes["cmp_node"]
+                for _, attributes in comparison.nodes(data=True)
+            },
+            key=_invariant_order_key,
+        )
+        colour_rank = {
+            colour: rank for rank, colour in enumerate(ordered_colours)
+        }
         profiles: List[RootedDistanceProfile] = []
         for hydrogen, attributes in comparison.nodes(data=True):
             if attributes["cmp_element"] != "H":
@@ -242,13 +361,11 @@ class HExtend(HComplete):
                 hydrogen,
             )
             histogram = Counter(
-                (comparison.nodes[node]["cmp_node"], distance)
+                (colour_rank[comparison.nodes[node]["cmp_node"]], distance)
                 for node, distance in distances.items()
             )
-            profiles.append(
-                tuple(sorted(histogram.items(), key=_invariant_order_key))
-            )
-        return tuple(sorted(profiles, key=_invariant_order_key))
+            profiles.append(tuple(sorted(histogram.items())))
+        return tuple(sorted(profiles))
 
     @staticmethod
     def hydrogen_distance_signature(its: nx.Graph) -> HydrogenDistanceInvariant:

@@ -105,7 +105,9 @@ formal tuples and global classes:
 | Formal A | 10/10 | 48/48 | 48/48 | 38 | 0/0 |
 | Raw A | 10/10 | 2,048/2,048 | 48/48 | 38 | 0/0 |
 | Formal B | 11/11 | 192/192 | 192/192 | 95 | 0/0 |
+| Raw B | 11/11 | 992,256/992,256 | 192/192 | 95 | 0/0 |
 | Formal C | 9/9 | 1,920/1,920 | 1,920/1,920 | 752 | 0/0 |
+| Raw C/VS146 | 1/1 | 2,359,296/2,359,296 | 64/64 | 64 | 0/0 |
 
 Formal A/B/C therefore cover 30 mixed-family cases and 2,160 joint formal
 assignments. The largest C case represents a hypothetical raw product of

@@ -17,6 +17,16 @@ GENERATED_REPORTS = (
     / "Global"
     / "A"
     / "global_formal_canonicalization_report.json",
+    DATA
+    / "Canonicalization"
+    / "Global"
+    / "B"
+    / "global_raw_canonicalization_report.json",
+    DATA
+    / "Canonicalization"
+    / "Global"
+    / "C"
+    / "global_raw_vs146_canonicalization_report.json",
     DATA / "Chirality" / "exact_acs_mirror_report.json",
     DATA / "Diagnostics" / "benchmark_report.json",
     DATA / "Diagnostics" / "backend_comparison_report.json",
@@ -31,9 +41,6 @@ GENERATED_OUTPUT_TESTS = {
     "test_acs_task_exhaustively_relabels_one_configured_case",
     "Test/Benchmark/Stereo/Canonicalization/test_atom_relabel.py::"
     "test_rota_task_reports_support_accuracy_not_handedness",
-    "Test/Benchmark/Stereo/Canonicalization/"
-    "test_configuration_free_global.py::"
-    "test_retained_abc_matrix_is_complete_without_raw_b_or_c",
     "Test/Benchmark/Stereo/Canonicalization/"
     "test_configuration_free_local.py::test_retained_local_matrix_is_complete",
     "Test/Benchmark/Stereo/Canonicalization/test_global_local.py::"

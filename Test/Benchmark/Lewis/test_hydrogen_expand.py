@@ -17,6 +17,7 @@ from Experiment.Lewis.hydrogen_expand.benchmark import (
 )
 from Experiment.Lewis.hydrogen_expand.reference_methods import run_reference_methods
 from synkit.Graph.Hyrogen.hextend import HExtend
+from synkit.Graph.Matcher.graph_cluster import GraphCluster
 
 
 def test_hydrogen_corpus_is_the_official_109_reaction_payload() -> None:
@@ -121,6 +122,63 @@ def test_hydrogen_distance_invariant_is_map_independent() -> None:
     )
     assert clusters == [{0, 1}]
     assert mapping == {0: 0, 1: 0}
+
+
+def test_rc_anchored_quotient_matches_exact_clustering_on_full_corpus() -> None:
+    baseline = GraphCluster()
+    payload, _ = select_reference_cases(load_pickle(DATASET))
+
+    for reaction in payload:
+        _, completed_its, signatures = HExtend.extend_its(
+            reaction["ITS"]
+        )
+        expected, _ = baseline.iterative_cluster(
+            completed_its,
+            nodeMatch=baseline.nodeMatch,
+            edgeMatch=baseline.edgeMatch,
+        )
+        observed, _ = HExtend.cluster_full_its(
+            completed_its,
+            signatures,
+        )
+
+        assert observed == expected, reaction["R-id"]
+
+
+def test_anchored_quotient_does_not_mutate_candidate_graphs() -> None:
+    reaction = next(
+        item for item in load_pickle(DATASET) if item["R-id"] == "R-51355"
+    )
+    _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
+    before = [
+        {node: dict(attributes) for node, attributes in graph.nodes(data=True)}
+        for graph in completed_its
+    ]
+
+    HExtend.cluster_full_its(completed_its, signatures)
+
+    after = [
+        {node: dict(attributes) for node, attributes in graph.nodes(data=True)}
+        for graph in completed_its
+    ]
+    assert after == before
+
+
+def test_exact_fallback_resolves_a_deliberate_invariant_collision() -> None:
+    path = nx.path_graph(4)
+    star = nx.star_graph(3)
+    for graph in (path, star):
+        nx.set_node_attributes(graph, "C", "element")
+        nx.set_node_attributes(graph, 0, "charge")
+        nx.set_edge_attributes(graph, (1, 1), "order")
+
+    clusters, mapping = HExtend.cluster_full_its(
+        [path, star],
+        ["deliberate-collision", "deliberate-collision"],
+    )
+
+    assert clusters == [{0}, {1}]
+    assert mapping == {0: 0, 1: 1}
 
 
 def test_summary_keeps_capability_failures_separate_from_outputs() -> None:

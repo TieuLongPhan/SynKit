@@ -524,7 +524,7 @@ def main() -> int:
     import synkit
 
     aggregate = {
-        "schema": "synkit.hydrogen-expansion-comparison/5",
+        "schema": "synkit.hydrogen-expansion-comparison/6",
         "dataset": {
             "path": str(dataset_path),
             "sha256": sha256(dataset_path),
@@ -563,8 +563,9 @@ def main() -> int:
             "rb_nx": "anchor-relabeling NetworkX",
         },
         "hextend_classification": (
-            "RC-invariant and hydrogen-distance prefilters followed by exact "
-            "full-ITS stereo-aware isomorphism"
+            "RC-invariant and hydrogen-distance prefilters followed by "
+            "exhaustive changed-core-anchored exact full-ITS stereo-aware "
+            "isomorphism"
         ),
         "local_environment": {
             "python": platform.python_version(),

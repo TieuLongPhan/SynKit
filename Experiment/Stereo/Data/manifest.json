@@ -173,17 +173,25 @@
       "reports": {
         "raw_a": "Experiment/Stereo/Data/Canonicalization/Global/A/global_raw_canonicalization_report.json",
         "formal_a": "Experiment/Stereo/Data/Canonicalization/Global/A/global_formal_canonicalization_report.json",
+        "raw_b": "Experiment/Stereo/Data/Canonicalization/Global/B/global_raw_canonicalization_report.json",
         "formal_b": "Experiment/Stereo/Data/Canonicalization/Global/B/global_formal_canonicalization_report.json",
+        "raw_c_vs146": "Experiment/Stereo/Data/Canonicalization/Global/C/global_raw_vs146_canonicalization_report.json",
         "formal_c": "Experiment/Stereo/Data/Canonicalization/Global/C/global_formal_canonicalization_report.json"
       },
       "cases": 30,
       "formal_assignments": 2160,
       "raw_a_assignments": 2048,
+      "supplemental_raw_stress": {
+        "cases": 12,
+        "raw_b_assignments": 992256,
+        "raw_c_vs146_assignments": 2359296,
+        "timeouts": 0,
+        "failures": 0
+      },
       "timeouts": 0,
       "failures": 0,
       "excluded_optional_stress_runs": [
-        "raw_b",
-        "raw_c"
+        "remaining_raw_c_cases"
       ]
     },
     "global_by_local_canonicalization": {

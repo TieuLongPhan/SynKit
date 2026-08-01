@@ -14,7 +14,11 @@ if str(ROOT) not in sys.path:
 
 from Experiment.Lewis.FLOWER.prepare_batches import prepare_batches  # noqa: E402
 from Experiment.Lewis.FLOWER.prepare_resume import _durable_prefix  # noqa: E402
-from Experiment.Lewis.FLOWER.replay import iter_rows, read_row_numbers  # noqa: E402
+from Experiment.Lewis.FLOWER.replay import (  # noqa: E402
+    case_identity,
+    iter_rows,
+    read_row_numbers,
+)
 
 
 def _write_rows(path: Path, labels: list[str]) -> list[str]:
@@ -67,6 +71,19 @@ def test_iter_rows_preserves_label_and_supports_window(tmp_path: Path) -> None:
         (2, "two", "[C:1]>>[C:1]"),
         (3, "three", "[C:2]>>[C:2]"),
     ]
+
+
+def test_case_identity_is_portable_across_aggregate_bug_logs() -> None:
+    identity = case_identity(
+        Path("/server/data/batch-07-of-10.txt.gz"),
+        321,
+    )
+
+    assert identity == {
+        "case_id": "batch-07-of-10.txt.gz:321",
+        "batch_file": "batch-07-of-10.txt.gz",
+        "batch_row": 321,
+    }
 
 
 def test_iter_rows_supports_sparse_provenance_selection(

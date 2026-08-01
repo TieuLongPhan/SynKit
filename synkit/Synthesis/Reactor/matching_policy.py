@@ -100,12 +100,14 @@ def has_heavy_cross_component_correlation(
     return False
 
 
-def deduplicate_joint_rule_mappings(
+def deduplicate_joint_rule_mappings(  # noqa: C901
     mappings: list[dict[Any, Any]],
     pattern: nx.Graph,
     reaction_center: nx.Graph,
     *,
     node_attrs: list[str],
+    edge_attrs: list[str],
+    fixed_nodes: frozenset[Any] = frozenset(),
     max_automorphisms: int = 256,
 ) -> list[dict[Any, Any]]:
     """Quotient mappings only by complete transition-graph automorphisms."""
@@ -118,17 +120,45 @@ def deduplicate_joint_rule_mappings(
         return mappings
 
     transition = pattern.copy()
-    transition_keys = (
+    transition_node_keys = (
+        "element",
+        "aromatic",
+        "hcount",
+        "charge",
+        "radical",
+        "neighbors",
+        "lone_pairs",
+        "valence_electrons",
+        "present",
+        "charge_model_consistent",
+    )
+    for node, attrs in transition.nodes(data=True):
+        reaction_attrs = reaction_center.nodes.get(node, {})
+        attrs["_transition_node_role"] = _freeze(
+            (
+                "source",
+                tuple((key, attrs.get(key)) for key in node_attrs),
+                "reaction_center",
+                tuple((key, reaction_attrs.get(key)) for key in transition_node_keys),
+            )
+        )
+    transition_edge_keys = (
         "order",
         "kekule_order",
         "sigma_order",
         "pi_order",
+        "aromatic",
         "standard_order",
     )
     for left, right, attrs in reaction_center.edges(data=True):
         if left not in transition or right not in transition:
             continue
-        role = _freeze(tuple((key, attrs.get(key)) for key in transition_keys))
+        role = _freeze(
+            (
+                "reaction_center",
+                tuple((key, attrs.get(key)) for key in transition_edge_keys),
+            )
+        )
         if transition.has_edge(left, right):
             transition.edges[left, right]["_transition_role"] = role
         else:
@@ -137,28 +167,52 @@ def deduplicate_joint_rule_mappings(
                 right,
                 _transition_role=role,
             )
+
+    # Explicit-H transfer pair IDs are provenance labels, but their incidence
+    # relation is chemical. Encode that relation with anonymous virtual nodes
+    # so automorphisms may rename a pair while preserving its donor/recipient
+    # connectivity exactly.
+    pair_incidence: dict[Any, dict[Any, set[str]]] = {}
+    for node, attrs in reaction_center.nodes(data=True):
+        for side, key in (("left", "h_pairs_left"), ("right", "h_pairs_right")):
+            for pair_id in attrs.get(key, ()):
+                pair_incidence.setdefault(pair_id, {}).setdefault(node, set()).add(side)
+    for ordinal, (_, incidence) in enumerate(
+        sorted(pair_incidence.items(), key=lambda item: repr(item[0]))
+    ):
+        pair_node = ("_synkit_h_pair_role", ordinal)
+        transition.add_node(
+            pair_node,
+            _transition_node_role=("hydrogen_pair",),
+        )
+        for node, sides in incidence.items():
+            if node in transition:
+                transition.add_edge(
+                    pair_node,
+                    node,
+                    _transition_role=("hydrogen_pair", tuple(sorted(sides))),
+                )
     for _, _, attrs in transition.edges(data=True):
         attrs.setdefault(
             "_transition_role",
             _freeze(
                 (
                     "source",
-                    attrs.get("order"),
-                    attrs.get("sigma_order"),
-                    attrs.get("pi_order"),
+                    tuple((key, attrs.get(key)) for key in edge_attrs),
                 )
             ),
         )
 
-    node_defaults = [0 if attr == "charge" else "*" for attr in node_attrs]
     matcher = GraphMatcher(
         transition,
         transition,
-        node_match=categorical_node_match(node_attrs, node_defaults),
+        node_match=categorical_node_match("_transition_node_role", ()),
         edge_match=categorical_edge_match("_transition_role", ()),
     )
     automorphisms = []
     for automorphism in matcher.isomorphisms_iter():
+        if any(automorphism[node] != node for node in fixed_nodes):
+            continue
         automorphisms.append(automorphism)
         if len(automorphisms) > max_automorphisms:
             return mappings

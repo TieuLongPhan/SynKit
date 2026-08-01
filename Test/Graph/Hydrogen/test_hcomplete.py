@@ -110,7 +110,7 @@ class TestHComplete(unittest.TestCase):
 
     def test_explicit_h2_provenance_is_preserved(self):
         """Explicit H2 atoms remain distinct from anonymous implicit-H slots."""
-        data = load_from_pickle("./Data/Testcase/hydro/hydrogen.pkl.gz")
+        data = load_from_pickle("./Experiment/Lewis/Data/hydrogen.pkl.gz")
         for fmt, its in (
             ("typesGH", data[26]["ITS"]),
             ("tuple", rsmi_to_its(data[26]["aam"], format="tuple")),
@@ -125,7 +125,7 @@ class TestHComplete(unittest.TestCase):
 
     def test_typesgh_plan_projection_equals_materialized_rc_projection(self):
         """Plan-native RC projection is definitionally equal after construction."""
-        data = load_from_pickle("./Data/Testcase/hydro/hydrogen.pkl.gz")
+        data = load_from_pickle("./Experiment/Lewis/Data/hydrogen.pkl.gz")
         for fixture in (self.data[16], data[26]):
             react_graph, prod_graph = its_decompose(fixture["ITS"])
             for plan in HComplete._iter_hydrogen_transfer_plans(

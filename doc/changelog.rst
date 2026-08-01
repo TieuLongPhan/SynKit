@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 1.6.1b1
+Version 1.6.1
 ---------------
 
 **Synthesis**

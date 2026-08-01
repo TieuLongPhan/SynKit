@@ -236,13 +236,21 @@ class ReactorMatchingMixin:
                     "Certified generic stereo rule retained %d exhaustive mapping(s)",
                     len(raw_maps),
                 )
-            elif (
-                automorphism_pattern is not None
-                and has_heavy_cross_component_correlation(
+            elif self.automorphism and not stereo_sensitive:
+                assert automorphism_pattern is not None
+                components = [
+                    frozenset(component)
+                    for component in nx.connected_components(automorphism_pattern)
+                ]
+                correlated = has_heavy_cross_component_correlation(
                     automorphism_pattern,
                     self.rule.rc.raw,
                 )
-            ):
+                fixed_nodes = (
+                    frozenset()
+                    if correlated or len(components) < 2
+                    else max(components, key=len)
+                )
                 self._mappings = deduplicate_joint_rule_mappings(
                     raw_maps,
                     automorphism_pattern,
@@ -251,39 +259,11 @@ class ReactorMatchingMixin:
                         automorphism_pattern,
                         node_attrs,
                     ),
+                    edge_attrs=edge_attrs,
+                    fixed_nodes=fixed_nodes,
                 )
                 log.debug(
-                    "Joint rule symmetry: %d → %d mapping(s)",
-                    len(raw_maps),
-                    len(self._mappings),
-                )
-            elif self.automorphism and not stereo_sensitive:
-                assert automorphism_pattern is not None
-                auto = Automorphism(
-                    automorphism_pattern,
-                    node_attr_keys=self._automorphism_node_attrs(
-                        automorphism_pattern,
-                        node_attrs,
-                    ),
-                    edge_attr_keys=edge_attrs,
-                )
-                self._mappings = deduplicate_matches_with_anchor(
-                    raw_maps,
-                    pattern_orbits=auto.orbits,
-                    pattern_anchor=auto.anchor_component,
-                )
-                self._mappings = self._deduplicate_equivalent_free_components(
-                    self._mappings,
-                    automorphism_pattern,
-                    auto.anchor_component,
-                    self._automorphism_node_attrs(
-                        automorphism_pattern,
-                        node_attrs,
-                    ),
-                    edge_attrs,
-                )
-                log.debug(
-                    "Automorphism pruning: %d → %d unique mapping(s)",
+                    "Exact rule symmetry: %d → %d mapping(s)",
                     len(raw_maps),
                     len(self._mappings),
                 )

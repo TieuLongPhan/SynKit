@@ -50,13 +50,21 @@ ten-family subset contributes 940 representations and the expected 67
 distinct configured classes. Whole-graph atom relabelling remains a separate
 secondary robustness test.
 
-The mixed-family A/B/C matrix is also complete except for the explicitly
-excluded optional raw-B/raw-C stress products. Raw A passes 2,048/2,048
+The formal mixed-family A/B/C matrix is complete. Raw A passes 2,048/2,048
 representations and collapses onto the same 48 formal tuples and 38 global
 classes as formal A. Formal B passes 192/192 assignments with 95 classes;
 formal C passes 1,920/1,920 with 752 classes. Across 30 formal A/B/C cases,
-all 2,160 assignments are invariant with zero timeout or failure. Raw B and C
-are not correctness gates and require explicit expensive-run authorization.
+all 2,160 assignments are invariant with zero timeout or failure.
+
+The retained supplemental raw stress runs are also complete within their
+declared scope. Raw B passes 992,256/992,256 representations across all 11
+cases and collapses onto the same 192 formal tuples and 95 global classes as
+formal B. Raw C/VS146 passes 2,359,296/2,359,296 representations and preserves
+all 64 formal tuples and 64 global classes. Both have zero timeout or failure.
+The other eight raw-C products remain excluded; the largest would require
+782,757,789,696 representations. Raw B/C remain supplemental stress evidence,
+not mandatory correctness gates, and require explicit expensive-run
+authorization.
 
 The global benchmark is also separate. Its nine-case pairwise relation matrix
 is 9/9. Across all 258 ACS records with a 5-second case budget, the exact

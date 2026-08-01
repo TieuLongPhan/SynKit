@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from pathlib import Path
 import sys
 
@@ -17,6 +18,7 @@ from Experiment.Lewis.common import (  # noqa: E402
     canonical_unmapped_side,
 )
 from Experiment.Lewis.rule_replay.benchmark import extract_rule  # noqa: E402
+from Experiment.Lewis.rule_replay import benchmark as replay_benchmark  # noqa: E402
 from synkit.Synthesis.Reactor.matching_policy import (  # noqa: E402
     contextual_electron_pattern_graph,
     deduplicate_joint_rule_mappings,
@@ -32,6 +34,7 @@ from synkit.Synthesis.Reactor.product_state import (  # noqa: E402
 from synkit.Synthesis.Reactor import product_state as product_state_module  # noqa: E402
 from synkit.Synthesis.Reactor.deduplication import (  # noqa: E402
     _finalize_product_electron_fields,
+    _prepare_its_for_structural_cluster,
 )
 from synkit.IO.graph_to_mol import GraphToMol  # noqa: E402
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor  # noqa: E402
@@ -160,6 +163,31 @@ def _correlated_component_its(*, split_changes: bool) -> nx.Graph:
     graph.nodes[0, 0]["charge"] = (0, 1)
     hydrogen_component = 1 if split_changes else 0
     graph.nodes[hydrogen_component, component_size - 1]["hcount"] = (0, 1)
+    graph.graph["_product_electron_fields_current"] = True
+    return graph
+
+
+def _long_chain_its(marker_position: int) -> nx.Graph:
+    """Build a positional isomer hidden from a three-round WL hash."""
+    graph = nx.path_graph(48)
+    for node in graph:
+        graph.nodes[node].update(
+            element=("C", "C"),
+            aromatic=(False, False),
+            hcount=(0, int(node == marker_position)),
+            charge=(0, 0),
+            radical=(0, 0),
+            lone_pairs=(0, 0),
+            valence_electrons=(4, 4),
+            present=(True, True),
+        )
+    for _, _, attrs in graph.edges(data=True):
+        attrs.update(
+            order=(1.0, 1.0),
+            kekule_order=(1.0, 1.0),
+            sigma_order=(1.0, 1.0),
+            pi_order=(0.0, 0.0),
+        )
     graph.graph["_product_electron_fields_current"] = True
     return graph
 
@@ -352,6 +380,32 @@ def test_deduplication_preserves_long_range_component_correlations() -> None:
     assert len(unique) == 2
 
 
+def test_long_chain_collision_is_refined_before_exact_vf2(monkeypatch) -> None:
+    first = _long_chain_its(18)
+    second = _long_chain_its(19)
+    prepared = [
+        _prepare_its_for_structural_cluster(graph, refresh_electrons=False)
+        for graph in (first, second)
+    ]
+    initial_hashes = [
+        nx.weisfeiler_lehman_graph_hash(
+            graph,
+            node_attr="_its_node_sig",
+            edge_attr="_its_edge_sig",
+            iterations=3,
+            digest_size=16,
+        )
+        for graph in prepared
+    ]
+    assert initial_hashes[0] == initial_hashes[1]
+
+    def unexpected_vf2(*_args, **_kwargs):
+        raise AssertionError("strong component invariant should split this collision")
+
+    monkeypatch.setattr(nx, "is_isomorphic", unexpected_vf2)
+    assert len(SynReactor._deduplicate_structural_its([first, second])) == 2
+
+
 def test_disconnected_rule_does_not_use_nodewise_host_orbits() -> None:
     size = 18
     reactant = "".join(
@@ -380,6 +434,105 @@ def test_joint_rule_symmetry_leaves_partial_mappings_unquotiented() -> None:
         pattern,
         nx.Graph(),
         node_attrs=[],
+        edge_attrs=[],
     )
 
     assert result is mappings
+
+
+def test_joint_rule_symmetry_uses_the_simultaneous_group_action() -> None:
+    pattern = nx.cycle_graph(4)
+    nx.set_node_attributes(pattern, "C", "element")
+    nx.set_node_attributes(pattern, 0, "charge")
+    nx.set_edge_attributes(pattern, 1.0, "order")
+    reaction_center = pattern.copy()
+    nx.set_edge_attributes(reaction_center, (1.0, 0.0), "order")
+    mappings = [
+        dict(zip(pattern.nodes, permutation))
+        for permutation in itertools.permutations((10, 11, 12, 13))
+    ]
+
+    result = deduplicate_joint_rule_mappings(
+        mappings,
+        pattern,
+        reaction_center,
+        node_attrs=["element", "charge"],
+        edge_attrs=["order"],
+        fixed_nodes=frozenset(),
+    )
+
+    # C4 has eight automorphisms, so its action has three orbits on the 24
+    # bijections. A vertex-orbit bag would incorrectly collapse all 24.
+    assert len(result) == 3
+
+
+def test_joint_rule_symmetry_preserves_node_transition_roles() -> None:
+    pattern = nx.path_graph(3)
+    nx.set_node_attributes(pattern, "C", "element")
+    nx.set_node_attributes(pattern, 0, "charge")
+    nx.set_edge_attributes(pattern, 1.0, "order")
+    reaction_center = pattern.copy()
+    reaction_center.nodes[0]["charge"] = (0, 1)
+    reaction_center.nodes[1]["charge"] = (0, 0)
+    reaction_center.nodes[2]["charge"] = (0, 0)
+    mappings = [
+        {0: 10, 1: 11, 2: 12},
+        {0: 12, 1: 11, 2: 10},
+    ]
+
+    result = deduplicate_joint_rule_mappings(
+        mappings,
+        pattern,
+        reaction_center,
+        node_attrs=["element", "charge"],
+        edge_attrs=["order"],
+        fixed_nodes=frozenset(),
+    )
+
+    assert result == mappings
+
+
+def test_replay_timeout_excludes_evidence_postprocessing(monkeypatch) -> None:
+    timer_calls = []
+
+    class FakeReactor:
+        mappings = [{1: 1}]
+        its_list = [nx.Graph()]
+
+        @property
+        def smarts_list(self):
+            assert timer_calls[-1] == (replay_benchmark.signal.ITIMER_REAL, 0.0)
+            return ["C>>C"]
+
+    monkeypatch.setattr(replay_benchmark, "make_reactor", lambda *_args: FakeReactor())
+    monkeypatch.setattr(
+        replay_benchmark,
+        "canonical_unmapped_reaction",
+        lambda reaction: reaction,
+    )
+    monkeypatch.setattr(
+        replay_benchmark.signal,
+        "setitimer",
+        lambda *args: timer_calls.append(args),
+    )
+    monkeypatch.setattr(replay_benchmark.signal, "signal", lambda *_args: None)
+
+    result = replay_benchmark.replay_direction(
+        host="C",
+        expected="C>>C",
+        rule=object(),
+        representation="tuple",
+        direction="forward",
+        embedding_threshold=None,
+        case_timeout=30.0,
+    )
+
+    assert result["status"] == "PASS"
+    assert result["expansion_seconds"] <= result["seconds"]
+    assert set(result["stage_seconds"]) == {
+        "reactor_construction",
+        "matching",
+        "rewriting",
+        "serialization",
+        "canonicalization",
+    }

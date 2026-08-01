@@ -157,10 +157,15 @@ def test_validation_report_is_deterministic_bounded_and_schema_stable():
     assert json.dumps(replay, sort_keys=True) == normalized
 
 
-def test_frozen_validation_evidence_is_machine_readable_and_passing():
-    report = json.loads(
-        (ROOT / "evidence/stereo_rxn_validation.json").read_text(encoding="utf-8")
+def test_generated_validation_evidence_is_machine_readable_and_passing(
+    tmp_path: Path,
+):
+    evidence = tmp_path / "stereo_rxn_validation.json"
+    evidence.write_text(
+        json.dumps(validation_report(), indent=2, sort_keys=True),
+        encoding="utf-8",
     )
+    report = json.loads(evidence.read_text(encoding="utf-8"))
 
     assert report["schema"] == "synkit.stereo-rxn-validation/1"
     assert report["status"] == "PASS"

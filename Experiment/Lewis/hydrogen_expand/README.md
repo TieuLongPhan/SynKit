@@ -56,4 +56,9 @@ where `h` ranges over hydrogen vertices and `C_G(h)` is its connected
 component. A colour-preserving isomorphism maps hydrogen vertices and their
 components bijectively and preserves both colour and graph distance, so
 unequal values prove non-isomorphism. Equal values do not prove equivalence
-and always fall through to the exact stereo-aware full-ITS check.
+and always fall through to the exact stereo-aware full-ITS check. The exact
+check enumerates every isomorphism of the changed-bond core and tests whether
+it extends to the complete ITS. This is complete because the full edge matcher
+preserves paired bond order, so every full ITS isomorphism restricts to one of
+those changed-core mappings. Anchoring makes the extension search substantially
+smaller without assuming equivalence.

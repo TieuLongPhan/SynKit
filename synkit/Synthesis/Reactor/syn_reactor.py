@@ -361,7 +361,6 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
         """Lazily wrap the substrate into a SynGraph.
-
         :returns: The reaction substrate as a `SynGraph`.
         :rtype: SynGraph
         """
@@ -372,7 +371,6 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     @property
     def rule(self) -> SynRule:  # noqa: D401
         """Lazily wrap the template into a SynRule.
-
         :returns: The reaction template as a `SynRule`.
         :rtype: SynRule
         """
@@ -382,13 +380,10 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
 
     @property
     def its_list(self) -> List[nx.Graph]:
-        """Build ITS graphs for each subgraph mapping.
-
+        """Build ITS graphs for exact rewrite representatives.
         :returns: A list of ITS (Internal Transition State) graphs.
-        :rtype: list of networkx.Graph
         """
         if self._its is None:
-            # Build ITS for each mapping -------------------------------
             host_raw = self._matching_host_graph()
             rc_raw = self.rule.rc.raw
             pattern_explicit = self.rule.left.raw
@@ -401,10 +396,39 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             certified_generic = bool(
                 self.rule.rc.raw.graph.get("generic_stereo_extraction")
             )
+            application_mappings = self.mappings
+            stereo_sensitive = bool(
+                self.rule.stereo_guards
+                or self.rule.stereo_effects
+                or self.rule.stereo_outcomes
+                or self.rule.stereo_couplings
+            )
+            if self.dedup_its and not certified_generic and not stereo_sensitive:
+                mapping_population = len(application_mappings)
+                application_mappings = self._deduplicate_rewrite_equivalent_mappings(
+                    application_mappings,
+                    host_raw,
+                    rc_raw,
+                )
+                log.debug(
+                    "Rewrite-equivalence quotient: %d -> %d application(s)",
+                    mapping_population,
+                    len(application_mappings),
+                )
+            rewrite_host, rewrite_host_prepared = (
+                _graph_rewrite._prepare_rewrite_batch_host(
+                    host_raw,
+                    application_mappings,
+                    rc_raw,
+                    self._flag_pattern_has_explicit_H,
+                    electron_aware,
+                )
+            )
             self._its = []
+            expanded_host_cache: Dict[frozenset[Any], nx.Graph] = {}
             self._stereo_branch_count = 0
             raw_application_index = 0
-            for mapping_index, m in enumerate(self.mappings):
+            for mapping_index, m in enumerate(application_mappings):
                 retain_provenance = not self.dedup_its or certified_generic
                 mapping_provenance = (
                     self._mapping_provenance(m, pattern_explicit, host_raw)
@@ -430,8 +454,8 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     if certified_generic
                     else None
                 )
-                its_batch = self._glue_graph(
-                    host_raw,
+                its_batch = _graph_rewrite._glue_graph(
+                    rewrite_host,
                     rc_raw,
                     m,
                     self._flag_pattern_has_explicit_H,
@@ -448,6 +472,9 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                         if self.radical_policy == "lower_bound"
                         else frozenset()
                     ),
+                    anchor_explicit_embedding=self.dedup_its,
+                    host_prepared=rewrite_host_prepared,
+                    expanded_host_cache=expanded_host_cache,
                 )
                 stereo_batch: List[nx.Graph] = []
                 for rewrite_index, candidate in enumerate(its_batch):
@@ -473,7 +500,6 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                             raw_application_index += 1
                     stereo_batch.extend(branches)
                 self._its.extend(stereo_batch)
-
             if self.explicit_h:
                 self._its = [self._explicit_h(g) for g in self._its]
             self._its = [
@@ -490,9 +516,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     @property
     def smarts_list(self) -> List[str]:
         """Serialise each ITS graph to a reaction-SMARTS string.
-
         :returns: A list of SMARTS strings (inverted if `invert=True`).
-        :rtype: list of str
         """
         if self._smarts is None:
             serialized = [self._to_smarts(g) for g in self.its_list]
@@ -789,6 +813,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         refresh_electrons: bool = True,
         electron_aware: bool | None = None,
         relative_match_resources: frozenset[str] = frozenset(),
+        anchor_explicit_embedding: bool = True,
     ) -> List[nx.Graph]:
         return _graph_rewrite._glue_graph(
             host,
@@ -804,6 +829,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             refresh_electrons,
             electron_aware,
             relative_match_resources,
+            anchor_explicit_embedding,
         )
 
     @staticmethod
@@ -864,6 +890,18 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         its_graphs: List[nx.Graph],
     ) -> List[nx.Graph]:
         return _deduplication._deduplicate_coupling_face_products(its_graphs)
+
+    @staticmethod
+    def _deduplicate_rewrite_equivalent_mappings(
+        mappings: List[MappingDict],
+        host: nx.Graph,
+        reaction_center: nx.Graph,
+    ) -> List[MappingDict]:
+        return _deduplication._deduplicate_rewrite_equivalent_mappings(
+            mappings,
+            host,
+            reaction_center,
+        )
 
     @staticmethod
     def _components_are_equivalent(

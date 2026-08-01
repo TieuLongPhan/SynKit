@@ -100,7 +100,7 @@ def test_raw_and_formal_modes_produce_the_same_global_quotient(capsys):
     assert raw["passed"]
 
 
-def test_retained_abc_matrix_is_complete_without_raw_b_or_c():
+def test_retained_abc_matrix_includes_completed_raw_stress_runs():
     paths = {
         ("A", "formal"): (
             REPORT_ROOT / "A" / "global_formal_canonicalization_report.json"
@@ -109,21 +109,29 @@ def test_retained_abc_matrix_is_complete_without_raw_b_or_c():
         ("B", "formal"): (
             REPORT_ROOT / "B" / "global_formal_canonicalization_report.json"
         ),
+        ("B", "raw"): (
+            REPORT_ROOT / "B" / "global_raw_canonicalization_report.json"
+        ),
         ("C", "formal"): (
             REPORT_ROOT / "C" / "global_formal_canonicalization_report.json"
+        ),
+        ("C", "raw"): (
+            REPORT_ROOT / "C" / "global_raw_vs146_canonicalization_report.json"
         ),
     }
     reports = {
         key: json.loads(path.read_text(encoding="utf-8")) for key, path in paths.items()
     }
     expected = {
-        ("A", "formal"): (10, 48, 38),
-        ("A", "raw"): (10, 2048, 38),
-        ("B", "formal"): (11, 192, 95),
-        ("C", "formal"): (9, 1920, 752),
+        ("A", "formal"): (10, 48, 48, 38),
+        ("A", "raw"): (10, 2048, 48, 38),
+        ("B", "formal"): (11, 192, 192, 95),
+        ("B", "raw"): (11, 992256, 192, 95),
+        ("C", "formal"): (9, 1920, 1920, 752),
+        ("C", "raw"): (1, 2359296, 64, 64),
     }
     for key, report in reports.items():
-        cases, assignments, classes = expected[key]
+        cases, assignments, formal_tuples, classes = expected[key]
         summary = report["summary"]
         assert report["budget"] == key[0]
         assert report["enumeration_mode"] == key[1]
@@ -136,11 +144,18 @@ def test_retained_abc_matrix_is_complete_without_raw_b_or_c():
             == summary["enumerated_assignments_expected"]
             == assignments
         )
+        assert summary["formal_assignment_tuples_invariant"] == formal_tuples
         assert summary["observed_global_canonical_classes"] == classes
 
-    assert (
-        reports[("A", "formal")]["summary"]["observed_global_canonical_classes"]
-        == reports[("A", "raw")]["summary"]["observed_global_canonical_classes"]
-    )
-    assert not (REPORT_ROOT / "B" / "global_raw_canonicalization_report.json").exists()
-    assert not (REPORT_ROOT / "C" / "global_raw_canonicalization_report.json").exists()
+    for budget in ("A", "B"):
+        formal = reports[(budget, "formal")]["summary"]
+        raw = reports[(budget, "raw")]["summary"]
+        assert raw["formal_assignment_tuples_invariant"] == formal[
+            "formal_assignment_tuples_invariant"
+        ]
+        assert raw["observed_global_canonical_classes"] == formal[
+            "observed_global_canonical_classes"
+        ]
+
+    raw_c = reports[("C", "raw")]
+    assert [record["record_id"] for record in raw_c["records"]] == ["VS146"]

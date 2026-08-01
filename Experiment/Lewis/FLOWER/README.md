@@ -34,7 +34,9 @@ unbounded enumeration. The launcher verifies every compressed batch against
 the manifest before starting. Each batch immediately flushes non-passing rows
 to its own `bugs.jsonl`; after all batches finish, the launcher also writes the
 aggregate `bugs.jsonl` at the output root. `cases.jsonl.gz`, `summary.json`, and
-`runner.log` remain available per batch.
+`runner.log` remain available per batch. Every case and timeout has a portable
+`case_id` such as `batch-07-of-10.txt.gz:321`, together with `batch_file`,
+`batch_row`, `source_label`, direction, and failed expansion stage.
 
 Use `bash Experiment/Lewis/FLOWER/run_bidirectional_replay.sh --help` for all
 runtime controls. Copy the SynKit checkout and this retained batch directory

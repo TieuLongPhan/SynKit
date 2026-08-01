@@ -86,6 +86,8 @@ test_syn.py
 measure_candidate_stages.py
 run_valid_bug_cases.py
 paper/*
+# Nested standalone Git repository.
+/paper/og_paper/
 
 # Fresh benchmark runs are reproducible and can be large. Retained reference
 # outputs live inside each experiment's Data directory.
