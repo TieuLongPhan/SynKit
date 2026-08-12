@@ -29,7 +29,7 @@ from synkit.Graph.Stereo import (
     stereo_registry_layers,
 )
 from synkit.IO.mol_to_graph import MolToGraph
-from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor import Strategy
 
 _ENDPOINT_NODE_ATTRS = (
     "element",
@@ -71,6 +71,14 @@ class FusionIssueCode(str, Enum):
     POSTPROCESS_FAILED = "FUSION_POSTPROCESS_FAILED"
     REACTANT_ENDPOINT_NOT_PRESERVED = "FUSION_REACTANT_ENDPOINT_NOT_PRESERVED"
     PRODUCT_ENDPOINT_NOT_PRESERVED = "FUSION_PRODUCT_ENDPOINT_NOT_PRESERVED"
+    REACTANT_COMPONENT_NOT_PRESERVED = (
+        "FUSION_REACTANT_COMPONENT_NOT_PRESERVED"
+    )
+    PRODUCT_COMPONENT_NOT_PRESERVED = "FUSION_PRODUCT_COMPONENT_NOT_PRESERVED"
+    ELEMENT_ISOTOPE_IMBALANCE = "FUSION_ELEMENT_ISOTOPE_IMBALANCE"
+    CHARGE_IMBALANCE = "FUSION_CHARGE_IMBALANCE"
+    UNMAPPED_MATERIAL_ATOM = "FUSION_UNMAPPED_MATERIAL_ATOM"
+    ENVIRONMENT_DELTA_MISMATCH = "FUSION_ENVIRONMENT_DELTA_MISMATCH"
 
 
 @dataclass(frozen=True)
@@ -362,8 +370,8 @@ def _endpoint_embedding_proof(
     chirality enabled; atom-map numbers are representation labels and are
     therefore excluded from the match relation.
     """
-    # Keep this import local: ``subgraph_matcher`` imports Reactor.strategy,
-    # while Reactor's public package imports this validation module.
+    # Keep this import local so validation that never reaches the endpoint
+    # proof does not initialize the general subgraph-matching stack.
     from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 
     original = _parse_unmapped_endpoint_graph(original_side)
@@ -519,6 +527,221 @@ def validate_rbl_candidate(
         evidence={
             "endpoint_preservation": dict(preservation.evidence),
         },
+    )
+
+
+def _component_inventory(side: str) -> Counter[str] | None:
+    """Return an atom-map-independent exact molecular-component multiset."""
+    molecule = _mapped_smiles_mol(side)
+    if molecule is None:
+        return None
+    inventory: Counter[str] = Counter()
+    for fragment in Chem.GetMolFrags(molecule, asMols=True, sanitizeFrags=True):
+        fragment = Chem.Mol(fragment)
+        for atom in fragment.GetAtoms():
+            atom.SetAtomMapNum(0)
+        try:
+            normalized = Chem.RemoveHs(fragment)
+            signature = Chem.MolToSmiles(
+                normalized,
+                canonical=True,
+                isomericSmiles=True,
+            )
+        except (RuntimeError, ValueError):
+            return None
+        inventory[signature] += 1
+    return inventory
+
+
+def _material_balance(
+    rsmi: str,
+) -> tuple[Counter[tuple[str, int]], Counter[tuple[str, int]], int, int] | None:
+    if rsmi.count(">>") != 1:
+        return None
+    inventories: list[Counter[tuple[str, int]]] = []
+    charges: list[int] = []
+    for side in rsmi.split(">>"):
+        molecule = _mapped_smiles_mol(side)
+        if molecule is None:
+            return None
+        try:
+            expanded = Chem.AddHs(molecule)
+        except RuntimeError:
+            return None
+        inventories.append(
+            Counter(
+                (atom.GetSymbol(), int(atom.GetIsotope()))
+                for atom in expanded.GetAtoms()
+            )
+        )
+        charges.append(int(Chem.GetFormalCharge(molecule)))
+    return inventories[0], inventories[1], charges[0], charges[1]
+
+
+def _resource_delta(
+    reactants: Counter[tuple[str, int]],
+    products: Counter[tuple[str, int]],
+    reactant_charge: int,
+    product_charge: int,
+) -> dict[str, int]:
+    delta = {
+        f"element:{element}:{isotope}": count
+        for (element, isotope), count in products.items()
+    }
+    for (element, isotope), count in reactants.items():
+        key = f"element:{element}:{isotope}"
+        delta[key] = delta.get(key, 0) - count
+    delta = {key: value for key, value in delta.items() if value}
+    charge_delta = product_charge - reactant_charge
+    if charge_delta:
+        delta["formal_charge"] = charge_delta
+    return dict(sorted(delta.items()))
+
+
+def validate_strict_rbl_candidate(  # noqa: C901
+    original_rsmi: str,
+    candidate_rsmi: str,
+    *,
+    allow_wildcards: bool = False,
+    boundary: str = "closed",
+    environment_delta: Mapping[str, int] | None = None,
+    require_mapped_material: bool = True,
+) -> FusionValidation:
+    """Validate strict component-completion and conservation semantics.
+
+    Both observed endpoints must occur as exact molecular-component multisets;
+    fragment embeddings are deliberately insufficient. A closed boundary
+    requires isotope/element and net-formal-charge conservation. An open
+    boundary must declare the exact material/charge delta supplied by its
+    environment.
+    """
+    if boundary not in {"closed", "open"}:
+        raise ValueError("boundary must be 'closed' or 'open'.")
+    base = validate_fusion_rsmi(candidate_rsmi, allow_wildcards=allow_wildcards)
+    issues = list(base.issues)
+    evidence: dict[str, Any] = {
+        "observation_relation": "exact_component_multiset_inclusion",
+        "boundary": boundary,
+    }
+    if original_rsmi.count(">>") != 1 or candidate_rsmi.count(">>") != 1:
+        return FusionValidation(valid=False, issues=tuple(issues), evidence=evidence)
+
+    original_sides = original_rsmi.split(">>")
+    candidate_sides = candidate_rsmi.split(">>")
+    component_evidence: dict[str, Any] = {}
+    for index, side_name in enumerate(("reactants", "products")):
+        observed = _component_inventory(original_sides[index])
+        completed = _component_inventory(candidate_sides[index])
+        if observed is None or completed is None:
+            issues.append(
+                _issue(
+                    FusionIssueCode.PARSE_FAILURE,
+                    f"Could not normalize {side_name} component inventory.",
+                    side=side_name,
+                )
+            )
+            continue
+        missing = observed - completed
+        component_evidence[side_name] = {
+            "observed": dict(sorted(observed.items())),
+            "candidate": dict(sorted(completed.items())),
+            "missing": dict(sorted(missing.items())),
+        }
+        if missing:
+            code = (
+                FusionIssueCode.REACTANT_COMPONENT_NOT_PRESERVED
+                if side_name == "reactants"
+                else FusionIssueCode.PRODUCT_COMPONENT_NOT_PRESERVED
+            )
+            issues.append(
+                _issue(
+                    code,
+                    f"Observed {side_name} components are not an exact multiset "
+                    "subset of the candidate endpoint.",
+                    missing=dict(sorted(missing.items())),
+                )
+            )
+    evidence["component_inventory"] = component_evidence
+
+    balance = _material_balance(candidate_rsmi)
+    if balance is None:
+        issues.append(
+            _issue(
+                FusionIssueCode.PARSE_FAILURE,
+                "Could not compute candidate material balance.",
+            )
+        )
+    else:
+        reactants, products, reactant_charge, product_charge = balance
+        delta = _resource_delta(
+            reactants,
+            products,
+            reactant_charge,
+            product_charge,
+        )
+        evidence["resource_delta"] = delta
+        if boundary == "closed":
+            element_delta = {
+                key: value for key, value in delta.items() if key != "formal_charge"
+            }
+            if element_delta:
+                issues.append(
+                    _issue(
+                        FusionIssueCode.ELEMENT_ISOTOPE_IMBALANCE,
+                        "Closed reconstruction does not conserve element/isotope inventory.",
+                        delta=element_delta,
+                    )
+                )
+            if delta.get("formal_charge", 0):
+                issues.append(
+                    _issue(
+                        FusionIssueCode.CHARGE_IMBALANCE,
+                        "Closed reconstruction does not conserve net formal charge.",
+                        delta=delta["formal_charge"],
+                    )
+                )
+        else:
+            declared = dict(sorted((environment_delta or {}).items()))
+            evidence["environment_delta"] = declared
+            if delta != declared:
+                issues.append(
+                    _issue(
+                        FusionIssueCode.ENVIRONMENT_DELTA_MISMATCH,
+                        "Open reconstruction delta differs from its environment token.",
+                        observed=delta,
+                        declared=declared,
+                    )
+                )
+
+    if require_mapped_material:
+        unmapped: dict[str, list[int]] = {}
+        for side_name, side in zip(
+            ("reactants", "products"), candidate_sides, strict=True
+        ):
+            molecule = _mapped_smiles_mol(side)
+            if molecule is None:
+                continue
+            missing_maps = [
+                atom.GetIdx()
+                for atom in molecule.GetAtoms()
+                if atom.GetAtomicNum() > 1 and atom.GetAtomMapNum() <= 0
+            ]
+            if missing_maps:
+                unmapped[side_name] = missing_maps
+        if unmapped:
+            issues.append(
+                _issue(
+                    FusionIssueCode.UNMAPPED_MATERIAL_ATOM,
+                    "Every material atom in strict reconstruction requires provenance.",
+                    atoms=unmapped,
+                )
+            )
+        evidence["unmapped_material_atoms"] = unmapped
+
+    return FusionValidation(
+        valid=not issues,
+        issues=tuple(issues),
+        evidence=evidence,
     )
 
 
@@ -832,5 +1055,6 @@ __all__: Sequence[str] = (
     "validate_fusion_rsmi",
     "validate_endpoint_preservation",
     "validate_rbl_candidate",
+    "validate_strict_rbl_candidate",
     "validate_wildcard_mapping_roles",
 )

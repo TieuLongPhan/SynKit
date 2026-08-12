@@ -1,8 +1,17 @@
 import unittest
 
 from synkit.IO import its_to_rsmi, rsmi_to_its
-from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
-from synkit.Synthesis.Reactor.fusion_validation import validate_fusion_rsmi
+from synkit.Synthesis.RBL import RBLEngine, validate_fusion_rsmi
+
+
+class TestRBLPackageBoundary(unittest.TestCase):
+    """Keep RBL's public API in its dedicated package."""
+
+    def test_rbl_engine_is_not_reexported_from_reactor(self) -> None:
+        from synkit.Synthesis import Reactor
+
+        self.assertFalse(hasattr(Reactor, "RBLEngine"))
+        self.assertEqual(RBLEngine.__module__, "synkit.Synthesis.RBL.engine")
 
 
 class TestRBLEngineExamples(unittest.TestCase):

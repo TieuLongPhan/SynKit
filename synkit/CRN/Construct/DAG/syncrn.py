@@ -8,7 +8,7 @@ from itertools import combinations
 
 import networkx as nx
 
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Run verified exact/global maximum-MCS fusion on raw fast-track failures."""
+"""Run exhaustive all-typed verified fusion on raw fast-track failures.
+
+The filename is retained for compatibility with older experiment commands;
+the recorded scope is authoritative and no longer means maximum-MCS-only.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +25,11 @@ ROOT = HERE.parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Experiment.RBL.benchmark import evaluate  # noqa: E402
+from Experiment.RBL.benchmark import (  # noqa: E402
+    evaluate,
+    file_manifest,
+    runtime_provenance,
+)
 
 DEFAULT_INPUT = HERE / "fast_track_all.json.gz"
 DEFAULT_OUTPUT = HERE / "verified_mcs_all.json.gz"
@@ -174,20 +182,25 @@ def main() -> None:
             if record["status"] == raw_status
         )
     payload = {
+        "schema": "synkit.rbl-verified-scan/1",
         "source": str(args.input.resolve()),
+        "provenance": runtime_provenance(args.input),
+        "input_manifest": file_manifest(args.input),
         "records_total": len(records),
         "input_field": "raw",
         "method": "verified",
         "timeout_seconds_per_record": args.timeout,
         "scope": {
-            "matcher": "exact global MCS",
-            "overlap_scope": "maximum common subgraphs only",
+            "matcher": "exact incremental typed partial injections",
+            "overlap_scope": "all typed overlaps",
             "component_matching": False,
             "automorphism_pruning": False,
             "max_mappings_per_pair": 0,
             "fusion_backend": "categorical_pushout",
-            "termination": "mapping_scope_exhausted",
-            "globally_complete_over_all_overlaps": False,
+            "termination": "overlap_universe_exhausted_or_explicit_limit",
+            "globally_complete_over_all_overlaps": (
+                "reported per record by fusion_search.complete"
+            ),
         },
         "success_definition": (
             "candidate equals balanced canonical complete after AAM/stereo removal"

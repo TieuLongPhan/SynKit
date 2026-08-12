@@ -10,7 +10,7 @@ import pytest
 
 from synkit.Chem.Reaction.aam_validator import AAMValidator
 from synkit.IO import its_to_rsmi, rsmi_to_its
-from synkit.Synthesis.Reactor.fusion_validation import (
+from synkit.Synthesis.RBL import (
     FusionIssueCode,
     WildcardRole,
     certify_fusion_postprocessing,
@@ -19,8 +19,8 @@ from synkit.Synthesis.Reactor.fusion_validation import (
     validate_rbl_candidate,
     validate_wildcard_mapping_roles,
 )
-from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
-from synkit.Synthesis.Reactor.rbl_policy import (
+from synkit.Synthesis.RBL import RBLEngine
+from synkit.Synthesis.RBL.policy import (
     RBLSearchPolicy,
     SearchScope,
     TerminationPolicy,
@@ -88,6 +88,7 @@ def test_rbl_preserves_explicit_hydrogen_aam_contract(
         validate_fusion_rsmi(candidate).valid for candidate in engine.fused_rsmis
     )
     assert engine.result["acceptance_policy"] == {
+        "task": "compatibility",
         "preserve_original_sides": ["products"],
         "relation": "component_injective_subgraph",
         "use_chirality": True,
@@ -418,11 +419,11 @@ def test_legacy_modes_are_explicit_search_policy_presets(
 ) -> None:
     engine = RBLEngine(mode=mode)
 
-    assert engine.search_policy == RBLSearchPolicy(scope, termination)
-    assert engine.result["search_policy"] == {
-        "scope": scope.value,
-        "termination": termination.value,
-    }
+    expected = RBLSearchPolicy.from_mode(mode)
+    assert expected.scope is scope
+    assert expected.termination is termination
+    assert engine.search_policy == expected
+    assert engine.result["search_policy"] == expected.to_dict()
 
 
 def test_explicit_search_policy_is_accepted_without_a_mode() -> None:
@@ -435,6 +436,52 @@ def test_explicit_search_policy_is_accepted_without_a_mode() -> None:
     assert engine.search_policy is policy
     with pytest.raises(ValueError, match="either mode or search_policy"):
         RBLEngine(mode="full", search_policy=policy)
+
+
+def test_negative_mapping_limit_is_rejected() -> None:
+    with pytest.raises(ValueError, match="max_mappings_per_pair"):
+        RBLEngine(max_mappings_per_pair=-1)
+
+
+def test_verified_mode_honours_explicit_search_budgets() -> None:
+    engine = RBLEngine(
+        mode="verified",
+        max_pairs=3,
+        max_mappings_per_pair=2,
+    )
+
+    assert engine.max_pairs == 3
+    assert engine.max_mappings_per_pair == 2
+
+
+def test_wider_search_with_the_same_acceptance_task_retains_fast_candidates() -> None:
+    class DirectCandidateEngine(RBLEngine):
+        def _quick_check(self, rsmi: str, template: object) -> str:
+            return rsmi
+
+        def _run_reaction(
+            self,
+            substrate: object,
+            pattern: object,
+            invert: bool,
+        ) -> list[object]:
+            return []
+
+    reaction = "CC>>CO"
+    template = "[C:1]>>[C:1]"
+    fast = DirectCandidateEngine(mode="fast_track").process(reaction, template)
+
+    assert fast.fused_rsmis
+    wider = DirectCandidateEngine(mode="full").process(reaction, template)
+    assert set(fast.fused_rsmis) <= set(wider.fused_rsmis)
+
+
+def test_full_search_honours_explicit_pair_budget() -> None:
+    _name, reaction, template, _expected = CASES[0]
+    full = RBLEngine(mode="full", max_pairs=2).process(reaction, template)
+
+    assert full.result["fusion_search"]["pairs_explored"] <= 2
+    assert full.result["fusion_search"]["pairs_truncated"] >= 0
 
 
 @pytest.mark.parametrize("_name,reaction,template,_expected", CASES)

@@ -15,19 +15,19 @@ from synkit.Graph.Matcher.subgraph_matcher import (
     resolve_template_match_attrs,
 )
 from synkit.IO import setup_logging
-from synkit.Synthesis.Reactor.assignment import StereoWildcardAssignmentLimitError
-from synkit.Synthesis.Reactor.matching_policy import (
+from ..stereo.assignment import StereoWildcardAssignmentLimitError
+from .policy import (
     contextual_electron_pattern_graph,
     deduplicate_joint_rule_mappings,
     has_heavy_cross_component_correlation,
 )
-from synkit.Synthesis.Reactor.mapping_symmetry import (
+from .symmetry import (
     deduplicate_exact_pattern_mappings,
     deduplicate_free_host_component_mappings,
     deduplicate_port_witness_mappings,
     deduplicate_pure_coupling_mappings,
 )
-from synkit.Synthesis.Reactor.strategy import Strategy
+from ..core.strategy import Strategy
 
 NodeId = Any
 MappingDict = Dict[NodeId, NodeId]

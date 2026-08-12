@@ -11,7 +11,7 @@ from synkit.Graph.Stereo import PlanarBondStereo, StereoOutcome
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Mechanism import MechanismRecord, MechanismReplayer
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
 DATA_PATH = ROOT / "Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json"

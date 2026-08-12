@@ -198,9 +198,9 @@ def test_all_changed_reaction_python_modules_remain_below_1000_lines():
         "synkit/Mechanism/model.py",
         "synkit/Mechanism/replay.py",
         "synkit/Rule/generic_stereo.py",
-        "synkit/Synthesis/Reactor/reactor_matching.py",
-        "synkit/Synthesis/Reactor/reactor_stereo.py",
-        "synkit/Synthesis/Reactor/syn_reactor.py",
+        "synkit/Synthesis/Reactor/matching/mixin.py",
+        "synkit/Synthesis/Reactor/stereo/mixin.py",
+        "synkit/Synthesis/Reactor/core/engine.py",
     ]
 
     for relative in modules:

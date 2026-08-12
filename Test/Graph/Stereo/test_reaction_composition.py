@@ -15,7 +15,7 @@ from synkit.Graph.Stereo import (
     reverse_reaction_stereo,
 )
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 STATE = TetrahedralStereo((1, 2, 3, 4, 5), 1, "composition")
 INVERSE = STATE.invert()

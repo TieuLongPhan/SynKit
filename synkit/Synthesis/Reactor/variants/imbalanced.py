@@ -1,7 +1,8 @@
 import networkx as nx
 from typing import Union, Optional, List
 from synkit.Graph.Canon.canon_graph import GraphCanonicaliser
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor, Strategy
+from ..core.engine import SynReactor
+from ..core.strategy import Strategy
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Rule.syn_rule import SynRule
 from synkit.Graph.Wildcard.radwc import RadWC

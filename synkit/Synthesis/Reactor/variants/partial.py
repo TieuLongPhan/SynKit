@@ -1,6 +1,6 @@
 from synkit.IO import rsmi_to_its, smiles_to_graph
 from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from ..core.engine import SynReactor
 from synkit.Chem.utils import remove_explicit_H_from_rsmi
 
 

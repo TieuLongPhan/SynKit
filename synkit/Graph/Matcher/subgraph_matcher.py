@@ -9,7 +9,7 @@ import networkx as nx
 from networkx.algorithms.isomorphism import GraphMatcher
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
-from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor import Strategy
 
 # ---------------------------------------------------------------------------
 # Type aliases

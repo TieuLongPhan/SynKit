@@ -8,23 +8,34 @@ from typing import Any, Dict, List, Tuple
 import networkx as nx
 
 from synkit.Graph.Matcher.graph_cluster import GraphCluster
-from synkit.Synthesis.Reactor import product_state as _product_state
-from synkit.Synthesis.Reactor.deduplication import (
-    ITS_STRUCTURAL_EDGE_ATTRS,
-    ITS_STRUCTURAL_NODE_ATTRS,
-    _EXACT_DIRTY_EDGES,
-    _EXACT_DIRTY_NODES,
-    _EXACT_EDGE_PALETTE,
-    _EXACT_EDGE_SIG,
-    _EXACT_IDENTITY_CACHE,
-    _EXACT_NODE_PALETTE,
-    _EXACT_NODE_SIG,
+from ..core import product as _product_state
+from .deduplication import (
     _PRIMITIVE_IDENTITY_TYPES,
-    _REFINED_EDGE_COLOUR,
-    _REFINED_NODE_COLOUR,
     _freeze_typed_identity,
     _merge_application_orbits,
 )
+
+ITS_STRUCTURAL_NODE_ATTRS = [
+    "element",
+    "aromatic",
+    "hcount",
+    "charge",
+    "radical",
+    "lone_pairs",
+    "valence_electrons",
+    "present",
+    "_legacy_typesgh_sig",
+]
+ITS_STRUCTURAL_EDGE_ATTRS = ["order", "kekule_order", "sigma_order", "pi_order"]
+_EXACT_NODE_SIG = "_structural_exact_node_sig"
+_REFINED_NODE_COLOUR = "_structural_refined_node_colour"
+_EXACT_EDGE_SIG = "_structural_exact_edge_sig"
+_REFINED_EDGE_COLOUR = "_structural_refined_edge_colour"
+_EXACT_NODE_PALETTE = "_structural_exact_node_palette"
+_EXACT_EDGE_PALETTE = "_structural_exact_edge_palette"
+_EXACT_IDENTITY_CACHE = "_structural_exact_identity_cache"
+_EXACT_DIRTY_NODES = "_structural_exact_dirty_nodes"
+_EXACT_DIRTY_EDGES = "_structural_exact_dirty_edges"
 
 
 def _attach_exact_structural_signatures(  # noqa: C901

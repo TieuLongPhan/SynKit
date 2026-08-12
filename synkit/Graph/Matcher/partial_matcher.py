@@ -9,7 +9,7 @@ from synkit.Graph.Matcher.subgraph_matcher import (
     SubgraphSearchEngine,
     electron_aware_node_match,
 )
-from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor import Strategy
 from synkit.Graph.Matcher.auto_est import AutoEst  # WL-1 orbit estimator
 from synkit.Graph.Matcher.dedup_matches import deduplicate_matches_with_anchor
 

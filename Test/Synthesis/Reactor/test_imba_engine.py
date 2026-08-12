@@ -2,7 +2,7 @@ import unittest
 from synkit.IO import rsmi_to_its
 from synkit.Graph.Wildcard.wildcard import WildCard
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Synthesis.Reactor.imba_engine import ImbaEngine
+from synkit.Synthesis.Reactor import ImbaEngine
 
 
 class TestImbaEngine(unittest.TestCase):

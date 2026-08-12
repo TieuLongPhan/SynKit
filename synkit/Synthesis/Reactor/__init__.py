@@ -1,54 +1,60 @@
-from typing import TYPE_CHECKING
+"""Reaction-rule application engines and workflows.
 
-from .fusion_validation import (
-    FusionIssue,
-    FusionIssueCode,
-    FusionValidation,
-    WildcardRole,
-    validate_endpoint_preservation,
-    validate_fusion_rsmi,
-    validate_rbl_candidate,
-    validate_wildcard_mapping_roles,
+Public classes are resolved lazily so importing a lightweight policy or error
+does not initialize RDKit, NetworkX, or the batch-processing stack.
+"""
+
+from __future__ import annotations
+
+from importlib import import_module
+from typing import TYPE_CHECKING, Any
+
+from .output.policy import RawITSApplicationSerializationWarning
+from .stereo.assignment import (
+    StereoBranchLimitError,
+    StereoWildcardAssignmentLimitError,
 )
-from .rbl_policy import RBLSearchPolicy, SearchScope, TerminationPolicy
-from .rbl_state import RBL_RESULT_SCHEMA
-from .assignment import StereoBranchLimitError, StereoWildcardAssignmentLimitError
-from .serialization_policy import RawITSApplicationSerializationWarning
 
 if TYPE_CHECKING:
-    from .rbl_engine import RBLEngine
+    from .core.engine import SynReactor
+    from .core.strategy import Strategy
+    from .variants.imbalanced import ImbaEngine
+    from .variants.partial import PartialEngine
+    from .workflow.batch import BatchReactor
+    from .workflow.benchmark import Benchmark
+    from .workflow.postprocess import PostSyn
+    from .workflow.rule_filter import RuleFilter
+
+_LAZY_EXPORTS = {
+    "SynReactor": ("core.engine", "SynReactor"),
+    "Strategy": ("core.strategy", "Strategy"),
+    "BatchReactor": ("workflow.batch", "BatchReactor"),
+    "Benchmark": ("workflow.benchmark", "Benchmark"),
+    "PostSyn": ("workflow.postprocess", "PostSyn"),
+    "RuleFilter": ("workflow.rule_filter", "RuleFilter"),
+    "ImbaEngine": ("variants.imbalanced", "ImbaEngine"),
+    "PartialEngine": ("variants.partial", "PartialEngine"),
+}
 
 __all__ = [
-    "FusionIssue",
-    "FusionIssueCode",
-    "FusionValidation",
-    "WildcardRole",
-    "validate_endpoint_preservation",
-    "validate_fusion_rsmi",
-    "validate_rbl_candidate",
-    "validate_wildcard_mapping_roles",
-    "RBLSearchPolicy",
-    "SearchScope",
-    "TerminationPolicy",
-    "RBLEngine",
-    "RBL_RESULT_SCHEMA",
+    *_LAZY_EXPORTS,
     "StereoBranchLimitError",
     "StereoWildcardAssignmentLimitError",
     "RawITSApplicationSerializationWarning",
 ]
 
 
-def __getattr__(name: str) -> object:
-    """Load heavyweight public reactor classes on first access.
+def __getattr__(name: str) -> Any:
+    """Resolve one public Reactor class on first access."""
+    target = _LAZY_EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute = target
+    value = getattr(import_module(f".{module_name}", __name__), attribute)
+    globals()[name] = value
+    return value
 
-    :param name: Requested package attribute.
-    :type name: str
-    :return: Lazily imported public object.
-    :rtype: object
-    :raises AttributeError: If ``name`` is not a lazy public export.
-    """
-    if name == "RBLEngine":
-        from .rbl_engine import RBLEngine
 
-        return RBLEngine
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+def __dir__() -> list[str]:
+    """Include lazy public names in interactive discovery."""
+    return sorted(set(globals()) | set(__all__))

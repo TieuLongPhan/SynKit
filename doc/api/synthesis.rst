@@ -6,39 +6,64 @@ Synthesis engines, multi-step search, benchmarking, and ranking utilities.
 Reactor
 -------
 
-.. automodule:: synkit.Synthesis.Reactor.batch_reactor
+Core engine
+~~~~~~~~~~~
+
+.. automodule:: synkit.Synthesis.Reactor.core.engine
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.benchmark
+.. automodule:: synkit.Synthesis.Reactor.core.strategy
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.imba_engine
+Workflows
+~~~~~~~~~
+
+.. automodule:: synkit.Synthesis.Reactor.workflow.batch
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.partial_engine
+.. automodule:: synkit.Synthesis.Reactor.workflow.benchmark
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.post_syn
+.. automodule:: synkit.Synthesis.Reactor.workflow.postprocess
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.rbl_engine
+.. automodule:: synkit.Synthesis.Reactor.workflow.rule_filter
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.rule_filter
+Variants
+~~~~~~~~
+
+.. automodule:: synkit.Synthesis.Reactor.variants.imbalanced
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.strategy
+.. automodule:: synkit.Synthesis.Reactor.variants.partial
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Synthesis.Reactor.syn_reactor
+Radical-based linking
+---------------------
+
+.. automodule:: synkit.Synthesis.RBL.engine
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Synthesis.RBL.policy
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Synthesis.RBL.proof
+   :members:
+   :no-index:
+   :show-inheritance:
+
+.. automodule:: synkit.Synthesis.RBL.validation
    :members:
    :show-inheritance:
 

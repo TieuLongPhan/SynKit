@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, Iterable, List, Optional
-from synkit.Synthesis.Reactor.batch_reactor import BatchReactor
+from .batch import BatchReactor
 
 # =============================================================================
 # Benchmark subclass

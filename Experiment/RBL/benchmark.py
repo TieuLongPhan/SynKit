@@ -12,24 +12,31 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import gzip
+import hashlib
 import json
 import logging
 import multiprocessing as mp
+import os
+import platform
 from pathlib import Path
+import subprocess
 import sys
 from time import perf_counter
 from typing import Any
+
+import rdkit
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+import synkit  # noqa: E402
 from synkit.Chem.Reaction.standardize import Standardize  # noqa: E402
 from synkit.Graph.Hyrogen.hcomplete import HComplete  # noqa: E402
 from synkit.IO import rsmi_to_its  # noqa: E402
 from synkit.Rule import SynRule  # noqa: E402
-from synkit.Synthesis.Reactor.rbl_engine import RBLEngine  # noqa: E402
+from synkit.Synthesis.RBL import RBLEngine  # noqa: E402
 
 DEFAULT_DATA = HERE / "uspto_50k_rbl.json.gz"
 DEFAULT_OUTPUT = HERE / "benchmark_results.json"
@@ -49,6 +56,76 @@ RULE_EXTRACTION_DESCRIPTION = (
     "HComplete unique exhaustive completion -> "
     f"{RULE_ADAPTER}"
 )
+
+
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def file_manifest(path: Path) -> dict[str, Any]:
+    """Return a stable content manifest for one benchmark input."""
+    resolved = path.resolve()
+    digest = hashlib.sha256()
+    with resolved.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    try:
+        display = resolved.relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        display = resolved.as_posix()
+    return {
+        "path": display,
+        "bytes": resolved.stat().st_size,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def record_digest(record: dict[str, Any]) -> str:
+    """Bind a benchmark row to its exact semantic input fields."""
+    payload = {
+        key: record.get(key)
+        for key in ("R_id", "raw", "complete", "aam")
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return _sha256_bytes(encoded)
+
+
+def runtime_provenance(data: Path) -> dict[str, Any]:
+    """Capture code, environment, and dataset identity for reproducibility."""
+    revision = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    dirty = subprocess.run(
+        ["git", "status", "--short"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    thread_variables = (
+        "OMP_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+    )
+    return {
+        "dataset": file_manifest(data),
+        "git_commit": revision.stdout.strip() if revision.returncode == 0 else None,
+        "git_dirty": bool(dirty.stdout.strip()) if dirty.returncode == 0 else None,
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "synkit": synkit.__version__,
+        "rdkit": rdkit.__version__,
+        "process_start_method": "fork",
+        "thread_environment": {
+            key: os.environ[key] for key in thread_variables if key in os.environ
+        },
+        "method_configuration": METHODS,
+    }
 
 
 class HydrogenCompletionRejected(ValueError):
@@ -231,6 +308,11 @@ def _evaluate_unbounded(
             "n_forward_its": result["n_forward_its"],
             "n_backward_its": result["n_backward_its"],
             "fusion_search": result["fusion_search"],
+            "search_status": result["search_status"],
+            "search_complete": result["complete"],
+            "reason_incomplete": result["reason_incomplete"],
+            "search_policy": result["search_policy"],
+            "acceptance_policy": result["acceptance_policy"],
             "diagnostic_codes": diagnostic_codes(result),
             "rule_audit": rule_audit,
             "input_field": input_field,
@@ -366,6 +448,7 @@ def main() -> None:
                 "R_id": record["R_id"],
                 "raw": record["raw"],
                 "complete": record["complete"],
+                "input_digest": record_digest(record),
                 "solved_by": solved_by,
                 "methods": method_results,
             }
@@ -380,6 +463,7 @@ def main() -> None:
         "record_schema": RBL_BENCHMARK_RECORD_SCHEMA,
         "evaluation_schema": RBL_EVALUATION_SCHEMA,
         "dataset": str(args.data.resolve()),
+        "provenance": runtime_provenance(args.data),
         "rule_adapter": RULE_ADAPTER,
         "rule_extraction": RULE_EXTRACTION_DESCRIPTION,
         "selection": args.selection,

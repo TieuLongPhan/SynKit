@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from contextlib import contextmanager
+import heapq
 from typing import Any, Dict, Generator, List, Optional, Sequence, Tuple, Iterator
 
 import networkx as nx
@@ -81,6 +82,7 @@ class WLSel:
         # scored pair storage: list of (i, j, primary_score, tie_tuple)
         self._pair_scores: List[Tuple[int, int, float, TieTuple]] = []
         self._pairs: List[Tuple[int, int]] = []
+        self._pair_candidate_count = 0
 
     # ---------------- fluent API ----------------
     def build_signatures(self) -> "WLSel":
@@ -135,6 +137,15 @@ class WLSel:
             self.build_signatures()
 
         scored: List[Tuple[int, int, float, TieTuple]] = []
+        bounded = top_k is not None
+        limit = 0 if top_k is None else max(0, int(top_k))
+        heap: list[
+            tuple[
+                tuple[Any, ...],
+                tuple[int, int, float, TieTuple],
+            ]
+        ] = []
+        candidate_count = 0
         w_node = self.node_weight
         min_sc = self.min_score
 
@@ -172,14 +183,28 @@ class WLSel:
                     unique_label_overlap,
                 )
 
-                scored.append((i, j, primary, tie_tuple))
+                record = (i, j, primary, tie_tuple)
+                candidate_count += 1
+                if not bounded:
+                    scored.append(record)
+                elif limit:
+                    # Higher score/tie is better; lower input indices retain
+                    # the stable ordering used by the former full sort.
+                    rank = (primary, tie_tuple, -i, -j)
+                    entry = (rank, record)
+                    if len(heap) < limit:
+                        heapq.heappush(heap, entry)
+                    elif rank > heap[0][0]:
+                        heapq.heapreplace(heap, entry)
 
         # sort by primary then tie_tuple (descending)
-        scored.sort(key=lambda t: (t[2], t[3]), reverse=True)
+        if bounded:
+            scored = [record for _, record in heap]
+            scored.sort(key=lambda t: (t[2], t[3], -t[0], -t[1]), reverse=True)
+        else:
+            scored.sort(key=lambda t: (t[2], t[3]), reverse=True)
 
-        if top_k is not None:
-            scored = scored[: int(top_k)]
-
+        self._pair_candidate_count = candidate_count
         self._pair_scores = scored
         self._pairs = [(i, j) for (i, j, _, _) in scored]
         return self
@@ -194,6 +219,11 @@ class WLSel:
     def pair_indices(self) -> List[Tuple[int, int]]:
         """Return list of pair indices (i, j) in sorted order."""
         return list(self._pairs)
+
+    @property
+    def pair_candidate_count(self) -> int:
+        """Return the number of qualifying pairs before a top-k bound."""
+        return self._pair_candidate_count
 
     def candidate_pairs(
         self, max_pairs: Optional[int] = None

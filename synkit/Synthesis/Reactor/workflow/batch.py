@@ -6,8 +6,8 @@ import networkx as nx
 from joblib import Parallel, delayed
 
 from synkit.IO import smiles_to_graph, rsmi_to_its
-from synkit.Synthesis.Reactor.rule_filter import RuleFilter
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from .rule_filter import RuleFilter
+from ..core.engine import SynReactor
 
 __all__ = ["BatchReactor"]
 

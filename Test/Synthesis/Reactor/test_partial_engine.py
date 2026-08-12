@@ -1,5 +1,5 @@
 import unittest
-from synkit.Synthesis.Reactor.partial_engine import PartialEngine
+from synkit.Synthesis.Reactor import PartialEngine
 
 
 class TestPartialEngine(unittest.TestCase):

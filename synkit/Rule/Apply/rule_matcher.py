@@ -23,7 +23,7 @@ import networkx as nx
 from synkit.IO import rsmi_to_graph, rsmi_to_its
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.Chem.Reaction.balance_check import BalanceReactionCheck
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 __all__ = ["RuleMatcher"]
 

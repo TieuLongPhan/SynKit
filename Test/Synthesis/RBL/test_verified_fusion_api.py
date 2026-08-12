@@ -4,14 +4,13 @@ import json
 
 import pytest
 
-import synkit.Synthesis.Reactor.rbl_engine as rbl_engine_module
+import synkit.Synthesis.RBL.engine as rbl_engine_module
 from synkit.Graph.Fusion import FUSION_PROOF_SCHEMA, FusionCandidate
 from synkit.Graph.Fusion.identity import graphs_exactly_equivalent
 from synkit.IO import rsmi_to_its
-from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
-from synkit.Synthesis.Reactor.rbl_policy import SearchScope
+from synkit.Synthesis.RBL import RBLEngine, SearchScope
 
-from Test.Synthesis.Reactor.test_rbl_fusion_contract import CASES
+from Test.Synthesis.RBL.test_fusion_contract import CASES
 
 
 @pytest.mark.parametrize("_name,reaction,template,_expected", CASES)
@@ -61,6 +60,15 @@ def test_uncapped_unpruned_rbl_search_exhausts_only_its_declared_mcs_scope(
         "maximum_common_subgraphs"
     )
     assert engine.result["fusion_search"]["mappings_truncated"] == 0
+    assert engine.result["fusion_search"]["overlap_scope"] == (
+        "maximum_common_subgraphs"
+    )
+    assert engine.result["fusion_search"][
+        "globally_complete_over_all_overlaps"
+    ] is False
+    assert engine.result["fusion_search"]["incomplete_reasons"] == [
+        "maximum_common_subgraphs_only"
+    ]
 
 
 @pytest.mark.parametrize("_name,reaction,template,_expected", CASES)
@@ -77,7 +85,7 @@ def test_verified_mode_selects_the_complete_mapping_profile(
     assert engine.implicit_temp is False
     assert engine.explicit_h is True
     assert engine.result["verified_fusion_mode"] is True
-    assert engine.result["fusion_search"]["complete"] is False
+    assert engine.result["fusion_search"]["complete"] is True
     assert engine.result["fusion_search"]["complete_within_mapping_scope"] is True
     assert {candidate.rsmi for candidate in engine.fusion_candidates} == set(
         engine.fused_rsmis
@@ -143,7 +151,7 @@ def test_verified_transesterification_resolves_typed_attachment_ports() -> None:
     assert len(engine.fused_rsmis) == 1
     assert len(engine.fusion_candidates) == 1
     assert engine.result["fusion_search"]["interface_completion"] == (
-        "maximal_typed_leaf_ports"
+        "all_typed_leaf_port_assignments"
     )
     assert graphs_exactly_equivalent(
         rsmi_to_its(engine.fused_rsmis[0], format="tuple"),
@@ -261,7 +269,16 @@ def test_candidate_proof_reuses_postprocess_endpoint_validation(
     )
     engine = RBLEngine(mode="full").process(reaction, template)
     postprocess_validations = sum(
-        item.get("source") == "postprocess" for item in engine.diagnostics["fusion"]
+        item.get("source") == "postprocess"
+        and not any(
+            issue["code"]
+            in {
+                "FUSION_SERIALIZATION_FAILED",
+                "FUSION_POSTPROCESS_FAILED",
+            }
+            for issue in item.get("issues", ())
+        )
+        for item in engine.diagnostics["fusion"]
     )
 
     assert engine.fused_rsmis

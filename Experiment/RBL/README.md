@@ -1,9 +1,9 @@
 # RBL paired reconstruction benchmark
 
 The runtime API is available as
-`from synkit.Synthesis.Reactor import RBLEngine`. Its serializable
+`from synkit.Synthesis.RBL import RBLEngine`. Its serializable
 `engine.result` mapping carries the versioned schema identifier
-`synkit.rbl-result/1`.
+`synkit.rbl-result/2`.
 
 ## Dataset construction
 
@@ -65,11 +65,29 @@ still normalized (for example lone-pair `(3, 2)` becomes `(1, 0)`). A solve is
 counted only when a candidate is exactly equal to `complete` after the same
 stereo-free, AAM-free standardization. Each method/record runs in a child
 process, so `--timeout` is a hard wall-time bound even inside RDKit or SciPy.
+The report also binds the dataset SHA-256, every selected row's semantic input
+digest, Git commit and dirty state, Python/SynKit/RDKit versions, platform,
+thread environment, and exact method configuration. Per-method records retain
+the engine's search status, completeness, incomplete reasons, policy, strict
+acceptance boundary, and stage timings.
 
 Search profiles have distinct scopes. `fast_track` uses quick replay and
 resolved non-wildcard outputs without MCS or fusion. `fast_fusion` adds the
 bounded component-MCS fallback. `early_stop`, `full`, and `verified` retain
-their wider scopes.
+their wider scopes. `verified` enumerates all admitted typed partial overlaps,
+uses exact typed port matching and categorical pushouts, applies strict
+component/conservation acceptance, and emits replayable
+`synkit.rbl-proof/2` certificates. Any typed-overlap state/result/time limit is
+reported as `INCOMPLETE`; only a limit-free exhausted universe can report
+`PROVED_NONE`.
+
+The historical command name `scan_verified_mcs.py` is retained, but it now
+runs the all-typed verified policy and records that authoritative scope in its
+artifact. A resumable smoke or full scan can be run with:
+
+```bash
+python Experiment/RBL/scan_verified_mcs.py --workers 16 --timeout 30
+```
 
 ## Fast-track baseline
 

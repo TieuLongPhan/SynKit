@@ -19,25 +19,27 @@ from Experiment.Lewis.common import (  # noqa: E402
 )
 from Experiment.Lewis.rule_replay.benchmark import extract_rule  # noqa: E402
 from Experiment.Lewis.rule_replay import benchmark as replay_benchmark  # noqa: E402
-from synkit.Synthesis.Reactor.matching_policy import (  # noqa: E402
+from synkit.Synthesis.Reactor.matching.policy import (  # noqa: E402
     contextual_electron_pattern_graph,
     deduplicate_joint_rule_mappings,
 )
 from synkit.Graph.Matcher.subgraph_matcher import (  # noqa: E402
     electron_aware_node_match,
 )
-from synkit.Synthesis.Reactor.product_state import (  # noqa: E402
+from synkit.Synthesis.Reactor.core.product import (  # noqa: E402
     ProductStatePerceptionError,
     _electron_product_charge,
     _reperceive_product_kekule_phase,
 )
-from synkit.Synthesis.Reactor import product_state as product_state_module  # noqa: E402
-from synkit.Synthesis.Reactor.deduplication import (  # noqa: E402
+from synkit.Synthesis.Reactor.core import product as product_state_module  # noqa: E402
+from synkit.Synthesis.Reactor.output.deduplication import (  # noqa: E402
     _finalize_product_electron_fields,
+)
+from synkit.Synthesis.Reactor.output.structural import (  # noqa: E402
     _prepare_its_for_structural_cluster,
 )
 from synkit.IO.graph_to_mol import GraphToMol  # noqa: E402
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor  # noqa: E402
+from synkit.Synthesis.Reactor import SynReactor  # noqa: E402
 
 SPECTATOR_METAL = (
     "[NH3:1].[CH3:2][Cl:3].[O:4]=[Ag:5]>>" "[NH3+:1][CH3:2].[Cl-:3].[O:4]=[Ag:5]"

@@ -6,13 +6,16 @@ import pytest
 
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor import RawITSApplicationSerializationWarning
-from synkit.Synthesis.Reactor import deduplication as reactor_deduplication
-from synkit.Synthesis.Reactor import product_state as reactor_product_state
-from synkit.Synthesis.Reactor import serialization as reactor_serialization
-from synkit.Synthesis.Reactor import batch_reactor as batch_reactor_module
-from synkit.Synthesis.Reactor.batch_reactor import BatchReactor, _RuleApplier
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import (
+    BatchReactor,
+    RawITSApplicationSerializationWarning,
+    SynReactor,
+)
+from synkit.Synthesis.Reactor.core import product as reactor_product_state
+from synkit.Synthesis.Reactor.output import serialization as reactor_serialization
+from synkit.Synthesis.Reactor.output import structural as reactor_structural
+from synkit.Synthesis.Reactor.workflow import batch as batch_reactor_module
+from synkit.Synthesis.Reactor.workflow.batch import _RuleApplier
 
 ETHANE_DEHYDROGENATION = "[CH2:1]([H:3])[CH2:2]([H:4])>>[CH2:1]=[CH2:2].[H:3][H:4]"
 
@@ -447,16 +450,16 @@ def test_canonical_certificate_resolves_a_regular_one_wl_collision():
                 sigma_order=(1, 1),
                 pi_order=(0, 0),
             )
-        reactor_deduplication._attach_exact_structural_signatures(graph)
+        reactor_structural._attach_exact_structural_signatures(graph)
 
-    reactor_deduplication._refine_structural_colours_in_place(
+    reactor_structural._refine_structural_colours_in_place(
         list(graphs),
         iterations=1,
     )
     wl_colours = [
         tuple(
             sorted(
-                attrs[reactor_deduplication._REFINED_NODE_COLOUR]
+                attrs[reactor_structural._REFINED_NODE_COLOUR]
                 for _, attrs in graph.nodes(data=True)
             )
         )
@@ -467,10 +470,10 @@ def test_canonical_certificate_resolves_a_regular_one_wl_collision():
     node_palette = {}
     edge_palette = {}
     certificates = [
-        reactor_deduplication._canonical_attributed_graph_certificate(
+        reactor_structural._canonical_attributed_graph_certificate(
             graph,
-            node_attribute=reactor_deduplication._EXACT_NODE_SIG,
-            edge_attribute=reactor_deduplication._EXACT_EDGE_SIG,
+            node_attribute=reactor_structural._EXACT_NODE_SIG,
+            edge_attribute=reactor_structural._EXACT_EDGE_SIG,
             node_palette=node_palette,
             edge_palette=edge_palette,
         )
@@ -504,39 +507,39 @@ def test_incremental_exact_labels_equal_complete_recomputation():
     node_palette = {}
     edge_palette = {}
     identity_cache = {}
-    base.graph[reactor_deduplication._EXACT_NODE_PALETTE] = node_palette
-    base.graph[reactor_deduplication._EXACT_EDGE_PALETTE] = edge_palette
-    base.graph[reactor_deduplication._EXACT_IDENTITY_CACHE] = identity_cache
-    reactor_deduplication._attach_exact_structural_signatures(base)
+    base.graph[reactor_structural._EXACT_NODE_PALETTE] = node_palette
+    base.graph[reactor_structural._EXACT_EDGE_PALETTE] = edge_palette
+    base.graph[reactor_structural._EXACT_IDENTITY_CACHE] = identity_cache
+    reactor_structural._attach_exact_structural_signatures(base)
 
     incremental = base.copy()
     complete = base.copy()
     for graph in (incremental, complete):
         graph.nodes[1]["charge"] = (0, 1)
-        graph.nodes[1].pop(reactor_deduplication._EXACT_NODE_SIG)
+        graph.nodes[1].pop(reactor_structural._EXACT_NODE_SIG)
         graph.edges[1, 2]["order"] = (1, 2)
-        graph.edges[1, 2].pop(reactor_deduplication._EXACT_EDGE_SIG)
+        graph.edges[1, 2].pop(reactor_structural._EXACT_EDGE_SIG)
 
     incremental.graph["_structural_signatures_seeded"] = True
-    incremental.graph[reactor_deduplication._EXACT_DIRTY_NODES] = {1}
-    incremental.graph[reactor_deduplication._EXACT_DIRTY_EDGES] = {(1, 2)}
-    reactor_deduplication._attach_exact_structural_signatures(incremental)
+    incremental.graph[reactor_structural._EXACT_DIRTY_NODES] = {1}
+    incremental.graph[reactor_structural._EXACT_DIRTY_EDGES] = {(1, 2)}
+    reactor_structural._attach_exact_structural_signatures(incremental)
 
     for _, attrs in complete.nodes(data=True):
-        attrs.pop(reactor_deduplication._EXACT_NODE_SIG, None)
+        attrs.pop(reactor_structural._EXACT_NODE_SIG, None)
     for _, _, attrs in complete.edges(data=True):
-        attrs.pop(reactor_deduplication._EXACT_EDGE_SIG, None)
-    reactor_deduplication._attach_exact_structural_signatures(complete)
+        attrs.pop(reactor_structural._EXACT_EDGE_SIG, None)
+    reactor_structural._attach_exact_structural_signatures(complete)
 
     for node in base:
         assert (
-            incremental.nodes[node][reactor_deduplication._EXACT_NODE_SIG]
-            == complete.nodes[node][reactor_deduplication._EXACT_NODE_SIG]
+            incremental.nodes[node][reactor_structural._EXACT_NODE_SIG]
+            == complete.nodes[node][reactor_structural._EXACT_NODE_SIG]
         )
     for left, right in base.edges():
         assert (
-            incremental.edges[left, right][reactor_deduplication._EXACT_EDGE_SIG]
-            == complete.edges[left, right][reactor_deduplication._EXACT_EDGE_SIG]
+            incremental.edges[left, right][reactor_structural._EXACT_EDGE_SIG]
+            == complete.edges[left, right][reactor_structural._EXACT_EDGE_SIG]
         )
 
 
@@ -569,14 +572,14 @@ def test_active_neighbourhood_is_invariant_under_node_relabelling():
     node_palette = {}
     edge_palette = {}
     for candidate in (graph, relabelled):
-        candidate.graph[reactor_deduplication._EXACT_NODE_PALETTE] = node_palette
-        candidate.graph[reactor_deduplication._EXACT_EDGE_PALETTE] = edge_palette
-        candidate.graph[reactor_deduplication._EXACT_IDENTITY_CACHE] = {}
-        reactor_deduplication._attach_exact_structural_signatures(candidate)
+        candidate.graph[reactor_structural._EXACT_NODE_PALETTE] = node_palette
+        candidate.graph[reactor_structural._EXACT_EDGE_PALETTE] = edge_palette
+        candidate.graph[reactor_structural._EXACT_IDENTITY_CACHE] = {}
+        reactor_structural._attach_exact_structural_signatures(candidate)
 
-    assert reactor_deduplication._active_neighbourhood_invariant(
+    assert reactor_structural._active_neighbourhood_invariant(
         graph
-    ) == reactor_deduplication._active_neighbourhood_invariant(relabelled)
+    ) == reactor_structural._active_neighbourhood_invariant(relabelled)
 
 
 @pytest.mark.parametrize("explicit_h", [False, True])

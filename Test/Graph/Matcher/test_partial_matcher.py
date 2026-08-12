@@ -5,7 +5,7 @@ import unittest
 import networkx as nx
 
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
-from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor import Strategy
 
 
 class TestPartialMatcher(unittest.TestCase):

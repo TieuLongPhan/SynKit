@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections import Counter
 from typing import Any, Dict, List, Optional, Self, Sequence, Union
 
@@ -9,13 +10,14 @@ import networkx as nx
 
 from synkit.Chem.utils import reverse_reaction
 from synkit.Rule.syn_rule import SynRule
-from synkit.Synthesis.Reactor.fusion_validation import (
+from synkit.Synthesis.RBL.validation import (
     FusionIssue,
     FusionIssueCode,
     FusionValidation,
     WildcardRole,
     validate_fusion_rsmi,
 )
+from synkit.Synthesis.RBL.policy import AcceptanceTask
 
 ITSLike = Any
 
@@ -252,14 +254,26 @@ class RBLReactionMixin:
             # Resolve through the historical facade so monkeypatching and
             # instrumentation of ``rbl_engine.validate_rbl_candidate`` keep
             # working after this method moved into a mixin.
-            from synkit.Synthesis.Reactor import rbl_engine as rbl_engine_module
+            from synkit.Synthesis.RBL import engine as rbl_engine_module
 
-            validation = rbl_engine_module.validate_rbl_candidate(
-                self._last_reaction,
-                rsmi,
-                allow_wildcards=allow_wildcards,
-                preserve_sides=self.preserve_original_sides,
-            )
+            if (
+                self._active_search_policy.acceptance_task
+                is AcceptanceTask.STRICT_RECONSTRUCTION
+            ):
+                validation = rbl_engine_module.validate_strict_rbl_candidate(
+                    self._last_reaction,
+                    rsmi,
+                    allow_wildcards=allow_wildcards,
+                    boundary=self.conservation_boundary,
+                    environment_delta=self.environment_delta,
+                )
+            else:
+                validation = rbl_engine_module.validate_rbl_candidate(
+                    self._last_reaction,
+                    rsmi,
+                    allow_wildcards=allow_wildcards,
+                    preserve_sides=self.preserve_original_sides,
+                )
         payload = validation.to_dict()
         payload["source"] = source
         payload.update(context or {})
@@ -286,6 +300,27 @@ class RBLReactionMixin:
         payload["source"] = source
         payload.update(context or {})
         self._diagnostics["fusion"].append(payload)
+
+    def _record_reaction_failure(
+        self,
+        code: FusionIssueCode,
+        message: str,
+        *,
+        stage: str,
+        source: str,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Record a typed forward/backward application-stage failure."""
+        issue = FusionIssue(
+            code=code,
+            stage=stage,
+            message=message,
+            context=context or {},
+        )
+        payload = FusionValidation(valid=False, issues=(issue,)).to_dict()
+        payload["stage"] = stage
+        payload["source"] = source
+        self._diagnostics[stage].append(payload)
 
     def _safe_rsmi_to_its(self, rsmi: str) -> Optional[ITSLike]:
         """Safely convert RSMI to ITS, returning ``None`` on failure.
@@ -366,6 +401,7 @@ class RBLReactionMixin:
             invert=invert,
             embed_threshold=self.embed_threshold,
             electron_diagnostics=self.electron_diagnostics,
+            dedup_its=not self.verified_mode,
         )
         stage = "backward" if invert else "forward"
         self._diagnostics[stage].extend(getattr(reactor, "diagnostics", []) or [])
@@ -380,19 +416,49 @@ class RBLReactionMixin:
                 explicit_hydrogen=self.explicit_h,
             )
             if rsmi is None:
+                self._record_reaction_failure(
+                    FusionIssueCode.SERIALIZATION_FAILED,
+                    "Could not serialize a rule-application graph.",
+                    stage=stage,
+                    source=f"{stage}_application",
+                    context={"invert": invert},
+                )
                 continue
 
             rsmi_decorated = self._decorate_radical(rsmi, invert)
             if rsmi_decorated is None:
+                self._record_reaction_failure(
+                    FusionIssueCode.POSTPROCESS_FAILED,
+                    "Could not decorate a rule-application graph with typed ports.",
+                    stage=stage,
+                    source=f"{stage}_application",
+                    context={"invert": invert},
+                )
                 continue
 
             its_back = self._safe_rsmi_to_its(rsmi_decorated)
             if its_back is not None:
+                application_provenance = its_graph.graph.get(
+                    "application_provenance"
+                )
+                if application_provenance is not None:
+                    its_back.graph["application_provenance"] = copy.deepcopy(
+                        application_provenance
+                    )
+                    its_back.graph["application_direction"] = stage
                 its_back = self._annotate_wildcard_roles(
                     its_back,
                     WildcardRole.RADICAL_COMPLETION,
                 )
                 out.append(its_back)
+            else:
+                self._record_reaction_failure(
+                    FusionIssueCode.POSTPROCESS_FAILED,
+                    "Could not restore a decorated rule-application graph.",
+                    stage=stage,
+                    source=f"{stage}_application",
+                    context={"invert": invert},
+                )
 
         self.logger.debug("Reaction produced %d ITS graphs", len(out))
         return out

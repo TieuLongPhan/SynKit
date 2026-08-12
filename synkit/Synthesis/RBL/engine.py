@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union
 import logging
+from time import perf_counter
 
 import networkx as nx
 
@@ -9,7 +10,7 @@ from synkit.Chem.utils import remove_explicit_H_from_rsmi
 from synkit.Graph.Hyrogen._misc import standardize_hydrogen, h_to_implicit
 from synkit.IO import its_to_rsmi, rsmi_to_its
 from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 from synkit.Graph.Wildcard.its_merge import fuse_its_graphs
 from synkit.Graph.Fusion import (
     DEFAULT_INTERFACE_EDGE_KEYS,
@@ -21,6 +22,7 @@ from synkit.Graph.Fusion import (
     construct_pushout,
     fusion_candidate_from_construction,
     fusion_candidates_exactly_equivalent,
+    graph_identity_digest,
     graphs_exactly_equivalent,
 )
 from synkit.Graph.Matcher.mcs_matcher import MCSMatcher
@@ -28,28 +30,39 @@ from synkit.Graph.Matcher.wl_sel import WLSel
 
 # from synkit.Graph.Matcher.approx_mcs import ApproxMCSMatcher
 from synkit.Chem.Reaction.standardize import Standardize
-from synkit.Graph.Wildcard.graph_wc import GraphCollectionSelector
-from synkit.Synthesis.Reactor.fusion_validation import (
+from synkit.Synthesis.RBL.validation import (
     FusionIssueCode,
     FusionValidation,
     certify_fusion_postprocessing,
     validate_fusion_rsmi,
     validate_rbl_candidate,
+    validate_strict_rbl_candidate,
     validate_wildcard_mapping_roles,
 )
-from synkit.Synthesis.Reactor.rbl_policy import (
+from synkit.Synthesis.RBL.policy import (
+    AcceptanceTask,
+    OverlapScope,
+    ProofLevel,
     RBLSearchPolicy,
     SearchScope,
     TerminationPolicy,
 )
-from synkit.Synthesis.Reactor.rbl_matching import RBLMatchingMixin
-from synkit.Synthesis.Reactor.rbl_reaction import RBLReactionMixin
-from synkit.Synthesis.Reactor.rbl_state import RBLStateMixin
+from synkit.Synthesis.RBL.overlap import (
+    TypedOverlapLimits,
+    enumerate_typed_overlaps,
+)
+from synkit.Synthesis.RBL.proof import RBLReplayCertificate
+from synkit.Synthesis.RBL.matching import RBLMatchingMixin
+from synkit.Synthesis.RBL.pipeline import RBLPipelineMixin
+from synkit.Synthesis.RBL.reaction import RBLReactionMixin
+from synkit.Synthesis.RBL.state import RBLStateMixin
 
 ITSLike = Any
 
 
-class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
+class RBLEngine(
+    RBLStateMixin, RBLPipelineMixin, RBLReactionMixin, RBLMatchingMixin
+):
     """Radical-based linking (RBL) engine for bidirectional template
     application and ITS-graph fusion using wildcard-based subgraph
     matching.
@@ -189,7 +202,9 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
     :param prune_wc: Remove wildcard nodes before matching when supported.
     :type prune_wc: bool
     :param prune_automorphisms: Collapse automorphism-equivalent mappings.
-    :type prune_automorphisms: bool
+        ``None`` selects the profile default; verified search always disables
+        this uncertified quotient.
+    :type prune_automorphisms: bool | None
     :param mcs_side: Reaction-center side passed to the MCS matcher.
     :type mcs_side: str
     :param early_stop: Stop after the first valid result.
@@ -205,8 +220,16 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
     :param max_pairs: Maximum number of ranked forward/backward pairs.
     :type max_pairs: int | None
     :param max_mappings_per_pair: Maximum mappings evaluated for each pair;
-                                  zero means unbounded.
-    :type max_mappings_per_pair: int
+                                  zero means unbounded and ``None`` selects
+                                  the active profile's default.
+    :type max_mappings_per_pair: int | None
+    :param overlap_max_states: Maximum incremental states per typed-overlap
+                               enumeration.
+    :type overlap_max_states: int
+    :param overlap_max_mappings: Maximum emitted typed overlaps per graph pair.
+    :type overlap_max_mappings: int
+    :param overlap_timeout_seconds: Optional internal typed-overlap wall time.
+    :type overlap_timeout_seconds: float | None
     :param component_matching: Enable component-assignment matching.
     :type component_matching: bool | None
     :param fusion_backend: Fusion materialization backend.
@@ -220,6 +243,12 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
     :param preserve_original_sides: Original reaction sides that accepted
                                      candidates must preserve.
     :type preserve_original_sides: Sequence[str]
+    :param conservation_boundary: Strict-mode ``"closed"`` or ``"open"``
+                                  material boundary.
+    :type conservation_boundary: str
+    :param environment_delta: Exact declared material/charge delta for an open
+                              boundary.
+    :type environment_delta: Mapping[str, int] | None
     :param embed_threshold: Reactor embedding limit.
     :type embed_threshold: int
     :param reactor_cls: Reactor implementation.
@@ -253,7 +282,7 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
 
     .. code-block:: python
 
-        from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+        from synkit.Synthesis.RBL.engine import RBLEngine
 
         rxn = "CCO.CBr>>CCOBr"
         template = "CBr>>C[*]"  # toy example
@@ -278,7 +307,7 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
     .. code-block:: python
 
         from synkit.Graph.Matcher.approx_mcs import ApproxMCSMatcher
-        from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+        from synkit.Synthesis.RBL.engine import RBLEngine
 
         rxn = "CC1=CC=CC=C1.OBr>>CC1=CC=CC=C1OBr"
         template = "OBr>>O[*]"
@@ -302,20 +331,25 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
         node_attrs: Optional[Sequence[str]] = None,
         edge_attrs: Optional[Sequence[str]] = None,
         prune_wc: bool = True,
-        prune_automorphisms: bool = True,
+        prune_automorphisms: bool | None = None,
         mcs_side: str = "l",
         early_stop: bool = True,
         fast_paths_only: bool = False,
         mode: str | None = None,
         search_policy: RBLSearchPolicy | None = None,
         max_pairs: int | None = None,
-        max_mappings_per_pair: int = 1,
+        max_mappings_per_pair: int | None = None,
+        overlap_max_states: int = 250_000,
+        overlap_max_mappings: int = 50_000,
+        overlap_timeout_seconds: float | None = None,
         component_matching: bool | None = None,
         fusion_backend: str | None = None,
         implicit_temp: bool = True,
         explicit_h: bool = False,
         electron_diagnostics: bool = False,
         preserve_original_sides: Sequence[str] = ("products",),
+        conservation_boundary: str = "closed",
+        environment_delta: Mapping[str, int] | None = None,
         embed_threshold: int = 10_000,
         reactor_cls: type = SynReactor,
         wildcard_adder_cls: type = RadicalWildcardAdder,
@@ -348,23 +382,9 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
         # completed-graph proof handles hydrogen presentation equivalence.
         self.interface_node_attrs = list(DEFAULT_INTERFACE_NODE_KEYS)
         self.interface_edge_attrs = list(DEFAULT_INTERFACE_EDGE_KEYS)
-        verified_mode = mode == "verified"
-        if verified_mode:
-            prune_automorphisms = False
-            max_mappings_per_pair = 0
-            max_pairs = None
-            # Proof-safe rule application keeps mapped hydrogen as an explicit
-            # graph vertex.  Folding it into an implicit template destroys the
-            # identity needed to certify proton-transfer rules.
-            implicit_temp = False
-            explicit_h = True
-        self.prune_wc: bool = prune_wc
-        self.prune_automorphisms: bool = prune_automorphisms
-        self.mcs_side: str = mcs_side
         if mode is not None and search_policy is not None:
             raise ValueError("Specify either mode or search_policy, not both.")
         self.mode = mode
-        self.verified_mode = verified_mode
         if search_policy is not None:
             if not isinstance(search_policy, RBLSearchPolicy):
                 raise TypeError("search_policy must be an RBLSearchPolicy.")
@@ -380,6 +400,24 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
             self.search_policy = RBLSearchPolicy.from_mode("early_stop")
         else:
             self.search_policy = RBLSearchPolicy.from_mode("full")
+        verified_mode = self.search_policy.proof_level is ProofLevel.REPLAYABLE
+        if prune_automorphisms is None:
+            # Orbit pruning is an optional heuristic until the matcher emits a
+            # checkable quotient certificate. The verified profile therefore
+            # uses the literal mapping universe; compatibility profiles retain
+            # their historical bounded behavior and report incompleteness.
+            prune_automorphisms = not verified_mode
+        if verified_mode:
+            prune_automorphisms = False
+            # Proof-safe rule application keeps mapped hydrogen as an explicit
+            # graph vertex. Folding it into an implicit template destroys the
+            # identity needed to certify proton-transfer rules.
+            implicit_temp = False
+            explicit_h = True
+        self.prune_wc = prune_wc
+        self.prune_automorphisms = prune_automorphisms
+        self.mcs_side = mcs_side
+        self.verified_mode = verified_mode
         self.early_stop = (
             self.search_policy.termination is TerminationPolicy.FIRST_VALID
         )
@@ -389,7 +427,17 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
         if max_pairs is not None and int(max_pairs) <= 0:
             raise ValueError("max_pairs must be positive or None.")
         self.max_pairs: int | None = None if max_pairs is None else int(max_pairs)
-        self.max_mappings_per_pair: int = max(0, int(max_mappings_per_pair))
+        mapping_limit = (
+            0 if verified_mode else 1
+        ) if max_mappings_per_pair is None else int(max_mappings_per_pair)
+        if mapping_limit < 0:
+            raise ValueError("max_mappings_per_pair must be non-negative.")
+        self.max_mappings_per_pair = mapping_limit
+        self.overlap_limits = TypedOverlapLimits(
+            max_states=int(overlap_max_states),
+            max_overlaps=int(overlap_max_mappings),
+            timeout_seconds=overlap_timeout_seconds,
+        )
         if component_matching is None:
             component_matching = not (
                 not self.prune_automorphisms and self.max_mappings_per_pair == 0
@@ -424,6 +472,10 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                 f"{sorted(unknown_preservation_sides)!r}."
             )
         self.preserve_original_sides = tuple(dict.fromkeys(preserve_original_sides))
+        if conservation_boundary not in {"closed", "open"}:
+            raise ValueError("conservation_boundary must be 'closed' or 'open'.")
+        self.conservation_boundary = conservation_boundary
+        self.environment_delta = dict(environment_delta or {})
         self.embed_threshold: int = int(embed_threshold)
 
         # Dependencies (DI)
@@ -456,6 +508,8 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
         self._fused_its: List[ITSLike] = []
         self._fused_rsmis: List[str] = []
         self._fusion_candidates: List[FusionCandidate] = []
+        self._rbl_proofs: List[RBLReplayCertificate] = []
+        self._rbl_proof_digests: set[str] = set()
         self._fusion_search_stats: Dict[str, Any] = {}
         self._latest_postprocessed_its: Optional[ITSLike] = None
         self._latest_output_validation: Optional[FusionValidation] = None
@@ -480,6 +534,8 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
         replace_wc: bool,
         early_stop: bool,
         max_pairs: int | None = None,
+        initial_graphs: Sequence[ITSLike] = (),
+        initial_rsmis: Sequence[str] = (),
     ) -> None:
         """
         Core fusion + post-processing loop.
@@ -516,14 +572,22 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
         :param max_pairs: Optional hard prefix bound after deterministic pair
             ranking. ``None`` explores every pair.
         :type max_pairs: int or None
+        :param initial_graphs: Already accepted direct-path candidates that a
+            wider search must retain.
+        :type initial_graphs: Sequence[ITSLike]
+        :param initial_rsmis: Serializations aligned with ``initial_graphs``.
+        :type initial_rsmis: Sequence[str]
         """
-        fused_graphs: List[ITSLike] = []
-        fused_rsmis: List[str] = []
+        if len(initial_graphs) != len(initial_rsmis):
+            raise ValueError("initial_graphs and initial_rsmis must be aligned.")
+        fused_graphs: List[ITSLike] = list(initial_graphs)
+        fused_rsmis: List[str] = list(initial_rsmis)
         rw_adder = self.wildcard_adder_cls()
 
         # --- WL-based candidate selection instead of naive nested loops ---
         # The selector is an ordering heuristic only.  A similarity threshold
         # is not a sound admissibility predicate for graph fusion.
+        pair_order_started = perf_counter()
         selector = WLSel(
             fw_its,
             bw_its,
@@ -532,35 +596,96 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
             edge_attrs=self.edge_attrs,
             min_score=0.0,
         )
-        selector.build_signatures().score_pairs(top_k=None)
-        all_pairs = selector.pair_indices
-        pairs = all_pairs if max_pairs is None else all_pairs[:max_pairs]
-        n_pairs_truncated = len(all_pairs) - len(pairs)
+        selector.build_signatures().score_pairs(top_k=max_pairs)
+        pairs = selector.pair_indices
+        pair_order_seconds = perf_counter() - pair_order_started
+        pair_candidate_count = selector.pair_candidate_count
+        n_pairs_truncated = pair_candidate_count - len(pairs)
 
         n_pairs = 0
         n_mappings_total = 0
         n_mappings_rejected = 0
         n_candidates_deduplicated = 0
         n_mappings_truncated = 0
+        n_postprocess_rejections = 0
+        overlap_certificates: List[Dict[str, Any]] = []
+        overlap_search_incomplete = 0
+        n_operational_failures = 0
+        overlap_seconds = 0.0
+        construction_seconds = 0.0
+        postprocess_seconds = 0.0
         candidate_buckets: Dict[str, List[FusionCandidate]] = {}
-        accepted_final_graphs: List[nx.Graph] = []
+        accepted_graph_buckets: Dict[str, List[nx.Graph]] = {}
+        for graph in initial_graphs:
+            if isinstance(graph, nx.Graph):
+                accepted_graph_buckets.setdefault(
+                    graph_identity_digest(graph),
+                    [],
+                ).append(graph)
+
+        def incomplete_reasons(*, first_valid: bool) -> List[str]:
+            reasons = []
+            if (
+                self._active_search_policy.overlap_scope
+                is OverlapScope.MAXIMUM_COMMON_SUBGRAPHS
+            ):
+                reasons.append("maximum_common_subgraphs_only")
+            if first_valid:
+                reasons.append("first_valid_termination")
+            if n_pairs_truncated:
+                reasons.append("pair_limit")
+            if n_mappings_truncated:
+                reasons.append("mapping_limit")
+            if self.prune_automorphisms:
+                reasons.append("uncertified_automorphism_pruning")
+            if self.component_matching:
+                reasons.append("single_component_assignment")
+            if (
+                self._active_search_policy.overlap_scope
+                is OverlapScope.MAXIMUM_COMMON_SUBGRAPHS
+                and self.matcher_cls is not MCSMatcher
+            ):
+                reasons.append("non_exact_matcher")
+            if overlap_search_incomplete:
+                reasons.append("typed_overlap_limit")
+            if n_operational_failures:
+                reasons.append("operational_failure")
+            return reasons
 
         for i_fw, i_bw in pairs:
             fw = fw_its[i_fw]
             bw = bw_its[i_bw]
             n_pairs += 1
 
-            matcher = self._build_matcher()
-            matcher.find_rc_mapping(
-                fw,
-                bw,
-                mcs=True,
-                mcs_mol=False,
-                component=self.component_matching,
-                side=self.mcs_side,
-            )
-
-            mappings = matcher.get_mappings(direction="G1_to_G2") or []
+            overlap_started = perf_counter()
+            if self._active_search_policy.overlap_scope is OverlapScope.ALL_TYPED:
+                overlap_result = enumerate_typed_overlaps(
+                    fw,
+                    bw,
+                    node_keys=self.interface_node_attrs,
+                    edge_keys=self.interface_edge_attrs,
+                    element_key=self.element_key,
+                    wildcard_element=self.wildcard_element,
+                    limits=self.overlap_limits,
+                )
+                certificate_payload = overlap_result.certificate.to_dict()
+                certificate_payload["pair_index"] = [i_fw, i_bw]
+                overlap_certificates.append(certificate_payload)
+                if not overlap_result.certificate.complete:
+                    overlap_search_incomplete += 1
+                mappings = [dict(mapping) for mapping in overlap_result.mappings]
+            else:
+                matcher = self._build_matcher()
+                matcher.find_rc_mapping(
+                    fw,
+                    bw,
+                    mcs=True,
+                    mcs_mol=False,
+                    component=self.component_matching,
+                    side=self.mcs_side,
+                )
+                mappings = matcher.get_mappings(direction="G1_to_G2") or []
+            overlap_seconds += perf_counter() - overlap_started
             if not mappings:
                 continue
 
@@ -568,7 +693,15 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                 completed_mappings: List[Dict[Any, Any]] = []
                 for mapping in mappings:
                     completed_mappings.extend(
-                        self._complete_typed_wildcard_ports(fw, bw, mapping)
+                        self._complete_typed_wildcard_ports(
+                            fw,
+                            bw,
+                            mapping,
+                            maximum_only=(
+                                self._active_search_policy.overlap_scope
+                                is not OverlapScope.ALL_TYPED
+                            ),
+                        )
                     )
                 mappings = completed_mappings
 
@@ -602,6 +735,7 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                     "pair_index": (i_fw, i_bw),
                     "mapping_index": i_map,
                 }
+                construction_started = perf_counter()
                 try:
                     interface = FusionInterface.from_mapping(
                         fw,
@@ -645,6 +779,8 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                         },
                     )
                     continue
+                finally:
+                    construction_seconds += perf_counter() - construction_started
                 if self.fusion_backend == "categorical_pushout":
                     fused_graph = proof_construction.graph.copy()
                 else:
@@ -667,6 +803,7 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                             )
                     except Exception as exc:  # pragma: no cover - defensive
                         n_mappings_rejected += 1
+                        n_operational_failures += 1
                         self._record_fusion_failure(
                             FusionIssueCode.OPERATION_FAILED,
                             "Legacy ITS graph fusion failed for the mapping.",
@@ -687,20 +824,37 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                 # from the preceding mapping.
                 self._latest_postprocessed_its = None
                 self._latest_output_validation = None
+                diagnostics_before = len(self._diagnostics["fusion"])
+                postprocess_started = perf_counter()
                 rsmi_final = self._postprocess_single(
                     fused_graph,
                     replace_wc=replace_wc,
                     rw_adder=rw_adder,
                     diagnostic_context=diagnostic_context,
                 )
+                postprocess_seconds += perf_counter() - postprocess_started
                 if rsmi_final is None:
                     n_mappings_rejected += 1
+                    n_postprocess_rejections += 1
+                    new_diagnostics = self._diagnostics["fusion"][
+                        diagnostics_before:
+                    ]
+                    if any(
+                        issue.get("code")
+                        in {
+                            FusionIssueCode.OPERATION_FAILED.value,
+                        }
+                        for report in new_diagnostics
+                        for issue in report.get("issues", ())
+                    ):
+                        n_operational_failures += 1
                     continue
                 final_graph = self._latest_postprocessed_its
                 if not isinstance(final_graph, nx.Graph):
                     final_graph = self._safe_rsmi_to_its(rsmi_final)
                 if not isinstance(final_graph, nx.Graph):
                     n_mappings_rejected += 1
+                    n_operational_failures += 1
                     self._record_fusion_failure(
                         FusionIssueCode.PROOF_FAILED,
                         "The accepted serialization could not be restored as an ITS graph.",
@@ -734,31 +888,85 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                         continue
                 proof_validation = self._latest_output_validation
                 if proof_validation is None:
-                    proof_validation = (
-                        validate_rbl_candidate(
+                    if (
+                        self._last_reaction is not None
+                        and self._active_search_policy.acceptance_task
+                        is AcceptanceTask.STRICT_RECONSTRUCTION
+                    ):
+                        proof_validation = validate_strict_rbl_candidate(
+                            self._last_reaction,
+                            rsmi_final,
+                            allow_wildcards=not replace_wc,
+                            boundary=self.conservation_boundary,
+                            environment_delta=self.environment_delta,
+                        )
+                    elif self._last_reaction is not None:
+                        proof_validation = validate_rbl_candidate(
                             self._last_reaction,
                             rsmi_final,
                             allow_wildcards=not replace_wc,
                             preserve_sides=self.preserve_original_sides,
                         )
-                        if self._last_reaction is not None
-                        else validate_fusion_rsmi(
+                    else:
+                        proof_validation = validate_fusion_rsmi(
                             rsmi_final,
                             allow_wildcards=not replace_wc,
                         )
-                    )
-                if any(
+                final_digest = graph_identity_digest(final_graph)
+                identity_bucket = accepted_graph_buckets.setdefault(
+                    final_digest,
+                    [],
+                )
+                duplicate_outcome = any(
                     graphs_exactly_equivalent(final_graph, previous)
-                    for previous in accepted_final_graphs
-                ):
+                    for previous in identity_bucket
+                )
+                if duplicate_outcome:
                     n_candidates_deduplicated += 1
-                    continue
                 if proof_equivalent:
                     validation_payload = proof_validation.to_dict()
                     validation_payload["evidence"] = {
                         **validation_payload.get("evidence", {}),
                         **postprocess_proof.evidence,
                     }
+                    replay_certificate = None
+                    if (
+                        self._active_search_policy.proof_level
+                        is ProofLevel.REPLAYABLE
+                    ):
+                        try:
+                            replay_certificate = RBLReplayCertificate.create(
+                                original_rsmi=self._last_reaction or rsmi_final,
+                                forward=fw,
+                                backward=bw,
+                                mapping=mapping,
+                                pushout=proof_construction.graph,
+                                final_graph=final_graph,
+                                final_rsmi=rsmi_final,
+                                materialize_hydrogen=replace_wc,
+                                acceptance_task=(
+                                    self._active_search_policy.acceptance_task.value
+                                ),
+                                preserve_sides=self.preserve_original_sides,
+                                conservation_boundary=self.conservation_boundary,
+                                environment_delta=self.environment_delta,
+                                wildcard_element=self.wildcard_element,
+                                node_keys=tuple(self.interface_node_attrs),
+                                edge_keys=tuple(self.interface_edge_attrs),
+                            )
+                        except (TypeError, ValueError) as error:
+                            n_operational_failures += 1
+                            self._record_fusion_failure(
+                                FusionIssueCode.PROOF_FAILED,
+                                "The end-to-end RBL certificate did not replay.",
+                                source="rbl_proof",
+                                context={
+                                    **diagnostic_context,
+                                    "error": str(error),
+                                },
+                            )
+                            n_mappings_rejected += 1
+                            continue
                     candidate = fusion_candidate_from_construction(
                         proof_construction,
                         rsmi=rsmi_final,
@@ -775,7 +983,15 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                     ):
                         self._fusion_candidates.append(candidate)
                         bucket.append(candidate)
-                accepted_final_graphs.append(final_graph)
+                    if replay_certificate is not None:
+                        replay_payload = replay_certificate.to_dict()
+                        replay_digest = replay_payload["document_digest"]
+                        if replay_digest not in self._rbl_proof_digests:
+                            self._rbl_proof_digests.add(replay_digest)
+                            self._rbl_proofs.append(replay_certificate)
+                if duplicate_outcome:
+                    continue
+                identity_bucket.append(final_graph)
                 fused_graphs.append(final_graph)
                 fused_rsmis.append(rsmi_final)
                 if early_stop:
@@ -795,23 +1011,44 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
                         "pairs_explored": n_pairs,
                         "mappings_explored": n_mappings_total,
                         "mappings_rejected": n_mappings_rejected,
+                        "operational_failures": n_operational_failures,
+                        "postprocess_rejections": n_postprocess_rejections,
                         "candidates_valid": len(fused_rsmis),
+                        "direct_candidates_valid": len(initial_rsmis),
+                        "fusion_candidates_valid": (
+                            len(fused_rsmis) - len(initial_rsmis)
+                        ),
                         "proof_candidates": len(self._fusion_candidates),
                         "candidates_deduplicated": n_candidates_deduplicated,
                         "mappings_truncated": n_mappings_truncated,
-                        "pair_candidates": len(all_pairs),
+                        "pair_candidates": pair_candidate_count,
                         "pairs_truncated": n_pairs_truncated,
                         "component_matching": self.component_matching,
-                        "mapping_scope": (
-                            "single_component_assignment"
-                            if self.component_matching
-                            else "maximum_common_subgraphs"
-                        ),
+                        "mapping_scope": self._active_search_policy.overlap_scope.value,
                         "pair_ordering": "wl_no_cutoff",
                         "fusion_backend": self.fusion_backend,
                         "interface_completion": (
-                            "maximal_typed_leaf_ports" if self.verified_mode else "none"
+                            "all_typed_leaf_port_assignments"
+                            if self._active_search_policy.overlap_scope
+                            is OverlapScope.ALL_TYPED
+                            else (
+                                "maximum_typed_leaf_ports"
+                                if self.verified_mode
+                                else "none"
+                            )
                         ),
+                        "overlap_scope": (
+                            self._active_search_policy.overlap_scope.value
+                        ),
+                        "globally_complete_over_all_overlaps": False,
+                        "incomplete_reasons": incomplete_reasons(first_valid=True),
+                        "overlap_certificates": overlap_certificates,
+                        "timings_seconds": {
+                            "pair_ordering": pair_order_seconds,
+                            "overlap_enumeration": overlap_seconds,
+                            "construction": construction_seconds,
+                            "postprocessing": postprocess_seconds,
+                        },
                     }
                     self._record_stop(
                         mode="early_stop",
@@ -839,22 +1076,26 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
         self._fused_rsmis = [record[1] for record in ranked_outputs]
         self._fusion_candidates.sort(
             key=lambda candidate: (
-                candidate.score,
+                candidate.score.ranking_key if candidate.score is not None else (),
                 candidate.canonical_signature,
                 candidate.proof_digest,
             )
+        )
+        all_typed_scope = (
+            self._active_search_policy.overlap_scope is OverlapScope.ALL_TYPED
         )
         mapping_scope_complete = (
             n_pairs_truncated == 0
             and n_mappings_truncated == 0
             and not self.prune_automorphisms
             and not self.component_matching
-            and self.matcher_cls is MCSMatcher
+            and overlap_search_incomplete == 0
+            and n_operational_failures == 0
+            and (all_typed_scope or self.matcher_cls is MCSMatcher)
         )
+        global_overlap_complete = mapping_scope_complete and all_typed_scope
         self._fusion_search_stats = {
-            # MCS is an ordering/search restriction, not a proof that smaller
-            # admissible overlaps cannot produce additional valid fusions.
-            "complete": False,
+            "complete": global_overlap_complete,
             "complete_within_mapping_scope": mapping_scope_complete,
             "termination": (
                 "mapping_scope_exhausted" if mapping_scope_complete else "bounded"
@@ -862,24 +1103,36 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
             "pairs_explored": n_pairs,
             "mappings_explored": n_mappings_total,
             "mappings_rejected": n_mappings_rejected,
+            "operational_failures": n_operational_failures,
+            "postprocess_rejections": n_postprocess_rejections,
             "candidates_valid": len(self._fused_rsmis),
+            "direct_candidates_valid": len(initial_rsmis),
+            "fusion_candidates_valid": len(self._fused_rsmis) - len(initial_rsmis),
             "proof_candidates": len(self._fusion_candidates),
             "candidates_deduplicated": n_candidates_deduplicated,
             "mappings_truncated": n_mappings_truncated,
             "automorphism_pruned": self.prune_automorphisms,
-            "pair_candidates": len(all_pairs),
+            "pair_candidates": pair_candidate_count,
             "pairs_truncated": n_pairs_truncated,
             "component_matching": self.component_matching,
-            "mapping_scope": (
-                "single_component_assignment"
-                if self.component_matching
-                else "maximum_common_subgraphs"
-            ),
+            "mapping_scope": self._active_search_policy.overlap_scope.value,
             "pair_ordering": "wl_no_cutoff",
             "fusion_backend": self.fusion_backend,
             "interface_completion": (
-                "maximal_typed_leaf_ports" if self.verified_mode else "none"
+                "all_typed_leaf_port_assignments"
+                if all_typed_scope
+                else ("maximum_typed_leaf_ports" if self.verified_mode else "none")
             ),
+            "overlap_scope": self._active_search_policy.overlap_scope.value,
+            "globally_complete_over_all_overlaps": global_overlap_complete,
+            "incomplete_reasons": incomplete_reasons(first_valid=False),
+            "overlap_certificates": overlap_certificates,
+            "timings_seconds": {
+                "pair_ordering": pair_order_seconds,
+                "overlap_enumeration": overlap_seconds,
+                "construction": construction_seconds,
+                "postprocessing": postprocess_seconds,
+            },
         }
 
         if not fused_graphs:
@@ -926,291 +1179,6 @@ class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
     # ------------------------------------------------------------------
     # Post-processing helper
     # ------------------------------------------------------------------
-
-    def _postprocess_single(
-        self,
-        graph: ITSLike,
-        *,
-        replace_wc: bool,
-        rw_adder: Optional[RadicalWildcardAdder] = None,
-        diagnostic_context: Optional[Dict[str, Any]] = None,
-    ) -> Optional[str]:
-        """Post-process a single fused ITS graph to a fused RSMI string.
-
-        Pipeline:
-
-        1. ITS → RSMI
-        2. Radical wildcard decoration
-        3. RSMI → ITS
-        4. (Optionally) wildcard → H replacement
-        5. ITS → RSMI
-
-        :param graph: Fused ITS graph to post-process.
-        :type graph: ITSLike
-        :param replace_wc: If ``True``, wildcard atoms are converted to
-            hydrogen before the final ITS→RSMI step.
-        :type replace_wc: bool
-        :param rw_adder: Optional pre-instantiated wildcard adder. If
-            ``None``, a new one is constructed.
-        :type rw_adder: RadicalWildcardAdder or None
-        :return: Final fused reaction SMILES or ``None`` if any step fails.
-        :rtype: Optional[str]
-        """
-        self._latest_postprocessed_its = None
-        self._latest_output_validation = None
-        if rw_adder is None:
-            rw_adder = self.wildcard_adder_cls()
-
-        rsmi1 = self._safe_its_to_rsmi(
-            graph,
-            fmt="tuple",
-            explicit_hydrogen=self.explicit_h,
-        )
-        if rsmi1 is None:
-            self._record_fusion_failure(
-                FusionIssueCode.SERIALIZATION_FAILED,
-                "Could not serialize the fused ITS before post-processing.",
-                source="postprocess",
-                context=diagnostic_context,
-            )
-            return None
-
-        # Radical completion can create the same isolated wildcard spectator
-        # on both endpoints.  Remove only that side-symmetric multiset before
-        # materialising the remaining wildcards as hydrogen.
-        rsmi1 = self._strip_balanced_isolated_wildcards(rsmi1)
-
-        try:
-            rsmi2 = rw_adder.transform(rsmi1)
-        except Exception as exc:  # pragma: no cover - defensive
-            self.logger.debug("Radical wildcard decoration (single) failed: %s", exc)
-            self._record_fusion_failure(
-                FusionIssueCode.POSTPROCESS_FAILED,
-                "Radical wildcard decoration failed during post-processing.",
-                source="postprocess",
-                context={**(diagnostic_context or {}), "error": type(exc).__name__},
-            )
-            return None
-
-        its_back = self._safe_rsmi_to_its(rsmi2)
-        if its_back is None:
-            self._record_fusion_failure(
-                FusionIssueCode.POSTPROCESS_FAILED,
-                "Could not parse the wildcard-decorated reaction.",
-                source="postprocess",
-                context=diagnostic_context,
-            )
-            return None
-
-        if isinstance(its_back, nx.Graph) and replace_wc:
-            its_back = self.replace_wildcard_with_H(its_back)
-
-        rsmi_final = self._safe_its_to_rsmi(
-            its_back,
-            fmt="tuple",
-            explicit_hydrogen=replace_wc,
-        )
-        if rsmi_final is None:
-            self._record_fusion_failure(
-                FusionIssueCode.SERIALIZATION_FAILED,
-                "Could not serialize the materialized fusion endpoint.",
-                source="postprocess",
-                context=diagnostic_context,
-            )
-            return None
-
-        validation = self._validate_fusion_output(
-            rsmi_final,
-            allow_wildcards=not replace_wc,
-            source="postprocess",
-            context=diagnostic_context,
-        )
-        if not validation.valid:
-            return None
-        self._latest_postprocessed_its = its_back
-        return rsmi_final
-
-    # ------------------------------------------------------------------
-    # Full RBL pipeline: forward + backward + fusion
-    # ------------------------------------------------------------------
-
-    def process(
-        self,
-        rsmi: str,
-        template: Union[str, nx.Graph, ITSLike],
-        *,
-        replace_wc: bool = True,
-        fast_paths_only: Optional[bool] = None,
-    ) -> RBLEngine:
-        """Run the full RBL pipeline on a reaction RSMI and a template.
-
-        1. Split the reaction into reactants/products via ``'>>'``.
-        2. Optionally attempt a quick-check (:meth:`_quick_check`) if
-           early-stop or fast-paths-only logic is active. On success,
-           store the solution as the sole entry in :attr:`fused_rsmis`.
-        3. Prepare the template via :meth:`prepare_template`.
-        4. Run forward and backward template application via :meth:`react`.
-        5. Optionally attempt :meth:`_early_stop_on_nonwildcard` to exploit
-           ITS graphs that contain no wildcard atoms at all, with canonical
-           reactant/product verification.
-        6. If fast-path-only logic is active and no solution was found in
-           steps 2–5, return without running fusion.
-        7. Otherwise, run :meth:`_fuse_and_postprocess` with streaming
-           early-stop behaviour controlled by :attr:`early_stop`.
-
-        When ``fast_paths_only`` (argument or attribute) is ``True``,
-        only steps 1–6 are executed and the expensive fusion stage is
-        skipped entirely.
-
-        :param rsmi: Input reaction SMILES.
-        :type rsmi: str
-        :param template: Template as reaction SMILES, graph or ITS-like.
-        :type template: str | nx.Graph | ITSLike
-        :param replace_wc: If ``True``, replace wildcard atoms by hydrogen
-            during final post-processing.
-        :type replace_wc: bool
-        :param fast_paths_only: Optional per-call override of the
-            engine-level :attr:`fast_paths_only` flag. If ``None``,
-            the attribute value is used.
-        :type fast_paths_only: bool or None
-        :return: The current engine instance.
-        :rtype: RBLEngine
-        :raises ValueError: If the reaction string does not contain ``'>>'``
-            or if template preparation fails.
-        """
-        try:
-            reactants, products = rsmi.split(">>", 1)
-        except ValueError as exc:
-            raise ValueError(
-                f"Invalid reaction string {rsmi!r}: expected 'reactants>>products'."
-            ) from exc
-
-        self._reset_run_state()
-        self._last_reaction = rsmi
-        self._last_reactants = reactants
-        self._last_products = products
-
-        # Resolve the compatibility override into the same explicit policy.
-        if fast_paths_only is None:
-            policy = self.search_policy
-        elif fast_paths_only:
-            policy = RBLSearchPolicy(
-                SearchScope.FAST_PATHS_ONLY,
-                TerminationPolicy.FIRST_VALID,
-            )
-        else:
-            policy = RBLSearchPolicy(
-                SearchScope.FUSION,
-                self.search_policy.termination,
-            )
-        self._active_search_policy = policy
-        fast_only = policy.scope is SearchScope.FAST_PATHS_ONLY
-        bounded_fusion = policy.scope is SearchScope.BOUNDED_FUSION
-        stop_first = policy.termination is TerminationPolicy.FIRST_VALID
-        run_fast_paths = stop_first
-
-        self.logger.debug(
-            "Processing reaction: %s (early_stop=%s, fast_paths_only=%s, "
-            "implicit_temp=%s, explicit_h=%s, embed_threshold=%d)",
-            rsmi,
-            stop_first,
-            fast_only,
-            self.implicit_temp,
-            self.explicit_h,
-            self.embed_threshold,
-        )
-
-        # Quick-check path (cheap SynReactor + standardizer)
-        quick_solution: Optional[str] = None
-        if run_fast_paths:
-            quick_solution = self._quick_check(rsmi, template)
-
-        if quick_solution is not None:
-            validation = self._validate_fusion_output(
-                quick_solution,
-                allow_wildcards=not replace_wc,
-                source="quick_check",
-            )
-            if validation.valid:
-                self.logger.debug("Quick-check path taken; skipping full RBL pipeline.")
-                self._forward_its = []
-                self._backward_its = []
-                self._fused_its = []
-                self._fused_rsmis = [quick_solution]
-                # _record_stop has already been called in _quick_check
-                return self
-
-            self.logger.debug(
-                "Quick-check candidate failed the shared fusion contract; "
-                "continuing with the RBL pipeline."
-            )
-
-        # Full RBL pipeline setup (up to ITS generation)
-        self.prepare_template(template)
-        pattern = self._template_its
-        if pattern is None:
-            raise ValueError("Template preparation failed; no ITS representation.")
-
-        fw_its = self._run_reaction(reactants, pattern, invert=False)
-        bw_its = self._run_reaction(products, pattern, invert=True)
-
-        self._forward_its = fw_its
-        self._backward_its = bw_its
-
-        # Early-stop second stage: exploit ITS graphs without wildcards
-        if run_fast_paths:
-            found_fast = self._early_stop_on_nonwildcard(
-                fw_its,
-                bw_its,
-                replace_wc=replace_wc,
-            )
-            if found_fast:
-                return self
-
-            # If we are in fast-path-only mode and non-wildcard early-stop
-            # failed, we *do not* run the expensive fusion stage.
-            if fast_only:
-                self._record_stop(
-                    mode="fast_paths_only",
-                    reason="fast_paths_no_solution",
-                    metadata={
-                        "n_fw": len(fw_its),
-                        "n_bw": len(bw_its),
-                        "fast_paths_only": fast_only,
-                        "early_stop": stop_first,
-                    },
-                )
-                self.logger.debug(
-                    "Fast-path-only mode: no quick-check or non-wildcard "
-                    "solution; skipping fusion."
-                )
-                return self
-
-        # Filter: keep only ITS graphs that *contain* wildcard atoms
-        sel_fw = GraphCollectionSelector(self._forward_its)
-        sel_fw.select_wc(
-            wildcard=self.wildcard_element,
-            select_with_wc=True,
-        )
-        self._forward_its = sel_fw.filtered
-
-        sel_bw = GraphCollectionSelector(self._backward_its)
-        sel_bw.select_wc(
-            wildcard=self.wildcard_element,
-            select_with_wc=True,
-        )
-        self._backward_its = sel_bw.filtered
-
-        # Full fusion + post-processing (only when fast-path-only is False)
-        self._fuse_and_postprocess(
-            self._forward_its,
-            self._backward_its,
-            replace_wc=replace_wc,
-            early_stop=stop_first,
-            max_pairs=self.max_pairs if bounded_fusion else None,
-        )
-
-        return self
 
     # ------------------------------------------------------------------
     # Convenience / diagnostics

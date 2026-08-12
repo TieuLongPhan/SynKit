@@ -1,4 +1,4 @@
-"""Explicit search-scope and termination policies for RBL."""
+"""Explicit search, proof, and acceptance policies for RBL."""
 
 from __future__ import annotations
 
@@ -22,12 +22,47 @@ class TerminationPolicy(str, Enum):
     EXHAUSTIVE = "exhaustive"
 
 
+class OverlapScope(str, Enum):
+    """Declared universe of fusion interfaces."""
+
+    NONE = "none"
+    MAXIMUM_COMMON_SUBGRAPHS = "maximum_common_subgraphs"
+    ALL_TYPED = "all_typed_overlaps"
+
+
+class ProofLevel(str, Enum):
+    """Evidence required for an accepted fusion candidate."""
+
+    NONE = "none"
+    CONSTRUCTION = "construction"
+    REPLAYABLE = "replayable"
+
+
+class AcceptanceTask(str, Enum):
+    """Chemical observation/conservation contract for accepted outputs."""
+
+    COMPATIBILITY = "compatibility"
+    STRICT_RECONSTRUCTION = "strict_reconstruction"
+
+
+class SearchOutcomeStatus(str, Enum):
+    """Four-valued outcome that never conflates limits with absence."""
+
+    FOUND = "FOUND"
+    PROVED_NONE = "PROVED_NONE"
+    INCOMPLETE = "INCOMPLETE"
+    ERROR = "ERROR"
+
+
 @dataclass(frozen=True)
 class RBLSearchPolicy:
-    """Orthogonal description of RBL search scope and termination."""
+    """Orthogonal description of candidate, proof, and acceptance scope."""
 
     scope: SearchScope
     termination: TerminationPolicy
+    overlap_scope: OverlapScope = OverlapScope.MAXIMUM_COMMON_SUBGRAPHS
+    proof_level: ProofLevel = ProofLevel.CONSTRUCTION
+    acceptance_task: AcceptanceTask = AcceptanceTask.COMPATIBILITY
 
     def __post_init__(self) -> None:
         if (
@@ -46,22 +81,33 @@ class RBLSearchPolicy:
             "fast_track": cls(
                 SearchScope.FAST_PATHS_ONLY,
                 TerminationPolicy.FIRST_VALID,
+                OverlapScope.NONE,
+                ProofLevel.NONE,
             ),
             "fast_fusion": cls(
                 SearchScope.BOUNDED_FUSION,
                 TerminationPolicy.FIRST_VALID,
+                OverlapScope.MAXIMUM_COMMON_SUBGRAPHS,
+                ProofLevel.CONSTRUCTION,
             ),
             "early_stop": cls(
                 SearchScope.FUSION,
                 TerminationPolicy.FIRST_VALID,
+                OverlapScope.MAXIMUM_COMMON_SUBGRAPHS,
+                ProofLevel.CONSTRUCTION,
             ),
             "full": cls(
                 SearchScope.FUSION,
                 TerminationPolicy.EXHAUSTIVE,
+                OverlapScope.MAXIMUM_COMMON_SUBGRAPHS,
+                ProofLevel.CONSTRUCTION,
             ),
             "verified": cls(
                 SearchScope.FUSION,
                 TerminationPolicy.EXHAUSTIVE,
+                OverlapScope.ALL_TYPED,
+                ProofLevel.REPLAYABLE,
+                AcceptanceTask.STRICT_RECONSTRUCTION,
             ),
         }
         try:
@@ -76,11 +122,18 @@ class RBLSearchPolicy:
         return {
             "scope": self.scope.value,
             "termination": self.termination.value,
+            "overlap_scope": self.overlap_scope.value,
+            "proof_level": self.proof_level.value,
+            "acceptance_task": self.acceptance_task.value,
         }
 
 
 __all__ = [
+    "AcceptanceTask",
+    "OverlapScope",
+    "ProofLevel",
     "RBLSearchPolicy",
+    "SearchOutcomeStatus",
     "SearchScope",
     "TerminationPolicy",
 ]

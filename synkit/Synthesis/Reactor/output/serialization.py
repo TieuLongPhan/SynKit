@@ -16,7 +16,7 @@ from synkit.Graph.Mech.electron_accounting import (
     refresh_electron_fields,
 )
 from synkit.IO.chem_converter import graph_to_smi
-from synkit.Synthesis.Reactor import product_state as _product_state
+from ..core import product as _product_state
 
 
 def _explicit_h(rc: nx.Graph) -> nx.Graph:

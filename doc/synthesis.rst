@@ -28,8 +28,23 @@ to an input **substrate** (SMILES) and enumerates all valid transformations unde
 graph-matching strategy.
 
 Reaction rewriting uses the native
-:py:class:`~synkit.Synthesis.Reactor.syn_reactor.SynReactor`, with NetworkX
-graphs and direct integration with SynKit Lewis-state and stereo models.
+:py:class:`~synkit.Synthesis.Reactor.SynReactor`, with NetworkX graphs and
+direct integration with SynKit Lewis-state and stereo models. Public classes
+are imported from :mod:`synkit.Synthesis.Reactor`; implementation modules are
+organized by responsibility:
+
+- ``core`` owns orchestration, graph rewriting, and product-state perception.
+- ``matching`` owns match policy and symmetry quotients.
+- ``stereo`` owns stereo assignment limits and product-branch propagation.
+- ``output`` owns exact deduplication and serialization.
+- ``workflow`` owns batch application, filtering, benchmarking, and postprocessing.
+- ``variants`` contains specialized engines built on ``SynReactor``.
+
+For example:
+
+.. code-block:: python
+
+   from synkit.Synthesis.Reactor import BatchReactor, Strategy, SynReactor
 
 Reactor parameters
 ~~~~~~~~~~~~~~~~~~
@@ -156,7 +171,7 @@ Example: Forward Prediction (NetworkX)
    :caption: Forward prediction with explicit H and backtracking strategy
    :linenos:
 
-   from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+   from synkit.Synthesis.Reactor import SynReactor
 
    input_fw = 'CC=O.CC=O'
    template = '[C:2]=[O:3].[C:4]([H:7])[H:8]>>[C:2]=[C:4].[O:3]([H:7])[H:8]'
@@ -189,7 +204,7 @@ Example: Backward Prediction (NetworkX)
    :caption: Backward prediction targeting product to precursors
    :linenos:
 
-   from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+   from synkit.Synthesis.Reactor import SynReactor
 
    target = 'CC=CC=O.O'
    template = '[C:2]=[O:3].[C:4]([H:7])[H:8]>>[C:2]=[C:4].[O:3]([H:7])[H:8]'
@@ -225,7 +240,7 @@ while keeping ``explicit_h=False``.
    :caption: Backward prediction with an implicit-H template
    :linenos:
 
-   from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+   from synkit.Synthesis.Reactor import SynReactor
 
    target = 'CC=CC=O.O'
    template = '[C:2]=[O:3].[CH2:4]>>[C:2]=[C:4].[OH2:3]'
@@ -268,7 +283,7 @@ There are two common entry points:
    :linenos:
 
    from synkit.IO import rsmi_to_its
-   from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+   from synkit.Synthesis.Reactor import SynReactor
 
    smart = "[NH3:1].[CH3:2][Cl:3]>>[NH3+:1][CH3:2].[Cl-:3]"
    substrate = "CCl.N"
@@ -325,6 +340,10 @@ LLG rewrite policy:
 Radical-based linking
 ---------------------
 
+The RBL subsystem lives in :mod:`synkit.Synthesis.RBL`. Generic rule
+application remains in :mod:`synkit.Synthesis.Reactor`; RBL types are not
+duplicated or re-exported from the Reactor package.
+
 ``RBLEngine`` links forward and backward template applications through a
 wildcard-aware reaction-centre overlap. It is useful when a direct reactor
 application is insufficient and the two sides need to be fused through a
@@ -337,29 +356,74 @@ Choose the execution mode according to the required recall and cost:
   always reports an incomplete search when that fallback is used.
 - ``"early_stop"`` (the default) tries both cheap paths first, then performs
   MCS fusion and stops at the first validated candidate.
-- ``"full"`` performs wildcard-aware MCS fusion and returns all collected
-  unique candidates within the declared maximum-MCS scope.
-- ``"verified"`` uses uncapped exact maximum-MCS mappings, explicit mapped
-  hydrogen, categorical pushouts, and proof-checked post-processing. It is
-  complete within that mapping scope, not over every smaller overlap.
+- ``"full"`` retains candidates from both cheap paths and continues with the
+  compatibility maximum-MCS generator. Its historical mapping cap,
+  component assignment, and uncertified automorphism quotient are always
+  exposed as incomplete-search reasons when active.
+- ``"verified"`` enumerates all admitted typed partial overlaps, with no
+  automorphism quotient or mapping cap, uses explicit mapped hydrogen and
+  categorical pushouts, and requires a replayable end-to-end proof plus the
+  strict reconstruction acceptance relation.
+
+The search policy has independent candidate-scope, termination,
+overlap-scope, proof-level, and acceptance-task axes. Search-scope monotonicity
+therefore applies only while the acceptance task is fixed: strict
+reconstruction can correctly reject a candidate accepted by compatibility
+mode. Explicit pair, mapping, typed-overlap state, result-count, and wall-time
+limits are never interpreted as proof that no candidate exists.
+
+Verified overlap semantics
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For forward graph :math:`F` and backward graph :math:`B`, verified search
+enumerates every non-empty injective partial map
+:math:`f:S\subseteq V(F)\rightarrow V(B)` admitted by the typed
+``FusionInterface`` contract. Unique compatible atom-map identities are
+mandatory provenance anchors. Node state, isotope, Lewis resources, bond
+state, wildcard role/domain, owner incidence, and stereo constraints must all
+agree. The constructed candidate is the audited graph pushout
+:math:`F\sqcup_f B`; maximum cardinality is an ordering preference, not an
+admissibility restriction. Typed leaf-port assignments are exact bipartite
+matching enumerations with maximum-matching upper-bound pruning.
+
+The strict acceptance relation treats observed endpoints as component
+multisets. For each side and canonical molecular component :math:`m`, it
+requires :math:`O_s(m)\leq C_s(m)`. A closed boundary additionally requires
+zero element/isotope and formal-charge delta. An open boundary accepts only an
+exact, explicitly declared environment delta. Every material atom must retain
+an atom-map provenance identity.
+
+Each verified output has a ``synkit.rbl-proof/2`` document. Replay restores
+the raw forward and backward application witnesses, rebuilds the typed
+interface and pushout, certifies the narrow wildcard-to-hydrogen
+post-processing transformation, deterministically reserializes the final
+graph, and reruns strict acceptance. Outcome identity and derivation identity
+are separate: one molecular result can list multiple proof digests.
+
+Results use four search statuses: ``FOUND``, ``PROVED_NONE``, ``INCOMPLETE``,
+and ``ERROR``. ``PROVED_NONE`` is emitted only after the declared overlap
+universe is exhausted without limits or operational failures. Deterministic
+candidate ranking is lexicographic over off-rule edits, resource imbalance,
+unresolved wildcards, added heavy material, total additions, charge
+separation, radical electrons, and finally stable graph/proof digests.
 
 .. code-block:: python
    :caption: Run the RBL engine with its default exact MCS matcher
 
-   from synkit.Synthesis.Reactor import RBLEngine, RBL_RESULT_SCHEMA
+   from synkit.Synthesis.RBL import RBLEngine, RBL_RESULT_SCHEMA
 
    engine = RBLEngine(mode="early_stop")
    result = engine.process(reaction_rsmi, template)
    candidates = result.fused_rsmis
    assert result.result["schema"] == RBL_RESULT_SCHEMA
 
-Use ``mode="full"`` only when the early path does not provide enough
-candidates, and ``mode="verified"`` when every returned fusion must carry a
-construction proof. ``matcher_cls`` accepts ``ApproxMCSMatcher`` for a faster,
-heuristic alternative on large or highly symmetric ITS graphs; this does not
-provide the verified profile's completeness-within-scope claim.
+Use ``mode="full"`` only when compatibility recall is the objective, and
+``mode="verified"`` when every returned fusion must carry a replayable proof
+and strict conservation semantics. ``matcher_cls`` accepts
+``ApproxMCSMatcher`` for a faster heuristic alternative in compatibility
+profiles; it cannot support the verified completeness claim.
 The serializable ``result`` mapping uses the versioned
-``synkit.rbl-result/1`` contract.
+``synkit.rbl-result/2`` contract.
 
 See Also
 --------

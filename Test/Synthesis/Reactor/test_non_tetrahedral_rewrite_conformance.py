@@ -22,7 +22,7 @@ from synkit.IO.chem_converter import rsmi_to_its
 from synkit.IO.graph_to_mol import GraphToMol
 from synkit.Mechanism.audit import audit_local_electron_state
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 DATA_PATH = (
     Path(__file__).parents[3]

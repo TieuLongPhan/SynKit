@@ -20,16 +20,17 @@ from synkit.Rule import SynRule
 from synkit.Graph.syn_graph import SynGraph
 from synkit.Graph.canon_graph import GraphCanonicaliser
 from synkit.Graph.Mech.electron_accounting import refresh_electron_fields
-from synkit.Synthesis.Reactor.strategy import Strategy
-from synkit.Synthesis.Reactor import product_state as _product_state
-from synkit.Synthesis.Reactor import serialization as _serialization
-from synkit.Synthesis.Reactor import graph_rewrite as _graph_rewrite
-from synkit.Synthesis.Reactor import deduplication as _deduplication
-from synkit.Synthesis.Reactor.reactor_matching import ReactorMatchingMixin
-from synkit.Synthesis.Reactor.reactor_stereo import ReactorStereoMixin
-from synkit.Synthesis.Reactor.serialization_policy import (
+from .strategy import Strategy
+from . import product as _product_state
+from . import rewrite as _graph_rewrite
+from ..matching.mixin import ReactorMatchingMixin
+from ..output import deduplication as _deduplication
+from ..output import serialization as _serialization
+from ..output import structural as _structural_deduplication
+from ..output.policy import (
     RawITSApplicationSerializationWarning,
 )
+from ..stereo.mixin import ReactorStereoMixin
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Typing aliases
@@ -43,20 +44,6 @@ MappingDict = Dict[NodeId, NodeId]
 # ──────────────────────────────────────────────────────────────────────────────
 
 log = setup_logging(task_type="synreactor")
-
-ITS_STRUCTURAL_NODE_ATTRS = [
-    "element",
-    "aromatic",
-    "hcount",
-    "charge",
-    "radical",
-    "lone_pairs",
-    "valence_electrons",
-    "present",
-    "_legacy_typesgh_sig",
-]
-ITS_STRUCTURAL_EDGE_ATTRS = ["order", "kekule_order", "sigma_order", "pi_order"]
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # SynReactor core
@@ -917,9 +904,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     _merge_application_orbits = staticmethod(_deduplication._merge_application_orbits)
     _chemical_rewrite_role = staticmethod(_deduplication._chemical_rewrite_role)
     _prepare_its_for_structural_cluster = staticmethod(
-        _deduplication._prepare_its_for_structural_cluster
+        _structural_deduplication._prepare_its_for_structural_cluster
     )
-    _cluster_structural_its = staticmethod(_deduplication._cluster_structural_its)
+    _cluster_structural_its = staticmethod(
+        _structural_deduplication._cluster_structural_its
+    )
     _finalize_product_electron_fields = staticmethod(
         _deduplication._finalize_product_electron_fields
     )

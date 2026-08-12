@@ -6,8 +6,9 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import networkx as nx
 
+from synkit.Graph.Fusion import graphs_exactly_equivalent
 from synkit.Rule.syn_rule import SynRule
-from synkit.Synthesis.Reactor.fusion_validation import WildcardRole
+from synkit.Synthesis.RBL.validation import WildcardRole
 
 ITSLike = Any
 Port = tuple[str, Any, Any, tuple[Any, ...]]
@@ -119,70 +120,129 @@ def _port_extensions(
     return [(candidate, port) for candidate in ordered]
 
 
-def _enumerate_port_completions(
+def _port_assignment_edges(
     ports: Sequence[Port],
-    index: int,
-    current: Dict[Any, Any],
-    completed: List[Dict[Any, Any]],
+    base: Mapping[Any, Any],
     forward: nx.Graph,
     backward: nx.Graph,
     *,
     element_key: str,
     wildcard_values: tuple[Any, Any],
     edge_attrs: Sequence[str],
-) -> None:
-    if index == len(ports):
-        completed.append(dict(current))
-        return
-    extensions = _port_extensions(
-        ports[index],
-        current,
-        forward,
-        backward,
-        element_key=element_key,
-        wildcard_values=wildcard_values,
-        edge_attrs=edge_attrs,
-    )
-    for left, right in extensions:
-        current[left] = right
-        _enumerate_port_completions(
-            ports,
-            index + 1,
-            current,
-            completed,
-            forward,
-            backward,
-            element_key=element_key,
-            wildcard_values=wildcard_values,
-            edge_attrs=edge_attrs,
+) -> tuple[tuple[Any, Any], ...]:
+    """Build the exact bipartite compatibility graph for port assignment."""
+    edges: set[tuple[Any, Any]] = set()
+    for port in ports:
+        edges.update(
+            _port_extensions(
+                port,
+                base,
+                forward,
+                backward,
+                element_key=element_key,
+                wildcard_values=wildcard_values,
+                edge_attrs=edge_attrs,
+            )
         )
-        del current[left]
-    _enumerate_port_completions(
-        ports,
-        index + 1,
-        current,
-        completed,
-        forward,
-        backward,
-        element_key=element_key,
-        wildcard_values=wildcard_values,
-        edge_attrs=edge_attrs,
+    return tuple(sorted(edges, key=lambda edge: (repr(edge[0]), repr(edge[1]))))
+
+
+def _maximum_matching_size(
+    choices: Mapping[Any, Sequence[Any]],
+    remaining_left: Sequence[Any],
+    used_right: set[Any],
+) -> int:
+    graph = nx.Graph()
+    tagged_left = [("left", node) for node in remaining_left]
+    graph.add_nodes_from(tagged_left, bipartite=0)
+    for left in remaining_left:
+        for right in choices.get(left, ()):
+            if right not in used_right:
+                graph.add_node(("right", right), bipartite=1)
+                graph.add_edge(("left", left), ("right", right))
+    if not graph.edges:
+        return 0
+    matching = nx.algorithms.bipartite.maximum_matching(
+        graph,
+        top_nodes=set(tagged_left),
     )
+    return len(matching) // 2
 
 
-def _maximal_unique_mappings(
-    completed: Sequence[Dict[Any, Any]],
-    base_size: int,
+def _enumerate_port_matchings(
+    base: Mapping[Any, Any],
+    edges: Sequence[tuple[Any, Any]],
+    *,
+    maximum_only: bool,
 ) -> List[Dict[Any, Any]]:
-    maximum_size = max(map(len, completed), default=base_size)
+    """Enumerate exact bipartite matchings, with optimality pruning if asked."""
+    choices: dict[Any, list[Any]] = {}
+    for left, right in edges:
+        choices.setdefault(left, []).append(right)
+    left_nodes = tuple(
+        sorted(choices, key=lambda node: (len(choices[node]), repr(node)))
+    )
+    optimum = (
+        _maximum_matching_size(choices, left_nodes, set(base.values()))
+        if maximum_only
+        else None
+    )
+    completed: List[Dict[Any, Any]] = []
+
+    def visit(
+        index: int,
+        current: Dict[Any, Any],
+        used_right: set[Any],
+        added: int,
+    ) -> None:
+        if index == len(left_nodes):
+            if optimum is None or added == optimum:
+                completed.append(dict(current))
+            return
+        if optimum is not None:
+            upper = added + _maximum_matching_size(
+                choices,
+                left_nodes[index:],
+                used_right,
+            )
+            if upper < optimum:
+                return
+        left = left_nodes[index]
+        for right in choices[left]:
+            if right in used_right:
+                continue
+            current[left] = right
+            used_right.add(right)
+            visit(index + 1, current, used_right, added + 1)
+            used_right.remove(right)
+            del current[left]
+        if optimum is None or added + _maximum_matching_size(
+            choices,
+            left_nodes[index + 1 :],
+            used_right,
+        ) >= optimum:
+            visit(index + 1, current, used_right, added)
+
+    visit(0, dict(base), set(base.values()), 0)
+    return _all_unique_mappings(completed)
+
+
+def _all_unique_mappings(
+    completed: Sequence[Dict[Any, Any]],
+) -> List[Dict[Any, Any]]:
     unique: Dict[tuple[tuple[str, str], ...], Dict[Any, Any]] = {}
     for candidate in completed:
-        if len(candidate) == maximum_size:
-            key = tuple(
-                sorted((repr(left), repr(right)) for left, right in candidate.items())
-            )
-            unique.setdefault(key, candidate)
-    return list(unique.values())
+        key = tuple(
+            sorted((repr(left), repr(right)) for left, right in candidate.items())
+        )
+        unique.setdefault(key, candidate)
+    return sorted(
+        unique.values(),
+        key=lambda mapping: (
+            -len(mapping),
+            repr(tuple(sorted(mapping.items(), key=repr))),
+        ),
+    )
 
 
 class RBLMatchingMixin:
@@ -248,6 +308,8 @@ class RBLMatchingMixin:
         forward: nx.Graph,
         backward: nx.Graph,
         mapping: Mapping[Any, Any],
+        *,
+        maximum_only: bool = True,
     ) -> List[Dict[Any, Any]]:
         """Maximally extend an MCS overlap through typed leaf ports.
 
@@ -276,19 +338,20 @@ class RBLMatchingMixin:
         )
         if not ports:
             return [base]
-        completed: List[Dict[Any, Any]] = []
-        _enumerate_port_completions(
+        edges = _port_assignment_edges(
             ports,
-            0,
-            base.copy(),
-            completed,
+            base,
             forward,
             backward,
             element_key=self.element_key,
             wildcard_values=wildcard_values,
             edge_attrs=self.edge_attrs,
         )
-        return _maximal_unique_mappings(completed, len(base))
+        return _enumerate_port_matchings(
+            base,
+            edges,
+            maximum_only=maximum_only,
+        )
 
     def replace_wildcard_with_H(self, G: nx.Graph) -> nx.Graph:
         """Replace wildcard atoms in an ITS graph with hydrogen.
@@ -323,6 +386,9 @@ class RBLMatchingMixin:
             data[element_key] = (
                 ("H", "H") if isinstance(data.get(element_key), tuple) else "H"
             )
+            # The role is evidence for the one-time materialization, not a
+            # persistent atom property of the resulting hydrogen.
+            data.pop("wildcard_role", None)
 
             if "typesGH" in data and isinstance(data["typesGH"], tuple):
                 gh1, gh2 = data["typesGH"]
@@ -473,6 +539,7 @@ class RBLMatchingMixin:
         bw_its: Sequence[ITSLike],
         *,
         replace_wc: bool,
+        stop_first: bool = True,
     ) -> bool:
         """Try an early-stop path based on ITS graphs that contain no wildcard
         atoms, using the same endpoint-preservation proof as every other mode.
@@ -506,7 +573,11 @@ class RBLMatchingMixin:
         :param replace_wc: Whether to replace wildcard atoms with H during
             post-processing.
         :type replace_wc: bool
-        :return: ``True`` if an early-stop solution was found, ``False``
+        :param stop_first: Return immediately after the first accepted direct
+            candidate. When false, collect every distinct direct candidate
+            for a wider search.
+        :type stop_first: bool
+        :return: ``True`` if a non-wildcard solution was found, ``False``
             otherwise.
         :rtype: bool
         """
@@ -525,8 +596,9 @@ class RBLMatchingMixin:
             return False
 
         rw_adder = self.wildcard_adder_cls()
-        fused_graphs: List[ITSLike] = []
-        fused_rsmis: List[str] = []
+        fused_graphs: List[ITSLike] = list(self._fused_its)
+        fused_rsmis: List[str] = list(self._fused_rsmis)
+        found_nonwildcard = False
 
         for side, graph in candidates:
             rsmi_final = self._postprocess_single(
@@ -538,7 +610,17 @@ class RBLMatchingMixin:
             if rsmi_final is None:
                 continue
 
-            fused_graphs.append(graph)
+            final_graph = self._latest_postprocessed_its
+            if not isinstance(final_graph, nx.Graph):
+                final_graph = graph
+            if any(
+                graphs_exactly_equivalent(final_graph, previous)
+                for previous in fused_graphs
+            ):
+                continue
+
+            found_nonwildcard = True
+            fused_graphs.append(final_graph)
             fused_rsmis.append(rsmi_final)
 
             self._fused_its = fused_graphs
@@ -552,7 +634,7 @@ class RBLMatchingMixin:
                     "n_bw": len(bw_its),
                     "n_candidates": len(candidates),
                     "n_fused_rsmis": len(fused_rsmis),
-                    "early_stop": True,
+                    "early_stop": stop_first,
                 },
             )
             self.logger.debug(
@@ -562,8 +644,9 @@ class RBLMatchingMixin:
                 len(candidates),
                 len(fused_rsmis),
             )
-            return True
+            if stop_first:
+                return True
 
         # All candidates failed verification or post-processing;
         # fall back to full fusion (unless fast-path-only mode is active).
-        return False
+        return found_nonwildcard

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import copy
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
@@ -288,12 +289,36 @@ class FusionScore:
     unresolved_wildcards: int
     added_nodes: int
     added_edges: int
+    off_rule_edits: int = 0
+    resource_imbalance: int = 0
+    added_heavy_atoms: int = 0
+    charge_separation: int = 0
+    radical_electrons: int = 0
+
+    @property
+    def ranking_key(self) -> tuple[int, ...]:
+        """Return the declared lexicographic reconstruction objective."""
+        return (
+            self.off_rule_edits,
+            self.resource_imbalance,
+            self.unresolved_wildcards,
+            self.added_heavy_atoms,
+            self.added_nodes,
+            self.added_edges,
+            self.charge_separation,
+            self.radical_electrons,
+        )
 
     def to_dict(self) -> dict[str, int]:
         return {
             "unresolved_wildcards": self.unresolved_wildcards,
             "added_nodes": self.added_nodes,
             "added_edges": self.added_edges,
+            "off_rule_edits": self.off_rule_edits,
+            "resource_imbalance": self.resource_imbalance,
+            "added_heavy_atoms": self.added_heavy_atoms,
+            "charge_separation": self.charge_separation,
+            "radical_electrons": self.radical_electrons,
         }
 
 
@@ -405,19 +430,65 @@ def _proof_digest(
     return hashlib.sha256(encoded).hexdigest()
 
 
-def default_fusion_score(construction: FusionConstruction) -> FusionScore:
-    """Rank valid constructions by transparent structural penalties only."""
-    graph = construction.graph
+def default_fusion_score(
+    construction: FusionConstruction,
+    graph: nx.Graph | None = None,
+) -> FusionScore:
+    """Rank the final normalized outcome by transparent penalties."""
+    graph = construction.graph if graph is None else graph
     wildcard_count = sum(
         attributes.get("element") in {"*", ("*", "*")}
         for _, attributes in graph.nodes(data=True)
     )
+    inventories = (Counter(), Counter())
+    charges = [0, 0]
+    radical_electrons = 0
+    concrete_heavy_atoms = 0
+    for _, attributes in graph.nodes(data=True):
+        raw_element = attributes.get("element")
+        elements = (
+            tuple(raw_element)
+            if isinstance(raw_element, (tuple, list)) and len(raw_element) == 2
+            else (raw_element, raw_element)
+        )
+        raw_charge = attributes.get("charge", 0)
+        endpoint_charges = (
+            tuple(raw_charge)
+            if isinstance(raw_charge, (tuple, list)) and len(raw_charge) == 2
+            else (raw_charge, raw_charge)
+        )
+        raw_radical = attributes.get("radical", 0)
+        endpoint_radicals = (
+            tuple(raw_radical)
+            if isinstance(raw_radical, (tuple, list)) and len(raw_radical) == 2
+            else (raw_radical, raw_radical)
+        )
+        for index, element in enumerate(elements):
+            if element not in {None, "*"}:
+                inventories[index][element] += 1
+            charges[index] += int(endpoint_charges[index] or 0)
+            radical_electrons += int(endpoint_radicals[index] or 0)
+        if elements[0] not in {None, "*", "H"} or elements[1] not in {
+            None,
+            "*",
+            "H",
+        }:
+            concrete_heavy_atoms += 1
     interface_nodes = len(construction.interface.interface_nodes)
     interface_edges = len(construction.interface.edges)
+    resource_imbalance = sum(
+        abs(inventories[1][element] - inventories[0][element])
+        for element in inventories[0].keys() | inventories[1].keys()
+    ) + abs(charges[1] - charges[0])
     return FusionScore(
         wildcard_count,
         graph.number_of_nodes() - interface_nodes,
         graph.number_of_edges() - interface_edges,
+        off_rule_edits=0,
+        resource_imbalance=resource_imbalance,
+        added_heavy_atoms=max(0, concrete_heavy_atoms - interface_nodes),
+        charge_separation=sum(abs(charge) for charge in charges),
+        radical_electrons=radical_electrons,
     )
 
 
@@ -443,7 +514,7 @@ def fusion_candidate_from_construction(
         construction.provenance,
         signature,
         _proof_digest(construction, signature, validation),
-        score or default_fusion_score(construction),
+        score or default_fusion_score(construction, candidate_graph),
     )
 
 

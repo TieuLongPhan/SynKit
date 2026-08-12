@@ -3,7 +3,7 @@
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.IO import rsmi_to_its
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor import RBLEngine, RBL_RESULT_SCHEMA
+from synkit.Synthesis.RBL import RBLEngine, RBL_RESULT_SCHEMA
 
 from Experiment.RBL.benchmark import (
     RBL_BENCHMARK_RECORD_SCHEMA,
@@ -13,6 +13,8 @@ from Experiment.RBL.benchmark import (
     RULE_EXTRACTION_DESCRIPTION,
     canonical_reaction,
     extract_normalized_rule,
+    file_manifest,
+    record_digest,
 )
 from Experiment.RBL.classify_complete_retry import balance_status
 from Experiment.RBL.retry_complete import reaction_balance
@@ -46,13 +48,26 @@ R_4223_AAM = (
 
 
 def test_rbl_public_api_and_serialization_schemas_are_versioned() -> None:
-    assert RBL_RESULT_SCHEMA == "synkit.rbl-result/1"
+    assert RBL_RESULT_SCHEMA == "synkit.rbl-result/2"
     assert RBL_BENCHMARK_SCHEMA == "synkit.rbl-benchmark/1"
     assert RBL_BENCHMARK_RECORD_SCHEMA == "synkit.rbl-benchmark-record/1"
     assert RBL_EVALUATION_SCHEMA == "synkit.rbl-evaluation/1"
 
     engine = RBLEngine(mode="fast_track")
     assert engine.result["schema"] == RBL_RESULT_SCHEMA
+
+
+def test_benchmark_content_manifests_are_stable(tmp_path) -> None:
+    source = tmp_path / "dataset.json"
+    source.write_text('{"case": 1}\n', encoding="utf-8")
+
+    first = file_manifest(source)
+    second = file_manifest(source)
+
+    assert first == second
+    assert first["bytes"] == len(source.read_bytes())
+    assert len(first["sha256"]) == 64
+    assert record_digest(R_34872) == record_digest(dict(reversed(R_34872.items())))
 
 
 def test_extracted_rule_is_explicitly_adapted_through_synrule() -> None:

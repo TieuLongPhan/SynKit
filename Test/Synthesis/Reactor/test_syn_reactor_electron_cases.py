@@ -4,7 +4,7 @@ from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Chem.Reaction.aam_validator import AAMValidator
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.IO.chem_converter import rsmi_to_its
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 
 class TestSynReactorElectronCases(unittest.TestCase):

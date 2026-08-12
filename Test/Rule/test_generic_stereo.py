@@ -11,7 +11,7 @@ from synkit.Rule import (
     GenericStereoRuleExtractor,
     GenericStereoRulePolicy,
 )
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 from synkit.Synthesis.Reactor import StereoWildcardAssignmentLimitError
 
 SN2 = "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>" "[CH3:1][C@@H:2]([F:3])[OH:5].[Cl-:4]"

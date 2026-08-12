@@ -6,7 +6,7 @@ from synkit.Graph.Stereo import StereoOutcome
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule import SynRule
 from synkit.Synthesis.Reactor import StereoBranchLimitError
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 SN2 = "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>" "[CH3:1][C@@H:2]([F:3])[OH:5].[Cl-:4]"
 CAPTURE = "[CH3:1][CH+:2][F:3].[OH-:4]>>" "[CH3:1][C@H:2]([F:3])[OH:4]"

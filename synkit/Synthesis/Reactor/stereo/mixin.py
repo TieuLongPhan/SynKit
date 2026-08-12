@@ -22,7 +22,7 @@ class ReactorStereoMixin:
         limit = self.stereo_branch_limit
         requested = self._stereo_branch_count + branch_count
         if limit is not None and requested > limit:
-            from synkit.Synthesis.Reactor.assignment import StereoBranchLimitError
+            from .assignment import StereoBranchLimitError
 
             raise StereoBranchLimitError(limit, requested)
 

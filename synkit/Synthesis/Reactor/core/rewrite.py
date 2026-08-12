@@ -13,8 +13,8 @@ from synkit.Graph.ITS.its_decompose import its_decompose
 from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.IO.chem_converter import ITSFormat, detect_its_format
-from synkit.Synthesis.Reactor import product_state as _product_state
-from synkit.Synthesis.Reactor.strategy import Strategy
+from . import product as _product_state
+from .strategy import Strategy
 
 MappingDict = Dict[Any, Any]
 _EMBEDDING_ANCHOR = "_synkit_explicit_h_embedding_anchor"
@@ -298,13 +298,13 @@ def _prepare_rewrite_batch_host(
         # Exact labels of unchanged context are mapping-invariant. NetworkX
         # copies their immutable values into every application, so materialize
         # them once and invalidate only the local write/electron support below.
-        from synkit.Synthesis.Reactor import deduplication as _deduplication
+        from ..output import structural as _structural
 
         prepared.graph["electron_aware_rewrite"] = electron_aware
-        prepared.graph[_deduplication._EXACT_NODE_PALETTE] = {}
-        prepared.graph[_deduplication._EXACT_EDGE_PALETTE] = {}
-        prepared.graph[_deduplication._EXACT_IDENTITY_CACHE] = {}
-        _deduplication._attach_exact_structural_signatures(prepared)
+        prepared.graph[_structural._EXACT_NODE_PALETTE] = {}
+        prepared.graph[_structural._EXACT_EDGE_PALETTE] = {}
+        prepared.graph[_structural._EXACT_IDENTITY_CACHE] = {}
+        _structural._attach_exact_structural_signatures(prepared)
         prepared.graph["_structural_signatures_seeded"] = True
     return prepared, True
 

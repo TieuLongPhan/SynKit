@@ -15,59 +15,10 @@ from networkx.algorithms.isomorphism import (
 )
 
 from synkit.Graph.ITS.its_reverter import ITSReverter
-from synkit.Synthesis.Reactor import product_state as _product_state
+from ..core import product as _product_state
 
 NodeId = Any
-ITS_STRUCTURAL_NODE_ATTRS = [
-    "element",
-    "aromatic",
-    "hcount",
-    "charge",
-    "radical",
-    "lone_pairs",
-    "valence_electrons",
-    "present",
-    "_legacy_typesgh_sig",
-]
-ITS_STRUCTURAL_EDGE_ATTRS = ["order", "kekule_order", "sigma_order", "pi_order"]
-_EXACT_NODE_SIG = "_structural_exact_node_sig"
-_REFINED_NODE_COLOUR = "_structural_refined_node_colour"
-_EXACT_EDGE_SIG = "_structural_exact_edge_sig"
-_REFINED_EDGE_COLOUR = "_structural_refined_edge_colour"
-_EXACT_NODE_PALETTE = "_structural_exact_node_palette"
-_EXACT_EDGE_PALETTE = "_structural_exact_edge_palette"
-_EXACT_IDENTITY_CACHE = "_structural_exact_identity_cache"
-_EXACT_DIRTY_NODES = "_structural_exact_dirty_nodes"
-_EXACT_DIRTY_EDGES = "_structural_exact_dirty_edges"
 _PRIMITIVE_IDENTITY_TYPES = frozenset((str, int, float, bool, type(None)))
-
-
-def _freeze_identity(value: Any) -> Any:
-    """Convert nested attribute values into a stable, hashable identity."""
-    if isinstance(value, dict):
-        return tuple(
-            sorted(
-                (
-                    (_freeze_identity(key), _freeze_identity(item))
-                    for key, item in value.items()
-                ),
-                key=repr,
-            )
-        )
-    if isinstance(value, (list, tuple)):
-        return tuple(_freeze_identity(item) for item in value)
-    if isinstance(value, set):
-        return tuple(
-            sorted(
-                (_freeze_identity(item) for item in value),
-                key=repr,
-            )
-        )
-    try:
-        hash(value)
-    except TypeError:
-        return repr(value)
-    return value
 
 
 def _freeze_typed_identity(
@@ -332,6 +283,11 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
     Unchanged context nodes are deliberately absent from the colours: their
     embeddings constrain matching but cannot affect the rewrite endpoint.
     """
+    from .structural import (
+        _canonical_attributed_graph_certificate,
+        _refine_structural_colours_in_place,
+    )
+
     active = _rewrite_locus_nodes(reaction_center)
     active = _project_mapped_rewrite_locus(mappings, reaction_center, active)
     if active is None:
@@ -590,109 +546,6 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
     return unique
 
 
-def _attach_exact_structural_signatures(
-    graph: nx.Graph,
-    identity_cache: Dict[int, Tuple[Any, Any]] | None = None,
-) -> None:
-    from synkit.Synthesis.Reactor.structural_deduplication import (
-        _attach_exact_structural_signatures as implementation,
-    )
-
-    implementation(graph, identity_cache)
-
-
-def _prepare_its_for_structural_cluster(
-    its: nx.Graph,
-    *,
-    refresh_electrons: bool = True,
-    hash_iterations: int = 5,
-) -> nx.Graph:
-    from synkit.Synthesis.Reactor.structural_deduplication import (
-        _prepare_its_for_structural_cluster as implementation,
-    )
-
-    return implementation(
-        its,
-        refresh_electrons=refresh_electrons,
-        hash_iterations=hash_iterations,
-    )
-
-
-def _refine_structural_colours_in_place(
-    graphs: List[nx.Graph],
-    *,
-    iterations: int,
-    node_signature_attr: str = _EXACT_NODE_SIG,
-    edge_signature_attr: str = _EXACT_EDGE_SIG,
-    node_colour_attr: str = _REFINED_NODE_COLOUR,
-    edge_colour_attr: str = _REFINED_EDGE_COLOUR,
-) -> None:
-    from synkit.Synthesis.Reactor.structural_deduplication import (
-        _refine_structural_colours_in_place as implementation,
-    )
-
-    implementation(
-        graphs,
-        iterations=iterations,
-        node_signature_attr=node_signature_attr,
-        edge_signature_attr=edge_signature_attr,
-        node_colour_attr=node_colour_attr,
-        edge_colour_attr=edge_colour_attr,
-    )
-
-
-def _active_neighbourhood_invariant(
-    graph: nx.Graph,
-    *,
-    radius: int = 2,
-) -> Any:
-    from synkit.Synthesis.Reactor.structural_deduplication import (
-        _active_neighbourhood_invariant as implementation,
-    )
-
-    return implementation(graph, radius=radius)
-
-
-def _canonical_attributed_graph_certificate(
-    graph: nx.Graph,
-    *,
-    node_attribute: str,
-    edge_attribute: str,
-    node_palette: Dict[Any, int],
-    edge_palette: Dict[Any, int],
-    topology_cache: Dict[Any, Any] | None = None,
-) -> str | None:
-    from synkit.Synthesis.Reactor.structural_deduplication import (
-        _canonical_attributed_graph_certificate as implementation,
-    )
-
-    return implementation(
-        graph,
-        node_attribute=node_attribute,
-        edge_attribute=edge_attribute,
-        node_palette=node_palette,
-        edge_palette=edge_palette,
-        topology_cache=topology_cache,
-    )
-
-
-def _cluster_structural_its(
-    its_graphs: List[nx.Graph],
-    *,
-    refresh_electrons: bool,
-    hash_iterations: int = 5,
-) -> List[nx.Graph]:
-    from synkit.Synthesis.Reactor.structural_deduplication import (
-        _cluster_structural_its as implementation,
-    )
-
-    return implementation(
-        its_graphs,
-        refresh_electrons=refresh_electrons,
-        hash_iterations=hash_iterations,
-    )
-
-
 def _finalize_product_electron_fields(
     its_graphs: List[nx.Graph],
 ) -> List[nx.Graph]:
@@ -719,6 +572,8 @@ def _deduplicate_structural_its(its_graphs: List[nx.Graph]) -> List[nx.Graph]:
     provisional candidates may not be merged before every state field that
     affects their serialized endpoints has been materialized.
     """
+    from .structural import _cluster_structural_its
+
     if not its_graphs:
         return its_graphs
 
@@ -754,6 +609,13 @@ def _deduplicate_coupling_face_products(
     limited to coupling branches without explicit population outcomes;
     true enantiomers remain non-isomorphic and are retained.
     """
+    from .structural import (
+        _EXACT_EDGE_SIG,
+        _EXACT_NODE_SIG,
+        _REFINED_NODE_COLOUR,
+        _prepare_its_for_structural_cluster,
+    )
+
     if len(its_graphs) < 2:
         return its_graphs
 

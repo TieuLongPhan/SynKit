@@ -48,14 +48,12 @@ synkit/Rule/Apply/retro_reactor.py:C901,\
 synkit/Rule/Apply/syn_reactor.py:C901,\
 synkit/Rule/Apply/rule_apply.py:C901,\
 synkit/Synthesis/MSR/path_finder.py:C901,\
-synkit/Synthesis/Reactor/retro_reactor.py:C901,\
-synkit/Synthesis/Reactor/rbl_engine.py:C901,\
-synkit/Synthesis/Reactor/graph_rewrite.py:C901,\
-synkit/Synthesis/Reactor/reactor_matching.py:C901,\
-synkit/Synthesis/Reactor/reactor_stereo.py:C901,\
-synkit/Synthesis/Reactor/serialization.py:C901,\
-synkit/Synthesis/Reactor/syn_reactor.py:C901,\
-synkit/Synthesis/Reactor/reactor_engine.py:C901,\
+synkit/Synthesis/RBL/engine.py:C901,\
+synkit/Synthesis/Reactor/core/rewrite.py:C901,\
+synkit/Synthesis/Reactor/core/engine.py:C901,\
+synkit/Synthesis/Reactor/matching/mixin.py:C901,\
+synkit/Synthesis/Reactor/output/serialization.py:C901,\
+synkit/Synthesis/Reactor/stereo/mixin.py:C901,\
 synkit/Vis/crn/visualizer.py:C901,\
 synkit/Vis/reaction/rule.py:C901" \
   --exclude="\

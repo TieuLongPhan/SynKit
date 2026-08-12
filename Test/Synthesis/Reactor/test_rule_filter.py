@@ -1,7 +1,7 @@
 import unittest
 
 from synkit.IO.chem_converter import rsmi_to_graph, rsmi_to_its, smiles_to_graph
-from synkit.Synthesis.Reactor.rule_filter import RuleFilter
+from synkit.Synthesis.Reactor import RuleFilter
 
 
 class TestRuleFilter(unittest.TestCase):

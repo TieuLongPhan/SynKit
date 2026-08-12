@@ -21,7 +21,7 @@ from synkit.Graph.Stereo import (
 )
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule import GenericStereoRuleExtractor, SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 DATA_PATH = (
     Path(__file__).parents[2]

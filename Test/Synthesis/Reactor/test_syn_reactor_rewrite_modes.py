@@ -4,8 +4,8 @@ import networkx as nx
 from rdkit import Chem
 
 from synkit.IO.chem_converter import detect_its_format, rsmi_to_its
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
-from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor import SynReactor
+from synkit.Synthesis.Reactor import Strategy
 
 ETHANE_DEHYDROGENATION = "[CH2:1]([H:3])[CH2:2]([H:4])>>" "[CH2:1]=[CH2:2].[H:3][H:4]"
 METHANOL_DEHYDROGENATION = "[O:1]([H:3])[CH2:2]([H:4])>>" "[O+:1]=[CH2:2].[H:3][H:4]"

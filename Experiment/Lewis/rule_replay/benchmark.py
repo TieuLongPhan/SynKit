@@ -41,7 +41,7 @@ from synkit.IO.chem_converter import (  # noqa: E402
     rsmi_to_its,
 )
 from synkit.Rule import SynRule  # noqa: E402
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor  # noqa: E402
+from synkit.Synthesis.Reactor import SynReactor  # noqa: E402
 
 REPRESENTATIONS = ("tuple", "typesGH")
 DIRECTIONS = ("forward", "backward")
