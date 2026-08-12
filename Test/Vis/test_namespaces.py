@@ -62,3 +62,22 @@ def test_crn_namespace_exports_domain_api():
     from synkit.Vis.crn import CRNVisualizer
 
     assert crn.CRNVisualizer is CRNVisualizer
+
+
+def test_legacy_visualization_modules_delegate_to_domain_modules():
+    from synkit.Vis.its import draw_its_graph
+    from synkit.Vis.its_drawer import draw_its_graph as legacy_draw_its_graph
+    from synkit.Vis.molecule import draw_molecule_graph, draw_reaction_graph
+    from synkit.Vis.molecule_drawer import (
+        draw_molecule_graph as legacy_draw_molecule_graph,
+    )
+    from synkit.Vis.mtg import draw_mtg_graph
+    from synkit.Vis.mtg_drawer import draw_mtg_graph as legacy_draw_mtg_graph
+    from synkit.Vis.reaction_drawer import (
+        draw_reaction_graph as legacy_draw_reaction_graph,
+    )
+
+    assert legacy_draw_molecule_graph is draw_molecule_graph
+    assert legacy_draw_reaction_graph is draw_reaction_graph
+    assert legacy_draw_its_graph is draw_its_graph
+    assert legacy_draw_mtg_graph is draw_mtg_graph

@@ -98,7 +98,7 @@ def detect_visual_kind(graph: nx.Graph) -> VisualKind:
 
     :param graph: NetworkX graph to inspect.
     :type graph: nx.Graph
-    :returns: Detected graph kind.
+    :return: Detected graph kind.
     :rtype: VisualKind
     """
 
@@ -139,7 +139,7 @@ def to_visual_graph(
     :type show_atom_map: bool
     :param title: Optional title carried to renderer metadata.
     :type title: str
-    :returns: Immutable visual graph model.
+    :return: Immutable visual graph model.
     :rtype: VisualGraph
     """
 

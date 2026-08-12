@@ -1,5 +1,4 @@
-"""
-Injectivity checks and an InjectivityAnalyzer for CRN structural diagnostics.
+"""Injectivity checks and an InjectivityAnalyzer for CRN structural diagnostics.
 
 This module collects several structural heuristics and conservative checks
 that help assess whether a chemical reaction network (CRN) is likely to be
@@ -20,8 +19,8 @@ All computations are defined for:
 - CRNHyperGraph instances (converted via hypergraph_to_bipartite), or
 - bipartite NetworkX graphs with the conventions of :mod:`synkit.CRN.Props.utils`.
 
-References
-----------
+.. rubric:: References
+
 - Feinberg (1979, 1987, 1988): Deficiency theory and injectivity.
 - Craciun & Feinberg (2005, 2006): SR-graph criteria for injectivity.
 - Banaji, Donnell & Baigent (2010): Sign-determined matrices and SSD property.
@@ -59,8 +58,7 @@ warnings.warn(
 
 
 def build_species_reaction_graph(crn: Any) -> nx.DiGraph:
-    """
-    Build the **Species–Reaction (SR) graph** (Craciun & Feinberg).
+    """Build the **Species–Reaction (SR) graph** (Craciun & Feinberg).
 
     Nodes
     -----
@@ -78,13 +76,15 @@ def build_species_reaction_graph(crn: Any) -> nx.DiGraph:
 
     :param crn: CRN-like object (CRNHyperGraph or bipartite NetworkX graph).
     :type crn: Any
-    :returns: Directed SR graph with node attributes ``kind``, ``index`` and ``label``.
+    :return: Directed SR graph with node attributes ``kind``, ``index`` and ``label``.
     :rtype: networkx.DiGraph
 
-    :reference: Craciun & Feinberg (2005, 2006) — SR-graph formalism.
+    .. rubric:: References
 
-    Examples
-    --------
+    Craciun & Feinberg (2005, 2006) — SR-graph formalism.
+
+    .. rubric:: Examples
+
     .. code-block:: python
 
         from synkit.CRN.Props.injectivity import build_species_reaction_graph
@@ -131,15 +131,15 @@ def build_species_reaction_graph(crn: Any) -> nx.DiGraph:
 
 
 def find_sr_graph_cycles(G: nx.DiGraph) -> List[List[str]]:
-    """
-    Enumerate simple directed cycles in an SR graph.
+    """Enumerate simple directed cycles in an SR graph.
 
     :param G: SR graph as produced by :func:`build_species_reaction_graph`.
     :type G: networkx.DiGraph
-    :returns: List of cycles, each cycle being a list of node identifiers.
+    :return: List of cycles, each cycle being a list of node identifiers.
     :rtype: list[list[str]]
 
-    :example:
+    .. rubric:: Examples
+
 
     .. code-block:: python
 
@@ -151,8 +151,7 @@ def find_sr_graph_cycles(G: nx.DiGraph) -> List[List[str]]:
 
 
 def check_species_reaction_graph_conditions(G: nx.DiGraph) -> bool:
-    """
-    Conservative SR-graph injectivity check: **SR-graph acyclicity**.
+    """Conservative SR-graph injectivity check: **SR-graph acyclicity**.
 
     This returns ``True`` if the SR graph has no directed cycles. Such
     acyclicity is a conservative sufficient condition in certain
@@ -160,13 +159,16 @@ def check_species_reaction_graph_conditions(G: nx.DiGraph) -> bool:
 
     :param G: SR graph.
     :type G: networkx.DiGraph
-    :returns: ``True`` if no directed cycles are found, ``False`` otherwise.
+    :return: ``True`` if no directed cycles are found, ``False`` otherwise.
     :rtype: bool
 
-    :reference: Craciun & Feinberg (2005, 2006) — SR-graph based injectivity
+    .. rubric:: References
+
+    Craciun & Feinberg (2005, 2006) — SR-graph based injectivity
         conditions (acyclic variants).
 
-    :example:
+    .. rubric:: Examples
+
 
     .. code-block:: python
 
@@ -182,8 +184,7 @@ def check_species_reaction_graph_conditions(G: nx.DiGraph) -> bool:
 
 
 def is_autocatalytic(crn: Any, *, tol: float = 1e-12) -> bool:
-    """
-    Stoichiometric **autocatalysis** test on the bipartite CRN graph.
+    """Stoichiometric **autocatalysis** test on the bipartite CRN graph.
 
     A reaction is considered stoichiometrically autocatalytic if some
     species appears on both sides with strictly larger total product
@@ -197,13 +198,16 @@ def is_autocatalytic(crn: Any, *, tol: float = 1e-12) -> bool:
     :type crn: Any
     :param tol: Numerical tolerance for comparing stoichiometric coefficients.
     :type tol: float
-    :returns: ``True`` if any reaction is stoichiometrically autocatalytic.
+    :return: ``True`` if any reaction is stoichiometrically autocatalytic.
     :rtype: bool
 
-    :reference: Stoichiometric autocatalysis heuristics in CRNT; see e.g.
+    .. rubric:: References
+
+    Stoichiometric autocatalysis heuristics in CRNT; see e.g.
         Feinberg (1987) for discussions of autocatalytic structures.
 
-    :example:
+    .. rubric:: Examples
+
 
     .. code-block:: python
 
@@ -250,8 +254,7 @@ def is_SSD(
     max_order: Optional[int] = None,
     sample_limit: Optional[int] = 5000,
 ) -> bool:
-    """
-    Heuristic test for **Strongly Sign-Determined (SSD)** property of
+    """Heuristic test for **Strongly Sign-Determined (SSD)** property of
     the stoichiometric matrix :math:`S`.
 
     The test examines determinants of square submatrices (minors) up to a
@@ -274,14 +277,17 @@ def is_SSD(
     :param sample_limit: Maximum number of minors to evaluate per order.
         If ``None``, no limit is applied.
     :type sample_limit: Optional[int]
-    :returns: ``True`` if no conflicting determinant signs are found up
+    :return: ``True`` if no conflicting determinant signs are found up
         to the inspected order; ``False`` otherwise.
     :rtype: bool
 
-    :reference: Banaji, Donnell & Baigent (2010) — sign-determined matrices
+    .. rubric:: References
+
+    Banaji, Donnell & Baigent (2010) — sign-determined matrices
         and SSD property (here used in heuristic form).
 
-    :example:
+    .. rubric:: Examples
+
 
     .. code-block:: python
 
@@ -377,8 +383,7 @@ def compute_injectivity_profile(
     scoring_thresholds: Tuple[float, float] = (0.4, 0.75),
     sample_limit: Optional[int] = 5000,
 ) -> InjectivityProfile:
-    """
-    Compute an :class:`InjectivityProfile` combining multiple structural checks.
+    """Compute an :class:`InjectivityProfile` combining multiple structural checks.
 
     Components (all conservative / heuristic):
 
@@ -419,14 +424,16 @@ def compute_injectivity_profile(
     :param sample_limit: Per-order minor sample limit for SSD (controls
         computational cost).
     :type sample_limit: Optional[int]
-    :returns: InjectivityProfile dataclass instance.
+    :return: InjectivityProfile dataclass instance.
     :rtype: InjectivityProfile
 
-    :reference: Feinberg (1979, 1987, 1988); Craciun & Feinberg (2005, 2006);
+    .. rubric:: References
+
+    Feinberg (1979, 1987, 1988); Craciun & Feinberg (2005, 2006);
         Banaji et al. (2010).
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         from synkit.CRN.Props.injectivity import compute_injectivity_profile
@@ -535,8 +542,7 @@ def compute_injectivity_profile(
 
 
 class InjectivityAnalyzer:
-    """
-    OOP wrapper around injectivity checks.
+    """OOP wrapper around injectivity checks.
 
     Fluent style: mutating methods return ``self`` so calls can be chained.
     Use properties to access computed results.
@@ -553,7 +559,8 @@ class InjectivityAnalyzer:
     :param sample_limit: Sample limit per minor order for SSD.
     :type sample_limit: Optional[int]
 
-    :example:
+    .. rubric:: Examples
+
 
     .. code-block:: python
 
@@ -583,13 +590,14 @@ class InjectivityAnalyzer:
 
     # single-step computations
     def compute_profile(self) -> "InjectivityAnalyzer":
-        """
-        Compute and store the :class:`InjectivityProfile` for the current network.
+        """Compute and store the :class:`InjectivityProfile` for the current network.
 
-        :returns: ``self`` (fluent style).
+        :return: ``self`` (fluent style).
         :rtype: InjectivityAnalyzer
 
-        :reference: Composite injectivity diagnostics combining Feinberg
+        .. rubric:: References
+
+        Composite injectivity diagnostics combining Feinberg
             deficiency theory, SR-graph criteria and SSD heuristics.
         """
         self._profile = compute_injectivity_profile(
@@ -602,10 +610,9 @@ class InjectivityAnalyzer:
         return self
 
     def compute_all(self) -> "InjectivityAnalyzer":
-        """
-        Alias for :meth:`compute_profile` (keeps naming consistent with other analyzers).
+        """Alias for :meth:`compute_profile` (keeps naming consistent with other analyzers).
 
-        :returns: ``self``.
+        :return: ``self``.
         :rtype: InjectivityAnalyzer
         """
         return self.compute_profile()
@@ -642,10 +649,9 @@ class InjectivityAnalyzer:
 
     # helpers
     def as_dict(self) -> Dict[str, Any]:
-        """
-        Serialisable dict of results (``None`` where not computed).
+        """Serialisable dict of results (``None`` where not computed).
 
-        :returns: Dictionary with keys:
+        :return: Dictionary with keys:
             ``components``, ``conservative_certified``, ``score``,
             ``interpretation``.
         :rtype: Dict[str, Any]
@@ -665,10 +671,9 @@ class InjectivityAnalyzer:
         }
 
     def explain(self) -> str:
-        """
-        Short human-readable summary of injectivity diagnostics.
+        """Short human-readable summary of injectivity diagnostics.
 
-        :returns: One-line explanation string.
+        :return: One-line explanation string.
         :rtype: str
         """
         if self._profile is None:
@@ -679,10 +684,9 @@ class InjectivityAnalyzer:
         )
 
     def __repr__(self) -> str:
-        """
-        Concise representation showing the current score and certificate flag.
+        """Concise representation showing the current score and certificate flag.
 
-        :returns: Representation string.
+        :return: Representation string.
         :rtype: str
         """
         score = "NA" if self._profile is None else f"{self._profile.score:.3f}"

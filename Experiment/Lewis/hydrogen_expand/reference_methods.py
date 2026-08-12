@@ -31,16 +31,18 @@ def _hydrogen_node() -> dict[str, Any]:
     return {"element": "H", "aromatic": False, "hcount": 0, "charge": 0}
 
 
-def _reference_graphs(its: nx.Graph) -> tuple[
-    nx.Graph, nx.Graph, nx.Graph, nx.Graph, list[str], list[str]
-]:
+def _reference_graphs(
+    its: nx.Graph,
+) -> tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph, list[str], list[str]]:
     """Build the base and unmatched-H graphs used by the reference code."""
     resolved_format = HComplete._resolve_format(its, "auto")
     reactant, product = HComplete._decompose_its(its, resolved_format)
     reactant = _clean_graph(reactant)
     product = _clean_graph(product)
     if set(reactant) != set(product):
-        raise ValueError("Reference methods require the same mapped atoms on both sides")
+        raise ValueError(
+            "Reference methods require the same mapped atoms on both sides"
+        )
 
     unmatched_reactant = deepcopy(reactant)
     unmatched_product = deepcopy(product)
@@ -96,7 +98,10 @@ def _its_graph(
         graph.add_edge(
             left,
             right,
-            its_edge=(deepcopy(attributes), deepcopy(mapped_edge) if mapped_edge else "*"),
+            its_edge=(
+                deepcopy(attributes),
+                deepcopy(mapped_edge) if mapped_edge else "*",
+            ),
         )
     for left, right, attributes in product.edges(data=True):
         source_left, source_right = inverse[left], inverse[right]
@@ -185,7 +190,9 @@ def _classify_full(
             product,
             base_map + list(zip(permutation, targets)),
         )
-        if not any(isomorphic(candidate, representative) for representative in representatives):
+        if not any(
+            isomorphic(candidate, representative) for representative in representatives
+        ):
             representatives.append(candidate)
     return len(representatives)
 

@@ -44,9 +44,7 @@ def latex_macros(report: Mapping[str, Any]) -> str:
         "MTGExactClasses": observed["exact_classes"],
         "MTGExploredStates": observed["explored_states"],
         "MTGPeakPythonMiB": observed["peak_python_mib"],
-        "MTGRuleConstructionMs": timings["rule_construction"][
-            "median_ms_per_unit"
-        ],
+        "MTGRuleConstructionMs": timings["rule_construction"]["median_ms_per_unit"],
         "MTGMatrixMs": timings["extended_match_matrix"]["median_ms_per_unit"],
         "MTGEnumerationMs": timings["overlap_enumeration"]["median_ms_per_unit"],
         "MTGCompositeMs": timings["composite_construction_family"][
@@ -59,17 +57,14 @@ def latex_macros(report: Mapping[str, Any]) -> str:
         "MTGAldolMechanisms": cases["aldol"]["mechanism_count"],
         "MTGAldolSteps": sum(cases["aldol"]["step_counts"]),
         "MTGSynthesisSteps": cases["multistep_synthesis"]["step_count"],
-        "MTGGAThreePAlternatives": cases["glycolysis_ga3p"][
-            "alternative_count"
-        ],
+        "MTGGAThreePAlternatives": cases["glycolysis_ga3p"]["alternative_count"],
     }
     lines = ["% Generated from passing synkit.mtg-validation/1 evidence."]
     lines.extend(
         f"\\newcommand{{\\{name}}}{{{value}}}" for name, value in values.items()
     )
     lines.append(
-        "\\newcommand{\\MTGInputDigest}{\\detokenize{%s}}"
-        % report["input_sha256"]
+        "\\newcommand{\\MTGInputDigest}{\\detokenize{%s}}" % report["input_sha256"]
     )
     return "\n".join(lines) + "\n"
 

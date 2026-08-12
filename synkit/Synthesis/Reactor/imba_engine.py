@@ -84,12 +84,11 @@ class ImbaEngine:
         print(ImbaEngine.__doc__)
 
     def fit(self) -> "ImbaEngine":
-        """
-        Apply the reaction template to the substrate, producing product SMARTS.
+        """Apply the reaction template to the substrate, producing product SMARTS.
         Optionally clean wildcard fragments and add radical wildcards.
         Results are stored internally and self is returned.
 
-        :returns: self
+        :return: self
         :rtype: ImbReactor
         :raises ValueError: If substrate cannot be parsed or reaction fails.
         """
@@ -142,10 +141,9 @@ class ImbaEngine:
 
     @property
     def smarts_list(self) -> List[str]:
-        """
-        Product SMARTS results from the last fit() invocation.
+        """Product SMARTS results from the last fit() invocation.
 
-        :returns: List of SMARTS strings.
+        :return: List of SMARTS strings.
         :rtype: List[str]
         """
         return self._results.copy()
@@ -162,22 +160,20 @@ class ImbaEngine:
         return len(self._results)
 
     def __getitem__(self, idx: int) -> str:
-        """
-        Get the product SMARTS at index `idx`.
+        """Get the product SMARTS at index `idx`.
 
         :param idx: Index of desired SMARTS.
         :type idx: int
-        :returns: SMARTS string at position `idx`.
+        :return: SMARTS string at position `idx`.
         :rtype: str
         :raises IndexError: If idx is out of bounds.
         """
         return self._results[idx]
 
     def to_list(self) -> List[str]:
-        """
-        Return all product SMARTS as a list.
+        """Return all product SMARTS as a list.
 
-        :returns: List of SMARTS strings.
+        :return: List of SMARTS strings.
         :rtype: List[str]
         """
         return self._results.copy()

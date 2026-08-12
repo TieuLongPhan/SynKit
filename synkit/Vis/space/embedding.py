@@ -14,10 +14,12 @@ class Embedding:
         """Initialize the Embedding class with options for caching directory,
         verbosity, and custom t-SNE parameters.
 
-        Parameters:
-            cache_dir (str): Directory where cached results are stored.
-            verbose (int): Verbosity level for the memory object.
-            custom_tsne_params (Dict, optional): Custom default parameters for t-SNE computations.
+        :param cache_dir: Directory where cached results are stored.
+        :type cache_dir: str
+        :param verbose: Verbosity level for the memory object.
+        :type verbose: int
+        :param custom_tsne_params: Custom default parameters for t-SNE computations.
+        :type custom_tsne_params: Dict, optional
         """
         self.memory = Memory(cache_dir, verbose=verbose)
         self.default_tsne_params = {
@@ -34,8 +36,7 @@ class Embedding:
     def set_tsne_params(self, **params) -> None:
         """Sets parameters for t-SNE computations.
 
-        Parameters:
-            **params: Arbitrary number of parameters for t-SNE.
+        :param params: Parameters for t-SNE.
         """
         self.tsne_params.update(params)
 
@@ -47,11 +48,11 @@ class Embedding:
         """Direct computation of the t-SNE embedding with the current
         parameters.
 
-        Parameters:
-            X (np.ndarray): High-dimensional data points.
+        :param X: High-dimensional data points.
+        :type X: np.ndarray
 
-        Returns:
-            np.ndarray: The 2-dimensional t-SNE embedding of the data.
+        :return: The 2-dimensional t-SNE embedding of the data.
+        :rtype: np.ndarray
         """
         tsne = TSNE(**self.tsne_params)
         return tsne.fit_transform(X)
@@ -59,12 +60,13 @@ class Embedding:
     def compute_tsne(self, X: np.ndarray, cache: bool = True) -> np.ndarray:
         """Computes or retrieves the t-SNE embedding from cache.
 
-        Parameters:
-            X (np.ndarray): High-dimensional data points.
-            cache (bool): Determines whether to use caching for the computation.
+        :param X: High-dimensional data points.
+        :type X: np.ndarray
+        :param cache: Determines whether to use caching for the computation.
+        :type cache: bool
 
-        Returns:
-            np.ndarray: The 2-dimensional t-SNE embedding of the data.
+        :return: The 2-dimensional t-SNE embedding of the data.
+        :rtype: np.ndarray
         """
         if cache:
             return self.cache(X)
@@ -75,8 +77,8 @@ class Embedding:
     def cache(self) -> Any:
         """Decorator for caching the compute_tsne function.
 
-        Returns:
-            Callable: Cached function.
+        :return: Cached function.
+        :rtype: Callable
         """
         return self.memory.cache(self._compute_tsne)
 

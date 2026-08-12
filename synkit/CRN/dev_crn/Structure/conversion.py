@@ -24,8 +24,7 @@ def hypergraph_to_bipartite(
     include_edge_id_attr: bool = False,
     include_mol: bool = False,
 ) -> nx.DiGraph:
-    """
-    Export a CRN hypergraph to a **bipartite** NetworkX DiGraph
+    """Export a CRN hypergraph to a **bipartite** NetworkX DiGraph
     with arcs ``species → reaction → species``.
 
     :param H: Hypergraph to export.
@@ -51,7 +50,7 @@ def hypergraph_to_bipartite(
     :param include_mol: If ``True``, include species-to-molecule mapping from
                         ``H.species_to_mol`` as node attribute ``'mol'``.
     :type include_mol: bool
-    :returns: Bipartite DiGraph.
+    :return: Bipartite DiGraph.
     :rtype: nx.DiGraph
 
     **Examples**
@@ -166,8 +165,7 @@ def bipartite_to_hypergraph(
     default_rule: str = "r",
     mol_attr: Optional[str] = "mol",
 ) -> CRNHyperGraph:
-    """
-    Reconstruct a **CRNHyperGraph** from a bipartite species→reaction→species graph.
+    """Reconstruct a **CRNHyperGraph** from a bipartite species→reaction→species graph.
 
     The function is the logical inverse of :func:`hypergraph_to_bipartite` and
     supports graphs produced by it, while attempting a best-effort reconstruction
@@ -192,7 +190,7 @@ def bipartite_to_hypergraph(
     :param mol_attr: Node attribute name used for molecule identifiers (default: ``"mol"``).
                      If ``None``, skip reconstruction of ``species_to_mol``.
     :type mol_attr: Optional[str]
-    :returns: Reconstructed hypergraph.
+    :return: Reconstructed hypergraph.
     :rtype: CRNHyperGraph
 
     **Examples**
@@ -293,8 +291,7 @@ def hypergraph_to_species_graph(
     *,
     include_mol: bool = False,
 ) -> nx.DiGraph:
-    """
-    Collapse hyperedges to a **species→species** DiGraph.
+    """Collapse hyperedges to a **species→species** DiGraph.
 
     Aggregated edge attributes:
       - ``via``: ``set`` of contributing hyperedge ids
@@ -317,7 +314,7 @@ def hypergraph_to_species_graph(
     :param include_mol: If ``True``, propagate ``H.species_to_mol`` into node
                         attribute ``'mol'`` when available.
     :type include_mol: bool
-    :returns: Directed species graph.
+    :return: Directed species graph.
     :rtype: nx.DiGraph
 
     **Examples**
@@ -403,8 +400,7 @@ def species_graph_to_hypergraph(
     mol_attr: Optional[str] = "mol",
     species_label_attr: str = "label",
 ) -> CRNHyperGraph:
-    """
-    Reconstruct a :class:`CRNHyperGraph` from a collapsed species→species graph.
+    """Reconstruct a :class:`CRNHyperGraph` from a collapsed species→species graph.
 
     If edges expose ``'via'`` sets (carrying original hyperedge ids), arcs that
     share the same ``via`` id are grouped back into one hyperedge. If no ``via``
@@ -452,7 +448,7 @@ def species_graph_to_hypergraph(
     :type mol_attr: Optional[str]
     :param species_label_attr: Node attribute holding species labels (default: ``"label"``).
     :type species_label_attr: str
-    :returns: Best-effort reconstructed hypergraph.
+    :return: Best-effort reconstructed hypergraph.
     :rtype: CRNHyperGraph
     """
     H = CRNHyperGraph()
@@ -561,15 +557,14 @@ def rxns_to_hypergraph(
     parse_rule_from_suffix: bool = True,
     prefer_suffix: bool = False,
 ) -> CRNHyperGraph:
-    """
-    Convenience constructor: parse reaction strings into a hypergraph.
+    """Convenience constructor: parse reaction strings into a hypergraph.
 
     :param rxns: Iterable of reaction strings (e.g., ``"A + B >> C"``).
                  Supports suffix ``"| rule=Rk"`` when enabled.
     :param default_rule: Fallback rule when none provided.
     :param parse_rule_from_suffix: If ``True``, read ``| rule=...`` suffix.
     :param prefer_suffix: If ``True``, suffix overrides explicit rule per line.
-    :returns: Populated :class:`CRNHyperGraph`.
+    :return: Populated :class:`CRNHyperGraph`.
 
     **Examples**
     ----------
@@ -595,8 +590,7 @@ def hypergraph_to_rxn_strings(
     include_edge_id: bool = False,
     sort: bool = True,
 ) -> List[str]:
-    """
-    Convert a hypergraph back to human-readable reaction strings.
+    """Convert a hypergraph back to human-readable reaction strings.
 
     Each line is printed as ``LHS >> RHS`` and, if requested,
     suffixed with ``| rule=R`` and/or ``| id=EDGEID``.
@@ -605,7 +599,7 @@ def hypergraph_to_rxn_strings(
     :param include_rule_suffix: If ``True``, append ``| rule=...``.
     :param include_edge_id: If ``True``, append ``| id=...``.
     :param sort: If ``True``, sort by edge id for determinism.
-    :returns: List of reaction strings.
+    :return: List of reaction strings.
 
     **Examples**
     ----------
@@ -656,8 +650,7 @@ def _as_bipartite(
     integer_ids: bool = True,
     include_stoich: bool = True,
 ) -> nx.DiGraph:
-    """
-    Normalize input to a bipartite species/reaction graph.
+    """Normalize input to a bipartite species/reaction graph.
 
     Accepted inputs
     ---------------
@@ -682,7 +675,7 @@ def _as_bipartite(
     :param include_stoich: Whether to attach stoichiometric coefficients as
         edge attributes (if available).
     :type include_stoich: bool
-    :returns: Bipartite species/reaction graph.
+    :return: Bipartite species/reaction graph.
     :rtype: networkx.DiGraph
     :raises TypeError: If the input type is unsupported or a required
         converter is unavailable.
@@ -719,8 +712,7 @@ def _as_bipartite(
 
 
 def _as_species_graph(crn: Any) -> nx.DiGraph:
-    """
-    Normalize input to a species→species directed graph.
+    """Normalize input to a species→species directed graph.
 
     Accepted inputs
     ---------------
@@ -743,7 +735,7 @@ def _as_species_graph(crn: Any) -> nx.DiGraph:
 
     :param crn: Hypergraph-like object, or species graph.
     :type crn: Any
-    :returns: Collapsed species→species directed graph.
+    :return: Collapsed species→species directed graph.
     :rtype: networkx.DiGraph
     :raises TypeError: If the input type is unsupported.
     """
@@ -787,13 +779,12 @@ def print_species_summary(
     species: Optional[Iterable[str]] = None,
     show_counts: bool = True,
 ) -> None:
-    """
-    Pretty-print per-species incoming/outgoing incidence.
+    """Pretty-print per-species incoming/outgoing incidence.
 
     :param H: Hypergraph to inspect.
     :param species: Optional subset of species to print.
     :param show_counts: If ``True``, print edge counts alongside lists.
-    :returns: ``None``.
+    :return: ``None``.
     """
     species_iter = species if species is not None else sorted(H.species)
     rows = []
@@ -832,13 +823,12 @@ def print_edge_list(
     edge_ids: Optional[Iterable[str]] = None,
     show_stoich: bool = True,
 ) -> None:
-    """
-    Pretty-print edges in the format: ``edge_id  rule  Reactants >> Products``.
+    """Pretty-print edges in the format: ``edge_id  rule  Reactants >> Products``.
 
     :param H: Hypergraph to inspect.
     :param edge_ids: Optional subset of edge ids to print.
     :param show_stoich: If ``True``, show coefficients; else names only.
-    :returns: ``None``.
+    :return: ``None``.
     """
     ids = list(edge_ids) if edge_ids is not None else sorted(H.edges.keys())
     if not ids:
@@ -876,8 +866,7 @@ def print_graph_attrs(
     use_labels: bool = False,
     label_attr: str = "label",
 ) -> None:
-    """
-    Pretty-print node and edge attributes of a NetworkX DiGraph.
+    """Pretty-print node and edge attributes of a NetworkX DiGraph.
 
     When ``use_labels=True``, node identifiers are *displayed* using the
     node attribute given by ``label_attr`` (default: ``"label"``), falling
@@ -899,7 +888,7 @@ def print_graph_attrs(
     :param label_attr: Node attribute name to use as display label when
                        ``use_labels=True``.
     :type label_attr: str
-    :returns: None (prints to stdout).
+    :return: None (prints to stdout).
     :rtype: None
     """
 

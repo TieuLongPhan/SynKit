@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from functools import lru_cache
 import gzip
 import hashlib
 import json
@@ -11,13 +13,10 @@ from typing import Any
 
 from rdkit import Chem
 
-from synkit.Chem.Reaction.standardize import Standardize
-
 ROOT = Path(__file__).resolve().parents[2]
 LEWIS_ROOT = Path(__file__).resolve().parent
 POLAR_DATASET = LEWIS_ROOT / "Data" / "benchmark.json.gz"
 RADICAL_DATASET = LEWIS_ROOT / "Data" / "all.csv"
-STANDARDIZER = Standardize()
 
 
 def open_text(path: Path, mode: str = "rt"):
@@ -85,18 +84,57 @@ def canonical_unmapped_side(side: str) -> str:
 
 
 def canonical_unmapped_reaction(reaction: str) -> str:
-    """Canonicalize both unordered endpoints without maps or stereo."""
-    standardized = STANDARDIZER.fit(
-        reaction,
-        remove_aam=True,
-        ignore_stereo=True,
-        remove_invalid=False,
-    )
-    if standardized is None:
-        raise ValueError(f"SynKit could not standardize reaction: {reaction!r}")
-    reactants, separator, products = standardized.partition(">>")
-    if not separator or ">>" in products:
-        raise ValueError(f"Malformed standardized reaction: {standardized!r}")
+    """Standardize both unordered endpoints without maps or stereo."""
+    reactants, separator, products = reaction.partition(">>")
+    if not separator or not reactants or not products or ">>" in products:
+        raise ValueError(f"Malformed reaction: {reaction!r}")
     return (
-        f"{canonical_unmapped_side(reactants)}" f">>{canonical_unmapped_side(products)}"
+        f"{_standardized_unmapped_side(reactants)}"
+        f">>{_standardized_unmapped_side(products)}"
     )
+
+
+@lru_cache(maxsize=8192)
+def _standardized_unmapped_side(side: str) -> str:
+    """Apply the established strict endpoint pipeline with a local cache.
+
+    Keeping the mapped canonicalization pass is important for a small class
+    of fused aromatic/Kekule products: it makes symmetry-related spellings
+    converge to the same endpoint. Splitting the reaction pipeline by side
+    lets repeated substrates share that exact work across all applications.
+    """
+    molecules = []
+    for fragment in side.split("."):
+        molecule = Chem.MolFromSmiles(fragment, sanitize=False)
+        if molecule is None or molecule.GetNumAtoms() == 0:
+            raise ValueError(f"RDKit rejected endpoint fragment: {fragment!r}")
+        try:
+            Chem.SanitizeMol(molecule)
+        except Exception as exc:
+            raise ValueError(f"RDKit rejected endpoint fragment: {fragment!r}") from exc
+        molecules.append(molecule)
+    if not molecules:
+        raise ValueError(f"Empty endpoint: {side!r}")
+
+    mapped = ".".join(
+        sorted(
+            Chem.MolToSmiles(molecule, isomericSmiles=False) for molecule in molecules
+        )
+    )
+    molecule = Chem.MolFromSmiles(mapped)
+    if molecule is None:
+        raise ValueError(f"RDKit rejected standardized endpoint: {mapped!r}")
+    for atom in molecule.GetAtoms():
+        atom.SetAtomMapNum(0)
+    unmapped = Chem.MolToSmiles(molecule, canonical=True).replace("[HH]", "[H][H]")
+    return canonical_unmapped_side(unmapped)
+
+
+def unique_standardized_reactions(reactions: Iterable[str]) -> set[str]:
+    """Standardize reaction SMILES and remove canonical duplicates.
+
+    Atom maps and stereochemistry are removed by
+    :func:`canonical_unmapped_reaction`; molecular components on both sides
+    are canonicalized and sorted before set-based deduplication.
+    """
+    return {canonical_unmapped_reaction(reaction) for reaction in reactions}

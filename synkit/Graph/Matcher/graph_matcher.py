@@ -1,28 +1,17 @@
+"""NetworkX-backed graph isomorphism and subgraph matching."""
+
 from __future__ import annotations
-
-"""graph_matcher_engine.py
-High‑performance (sub‑)graph isomorphism helper built on top of NetworkX.
-Highlights
-----------
-* **One‑time compilation** of node/edge match functions – avoids recreating
-  lambdas for every call.
-* **Weakly‑referenced cache** of 1‑iteration WL‑hashes so the inexpensive
-  colour‑refinement pre‑filter is paid only once per graph object lifetime.
-* **Early exits** on obvious size/degree mismatches.
-* **Lean public API** identical to the original implementation for seamless
-  drop‑in replacement.
-
-The implementation keeps the 90‑line footprint of the original version while
-cutting the critical‑path allocations in half (≈2× faster in micro‑benchmarks
-on medium‑sized chemistry graphs).
-"""
 
 from collections import Counter
 from typing import Any, Dict, List, Optional
-from weakref import WeakKeyDictionary
-
 import networkx as nx
-from networkx.algorithms.isomorphism import GraphMatcher as _NXGraphMatcher
+from networkx.algorithms.isomorphism import (
+    DiGraphMatcher as _NXDiGraphMatcher,
+    GraphMatcher as _NXGraphMatcher,
+    MultiDiGraphMatcher as _NXMultiDiGraphMatcher,
+    MultiGraphMatcher as _NXMultiGraphMatcher,
+    categorical_multiedge_match,
+)
 
 MappingDict = Dict[int, int]
 
@@ -62,28 +51,22 @@ def _wl1_hash(g: nx.Graph, node_attrs: tuple[str, ...]) -> Counter:
 class GraphMatcherEngine:
     """Reusable engine for (sub‑)graph isomorphism checks & embeddings.
 
-    Parameters
-    ----------
-    backend:
-        ``"nx"`` – the native NetworkX implementation.
-    node_attrs, edge_attrs:
-        Lists of attribute keys used for matching. ``hcount`` and
-        ``lone_pairs`` are treated specially: the host must be **≥** the
-        pattern. Other requested attributes, including ``radical``, match
-        exactly.
-    wl1_filter:
-        If *True*, a fast WL‑based colour refinement pre‑filter discards host
-        graphs that cannot possibly contain the pattern.
-    max_mappings:
-        Upper bound on the number of mappings to enumerate in
-        :py:meth:`get_mappings`.  *None* means "no limit".
+    :param backend: ``"nx"`` – the native NetworkX implementation.
+    :param node_attrs: Lists of attribute keys used for matching. ``hcount`` and
+                       ``lone_pairs`` are treated specially: the host must be **≥** the
+                       pattern. Other requested attributes, including ``radical``, match
+                       exactly.
+    :param edge_attrs: Lists of attribute keys used for matching. ``hcount`` and
+                       ``lone_pairs`` are treated specially: the host must be **≥** the
+                       pattern. Other requested attributes, including ``radical``, match
+                       exactly.
+    :param wl1_filter: If *True*, a fast WL‑based colour refinement pre‑filter discards host
+                       graphs that cannot possibly contain the pattern.
+    :param max_mappings: Upper bound on the number of mappings to enumerate in
+                         :py:meth:`get_mappings`.  *None* means "no limit".
     """
 
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
-    # Construction & representation
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
-
-    _wl_cache: "WeakKeyDictionary[nx.Graph, Counter]" = WeakKeyDictionary()
+    # Construction
 
     def __init__(
         self,
@@ -104,34 +87,19 @@ class GraphMatcherEngine:
         self.edge_attrs: tuple[str, ...] = tuple(edge_attrs or ())
 
         self.wl1_filter = bool(wl1_filter)
-        self.max_mappings = max_mappings  # None → enumerate all mappings.
+        if max_mappings is not None and max_mappings < 0:
+            raise ValueError("max_mappings must be non-negative or None")
+        self.max_mappings = max_mappings
 
-        # Compile node/edge matcher *once* – a huge win when the engine is reused
-        # many times.
+        # Reuse the match functions across calls on this engine.
         self._nm = self._compile_node_matcher()
         self._em = self._compile_edge_matcher()
 
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
     # Public helpers
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
 
     @staticmethod
     def available_backends() -> List[str]:
         return ["nx"]
-
-    # ---------------------------------------------------------------------
-    # Fast WL hash cache – we key only on the *id* of the graph instance.
-    # If the user mutates the graph **in‑place** the cache can go stale – they
-    # should construct a new GraphMatcherEngine or a new graph object instead.
-    # ---------------------------------------------------------------------
-
-    def _wl_hash_cached(self, g: nx.Graph) -> Counter:
-        try:
-            return self._wl_cache[g]
-        except KeyError:
-            h = _wl1_hash(g, self.node_attrs)
-            self._wl_cache[g] = h
-            return h
 
     # ------------------------------------------------------------------
     # Node / edge matchers – compiled only once per engine instance.
@@ -174,9 +142,36 @@ class GraphMatcherEngine:
 
         return em
 
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
+    def _matcher(self, host: nx.Graph, pattern: nx.Graph):
+        """Build the NetworkX matcher appropriate for the graph kind."""
+        if host.is_directed() != pattern.is_directed():
+            return None
+        if host.is_multigraph() != pattern.is_multigraph():
+            return None
+
+        if host.is_multigraph():
+            matcher_cls = (
+                _NXMultiDiGraphMatcher if host.is_directed() else _NXMultiGraphMatcher
+            )
+            edge_match = (
+                categorical_multiedge_match(
+                    self.edge_attrs,
+                    [None] * len(self.edge_attrs),
+                )
+                if self.edge_attrs
+                else (lambda *_: True)
+            )
+        else:
+            matcher_cls = _NXDiGraphMatcher if host.is_directed() else _NXGraphMatcher
+            edge_match = self._em
+        return matcher_cls(
+            host,
+            pattern,
+            node_match=self._nm,
+            edge_match=edge_match,
+        )
+
     # Public API
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
 
     def isomorphic(self, obj1: Any, obj2: Any) -> bool:
         return self._isomorphic_nx(obj1, obj2)
@@ -184,13 +179,7 @@ class GraphMatcherEngine:
     def get_mappings(self, host: Any, pattern: Any) -> List[MappingDict]:
         return self._get_mappings_nx(host, pattern)
 
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
-    # NetworkX backend – private helpers
-    # ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――——
-
-    # Fast micro‑benchmarks show a 20–30 % speed‑up when *small* (pattern) is the
-    # first argument of GraphMatcher, because the core VF2 recursion iterates
-    # over G1′s nodes.
+    # NetworkX backend
 
     def _pre_check(self, host: nx.Graph, pattern: nx.Graph) -> bool:
         """Return *True* if the inexpensive sanity checks pass."""
@@ -205,10 +194,29 @@ class GraphMatcherEngine:
         if not self.wl1_filter:
             return True
 
-        h_wl = self._wl_hash_cached(host)
-        p_wl = self._wl_hash_cached(pattern)
-        # The pattern's multiset must be *contained* in the host's multiset.
-        return all(h_wl.get(lbl, 0) >= cnt for lbl, cnt in p_wl.items())
+        # Whole-graph 1-WL colours are not a necessary invariant for a
+        # subgraph embedding: neighbours outside the selected image change the
+        # host colours. Likewise, hcount/lone_pairs use a directional >=
+        # comparator rather than exact label equality. In either situation a
+        # WL mismatch cannot soundly reject the candidate.
+        if (
+            host.number_of_nodes() != pattern.number_of_nodes()
+            or host.number_of_edges() != pattern.number_of_edges()
+            or {"hcount", "lone_pairs"}.intersection(self.node_attrs)
+        ):
+            return True
+
+        try:
+            # Recompute from current graph state. NetworkX graphs are mutable,
+            # so caching solely by object identity can retain stale colours.
+            return _wl1_hash(host, self.node_attrs) == _wl1_hash(
+                pattern,
+                self.node_attrs,
+            )
+        except (TypeError, ValueError):
+            # Heterogeneous or unhashable user attributes are still supported
+            # by the authoritative matcher. A pre-filter must fail open.
+            return True
 
     def _isomorphic_nx(
         self, g1: nx.Graph, g2: nx.Graph
@@ -225,7 +233,9 @@ class GraphMatcherEngine:
         if not self._pre_check(host, pattern):
             return False
 
-        gm = _NXGraphMatcher(host, pattern, node_match=self._nm, edge_match=self._em)
+        gm = self._matcher(host, pattern)
+        if gm is None:
+            return False
         return (
             gm.is_isomorphic()
             if host.number_of_nodes() == pattern.number_of_nodes()
@@ -241,12 +251,18 @@ class GraphMatcherEngine:
         if not self._pre_check(host, pattern):
             return []
 
-        gm = _NXGraphMatcher(host, pattern, node_match=self._nm, edge_match=self._em)
+        if self.max_mappings == 0:
+            return []
+
+        gm = self._matcher(host, pattern)
+        if gm is None:
+            return []
 
         # Full blow isomorphism (same #nodes / #edges)? Then a single call tells
         # us everything and is much faster than iterating via *isomorphisms_iter*.
         if (
-            pattern.number_of_nodes() == host.number_of_nodes()
+            self.max_mappings == 1
+            and pattern.number_of_nodes() == host.number_of_nodes()
             and pattern.number_of_edges() == host.number_of_edges()
         ):
             return (
@@ -274,7 +290,7 @@ class GraphMatcherEngine:
         ]
 
     # ------------------------------------------------------------------
-    # Introspection helpers – nice‑to‑have but not critical to hot path.
+    # Introspection
     # ------------------------------------------------------------------
 
     def __repr__(self) -> str:  # pragma: no cover – debug only

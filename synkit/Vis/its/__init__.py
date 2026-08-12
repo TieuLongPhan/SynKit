@@ -2,8 +2,8 @@
 
 This namespace groups renderers for Integrated Transition State graphs.
 
-Example
--------
+.. rubric:: Example
+
 .. code-block:: python
 
     from synkit.IO import rsmi_to_its

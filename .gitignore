@@ -106,3 +106,6 @@ Experiment/Lewis/FLOWER/replay-results*/
 # Keep generated Python bytecode ignored after directory re-inclusions above.
 **/__pycache__/
 *.py[cod]
+
+# RBL long-run checkpoints are resumable local state, not retained evidence.
+Experiment/RBL/*checkpoint*.jsonl

@@ -18,7 +18,7 @@ class Neutralize:
 
         :param smiles: SMILES string of the molecule.
         :type smiles: str
-        :returns: Formal charge of the molecule (0 if invalid SMILES).
+        :return: Formal charge of the molecule (0 if invalid SMILES).
         :rtype: int
         """
         mol = Chem.MolFromSmiles(smiles)
@@ -33,7 +33,7 @@ class Neutralize:
         :param reaction_smiles: Reaction SMILES in 'reactants>>products'
             format.
         :type reaction_smiles: str
-        :returns: Tuple of (reactants, products) SMILES, or (None, None)
+        :return: Tuple of (reactants, products) SMILES, or (None, None)
             if parse fails.
         :rtype: Tuple[Optional[str], Optional[str]]
         """
@@ -54,7 +54,7 @@ class Neutralize:
         :type reaction: Dict[str, Any]
         :param reaction_column: Key under which the reaction SMILES is stored.
         :type reaction_column: str
-        :returns: The same dictionary updated with:
+        :return: The same dictionary updated with:
                   - 'reactants': reactant SMILES or None
                   - 'products': product SMILES or None
                   - 'total_charge_in_products': integer sum of product charges or None
@@ -91,7 +91,7 @@ class Neutralize:
         :type id_column: str
         :param reaction_column: Key for reaction SMILES to update. Defaults to 'reactions'.
         :type reaction_column: str
-        :returns: New dictionary with:
+        :return: New dictionary with:
                   - updated `reaction_column` including added [Na+] ions
                   - 'reactants' and 'products' with ions appended
                   - charge column set to 0
@@ -132,7 +132,7 @@ class Neutralize:
         :type id_column: str
         :param reaction_column: Key for reaction SMILES to update. Defaults to 'reactions'.
         :type reaction_column: str
-        :returns: New dictionary with:
+        :return: New dictionary with:
                   - updated `reaction_column` including added [Cl‑] ions
                   - 'reactants' and 'products' with ions appended
                   - charge column set to 0
@@ -167,7 +167,7 @@ class Neutralize:
         :type reaction_dict: Dict[str, Any]
         :param reaction_column: Key for reaction SMILES in the input dict.
         :type reaction_column: str
-        :returns: Dictionary with balanced charges and updated SMILES.
+        :return: Dictionary with balanced charges and updated SMILES.
         :rtype: Dict[str, Any]
         """
         rd = Neutralize.calculate_charge_dict(reaction_dict, reaction_column)
@@ -194,7 +194,7 @@ class Neutralize:
         :param n_jobs: Number of parallel jobs (use -1 for all cores).
             Defaults to 4.
         :type n_jobs: int
-        :returns: List of dictionaries with balanced charges and updated
+        :return: List of dictionaries with balanced charges and updated
             SMILES.
         :rtype: List[Dict[str, Any]]
         """

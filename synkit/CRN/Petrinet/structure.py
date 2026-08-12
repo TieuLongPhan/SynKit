@@ -7,23 +7,21 @@ from .net import PetriNet
 
 
 def _as_petri(crn: Any) -> PetriNet:
-    """
-    Convert a SynCRN-like object into a :class:`PetriNet`.
+    """Convert a SynCRN-like object into a :class:`PetriNet`.
 
     If ``crn`` is already a :class:`PetriNet`, it is returned unchanged.
     Otherwise, the object is converted using :meth:`PetriNet.from_syncrn`.
 
     :param crn: SynCRN-like object or an existing :class:`PetriNet`.
     :type crn: Any
-    :returns: Petri-net representation of the input object.
+    :return: Petri-net representation of the input object.
     :rtype: PetriNet
     """
     return crn if isinstance(crn, PetriNet) else PetriNet.from_syncrn(crn)
 
 
 def _is_siphon(net: PetriNet, places: Set[str]) -> bool:
-    """
-    Test whether a set of places is a siphon.
+    """Test whether a set of places is a siphon.
 
     A place set ``S`` is a siphon if every transition that produces tokens into
     ``S`` also consumes at least one token from ``S``.
@@ -32,7 +30,7 @@ def _is_siphon(net: PetriNet, places: Set[str]) -> bool:
     :type net: PetriNet
     :param places: Candidate place set.
     :type places: Set[str]
-    :returns:
+    :return:
         ``True`` if ``places`` is a non-empty siphon, otherwise ``False``.
     :rtype: bool
     """
@@ -50,8 +48,7 @@ def _is_siphon(net: PetriNet, places: Set[str]) -> bool:
 
 
 def _is_trap(net: PetriNet, places: Set[str]) -> bool:
-    """
-    Test whether a set of places is a trap.
+    """Test whether a set of places is a trap.
 
     A place set ``S`` is a trap if every transition that consumes tokens from
     ``S`` also produces at least one token back into ``S``.
@@ -60,7 +57,7 @@ def _is_trap(net: PetriNet, places: Set[str]) -> bool:
     :type net: PetriNet
     :param places: Candidate place set.
     :type places: Set[str]
-    :returns:
+    :return:
         ``True`` if ``places`` is a non-empty trap, otherwise ``False``.
     :rtype: bool
     """
@@ -78,15 +75,14 @@ def _is_trap(net: PetriNet, places: Set[str]) -> bool:
 
 
 def _minimal_sets(candidates: List[Set[str]]) -> List[Set[str]]:
-    """
-    Reduce a collection of candidate sets to inclusion-minimal sets.
+    """Reduce a collection of candidate sets to inclusion-minimal sets.
 
     The result contains only those sets for which no strict subset is also
     present among the candidates.
 
     :param candidates: Candidate place sets.
     :type candidates: List[Set[str]]
-    :returns: Inclusion-minimal subset of the input candidates.
+    :return: Inclusion-minimal subset of the input candidates.
     :rtype: List[Set[str]]
     """
     candidates = sorted(candidates, key=lambda s: (len(s), sorted(s)))
@@ -105,8 +101,7 @@ def _render_place_sets(
     *,
     names: str,
 ) -> List[Set[str]]:
-    """
-    Render place sets either by internal ids or by place labels.
+    """Render place sets either by internal ids or by place labels.
 
     :param net: Petri net providing place-name lookup.
     :type net: PetriNet
@@ -115,7 +110,7 @@ def _render_place_sets(
     :param names:
         Output naming mode. Supported values are ``"id"`` and ``"label"``.
     :type names: str
-    :returns:
+    :return:
         Place sets rendered according to the requested naming convention.
     :rtype: List[Set[str]]
     :raises ValueError: If ``names`` is not ``"id"`` or ``"label"``.
@@ -133,8 +128,7 @@ def find_siphons(
     max_size: int | None = None,
     names: str = "label",
 ) -> List[Set[str]]:
-    """
-    Enumerate inclusion-minimal siphons of a SynCRN Petri-net view.
+    """Enumerate inclusion-minimal siphons of a SynCRN Petri-net view.
 
     The search is performed by brute-force subset enumeration up to the
     requested size bound, followed by inclusion-minimal filtering.
@@ -148,7 +142,7 @@ def find_siphons(
         Whether to return internal place ids or species labels.
         Supported values are ``"id"`` and ``"label"``.
     :type names: str
-    :returns: Inclusion-minimal siphons.
+    :return: Inclusion-minimal siphons.
     :rtype: List[Set[str]]
     """
     net = _as_petri(crn)
@@ -171,8 +165,7 @@ def find_traps(
     max_size: int | None = None,
     names: str = "label",
 ) -> List[Set[str]]:
-    """
-    Enumerate inclusion-minimal traps of a SynCRN Petri-net view.
+    """Enumerate inclusion-minimal traps of a SynCRN Petri-net view.
 
     The search is performed by brute-force subset enumeration up to the
     requested size bound, followed by inclusion-minimal filtering.
@@ -186,7 +179,7 @@ def find_traps(
         Whether to return internal place ids or species labels.
         Supported values are ``"id"`` and ``"label"``.
     :type names: str
-    :returns: Inclusion-minimal traps.
+    :return: Inclusion-minimal traps.
     :rtype: List[Set[str]]
     """
     net = _as_petri(crn)
@@ -204,8 +197,7 @@ def find_traps(
 
 
 def species_transition_neighborhoods(crn: Any) -> Dict[str, Dict[str, List[str]]]:
-    """
-    Return per-species producer and consumer transition neighborhoods.
+    """Return per-species producer and consumer transition neighborhoods.
 
     This is a small structural helper that is often useful when debugging
     siphons, traps, and reachability issues.
@@ -216,7 +208,7 @@ def species_transition_neighborhoods(crn: Any) -> Dict[str, Dict[str, List[str]]
 
     :param crn: SynCRN-like object or :class:`PetriNet`.
     :type crn: Any
-    :returns:
+    :return:
         Mapping from place id to a dictionary with keys ``"label"``,
         ``"producer_transitions"``, and ``"consumer_transitions"``.
     :rtype: Dict[str, Dict[str, List[str]]]

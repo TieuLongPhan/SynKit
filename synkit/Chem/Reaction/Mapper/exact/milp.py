@@ -57,25 +57,21 @@ def _cbc_solver():
 def solve_qap(lin, quad, n, compatible, const=0.0):
     """Solve a linearised QAP assignment with PuLP/CBC.
 
-    Parameters
-    ----------
-    lin : dict[(int, int), float]
-        Linear cost ``lin[a, b]`` for assigning ``a -> b``.
-    quad : dict[(int, int, int, int), float]
-        Quadratic cost ``quad[a, b, a', b']`` (defined for ``a < a'``) added when
-        both ``a -> b`` and ``a' -> b'`` hold.
-    n : int
-        Number of reactant positions (== product positions).
-    compatible : set[(int, int)]
-        Allowed ``(a, b)`` assignments (element-compatible pairs).
-    const : float
-        Constant added to the objective.
+    :param lin: Linear cost ``lin[a, b]`` for assigning ``a -> b``.
+    :type lin: dict[(int, int), float]
+    :param quad: Quadratic cost ``quad[a, b, a', b']`` (defined for ``a < a'``) added when
+                 both ``a -> b`` and ``a' -> b'`` hold.
+    :type quad: dict[(int, int, int, int), float]
+    :param n: Number of reactant positions (== product positions).
+    :type n: int
+    :param compatible: Allowed ``(a, b)`` assignments (element-compatible pairs).
+    :type compatible: set[(int, int)]
+    :param const: Constant added to the objective.
+    :type const: float
 
-    Returns
-    -------
-    (cost, mapping, proven) : (float, dict[int, int], bool)
-        Optimal cost, the assignment ``a -> b``, and whether CBC proved
-        optimality.
+    :return: **(cost, mapping, proven)** -- Optimal cost, the assignment ``a -> b``, and whether CBC proved
+              optimality.
+    :rtype: (float, dict[int, int], bool)
     """
     if not HAS_PULP:
         raise ImportError("pulp is required for the MILP/QAP solver")
@@ -132,10 +128,8 @@ def solve_qap(lin, quad, n, compatible, const=0.0):
 def solve_kernel_milp(kernel):  # noqa: C901
     """Solve a :class:`~mapper.exact.kernel.Kernel` exactly via MILP/QAP.
 
-    Returns
-    -------
-    KernelSolution
-        With ``proven_optimal`` reflecting CBC's status.
+    :return: With ``proven_optimal`` reflecting CBC's status.
+    :rtype: KernelSolution
     """
     lgp = kernel.lgp
     binary = kernel.binary

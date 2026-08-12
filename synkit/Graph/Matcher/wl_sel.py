@@ -13,36 +13,33 @@ TieTuple = Tuple[Any, ...]
 
 
 class WLSel:
-    """
-    WL-based selector for pairing two lists of graphs.
+    """WL-based selector for pairing two lists of graphs.
 
-    Parameters
-    ----------
-    fw : Sequence[nx.Graph]
-        Forward graphs (indices form first element of pairs).
-    bw : Sequence[nx.Graph]
-        Backward graphs (indices form second element of pairs).
-    element_key : str or None
-        Node attribute name used to detect wildcard nodes. Nodes with
-        ``data[element_key] == "*"`` are removed from the core. If None,
-        no wildcard filtering is applied.
-    node_attrs : sequence of str or None
-        Node attributes used to build base labels. If provided, the base
-        label for a node is ``str(tuple(data[k] for k in node_attrs))``.
-        If empty and element_key is provided, the element value is used.
-        If both are empty/None, node degree is used as base label.
-    edge_attrs : sequence of str or None
-        Edge attributes used inside WL neighbor signatures. If multiple keys
-        are provided, temporary edge tuples are formed internally.
-    wl_iters : int
-        WL refinement iterations (0 disables WL, uses base labels).
-    min_score : float
-        Minimum score (0..1) for pairs to be kept by default in scoring.
-    node_weight : float
-        Weight for node-overlap in final score (size-sim gets 1-node_weight).
+    :param fw: Forward graphs (indices form first element of pairs).
+    :type fw: Sequence[nx.Graph]
+    :param bw: Backward graphs (indices form second element of pairs).
+    :type bw: Sequence[nx.Graph]
+    :param element_key: Node attribute name used to detect wildcard nodes. Nodes with
+                        ``data[element_key] == "*"`` are removed from the core. If None,
+                        no wildcard filtering is applied.
+    :type element_key: str or None
+    :param node_attrs: Node attributes used to build base labels. If provided, the base
+                       label for a node is ``str(tuple(data[k] for k in node_attrs))``.
+                       If empty and element_key is provided, the element value is used.
+                       If both are empty/None, node degree is used as base label.
+    :type node_attrs: sequence of str or None
+    :param edge_attrs: Edge attributes used inside WL neighbor signatures. If multiple keys
+                       are provided, temporary edge tuples are formed internally.
+    :type edge_attrs: sequence of str or None
+    :param wl_iters: WL refinement iterations (0 disables WL, uses base labels).
+    :type wl_iters: int
+    :param min_score: Minimum score (0..1) for pairs to be kept by default in scoring.
+    :type min_score: float
+    :param node_weight: Weight for node-overlap in final score (size-sim gets 1-node_weight).
+    :type node_weight: float
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     - Use :meth:`build_signatures` then :meth:`score_pairs`.
     - Results available via :attr:`pair_scores` and :attr:`pair_indices`.
     """
@@ -124,20 +121,15 @@ class WLSel:
         top_k: Optional[int] = None,
         require_label_exact: bool = False,
     ) -> "WLSel":
-        """
-        Score all fw–bw pairs using WL-overlap + size similarity.
+        """Score all fw–bw pairs using WL-overlap + size similarity.
 
-        Parameters
-        ----------
-        top_k : int or None
-            If provided, keep only top_k pairs after sorting.
-        require_label_exact : bool
-            If True, keep only pairs whose WL label multisets are identical.
+        :param top_k: If provided, keep only top_k pairs after sorting.
+        :type top_k: int or None
+        :param require_label_exact: If True, keep only pairs whose WL label multisets are identical.
+        :type require_label_exact: bool
 
-        Returns
-        -------
-        WLSel
-            self (pairs stored in .pair_scores and .pair_indices).
+        :return: self (pairs stored in .pair_scores and .pair_indices).
+        :rtype: WLSel
         """
         if not self._signatures_built:
             self.build_signatures()
@@ -291,20 +283,29 @@ class WLSel:
 
         node_attr_arg, edge_attr_arg = self._resolve_wl_attr_args()
 
+        # Combined-attribute keys are an implementation detail. Work on a
+        # copy so existing user attributes with the same names are neither
+        # overwritten nor removed, including when ``g`` is a subgraph view.
+        working_graph = (
+            g.copy()
+            if node_attr_arg == "__TEMP_NODE__" or edge_attr_arg == "__TEMP_EDGE__"
+            else g
+        )
+
         with self._inject_temp_attrs(
-            g,
+            working_graph,
             node_attr_arg=node_attr_arg,
             edge_attr_arg=edge_attr_arg,
         ) as (node_attr_final, edge_attr_final):
             node_hash_dict = nx_wl(
-                g,
+                working_graph,
                 node_attr=node_attr_final,
                 edge_attr=edge_attr_final,
                 iterations=self.wl_iters,
                 include_initial_labels=False,
             )
 
-        return self._labels_from_nx_hash_dict(g, node_hash_dict)
+        return self._labels_from_nx_hash_dict(working_graph, node_hash_dict)
 
     def _nx_wl_hashes(self):
         """Return networkx WL-hash function if available, else None."""
@@ -317,16 +318,13 @@ class WLSel:
         return weisfeiler_lehman_subgraph_hashes
 
     def _resolve_wl_attr_args(self) -> Tuple[Optional[str], Optional[str]]:
-        """
-        Decide which node_attr and edge_attr keys to use for networkx WL.
+        """Decide which node_attr and edge_attr keys to use for networkx WL.
 
-        Returns
-        -------
-        (node_attr_arg, edge_attr_arg)
-            These may be:
-            - a real attribute key,
-            - the special sentinel "__TEMP__" meaning "needs temp injection",
-            - or None.
+        :return: These may be:
+                  - a real attribute key,
+                  - the special sentinel "__TEMP__" meaning "needs temp injection",
+                  - or None.
+        :rtype: (node_attr_arg, edge_attr_arg)
         """
         node_attr_arg: Optional[str]
         edge_attr_arg: Optional[str]
@@ -359,16 +357,13 @@ class WLSel:
         node_attr_arg: Optional[str],
         edge_attr_arg: Optional[str],
     ) -> Iterator[Tuple[Optional[str], Optional[str]]]:
-        """
-        Context manager that injects temporary combined attrs if needed.
+        """Context manager that injects temporary combined attrs if needed.
 
         If node_attr_arg is "__TEMP_NODE__", we create "__wl_node_temp__".
         If edge_attr_arg is "__TEMP_EDGE__", we create "__wl_edge_temp__".
 
-        Yields
-        ------
-        (node_attr_final, edge_attr_final)
-            The actual attribute names to pass into networkx WL.
+        :yield: The actual node and edge attribute names passed to NetworkX WL.
+        :ytype: tuple[Optional[str], Optional[str]]
         """
         node_temp_key: Optional[str] = None
         edge_temp_key: Optional[str] = None

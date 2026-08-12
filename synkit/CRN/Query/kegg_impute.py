@@ -14,8 +14,7 @@ FixRecord = dict[str, str]
 
 @dataclass
 class KEGGImputer:
-    """
-    Impute missing compound SMILES and repair reaction records in KEGG-style
+    """Impute missing compound SMILES and repair reaction records in KEGG-style
     module or pathway JSON blocks.
 
     The imputer supports two fix types through the same ``fixes`` argument:
@@ -35,8 +34,8 @@ class KEGGImputer:
         :class:`KEGGExtractor` instance is created.
     :type extractor: Optional[KEGGExtractor]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         imputer = KEGGImputer()
@@ -69,8 +68,7 @@ class KEGGImputer:
         *,
         id_key: str = "id",
     ) -> List[MoleculeRecord]:
-        """
-        Restore a molecule list while preserving original order.
+        """Restore a molecule list while preserving original order.
 
         Molecules present in ``molecules_by_id`` but absent from the original
         list are appended in sorted identifier order.
@@ -85,12 +83,12 @@ class KEGGImputer:
             Dictionary key used as the molecule identifier.
         :type id_key: str
 
-        :returns:
+        :return:
             Restored molecule list.
         :rtype: List[dict[str, Any]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             restored = KEGGImputer._restore_molecule_list(
@@ -121,8 +119,7 @@ class KEGGImputer:
         reaction_id_key: str,
         equation_key: str,
     ) -> Tuple[List[FixRecord], List[FixRecord]]:
-        """
-        Split mixed fix records into reaction fixes and molecule fixes.
+        """Split mixed fix records into reaction fixes and molecule fixes.
 
         A fix is treated as a reaction fix when it contains both the reaction
         identifier key and the equation key. All other fixes are treated as
@@ -138,12 +135,12 @@ class KEGGImputer:
             Key used to store reaction equations.
         :type equation_key: str
 
-        :returns:
+        :return:
             Tuple ``(reaction_fixes, molecule_fixes)``.
         :rtype: Tuple[List[dict[str, str]], List[dict[str, str]]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             reaction_fixes, molecule_fixes = KEGGImputer._split_fixes(
@@ -173,8 +170,7 @@ class KEGGImputer:
         reaction_smiles_key: str = "smiles",
         reaction_rule_key: str = "rule",
     ) -> Set[str]:
-        """
-        Apply reaction equation fixes in place.
+        """Apply reaction equation fixes in place.
 
         The target reaction equation is replaced for each matching reaction
         record. Existing SMILES and rule fields for edited reactions are reset
@@ -199,7 +195,7 @@ class KEGGImputer:
             Dictionary key used for atom-mapped rules.
         :type reaction_rule_key: str
 
-        :returns:
+        :return:
             Set of edited reaction identifiers.
         :rtype: Set[str]
 
@@ -207,8 +203,8 @@ class KEGGImputer:
             If a reaction fix refers to a reaction identifier that is not
             present in the provided reaction list.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             edited = KEGGImputer._apply_reaction_fixes(
@@ -248,8 +244,7 @@ class KEGGImputer:
         *,
         molecule_id_key: str = "id",
     ) -> Set[str]:
-        """
-        Apply molecule fixes to a molecule mapping in place.
+        """Apply molecule fixes to a molecule mapping in place.
 
         Existing molecule records are updated, while missing identifiers are
         inserted as new molecule records.
@@ -264,12 +259,12 @@ class KEGGImputer:
             Dictionary key used as the molecule identifier.
         :type molecule_id_key: str
 
-        :returns:
+        :return:
             Set of updated compound identifiers.
         :rtype: Set[str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             updated_ids = KEGGImputer._apply_molecule_fixes(
@@ -308,8 +303,7 @@ class KEGGImputer:
         reaction_id_key: str,
         equation_key: str,
     ) -> Set[str]:
-        """
-        Infer which reactions are affected by updated compound identifiers.
+        """Infer which reactions are affected by updated compound identifiers.
 
         The method first consults the existing ``missing`` block. If that block
         already records which reactions involve the updated compounds, those
@@ -329,12 +323,12 @@ class KEGGImputer:
             Dictionary key storing equation text.
         :type equation_key: str
 
-        :returns:
+        :return:
             Set of impacted reaction identifiers.
         :rtype: Set[str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             impacted = KEGGImputer._infer_impacted_reaction_ids(
@@ -366,8 +360,7 @@ class KEGGImputer:
         reaction_rule_key: str = "rule",
         molecule_id_key: str = "id",
     ) -> None:
-        """
-        Recompute reaction SMILES and mapped rules in place for impacted reactions.
+        """Recompute reaction SMILES and mapped rules in place for impacted reactions.
 
         Only reactions listed in ``impacted_reaction_ids`` are rebuilt. Reaction
         SMILES are regenerated from the updated molecule table, then optional
@@ -399,12 +392,12 @@ class KEGGImputer:
             Dictionary key storing molecule identifiers.
         :type molecule_id_key: str
 
-        :returns:
+        :return:
             ``None``.
         :rtype: None
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             imputer._rebuild_reaction_fields(
@@ -469,8 +462,7 @@ class KEGGImputer:
         reaction_smiles_key: str = "smiles",
         reaction_rule_key: str = "rule",
     ) -> Dict[str, Any]:
-        """
-        Apply molecule and reaction fixes to a module JSON block.
+        """Apply molecule and reaction fixes to a module JSON block.
 
         Reaction fixes are applied first, then molecule fixes are applied, then
         impacted reaction SMILES and atom-mapped rules are rebuilt, and finally
@@ -504,12 +496,12 @@ class KEGGImputer:
             Atom-mapped rule field key.
         :type reaction_rule_key: str
 
-        :returns:
+        :return:
             Updated module JSON dictionary.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             updated = imputer.impute_module(
@@ -624,8 +616,7 @@ class KEGGImputer:
         reaction_smiles_key: str = "smiles",
         reaction_rule_key: str = "rule",
     ) -> Dict[str, Any]:
-        """
-        Apply molecule and reaction fixes across all modules in a pathway JSON
+        """Apply molecule and reaction fixes across all modules in a pathway JSON
         block.
 
         Each module is processed independently through :meth:`impute_module`,
@@ -657,12 +648,12 @@ class KEGGImputer:
             Atom-mapped rule field key.
         :type reaction_rule_key: str
 
-        :returns:
+        :return:
             Updated pathway JSON dictionary.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             updated = imputer.impute_pathway(

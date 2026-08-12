@@ -4,8 +4,7 @@ from synkit.IO import rsmi_to_graph, graph_to_smi
 
 
 class WildCard:
-    """
-    Static utility class for generating reaction SMILES with wildcards by
+    """Static utility class for generating reaction SMILES with wildcards by
     augmenting the product graph with subgraphs unique to the reactant and
     patching lost external connections with wildcard atoms ('*').
 
@@ -14,8 +13,8 @@ class WildCard:
 
     All methods are static and do not store any internal state.
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> WildCard.rsmi_with_wildcards('CCO>>CC')
     'CCO>>CC*'
 
@@ -29,8 +28,7 @@ class WildCard:
         attributes_defaults: Optional[Dict[str, Any]] = None,
         rebalance: bool = False,
     ) -> str:
-        """
-        Given a reaction SMILES string, returns a new reaction SMILES where the product
+        """Given a reaction SMILES string, returns a new reaction SMILES where the product
         side contains any disconnected subgraphs unique to the reactant, with lost
         external bonds patched with wildcard atoms. Optionally, also adds wildcards to
         the reactant side to ensure matching atom maps (rebalance).
@@ -41,12 +39,12 @@ class WildCard:
         :type attributes_defaults: dict, optional
         :param rebalance: Whether to rebalance the reactant side by adding wildcards
         :type rebalance: bool
-        :returns: Augmented reaction SMILES string
+        :return: Augmented reaction SMILES string
         :rtype: str
         :raises ValueError: If parsing or output generation fails.
 
-        Example
-        -------
+        .. rubric:: Example
+
         >>> WildCard.rsmi_with_wildcards('CCO>>CC')
         'CCO>>CC*'
         >>> WildCard.rsmi_with_wildcards('CCO>>CC', rebalance=True)
@@ -70,8 +68,7 @@ class WildCard:
         attributes_defaults: Optional[Dict[str, Any]] = None,
         rebalance: bool = False,
     ) -> Tuple[nx.Graph, nx.Graph]:
-        """
-        Add the subgraph unique to G as a disconnected union to H,
+        """Add the subgraph unique to G as a disconnected union to H,
         and patch lost external connections with plain wildcard bonds.
         Optionally, rebalance the reactant side to ensure both sides have
         matching atom maps by adding wildcards.
@@ -84,12 +81,12 @@ class WildCard:
         :type attributes_defaults: dict, optional
         :param rebalance: Whether to rebalance the reactant side with wildcards
         :type rebalance: bool
-        :returns: Tuple (new_G, new_H) with both graphs possibly augmented by wildcards
+        :return: Tuple (new_G, new_H) with both graphs possibly augmented by wildcards
         :rtype: Tuple[nx.Graph, nx.Graph]
         :raises ValueError: If G or H are not valid graphs.
 
-        Example
-        -------
+        .. rubric:: Example
+
         >>> r, p = WildCard.from_rsmi('CCO>>CC')
         >>> r2, p2 = WildCard.add_unique_subgraph_with_wildcards(r, p, rebalance=True)
         """
@@ -189,12 +186,11 @@ class WildCard:
 
     @staticmethod
     def from_rsmi(rsmi: str) -> Tuple[nx.Graph, nx.Graph]:
-        """
-        Convert a reaction SMILES string into reactant and product graphs.
+        """Convert a reaction SMILES string into reactant and product graphs.
 
         :param rsmi: Reaction SMILES string
         :type rsmi: str
-        :returns: Tuple (reactant_graph, product_graph)
+        :return: Tuple (reactant_graph, product_graph)
         :rtype: Tuple[nx.Graph, nx.Graph]
         :raises ValueError: If input cannot be parsed.
         """
@@ -205,12 +201,11 @@ class WildCard:
 
     @staticmethod
     def to_smi(G: nx.Graph) -> str:
-        """
-        Convert a networkx molecular graph to a canonical SMILES string.
+        """Convert a networkx molecular graph to a canonical SMILES string.
 
         :param G: Molecular graph
         :type G: nx.Graph
-        :returns: SMILES string
+        :return: SMILES string
         :rtype: str
         :raises ValueError: If conversion fails.
         """

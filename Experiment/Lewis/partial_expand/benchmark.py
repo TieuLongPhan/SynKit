@@ -34,6 +34,7 @@ from Experiment.Lewis.common import (  # noqa: E402
 )
 from synkit.Chem.Reaction import AAMValidator  # noqa: E402
 from synkit.Graph.ITS.its_expand import ITSExpand  # noqa: E402
+from synkit.Mechanism.radical_data import complete_radical_aam  # noqa: E402
 
 METHODS = ("synkit", "gm", "rb1", "rb2")
 METHOD_LABELS = {
@@ -174,6 +175,14 @@ def _synkit_expand(source: str, *, preserve_radical_state: bool = False) -> str:
     )
 
 
+def _synkit_radical_expand(source: str) -> str:
+    """Retain or complete a radical AAM under the audited guarded protocol."""
+    result = complete_radical_aam(source)
+    if not result.usable or result.mapped_reaction is None:
+        raise ValueError(result.failure_reason or "Radical AAM completion failed")
+    return result.mapped_reaction
+
+
 def load_methods(
     suite: str,
     selected: list[str],
@@ -182,10 +191,7 @@ def load_methods(
     partialaams: Path,
 ) -> dict[str, Callable[[str], str]]:
     if suite == "radical":
-        synkit_expand = lambda source: _synkit_expand(  # noqa: E731
-            source,
-            preserve_radical_state=True,
-        )
+        synkit_expand = _synkit_radical_expand
     else:
         synkit_expand = _synkit_expand
     methods: dict[str, Callable[[str], str]] = {"synkit": synkit_expand}

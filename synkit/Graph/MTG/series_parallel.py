@@ -84,8 +84,12 @@ def detect_series_parallel(
                 first = frozenset((anchor, *selected))
                 second = current - first
                 orientations = (
-                    all((left, right) in relation for left in first for right in second),
-                    all((right, left) in relation for left in first for right in second),
+                    all(
+                        (left, right) in relation for left in first for right in second
+                    ),
+                    all(
+                        (right, left) in relation for left in first for right in second
+                    ),
                 )
                 if not any(orientations):
                     continue

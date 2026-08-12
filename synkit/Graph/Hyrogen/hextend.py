@@ -50,17 +50,17 @@ class HExtend(HComplete):
         each cluster set. Clusters are expected to be represented as sets of
         indices, each corresponding to a graph in the `graphs` list.
 
-        Parameters:
-        - graphs (List[nx.Graph]): List of networkx graphs.
-        - cluster_indices (List[set]): List of sets, each containing indices representing graphs
-        that belong to the same cluster.
+        :param graphs: List of networkx graphs.
+        :type graphs: List[nx.Graph]
+        :param cluster_indices: List of sets, each containing indices representing graphs
+                                that belong to the same cluster.
+        :type cluster_indices: List[set]
 
-        Returns:
-        - List[nx.Graph]: A list containing one unique graph from each cluster.
+        :return: A list containing one unique graph from each cluster.
+        :rtype: List[nx.Graph]
 
-        Raises:
-        - ValueError: If any index in `cluster_indices` is out of the range of `graphs`.
-        - TypeError: If `cluster_indices` is not a list of sets.
+        :raises ValueError: If any index in `cluster_indices` is out of the range of `graphs`.
+        :raises TypeError: If `cluster_indices` is not a list of sets.
         """
         if not all(isinstance(cluster, set) for cluster in cluster_indices):
             raise TypeError("Each cluster index must be a set of integers.")
@@ -84,16 +84,19 @@ class HExtend(HComplete):
     ) -> Tuple[List[nx.Graph], List[nx.Graph], List[str]]:
         """Extend a bare ITS graph into all valid hydrogen-completed variants.
 
-        Parameters:
-        - its (nx.Graph): The initial transition state graph to be processed.
-        - ignore_aromaticity (bool): Flag to ignore aromaticity in graph construction.
-        - balance_its (bool): Flag to balance the ITS graph during processing.
-        - format (str): ITS representation: "auto", "typesGH", or "tuple".
-        - max_candidates (Optional[int]): Optional cap for enumerated hydrogen assignments.
+        :param its: The initial transition state graph to be processed.
+        :type its: nx.Graph
+        :param ignore_aromaticity: Flag to ignore aromaticity in graph construction.
+        :type ignore_aromaticity: bool
+        :param balance_its: Flag to balance the ITS graph during processing.
+        :type balance_its: bool
+        :param format: ITS representation: "auto", "typesGH", or "tuple".
+        :type format: str
+        :param max_candidates: Optional cap for enumerated hydrogen assignments.
+        :type max_candidates: Optional[int]
 
-        Returns:
-        - Tuple[List[nx.Graph], List[nx.Graph], List[str]]: Tuple containing lists of
-        processed reaction graphs, ITS graphs, and their signatures.
+        :return: Tuple containing lists of processed reaction graphs, ITS graphs, and their signatures.
+        :rtype: Tuple[List[nx.Graph], List[nx.Graph], List[str]]
         """
         if not isinstance(its, nx.Graph) or its.number_of_nodes() == 0:
             return [], [], []
@@ -343,15 +346,10 @@ class HExtend(HComplete):
         resolved_format = HComplete._resolve_format(its, "auto")
         comparison = HComplete._comparison_graph(its, resolved_format)
         ordered_colours = sorted(
-            {
-                attributes["cmp_node"]
-                for _, attributes in comparison.nodes(data=True)
-            },
+            {attributes["cmp_node"] for _, attributes in comparison.nodes(data=True)},
             key=_invariant_order_key,
         )
-        colour_rank = {
-            colour: rank for rank, colour in enumerate(ordered_colours)
-        }
+        colour_rank = {colour: rank for rank, colour in enumerate(ordered_colours)}
         profiles: List[RootedDistanceProfile] = []
         for hydrogen, attributes in comparison.nodes(data=True):
             if attributes["cmp_element"] != "H":
@@ -465,18 +463,24 @@ class HExtend(HComplete):
         """Processes a dictionary of graphs using specific graph processing
         functions and updates the dictionary with new graph data.
 
-        Parameters:
-        - data_dict (Dict): Dictionary containing the graphs and their keys.
-        - its_key (str): Key in the dictionary for the ITS graph.
-        - rc_key (str): Key in the dictionary for the reaction graph.
-        - ignore_aromaticity (bool): Whether to ignore aromaticity
-        during graph processing.
-        - balance_its (bool): Whether to balance the ITS graph.
-        - format (str): ITS representation: "auto", "typesGH", or "tuple".
-        - max_candidates (Optional[int]): Optional cap for enumerated hydrogen assignments.
+        :param data_dict: Dictionary containing the graphs and their keys.
+        :type data_dict: Dict
+        :param its_key: Key in the dictionary for the ITS graph.
+        :type its_key: str
+        :param rc_key: Key in the dictionary for the reaction graph.
+        :type rc_key: str
+        :param ignore_aromaticity: Whether to ignore aromaticity
+                                   during graph processing.
+        :type ignore_aromaticity: bool
+        :param balance_its: Whether to balance the ITS graph.
+        :type balance_its: bool
+        :param format: ITS representation: "auto", "typesGH", or "tuple".
+        :type format: str
+        :param max_candidates: Optional cap for enumerated hydrogen assignments.
+        :type max_candidates: Optional[int]
 
-        Returns:
-        - Dict: The updated dictionary containing new ITS and reaction graphs.
+        :return: The updated dictionary containing new ITS and reaction graphs.
+        :rtype: Dict
         """
         its = data_dict[its_key]
         resolved_format = HComplete._resolve_format(its, format)
@@ -507,22 +511,31 @@ class HExtend(HComplete):
         """Fit the model to the data in parallel, processing each entry to
         generate new graph data based on the ITS and reaction graph keys.
 
-        Parameters:
-        - data (iterable): Data to be processed.
-        - its_key (str): Key for the ITS graphs in the data.
-        - rc_key (str): Key for the reaction graphs in the data.
-        - ignore_aromaticity (bool): Whether to ignore aromaticity during processing.
-        Default to False.
-        - balance_its (bool): Whether to balance the ITS during processing.
-        Default to True.
-        - n_jobs (int): Number of jobs to run in parallel. Default to 1.
-        - verbose (int): Verbosity level for parallel processing. Default to 0.
-        - format (str): ITS representation: "auto", "typesGH", or "tuple".
-        - max_candidates (Optional[int]): Optional cap for enumerated hydrogen assignments.
-        - backend (Optional[str]): Optional joblib backend.
+        :param data: Data to be processed.
+        :type data: iterable
+        :param its_key: Key for the ITS graphs in the data.
+        :type its_key: str
+        :param rc_key: Key for the reaction graphs in the data.
+        :type rc_key: str
+        :param ignore_aromaticity: Whether to ignore aromaticity during processing.
+                                   Default to False.
+        :type ignore_aromaticity: bool
+        :param balance_its: Whether to balance the ITS during processing.
+                            Default to True.
+        :type balance_its: bool
+        :param n_jobs: Number of jobs to run in parallel. Default to 1.
+        :type n_jobs: int
+        :param verbose: Verbosity level for parallel processing. Default to 0.
+        :type verbose: int
+        :param format: ITS representation: "auto", "typesGH", or "tuple".
+        :type format: str
+        :param max_candidates: Optional cap for enumerated hydrogen assignments.
+        :type max_candidates: Optional[int]
+        :param backend: Optional joblib backend.
+        :type backend: Optional[str]
 
-        Returns:
-        - List: A list containing the results of the processed data.
+        :return: A list containing the results of the processed data.
+        :rtype: List
         """
         if n_jobs == 1 and backend is None:
             return [

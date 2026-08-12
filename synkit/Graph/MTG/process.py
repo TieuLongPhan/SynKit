@@ -80,7 +80,9 @@ class MaterialBinding:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "endpoint_nodes", frozenset(self.endpoint_nodes))
-        pairs = self.mapping.items() if isinstance(self.mapping, Mapping) else self.mapping
+        pairs = (
+            self.mapping.items() if isinstance(self.mapping, Mapping) else self.mapping
+        )
         object.__setattr__(self, "mapping", tuple(sorted(pairs, key=repr)))
 
 
@@ -122,9 +124,9 @@ class LinearExtensionEquivalence:
     swaps: tuple[tuple[str, str], ...]
 
     def replay(self, process: "OccurrenceProcess") -> bool:
-        if not process.is_linear_extension(self.source) or not process.is_linear_extension(
-            self.target
-        ):
+        if not process.is_linear_extension(
+            self.source
+        ) or not process.is_linear_extension(self.target):
             return False
         current = list(self.source)
         witnesses = process.independence_by_pair
@@ -241,9 +243,7 @@ class OccurrenceProcess:
                         {
                             "event": event.occurrence_id,
                             "material": binding.material_id,
-                            "issues": tuple(
-                                issue.to_dict() for issue in error.issues
-                            ),
+                            "issues": tuple(issue.to_dict() for issue in error.issues),
                         },
                     )
                 )
@@ -416,7 +416,9 @@ class OccurrenceProcess:
                     result.append(frozenset((left, right)))
         return tuple(result)
 
-    def linear_extensions(self, *, max_extensions: int = 10_000) -> tuple[tuple[str, ...], ...]:
+    def linear_extensions(
+        self, *, max_extensions: int = 10_000
+    ) -> tuple[tuple[str, ...], ...]:
         """Enumerate all extensions or raise instead of returning a prefix."""
         if max_extensions <= 0:
             raise ValueError("max_extensions must be positive.")
@@ -438,7 +440,9 @@ class OccurrenceProcess:
         if set(order) != set(self.event_by_id) or len(order) != len(self.events):
             return False
         position = {event: index for index, event in enumerate(order)}
-        return all(position[left] < position[right] for left, right in self.causal_pairs)
+        return all(
+            position[left] < position[right] for left, right in self.causal_pairs
+        )
 
     def extension_equivalence(
         self, source: Iterable[str], target: Iterable[str]
@@ -472,9 +476,7 @@ class OccurrenceProcess:
                 current[position - 1], current[position] = right, left
                 swaps.append((left, right))
                 position -= 1
-        witness = LinearExtensionEquivalence(
-            source_order, target_order, tuple(swaps)
-        )
+        witness = LinearExtensionEquivalence(source_order, target_order, tuple(swaps))
         if not witness.replay(self):
             raise ProcessError(
                 ProcessIssue(

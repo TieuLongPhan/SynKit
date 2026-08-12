@@ -2,12 +2,7 @@ import unittest
 
 import networkx as nx
 
-# Adjust this import to your actual module path
-# Example:
 from synkit.CRN.Structure.syncrn import SynCRN
-
-# from your_module import SynCRN
-
 
 RXNS = [
     "2A>>B+3C",

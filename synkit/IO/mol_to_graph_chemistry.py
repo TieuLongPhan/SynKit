@@ -18,7 +18,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Atom-map number.
+        :return: Atom-map number.
         :rtype: int
         """
         try:
@@ -32,7 +32,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Incident bond-order sum.
+        :return: Incident bond-order sum.
         :rtype: float
         """
         try:
@@ -46,7 +46,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Valence electron count, or ``0`` on failure.
+        :return: Valence electron count, or ``0`` on failure.
         :rtype: int
         """
         try:
@@ -61,7 +61,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Number of explicit hydrogen neighbors.
+        :return: Number of explicit hydrogen neighbors.
         :rtype: int
         """
         try:
@@ -75,7 +75,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Non-neighbor hydrogen count.
+        :return: Non-neighbor hydrogen count.
         :rtype: int
         """
         try:
@@ -94,7 +94,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Total hydrogen count.
+        :return: Total hydrogen count.
         :rtype: int
         """
         return MolToGraphChemistryMixin._explicit_h_neighbor_count(
@@ -107,7 +107,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Heavy-neighbor count.
+        :return: Heavy-neighbor count.
         :rtype: int
         """
         try:
@@ -121,7 +121,7 @@ class MolToGraphChemistryMixin:
 
         :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :returns: Kekulized molecule copy or ``None``.
+        :return: Kekulized molecule copy or ``None``.
         :rtype: Optional[Chem.Mol]
         """
         try:
@@ -142,7 +142,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: ``True`` if aromatic bonds should be counted as sigma bonds
+        :return: ``True`` if aromatic bonds should be counted as sigma bonds
             for lone-pair bookkeeping.
         :rtype: bool
         """
@@ -202,7 +202,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Corrected lone-pair bond-order sum.
+        :return: Corrected lone-pair bond-order sum.
         :rtype: float
         """
         try:
@@ -234,7 +234,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Estimated total lone-pair count.
+        :return: Estimated total lone-pair count.
         :rtype: int
 
         .. code-block:: python
@@ -270,7 +270,7 @@ class MolToGraphChemistryMixin:
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Locally available lone-pair count.
+        :return: Locally available lone-pair count.
         :rtype: int
         """
         total_lp = cls.estimate_lone_pairs(atom)
@@ -317,7 +317,7 @@ class MolToGraphChemistryMixin:
         :type kek_bond: Optional[Chem.Bond]
         :param prefer_kekule: Whether to use ``kek_bond`` when available.
         :type prefer_kekule: bool
-        :returns: Bond order.
+        :return: Bond order.
         :rtype: float
         """
         try:
@@ -350,7 +350,7 @@ class MolToGraphChemistryMixin:
         :param en_tie_threshold: Electronegativity-difference threshold for
             treating a bond as a tie.
         :type en_tie_threshold: float
-        :returns: Oxidation states keyed by RDKit atom index.
+        :return: Oxidation states keyed by RDKit atom index.
         :rtype: Dict[int, float]
         """
         ox: Dict[int, float] = {}
@@ -428,7 +428,7 @@ class MolToGraphChemistryMixin:
         :type prefer_kekule: bool
         :param en_tie_threshold: Electronegativity tie threshold.
         :type en_tie_threshold: float
-        :returns: Oxidation-state records keyed by atom-map number.
+        :return: Oxidation-state records keyed by atom-map number.
         :rtype: Dict[int, Dict[str, Any]]
         """
         if kek_mol is None:
@@ -478,7 +478,7 @@ class MolToGraphChemistryMixin:
         :type prefer_kekule: bool
         :param en_tie_threshold: Electronegativity tie threshold.
         :type en_tie_threshold: float
-        :returns: Significant oxidation-state changes keyed by atom map.
+        :return: Significant oxidation-state changes keyed by atom map.
         :rtype: Dict[int, Dict[str, Any]]
         :raises ValueError: If ``rsmi`` lacks ``">>"``.
 

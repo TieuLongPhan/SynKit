@@ -67,10 +67,9 @@ class _CRNGraphBackend:
 
     @property
     def G(self) -> nx.DiGraph:
-        """
-        Underlying NetworkX DiGraph view of the CRN.
+        """Underlying NetworkX DiGraph view of the CRN.
 
-        :returns: bipartite or species graph, depending on ``include_rule``.
+        :return: bipartite or species graph, depending on ``include_rule``.
         :rtype: nx.DiGraph
         """
         self._build_graph()

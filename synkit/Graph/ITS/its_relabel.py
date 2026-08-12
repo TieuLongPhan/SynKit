@@ -31,7 +31,7 @@ class ITSRelabel:
 
         :param graph: Input SynGraph with 'atom_map' on nodes.
         :type graph: SynGraph
-        :returns: List of node identifiers where 'atom_map' != 0.
+        :return: List of node identifiers where 'atom_map' != 0.
         :rtype: List[Any]
         """
         return [
@@ -48,7 +48,7 @@ class ITSRelabel:
         :type graph: SynGraph
         :param nodes: Node IDs whose connecting edges will be removed.
         :type nodes: List[Any]
-        :returns: A new SynGraph with specified edges removed.
+        :return: A new SynGraph with specified edges removed.
         :rtype: SynGraph
         """
         G_copy = SynGraph(graph.raw.copy())
@@ -71,7 +71,7 @@ class ITSRelabel:
         :type sort_by_key: bool
         :param sort_by_value: Sort tuples by value if True.
         :type sort_by_value: bool
-        :returns: List of (key, value) tuples.
+        :return: List of (key, value) tuples.
         :rtype: List[Tuple[Any, Any]]
         """
         items = list(mapping.items())
@@ -105,7 +105,7 @@ class ITSRelabel:
         :type mapping: Iterable[Tuple[Any, Any]]
         :param aam_key: Name of the atom-map attribute on each node.
         :type aam_key: str
-        :returns: Tuple of updated SynGraphs (G_updated, H_updated).
+        :return: Tuple of updated SynGraphs (G_updated, H_updated).
         :rtype: Tuple[SynGraph, SynGraph]
         """
         # Create deep copies of raw graphs
@@ -138,11 +138,12 @@ class ITSRelabel:
 
         :param rsmi: Reaction SMILES string formatted as 'reactant>>product'.
         :type rsmi: str
-        :returns: Extended reaction SMILES after remapping.
+        :return: Extended reaction SMILES after remapping.
         :rtype: str
         :raises ValueError: If input format is invalid or graphs are not isomorphic.
 
-        :example:
+        .. rubric:: Examples
+
         >>> its = ITSRelabel()
         >>> its.fit('CCO:1>>CC=O:1')
         'CCO>>CC=O'

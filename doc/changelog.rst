@@ -66,9 +66,13 @@ Version 1.5.0
 
 **Synthesis**
 
-- Expanded ``RBLEngine`` with explicit ``fast_track``, ``early_stop``, and
-  ``full`` execution modes, pluggable exact or approximate MCS matching, and
-  wildcard-aware ITS fusion.
+- Expanded ``RBLEngine`` with explicit ``fast_track``, ``fast_fusion``,
+  ``early_stop``, ``full``, and proof-bearing ``verified`` execution modes,
+  pluggable exact or approximate MCS matching, and wildcard-aware ITS fusion.
+- Hardened fusion identity for isotopes and Lewis state, required
+  side-symmetric mapped atoms, and separated coarse matcher labels from the
+  stricter categorical-interface contract; hydrogen presentation remains an
+  explicit completed-graph proof obligation.
 
 **EF-SMIRKS conversion**
 

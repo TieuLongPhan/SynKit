@@ -178,6 +178,16 @@ def test_electron_distinct_candidates_never_deduplicate() -> None:
     assert not graphs_exactly_equivalent(closed_shell, radical)
 
 
+def test_isotope_distinct_candidates_never_deduplicate() -> None:
+    carbon_12 = nx.Graph()
+    carbon_12.add_node(1, element="C", isotope=12, charge=0, radical=0)
+    carbon_13 = nx.Graph()
+    carbon_13.add_node(2, element="C", isotope=13, charge=0, radical=0)
+
+    assert graph_identity_digest(carbon_12) != graph_identity_digest(carbon_13)
+    assert not graphs_exactly_equivalent(carbon_12, carbon_13)
+
+
 def _wildcard_candidate(role: str):
     forward = nx.Graph()
     backward = nx.Graph()

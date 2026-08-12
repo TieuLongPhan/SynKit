@@ -11,8 +11,7 @@ def find_mtg(
     ground_truth: str,
     node_label_names: Optional[List[str]] = None,
 ) -> Optional[MTG]:
-    """
-    Attempt to construct a Mapping Transformation Graph (MTG) for two input graphs
+    """Attempt to construct a Mapping Transformation Graph (MTG) for two input graphs
     by finding maximum common substructure mappings and validating against a ground truth.
 
     :param g1: The first input graph to match.
@@ -25,12 +24,13 @@ def find_mtg(
     :param node_label_names: List of node attribute names to use for MCS matching.
         Defaults to ["element", "charge", "hcount"].
     :type node_label_names: list of str, optional
-    :returns: An MTG instance if a valid mapping satisfying the ground truth is found;
+    :return: An MTG instance if a valid mapping satisfying the ground truth is found;
         otherwise, None.
     :rtype: MTG or None
     :raises ValueError: If input graphs are empty or ground_truth is invalid format.
 
-    :example:
+    .. rubric:: Examples
+
     >>> from networkx import Graph
     >>> g1, g2 = Graph(), Graph()
     >>> # populate g1 and g2 with nodes/edges

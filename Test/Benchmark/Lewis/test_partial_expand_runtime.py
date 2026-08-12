@@ -45,10 +45,7 @@ def _write_run(
             )
     write_timing_artifact(
         source=generated,
-        output=(
-            directory
-            / f"general-{method}-run-{repetition:02d}-timings.json.gz"
-        ),
+        output=(directory / f"general-{method}-run-{repetition:02d}-timings.json.gz"),
         dataset=dataset,
         method=method,
         repetition=repetition,

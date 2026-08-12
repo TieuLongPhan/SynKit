@@ -1,6 +1,6 @@
 import unittest
 
-from synkit.IO.chem_converter import rsmi_to_graph, rsmi_to_its
+from synkit.IO.chem_converter import rsmi_to_graph, rsmi_to_its, smiles_to_graph
 from synkit.Synthesis.Reactor.rule_filter import RuleFilter
 
 
@@ -16,6 +16,24 @@ class TestRuleFilter(unittest.TestCase):
         filtered = RuleFilter(host, [rule], engine="nx")
 
         self.assertEqual(filtered.new_rules, [rule])
+
+    def test_wildcard_context_is_removed_before_prefiltering(self):
+        host = smiles_to_graph("CC")
+        rule = rsmi_to_its("[*:1][C:2]>>[*:1][O:2]", core=False)
+
+        for engine in ("turbo", "sing", "nx"):
+            with self.subTest(engine=engine):
+                filtered = RuleFilter(host, [rule], engine=engine)
+                self.assertEqual(filtered.new_rules, [rule])
+
+    def test_empty_pattern_matches_every_host(self):
+        host = smiles_to_graph("C")
+        rule = rsmi_to_its("[*:1]>>[*:1]", core=True)
+
+        for engine in ("turbo", "sing", "nx"):
+            with self.subTest(engine=engine):
+                filtered = RuleFilter(host, [rule], engine=engine)
+                self.assertEqual(filtered.new_rules, [rule])
 
 
 if __name__ == "__main__":

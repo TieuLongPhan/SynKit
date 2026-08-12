@@ -15,12 +15,15 @@ class MorganFPs:
         Morgan algorithm, approximating Extended Connectivity Fingerprints
         (ECFPs).
 
-        Parameters:
-        - graph (nx.Graph): The graph to analyze.
-        - radius (int): The radius to consider for node neighborhood analysis.
-        - nBits (int): Total number of bits in the final fingerprint output.
-        - hash_alg (str): Hash algorithm to use for generating hashes of node
-        neighborhoods.
+        :param graph: The graph to analyze.
+        :type graph: nx.Graph
+        :param radius: The radius to consider for node neighborhood analysis.
+        :type radius: int
+        :param nBits: Total number of bits in the final fingerprint output.
+        :type nBits: int
+        :param hash_alg: Hash algorithm to use for generating hashes of node
+                         neighborhoods.
+        :type hash_alg: str
         """
         self.graph = graph
         self.radius = radius
@@ -33,9 +36,8 @@ class MorganFPs:
         environments of nodes. Ensures the output is exactly `nBits` in length
         using iterative deepening if necessary.
 
-        Returns:
-        - str: A binary string of length `nBits` representing the fingerprint of the
-        graph.
+        :return: A binary string of length `nBits` representing the fingerprint of the graph.
+        :rtype: str
         """
         fingerprint = ""
         for node in self.graph.nodes():
@@ -70,13 +72,14 @@ class MorganFPs:
         """Extend the hash length using iterative hashing until the desired bit
         length is achieved.
 
-        Parameters:
-        - hash_object (hashlib._Hash): The hash object used for iterative deepening.
-        - remaining_bits (int): Number of bits needed to complete the fingerprint to
-        `nBits`.
+        :param hash_object: The hash object used for iterative deepening.
+        :type hash_object: hashlib._Hash
+        :param remaining_bits: Number of bits needed to complete the fingerprint to
+                               `nBits`.
+        :type remaining_bits: int
 
-        Returns:
-        - str: Additional binary data to achieve the desired hash length.
+        :return: Additional binary data to achieve the desired hash length.
+        :rtype: str
         """
         additional_data = ""
         while len(additional_data) * 4 < remaining_bits:

@@ -23,7 +23,7 @@ class SpeciesProperty:
     """
     Canonical description of a chemical species (node).
 
-    The class is *fluent*: mutating helpers return ``self`` so you can chain calls.
+    Mutating helpers return ``self`` to support method chaining.
     Access results via attributes or :py:meth:`to_dict`.
 
     :param identifier: User-facing identifier (e.g., "A", "CH4").
@@ -77,10 +77,9 @@ class SpeciesProperty:
     # ---- Derived keys / serialization ----
     @property
     def canonical_id(self) -> str:
-        """
-        Stable key combining preferred canonical fields.
+        """Stable key combining preferred canonical fields.
 
-        :returns: A composited key like ``"CH4|a1b2c3d4e5f6"``.
+        :return: A composited key like ``"CH4|a1b2c3d4e5f6"``.
         """
         if self.smiles:
             base = f"smiles:{self.smiles}"

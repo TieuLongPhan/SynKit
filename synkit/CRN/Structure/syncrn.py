@@ -15,8 +15,7 @@ _REACTION_SPLIT_RE = re.compile(r"\s*>>\s*")
 
 
 def _default_parse_side_text(side_text: str) -> Dict[str, int]:
-    """
-    Parse one reaction side into a ``species -> coefficient`` mapping.
+    """Parse one reaction side into a ``species -> coefficient`` mapping.
 
     Supported examples include plain species lists, integer stoichiometric
     prefixes, and dot-separated species tokens.
@@ -33,12 +32,12 @@ def _default_parse_side_text(side_text: str) -> Dict[str, int]:
         One side of a reaction string.
     :type side_text: str
 
-    :returns:
+    :return:
         Mapping from species label to stoichiometric coefficient.
     :rtype: Dict[str, int]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         _default_parse_side_text("2A + B")
@@ -76,8 +75,7 @@ def _default_parse_side_text(side_text: str) -> Dict[str, int]:
 
 
 def _coerce_side_counts(obj: Any) -> Dict[str, int]:
-    """
-    Coerce a parsed side object into a plain dictionary.
+    """Coerce a parsed side object into a plain dictionary.
 
     This helper accepts plain mappings, objects exposing ``to_dict()``, and
     RXNSide-like objects exposing ``items()``.
@@ -86,15 +84,15 @@ def _coerce_side_counts(obj: Any) -> Dict[str, int]:
         Parsed side object.
     :type obj: Any
 
-    :returns:
+    :return:
         Mapping from species label to stoichiometric coefficient.
     :rtype: Dict[str, int]
 
     :raises TypeError:
         If the object cannot be interpreted as a side-count mapping.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         _coerce_side_counts({"A": 2, "B": 1})
@@ -119,19 +117,18 @@ def _coerce_side_counts(obj: Any) -> Dict[str, int]:
 
 
 def _stable_sort_key(x: Any) -> Tuple[str, str]:
-    """
-    Return a stable sort key for mixed node-id types.
+    """Return a stable sort key for mixed node-id types.
 
     :param x:
         Any object that can be represented with ``repr``.
     :type x: Any
 
-    :returns:
+    :return:
         Tuple based on type name and repr.
     :rtype: Tuple[str, str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         sorted(nodes, key=_stable_sort_key)
@@ -140,8 +137,7 @@ def _stable_sort_key(x: Any) -> Tuple[str, str]:
 
 
 def _edge_side(is_incoming: bool, role: Optional[str]) -> str:
-    """
-    Resolve the side of a reaction incidence edge.
+    """Resolve the side of a reaction incidence edge.
 
     Explicit edge role takes priority. If no role is provided, graph direction
     is used:
@@ -157,12 +153,12 @@ def _edge_side(is_incoming: bool, role: Optional[str]) -> str:
         Optional edge role, usually ``"reactant"`` or ``"product"``.
     :type role: Optional[str]
 
-    :returns:
+    :return:
         Either ``"lhs"`` or ``"rhs"``.
     :rtype: str
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         _edge_side(True, "reactant")
@@ -181,8 +177,7 @@ def _collect_bipartite_nodes(
     species_kind: str,
     reaction_kinds: Tuple[str, ...],
 ) -> Tuple[List[Hashable], List[Hashable]]:
-    """
-    Collect species and reaction-like nodes from a bipartite CRN graph.
+    """Collect species and reaction-like nodes from a bipartite CRN graph.
 
     :param crn:
         Directed bipartite CRN graph.
@@ -196,12 +191,12 @@ def _collect_bipartite_nodes(
         Node-kind values identifying reaction or rule nodes.
     :type reaction_kinds: Tuple[str, ...]
 
-    :returns:
+    :return:
         Pair ``(species_nodes, reaction_nodes)`` in deterministic order.
     :rtype: Tuple[List[Hashable], List[Hashable]]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         species_nodes, reaction_nodes = _collect_bipartite_nodes(
@@ -234,8 +229,7 @@ def _validate_bipartite_node_sets(
     reaction_nodes: List[Hashable],
     strict: bool,
 ) -> None:
-    """
-    Validate that a bipartite CRN graph contains required node classes.
+    """Validate that a bipartite CRN graph contains required node classes.
 
     :param species_nodes:
         Collected species nodes.
@@ -249,7 +243,7 @@ def _validate_bipartite_node_sets(
         Whether missing classes should raise an error.
     :type strict: bool
 
-    :returns:
+    :return:
         None.
     :rtype: None
     """
@@ -266,8 +260,7 @@ def _make_internal_id_maps(
     species_prefix: str,
     reaction_prefix: str,
 ) -> Tuple[Dict[Hashable, str], Dict[Hashable, str]]:
-    """
-    Build internal id maps for species and reaction nodes.
+    """Build internal id maps for species and reaction nodes.
 
     :param species_nodes:
         Ordered species nodes.
@@ -285,7 +278,7 @@ def _make_internal_id_maps(
         Prefix for generated reaction ids.
     :type reaction_prefix: str
 
-    :returns:
+    :return:
         Pair ``(species_node_to_id, reaction_node_to_id)``.
     :rtype: Tuple[Dict[Hashable, str], Dict[Hashable, str]]
     """
@@ -304,8 +297,7 @@ def _build_species_table_from_graph(
     species_nodes: List[Hashable],
     species_node_to_id: Dict[Hashable, str],
 ) -> Dict[str, Species]:
-    """
-    Build the canonical species table from graph species nodes.
+    """Build the canonical species table from graph species nodes.
 
     :param crn:
         Source CRN graph.
@@ -319,7 +311,7 @@ def _build_species_table_from_graph(
         Mapping from source node id to internal species id.
     :type species_node_to_id: Dict[Hashable, str]
 
-    :returns:
+    :return:
         Species table keyed by internal species id.
     :rtype: Dict[str, Species]
     """
@@ -345,8 +337,7 @@ def _collect_reaction_sides_from_graph(
     species_node_to_id: Dict[Hashable, str],
     strict: bool,
 ) -> Tuple[RXNSide, RXNSide, Dict[str, Dict[str, Any]], Dict[str, Dict[str, Any]]]:
-    """
-    Collect reactant and product sides for one reaction node.
+    """Collect reactant and product sides for one reaction node.
 
     :param crn:
         Source CRN graph.
@@ -364,7 +355,7 @@ def _collect_reaction_sides_from_graph(
         Whether malformed structure should raise an error.
     :type strict: bool
 
-    :returns:
+    :return:
         Tuple ``(lhs, rhs, reactant_edge_attrs, product_edge_attrs)``.
     :rtype: Tuple[RXNSide, RXNSide, Dict[str, Dict[str, Any]], Dict[str, Dict[str, Any]]]
     """
@@ -431,8 +422,7 @@ def _validate_nonempty_reaction_sides(
     rhs: RXNSide,
     strict: bool,
 ) -> None:
-    """
-    Validate that a reaction has non-empty lhs and rhs sides when strict mode is enabled.
+    """Validate that a reaction has non-empty lhs and rhs sides when strict mode is enabled.
 
     :param rnode:
         Source reaction node id.
@@ -450,7 +440,7 @@ def _validate_nonempty_reaction_sides(
         Whether empty sides should raise an error.
     :type strict: bool
 
-    :returns:
+    :return:
         None.
     :rtype: None
     """
@@ -467,8 +457,7 @@ def _get_or_create_rule_from_attrs(
     rule_key_to_id: Dict[Tuple[Optional[int], Optional[str]], str],
     rule_prefix: str,
 ) -> Optional[str]:
-    """
-    Get or create a canonical rule entry from reaction-node attributes.
+    """Get or create a canonical rule entry from reaction-node attributes.
 
     :param rattrs:
         Reaction-node attribute dictionary.
@@ -486,7 +475,7 @@ def _get_or_create_rule_from_attrs(
         Prefix used when creating new rule ids.
     :type rule_prefix: str
 
-    :returns:
+    :return:
         Canonical rule id if a rule is defined, else ``None``.
     :rtype: Optional[str]
     """
@@ -522,8 +511,7 @@ def _build_reaction_from_graph_node(
     rule_prefix: str,
     strict: bool,
 ) -> Reaction:
-    """
-    Build one canonical Reaction object from a graph reaction node.
+    """Build one canonical Reaction object from a graph reaction node.
 
     :param crn:
         Source CRN graph.
@@ -557,7 +545,7 @@ def _build_reaction_from_graph_node(
         Whether malformed structure should raise an error.
     :type strict: bool
 
-    :returns:
+    :return:
         Canonical reaction object.
     :rtype: Reaction
     """
@@ -606,8 +594,7 @@ def _normalize_side_counts(
     side_name: str,
     strict: bool,
 ) -> Dict[str, int]:
-    """
-    Normalize a parsed reaction side into a validated label-to-coefficient mapping.
+    """Normalize a parsed reaction side into a validated label-to-coefficient mapping.
 
     :param counts:
         Parsed side object.
@@ -625,7 +612,7 @@ def _normalize_side_counts(
         Whether invalid labels or coefficients should raise an error.
     :type strict: bool
 
-    :returns:
+    :return:
         Cleaned mapping from species label to coefficient.
     :rtype: Dict[str, int]
     """
@@ -671,8 +658,7 @@ def _parse_reaction_string_entry(
     parse_side: Callable[[str], Any],
     strict: bool,
 ) -> Dict[str, Any]:
-    """
-    Parse one reaction string into normalized lhs/rhs count dictionaries.
+    """Parse one reaction string into normalized lhs/rhs count dictionaries.
 
     :param rxn_text:
         Raw reaction string such as ``"2A>>B+3C"``.
@@ -698,7 +684,7 @@ def _parse_reaction_string_entry(
         Whether malformed input should raise an error.
     :type strict: bool
 
-    :returns:
+    :return:
         Parsed reaction record.
     :rtype: Dict[str, Any]
     """
@@ -742,14 +728,13 @@ def _parse_reaction_string_entry(
 def _species_order_from_parsed_reactions(
     parsed_rxns: List[Dict[str, Any]],
 ) -> List[str]:
-    """
-    Derive species order by first appearance in parsed reactions.
+    """Derive species order by first appearance in parsed reactions.
 
     :param parsed_rxns:
         Parsed reaction entries.
     :type parsed_rxns: List[Dict[str, Any]]
 
-    :returns:
+    :return:
         Ordered species labels.
     :rtype: List[str]
     """
@@ -766,14 +751,13 @@ def _species_order_from_parsed_reactions(
 
 
 def _build_species_table_from_labels(species_order: List[str]) -> Dict[str, Species]:
-    """
-    Build the canonical species table from an ordered list of species labels.
+    """Build the canonical species table from an ordered list of species labels.
 
     :param species_order:
         Species labels in canonical order.
     :type species_order: List[str]
 
-    :returns:
+    :return:
         Species table keyed by canonical string ids.
     :rtype: Dict[str, Species]
     """
@@ -799,8 +783,7 @@ def _build_rules_table_from_reaction_strings(
     *,
     has_rules: bool,
 ) -> Dict[str, Rule]:
-    """
-    Build the abstract rules table for reaction-string input.
+    """Build the abstract rules table for reaction-string input.
 
     :param parsed_rxns:
         Parsed reaction entries.
@@ -810,7 +793,7 @@ def _build_rules_table_from_reaction_strings(
         Whether rules were supplied pairwise.
     :type has_rules: bool
 
-    :returns:
+    :return:
         Rule table keyed by canonical rule ids.
     :rtype: Dict[str, Rule]
     """
@@ -839,8 +822,7 @@ def _build_reactions_from_parsed_strings(
     reaction_start_index: int,
     has_rules: bool,
 ) -> Dict[str, Reaction]:
-    """
-    Build canonical Reaction objects from parsed reaction-string entries.
+    """Build canonical Reaction objects from parsed reaction-string entries.
 
     :param parsed_rxns:
         Parsed reaction entries.
@@ -858,7 +840,7 @@ def _build_reactions_from_parsed_strings(
         Whether rules were supplied pairwise.
     :type has_rules: bool
 
-    :returns:
+    :return:
         Reaction table keyed by canonical reaction ids.
     :rtype: Dict[str, Reaction]
     """
@@ -916,8 +898,7 @@ def _build_reactions_from_parsed_strings(
 
 
 def _resolve_species_node_id(sp: Species, *, node_ids: str) -> Hashable:
-    """
-    Resolve the node id for one species during graph reconstruction.
+    """Resolve the node id for one species during graph reconstruction.
 
     :param sp:
         Species record.
@@ -927,7 +908,7 @@ def _resolve_species_node_id(sp: Species, *, node_ids: str) -> Hashable:
         Either ``"source"`` or ``"internal"``.
     :type node_ids: str
 
-    :returns:
+    :return:
         Reconstructed graph node id.
     :rtype: Hashable
     """
@@ -935,8 +916,7 @@ def _resolve_species_node_id(sp: Species, *, node_ids: str) -> Hashable:
 
 
 def _resolve_reaction_node_id(rxn: Reaction, *, node_ids: str) -> Hashable:
-    """
-    Resolve the node id for one reaction during graph reconstruction.
+    """Resolve the node id for one reaction during graph reconstruction.
 
     :param rxn:
         Reaction record.
@@ -946,7 +926,7 @@ def _resolve_reaction_node_id(rxn: Reaction, *, node_ids: str) -> Hashable:
         Either ``"source"`` or ``"internal"``.
     :type node_ids: str
 
-    :returns:
+    :return:
         Reconstructed graph node id.
     :rtype: Hashable
     """
@@ -958,8 +938,7 @@ def _species_node_attrs(
     *,
     include_internal_ids: bool,
 ) -> Dict[str, Any]:
-    """
-    Build species-node attributes for graph reconstruction.
+    """Build species-node attributes for graph reconstruction.
 
     :param sp:
         Species record.
@@ -969,7 +948,7 @@ def _species_node_attrs(
         Whether canonical ids should be attached as attributes.
     :type include_internal_ids: bool
 
-    :returns:
+    :return:
         Node-attribute dictionary.
     :rtype: Dict[str, Any]
     """
@@ -989,8 +968,7 @@ def _reaction_node_attrs(
     reaction_kind: Optional[str],
     include_internal_ids: bool,
 ) -> Dict[str, Any]:
-    """
-    Build reaction-node attributes for graph reconstruction.
+    """Build reaction-node attributes for graph reconstruction.
 
     :param rxn:
         Reaction record.
@@ -1004,7 +982,7 @@ def _reaction_node_attrs(
         Whether canonical ids should be attached as attributes.
     :type include_internal_ids: bool
 
-    :returns:
+    :return:
         Node-attribute dictionary.
     :rtype: Dict[str, Any]
     """
@@ -1030,8 +1008,7 @@ def _add_reaction_edges_to_graph(
     reaction_node: Hashable,
     species_node_map: Dict[str, Hashable],
 ) -> None:
-    """
-    Add reactant and product incidence edges for one reaction.
+    """Add reactant and product incidence edges for one reaction.
 
     :param g:
         Graph under construction.
@@ -1049,7 +1026,7 @@ def _add_reaction_edges_to_graph(
         Mapping from canonical species ids to graph node ids.
     :type species_node_map: Dict[str, Hashable]
 
-    :returns:
+    :return:
         None.
     :rtype: None
     """
@@ -1078,8 +1055,7 @@ def _add_reaction_edges_to_graph(
 
 @dataclass
 class SynCRN:
-    """
-    Canonical reaction-system object for SynKit-CRN.
+    """Canonical reaction-system object for SynKit-CRN.
 
     Official representations exposed by this object
     ------------------------------------------------
@@ -1115,8 +1091,8 @@ class SynCRN:
         Additional canonical metadata for the SynCRN object.
     :type metadata: Dict[str, Any]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         syn = SynCRN.from_reaction_strings(["A>>B", "B>>C"])
@@ -1142,8 +1118,7 @@ class SynCRN:
         rule_prefix: str = "rule_",
         strict: bool = True,
     ) -> "SynCRN":
-        """
-        Build a canonical SynCRN object from a species--reaction bipartite digraph.
+        """Build a canonical SynCRN object from a species--reaction bipartite digraph.
 
         The current SynKit-CRN graph frequently stores concrete reaction-instance
         nodes with ``kind="rule"``. This constructor preserves that original kind
@@ -1178,15 +1153,15 @@ class SynCRN:
             Whether malformed graph structure should raise an error.
         :type strict: bool
 
-        :returns:
+        :return:
             Canonical SynCRN object.
         :rtype: SynCRN
 
         :raises TypeError:
             If ``crn`` is not an ``nx.DiGraph``.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             syn = SynCRN.from_digraph(crn)
@@ -1246,15 +1221,14 @@ class SynCRN:
 
     @property
     def species_ids(self) -> List[str]:
-        """
-        Return the internal species order.
+        """Return the internal species order.
 
-        :returns:
+        :return:
             Ordered list of species ids.
         :rtype: List[str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             print(syn.species_ids)
@@ -1263,15 +1237,14 @@ class SynCRN:
 
     @property
     def reaction_ids(self) -> List[str]:
-        """
-        Return the internal reaction order.
+        """Return the internal reaction order.
 
-        :returns:
+        :return:
             Ordered list of reaction ids.
         :rtype: List[str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             print(syn.reaction_ids)
@@ -1280,15 +1253,14 @@ class SynCRN:
 
     @property
     def rule_ids(self) -> List[str]:
-        """
-        Return the internal rule order.
+        """Return the internal rule order.
 
-        :returns:
+        :return:
             Ordered list of rule ids.
         :rtype: List[str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             print(syn.rule_ids)
@@ -1297,10 +1269,9 @@ class SynCRN:
 
     @property
     def n_species(self) -> int:
-        """
-        Return the number of species.
+        """Return the number of species.
 
-        :returns:
+        :return:
             Number of species.
         :rtype: int
         """
@@ -1308,10 +1279,9 @@ class SynCRN:
 
     @property
     def n_reactions(self) -> int:
-        """
-        Return the number of reactions.
+        """Return the number of reactions.
 
-        :returns:
+        :return:
             Number of reactions.
         :rtype: int
         """
@@ -1319,20 +1289,18 @@ class SynCRN:
 
     @property
     def n_rules(self) -> int:
-        """
-        Return the number of unique abstract rules.
+        """Return the number of unique abstract rules.
 
-        :returns:
+        :return:
             Number of rules.
         :rtype: int
         """
         return len(self.rules)
 
     def __repr__(self) -> str:
-        """
-        Return a compact developer-facing representation.
+        """Return a compact developer-facing representation.
 
-        :returns:
+        :return:
             Summary representation string.
         :rtype: str
         """
@@ -1342,18 +1310,16 @@ class SynCRN:
         )
 
     def __str__(self) -> str:
-        """
-        Return a human-readable text summary.
+        """Return a human-readable text summary.
 
-        :returns:
+        :return:
             Multiline description string.
         :rtype: str
         """
         return self.describe(include_species=True, species="label")
 
     def _species_token(self, species_id: str, mode: str = "label") -> str:
-        """
-        Resolve how a species should be displayed.
+        """Resolve how a species should be displayed.
 
         Supported modes are ``"id"``, ``"label"``, ``"smiles"``, and ``"source"``.
 
@@ -1365,15 +1331,15 @@ class SynCRN:
             Species display mode.
         :type mode: str
 
-        :returns:
+        :return:
             Display token for the species.
         :rtype: str
 
         :raises ValueError:
             If the display mode is unsupported.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             syn._species_token("1", mode="label")
@@ -1399,8 +1365,7 @@ class SynCRN:
         include_step: bool = False,
         arrow: str = ">>",
     ) -> str:
-        """
-        Format one reaction as text.
+        """Format one reaction as text.
 
         :param reaction_id:
             Internal reaction id.
@@ -1426,12 +1391,12 @@ class SynCRN:
             Arrow string between lhs and rhs.
         :type arrow: str
 
-        :returns:
+        :return:
             Human-readable reaction string.
         :rtype: str
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             syn.format_reaction("r_1", species="label", include_rule=True)
@@ -1454,8 +1419,7 @@ class SynCRN:
         include_step: bool = False,
         arrow: str = ">>",
     ) -> List[str]:
-        """
-        Return the network as a list of formatted reaction equations.
+        """Return the network as a list of formatted reaction equations.
 
         :param species:
             Species display mode.
@@ -1477,12 +1441,12 @@ class SynCRN:
             Arrow string between lhs and rhs.
         :type arrow: str
 
-        :returns:
+        :return:
             List of formatted reaction equations.
         :rtype: List[str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             eqs = syn.to_equations(species="smiles", include_rule=True)
@@ -1506,8 +1470,7 @@ class SynCRN:
         include_species: bool = False,
         species: str = "label",
     ) -> str:
-        """
-        Return a human-readable multiline description of the network.
+        """Return a human-readable multiline description of the network.
 
         :param include_species:
             Whether to append a final line listing species names.
@@ -1517,12 +1480,12 @@ class SynCRN:
             Species display mode used in the text summary.
         :type species: str
 
-        :returns:
+        :return:
             Multiline text description.
         :rtype: str
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             print(syn.describe(include_species=True, species="label"))
@@ -1551,15 +1514,14 @@ class SynCRN:
         return "\n".join(lines)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Return a nested JSON-like dictionary representation.
+        """Return a nested JSON-like dictionary representation.
 
-        :returns:
+        :return:
             Full SynCRN object as a dictionary.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             data = syn.to_dict()
@@ -1574,8 +1536,7 @@ class SynCRN:
         }
 
     def to_stoichiometric_matrices(self) -> Dict[str, Any]:
-        """
-        Construct stoichiometric matrices in canonical species and reaction order.
+        """Construct stoichiometric matrices in canonical species and reaction order.
 
         The returned dictionary contains:
 
@@ -1585,12 +1546,12 @@ class SynCRN:
         - ``S_plus``: product-incidence matrix
         - ``S``: net stoichiometric matrix
 
-        :returns:
+        :return:
             Stoichiometric matrix view of the network.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             mats = syn.to_stoichiometric_matrices()
@@ -1628,8 +1589,7 @@ class SynCRN:
         }
 
     def to_petrinet(self) -> Dict[str, Any]:
-        """
-        Return a Petri-net style pre/post incidence view.
+        """Return a Petri-net style pre/post incidence view.
 
         The returned dictionary contains:
 
@@ -1638,12 +1598,12 @@ class SynCRN:
         - ``pre``: input incidence map
         - ``post``: output incidence map
 
-        :returns:
+        :return:
             Petri-net incidence representation.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             pn = syn.to_petrinet()
@@ -1673,8 +1633,7 @@ class SynCRN:
         reaction_kind: Optional[str] = None,
         include_internal_ids: bool = True,
     ) -> nx.DiGraph:
-        """
-        Reconstruct a species--reaction bipartite digraph.
+        """Reconstruct a species--reaction bipartite digraph.
 
         By default, this method preserves original node ids and original
         reaction-node kinds. This means that input reaction nodes with
@@ -1693,15 +1652,15 @@ class SynCRN:
             Whether to attach ``syncrn_id`` and ``source_node_id`` as node attributes.
         :type include_internal_ids: bool
 
-        :returns:
+        :return:
             Reconstructed bipartite digraph.
         :rtype: nx.DiGraph
 
         :raises ValueError:
             If ``node_ids`` is not ``"source"`` or ``"internal"``.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             g2 = syn.to_digraph()
@@ -1756,8 +1715,7 @@ class SynCRN:
         parser: Optional[Callable[[str], Any]] = None,
         strict: bool = True,
     ) -> "SynCRN":
-        """
-        Build a SynCRN object directly from reaction strings.
+        """Build a SynCRN object directly from reaction strings.
 
         Reactions and rules are interpreted pairwise, so ``rxns[i]`` corresponds
         to ``rules[i]``.
@@ -1790,7 +1748,7 @@ class SynCRN:
             Whether malformed reaction strings or empty sides should raise an error.
         :type strict: bool
 
-        :returns:
+        :return:
             Canonical SynCRN object.
         :rtype: SynCRN
 
@@ -1800,8 +1758,8 @@ class SynCRN:
         :raises ValueError:
             If reaction strings are malformed or rules are not pairwise aligned.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             syn = SynCRN.from_reaction_strings(["2A>>B+3C"])

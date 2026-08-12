@@ -68,6 +68,43 @@ class TestSubgraphMatch(unittest.TestCase):
         )
         self.assertFalse(result)
 
+    def test_filter_does_not_assume_shared_node_identifiers(self):
+        host = nx.cycle_graph(3)
+        pattern = nx.Graph()
+        pattern.add_edge(10, 11, order=1)
+        nx.set_node_attributes(host, "C", "element")
+        nx.set_node_attributes(host, 0, "charge")
+        nx.set_edge_attributes(host, 1, "order")
+        nx.set_node_attributes(pattern, "C", "element")
+        nx.set_node_attributes(pattern, 0, "charge")
+
+        self.assertTrue(
+            self.gm.subgraph_isomorphism(
+                pattern,
+                host,
+                use_filter=True,
+                check_type="monomorphism",
+            )
+        )
+
+    def test_directed_edges_preserve_orientation(self):
+        host = nx.DiGraph()
+        host.add_edge(0, 1, order=1)
+        host.nodes[0].update(element="C", charge=0)
+        host.nodes[1].update(element="O", charge=0)
+        pattern = nx.DiGraph()
+        pattern.add_edge(10, 11, order=1)
+        pattern.nodes[10].update(element="O", charge=0)
+        pattern.nodes[11].update(element="C", charge=0)
+
+        self.assertFalse(
+            self.gm.subgraph_isomorphism(
+                pattern,
+                host,
+                check_type="monomorphism",
+            )
+        )
+
 
 class TestSubGraphSearchEngine(unittest.TestCase):
 
@@ -94,6 +131,28 @@ class TestSubGraphSearchEngine(unittest.TestCase):
             edge_attrs=["order"],
         )
         self.assertEqual(len(mapping), 0)
+
+    def test_directed_search_preserves_orientation_for_all_strategies(self):
+        host = nx.DiGraph()
+        host.add_edge(0, 1, order=1)
+        host.nodes[0]["element"] = "C"
+        host.nodes[1]["element"] = "O"
+        pattern = nx.DiGraph()
+        pattern.add_edge(10, 11, order=1)
+        pattern.nodes[10]["element"] = "O"
+        pattern.nodes[11]["element"] = "C"
+
+        for strategy in ("all", "comp", "bt"):
+            with self.subTest(strategy=strategy):
+                mappings = self.gm.find_subgraph_mappings(
+                    host,
+                    pattern,
+                    node_attrs=["element"],
+                    edge_attrs=["order"],
+                    strategy=strategy,
+                    threshold=None,
+                )
+                self.assertEqual(mappings, [])
 
     def test_pre_filter_does_not_reject_large_candidate_domain(self):
         host = nx.cycle_graph(10)
@@ -295,6 +354,37 @@ class TestSubGraphSearchEngine(unittest.TestCase):
                 ["order", "sigma_order", "pi_order"],
             )
         )
+
+    def test_zero_result_cap_returns_no_mappings(self):
+        mappings = SubgraphSearchEngine.find_subgraph_mappings(
+            nx.path_graph(3),
+            nx.path_graph(2),
+            node_attrs=[],
+            edge_attrs=[],
+            strategy="all",
+            max_results=0,
+            threshold=None,
+        )
+
+        self.assertEqual(mappings, [])
+
+    def test_negative_search_caps_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "max_results"):
+            SubgraphSearchEngine.find_subgraph_mappings(
+                nx.path_graph(3),
+                nx.path_graph(2),
+                node_attrs=[],
+                edge_attrs=[],
+                max_results=-1,
+            )
+        with self.assertRaisesRegex(ValueError, "threshold"):
+            SubgraphSearchEngine.find_subgraph_mappings(
+                nx.path_graph(3),
+                nx.path_graph(2),
+                node_attrs=[],
+                edge_attrs=[],
+                threshold=-1,
+            )
 
 
 if __name__ == "__main__":

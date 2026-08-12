@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import networkx as nx
 from rdkit import Chem
@@ -24,6 +24,8 @@ def _explicit_h(rc: nx.Graph) -> nx.Graph:
         return _explicit_h_tuple(rc)
 
     next_id = max((n for n in rc.nodes if isinstance(n, int)), default=-1) + 1
+    structural_dirty_nodes = rc.graph.get("_structural_exact_dirty_nodes")
+    structural_dirty_edges = rc.graph.get("_structural_exact_dirty_edges")
     orig_delta: Dict[int, int] = {}
     pair_to_nodes: Dict[int, List[int]] = defaultdict(list)
 
@@ -69,9 +71,16 @@ def _explicit_h(rc: nx.Graph) -> nx.Graph:
         )
         rc.add_edge(src, h, order=(1, 0), standard_order=1)
         rc.add_edge(h, dst, order=(0, 1), standard_order=-1)
+        if isinstance(structural_dirty_nodes, set):
+            structural_dirty_nodes.add(h)
+        if isinstance(structural_dirty_edges, set):
+            structural_dirty_edges.update(((src, h), (h, dst)))
 
     affected = [n for nodes in pair_to_nodes.values() for n in nodes]
     for n in affected:
+        rc.nodes[n].pop("_structural_exact_node_sig", None)
+        if isinstance(structural_dirty_nodes, set):
+            structural_dirty_nodes.add(n)
         t0, t1 = rc.nodes[n]["typesGH"]
         delta_h = t0[2] - t1[2]
         if delta_h >= 0:
@@ -88,6 +97,8 @@ def _explicit_h(rc: nx.Graph) -> nx.Graph:
 def _explicit_h_tuple(rc: nx.Graph) -> nx.Graph:
     """Materialize only hydrogens that were explicit in the template."""
     next_id = max((n for n in rc.nodes if isinstance(n, int)), default=-1) + 1
+    structural_dirty_nodes = rc.graph.get("_structural_exact_dirty_nodes")
+    structural_dirty_edges = rc.graph.get("_structural_exact_dirty_edges")
     pair_left: Dict[int, int] = {}
     pair_right: Dict[int, int] = {}
     for n, data in rc.nodes(data=True):
@@ -135,6 +146,8 @@ def _explicit_h_tuple(rc: nx.Graph) -> nx.Graph:
             present=(True, True),
             typesGH=(("H", False, 0, 0, []), ("H", False, 0, 0, [])),
         )
+        if isinstance(structural_dirty_nodes, set):
+            structural_dirty_nodes.add(h)
         if src == dst:
             rc.add_edge(
                 src,
@@ -145,6 +158,8 @@ def _explicit_h_tuple(rc: nx.Graph) -> nx.Graph:
                 pi_order=(0.0, 0.0),
                 standard_order=0.0,
             )
+            if isinstance(structural_dirty_edges, set):
+                structural_dirty_edges.add((src, h))
             continue
         rc.add_edge(
             src,
@@ -164,10 +179,16 @@ def _explicit_h_tuple(rc: nx.Graph) -> nx.Graph:
             pi_order=(0.0, 0.0),
             standard_order=-1.0,
         )
+        if isinstance(structural_dirty_edges, set):
+            structural_dirty_edges.update(((src, h), (h, dst)))
 
     for pair_id in explicit_pairs:
         src = pair_left[pair_id]
         dst = pair_right[pair_id]
+        rc.nodes[src].pop("_structural_exact_node_sig", None)
+        rc.nodes[dst].pop("_structural_exact_node_sig", None)
+        if isinstance(structural_dirty_nodes, set):
+            structural_dirty_nodes.update((src, dst))
         if src == dst:
             h0, h1 = rc.nodes[src]["hcount"]
             rc.nodes[src]["hcount"] = (h0 - 1, h1 - 1)
@@ -277,14 +298,21 @@ def _tuple_preserved_hydrogen_maps(its: nx.Graph) -> List[int]:
     return sorted(atom_maps)
 
 
-def _tuple_endpoint_graphs(its: nx.Graph) -> Tuple[nx.Graph, nx.Graph]:
-    """Project both tuple endpoints in one ITS traversal.
+def _tuple_endpoint_graphs(
+    its: nx.Graph,
+    *,
+    sides: Tuple[int, ...] = (0, 1),
+) -> Tuple[nx.Graph, ...]:
+    """Project selected tuple endpoints in one ITS traversal.
 
     ``ITSReverter`` exposes one side at a time.  Serialization always needs
-    both, so projecting them together avoids scanning and decoding every
-    tuple attribute twice while preserving the same endpoint schema.
+    both for its first product and only the product side after the invariant
+    substrate SMILES has been cached. Projecting only requested sides avoids
+    building a redundant reactant graph for every additional application.
     """
-    endpoints = (nx.Graph(), nx.Graph())
+    if not sides or len(set(sides)) != len(sides) or set(sides) - {0, 1}:
+        raise ValueError("sides must contain unique endpoint indices 0 and/or 1")
+    endpoints = {side: nx.Graph() for side in sides}
     node_keys = ITSReverter.DEFAULT_NODE_ATTRS
     edge_keys = ITSReverter.DEFAULT_EDGE_ATTRS
 
@@ -293,6 +321,44 @@ def _tuple_endpoint_graphs(its: nx.Graph) -> Tuple[nx.Graph, nx.Graph]:
             return value
         return value, value
 
+    if sides == (1,):
+        # Cached-substrate serialization is the dominant replay path.  Avoid
+        # constructing per-side dictionaries and iterating a one-element side
+        # loop when only the product projection is requested.
+        product = endpoints[1]
+        for node, attrs in its.nodes(data=True):
+            present = attrs.get("present")
+            if isinstance(present, tuple) and len(present) == 2:
+                exists = bool(present[1])
+            else:
+                exists = side_values(attrs.get("element"))[1] not in (None, "")
+            if not exists:
+                continue
+            projected = {
+                key: side_values(attrs[key])[1] for key in node_keys if key in attrs
+            }
+            product.add_node(node, **projected)
+
+        for left, right, attrs in its.edges(data=True):
+            exists = any(
+                side_values(attrs.get(key))[1] not in (None, "", 0, 0.0)
+                for key in ("order", "kekule_order", "bond_type")
+            )
+            if left not in product or right not in product or not exists:
+                continue
+            projected = {
+                key: side_values(attrs[key])[1] for key in edge_keys if key in attrs
+            }
+            product.add_edge(left, right, **projected)
+
+        stereo = its.graph.get("stereo_descriptors", {})
+        if isinstance(stereo, dict) and ("reactant" in stereo or "product" in stereo):
+            product.graph["stereo_descriptors"] = dict(stereo.get("product", {}))
+            product.graph["stereo_projection"] = "product"
+        elif isinstance(stereo, dict):
+            product.graph["stereo_descriptors"] = dict(stereo)
+        return (product,)
+
     for node, attrs in its.nodes(data=True):
         present = attrs.get("present")
         if isinstance(present, tuple) and len(present) == 2:
@@ -300,14 +366,15 @@ def _tuple_endpoint_graphs(its: nx.Graph) -> Tuple[nx.Graph, nx.Graph]:
         else:
             elements = side_values(attrs.get("element"))
             exists = tuple(value not in (None, "") for value in elements)
-        projected = ({}, {})
+        projected = {side: {} for side in sides}
         for key in node_keys:
             if key not in attrs:
                 continue
             left_value, right_value = side_values(attrs[key])
-            projected[0][key] = left_value
-            projected[1][key] = right_value
-        for side in (0, 1):
+            values = (left_value, right_value)
+            for side in sides:
+                projected[side][key] = values[side]
+        for side in sides:
             if exists[side]:
                 endpoints[side].add_node(node, **projected[side])
 
@@ -321,14 +388,15 @@ def _tuple_endpoint_graphs(its: nx.Graph) -> Tuple[nx.Graph, nx.Graph]:
             or bond_types[side] not in (None, "")
             for side in (0, 1)
         )
-        projected = ({}, {})
+        projected = {side: {} for side in sides}
         for key in edge_keys:
             if key not in attrs:
                 continue
             left_value, right_value = side_values(attrs[key])
-            projected[0][key] = left_value
-            projected[1][key] = right_value
-        for side in (0, 1):
+            values = (left_value, right_value)
+            for side in sides:
+                projected[side][key] = values[side]
+        for side in sides:
             endpoint = endpoints[side]
             if left not in endpoint or right not in endpoint or not exists[side]:
                 continue
@@ -336,26 +404,46 @@ def _tuple_endpoint_graphs(its: nx.Graph) -> Tuple[nx.Graph, nx.Graph]:
 
     stereo = its.graph.get("stereo_descriptors", {})
     if isinstance(stereo, dict) and ("reactant" in stereo or "product" in stereo):
-        for side_name, endpoint in zip(("reactant", "product"), endpoints):
+        for side in sides:
+            side_name = ("reactant", "product")[side]
+            endpoint = endpoints[side]
             endpoint.graph["stereo_descriptors"] = dict(stereo.get(side_name, {}))
             endpoint.graph["stereo_projection"] = side_name
     elif isinstance(stereo, dict):
-        for endpoint in endpoints:
+        for endpoint in endpoints.values():
             endpoint.graph["stereo_descriptors"] = dict(stereo)
-    return endpoints
+    return tuple(endpoints[side] for side in sides)
 
 
-def _to_smarts(its: nx.Graph) -> str:
+def _to_smarts(
+    its: nx.Graph,
+    *,
+    reactant_smiles: Optional[str] = None,
+    preserved_hydrogen_maps: Optional[Sequence[int]] = None,
+) -> str:
     electron_aware = bool(its.graph.get("electron_aware_rewrite", False))
     if electron_aware:
-        left, right = _tuple_endpoint_graphs(its)
-        preserved_hydrogens = _tuple_preserved_hydrogen_maps(its)
+        if reactant_smiles is None:
+            left, right = _tuple_endpoint_graphs(its)
+            preserved_hydrogens = list(
+                preserved_hydrogen_maps
+                if preserved_hydrogen_maps is not None
+                else _tuple_preserved_hydrogen_maps(its)
+            )
+        else:
+            (right,) = _tuple_endpoint_graphs(its, sides=(1,))
+            left = None
+            preserved_hydrogens = []
     else:
         left, right = its_decompose(its)
         preserved_hydrogens = []
-    left = remove_wildcard_nodes(left)
+    if left is not None:
+        left = remove_wildcard_nodes(left)
     right = remove_wildcard_nodes(right)
-    r_smi = graph_to_smi(left, preserve_atom_maps=preserved_hydrogens)
+    r_smi = reactant_smiles or graph_to_smi(
+        left,
+        preserve_atom_maps=preserved_hydrogens,
+    )
     if electron_aware:
         p_smi = None
         for candidate_index in range(2):

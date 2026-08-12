@@ -11,8 +11,7 @@ LayoutFunc = Callable[..., Pos]
 
 
 def _sort_nodes(graph: nx.DiGraph, nodes: Iterable[Hashable]) -> List[Hashable]:
-    """
-    Return nodes in a deterministic visualization order.
+    """Return nodes in a deterministic visualization order.
 
     Nodes are sorted by selected node attributes and finally by node identifier.
 
@@ -20,7 +19,7 @@ def _sort_nodes(graph: nx.DiGraph, nodes: Iterable[Hashable]) -> List[Hashable]:
     :type graph: nx.DiGraph
     :param nodes: Nodes to sort.
     :type nodes: Iterable[Hashable]
-    :returns: Sorted node identifiers.
+    :return: Sorted node identifiers.
     :rtype: List[Hashable]
     """
     return sorted(
@@ -43,8 +42,7 @@ def _stack_vertical(
     x: float,
     node_spacing: float,
 ) -> Pos:
-    """
-    Place nodes in a vertical stack centered around ``y = 0``.
+    """Place nodes in a vertical stack centered around ``y = 0``.
 
     :param graph: Directed graph containing node metadata.
     :type graph: nx.DiGraph
@@ -54,7 +52,7 @@ def _stack_vertical(
     :type x: float
     :param node_spacing: Distance between adjacent nodes along the y-axis.
     :type node_spacing: float
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     ordered = _sort_nodes(graph, nodes)
@@ -77,8 +75,7 @@ def _stack_horizontal(
     y: float,
     node_spacing: float,
 ) -> Pos:
-    """
-    Place nodes in a horizontal stack centered around ``x = 0``.
+    """Place nodes in a horizontal stack centered around ``x = 0``.
 
     :param graph: Directed graph containing node metadata.
     :type graph: nx.DiGraph
@@ -88,7 +85,7 @@ def _stack_horizontal(
     :type y: float
     :param node_spacing: Distance between adjacent nodes along the x-axis.
     :type node_spacing: float
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     ordered = _sort_nodes(graph, nodes)
@@ -105,8 +102,7 @@ def _stack_horizontal(
 
 
 def _rule_x_from_step(graph: nx.DiGraph, node: Hashable) -> float:
-    """
-    Compute the logical x-layer of a rule node from its step annotation.
+    """Compute the logical x-layer of a rule node from its step annotation.
 
     Rule layers are placed at odd indices: ``1, 3, 5, ...``.
 
@@ -114,7 +110,7 @@ def _rule_x_from_step(graph: nx.DiGraph, node: Hashable) -> float:
     :type graph: nx.DiGraph
     :param node: Rule node identifier.
     :type node: Hashable
-    :returns: Logical x-layer for the rule node.
+    :return: Logical x-layer for the rule node.
     :rtype: float
     """
     step = graph.nodes[node].get("step")
@@ -122,8 +118,7 @@ def _rule_x_from_step(graph: nx.DiGraph, node: Hashable) -> float:
 
 
 def _species_x_from_incidence(graph: nx.DiGraph, node: Hashable) -> float:
-    """
-    Infer the logical x-layer of a species node from adjacent rule nodes.
+    """Infer the logical x-layer of a species node from adjacent rule nodes.
 
     The heuristic is:
     - if the species is a reactant of one or more rules, place it immediately
@@ -136,7 +131,7 @@ def _species_x_from_incidence(graph: nx.DiGraph, node: Hashable) -> float:
     :type graph: nx.DiGraph
     :param node: Species node identifier.
     :type node: Hashable
-    :returns: Logical x-layer for the species node.
+    :return: Logical x-layer for the species node.
     :rtype: float
     """
     reactant_steps: List[int] = []
@@ -167,8 +162,7 @@ def _logical_layers(
     species_nodes: List[Hashable],
     rule_nodes: List[Hashable],
 ) -> Dict[int, List[Hashable]]:
-    """
-    Build integer logical layers for species and rule nodes.
+    """Build integer logical layers for species and rule nodes.
 
     :param graph: Directed graph containing node and edge metadata.
     :type graph: nx.DiGraph
@@ -176,7 +170,7 @@ def _logical_layers(
     :type species_nodes: List[Hashable]
     :param rule_nodes: List of rule node identifiers.
     :type rule_nodes: List[Hashable]
-    :returns: Mapping from integer layer index to nodes in that layer.
+    :return: Mapping from integer layer index to nodes in that layer.
     :rtype: Dict[int, List[Hashable]]
     """
     layers: Dict[int, List[Hashable]] = defaultdict(list)
@@ -198,8 +192,7 @@ def step_layout(
     node_spacing: float = 1.4,
     layer_spacing: float = 2.5,
 ) -> Pos:
-    """
-    Compute a layered step-wise layout.
+    """Compute a layered step-wise layout.
 
     Species and rule nodes are assigned to alternating logical x-layers inferred
     from rule steps and incidence relationships.
@@ -214,7 +207,7 @@ def step_layout(
     :type node_spacing: float
     :param layer_spacing: Horizontal spacing between adjacent layers.
     :type layer_spacing: float
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
 
     .. code-block:: python
@@ -257,8 +250,7 @@ def bipartite_layout(
     layer_spacing: float = 3.0,
     orientation: str = "vertical",
 ) -> Pos:
-    """
-    Compute a two-layer species-rule layout.
+    """Compute a two-layer species-rule layout.
 
     :param graph: Directed graph containing species and rule nodes.
     :type graph: nx.DiGraph
@@ -273,7 +265,7 @@ def bipartite_layout(
     :param orientation: Layout orientation. Must be ``"vertical"`` or
         ``"horizontal"``.
     :type orientation: str
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     :raises ValueError: If ``orientation`` is not supported.
     """
@@ -316,8 +308,7 @@ def multipartite_step_layout(
     species_nodes: List[Hashable],
     rule_nodes: List[Hashable],
 ) -> Pos:
-    """
-    Compute a multipartite layout using inferred step layers.
+    """Compute a multipartite layout using inferred step layers.
 
     This layout is useful for larger step-annotated graphs where a simple custom
     step layout becomes crowded.
@@ -328,7 +319,7 @@ def multipartite_step_layout(
     :type species_nodes: List[Hashable]
     :param rule_nodes: List of rule node identifiers.
     :type rule_nodes: List[Hashable]
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     G = graph.copy()
@@ -353,8 +344,7 @@ def radial_step_layout(
     rule_nodes: List[Hashable],
     radius_step: float = 1.8,
 ) -> Pos:
-    """
-    Compute a radial step layout using concentric circles.
+    """Compute a radial step layout using concentric circles.
 
     Logical layers are mapped to increasing radii.
 
@@ -366,7 +356,7 @@ def radial_step_layout(
     :type rule_nodes: List[Hashable]
     :param radius_step: Radial increment between adjacent logical layers.
     :type radius_step: float
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     layers = _logical_layers(
@@ -396,8 +386,7 @@ def circular_bipartite_layout(
     species_radius: float = 2.5,
     rule_radius: float = 4.0,
 ) -> Pos:
-    """
-    Compute a circular bipartite layout using two concentric circles.
+    """Compute a circular bipartite layout using two concentric circles.
 
     Species and rule nodes are placed on separate rings.
 
@@ -411,7 +400,7 @@ def circular_bipartite_layout(
     :type species_radius: float
     :param rule_radius: Radius of the rule ring.
     :type rule_radius: float
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     pos: Pos = {}
@@ -435,8 +424,7 @@ def degree_shell_layout(
     species_nodes: List[Hashable],
     rule_nodes: List[Hashable],
 ) -> Pos:
-    """
-    Compute a degree-based shell layout.
+    """Compute a degree-based shell layout.
 
     Nodes with the highest degree are placed in the inner shell, followed by
     medium-degree and lower-degree shells.
@@ -447,7 +435,7 @@ def degree_shell_layout(
     :type species_nodes: List[Hashable]
     :param rule_nodes: List of rule node identifiers.
     :type rule_nodes: List[Hashable]
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     by_degree = sorted(graph.degree, key=lambda x: (-x[1], str(x[0])))
@@ -470,8 +458,7 @@ def choose_auto_layout(
     species_nodes: List[Hashable],
     rule_nodes: List[Hashable],
 ) -> str:
-    """
-    Choose a layout heuristically.
+    """Choose a layout heuristically.
 
     Preference is given to step-aware layouts when rule step annotations are
     available. Larger or denser graphs are routed to layouts that typically
@@ -483,7 +470,7 @@ def choose_auto_layout(
     :type species_nodes: List[Hashable]
     :param rule_nodes: List of rule node identifiers.
     :type rule_nodes: List[Hashable]
-    :returns: Selected layout name.
+    :return: Selected layout name.
     :rtype: str
     """
     n_nodes = graph.number_of_nodes()
@@ -506,14 +493,13 @@ def _spring_layout(
     seed: int,
     **_: object,
 ) -> Pos:
-    """
-    Compute a spring layout with a slightly enlarged optimal distance.
+    """Compute a spring layout with a slightly enlarged optimal distance.
 
     :param graph: Directed graph to layout.
     :type graph: nx.DiGraph
     :param seed: Random seed for the spring layout.
     :type seed: int
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     n_nodes = max(graph.number_of_nodes(), 1)
@@ -525,12 +511,11 @@ def _kamada_kawai_layout(
     graph: nx.DiGraph,
     **_: object,
 ) -> Pos:
-    """
-    Compute a Kamada-Kawai layout.
+    """Compute a Kamada-Kawai layout.
 
     :param graph: Directed graph to layout.
     :type graph: nx.DiGraph
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     return nx.kamada_kawai_layout(graph)
@@ -540,12 +525,11 @@ def _spectral_layout(
     graph: nx.DiGraph,
     **_: object,
 ) -> Pos:
-    """
-    Compute a spectral layout.
+    """Compute a spectral layout.
 
     :param graph: Directed graph to layout.
     :type graph: nx.DiGraph
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     return nx.spectral_layout(graph)
@@ -558,8 +542,7 @@ def _shell_layout(
     rule_nodes: List[Hashable],
     **_: object,
 ) -> Pos:
-    """
-    Compute a shell layout with species and rule nodes grouped into shells.
+    """Compute a shell layout with species and rule nodes grouped into shells.
 
     :param graph: Directed graph to layout.
     :type graph: nx.DiGraph
@@ -567,7 +550,7 @@ def _shell_layout(
     :type species_nodes: List[Hashable]
     :param rule_nodes: List of rule node identifiers.
     :type rule_nodes: List[Hashable]
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     shells: List[List[Hashable]] = []
@@ -582,12 +565,11 @@ def _spiral_layout(
     graph: nx.DiGraph,
     **_: object,
 ) -> Pos:
-    """
-    Compute a spiral layout.
+    """Compute a spiral layout.
 
     :param graph: Directed graph to layout.
     :type graph: nx.DiGraph
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     return nx.spiral_layout(graph)
@@ -599,14 +581,13 @@ def _random_layout(
     seed: int,
     **_: object,
 ) -> Pos:
-    """
-    Compute a random layout.
+    """Compute a random layout.
 
     :param graph: Directed graph to layout.
     :type graph: nx.DiGraph
     :param seed: Random seed for layout generation.
     :type seed: int
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     """
     return nx.random_layout(graph, seed=seed)
@@ -629,10 +610,9 @@ _LAYOUT_REGISTRY: Mapping[str, LayoutFunc] = {
 
 
 def available_layouts() -> List[str]:
-    """
-    Return the list of supported layout names.
+    """Return the list of supported layout names.
 
-    :returns: Supported layout names, including ``"auto"``.
+    :return: Supported layout names, including ``"auto"``.
     :rtype: List[str]
 
     .. code-block:: python
@@ -654,8 +634,7 @@ def compute_layout(
     seed: int = 0,
     orientation: str = "vertical",
 ) -> Pos:
-    """
-    Compute node positions for CRN visualization.
+    """Compute node positions for CRN visualization.
 
     :param graph: Directed graph containing species and rule nodes.
     :type graph: nx.DiGraph
@@ -679,7 +658,7 @@ def compute_layout(
     :param orientation: Orientation for the bipartite layout. Must be
         ``"vertical"`` or ``"horizontal"``.
     :type orientation: str
-    :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+    :return: Mapping from node identifier to ``(x, y)`` coordinates.
     :rtype: Pos
     :raises ValueError: If the requested layout name is not supported.
 

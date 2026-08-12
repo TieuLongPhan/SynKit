@@ -5,16 +5,15 @@ from rdkit.Chem import rdChemReactions
 
 
 class SMARTSGeneralizer:
-    """
-    Generalizes a list of atom-mapped (reaction) SMARTS into one combinatorial SMARTS
+    """Generalizes a list of atom-mapped (reaction) SMARTS into one combinatorial SMARTS
     with element-list placeholders at mapped atom positions.
     Optionally validates output using RDKit.
 
     :param sanity_check: If True, validate the output SMARTS with RDKit.
     :type sanity_check: bool
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> input_smarts = [
     ...     '[C:1]-[N:2]>>[N:1]-[C:2]',
     ...     '[N:1]-[N:2]>>[N:1]-[N:2]',

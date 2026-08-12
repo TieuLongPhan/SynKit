@@ -38,16 +38,15 @@ except Exception:
 # Simple functional helpers
 # -------------------------
 def sanitize_and_canonicalize_smiles(smiles: str) -> Optional[str]:
-    """
-    Sanitize and canonicalize a SMILES string.
+    """Sanitize and canonicalize a SMILES string.
 
     :param smiles: Input SMILES string.
     :type smiles: str
-    :returns: Canonical SMILES if valid, otherwise ``None``.
+    :return: Canonical SMILES if valid, otherwise ``None``.
     :rtype: Optional[str]
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     The function attempts to parse and sanitize the SMILES with RDKit. On any
     parsing/sanitization failure it returns ``None`` (best-effort policy).
     """
@@ -65,12 +64,11 @@ def sanitize_and_canonicalize_smiles(smiles: str) -> Optional[str]:
 
 
 def normalize_molecule(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Normalize a molecule using rdMolStandardize.Normalizer when available.
+    """Normalize a molecule using rdMolStandardize.Normalizer when available.
 
     :param mol: RDKit Mol object to normalize.
     :type mol: Chem.Mol
-    :returns: Normalized RDKit Mol object (or original if normalizer missing).
+    :return: Normalized RDKit Mol object (or original if normalizer missing).
     :rtype: Chem.Mol
     """
     if rdMolStandardize is None:
@@ -88,12 +86,11 @@ def normalize_molecule(mol: Chem.Mol) -> Chem.Mol:
 
 
 def canonicalize_tautomer(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Canonicalize tautomeric form using rdMolStandardize.TautomerEnumerator if available.
+    """Canonicalize tautomeric form using rdMolStandardize.TautomerEnumerator if available.
 
     :param mol: RDKit Mol object to canonicalize.
     :type mol: Chem.Mol
-    :returns: Canonicalized tautomer Mol (or original if unavailable).
+    :return: Canonicalized tautomer Mol (or original if unavailable).
     :rtype: Chem.Mol
     """
     if rdMolStandardize is None:
@@ -113,14 +110,13 @@ def canonicalize_tautomer(mol: Chem.Mol) -> Chem.Mol:
 
 
 def salts_remover(mol: Chem.Mol, remover: Optional[SaltRemover] = None) -> Chem.Mol:
-    """
-    Remove salts from a molecule using RDKit's SaltRemover.
+    """Remove salts from a molecule using RDKit's SaltRemover.
 
     :param mol: RDKit Mol object to process.
     :type mol: Chem.Mol
     :param remover: Optional SaltRemover instance to use.
     :type remover: Optional[SaltRemover]
-    :returns: Mol object with salts removed (best-effort).
+    :return: Mol object with salts removed (best-effort).
     :rtype: Chem.Mol
     """
     try:
@@ -132,12 +128,11 @@ def salts_remover(mol: Chem.Mol, remover: Optional[SaltRemover] = None) -> Chem.
 
 
 def uncharge_molecule(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Neutralize/uncharge a molecule using rdMolStandardize.Uncharger if available.
+    """Neutralize/uncharge a molecule using rdMolStandardize.Uncharger if available.
 
     :param mol: RDKit Mol object to neutralize.
     :type mol: Chem.Mol
-    :returns: Neutralized Mol object (or original if uncharger missing).
+    :return: Neutralized Mol object (or original if uncharger missing).
     :rtype: Chem.Mol
     """
     if rdMolStandardize is None:
@@ -155,12 +150,11 @@ def uncharge_molecule(mol: Chem.Mol) -> Chem.Mol:
 
 
 def fragments_remover(mol: Chem.Mol) -> Optional[Chem.Mol]:
-    """
-    Keep only the largest fragment by atom count.
+    """Keep only the largest fragment by atom count.
 
     :param mol: RDKit Mol object to fragment.
     :type mol: Chem.Mol
-    :returns: Mol of the largest fragment, or None if input is empty.
+    :return: Mol of the largest fragment, or None if input is empty.
     :rtype: Optional[Chem.Mol]
     """
     try:
@@ -172,12 +166,11 @@ def fragments_remover(mol: Chem.Mol) -> Optional[Chem.Mol]:
 
 
 def remove_explicit_hydrogens(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Remove explicit hydrogens from the molecule (Chem.RemoveHs wrapper).
+    """Remove explicit hydrogens from the molecule (Chem.RemoveHs wrapper).
 
     :param mol: RDKit Mol object to process.
     :type mol: Chem.Mol
-    :returns: Mol object without explicit hydrogens.
+    :return: Mol object without explicit hydrogens.
     :rtype: Chem.Mol
     """
     try:
@@ -191,15 +184,14 @@ def remove_explicit_hydrogens(mol: Chem.Mol) -> Chem.Mol:
 # Radical-handling helpers (further split to reduce complexity)
 # -------------------------
 def _zero_out_radicals_on_atoms(mol: Chem.Mol) -> None:
-    """
-    Iterate atoms and zero radical electron counts; also increment explicit H count
+    """Iterate atoms and zero radical electron counts; also increment explicit H count
     by the number of radical electrons for each atom (best-effort).
 
     This mutates the input molecule in-place.
 
     :param mol: RDKit Mol to operate on (mutated in place).
     :type mol: Chem.Mol
-    :returns: None
+    :return: None
     :rtype: None
     """
     for atom in mol.GetAtoms():
@@ -217,13 +209,12 @@ def _zero_out_radicals_on_atoms(mol: Chem.Mol) -> None:
 
 
 def _add_explicit_hydrogens(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Wrapper around rdmolops.AddHs with defensive fallback to return original mol
+    """Wrapper around rdmolops.AddHs with defensive fallback to return original mol
     if AddHs fails.
 
     :param mol: RDKit Mol to process.
     :type mol: Chem.Mol
-    :returns: Molecule with explicit hydrogens added, or original on failure.
+    :return: Molecule with explicit hydrogens added, or original on failure.
     :rtype: Chem.Mol
     """
     try:
@@ -233,14 +224,13 @@ def _add_explicit_hydrogens(mol: Chem.Mol) -> Chem.Mol:
 
 
 def _maybe_remove_explicit_hydrogens(mol: Chem.Mol, removeH: bool) -> Chem.Mol:
-    """
-    Remove explicit hydrogens if removeH is True, otherwise return the molecule unchanged.
+    """Remove explicit hydrogens if removeH is True, otherwise return the molecule unchanged.
 
     :param mol: RDKit Mol to process.
     :type mol: Chem.Mol
     :param removeH: whether to remove explicit hydrogens after adding them.
     :type removeH: bool
-    :returns: Processed molecule.
+    :return: Processed molecule.
     :rtype: Chem.Mol
     """
     if not removeH:
@@ -254,8 +244,7 @@ def _maybe_remove_explicit_hydrogens(mol: Chem.Mol, removeH: bool) -> Chem.Mol:
 def _replace_radicals_with_hs_in_mol(
     mol: Chem.Mol, removeH: bool = True
 ) -> Optional[Chem.Mol]:
-    """
-    High-level helper that replaces radicals with hydrogens.
+    """High-level helper that replaces radicals with hydrogens.
 
     Steps:
       1. zero out radicals (and add explicit H counters)
@@ -266,7 +255,7 @@ def _replace_radicals_with_hs_in_mol(
     :type mol: Chem.Mol
     :param removeH: whether to remove explicit hydrogens after addition.
     :type removeH: bool
-    :returns: Processed RDKit Mol or None on extreme failure.
+    :return: Processed RDKit Mol or None on extreme failure.
     :rtype: Optional[Chem.Mol]
     """
     if mol is None:
@@ -283,14 +272,13 @@ def _replace_radicals_with_hs_in_mol(
 def remove_radicals_and_add_hydrogens(
     mol: Chem.Mol, removeH: bool = True
 ) -> Optional[Chem.Mol]:
-    """
-    Replace radical electrons by adding hydrogens and optionally remove explicit H.
+    """Replace radical electrons by adding hydrogens and optionally remove explicit H.
 
     :param mol: RDKit Mol with possible radical atoms.
     :type mol: Chem.Mol
     :param removeH: If True, remove explicit hydrogens after addition.
     :type removeH: bool
-    :returns: Mol with radicals neutralized (or None on failure).
+    :return: Mol with radicals neutralized (or None on failure).
     :rtype: Optional[Chem.Mol]
     """
     return _replace_radicals_with_hs_in_mol(mol, removeH)
@@ -300,13 +288,12 @@ def remove_radicals_and_add_hydrogens(
 # Reaction SMILES helpers
 # -------------------------
 def _parse_reaction_smiles(rsmi: str) -> Optional[Tuple[str, str]]:
-    """
-    Parse a reaction SMILES of the form 'reactant>>product' and return tuple,
+    """Parse a reaction SMILES of the form 'reactant>>product' and return tuple,
     or None if not parseable.
 
     :param rsmi: reaction SMILES string.
     :type rsmi: str
-    :returns: tuple (reactant_smiles, product_smiles) or None.
+    :return: tuple (reactant_smiles, product_smiles) or None.
     :rtype: Optional[Tuple[str, str]]
     """
     if ">>" not in rsmi:
@@ -318,15 +305,14 @@ def _parse_reaction_smiles(rsmi: str) -> Optional[Tuple[str, str]]:
 
 
 def _fix_single_side_of_reaction(smiles: str, removeH: bool) -> Optional[Chem.Mol]:
-    """
-    Create a Mol from SMILES (without sanitization), sanitize best-effort,
+    """Create a Mol from SMILES (without sanitization), sanitize best-effort,
     then replace radicals and return processed Mol.
 
     :param smiles: SMILES for one side of a reaction.
     :type smiles: str
     :param removeH: whether to remove explicit hydrogens after addition.
     :type removeH: bool
-    :returns: Processed RDKit Mol or None.
+    :return: Processed RDKit Mol or None.
     :rtype: Optional[Chem.Mol]
     """
     m = Chem.MolFromSmiles(smiles, sanitize=False)
@@ -340,14 +326,13 @@ def _fix_single_side_of_reaction(smiles: str, removeH: bool) -> Optional[Chem.Mo
 
 
 def fix_radical_rsmi(rsmi: str, removeH: bool = True) -> str:
-    """
-    Fix radicals in a reaction SMILES by converting them to hydrogens.
+    """Fix radicals in a reaction SMILES by converting them to hydrogens.
 
     :param rsmi: Reaction SMILES string (format 'reactant>>product').
     :type rsmi: str
     :param removeH: If True, remove explicit hydrogens after addition.
     :type removeH: bool
-    :returns: Corrected reaction SMILES with radicals replaced (or original on failure).
+    :return: Corrected reaction SMILES with radicals replaced (or original on failure).
     :rtype: str
     """
     try:
@@ -366,12 +351,11 @@ def fix_radical_rsmi(rsmi: str, removeH: bool = True) -> str:
 
 
 def remove_isotopes(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Clear isotope labels on every atom in the molecule.
+    """Clear isotope labels on every atom in the molecule.
 
     :param mol: RDKit Mol object to process.
     :type mol: Chem.Mol
-    :returns: The same RDKit Mol instance with isotopic labels cleared.
+    :return: The same RDKit Mol instance with isotopic labels cleared.
     :rtype: Chem.Mol
     """
     try:
@@ -386,12 +370,11 @@ def remove_isotopes(mol: Chem.Mol) -> Chem.Mol:
 
 
 def clear_stereochemistry(mol: Chem.Mol) -> Chem.Mol:
-    """
-    Remove stereochemical annotations from a molecule.
+    """Remove stereochemical annotations from a molecule.
 
     :param mol: RDKit Mol object to process.
     :type mol: Chem.Mol
-    :returns: Mol object with stereochemistry removed.
+    :return: Mol object with stereochemistry removed.
     :rtype: Chem.Mol
     """
     try:
@@ -405,14 +388,13 @@ def clear_stereochemistry(mol: Chem.Mol) -> Chem.Mol:
 # MolStandardizer class
 # -------------------------
 class MolStandardizer:
-    """
-    Chainable molecule standardizer wrapper around RDKit utilities.
+    """Chainable molecule standardizer wrapper around RDKit utilities.
 
     Use the fluent API to apply a sequence of standardizations and then
     retrieve the resulting molecule via the ``.mol`` property or ``.to_smiles()``.
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> std = MolStandardizer.from_smiles("CC(=O)[O-]").remove_salts().uncharge().mol
     """
 
@@ -438,14 +420,13 @@ class MolStandardizer:
     # ----- constructors / convenience -----
     @classmethod
     def from_smiles(cls, smiles: str, sanitize: bool = True) -> "MolStandardizer":
-        """
-        Parse SMILES and return a configured standardizer.
+        """Parse SMILES and return a configured standardizer.
 
         :param smiles: SMILES string to parse.
         :type smiles: str
         :param sanitize: attempt sanitization on parse (default True).
         :type sanitize: bool
-        :returns: MolStandardizer.
+        :return: MolStandardizer.
         :rtype: MolStandardizer
         :raises ValueError: if SMILES fails to parse.
         """
@@ -456,12 +437,11 @@ class MolStandardizer:
 
     @classmethod
     def _maybe_normalize(cls, inst: "MolStandardizer") -> "MolStandardizer":
-        """
-        Normalize if rdMolStandardize available (small wrapper).
+        """Normalize if rdMolStandardize available (small wrapper).
 
         :param inst: MolStandardizer instance to operate on.
         :type inst: MolStandardizer
-        :returns: same instance (chainable).
+        :return: same instance (chainable).
         :rtype: MolStandardizer
         """
         if rdMolStandardize is None:
@@ -476,14 +456,13 @@ class MolStandardizer:
     def _maybe_keep_largest_fragment(
         cls, inst: "MolStandardizer", keep: bool
     ) -> "MolStandardizer":
-        """
-        Keep largest fragment if requested (small wrapper).
+        """Keep largest fragment if requested (small wrapper).
 
         :param inst: MolStandardizer instance to operate on.
         :type inst: MolStandardizer
         :param keep: whether to keep the largest fragment.
         :type keep: bool
-        :returns: same instance (chainable).
+        :return: same instance (chainable).
         :rtype: MolStandardizer
         """
         if not keep:
@@ -496,12 +475,11 @@ class MolStandardizer:
 
     @classmethod
     def _maybe_remove_salts(cls, inst: "MolStandardizer") -> "MolStandardizer":
-        """
-        Remove salts (small wrapper).
+        """Remove salts (small wrapper).
 
         :param inst: MolStandardizer instance to operate on.
         :type inst: MolStandardizer
-        :returns: same instance (chainable).
+        :return: same instance (chainable).
         :rtype: MolStandardizer
         """
         try:
@@ -512,12 +490,11 @@ class MolStandardizer:
 
     @classmethod
     def _maybe_uncharge(cls, inst: "MolStandardizer") -> "MolStandardizer":
-        """
-        Uncharge if rdMolStandardize available (small wrapper).
+        """Uncharge if rdMolStandardize available (small wrapper).
 
         :param inst: MolStandardizer instance to operate on.
         :type inst: MolStandardizer
-        :returns: same instance (chainable).
+        :return: same instance (chainable).
         :rtype: MolStandardizer
         """
         if rdMolStandardize is None:
@@ -530,12 +507,11 @@ class MolStandardizer:
 
     @classmethod
     def _maybe_canonicalize_tautomer(cls, inst: "MolStandardizer") -> "MolStandardizer":
-        """
-        Canonicalize tautomer if rdMolStandardize available (small wrapper).
+        """Canonicalize tautomer if rdMolStandardize available (small wrapper).
 
         :param inst: MolStandardizer instance to operate on.
         :type inst: MolStandardizer
-        :returns: same instance (chainable).
+        :return: same instance (chainable).
         :rtype: MolStandardizer
         """
         if rdMolStandardize is None:
@@ -550,14 +526,13 @@ class MolStandardizer:
     def _apply_default_pipeline(
         cls, inst: "MolStandardizer", keep_largest_fragment: bool
     ) -> "MolStandardizer":
-        """
-        Apply the default standardization pipeline to an instance.
+        """Apply the default standardization pipeline to an instance.
 
         :param inst: MolStandardizer instance to operate on.
         :type inst: MolStandardizer
         :param keep_largest_fragment: whether to keep the largest fragment.
         :type keep_largest_fragment: bool
-        :returns: same instance after applying pipeline.
+        :return: same instance after applying pipeline.
         :rtype: MolStandardizer
         """
         cls._maybe_normalize(inst)
@@ -571,8 +546,7 @@ class MolStandardizer:
     def standardize_smiles(
         cls, smiles: str, *, keep_largest_fragment: bool = True
     ) -> Optional[str]:
-        """
-        Quick convenience: parse SMILES, apply a sensible default standardization,
+        """Quick convenience: parse SMILES, apply a sensible default standardization,
         and return canonical SMILES or None on failure.
 
         Default pipeline:
@@ -583,7 +557,7 @@ class MolStandardizer:
         :type smiles: str
         :param keep_largest_fragment: keep only the largest fragment (default True).
         :type keep_largest_fragment: bool
-        :returns: Canonical SMILES or None.
+        :return: Canonical SMILES or None.
         :rtype: Optional[str]
         """
         try:
@@ -598,10 +572,9 @@ class MolStandardizer:
 
     # ----- mutating chainable operations -----
     def normalize(self) -> "MolStandardizer":
-        """
-        Normalize the internal molecule using rdMolStandardize.Normalizer.
+        """Normalize the internal molecule using rdMolStandardize.Normalizer.
 
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -621,10 +594,9 @@ class MolStandardizer:
         return self
 
     def canonicalize_tautomer(self) -> "MolStandardizer":
-        """
-        Canonicalize tautomer using rdMolStandardize.TautomerEnumerator.
+        """Canonicalize tautomer using rdMolStandardize.TautomerEnumerator.
 
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -648,12 +620,11 @@ class MolStandardizer:
     def remove_salts(
         self, salt_remover: Optional[SaltRemover] = None
     ) -> "MolStandardizer":
-        """
-        Remove salts using RDKit's SaltRemover.
+        """Remove salts using RDKit's SaltRemover.
 
         :param salt_remover: Optional SaltRemover instance to use; if None a new one is created.
         :type salt_remover: Optional[SaltRemover]
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -667,10 +638,9 @@ class MolStandardizer:
         return self
 
     def uncharge(self) -> "MolStandardizer":
-        """
-        Neutralize charges using rdMolStandardize.Uncharger.
+        """Neutralize charges using rdMolStandardize.Uncharger.
 
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -690,10 +660,9 @@ class MolStandardizer:
         return self
 
     def keep_largest_fragment(self) -> "MolStandardizer":
-        """
-        Keep only the largest fragment by atom count.
+        """Keep only the largest fragment by atom count.
 
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -708,10 +677,9 @@ class MolStandardizer:
         return self
 
     def remove_explicit_hs(self) -> "MolStandardizer":
-        """
-        Remove explicit hydrogens (Chem.RemoveHs).
+        """Remove explicit hydrogens (Chem.RemoveHs).
 
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -724,12 +692,11 @@ class MolStandardizer:
         return self
 
     def add_hs_and_clear_radicals(self, removeH: bool = True) -> "MolStandardizer":
-        """
-        Replace radical electrons with explicit hydrogens and optionally remove them.
+        """Replace radical electrons with explicit hydrogens and optionally remove them.
 
         :param removeH: if True remove explicit hydrogens after addition.
         :type removeH: bool
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -744,10 +711,9 @@ class MolStandardizer:
         return self
 
     def remove_isotopes(self) -> "MolStandardizer":
-        """
-        Clear isotope labels on all atoms.
+        """Clear isotope labels on all atoms.
 
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -764,10 +730,9 @@ class MolStandardizer:
         return self
 
     def clear_stereochemistry(self) -> "MolStandardizer":
-        """
-        Remove stereochemical annotations (Chem.RemoveStereochemistry).
+        """Remove stereochemical annotations (Chem.RemoveStereochemistry).
 
-        :returns: self (chainable).
+        :return: self (chainable).
         :rtype: MolStandardizer
         """
         if self._mol is None:
@@ -782,21 +747,19 @@ class MolStandardizer:
     # ----- retrieval / helpers -----
     @property
     def mol(self) -> Optional[Chem.Mol]:
-        """
-        Return the internal RDKit Mol (or None if absent).
+        """Return the internal RDKit Mol (or None if absent).
 
-        :returns: the internal RDKit Mol or None.
+        :return: the internal RDKit Mol or None.
         :rtype: Optional[Chem.Mol]
         """
         return self._mol
 
     def to_smiles(self, canonical: bool = True) -> Optional[str]:
-        """
-        Return a SMILES string for the internal molecule.
+        """Return a SMILES string for the internal molecule.
 
         :param canonical: whether to return a canonical SMILES (default True).
         :type canonical: bool
-        :returns: SMILES string or None.
+        :return: SMILES string or None.
         :rtype: Optional[str]
         """
         if self._mol is None:
@@ -812,10 +775,9 @@ class MolStandardizer:
                 return None
 
     def summarize_last_error(self) -> Optional[str]:
-        """
-        Return a short string describing the last internal exception, if any.
+        """Return a short string describing the last internal exception, if any.
 
-        :returns: descriptive string for last error or None.
+        :return: descriptive string for last error or None.
         :rtype: Optional[str]
         """
         if self._last_error is None:
@@ -823,10 +785,9 @@ class MolStandardizer:
         return f"{type(self._last_error).__name__}: {str(self._last_error)}"
 
     def __repr__(self) -> str:
-        """
-        Debug representation showing the number of atoms in the internal Mol.
+        """Debug representation showing the number of atoms in the internal Mol.
 
-        :returns: repr string.
+        :return: repr string.
         :rtype: str
         """
         n = -1
@@ -838,10 +799,9 @@ class MolStandardizer:
 
     @classmethod
     def help(cls) -> str:
-        """
-        Short machine-readable help describing capabilities.
+        """Short machine-readable help describing capabilities.
 
-        :returns: help string.
+        :return: help string.
         :rtype: str
         """
         return (

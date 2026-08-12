@@ -2,25 +2,198 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import networkx as nx
 
+from synkit.Rule.syn_rule import SynRule
 from synkit.Synthesis.Reactor.fusion_validation import WildcardRole
 
 ITSLike = Any
+Port = tuple[str, Any, Any, tuple[Any, ...]]
+
+
+def _typed_leaf(
+    graph: nx.Graph,
+    node: Any,
+    *,
+    element_key: str,
+    wildcard_values: tuple[Any, Any],
+) -> bool:
+    data = graph.nodes[node]
+    neighbours = list(graph.neighbors(node))
+    return (
+        data.get(element_key) in wildcard_values
+        and data.get("wildcard_role")
+        in {
+            WildcardRole.ATTACHMENT_PORT.value,
+            WildcardRole.RADICAL_COMPLETION.value,
+        }
+        and len(neighbours) == 1
+        and data.get("owner") == neighbours[0]
+    )
+
+
+def _edge_signature(
+    graph: nx.Graph,
+    left: Any,
+    right: Any,
+    edge_attrs: Sequence[str],
+) -> tuple[Any, ...]:
+    attributes = graph.edges[left, right]
+    return tuple(attributes.get(key) for key in edge_attrs)
+
+
+def _collect_ports(
+    forward: nx.Graph,
+    backward: nx.Graph,
+    base: Mapping[Any, Any],
+    *,
+    element_key: str,
+    wildcard_values: tuple[Any, Any],
+    edge_attrs: Sequence[str],
+) -> list[Port]:
+    """Collect typed leaves whose owner already belongs to the overlap."""
+    ports: list[Port] = []
+    for direction, graph, used, owners in (
+        ("forward", forward, set(base), base),
+        (
+            "backward",
+            backward,
+            set(base.values()),
+            {right: left for left, right in base.items()},
+        ),
+    ):
+        for port in sorted(graph.nodes, key=repr):
+            if port in used or not _typed_leaf(
+                graph,
+                port,
+                element_key=element_key,
+                wildcard_values=wildcard_values,
+            ):
+                continue
+            owner = next(iter(graph.neighbors(port)))
+            if owner in owners:
+                ports.append(
+                    (
+                        direction,
+                        port,
+                        owner,
+                        _edge_signature(graph, port, owner, edge_attrs),
+                    )
+                )
+    return ports
+
+
+def _port_extensions(
+    port_info: Port,
+    current: Mapping[Any, Any],
+    forward: nx.Graph,
+    backward: nx.Graph,
+    *,
+    element_key: str,
+    wildcard_values: tuple[Any, Any],
+    edge_attrs: Sequence[str],
+) -> list[tuple[Any, Any]]:
+    """Return injective left-to-right pairs that can resolve one port."""
+    direction, port, owner, signature = port_info
+    if direction == "forward":
+        source, opposite = backward, current.get(owner)
+        used = set(current.values())
+    else:
+        source = forward
+        opposite = {right: left for left, right in current.items()}.get(owner)
+        used = set(current)
+    if opposite is None:
+        return []
+    candidates = [
+        node
+        for node in source.neighbors(opposite)
+        if node not in used
+        and source.nodes[node].get(element_key) not in wildcard_values
+        and _edge_signature(source, opposite, node, edge_attrs) == signature
+    ]
+    ordered = sorted(candidates, key=repr)
+    if direction == "forward":
+        return [(port, candidate) for candidate in ordered]
+    return [(candidate, port) for candidate in ordered]
+
+
+def _enumerate_port_completions(
+    ports: Sequence[Port],
+    index: int,
+    current: Dict[Any, Any],
+    completed: List[Dict[Any, Any]],
+    forward: nx.Graph,
+    backward: nx.Graph,
+    *,
+    element_key: str,
+    wildcard_values: tuple[Any, Any],
+    edge_attrs: Sequence[str],
+) -> None:
+    if index == len(ports):
+        completed.append(dict(current))
+        return
+    extensions = _port_extensions(
+        ports[index],
+        current,
+        forward,
+        backward,
+        element_key=element_key,
+        wildcard_values=wildcard_values,
+        edge_attrs=edge_attrs,
+    )
+    for left, right in extensions:
+        current[left] = right
+        _enumerate_port_completions(
+            ports,
+            index + 1,
+            current,
+            completed,
+            forward,
+            backward,
+            element_key=element_key,
+            wildcard_values=wildcard_values,
+            edge_attrs=edge_attrs,
+        )
+        del current[left]
+    _enumerate_port_completions(
+        ports,
+        index + 1,
+        current,
+        completed,
+        forward,
+        backward,
+        element_key=element_key,
+        wildcard_values=wildcard_values,
+        edge_attrs=edge_attrs,
+    )
+
+
+def _maximal_unique_mappings(
+    completed: Sequence[Dict[Any, Any]],
+    base_size: int,
+) -> List[Dict[Any, Any]]:
+    maximum_size = max(map(len, completed), default=base_size)
+    unique: Dict[tuple[tuple[str, str], ...], Dict[Any, Any]] = {}
+    for candidate in completed:
+        if len(candidate) == maximum_size:
+            key = tuple(
+                sorted((repr(left), repr(right)) for left, right in candidate.items())
+            )
+            unique.setdefault(key, candidate)
+    return list(unique.values())
 
 
 class RBLMatchingMixin:
     def _has_wildcard_nodes(self, G: ITSLike) -> bool:
-        """
-        Check whether an ITS graph contains any wildcard atoms.
+        """Check whether an ITS graph contains any wildcard atoms.
 
         For now this assumes a NetworkX-style graph with node attributes.
 
         :param G: ITS graph to inspect.
         :type G: ITSLike
-        :returns: ``True`` if any node has ``element_key == wildcard_element``.
+        :return: ``True`` if any node has ``element_key == wildcard_element``.
         :rtype: bool
         """
         if not isinstance(G, nx.Graph):
@@ -56,11 +229,69 @@ class RBLMatchingMixin:
                 scalar_wildcard,
             ):
                 data.setdefault("wildcard_role", role.value)
+        # A degree-one radical completion is an attachment port owned by its
+        # sole neighbour.  Recording that incidence lets the verified fusion
+        # interface prove any later wildcard-to-concrete substitution.
+        for node, data in graph.nodes(data=True):
+            if data.get(self.element_key) not in (
+                self.wildcard_element,
+                scalar_wildcard,
+            ):
+                continue
+            neighbours = list(graph.neighbors(node))
+            if len(neighbours) == 1:
+                data.setdefault("owner", neighbours[0])
         return graph
 
-    def replace_wildcard_with_H(self, G: nx.Graph) -> nx.Graph:
+    def _complete_typed_wildcard_ports(
+        self,
+        forward: nx.Graph,
+        backward: nx.Graph,
+        mapping: Mapping[Any, Any],
+    ) -> List[Dict[Any, Any]]:
+        """Maximally extend an MCS overlap through typed leaf ports.
+
+        MCS compares concrete node labels and therefore cannot identify a
+        wildcard leaf with the concrete substituent supplied by the other
+        partial graph.  For every typed degree-one wildcard whose owner is
+        already in the overlap, enumerate injective owner-adjacent concrete
+        substitutions with the same edge label.  Only extensions with the
+        maximum number of resolved ports are returned; the categorical
+        interface performs the full constraint audit afterward.
         """
-        Replace wildcard atoms in an ITS graph with hydrogen.
+        scalar_wildcard = (
+            self.wildcard_element[0]
+            if isinstance(self.wildcard_element, tuple)
+            else self.wildcard_element
+        )
+        wildcard_values = (self.wildcard_element, scalar_wildcard)
+        base = dict(mapping)
+        ports = _collect_ports(
+            forward,
+            backward,
+            base,
+            element_key=self.element_key,
+            wildcard_values=wildcard_values,
+            edge_attrs=self.edge_attrs,
+        )
+        if not ports:
+            return [base]
+        completed: List[Dict[Any, Any]] = []
+        _enumerate_port_completions(
+            ports,
+            0,
+            base.copy(),
+            completed,
+            forward,
+            backward,
+            element_key=self.element_key,
+            wildcard_values=wildcard_values,
+            edge_attrs=self.edge_attrs,
+        )
+        return _maximal_unique_mappings(completed, len(base))
+
+    def replace_wildcard_with_H(self, G: nx.Graph) -> nx.Graph:
+        """Replace wildcard atoms in an ITS graph with hydrogen.
 
         This updates node-level attributes:
 
@@ -72,7 +303,7 @@ class RBLMatchingMixin:
 
         :param G: ITS graph to modify in-place.
         :type G: nx.Graph
-        :returns: The same graph instance, for convenience.
+        :return: The same graph instance, for convenience.
         :rtype: nx.Graph
         """
         wildcard = self.wildcard_element
@@ -120,13 +351,12 @@ class RBLMatchingMixin:
     # ------------------------------------------------------------------
 
     def _build_matcher(self) -> Any:
-        """
-        Construct a matcher instance using engine configuration.
+        """Construct a matcher instance using engine configuration.
 
         Assumes :attr:`matcher_cls` is API-compatible with :class:`MCSMatcher`
         or :class:`ApproxMCSMatcher`.
 
-        :returns: Matcher instance.
+        :return: Matcher instance.
         :rtype: Any
         """
         node_defaults: List[Any] = []
@@ -158,10 +388,9 @@ class RBLMatchingMixin:
     def _quick_check(
         self,
         rsmi: str,
-        template: Union[str, nx.Graph, ITSLike],
+        template: Union[str, nx.Graph, SynRule, ITSLike],
     ) -> Optional[str]:
-        """
-        Fast pre-check used when early-stop or fast-paths-only logic is active.
+        """Fast pre-check used when early-stop or fast-paths-only logic is active.
 
         Logic:
 
@@ -178,9 +407,10 @@ class RBLMatchingMixin:
 
         :param rsmi: Input reaction SMILES.
         :type rsmi: str
-        :param template: Template as reaction SMILES, graph or ITS-like.
-        :type template: str | nx.Graph | ITSLike
-        :returns: Matching solution string or ``None`` if no match is found.
+        :param template: Template as reaction SMILES, graph, normalized
+            :class:`SynRule`, or ITS-like value.
+        :type template: str | nx.Graph | SynRule | ITSLike
+        :return: Matching solution string or ``None`` if no match is found.
         :rtype: Optional[str]
         """
         split = self._canonical_split(rsmi)
@@ -188,7 +418,9 @@ class RBLMatchingMixin:
             return None
         r_canon, p_canon = split
 
-        if isinstance(template, nx.Graph):
+        if isinstance(template, SynRule):
+            temp_its = template
+        elif isinstance(template, nx.Graph):
             temp_its = template
         elif isinstance(template, str):
             temp_its = self._prepare_from_str(template)
@@ -242,8 +474,7 @@ class RBLMatchingMixin:
         *,
         replace_wc: bool,
     ) -> bool:
-        """
-        Try an early-stop path based on ITS graphs that contain no wildcard
+        """Try an early-stop path based on ITS graphs that contain no wildcard
         atoms, using the same endpoint-preservation proof as every other mode.
 
         Rationale
@@ -275,7 +506,7 @@ class RBLMatchingMixin:
         :param replace_wc: Whether to replace wildcard atoms with H during
             post-processing.
         :type replace_wc: bool
-        :returns: ``True`` if an early-stop solution was found, ``False``
+        :return: ``True`` if an early-stop solution was found, ``False``
             otherwise.
         :rtype: bool
         """

@@ -10,10 +10,10 @@ Getting Started
      <a href="https://github.com/TieuLongPhan/SynKit"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-SynKit-181717?logo=github"></a>
    </div>
 
-Welcome! This guide gets you from **zero → first SynKit workflow** in minutes.
+This guide covers installation and a minimal SynKit workflow.
 
-What you get
-------------
+Scope
+-----
 
 SynKit is a modular toolkit for **reaction informatics** and **graph-first chemistry**:
 
@@ -44,36 +44,32 @@ Install
          docker run --rm tieulongphan/synkit:latest \
            python -c "import importlib.metadata as m; print(m.version('synkit'))"
 
-Verify your install
--------------------
+Verify the installation
+-----------------------
 
 .. code-block:: bash
 
    python -c "import importlib.metadata as m; print(m.version('synkit'))"
 
-If this prints a version, you are ready.
+A printed version confirms that the package is importable.
 
 Quick tour
 ----------
 
-Try one small end-to-end snippet that touches the most common building blocks:
+The following example constructs a small CRN and converts it to a NetworkX
+digraph:
 
 .. code-block:: python
 
-   # 1) Build a tiny CRN
-   from synkit.CRN.DAG.syncrn import SynCRN
+   from synkit.CRN.Structure.syncrn import SynCRN
 
    rxns = ["A+B>>C", "C>>D"]
-   crn = SynCRN(rxns).build()
+   crn = SynCRN.from_reaction_strings(rxns)
 
-   # 2) Inspect basic counts
    print(crn.n_species, crn.n_reactions)
 
-   # 3) Convert to hypergraph (useful for canonicalization)
-   from synkit.CRN.Hypergraph.conversion import rxns_to_hypergraph
-
-   H = rxns_to_hypergraph(rxns)
-   print(H)
+   graph = crn.to_digraph()
+   print(graph.number_of_nodes(), graph.number_of_edges())
 
 Next steps
 ----------

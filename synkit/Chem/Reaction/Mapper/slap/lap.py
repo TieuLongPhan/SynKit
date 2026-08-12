@@ -40,18 +40,12 @@ _INF = float("inf")
 def solve_lap(cost):
     """Solve a linear assignment problem.
 
-    Parameters
-    ----------
-    cost : array_like, shape (n, m)
-        Cost matrix.
+    :param cost: Cost matrix.
+    :type cost: array_like, shape (n, m)
 
-    Returns
-    -------
-    row_ind, col_ind : numpy.ndarray
-        Optimal assignment indices (as returned by
-        :func:`scipy.optimize.linear_sum_assignment`).
-    value : float
-        Total cost of the optimal assignment.
+    :return: * **row_ind, col_ind** (*numpy.ndarray*) -- Optimal assignment indices (as returned by
+                :func:`scipy.optimize.linear_sum_assignment`).
+              * **value** (*float*) -- Total cost of the optimal assignment.
     """
     cost = np.asarray(cost, dtype=float)
     row, col = linear_sum_assignment(cost)
@@ -115,19 +109,15 @@ def recover_mapping(result_lgp):
 def chemical_distance(lgp, mapping, binary):
     """Chemical distance ``D(pi)`` of a concrete mapping, in cd units.
 
-    Parameters
-    ----------
-    lgp : list[LabeledGraph]
-        Reactant/product graph pair.
-    mapping : sequence[int]
-        ``mapping[i]`` is the product atom assigned to reactant atom ``i``.
-    binary : bool
-        Whether bond orders are binarised (matches the matcher's ``binary``).
+    :param lgp: Reactant/product graph pair.
+    :type lgp: list[LabeledGraph]
+    :param mapping: ``mapping[i]`` is the product atom assigned to reactant atom ``i``.
+    :type mapping: sequence[int]
+    :param binary: Whether bond orders are binarised (matches the matcher's ``binary``).
+    :type binary: bool
 
-    Returns
-    -------
-    float
-        ``1/2 * sum_{i,j} |A_R[i,j] - A_P[pi(i), pi(j)]|``.
+    :return: ``1/2 * sum_{i,j} |A_R[i,j] - A_P[pi(i), pi(j)]|``.
+    :rtype: float
     """
     A, _ = _adjacency_and_elements(lgp[0], binary)
     B, _ = _adjacency_and_elements(lgp[1], binary)
@@ -148,17 +138,13 @@ def dual_lap_lower_bound(lgp, binary):
     This is an admissible lower bound: ``dual_lap_lower_bound(lgp) <= D(pi)`` for
     every atom-type-respecting bijection ``pi``. See the module docstring.
 
-    Parameters
-    ----------
-    lgp : list[LabeledGraph]
-        Reactant/product graph pair (must have equal atom counts).
-    binary : bool
-        Whether bond orders are binarised.
+    :param lgp: Reactant/product graph pair (must have equal atom counts).
+    :type lgp: list[LabeledGraph]
+    :param binary: Whether bond orders are binarised.
+    :type binary: bool
 
-    Returns
-    -------
-    float
-        The lower bound. ``inf`` if the atom-type multisets are incompatible.
+    :return: The lower bound. ``inf`` if the atom-type multisets are incompatible.
+    :rtype: float
     """
     A, elem_r = _adjacency_and_elements(lgp[0], binary)
     B, elem_p = _adjacency_and_elements(lgp[1], binary)

@@ -55,20 +55,15 @@ def _get_hasher():
 
 
 def its_canonical_hash(mapped_rxn_smiles):
-    """
-    Return a canonical hash of the ITS graph of a mapped reaction SMILES.
+    """Return a canonical hash of the ITS graph of a mapped reaction SMILES.
 
-    Parameters
-    ----------
-    mapped_rxn_smiles : str
-        Reaction SMILES annotated with atom map numbers (``"A>>B"``).
+    :param mapped_rxn_smiles: Reaction SMILES annotated with atom map numbers (``"A>>B"``).
+    :type mapped_rxn_smiles: str
 
-    Returns
-    -------
-    str or None
-        A hash that is identical for mappings describing the same reaction up to
-        relabeling of symmetry-equivalent atoms, or ``None`` if the ITS graph
-        could not be constructed.
+    :return: A hash that is identical for mappings describing the same reaction up to
+              relabeling of symmetry-equivalent atoms, or ``None`` if the ITS graph
+              could not be constructed.
+    :rtype: str or None
     """
     try:
         its = rsmi_to_its(mapped_rxn_smiles)
@@ -284,8 +279,7 @@ def mapped_rxn_is_electron_balanced(mapped_rxn_smiles):
 
 
 def dedup_mapped_rxns(results, smiles_key="smiles"):
-    """
-    Remove isomorphic duplicate mappings from a list of result dictionaries.
+    """Remove isomorphic duplicate mappings from a list of result dictionaries.
 
     Each result is expected to carry a ``"smiles"`` key with the mapped reaction
     SMILES. The canonical ITS hash is computed for every result and stored under
@@ -296,15 +290,11 @@ def dedup_mapped_rxns(results, smiles_key="smiles"):
     together -- they are all kept, keyed by their raw mapped SMILES instead -- so
     deduplication can only ever remove provable isomorphic copies.
 
-    Parameters
-    ----------
-    results : list[dict]
-        Mapping results, each containing a ``"smiles"`` entry.
+    :param results: Mapping results, each containing a ``"smiles"`` entry.
+    :type results: list[dict]
 
-    Returns
-    -------
-    list[dict]
-        The symmetry-distinct subset of ``results``.
+    :return: The symmetry-distinct subset of ``results``.
+    :rtype: list[dict]
     """
     seen = set()
     deduped = []

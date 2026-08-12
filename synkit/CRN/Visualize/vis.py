@@ -233,10 +233,9 @@ class CRNVis:
     _info: CRNGraphInfo = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        """
-        Resolve palette configuration and validate the CRN graph.
+        """Resolve palette configuration and validate the CRN graph.
 
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         if isinstance(self.palette, str):
@@ -249,39 +248,35 @@ class CRNVis:
 
     @property
     def species_nodes(self) -> list[Hashable]:
-        """
-        Return validated species nodes.
+        """Return validated species nodes.
 
-        :returns: Species node identifiers.
+        :return: Species node identifiers.
         :rtype: list[Hashable]
         """
         return self._info.species_nodes
 
     @property
     def rule_nodes(self) -> list[Hashable]:
-        """
-        Return validated rule nodes.
+        """Return validated rule nodes.
 
-        :returns: Rule node identifiers.
+        :return: Rule node identifiers.
         :rtype: list[Hashable]
         """
         return self._info.rule_nodes
 
     @property
     def is_dag(self) -> bool:
-        """
-        Return whether the graph is acyclic.
+        """Return whether the graph is acyclic.
 
-        :returns: ``True`` if the graph is a DAG, else ``False``.
+        :return: ``True`` if the graph is a DAG, else ``False``.
         :rtype: bool
         """
         return self._info.is_dag
 
     def positions(self) -> dict[Hashable, tuple[float, float]]:
-        """
-        Compute node positions for the current graph and layout settings.
+        """Compute node positions for the current graph and layout settings.
 
-        :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+        :return: Mapping from node identifier to ``(x, y)`` coordinates.
         :rtype: dict[Hashable, tuple[float, float]]
         """
         return compute_layout(
@@ -296,10 +291,9 @@ class CRNVis:
         )
 
     def node_labels(self) -> dict[Hashable, str]:
-        """
-        Build node labels for the current graph.
+        """Build node labels for the current graph.
 
-        :returns: Mapping from node identifier to rendered label text.
+        :return: Mapping from node identifier to rendered label text.
         :rtype: dict[Hashable, str]
         """
         return build_node_labels(
@@ -317,21 +311,19 @@ class CRNVis:
     def edge_labels(
         self, *, mode: str = "none"
     ) -> dict[tuple[Hashable, Hashable], str]:
-        """
-        Build edge labels for the current graph.
+        """Build edge labels for the current graph.
 
         :param mode: Labeling mode passed to :func:`build_edge_labels`.
         :type mode: str
-        :returns: Mapping from edge to rendered label text.
+        :return: Mapping from edge to rendered label text.
         :rtype: dict[tuple[Hashable, Hashable], str]
         """
         return build_edge_labels(self.graph, mode=mode)
 
     def strongly_connected_species(self) -> list[set[Hashable]]:
-        """
-        Return strongly connected components containing at least one species node.
+        """Return strongly connected components containing at least one species node.
 
-        :returns: Species-containing strongly connected components.
+        :return: Species-containing strongly connected components.
         :rtype: list[set[Hashable]]
         """
         sccs: list[set[Hashable]] = []
@@ -343,10 +335,9 @@ class CRNVis:
         return sccs
 
     def dense_graph(self) -> bool:
-        """
-        Return whether the graph should be treated as dense.
+        """Return whether the graph should be treated as dense.
 
-        :returns: ``True`` if the graph exceeds node or edge thresholds.
+        :return: ``True`` if the graph exceeds node or edge thresholds.
         :rtype: bool
         """
         return (
@@ -361,10 +352,9 @@ class CRNVis:
         list[tuple[Hashable, Hashable]],
         list[tuple[Hashable, Hashable]],
     ]:
-        """
-        Partition edges into reactant, product, and other groups.
+        """Partition edges into reactant, product, and other groups.
 
-        :returns: Three edge lists in the order reactant, product, other.
+        :return: Three edge lists in the order reactant, product, other.
         :rtype: tuple[list[tuple[Hashable, Hashable]], list[tuple[Hashable, Hashable]], list[tuple[Hashable, Hashable]]]
         """
         reactant_edges: list[tuple[Hashable, Hashable]] = []
@@ -383,12 +373,11 @@ class CRNVis:
 
     @staticmethod
     def _normalize_nodes(nodes: Optional[Iterable[Hashable]]) -> set[Hashable]:
-        """
-        Normalize an optional node iterable to a set.
+        """Normalize an optional node iterable to a set.
 
         :param nodes: Optional node iterable.
         :type nodes: Optional[Iterable[Hashable]]
-        :returns: Set of node identifiers.
+        :return: Set of node identifiers.
         :rtype: set[Hashable]
         """
         return set() if nodes is None else set(nodes)
@@ -397,12 +386,11 @@ class CRNVis:
     def _normalize_edges(
         edges: Optional[Iterable[Tuple[Hashable, Hashable]]],
     ) -> set[Tuple[Hashable, Hashable]]:
-        """
-        Normalize an optional edge iterable to a set.
+        """Normalize an optional edge iterable to a set.
 
         :param edges: Optional edge iterable.
         :type edges: Optional[Iterable[Tuple[Hashable, Hashable]]]
-        :returns: Set of edge tuples.
+        :return: Set of edge tuples.
         :rtype: set[Tuple[Hashable, Hashable]]
         """
         return set() if edges is None else set(edges)
@@ -411,12 +399,11 @@ class CRNVis:
         self,
         edgelist: Sequence[Tuple[Hashable, Hashable]],
     ) -> list[float]:
-        """
-        Compute per-edge widths for the given edge list.
+        """Compute per-edge widths for the given edge list.
 
         :param edgelist: Edges to evaluate.
         :type edgelist: Sequence[Tuple[Hashable, Hashable]]
-        :returns: Edge widths matching the order of ``edgelist``.
+        :return: Edge widths matching the order of ``edgelist``.
         :rtype: list[float]
         """
         widths: list[float] = []
@@ -435,10 +422,9 @@ class CRNVis:
         return widths
 
     def _connectionstyle(self) -> str:
-        """
-        Return the NetworkX/Matplotlib connection style string.
+        """Return the NetworkX/Matplotlib connection style string.
 
-        :returns: Connection style string.
+        :return: Connection style string.
         :rtype: str
         """
         if not self.style.curved_edges:
@@ -446,14 +432,13 @@ class CRNVis:
         return f"arc3,rad={self.style.curve_radius}"
 
     def _categorical_colors(self, values: list[Any], cmap_name: str) -> dict[Any, Any]:
-        """
-        Map categorical values to colors from a colormap.
+        """Map categorical values to colors from a colormap.
 
         :param values: Values to color.
         :type values: list[Any]
         :param cmap_name: Matplotlib colormap name.
         :type cmap_name: str
-        :returns: Mapping from unique values to colors.
+        :return: Mapping from unique values to colors.
         :rtype: dict[Any, Any]
         """
         import matplotlib.pyplot as plt
@@ -463,14 +448,13 @@ class CRNVis:
         return {val: cmap(i) for i, val in enumerate(unique)}
 
     def _node_facecolors(self, nodes: Sequence[Hashable], *, kind: str) -> list[Any]:
-        """
-        Compute face colors for the given node list.
+        """Compute face colors for the given node list.
 
         :param nodes: Nodes to color.
         :type nodes: Sequence[Hashable]
         :param kind: Node kind, either ``"species"`` or ``"rule"``.
         :type kind: str
-        :returns: Face colors matching the order of ``nodes``.
+        :return: Face colors matching the order of ``nodes``.
         :rtype: list[Any]
         """
         if self.node_color_overrides:
@@ -536,12 +520,11 @@ class CRNVis:
         )
 
     def subgraph(self, nodes: Iterable[Hashable]) -> "CRNVis":
-        """
-        Return a new :class:`CRNVis` instance restricted to the given nodes.
+        """Return a new :class:`CRNVis` instance restricted to the given nodes.
 
         :param nodes: Nodes to keep in the induced subgraph.
         :type nodes: Iterable[Hashable]
-        :returns: New visualization helper for the induced subgraph.
+        :return: New visualization helper for the induced subgraph.
         :rtype: CRNVis
         """
         sub = self.graph.subgraph(list(nodes)).copy()
@@ -576,13 +559,12 @@ class CRNVis:
         *,
         auto_align_dense: bool,
     ) -> dict[Hashable, tuple[float, float]]:
-        """
-        Compute positions, optionally switching to automatic layout for dense graphs.
+        """Compute positions, optionally switching to automatic layout for dense graphs.
 
         :param auto_align_dense: Whether to temporarily switch to ``"auto"``
             layout for dense graphs.
         :type auto_align_dense: bool
-        :returns: Mapping from node identifier to ``(x, y)`` coordinates.
+        :return: Mapping from node identifier to ``(x, y)`` coordinates.
         :rtype: dict[Hashable, tuple[float, float]]
         """
         orig_layout = self.layout
@@ -599,8 +581,7 @@ class CRNVis:
         highlight_edges: Optional[Iterable[Tuple[Hashable, Hashable]]],
         highlight_cycles: bool,
     ) -> tuple[set[Hashable], set[tuple[Hashable, Hashable]]]:
-        """
-        Resolve highlighted nodes and edges.
+        """Resolve highlighted nodes and edges.
 
         :param highlight_nodes: Explicit nodes to highlight.
         :type highlight_nodes: Optional[Iterable[Hashable]]
@@ -608,7 +589,7 @@ class CRNVis:
         :type highlight_edges: Optional[Iterable[Tuple[Hashable, Hashable]]]
         :param highlight_cycles: Whether to also highlight cyclic components.
         :type highlight_cycles: bool
-        :returns: Highlighted nodes and highlighted edges.
+        :return: Highlighted nodes and highlighted edges.
         :rtype: tuple[set[Hashable], set[tuple[Hashable, Hashable]]]
         """
         highlight_node_set = self._normalize_nodes(highlight_nodes)
@@ -627,12 +608,11 @@ class CRNVis:
         self,
         highlight_node_set: set[Hashable],
     ) -> tuple[list[Hashable], list[Hashable], list[Hashable], list[Hashable]]:
-        """
-        Partition species and rule nodes into normal and highlighted groups.
+        """Partition species and rule nodes into normal and highlighted groups.
 
         :param highlight_node_set: Nodes marked for highlighting.
         :type highlight_node_set: set[Hashable]
-        :returns: Species normal, rule normal, species highlighted, rule highlighted.
+        :return: Species normal, rule normal, species highlighted, rule highlighted.
         :rtype: tuple[list[Hashable], list[Hashable], list[Hashable], list[Hashable]]
         """
         species_normal = [n for n in self.species_nodes if n not in highlight_node_set]
@@ -650,12 +630,11 @@ class CRNVis:
         list[tuple[Hashable, Hashable]],
         list[tuple[Hashable, Hashable]],
     ]:
-        """
-        Partition edges into normal and highlighted groups.
+        """Partition edges into normal and highlighted groups.
 
         :param highlight_edge_set: Edges marked for highlighting.
         :type highlight_edge_set: set[tuple[Hashable, Hashable]]
-        :returns: Reactant normal, product normal, other normal, highlighted edges.
+        :return: Reactant normal, product normal, other normal, highlighted edges.
         :rtype: tuple[list[tuple[Hashable, Hashable]], list[tuple[Hashable, Hashable]],
         list[tuple[Hashable, Hashable]], list[tuple[Hashable, Hashable]]]
         """
@@ -667,12 +646,11 @@ class CRNVis:
         return reactant_normal, product_normal, other_normal, highlighted_edges
 
     def _node_edgecolors(self, *, kind: str) -> str:
-        """
-        Return the node outline color for the given kind.
+        """Return the node outline color for the given kind.
 
         :param kind: Node kind, either ``"species"`` or ``"rule"``.
         :type kind: str
-        :returns: Edge color string.
+        :return: Edge color string.
         :rtype: str
         """
         if not self.style.show_node_outline:
@@ -691,8 +669,7 @@ class CRNVis:
         node_color: Sequence[Any],
         highlighted: bool,
     ) -> None:
-        """
-        Draw a single node group.
+        """Draw a single node group.
 
         :param ax: Matplotlib axes.
         :type ax: Any
@@ -706,7 +683,7 @@ class CRNVis:
         :type node_color: Sequence[Any]
         :param highlighted: Whether highlight linewidths should be used.
         :type highlighted: bool
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         if not nodes:
@@ -739,12 +716,11 @@ class CRNVis:
         )
 
     def _common_edge_draw_kwargs(self, ax: Any) -> dict[str, Any]:
-        """
-        Return common edge drawing keyword arguments.
+        """Return common edge drawing keyword arguments.
 
         :param ax: Matplotlib axes.
         :type ax: Any
-        :returns: Shared edge drawing keyword arguments.
+        :return: Shared edge drawing keyword arguments.
         :rtype: dict[str, Any]
         """
         return dict(
@@ -766,8 +742,7 @@ class CRNVis:
         edge_color: Any,
         width: float | Sequence[float],
     ) -> None:
-        """
-        Draw a single edge group.
+        """Draw a single edge group.
 
         :param ax: Matplotlib axes.
         :type ax: Any
@@ -781,7 +756,7 @@ class CRNVis:
         :type edge_color: Any
         :param width: Edge width or per-edge widths.
         :type width: float | Sequence[float]
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         if not edgelist:
@@ -798,10 +773,9 @@ class CRNVis:
         )
 
     def _effective_font_size(self) -> int:
-        """
-        Return the effective node label font size.
+        """Return the effective node label font size.
 
-        :returns: Effective font size after applying dense-graph adjustment.
+        :return: Effective font size after applying dense-graph adjustment.
         :rtype: int
         """
         effective_font = (
@@ -812,12 +786,11 @@ class CRNVis:
         return effective_font
 
     def _label_draw_kwargs(self, ax: Any) -> dict[str, Any]:
-        """
-        Return node label drawing keyword arguments.
+        """Return node label drawing keyword arguments.
 
         :param ax: Matplotlib axes.
         :type ax: Any
-        :returns: Label drawing keyword arguments.
+        :return: Label drawing keyword arguments.
         :rtype: dict[str, Any]
         """
         text_kwargs: dict[str, Any] = dict(
@@ -842,8 +815,7 @@ class CRNVis:
         pos: Mapping[Hashable, tuple[float, float]],
         labels: Mapping[Hashable, str],
     ) -> None:
-        """
-        Draw node labels.
+        """Draw node labels.
 
         :param ax: Matplotlib axes.
         :type ax: Any
@@ -851,7 +823,7 @@ class CRNVis:
         :type pos: Mapping[Hashable, tuple[float, float]]
         :param labels: Node labels.
         :type labels: Mapping[Hashable, str]
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         nx.draw_networkx_labels(
@@ -868,8 +840,7 @@ class CRNVis:
         *,
         edge_label_mode: str,
     ) -> None:
-        """
-        Draw edge labels if requested.
+        """Draw edge labels if requested.
 
         :param ax: Matplotlib axes.
         :type ax: Any
@@ -877,7 +848,7 @@ class CRNVis:
         :type pos: Mapping[Hashable, tuple[float, float]]
         :param edge_label_mode: Edge label mode.
         :type edge_label_mode: str
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         if edge_label_mode == "none":
@@ -898,14 +869,13 @@ class CRNVis:
         )
 
     def _set_title(self, ax: Any, title: Optional[str]) -> None:
-        """
-        Set the plot title if provided.
+        """Set the plot title if provided.
 
         :param ax: Matplotlib axes.
         :type ax: Any
         :param title: Optional title.
         :type title: Optional[str]
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         if not title:
@@ -914,12 +884,11 @@ class CRNVis:
         ax.set_title(f"{title}{suffix}", color=self.palette.title_text)
 
     def _draw_legend(self, ax: Any) -> None:
-        """
-        Draw the default legend.
+        """Draw the default legend.
 
         :param ax: Matplotlib axes.
         :type ax: Any
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         from matplotlib.lines import Line2D
@@ -971,8 +940,7 @@ class CRNVis:
         *,
         hide_axis: bool,
     ) -> None:
-        """
-        Finalize axes appearance.
+        """Finalize axes appearance.
 
         :param fig: Matplotlib figure.
         :type fig: Any
@@ -980,7 +948,7 @@ class CRNVis:
         :type ax: Any
         :param hide_axis: Whether to hide the axes.
         :type hide_axis: bool
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         ax.margins(self.style.margins)
@@ -1002,8 +970,7 @@ class CRNVis:
         hide_axis: bool = True,
         auto_align_dense: bool = False,
     ) -> tuple[Any, Any, dict[Hashable, tuple[float, float]]]:
-        """
-        Draw the CRN.
+        """Draw the CRN.
 
         :param ax: Existing Matplotlib axes. If ``None``, a new figure and axes
             are created.
@@ -1028,7 +995,7 @@ class CRNVis:
         :param auto_align_dense: Whether to temporarily switch to automatic
             layout for dense graphs.
         :type auto_align_dense: bool
-        :returns: Figure, axes, and node positions.
+        :return: Figure, axes, and node positions.
         :rtype: tuple[Any, Any, dict[Hashable, tuple[float, float]]]
         """
         import matplotlib.pyplot as plt
@@ -1145,8 +1112,7 @@ class CRNVis:
         bbox_inches: str = "tight",
         **draw_kwargs: Any,
     ) -> Path:
-        """
-        Draw and save the CRN figure.
+        """Draw and save the CRN figure.
 
         :param path: Output file path.
         :type path: str | Path
@@ -1156,7 +1122,7 @@ class CRNVis:
         :type bbox_inches: str
         :param draw_kwargs: Additional keyword arguments passed to :meth:`draw`.
         :type draw_kwargs: Any
-        :returns: Saved output path.
+        :return: Saved output path.
         :rtype: Path
         """
         path = Path(path)
@@ -1174,14 +1140,13 @@ def draw_crn(
     graph: nx.DiGraph,
     **kwargs: Any,
 ) -> tuple[Any, Any, dict[Hashable, tuple[float, float]]]:
-    """
-    Convenience wrapper around :class:`CRNVis`.
+    """Convenience wrapper around :class:`CRNVis`.
 
     :param graph: Directed CRN graph to visualize.
     :type graph: nx.DiGraph
     :param kwargs: Keyword arguments forwarded to :class:`CRNVis`.
     :type kwargs: Any
-    :returns: Figure, axes, and node positions.
+    :return: Figure, axes, and node positions.
     :rtype: tuple[Any, Any, dict[Hashable, tuple[float, float]]]
     """
     return CRNVis(graph=graph, **kwargs).draw()

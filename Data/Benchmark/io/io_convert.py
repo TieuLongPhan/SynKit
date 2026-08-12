@@ -86,17 +86,14 @@ if __name__ == "__main__":
         limit: Optional[int] = None,
         out_dir: Path = Path("Data/Benchmark/io"),
     ) -> None:
-        """
-        Run IO conversion benchmarks on dataset.
+        """Run IO conversion benchmarks on dataset.
 
-        Parameters
-        ----------
-        data_path : Path
-            Path to JSON(.gz) database with entries containing 'smart' keys.
-        limit : Optional[int]
-            Maximum number of entries to process.
-        out_dir : Path
-            Directory to save output files.
+        :param data_path: Path to JSON(.gz) database with entries containing 'smart' keys.
+        :type data_path: Path
+        :param limit: Maximum number of entries to process.
+        :type limit: Optional[int]
+        :param out_dir: Directory to save output files.
+        :type out_dir: Path
         """
         out_dir = out_dir.expanduser()
         out_dir.mkdir(parents=True, exist_ok=True)

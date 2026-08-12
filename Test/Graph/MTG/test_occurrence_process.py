@@ -238,10 +238,7 @@ def test_material_bindings_are_component_isomorphisms_not_names() -> None:
             (wrong_input, output),
             (_event("E", rule, wrong_input, output),),
         )
-    assert (
-        error.value.issues[0].code
-        is ProcessIssueCode.BINDING_NOT_ISOMORPHIC
-    )
+    assert error.value.issues[0].code is ProcessIssueCode.BINDING_NOT_ISOMORPHIC
 
 
 def test_finite_unfolding_uses_distinct_catalyst_occurrences() -> None:
@@ -420,7 +417,4 @@ def test_series_parallel_is_detected_but_not_assumed_for_general_posets() -> Non
 
     with pytest.raises(ProcessError) as exhausted:
         detect_series_parallel(n_poset, max_partition_states=1)  # type: ignore[arg-type]
-    assert (
-        exhausted.value.issues[0].code
-        is ProcessIssueCode.SERIES_PARALLEL_LIMIT
-    )
+    assert exhausted.value.issues[0].code is ProcessIssueCode.SERIES_PARALLEL_LIMIT

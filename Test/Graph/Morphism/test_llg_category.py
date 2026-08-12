@@ -191,6 +191,28 @@ def _electron_graph() -> nx.Graph:
     return graph
 
 
+def _aromatic_electron_ring(phase: int) -> LewisLabelledGraph:
+    graph = nx.cycle_graph(6)
+    for node in graph:
+        graph.nodes[node].update(
+            element="C",
+            aromatic=True,
+            hcount=1,
+            radical=0,
+            lone_pairs=0,
+            valence_electrons=4,
+        )
+    for index in range(6):
+        left, right = index, (index + 1) % 6
+        graph.edges[left, right].update(
+            sigma_order=1.0,
+            pi_order=float((index + phase) % 2),
+        )
+    return LewisLabelledGraph.from_networkx(
+        derive_electron_labeled_graph(graph), ELECTRON_LLG_SCHEMA
+    )
+
+
 def test_electron_derived_charge_and_total_order_are_deterministic() -> None:
     source = _electron_graph()
     derived = derive_electron_labeled_graph(source)
@@ -207,6 +229,62 @@ def test_electron_derived_charge_and_total_order_are_deterministic() -> None:
     with pytest.raises(LLGError) as error:
         derive_electron_labeled_graph(inconsistent)
     assert error.value.issues[0].code is LLGIssueCode.DERIVED_LABEL_MISMATCH
+
+
+def test_aromatic_electron_matching_is_kekule_phase_invariant() -> None:
+    first = _aromatic_electron_ring(0)
+    second = _aromatic_electron_ring(1)
+
+    assert first.is_isomorphic(second)
+    morphism = LLGMorphism(first, second, {node: node for node in first.node_ids})
+    assert morphism.is_isomorphism
+
+
+def test_aromatic_phase_matching_preserves_local_pi_electron_count() -> None:
+    aromatic = _aromatic_electron_ring(0)
+    invalid_graph = aromatic.to_networkx()
+    for node in invalid_graph:
+        invalid_graph.nodes[node].pop("charge")
+        invalid_graph.nodes[node].pop("bond_order_sum")
+    for left, right in invalid_graph.edges:
+        invalid_graph.edges[left, right]["pi_order"] = 0.0
+        invalid_graph.edges[left, right]["order"] = 1.0
+        invalid_graph.edges[left, right]["kekule_order"] = 1.0
+    invalid = LewisLabelledGraph.from_networkx(
+        derive_electron_labeled_graph(invalid_graph), ELECTRON_LLG_SCHEMA
+    )
+
+    assert not aromatic.is_isomorphic(invalid)
+    with pytest.raises(LLGError) as error:
+        LLGMorphism(aromatic, invalid, {node: node for node in aromatic.node_ids})
+    assert error.value.issues[0].code is LLGIssueCode.NODE_LABEL_MISMATCH
+
+
+def test_partial_aromatic_morphisms_remain_kekule_phase_sensitive() -> None:
+    first = _aromatic_electron_ring(0)
+    second = _aromatic_electron_ring(1)
+    fragment_graph = first.to_networkx().subgraph((0, 1)).copy()
+    fragment = LewisLabelledGraph.from_networkx(fragment_graph, ELECTRON_LLG_SCHEMA)
+
+    with pytest.raises(LLGError) as error:
+        LLGMorphism(fragment, second, {0: 0, 1: 1})
+    assert error.value.issues[0].code is LLGIssueCode.EDGE_LABEL_MISMATCH
+
+
+def test_nonaromatic_electron_edges_remain_phase_sensitive() -> None:
+    single = LewisLabelledGraph.from_networkx(
+        derive_electron_labeled_graph(_electron_graph()), ELECTRON_LLG_SCHEMA
+    )
+    double_graph = _electron_graph()
+    double_graph.edges[1, 2]["pi_order"] = 1.0
+    double = LewisLabelledGraph.from_networkx(
+        derive_electron_labeled_graph(double_graph), ELECTRON_LLG_SCHEMA
+    )
+
+    assert not single.is_isomorphic(double)
+    with pytest.raises(LLGError) as error:
+        LLGMorphism(single, double, {1: 1, 2: 2})
+    assert error.value.issues[0].code is LLGIssueCode.EDGE_LABEL_MISMATCH
 
 
 def test_tuple_and_typesgh_adapt_to_the_same_common_contract() -> None:

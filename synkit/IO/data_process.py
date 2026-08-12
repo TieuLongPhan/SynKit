@@ -104,16 +104,18 @@ def merge_dicts(
     option to either merge only dictionaries with matching key values
     (intersection) or all dictionaries (union).
 
-    Parameters:
-    - list1 (List[Dict[str, Any]]): The first list of dictionaries.
-    - list2 (List[Dict[str, Any]]): The second list of dictionaries.
-    - key (str): The key used to match and merge dictionaries from both lists.
-    - intersection (bool): If True, only merge dictionaries with matching key values;
-      if False, merge all dictionaries, combining those with matching key values.
+    :param list1: The first list of dictionaries.
+    :type list1: List[Dict[str, Any]]
+    :param list2: The second list of dictionaries.
+    :type list2: List[Dict[str, Any]]
+    :param key: The key used to match and merge dictionaries from both lists.
+    :type key: str
+    :param intersection: If True, only merge dictionaries with matching key values;
+                         if False, merge all dictionaries, combining those with matching key values.
+    :type intersection: bool
 
-    Returns:
-    - List[Dict[str, Any]]: A list of dictionaries with merged contents from both
-      input lists according to the specified merging strategy.
+    :return: Dictionaries merged according to the selected strategy.
+    :rtype: List[Dict[str, Any]]
     """
     dict1 = {item[key]: item for item in list1}
     dict2 = {item[key]: item for item in list2}

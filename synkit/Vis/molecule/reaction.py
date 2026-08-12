@@ -52,7 +52,7 @@ def draw_reaction_graph(
     :type figsize_per_mol: tuple[float, float]
     :param sanitize: Whether to sanitize molecules during RSMI conversion.
     :type sanitize: bool
-    :returns: ``(fig, axes)``.
+    :return: ``(fig, axes)``.
     :rtype: tuple[plt.Figure, list[plt.Axes]]
     """
 

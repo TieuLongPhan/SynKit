@@ -45,8 +45,7 @@ class WLResult:
 
 
 class WLCanonicalizer(_CRNGraphBackend):
-    """
-    Fast *approximate* canonicalization + orbit-like partition using
+    """Fast *approximate* canonicalization + orbit-like partition using
     Weisfeiler–Lehman (1-WL) refinement on the CRN graph view.
 
     What you get:
@@ -59,9 +58,10 @@ class WLCanonicalizer(_CRNGraphBackend):
         This is often an over-estimate and can be a very loose proxy.
       - Otherwise it is None.
 
-    Notes:
-      - This does NOT enumerate automorphisms / exact orbits.
-      - Designed for speed and deterministic output.
+    .. rubric:: Notes
+
+    This does NOT enumerate automorphisms / exact orbits.
+    Designed for speed and deterministic output.
     """
 
     def __init__(

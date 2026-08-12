@@ -126,8 +126,7 @@ class RXNSide(MutableMapping[str, int]):
 
     @classmethod
     def _parse_one_term(cls, token: str) -> Tuple[str, int]:
-        """
-        Parse one side term.
+        """Parse one side term.
 
         Accepted forms include:
         - ``A``
@@ -141,7 +140,7 @@ class RXNSide(MutableMapping[str, int]):
 
         :param token: One term from a side string.
         :type token: str
-        :returns: ``(species, count)``
+        :return: ``(species, count)``
         :rtype: Tuple[str, int]
         """
         raw = token.strip()
@@ -174,26 +173,24 @@ class RXNSide(MutableMapping[str, int]):
     # ------------------------------------------------------------------
     @classmethod
     def from_any(cls, obj: SideInput) -> RXNSide:
-        """
-        Build from mapping / iterable / None with normalization.
+        """Build from mapping / iterable / None with normalization.
 
         :param obj: Side-like input.
         :type obj: SideInput
-        :returns: Normalized side.
+        :return: Normalized side.
         :rtype: RXNSide
         """
         return cls(cls._normalize_any(obj))
 
     @classmethod
     def from_str(cls, side: str) -> RXNSide:
-        """
-        Parse one reaction side.
+        """Parse one reaction side.
 
         Both ``+`` and ``.`` are accepted as separators between terms.
         This allows both coefficient-style and repeated-species style.
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             RXNSide.from_str("2A + B").to_dict()
@@ -213,7 +210,7 @@ class RXNSide(MutableMapping[str, int]):
 
         :param side: Side string.
         :type side: str
-        :returns: Parsed side.
+        :return: Parsed side.
         :rtype: RXNSide
         """
         if side is None:
@@ -357,14 +354,13 @@ class RXNSide(MutableMapping[str, int]):
         self.incr(species, -int(by))
 
     def arity(self, include_coeff: bool = False) -> int:
-        """
-        Count molecules on this side.
+        """Count molecules on this side.
 
         :param include_coeff:
             If ``False``, count distinct present terms.
             If ``True``, sum stoichiometric coefficients.
         :type include_coeff: bool
-        :returns: Arity under the chosen convention.
+        :return: Arity under the chosen convention.
         :rtype: int
         """
         if include_coeff:
@@ -378,10 +374,10 @@ class RXNSide(MutableMapping[str, int]):
         return not self.data
 
     def expand(self) -> List[str]:
-        """
-        Expand into a flat list respecting stoichiometry.
+        """Expand into a flat list respecting stoichiometry.
 
-        Example:
+        .. rubric:: Examples
+
         ``{"A": 2, "B": 1} -> ["A", "A", "B"]``
         """
         out: List[str] = []
@@ -404,8 +400,7 @@ class RXNSide(MutableMapping[str, int]):
         repeated: bool = False,
         sort: bool = True,
     ) -> str:
-        """
-        Format this side as a string.
+        """Format this side as a string.
 
         :param sep: Separator between terms.
         :type sep: str
@@ -415,7 +410,7 @@ class RXNSide(MutableMapping[str, int]):
         :type repeated: bool
         :param sort: Whether to sort species labels.
         :type sort: bool
-        :returns: String representation.
+        :return: String representation.
         :rtype: str
 
         .. code-block:: python

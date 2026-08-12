@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 approx_mcs_matcher.py — Heuristic / Approximate MCS Matcher
 ===========================================================
@@ -56,6 +54,8 @@ Classes
    ApproxMCSMatcher
 """
 
+from __future__ import annotations
+
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 import networkx as nx
@@ -72,8 +72,7 @@ MappingDict = Dict[int, int]
 
 
 class ApproxMCSMatcher:
-    """
-    Heuristic / approximate common-subgraph matcher.
+    """Heuristic / approximate common-subgraph matcher.
 
     This class provides a **fast, approximate** alternative to
     :class:`MCSMatcher`. It does *not* enumerate all subgraph
@@ -110,40 +109,38 @@ class ApproxMCSMatcher:
     closely as possible so that :class:`ApproxMCSMatcher` can drop in as
     a faster, heuristic substitute in many workflows.
 
-    Parameters
-    ----------
-    node_attrs : list[str] or None, optional
-        Node attribute keys to compare. If ``None``, defaults to
-        ``["element"]``.
-    node_defaults : list[Any] or None, optional
-        Fallback values for each node attribute when missing. If
-        ``None``, defaults to a list of ``"*"``
-        with the same length as :paramref:`node_attrs`.
-    allow_shift : bool, optional
-        Placeholder for future asymmetric rules. Kept for API
-        compatibility with :class:`MCSMatcher`.
-    edge_attrs : list[str] or None, optional
-        Edge attribute keys to use for scalar comparison
-        (e.g. ``["order"]``). If ``None``, defaults to ``["order"]``.
-    prune_wc : bool, optional
-        If ``True``, strip wildcard nodes (see
-        :paramref:`wildcard_element`, :paramref:`element_key`) from both
-        graphs before searching.
-    prune_automorphisms : bool, optional
-        If ``True``, collapse mappings that have the same host node set
-        (automorphism pruning).
-    wildcard_element : Any, optional
-        Attribute value denoting wildcard nodes (typically ``"*"``,
-        used together with :paramref:`element_key`).
-    element_key : str, optional
-        Node attribute key used to detect wildcard nodes when
-        :paramref:`prune_wc` is ``True``.
-    use_wl : bool, optional
-        If ``True``, run a simple 1-WL-style color refinement on both
-        graphs and include the resulting colors in the node similarity
-        score.
-    wl_max_iter : int, optional
-        Maximum number of WL refinement iterations.
+    :param node_attrs: Node attribute keys to compare. If ``None``, defaults to
+                       ``["element"]``.
+    :type node_attrs: list[str] or None, optional
+    :param node_defaults: Fallback values for each node attribute when missing. If
+                          ``None``, defaults to a list of ``"*"``
+                          with the same length as ``node_attrs``.
+    :type node_defaults: list[Any] or None, optional
+    :param allow_shift: Placeholder for future asymmetric rules. Kept for API
+                        compatibility with :class:`MCSMatcher`.
+    :type allow_shift: bool, optional
+    :param edge_attrs: Edge attribute keys to use for scalar comparison
+                       (e.g. ``["order"]``). If ``None``, defaults to ``["order"]``.
+    :type edge_attrs: list[str] or None, optional
+    :param prune_wc: If ``True``, strip wildcard nodes (see
+                     ``wildcard_element``, ``element_key``) from both
+                     graphs before searching.
+    :type prune_wc: bool, optional
+    :param prune_automorphisms: If ``True``, collapse mappings that have the same host node set
+                                (automorphism pruning).
+    :type prune_automorphisms: bool, optional
+    :param wildcard_element: Attribute value denoting wildcard nodes (typically ``"*"``,
+                             used together with ``element_key``).
+    :type wildcard_element: Any, optional
+    :param element_key: Node attribute key used to detect wildcard nodes when
+                        ``prune_wc`` is ``True``.
+    :type element_key: str, optional
+    :param use_wl: If ``True``, run a simple 1-WL-style color refinement on both
+                   graphs and include the resulting colors in the node similarity
+                   score.
+    :type use_wl: bool, optional
+    :param wl_max_iter: Maximum number of WL refinement iterations.
+    :type wl_max_iter: int, optional
     """
 
     # ------------------------------------------------------------------
@@ -176,7 +173,9 @@ class ApproxMCSMatcher:
 
         self._node_attrs: List[str] = node_attrs
         self._node_defaults: List[Any] = node_defaults
-        self._edge_attrs: List[str] = edge_attrs or ["order"]
+        self._edge_attrs: List[str] = (
+            ["order"] if edge_attrs is None else list(edge_attrs)
+        )
         self.allow_shift: bool = allow_shift
 
         self.wildcard_aware: bool = wildcard_aware
@@ -227,15 +226,14 @@ class ApproxMCSMatcher:
         return self.node_match(pdata, hdata)
 
     def _prune_graph(self, G: nx.Graph) -> nx.Graph:
-        """
-        Remove wildcard nodes from ``G`` (non-inplace) if applicable.
+        """Remove wildcard nodes from ``G`` (non-inplace) if applicable.
 
-        When :pyattr:`prune_wc` is ``False``, the input graph is returned
+        When :attr:`prune_wc` is ``False``, the input graph is returned
         as-is.
 
         :param G: Input graph.
         :type G: nx.Graph
-        :returns: Possibly pruned graph.
+        :return: Possibly pruned graph.
         :rtype: nx.Graph
         """
         if not self.prune_wc:
@@ -251,14 +249,13 @@ class ApproxMCSMatcher:
         G1: nx.Graph,
         G2: nx.Graph,
     ) -> Tuple[nx.Graph, nx.Graph, bool]:
-        """
-        Ensure the smaller graph is used as pattern.
+        """Ensure the smaller graph is used as pattern.
 
         :param G1: First input graph.
         :type G1: nx.Graph
         :param G2: Second input graph.
         :type G2: nx.Graph
-        :returns: Tuple ``(pattern, host, pattern_is_G1)``.
+        :return: Tuple ``(pattern, host, pattern_is_G1)``.
         :rtype: tuple[nx.Graph, nx.Graph, bool]
         """
         if G1.number_of_nodes() <= G2.number_of_nodes():
@@ -267,12 +264,11 @@ class ApproxMCSMatcher:
 
     @staticmethod
     def _invert_mapping(mapping: MappingDict) -> MappingDict:
-        """
-        Invert a mapping from host→pattern to pattern→host or vice versa.
+        """Invert a mapping from host→pattern to pattern→host or vice versa.
 
         :param mapping: Mapping to invert.
         :type mapping: dict[int, int]
-        :returns: Inverted mapping.
+        :return: Inverted mapping.
         :rtype: dict[int, int]
         """
         return {v: k for k, v in mapping.items()}
@@ -282,8 +278,7 @@ class ApproxMCSMatcher:
         attrs1: Dict[str, Any],
         attrs2: Dict[str, Any],
     ) -> bool:
-        """
-        Compare edge attributes listed in :pyattr:`_edge_attrs`.
+        """Compare edge attributes listed in :attr:`_edge_attrs`.
 
         For each attribute name:
 
@@ -295,7 +290,7 @@ class ApproxMCSMatcher:
         :type attrs1: dict[str, Any]
         :param attrs2: Edge attributes of the second edge.
         :type attrs2: dict[str, Any]
-        :returns: ``True`` if the attributes are compatible.
+        :return: ``True`` if the attributes are compatible.
         :rtype: bool
         """
         for name in self._edge_attrs:
@@ -312,8 +307,7 @@ class ApproxMCSMatcher:
         return True
 
     def _compute_wl_colors(self, G: nx.Graph) -> Dict[int, int]:
-        """
-        Run a simple 1-WL color refinement on ``G``.
+        """Run a simple 1-WL color refinement on ``G``.
 
         Initial colors are based on the configured node attributes and
         the node degree; refinement iteratively refines colors using the
@@ -321,7 +315,7 @@ class ApproxMCSMatcher:
 
         :param G: Input graph.
         :type G: nx.Graph
-        :returns: Mapping from node id to WL color id.
+        :return: Mapping from node id to WL color id.
         :rtype: dict[int, int]
         """
         colors: Dict[int, int] = {}
@@ -356,15 +350,14 @@ class ApproxMCSMatcher:
         wl_pattern: Dict[int, int],
         wl_host: Dict[int, int],
     ) -> float:
-        """
-        Compute a simple structural similarity score for a node pair.
+        """Compute a simple structural similarity score for a node pair.
 
         The score is based on:
 
-        * Node attribute compatibility via :pyattr:`node_match`.
+        * Node attribute compatibility via :attr:`node_match`.
         * Degree difference between ``p`` and ``h``.
         * Overlap in neighbour degrees.
-        * Optional 1-WL color agreement (if :pyattr:`use_wl` is ``True``).
+        * Optional 1-WL color agreement (if :attr:`use_wl` is ``True``).
 
         :param p: Node id in the pattern graph.
         :type p: int
@@ -378,7 +371,7 @@ class ApproxMCSMatcher:
         :type wl_pattern: dict[int, int]
         :param wl_host: WL colors for the host graph.
         :type wl_host: dict[int, int]
-        :returns: Similarity score (larger is better; negative for
+        :return: Similarity score (larger is better; negative for
             incompatible pairs).
         :rtype: float
         """
@@ -413,8 +406,7 @@ class ApproxMCSMatcher:
         wl_pattern: Dict[int, int],
         wl_host: Dict[int, int],
     ) -> List[Tuple[int, int]]:
-        """
-        Generate a list of high-scoring seed node pairs.
+        """Generate a list of high-scoring seed node pairs.
 
         :param pattern: Pattern graph.
         :type pattern: nx.Graph
@@ -426,7 +418,7 @@ class ApproxMCSMatcher:
         :type wl_pattern: dict[int, int]
         :param wl_host: WL colors for ``host`` (may be empty).
         :type wl_host: dict[int, int]
-        :returns: List of ``(pattern_node, host_node)`` pairs.
+        :return: List of ``(pattern_node, host_node)`` pairs.
         :rtype: list[tuple[int, int]]
         """
         candidates: List[Tuple[float, int, int]] = []
@@ -456,8 +448,7 @@ class ApproxMCSMatcher:
         host: nx.Graph,
         mapping: MappingDict,
     ) -> bool:
-        """
-        Check whether extending mapping with ``p → h`` is locally valid.
+        """Check whether extending mapping with ``p → h`` is locally valid.
 
         This ensures that for any already-mapped neighbour ``p_n`` of
         ``p``, the candidate host node ``h`` is adjacent to the mapped
@@ -473,7 +464,7 @@ class ApproxMCSMatcher:
         :type host: nx.Graph
         :param mapping: Current partial mapping (pattern→host).
         :type mapping: dict[int, int]
-        :returns: ``True`` if the extension is feasible.
+        :return: ``True`` if the extension is feasible.
         :rtype: bool
         """
         for p_n, h_n in mapping.items():
@@ -496,8 +487,7 @@ class ApproxMCSMatcher:
         wl_pattern: Dict[int, int],
         wl_host: Dict[int, int],
     ) -> List[int]:
-        """
-        Enumerate host nodes that can be matched to pattern node ``p``.
+        """Enumerate host nodes that can be matched to pattern node ``p``.
 
         :param p: Pattern node.
         :type p: int
@@ -511,7 +501,7 @@ class ApproxMCSMatcher:
         :type wl_pattern: dict[int, int]
         :param wl_host: WL colors for ``host`` (may be empty).
         :type wl_host: dict[int, int]
-        :returns: List of feasible host node ids.
+        :return: List of feasible host node ids.
         :rtype: list[int]
         """
         mapped_hosts = set(mapping.values())
@@ -551,8 +541,7 @@ class ApproxMCSMatcher:
         wl_pattern: Dict[int, int],
         wl_host: Dict[int, int],
     ) -> MappingDict:
-        """
-        Greedily grow a subgraph mapping starting from a single seed.
+        """Greedily grow a subgraph mapping starting from a single seed.
 
         :param pattern: Pattern graph.
         :type pattern: nx.Graph
@@ -568,7 +557,7 @@ class ApproxMCSMatcher:
         :type wl_pattern: dict[int, int]
         :param wl_host: WL colors for ``host`` (may be empty).
         :type wl_host: dict[int, int]
-        :returns: Completed partial mapping (pattern→host).
+        :return: Completed partial mapping (pattern→host).
         :rtype: dict[int, int]
         """
         mapping: MappingDict = {seed_p: seed_h}
@@ -618,8 +607,7 @@ class ApproxMCSMatcher:
         max_seeds: int,
         max_steps: int,
     ) -> Tuple[List[MappingDict], int]:
-        """
-        Core heuristic search between ``pattern`` and ``host``.
+        """Core heuristic search between ``pattern`` and ``host``.
 
         This is factored out so that it can be reused for whole-graph,
         component-wise, and reaction-centre searches.
@@ -632,7 +620,7 @@ class ApproxMCSMatcher:
         :type max_seeds: int
         :param max_steps: Maximum number of growth steps per seed.
         :type max_steps: int
-        :returns: Tuple ``(mappings, best_size)`` where ``mappings`` are
+        :return: Tuple ``(mappings, best_size)`` where ``mappings`` are
             pattern→host and ``best_size`` is the size of the largest
             mapping found.
         :rtype: tuple[list[dict[int, int]], int]
@@ -674,7 +662,12 @@ class ApproxMCSMatcher:
         if self.prune_automorphisms:
             filtered: List[MappingDict] = []
             seen_host_sets: Set[frozenset[int]] = set()
-            all_maps.sort(key=lambda d: (-len(d), tuple(sorted(d.items()))))
+            all_maps.sort(
+                key=lambda mapping: (
+                    -len(mapping),
+                    repr(tuple(sorted(mapping.items(), key=repr))),
+                )
+            )
             for mp in all_maps:
                 hset = frozenset(mp.values())
                 if hset in seen_host_sets:
@@ -693,8 +686,7 @@ class ApproxMCSMatcher:
         max_seeds: int,
         max_steps: int,
     ) -> MappingDict:
-        """
-        Component-wise approximate matching between ``G1`` and ``G2``.
+        """Component-wise approximate matching between ``G1`` and ``G2``.
 
         Connected components of each graph are sorted by size
         (descending) and matched pairwise (largest with largest, etc.).
@@ -709,7 +701,7 @@ class ApproxMCSMatcher:
         :type max_seeds: int
         :param max_steps: Maximum growth steps per seed.
         :type max_steps: int
-        :returns: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
+        :return: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
         :rtype: dict[int, int]
         """
         comps1 = [G1.subgraph(c).copy() for c in nx.connected_components(G1)]
@@ -751,8 +743,7 @@ class ApproxMCSMatcher:
         max_seeds: int,
         max_steps: int,
     ) -> MappingDict:
-        """
-        Hungarian-optimal component pairing followed by per-pair approx MCS.
+        """Hungarian-optimal component pairing followed by per-pair approx MCS.
 
         Builds an n₁×n₂ score matrix (best approximate MCS size for each
         component pair), solves the linear assignment problem to maximise
@@ -770,7 +761,7 @@ class ApproxMCSMatcher:
         :type max_seeds: int
         :param max_steps: Maximum growth steps per seed.
         :type max_steps: int
-        :returns: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
+        :return: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
         :rtype: dict[int, int]
         """
         try:
@@ -821,8 +812,7 @@ class ApproxMCSMatcher:
         max_seeds: int,
         max_steps: int,
     ) -> MappingDict:
-        """
-        Approximate molecule-level (component) matching in G1→G2.
+        """Approximate molecule-level (component) matching in G1→G2.
 
         This mirrors :py:meth:`MCSMatcher._find_mcs_mol` but uses the
         heuristic search rather than exact isomorphism checks.
@@ -835,7 +825,7 @@ class ApproxMCSMatcher:
         :type max_seeds: int
         :param max_steps: Maximum growth steps per seed.
         :type max_steps: int
-        :returns: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
+        :return: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
         :rtype: dict[int, int]
         """
         comps1 = sorted(nx.connected_components(G1), key=len, reverse=True)
@@ -894,8 +884,7 @@ class ApproxMCSMatcher:
         rc2: Any,
         side: str,
     ) -> Tuple[Any, Any]:
-        """
-        Select ITS sides or treat inputs as graphs.
+        """Select ITS sides or treat inputs as graphs.
 
         :param rc1: First reaction-centre or ITS-like graph object.
         :type rc1: Any
@@ -903,7 +892,7 @@ class ApproxMCSMatcher:
         :type rc2: Any
         :param side: Which ITS sides to compare.
         :type side: str
-        :returns: Tuple ``(G1, G2)`` as graphs.
+        :return: Tuple ``(G1, G2)`` as graphs.
         :rtype: tuple[Any, Any]
         :raises ImportError: If ITS utilities are required but missing.
         :raises ValueError: If ``side`` is invalid.
@@ -946,8 +935,7 @@ class ApproxMCSMatcher:
         max_seeds: int = 16,
         max_steps: int = 256,
     ) -> "ApproxMCSMatcher":
-        """
-        Heuristically search for approximate common subgraphs.
+        """Heuristically search for approximate common subgraphs.
 
         This is a lightweight wrapper that ignores molecule-level
         options and simply runs the greedy approximate search on the
@@ -961,7 +949,7 @@ class ApproxMCSMatcher:
         :type max_seeds: int
         :param max_steps: Maximum number of growth steps per seed.
         :type max_steps: int
-        :returns: The matcher instance (with cache updated).
+        :return: The matcher instance (with cache updated).
         :rtype: ApproxMCSMatcher
         """
         return self.find_common_subgraph(
@@ -983,20 +971,19 @@ class ApproxMCSMatcher:
         max_seeds: int = 16,
         max_steps: int = 256,
     ) -> "ApproxMCSMatcher":
-        """
-        Approximate analogue of :py:meth:`MCSMatcher.find_common_subgraph`.
+        """Approximate analogue of :py:meth:`MCSMatcher.find_common_subgraph`.
 
         The signature mirrors the exact matcher, but the implementation
         is greedy/heuristic:
 
         1. Optionally prunes wildcard nodes from both graphs.
-        2. If :paramref:`mcs_mol` is ``True``, performs component-level
+        2. If ``mcs_mol`` is ``True``, performs component-level
            (molecule-level) approximate matching with
            :py:meth:`_find_mcs_mol_approx`.
         3. Otherwise, orients the pair so that the smaller graph is the
            pattern and runs the heuristic search.
 
-        The :paramref:`mcs` flag is accepted for API compatibility but
+        The ``mcs`` flag is accepted for API compatibility but
         has no distinct effect here; the heuristic always aims for large
         mappings.
 
@@ -1013,7 +1000,7 @@ class ApproxMCSMatcher:
         :type max_seeds: int
         :param max_steps: Maximum growth steps per seed.
         :type max_steps: int
-        :returns: The matcher instance (with internal cache updated).
+        :return: The matcher instance (with internal cache updated).
         :rtype: ApproxMCSMatcher
         """
         del mcs  # unused, kept for signature compatibility
@@ -1066,12 +1053,11 @@ class ApproxMCSMatcher:
         max_seeds: int = 16,
         max_steps: int = 256,
     ) -> "ApproxMCSMatcher":
-        """
-        Convenience wrapper for ITS reaction-centre or ITS-like graph
+        """Convenience wrapper for ITS reaction-centre or ITS-like graph
         objects, analogous to :py:meth:`MCSMatcher.find_rc_mapping` but
         using the heuristic search internally.
 
-        Depending on :paramref:`side`, this either uses
+        Depending on ``side``, this either uses
         :func:`synkit.Graph.ITS.its_decompose` to obtain left/right
         graphs or treats the inputs directly as graphs.
 
@@ -1086,12 +1072,12 @@ class ApproxMCSMatcher:
 
         Component-wise mode
         -------------------
-        If :paramref:`component` is ``True``, the selected graphs are
+        If ``component`` is ``True``, the selected graphs are
         decomposed into connected components, sorted by size
         (descending), and matched pairwise using
         :py:meth:`_componentwise_approx`. The resulting mappings are
         combined into a single **G1 → G2** mapping in terms of the
-        original node ids. In this mode, :paramref:`mcs_mol` is ignored.
+        original node ids. In this mode, ``mcs_mol`` is ignored.
 
         :param rc1: First reaction-centre or ITS-like graph object.
         :type rc1: Any
@@ -1103,10 +1089,10 @@ class ApproxMCSMatcher:
         :param mcs: Ignored (kept for compatibility with
             :class:`MCSMatcher`).
         :type mcs: bool
-        :param mcs_mol: If ``True`` and :paramref:`component` is
+        :param mcs_mol: If ``True`` and ``component`` is
             ``False``, use approximate molecule-level matching via
             :py:meth:`find_common_subgraph` with
-            :paramref:`mcs_mol=True`.
+            ``mcs_mol=True``.
         :type mcs_mol: bool
         :param component: If ``True``, perform size-sorted,
             component-wise approximate matching between the selected
@@ -1117,7 +1103,7 @@ class ApproxMCSMatcher:
         :type max_seeds: int
         :param max_steps: Maximum growth steps per seed.
         :type max_steps: int
-        :returns: The matcher instance (with internal cache updated).
+        :return: The matcher instance (with internal cache updated).
         :rtype: ApproxMCSMatcher
         :raises ImportError: If :mod:`synkit` ITS utilities are not
             available for ``side`` in ``{'r', 'l', 'op'}``.
@@ -1160,8 +1146,7 @@ class ApproxMCSMatcher:
     # Accessors / properties
     # ------------------------------------------------------------------
     def get_mappings(self, direction: str = "pattern_to_host") -> List[MappingDict]:
-        """
-        Return a copy of the cached mapping list in the requested
+        """Return a copy of the cached mapping list in the requested
         orientation.
 
         Internal orientation is **pattern → host**. This method can
@@ -1175,7 +1160,7 @@ class ApproxMCSMatcher:
             * ``"G1_to_G2"``
             * ``"G2_to_G1"``
         :type direction: str
-        :returns: List of mapping dictionaries.
+        :return: List of mapping dictionaries.
         :rtype: list[dict[int, int]]
         :raises ValueError: If the direction is not supported.
         """
@@ -1207,43 +1192,39 @@ class ApproxMCSMatcher:
 
     @property
     def mappings(self) -> List[MappingDict]:
-        """
-        Cached approximate mappings from the most recent search.
+        """Cached approximate mappings from the most recent search.
 
         The orientation is pattern→host. For ``G1→G2`` or ``G2→G1``,
         use :py:meth:`get_mappings`.
 
-        :returns: List of cached mapping dictionaries.
+        :return: List of cached mapping dictionaries.
         :rtype: list[dict[int, int]]
         """
         return self.get_mappings(direction="pattern_to_host")
 
     @property
     def last_size(self) -> int:
-        """
-        Size of the largest approximate mapping from the last search.
+        """Size of the largest approximate mapping from the last search.
 
-        :returns: Size of the best mapping.
+        :return: Size of the best mapping.
         :rtype: int
         """
         return self._last_size
 
     @property
     def num_mappings(self) -> int:
-        """
-        Number of approximate mappings stored from the last search.
+        """Number of approximate mappings stored from the last search.
 
-        :returns: Count of mappings.
+        :return: Count of mappings.
         :rtype: int
         """
         return len(self._mappings)
 
     @property
     def mapping_direction(self) -> str:
-        """
-        Human-readable description of internal mapping orientation.
+        """Human-readable description of internal mapping orientation.
 
-        :returns: ``"G1_to_G2"``, ``"G2_to_G1"``, or ``"unknown"`` if
+        :return: ``"G1_to_G2"``, ``"G2_to_G1"``, or ``"unknown"`` if
             no search has been run.
         :rtype: str
         """
@@ -1255,19 +1236,17 @@ class ApproxMCSMatcher:
     # Iteration & niceties
     # ------------------------------------------------------------------
     def __iter__(self) -> Iterable[MappingDict]:
-        """
-        Iterate over cached mappings in pattern→host orientation.
+        """Iterate over cached mappings in pattern→host orientation.
 
-        :returns: Iterator over mapping dictionaries.
+        :return: Iterator over mapping dictionaries.
         :rtype: Iterable[dict[int, int]]
         """
         return iter(self._mappings)
 
     def __repr__(self) -> str:
-        """
-        Short textual representation for debugging.
+        """Short textual representation for debugging.
 
-        :returns: Summary string with key attributes.
+        :return: Summary string with key attributes.
         :rtype: str
         """
         return (
@@ -1283,10 +1262,9 @@ class ApproxMCSMatcher:
 
     @property
     def help(self) -> str:
-        """
-        Return the module-level documentation string.
+        """Return the module-level documentation string.
 
-        :returns: The full module docstring, if available.
+        :return: The full module docstring, if available.
         :rtype: str
         """
         return __doc__ or ""

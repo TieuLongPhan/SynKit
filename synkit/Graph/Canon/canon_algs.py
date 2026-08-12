@@ -1,18 +1,8 @@
-"""
-networkx_canonical_algorithms.py
-================================
+"""NetworkX-based canonical-labelling utilities for molecular graphs.
 
-NetworkX-based canonical-labelling utilities for molecular graphs.
-Each helper produces a deterministic ordering (or signature) for graph isomorphism
-tasks and returns:
-  - a relabelled NetworkX graph copy (where applicable),
-  - a 32-hex SHA-256 digest.
-
-Dependencies:
-  * networkx
-  * numpy
-
-No nauty, bliss, or third-party canonical-labeling binding is required.
+The helpers produce deterministic orderings or signatures for graph-isomorphism
+tasks. Where applicable, they return a relabelled graph copy and a 32-character
+SHA-256 digest. No external canonical-labelling binding is required.
 """
 
 import hashlib
@@ -28,15 +18,11 @@ Digest = str
 def _digest(text: str) -> Digest:
     """Compute a 32-character hexadecimal SHA-256 digest of the input string.
 
-    Parameters
-    ----------
-    text : str
-        Input text to be hashed.
+    :param text: Input text to be hashed.
+    :type text: str
 
-    Returns
-    -------
-    Digest
-        First 32 hex characters of the SHA-256 digest.
+    :return: First 32 hex characters of the SHA-256 digest.
+    :rtype: Digest
     """
     return hashlib.sha256(text.encode()).hexdigest()[:32]
 
@@ -50,16 +36,14 @@ def ring_canonical_graph(g: nx.Graph) -> Tuple[nx.Graph, Digest]:
       2. Node degree.
       3. Original node identifier.
 
-    Parameters
-    ----------
-    g : nx.Graph
-        Input molecular graph (nodes may have attributes).
+    :param g: Input molecular graph (nodes may have attributes).
+    :type g: nx.Graph
 
-    Returns
-    -------
-    Tuple[nx.Graph, Digest]
-        - Relabelled graph with nodes numbered 1..N according to canonical order.
-        - 32-hex digest based on node membership counts and ordering.
+    :return:
+
+              - Relabelled graph with nodes numbered 1..N according to canonical order.
+              - 32-hex digest based on node membership counts and ordering.
+    :rtype: Tuple[nx.Graph, Digest]
     """
     # Compute ring membership counts
     rings: List[List[Any]] = nx.cycle_basis(g)
@@ -95,15 +79,11 @@ def eigen_canonical_signature(g: nx.Graph) -> Digest:
     Edge weights are taken from the 'order' attribute (default=1).
     The adjacency matrix is symmetric for undirected graphs.
 
-    Parameters
-    ----------
-    g : nx.Graph
-        Input molecular graph.
+    :param g: Input molecular graph.
+    :type g: nx.Graph
 
-    Returns
-    -------
-    Digest
-        32-hex digest of sorted real parts of eigenvalues.
+    :return: 32-hex digest of sorted real parts of eigenvalues.
+    :rtype: Digest
     """
     n = g.number_of_nodes()
     # Map nodes to matrix indices
@@ -130,17 +110,13 @@ def pgraph_signature(g: nx.Graph, p: int = 4) -> Digest:
     attributes (or '?' if missing), and the sorted list of these sequences
     is concatenated for hashing.
 
-    Parameters
-    ----------
-    g : nx.Graph
-        Input molecular graph.
-    p : int, optional
-        Maximum path length (number of edges), by default 4.
+    :param g: Input molecular graph.
+    :type g: nx.Graph
+    :param p: Maximum path length (number of edges), by default 4.
+    :type p: int, optional
 
-    Returns
-    -------
-    Digest
-        32-hex digest of the concatenated sorted path strings.
+    :return: 32-hex digest of the concatenated sorted path strings.
+    :rtype: Digest
     """
     paths: List[str] = []
     for src in g.nodes():
@@ -164,21 +140,19 @@ def canon_morgan(
     For each iteration up to `morgan_radius`, node labels are updated by
     multiplying by the labels of neighboring nodes.
 
-    Parameters
-    ----------
-    g : nx.Graph
-        Input molecular graph.
-    morgan_radius : int, optional
-        Number of refinement iterations, by default 2.
-    node_attributes : List[str], optional
-        Node attribute keys to include in initial hashing; if None,
-        only prime seeding is used.
+    :param g: Input molecular graph.
+    :type g: nx.Graph
+    :param morgan_radius: Number of refinement iterations, by default 2.
+    :type morgan_radius: int, optional
+    :param node_attributes: Node attribute keys to include in initial hashing; if None,
+                            only prime seeding is used.
+    :type node_attributes: List[str], optional
 
-    Returns
-    -------
-    Tuple[nx.Graph, Digest]
-        - Relabelled graph with canonical node ordering.
-        - 32-hex digest of the sequence of final labels per node.
+    :return:
+
+              - Relabelled graph with canonical node ordering.
+              - 32-hex digest of the sequence of final labels per node.
+    :rtype: Tuple[nx.Graph, Digest]
     """
     nodes_sorted = sorted(g.nodes())
     # Generate unique primes

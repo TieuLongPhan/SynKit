@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
 """Secondary whole-graph atom-relabeling stress tests.
 
-Examples
---------
+.. rubric:: Examples
+
 Run all ten internal families::
 
     python Experiment/Stereo/Canonicalization/run.py internal
 
 Run ACS configured records with 100 deterministic relabelings per large case::
 
-    python Experiment/Stereo/Canonicalization/atom_relabel.py \
-        acs --permutations 100
+    python Experiment/Stereo/Canonicalization/atom_relabel.py         acs --permutations 100
 
 Run RotA support invariance (not configured handedness)::
 
-    python Experiment/Stereo/Canonicalization/atom_relabel.py \
-        rota --permutations 100
+    python Experiment/Stereo/Canonicalization/atom_relabel.py         rota --permutations 100
 
 Run the external CIP suite after supplying its exact audited source file::
 
-    python Experiment/Stereo/Canonicalization/atom_relabel.py cip \
-        --cip-path /path/to/compounds.smi --permutations 100
+    python Experiment/Stereo/Canonicalization/atom_relabel.py cip         --cip-path /path/to/compounds.smi --permutations 100
 """
 
 from __future__ import annotations

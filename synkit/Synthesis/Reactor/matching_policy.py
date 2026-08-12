@@ -11,15 +11,42 @@ from networkx.algorithms.isomorphism import (
     categorical_node_match,
 )
 
+_PRIMITIVE_TYPES = frozenset((str, int, float, bool, type(None)))
 
-def _freeze(value: Any) -> Any:
+
+def _freeze(
+    value: Any,
+    cache: dict[int, tuple[Any, Any]] | None = None,
+) -> Any:
+    if type(value) in _PRIMITIVE_TYPES:
+        return value
+    cache_key = id(value)
+    if cache is not None:
+        cached = cache.get(cache_key)
+        if cached is not None and cached[0] is value:
+            return cached[1]
     if isinstance(value, dict):
-        return tuple(sorted((key, _freeze(item)) for key, item in value.items()))
-    if isinstance(value, (list, tuple)):
-        return tuple(_freeze(item) for item in value)
-    if isinstance(value, set):
-        return tuple(sorted((_freeze(item) for item in value), key=repr))
-    return value
+        result = tuple(
+            sorted((key, _freeze(item, cache)) for key, item in value.items())
+        )
+    elif isinstance(value, (list, tuple)):
+        shallow = tuple(value)
+        try:
+            hash(shallow)
+        except TypeError:
+            result = tuple(_freeze(item, cache) for item in value)
+        else:
+            # Every recursively mutable child makes the shallow tuple
+            # unhashable. If hashing succeeds, recursive normalization would
+            # preserve each child and produce exactly this tuple.
+            result = shallow
+    elif isinstance(value, set):
+        result = tuple(sorted((_freeze(item, cache) for item in value), key=repr))
+    else:
+        result = value
+    if cache is not None:
+        cache[cache_key] = (value, result)
+    return result
 
 
 def contextual_electron_pattern_graph(
@@ -100,6 +127,73 @@ def has_heavy_cross_component_correlation(
     return False
 
 
+def _wl_proves_transition_asymmetric(transition: nx.Graph) -> bool:
+    """Return whether exact color refinement proves a trivial automorphism group.
+
+    Every attributed automorphism preserves each 1-WL color class. Therefore,
+    if refinement makes every vertex color unique, only the identity
+    automorphism can remain. A non-discrete partition proves nothing and keeps
+    the complete GraphMatcher path.
+    """
+    if len(transition) < 2:
+        return True
+
+    node_palette: dict[Any, int] = {}
+    colors = {}
+    for node, attrs in transition.nodes(data=True):
+        role = attrs.get("_transition_node_role", ())
+        color = node_palette.get(role)
+        if color is None:
+            color = len(node_palette) + 1
+            node_palette[role] = color
+        colors[node] = color
+    if len(set(colors.values())) == len(transition):
+        return True
+
+    edge_palette: dict[Any, int] = {}
+    edge_colors = {}
+    for left, right, attrs in transition.edges(data=True):
+        role = attrs.get("_transition_role", ())
+        color = edge_palette.get(role)
+        if color is None:
+            color = len(edge_palette) + 1
+            edge_palette[role] = color
+        edge_colors[frozenset((left, right))] = color
+
+    for _ in range(len(transition)):
+        signatures = {
+            node: (
+                colors[node],
+                tuple(
+                    sorted(
+                        (
+                            edge_colors[frozenset((node, neighbor))],
+                            colors[neighbor],
+                        )
+                        for neighbor in transition.neighbors(node)
+                    )
+                ),
+            )
+            for node in transition
+        }
+        palette: dict[Any, int] = {}
+        refined = {}
+        for node, signature in signatures.items():
+            color = palette.get(signature)
+            if color is None:
+                color = len(palette) + 1
+                palette[signature] = color
+            refined[node] = color
+        if len(palette) == len(transition):
+            return True
+        if all(refined[node] == colors[node] for node in transition):
+            return False
+        if len(set(refined.values())) == len(set(colors.values())):
+            return False
+        colors = refined
+    return False
+
+
 def deduplicate_joint_rule_mappings(  # noqa: C901
     mappings: list[dict[Any, Any]],
     pattern: nx.Graph,
@@ -120,6 +214,7 @@ def deduplicate_joint_rule_mappings(  # noqa: C901
         return mappings
 
     transition = pattern.copy()
+    identity_cache: dict[int, tuple[Any, Any]] = {}
     transition_node_keys = (
         "element",
         "aromatic",
@@ -140,8 +235,18 @@ def deduplicate_joint_rule_mappings(  # noqa: C901
                 tuple((key, attrs.get(key)) for key in node_attrs),
                 "reaction_center",
                 tuple((key, reaction_attrs.get(key)) for key in transition_node_keys),
-            )
+            ),
+            identity_cache,
         )
+
+    # An attributed automorphism must preserve every node role. If those
+    # roles already form a discrete partition, every chemical pattern node
+    # is fixed. Any later virtual hydrogen-pair nodes can then permute only
+    # among themselves and cannot change a mapping orbit.
+    if len(
+        {attrs["_transition_node_role"] for _, attrs in transition.nodes(data=True)}
+    ) == len(transition):
+        return mappings
     transition_edge_keys = (
         "order",
         "kekule_order",
@@ -157,7 +262,8 @@ def deduplicate_joint_rule_mappings(  # noqa: C901
             (
                 "reaction_center",
                 tuple((key, attrs.get(key)) for key in transition_edge_keys),
-            )
+            ),
+            identity_cache,
         )
         if transition.has_edge(left, right):
             transition.edges[left, right]["_transition_role"] = role
@@ -199,9 +305,13 @@ def deduplicate_joint_rule_mappings(  # noqa: C901
                 (
                     "source",
                     tuple((key, attrs.get(key)) for key in edge_attrs),
-                )
+                ),
+                identity_cache,
             ),
         )
+
+    if _wl_proves_transition_asymmetric(transition):
+        return mappings
 
     matcher = GraphMatcher(
         transition,

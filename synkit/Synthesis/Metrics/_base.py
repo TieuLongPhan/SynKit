@@ -17,17 +17,20 @@ def _compute_metrics(
 ) -> Dict[str, float]:
     """Computes the metrics for a list of reactions data.
 
-    Parameters:
-    - reactions_data (List[Dict[str, any]]): List of dictionaries containing RSMI strings.
-    - key_ground_truth (str): Key in the dictionary for the ground truth RSMI.
-    - key_prediction (str): Key in the dictionary for the predicted RSMIs
-    (list of predictions).
-    - k (int, optional): The number of top predictions to consider. Defaults to 5.
-    - alpha (float, optional): Weight for the novelty component. Defaults to 0.5.
-    - beta (float, optional): Weight for the recognition component. Defaults to 0.5.
+    :param reactions_data: List of dictionaries containing RSMI strings.
+    :type reactions_data: List[Dict[str, any]]
+    :param key_ground_truth: Key in the dictionary for the ground truth RSMI.
+    :type key_ground_truth: str
+    :param key_prediction: Key in the dictionary for the predicted RSMIs
+                           (list of predictions).
+    :type key_prediction: str
+    :param k: The number of top predictions to consider. Defaults to 5.
+    :type k: int, optional
+    :param beta: Beta parameter for the F-beta score. Defaults to 1.
+    :type beta: float, optional
 
-    Returns:
-    - Dict[str, float]: A dictionary with the metrics.
+    :return: A dictionary with the metrics.
+    :rtype: Dict[str, float]
     """
     return {
         "Novelty": _novelty_rate(reactions_data, key_ground_truth, key_prediction)

@@ -88,7 +88,7 @@ def draw_mtg_graph(
     :param dimension: Draw as ``"2d"`` or ``"3d"``. The 3D mode uses a
         spring layout with ``dim=3`` and is helpful for dense changed cores.
     :type dimension: str
-    :returns: ``(figure, axes)``.
+    :return: ``(figure, axes)``.
     :rtype: tuple[plt.Figure, plt.Axes]
     """
     if dimension not in {"2d", "3d"}:
@@ -142,7 +142,7 @@ def draw_mtg_steps(
     :type title: Optional[str]
     :param max_columns: Maximum subplot columns.
     :type max_columns: int
-    :returns: ``(figure, axes)``.
+    :return: ``(figure, axes)``.
     :rtype: tuple[plt.Figure, list[plt.Axes]]
     """
 

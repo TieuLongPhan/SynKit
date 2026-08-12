@@ -57,8 +57,7 @@ class ThermoSummary:
 
 
 def _normalize_positive(vec: np.ndarray, *, eps: float = 1e-8) -> Optional[np.ndarray]:
-    """
-    Normalize a strictly signed vector to a positive unit-:math:`\\ell_1` vector.
+    """Normalize a strictly signed vector to a positive unit-:math:`\\ell_1` vector.
 
     This helper accepts a candidate vector and checks whether all entries are
     strictly positive or strictly negative up to the threshold ``eps``. If the
@@ -74,7 +73,7 @@ def _normalize_positive(vec: np.ndarray, *, eps: float = 1e-8) -> Optional[np.nd
     :param eps:
         Absolute threshold used to determine strict positivity or negativity.
     :type eps: float
-    :returns:
+    :return:
         A strictly positive vector normalized to sum to 1, or ``None`` if the
         input does not have a uniform strict sign.
     :rtype: Optional[numpy.ndarray]
@@ -107,8 +106,7 @@ def _find_positive_left_kernel_vector(
     eps: float = 1e-8,
     rtol: float = 1e-12,
 ) -> tuple[Optional[bool], Optional[np.ndarray]]:
-    """
-    Attempt to find a strictly positive conservation-law vector
+    """Attempt to find a strictly positive conservation-law vector
     :math:`m > 0` satisfying :math:`m^T S = 0`.
 
     This helper implements the main conservativity search logic used by
@@ -133,7 +131,7 @@ def _find_positive_left_kernel_vector(
     :param rtol:
         Relative tolerance used in nullspace computations.
     :type rtol: float
-    :returns:
+    :return:
         A tuple ``(flag, m)`` where ``flag`` is:
 
         - ``True`` if a strictly positive conservation law was found,
@@ -214,8 +212,7 @@ def _find_positive_left_kernel_vector(
 
 
 def left_nullspace_from_matrix(S: np.ndarray, *, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute a basis for the left kernel :math:`\\ker(S^T)` directly from a
+    """Compute a basis for the left kernel :math:`\\ker(S^T)` directly from a
     stoichiometric matrix.
 
     This helper is a matrix-level analogue of the graph-based nullspace
@@ -233,7 +230,7 @@ def left_nullspace_from_matrix(S: np.ndarray, *, rtol: float = 1e-12) -> np.ndar
         Relative tolerance used to determine the effective numerical rank in
         the nullspace computation.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis for :math:`\\ker(S^T)`. The returned
         array has shape ``(n_species, k)``, where ``k`` is the dimension of the
         left kernel.
@@ -270,8 +267,7 @@ def is_conservative(
     eps: float = 1e-8,
     rtol: float = 1e-12,
 ) -> Optional[bool]:
-    """
-    Check whether the chemical reaction network is conservative.
+    """Check whether the chemical reaction network is conservative.
 
     A network is called conservative here if there exists a strictly positive
     vector :math:`m > 0` such that
@@ -298,7 +294,7 @@ def is_conservative(
     :param rtol:
         Relative tolerance used in nullspace-based computations.
     :type rtol: float
-    :returns:
+    :return:
         - ``True`` if a strictly positive conservation law exists,
         - ``False`` if no such law exists,
         - ``None`` if the result is inconclusive.
@@ -322,8 +318,7 @@ def compute_conservativity(
     rtol: float = 1e-12,
     eps: float = 1e-8,
 ) -> tuple[Optional[bool], Optional[np.ndarray]]:
-    """
-    Compute the conservativity status of a network together with an example
+    """Compute the conservativity status of a network together with an example
     positive conservation law when available.
 
     This is the more informative counterpart of :func:`is_conservative`. It
@@ -342,7 +337,7 @@ def compute_conservativity(
         Absolute threshold used to test strict positivity of candidate
         conservation-law vectors.
     :type eps: float
-    :returns:
+    :return:
         Tuple ``(flag, m)`` where ``flag`` is the conservativity result and
         ``m`` is an example normalized strictly positive conservation law if
         one was found, otherwise ``None``.
@@ -362,8 +357,7 @@ def compute_conservativity(
 
 
 def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
-    """
-    Check whether the chemical reaction network is consistent.
+    """Check whether the chemical reaction network is consistent.
 
     Consistency is tested here by asking whether there exists a strictly
     positive flux vector :math:`v > 0` such that
@@ -387,7 +381,7 @@ def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
         Absolute lower bound used to enforce strict positivity of candidate
         flux vectors.
     :type eps: float
-    :returns:
+    :return:
         - ``True`` if a strictly positive right-kernel vector exists,
         - ``False`` if no such vector exists,
         - ``None`` if the result is inconclusive.
@@ -446,8 +440,7 @@ def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
 
 
 def has_irreversible_futile_cycles(crn: Any, *, rtol: float = 1e-12) -> bool:
-    """
-    Check whether the network admits non-trivial steady-state flux modes.
+    """Check whether the network admits non-trivial steady-state flux modes.
 
     This function tests whether the right kernel :math:`\\ker(S)` is
     non-trivial, i.e. whether there exists a nonzero vector :math:`v` such that
@@ -469,7 +462,7 @@ def has_irreversible_futile_cycles(crn: Any, *, rtol: float = 1e-12) -> bool:
     :param rtol:
         Relative tolerance used in the nullspace computation.
     :type rtol: float
-    :returns:
+    :return:
         ``True`` if :math:`\\ker(S)` is non-trivial, otherwise ``False``.
     :rtype: bool
 
@@ -490,20 +483,19 @@ def has_irreversible_futile_cycles(crn: Any, *, rtol: float = 1e-12) -> bool:
 def compute_thermo_summary(
     crn: Any, *, rtol: float = 1e-12, eps: float = 1e-8
 ) -> ThermoSummary:
-    """
-    Compute a composite :class:`ThermoSummary` describing key thermodynamic-like
+    """Compute a composite :class:`ThermoSummary` describing key thermodynamic-like
     and structural stoichiometric properties of a chemical reaction network.
 
     This helper combines the main thermo-related analyses into a single call:
 
-    - conservativity: whether there exists a strictly positive vector
-    :math:`m > 0` such that :math:`m^T S = 0`,
-    - consistency: whether there exists a strictly positive flux vector
-    :math:`v > 0` such that :math:`S v = 0`,
-    - irreversible futile-cycle proxy: whether the right kernel
-    :math:`\\ker(S)` is non-trivial,
-    - example conservation law: one normalized strictly positive left-kernel
-    vector, when such a vector can be found.
+    * Conservativity: whether a strictly positive vector :math:`m > 0` exists
+      such that :math:`m^T S = 0`.
+    * Consistency: whether a strictly positive flux vector :math:`v > 0`
+      exists such that :math:`S v = 0`.
+    * Irreversible futile-cycle proxy: whether the right kernel
+      :math:`\\ker(S)` is non-trivial.
+    * Example conservation law: a normalized strictly positive left-kernel
+      vector, when one can be found.
 
     The returned summary is intended as a lightweight diagnostic object for
     quick inspection of CRN thermodynamic structure without calling each helper
@@ -522,7 +514,7 @@ def compute_thermo_summary(
         Absolute positivity threshold used when testing whether a candidate
         conservation law or flux mode is strictly positive.
     :type eps: float
-    :returns:
+    :return:
         A :class:`ThermoSummary` instance containing conservativity,
         consistency, an optional example positive conservation law, and a
         Boolean indicator for non-trivial steady-state flux cycles.

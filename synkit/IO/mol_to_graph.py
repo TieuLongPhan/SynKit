@@ -179,7 +179,7 @@ class MolToGraph(MolToGraphChemistryMixin):
         :param use_index_as_atom_map: If ``True``, use non-zero atom-map numbers
             as node identifiers; otherwise use ``atom index + 1``.
         :type use_index_as_atom_map: bool
-        :returns: Molecular graph with atom and bond attributes.
+        :return: Molecular graph with atom and bond attributes.
         :rtype: nx.Graph
         :raises ValueError: If ``drop_non_aam=True`` but
             ``use_index_as_atom_map=False``.
@@ -460,7 +460,7 @@ class MolToGraph(MolToGraphChemistryMixin):
         :type drop_non_aam: bool
         :param use_index_as_atom_map: If ``True``, use atom maps as node IDs.
         :type use_index_as_atom_map: bool
-        :returns: Current converter instance.
+        :return: Current converter instance.
         :rtype: MolToGraph
         """
         self._graph = self.transform(
@@ -474,7 +474,7 @@ class MolToGraph(MolToGraphChemistryMixin):
     def graph(self) -> nx.Graph:
         """Return the graph produced by :meth:`transform_store`.
 
-        :returns: Stored molecular graph.
+        :return: Stored molecular graph.
         :rtype: nx.Graph
         :raises RuntimeError: If no graph has been stored yet.
         """
@@ -487,7 +487,7 @@ class MolToGraph(MolToGraphChemistryMixin):
     def __repr__(self) -> str:
         """Return a compact representation.
 
-        :returns: Developer-facing representation string.
+        :return: Developer-facing representation string.
         :rtype: str
         """
         try:
@@ -507,7 +507,7 @@ class MolToGraph(MolToGraphChemistryMixin):
     def help(cls) -> str:
         """Return a short usage string.
 
-        :returns: Usage summary.
+        :return: Usage summary.
         :rtype: str
         """
         return (
@@ -544,7 +544,7 @@ class MolToGraph(MolToGraphChemistryMixin):
         :type oxidation_state: Optional[float]
         :param profile: Feature profile — ``"minimal"`` or ``"full"``.
         :type profile: str
-        :returns: Augmented atom attributes dict.
+        :return: Augmented atom attributes dict.
         :rtype: Dict[str, Any]
         """
         new_props = dict(props)
@@ -604,7 +604,7 @@ class MolToGraph(MolToGraphChemistryMixin):
         :type oxidation_state: Optional[float]
         :param profile: Feature profile — ``"minimal"`` or ``"full"``.
         :type profile: str
-        :returns: Node attribute dict.
+        :return: Node attribute dict.
         :rtype: Dict[str, Any]
         """
         try:
@@ -672,7 +672,7 @@ class MolToGraph(MolToGraphChemistryMixin):
         :type bond: Chem.Bond
         :param kek_bond: Matching bond from a kekulized copy.
         :type kek_bond: Optional[Chem.Bond]
-        :returns: Edge attributes.
+        :return: Edge attributes.
         :rtype: Dict[str, Any]
         """
         try:
@@ -758,7 +758,7 @@ class MolToGraph(MolToGraphChemistryMixin):
 
         :param atom: RDKit atom.
         :type atom: Chem.Atom
-        :returns: Simple atom stereochemistry label.
+        :return: Simple atom stereochemistry label.
         :rtype: str
         """
         chiral_tag = atom.GetChiralTag()
@@ -788,7 +788,7 @@ class MolToGraph(MolToGraphChemistryMixin):
 
         :param bond: RDKit bond.
         :type bond: Chem.Bond
-        :returns: Simple bond stereochemistry label.
+        :return: Simple bond stereochemistry label.
         :rtype: str
         """
         if bond.GetBondType() != Chem.BondType.DOUBLE:
@@ -811,7 +811,7 @@ class MolToGraph(MolToGraphChemistryMixin):
 
         :param mol: RDKit molecule.
         :type mol: Chem.Mol
-        :returns: ``True`` if mapped.
+        :return: ``True`` if mapped.
         :rtype: bool
         """
         return any(atom.GetAtomMapNum() != 0 for atom in mol.GetAtoms())
@@ -822,7 +822,7 @@ class MolToGraph(MolToGraphChemistryMixin):
 
         :param mol: RDKit molecule to mutate.
         :type mol: Chem.Mol
-        :returns: Same molecule with assigned atom-map numbers.
+        :return: Same molecule with assigned atom-map numbers.
         :rtype: Chem.Mol
         """
         indices = list(range(1, mol.GetNumAtoms() + 1))
@@ -851,7 +851,7 @@ class MolToGraph(MolToGraphChemistryMixin):
         :type light_weight: bool
         :param use_index_as_atom_map: If ``True``, use atom maps as node IDs.
         :type use_index_as_atom_map: bool
-        :returns: Molecular graph.
+        :return: Molecular graph.
         :rtype: nx.Graph
         :raises ValueError: If ``drop_non_aam=True`` but
             ``use_index_as_atom_map=False``.
@@ -908,7 +908,7 @@ class MolToGraph(MolToGraphChemistryMixin):
             IDs for mapped atoms; unmapped atoms fall back to
             ``atom.GetIdx() + 1``.
         :type use_index_as_atom_map: bool
-        :returns: Lightweight molecular graph.
+        :return: Lightweight molecular graph.
         :rtype: nx.Graph
         """
         graph = nx.Graph()
@@ -1035,7 +1035,7 @@ class MolToGraph(MolToGraphChemistryMixin):
         :type drop_non_aam: bool
         :param use_index_as_atom_map: If ``True``, use atom maps as node IDs.
         :type use_index_as_atom_map: bool
-        :returns: Detailed molecular graph.
+        :return: Detailed molecular graph.
         :rtype: nx.Graph
         """
         try:
@@ -1096,7 +1096,7 @@ class MolToGraph(MolToGraphChemistryMixin):
 
         :param mol: RDKit molecule to modify.
         :type mol: Chem.Mol
-        :returns: ``None``.
+        :return: ``None``.
         :rtype: None
         """
         try:

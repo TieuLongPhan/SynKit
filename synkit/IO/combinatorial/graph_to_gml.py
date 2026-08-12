@@ -3,8 +3,7 @@ from typing import Dict, List, Tuple, Any, Set
 
 
 class GraphToGML:
-    """
-    Convert two NetworkX graphs into a minimal GML reaction rule string,
+    """Convert two NetworkX graphs into a minimal GML reaction rule string,
     using canonical context detection and SynKit-style constraint annotations.
 
     This class identifies the conserved context (nodes/edges unchanged between
@@ -19,7 +18,8 @@ class GraphToGML:
     :type  rule_id: str
     :raises ValueError: If input graphs have mismatched mapping nodes.
 
-    :Example:
+    .. rubric:: Examples
+
     >>> from networkx import Graph
     >>> G1, G2 = Graph(), Graph()
     >>> # populate G1, G2 with atom_map nodes, constraints, etc.
@@ -29,8 +29,7 @@ class GraphToGML:
     """
 
     def __init__(self, left: nx.Graph, right: nx.Graph, rule_id: str = "1") -> None:
-        """
-        Initialize the GraphToGML converter.
+        """Initialize the GraphToGML converter.
 
         :param left: Reactant graph with node and edge attributes.
         :type  left: nx.Graph
@@ -38,7 +37,7 @@ class GraphToGML:
         :type  right: nx.Graph
         :param rule_id: Unique identifier for the rule output.
         :type  rule_id: str
-        :returns: None
+        :return: None
         :rtype: None
         :raises ValueError: If graphs have nodes without atom_map attribute.
         """
@@ -57,14 +56,13 @@ class GraphToGML:
 
     @staticmethod
     def same_node(nl: Dict[str, Any], nr: Dict[str, Any]) -> bool:
-        """
-        Compare two node attribute dictionaries, ignoring 'atom_map'.
+        """Compare two node attribute dictionaries, ignoring 'atom_map'.
 
         :param nl: Node attribute dict from left graph.
         :type  nl: Dict[str, Any]
         :param nr: Node attribute dict from right graph.
         :type  nr: Dict[str, Any]
-        :returns: True if all attributes (except 'atom_map') match.
+        :return: True if all attributes (except 'atom_map') match.
         :rtype: bool
         """
         keys = set(nl) | set(nr)
@@ -73,25 +71,23 @@ class GraphToGML:
 
     @staticmethod
     def same_edge(el: Dict[str, Any], er: Dict[str, Any]) -> bool:
-        """
-        Compare two edge attribute dictionaries for equality.
+        """Compare two edge attribute dictionaries for equality.
 
         :param el: Edge attribute dict from left graph.
         :type  el: Dict[str, Any]
         :param er: Edge attribute dict from right graph.
         :type  er: Dict[str, Any]
-        :returns: True if all edge attributes match.
+        :return: True if all edge attributes match.
         :rtype: bool
         """
         keys = set(el) | set(er)
         return all(el.get(k) == er.get(k) for k in keys)
 
     def compute(self) -> None:
-        """
-        Compute conserved context and minimal changing nodes/edges,
+        """Compute conserved context and minimal changing nodes/edges,
         then collect placeholder constraints from context graph.
 
-        :returns: None
+        :return: None
         :rtype: None
         """
         # Identify conserved context nodes
@@ -140,8 +136,7 @@ class GraphToGML:
     def get_changing_edges_and_nodes(
         G: nx.Graph, context_edges: Set[Tuple[int, int]], context_nodes: Set[int]
     ) -> Tuple[List[Tuple[int, int, Dict[str, Any]]], Set[int]]:
-        """
-        Identify edges and nodes in G that are not in the conserved context.
+        """Identify edges and nodes in G that are not in the conserved context.
 
         :param G: Input graph.
         :type  G: nx.Graph
@@ -149,7 +144,7 @@ class GraphToGML:
         :type  context_edges: Set[Tuple[int, int]]
         :param context_nodes: Nodes part of context.
         :type  context_nodes: Set[int]
-        :returns: A tuple of (changed_edges, changed_nodes).
+        :return: A tuple of (changed_edges, changed_nodes).
         :rtype: Tuple[List[Tuple[int, int, Dict[str, Any]]], Set[int]]
         """
         changed_edges: List[Tuple[int, int, Dict[str, Any]]] = []
@@ -171,8 +166,7 @@ class GraphToGML:
         nodes: Set[int],
         edges: List[Tuple[int, int, Dict[str, Any]]],
     ) -> List[str]:
-        """
-        Render a GML block for a subgraph section.
+        """Render a GML block for a subgraph section.
 
         :param name: Section name ('left', 'context', or 'right').
         :type  name: str
@@ -182,7 +176,7 @@ class GraphToGML:
         :type  nodes: Set[int]
         :param edges: Edges to include (u,v,attr).
         :type  edges: List[Tuple[int,int,Dict[str,Any]]]
-        :returns: Lines of GML representing the section.
+        :return: Lines of GML representing the section.
         :rtype: List[str]
         """
         lines: List[str] = [f" {name} ["]
@@ -199,12 +193,11 @@ class GraphToGML:
 
     @staticmethod
     def context_section(G: nx.Graph) -> List[str]:
-        """
-        Render the conserved context GML block.
+        """Render the conserved context GML block.
 
         :param G: Context graph.
         :type  G: nx.Graph
-        :returns: Lines of GML for context.
+        :return: Lines of GML for context.
         :rtype: List[str]
         """
         lines: List[str] = [" context []"]  # placeholder, updated in full block
@@ -220,10 +213,9 @@ class GraphToGML:
         return lines
 
     def constraints_section(self) -> List[str]:
-        """
-        Render placeholder constraints as one constrainLabelAny block.
+        """Render placeholder constraints as one constrainLabelAny block.
 
-        :returns: Lines of GML for constraints.
+        :return: Lines of GML for constraints.
         :rtype: List[str]
         """
         lines: List[str] = []
@@ -241,10 +233,9 @@ class GraphToGML:
         return lines
 
     def to_gml(self) -> str:
-        """
-        Generate the full GML reaction rule string.
+        """Generate the full GML reaction rule string.
 
-        :returns: Complete GML string for the reaction rule.
+        :return: Complete GML string for the reaction rule.
         :rtype: str
         """
         self.compute()
@@ -259,10 +250,9 @@ class GraphToGML:
         return "\n".join(out)
 
     def __repr__(self) -> str:
-        """
-        Return a summary of the rule converter.
+        """Return a summary of the rule converter.
 
-        :returns: Brief description with node counts.
+        :return: Brief description with node counts.
         :rtype: str
         """
         return (
@@ -273,10 +263,9 @@ class GraphToGML:
         )
 
     def help(self) -> str:
-        """
-        Show usage instructions for GraphToGML.
+        """Show usage instructions for GraphToGML.
 
-        :returns: Multi-line help text.
+        :return: Multi-line help text.
         :rtype: str
         """
         return (

@@ -16,10 +16,9 @@ class TestPathwayFinderFromSynCRN(unittest.TestCase):
 
     @staticmethod
     def _build_syn() -> SynCRN:
-        """
-        Build the standard SynCRN testcase.
+        """Build the standard SynCRN testcase.
 
-        :returns: Parsed SynCRN instance.
+        :return: Parsed SynCRN instance.
         :rtype: SynCRN
         """
         rxns = [
@@ -41,12 +40,11 @@ class TestPathwayFinderFromSynCRN(unittest.TestCase):
         self,
         config: PathFinderConfig | None = None,
     ) -> PathwayFinder:
-        """
-        Build a path finder loaded from the SynCRN testcase.
+        """Build a path finder loaded from the SynCRN testcase.
 
         :param config: Optional finder configuration.
         :type config: PathFinderConfig | None
-        :returns: Loaded path finder.
+        :return: Loaded path finder.
         :rtype: PathwayFinder
         """
         syn = self._build_syn()
@@ -60,8 +58,7 @@ class TestPathwayFinderFromSynCRN(unittest.TestCase):
         tail: dict[str, int],
         head: dict[str, int],
     ) -> str:
-        """
-        Find the reaction token whose tail/head multisets match exactly.
+        """Find the reaction token whose tail/head multisets match exactly.
 
         :param finder: Loaded path finder.
         :type finder: PathwayFinder
@@ -69,7 +66,7 @@ class TestPathwayFinderFromSynCRN(unittest.TestCase):
         :type tail: dict[str, int]
         :param head: Product multiset.
         :type head: dict[str, int]
-        :returns: Matching reaction token.
+        :return: Matching reaction token.
         :rtype: str
         :raises AssertionError: If no unique matching reaction is found.
         """
@@ -85,10 +82,9 @@ class TestPathwayFinderFromSynCRN(unittest.TestCase):
         return matches[0]
 
     def _reaction_tokens(self) -> dict[str, str]:
-        """
-        Resolve semantic shortcut names onto concrete reaction tokens.
+        """Resolve semantic shortcut names onto concrete reaction tokens.
 
-        :returns: Mapping from semantic shortcut to reaction token.
+        :return: Mapping from semantic shortcut to reaction token.
         :rtype: dict[str, str]
         """
         finder = self._build_finder()
@@ -108,12 +104,11 @@ class TestPathwayFinderFromSynCRN(unittest.TestCase):
 
     @staticmethod
     def _flow_signature(flow: dict[str, int]) -> tuple[tuple[str, int], ...]:
-        """
-        Convert a flow mapping into a stable comparable signature.
+        """Convert a flow mapping into a stable comparable signature.
 
         :param flow: Reaction-count flow.
         :type flow: dict[str, int]
-        :returns: Sorted tuple representation.
+        :return: Sorted tuple representation.
         :rtype: tuple[tuple[str, int], ...]
         """
         return tuple(sorted(flow.items()))

@@ -10,13 +10,12 @@ from .network import ReactionNetwork
 
 
 def _coerce_render_engine(engine: Union[RenderEngine, str]) -> RenderEngine:
-    """
-    Coerce a RenderEngine or a string into RenderEngine enum.
+    """Coerce a RenderEngine or a string into RenderEngine enum.
 
     Accepts case-insensitive strings like "dot", "DOT", "neato".
 
     :param engine: RenderEngine or string
-    :returns: RenderEngine enum
+    :return: RenderEngine enum
     """
     if isinstance(engine, RenderEngine):
         return engine
@@ -28,13 +27,12 @@ def _coerce_render_engine(engine: Union[RenderEngine, str]) -> RenderEngine:
 
 
 def _coerce_render_format(fmt: Union[RenderFormat, str]) -> RenderFormat:
-    """
-    Coerce a RenderFormat or a string into RenderFormat enum.
+    """Coerce a RenderFormat or a string into RenderFormat enum.
 
     Accepts case-insensitive strings like "svg", "png".
 
     :param fmt: RenderFormat or string
-    :returns: RenderFormat enum
+    :return: RenderFormat enum
     """
     if isinstance(fmt, RenderFormat):
         return fmt
@@ -45,16 +43,15 @@ def _coerce_render_format(fmt: Union[RenderFormat, str]) -> RenderFormat:
 
 
 class CRNVisualizer:
-    """
-    Visualization wrapper for a :class:`crn.network.ReactionNetwork`.
+    """Visualization wrapper for a :class:`crn.network.ReactionNetwork`.
 
     The API is fluent: rendering methods return ``self`` and results are read
-    from :pyattr:`last_bytes`, :pyattr:`last_text`, or :pyattr:`last_path`.
+    from :attr:`last_bytes`, :attr:`last_text`, or :attr:`last_path`.
 
     :param network: ReactionNetwork instance to visualize.
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> viz = CRNVisualizer(net)
     >>> viz.graphviz(fmt="png", highlight_rxns=[0])
     >>> display(Image(data=viz.get_display_bytes()))
@@ -89,10 +86,9 @@ class CRNVisualizer:
         return self._last_path
 
     def get_display_bytes(self) -> bytes:
-        """
-        Return bytes appropriate for display in notebooks.
+        """Return bytes appropriate for display in notebooks.
 
-        :returns: PNG bytes (binary) or SVG bytes (utf-8).
+        :return: PNG bytes (binary) or SVG bytes (utf-8).
         :raises VisualizationError: If nothing was rendered yet.
         """
         if self._last_bytes is None:
@@ -103,10 +99,9 @@ class CRNVisualizer:
 
     # ---- helpers ----
     def _collect_molecules(self) -> Tuple[List[str], Dict[str, str]]:
-        """
-        Collect molecules from reactions deterministically and build ids.
+        """Collect molecules from reactions deterministically and build ids.
 
-        :returns: (mols, mol_id) where mols is ordered list and mol_id maps
+        :return: (mols, mol_id) where mols is ordered list and mol_id maps
                   molecule -> node id like 'm0', 'm1', ...
         """
         mols: List[str] = []
@@ -232,8 +227,7 @@ class CRNVisualizer:
         edge_color_map: Optional[Dict[int, str]] = None,
         out_path: Optional[str] = None,
     ) -> "CRNVisualizer":
-        """
-        Render the network with Graphviz.
+        """Render the network with Graphviz.
 
         :param engine: Graphviz layout engine; either RenderEngine enum or string (e.g., "dot").
         :param fmt: Output format; either RenderFormat enum or string ("svg"/"png"/"pdf").
@@ -242,8 +236,8 @@ class CRNVisualizer:
         :param graph_attrs: Graph attributes overlaying the defaults.
         :param reaction_color_map: Mapping reaction id -> fill color.
         :param edge_color_map: Mapping reaction id -> edge color.
-        :param out_path: If provided, write to disk and set :pyattr:`last_path`.
-        :returns: ``self`` (fluent).
+        :param out_path: If provided, write to disk and set :attr:`last_path`.
+        :return: ``self`` (fluent).
         :raises VisualizationError: When Graphviz is unavailable or rendering fails.
         """
         engine = _coerce_render_engine(engine)
@@ -279,11 +273,10 @@ class CRNVisualizer:
 
     # ---- Matplotlib fallback renderer ----
     def _build_positions(self, mols: List[str]) -> Dict[str, Tuple[float, float]]:
-        """
-        Build a simple two-column layout for species and vertical stacking for reactions.
+        """Build a simple two-column layout for species and vertical stacking for reactions.
 
         :param mols: ordered list of molecule identifiers
-        :returns: mapping node id -> (x, y)
+        :return: mapping node id -> (x, y)
         """
         mid = max(1, len(mols) // 2)
         left, right = mols[:mid], mols[mid:]
@@ -422,8 +415,7 @@ class CRNVisualizer:
         out_path: Optional[str] = None,
         save_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "CRNVisualizer":
-        """
-        Render a simple fallback representation using matplotlib.
+        """Render a simple fallback representation using matplotlib.
 
         :param highlight_rxns: Reaction ids to emphasize.
         :param reaction_color_map: Reaction id -> color map.
@@ -433,7 +425,7 @@ class CRNVisualizer:
         :param show_labels: Whether to draw species labels.
         :param out_path: If provided, save figure to disk.
         :param save_kwargs: Extra kwargs passed to ``plt.savefig``.
-        :returns: ``self``.
+        :return: ``self``.
         :raises VisualizationError: If matplotlib is not available.
         """
         try:

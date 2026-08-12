@@ -65,7 +65,7 @@ class GMLToNX:
         :param label: The label string from a GML node (e.g., 'N+',
             'O2-', etc.).
         :type label: str
-        :returns: A tuple of (element symbol, formal charge).
+        :return: A tuple of (element symbol, formal charge).
         :rtype: tuple[str, int]
         """
         match = re.match(r"([A-Za-z*]+)(\d+)?([+-])?$", label)
@@ -86,7 +86,7 @@ class GMLToNX:
         in context. We only add missing context nodes and edges to left and
         right.
 
-        :returns: None
+        :return: None
         """
         # Add missing context nodes to left and right
         for node, ndata in self.graphs["context"].nodes(data=True):
@@ -112,10 +112,9 @@ class GMLToNX:
                 self.graphs["right"].add_edge(s, t, **edata)
 
     def transform(self) -> Tuple[nx.Graph, nx.Graph, nx.Graph]:
-        """
-        Transforms the GML-like text into three NetworkX graphs: left, right, and context.
+        """Transforms the GML-like text into three NetworkX graphs: left, right, and context.
 
-        :returns: A tuple of (left_graph, right_graph, context_graph), each a NetworkX graph.
+        :return: A tuple of (left_graph, right_graph, context_graph), each a NetworkX graph.
         :rtype: tuple[nx.Graph, nx.Graph, nx.Graph]
         """
         current_section = None

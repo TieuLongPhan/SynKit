@@ -413,9 +413,7 @@ def validation_report(*, iterations: int = 7) -> dict[str, Any]:
         limits=LIMITS,
         _match_matrix=memory_matrix,
     )
-    memory_witnesses = _accepted_witnesses(
-        memory_first, memory_second, memory_overlaps
-    )
+    memory_witnesses = _accepted_witnesses(memory_first, memory_second, memory_overlaps)
     quotient_composition_witnesses(memory_witnesses, limits=LIMITS)
     OccurrenceMTG.from_process(_chain_process())
     current, peak = tracemalloc.get_traced_memory()
@@ -458,9 +456,7 @@ def validation_report(*, iterations: int = 7) -> dict[str, Any]:
         "all_composition_certificates_replay": all(
             witness.composition.certificate.replay().valid for witness in accepted
         ),
-        "exact_quotient_keeps_witnesses": sum(
-            len(group.witnesses) for group in classes
-        )
+        "exact_quotient_keeps_witnesses": sum(len(group.witnesses) for group in classes)
         == len(accepted),
         "carrier_relabeling_invariant": canonical_ids
         == tuple(group.canonical_id for group in relabeled.classes),
@@ -472,15 +468,12 @@ def validation_report(*, iterations: int = 7) -> dict[str, Any]:
         == {"direct", "converted"},
         "native_tuple_synrule_replays": native_case["explicit_replay"],
         "stage_time_budget": all(
-            item["median_ms"] <= BUDGETS["median_stage_ms"]
-            for item in timings.values()
+            item["median_ms"] <= BUDGETS["median_stage_ms"] for item in timings.values()
         ),
         "memory_budget": observed["peak_python_mib"] <= BUDGETS["peak_python_mib"],
         "search_budget": observed["raw_overlaps"] <= BUDGETS["raw_overlaps"]
         and observed["exact_classes"] <= BUDGETS["exact_classes"],
-        "curated_inputs_readable": datasets["aldol"][
-            "all_steps_have_mapped_reaction"
-        ]
+        "curated_inputs_readable": datasets["aldol"]["all_steps_have_mapped_reaction"]
         and datasets["multistep_synthesis"]["all_steps_have_aam"],
     }
     cases = {

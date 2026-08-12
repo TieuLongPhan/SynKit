@@ -19,7 +19,7 @@ class Tautomerize:
         :param atom_indices: List of three atom indices [C1, C2, O]
             defining the enol. If None, defaults to [0, 1, 2].
         :type atom_indices: List[int] or None
-        :returns: SMILES of the molecule after enol→carbonyl conversion,
+        :return: SMILES of the molecule after enol→carbonyl conversion,
             or an error message if the input is invalid or indices fail.
         :rtype: str
         """
@@ -63,7 +63,7 @@ class Tautomerize:
         :param atom_indices: List of atom indices [C, O1, O2] defining
             the hemiketal.
         :type atom_indices: List[int]
-        :returns: SMILES of the molecule after hemiketal→carbonyl
+        :return: SMILES of the molecule after hemiketal→carbonyl
             conversion, or an error message if the input is invalid.
         :rtype: str
         """
@@ -101,7 +101,7 @@ class Tautomerize:
 
         :param smiles: SMILES string to standardize.
         :type smiles: str
-        :returns: Canonical SMILES of the standardized molecule.
+        :return: Canonical SMILES of the standardized molecule.
         :rtype: str
         """
         while True:
@@ -167,7 +167,7 @@ class Tautomerize:
         :type data: Dict[str, str]
         :param reaction_column: Key in `data` where the reaction SMILES is stored.
         :type reaction_column: str
-        :returns: The same dictionary with standardized reaction SMILES.
+        :return: The same dictionary with standardized reaction SMILES.
         :rtype: Dict[str, str]
         """
         try:
@@ -196,7 +196,7 @@ class Tautomerize:
         :type n_jobs: int
         :param verbose: Verbosity level for the joblib Parallel call. Defaults to 0.
         :type verbose: int
-        :returns: List of dictionaries with standardized SMILES.
+        :return: List of dictionaries with standardized SMILES.
         :rtype: List[Dict[str, str]]
         """
         results = Parallel(n_jobs=n_jobs, verbose=verbose)(

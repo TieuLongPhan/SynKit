@@ -59,7 +59,7 @@ class PartialEngine:
         :param invert: If True, apply the template in the reverse direction (Products→Reactants).
                        Default is False (forward direction).
         :type invert: bool
-        :returns: A list of ITS‐encoded reaction SMARTS strings,
+        :return: A list of ITS‐encoded reaction SMARTS strings,
                   each augmented with radical wildcard notation.
         :rtype: list[str]
         """

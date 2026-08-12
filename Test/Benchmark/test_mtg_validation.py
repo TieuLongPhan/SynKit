@@ -27,12 +27,8 @@ def test_report_is_passing_bounded_and_claim_typed() -> None:
         "process_construction",
         "mtg_derivation",
     }
-    assert all(
-        item["iterations"] == 2 for item in report["stage_timings"].values()
-    )
-    assert all(
-        not item["formal_proof"] for item in report["case_studies"].values()
-    )
+    assert all(item["iterations"] == 2 for item in report["stage_timings"].values())
+    assert all(not item["formal_proof"] for item in report["case_studies"].values())
 
 
 def test_case_studies_retain_material_ambiguity_and_curated_scope() -> None:

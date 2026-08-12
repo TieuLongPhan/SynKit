@@ -11,7 +11,7 @@ SynKit's visualization layer has two roles:
 
 For normal chemistry work, prefer the molecule, reaction, and ITS helpers from
 ``synkit.Vis``. The generic graph drawer is useful when debugging attributes or
-new graph representations, but it is intentionally less polished.
+new graph representations; it prioritizes diagnostics over presentation.
 
 .. raw:: html
 
@@ -203,8 +203,8 @@ debugging.
        title="ITS with reactant/product projections",
    )
 
-Use ``projection=True`` when you need to inspect how an ITS decomposes back into
-left and right molecular graphs. Use the default ITS-only view for reports and
+Use ``projection=True`` to inspect how an ITS decomposes into left and right
+molecular graphs. The default ITS-only view is suitable for reports and
 notebooks.
 
 Electron-Pushing Diagrams
@@ -320,9 +320,8 @@ Compact MTG visualization has two complementary views:
    *Figure:* Ordered ITS step panels reconstructed from the MTG, plus the
    composed outer-state view.
 
-Use the timeline graph to see transient bonds and Lewis-state paths across
-the mechanism. Use the step panels when you need to check each reconstructed
-ITS independently.
+The timeline graph shows transient bonds and Lewis-state paths across the
+mechanism. Step panels show each reconstructed ITS independently.
 
 The 2D view is the default and gives a flattened changed-core drawing. The 3D
 view is optional and is useful when a dense MTG has too many overlapping

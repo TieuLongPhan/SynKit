@@ -297,17 +297,11 @@ def test_process_alternatives_emit_separate_mtg_candidates() -> None:
         "converted",
     )
     assert (
-        histories.alternatives[0]
-        .history.events[0]
-        .inputs[0]
-        .material_id
+        histories.alternatives[0].history.events[0].inputs[0].material_id
         == "ga3p-direct"
     )
     assert (
-        histories.alternatives[1]
-        .history.events[0]
-        .inputs[0]
-        .material_id
+        histories.alternatives[1].history.events[0].inputs[0].material_id
         == "ga3p-converted"
     )
     assert restored.choices == family.choices
@@ -320,7 +314,10 @@ def test_material_carrier_relabeling_preserves_semantic_histories() -> None:
         MaterialOccurrence(
             material.occurrence_id,
             material.value.relabel(
-                {node: ("renamed", material.occurrence_id) for node in material.value.node_ids}
+                {
+                    node: ("renamed", material.occurrence_id)
+                    for node in material.value.node_ids
+                }
             ),
         )
         for material in process.materials

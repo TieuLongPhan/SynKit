@@ -91,6 +91,102 @@ class TestGraphMatcherEngine(unittest.TestCase):
         )
         self.assertEqual(gm.get_mappings(host, pattern), [])
 
+    def test_wl_filter_does_not_reject_subgraph_external_neighbours(self):
+        host = nx.cycle_graph(3)
+        pattern = nx.path_graph(2)
+        nx.set_node_attributes(host, "C", "element")
+        nx.set_node_attributes(pattern, "C", "element")
+
+        gm = GraphMatcherEngine(
+            node_attrs=["element"],
+            wl1_filter=True,
+            max_mappings=None,
+        )
+
+        self.assertEqual(len(gm.get_mappings(host, pattern)), 6)
+
+    def test_wl_filter_does_not_reject_lower_bound_attributes(self):
+        host = nx.Graph()
+        host.add_node(1, element="O", hcount=1, lone_pairs=3)
+        pattern = nx.Graph()
+        pattern.add_node(10, element="O", hcount=0, lone_pairs=2)
+
+        gm = GraphMatcherEngine(
+            node_attrs=["element", "hcount", "lone_pairs"],
+            wl1_filter=True,
+            max_mappings=None,
+        )
+
+        self.assertEqual(gm.get_mappings(host, pattern), [{10: 1}])
+
+    def test_wl_filter_observes_in_place_graph_mutation(self):
+        host = nx.Graph()
+        host.add_node(1, element="C")
+        pattern = nx.Graph()
+        pattern.add_node(10, element="N")
+        gm = GraphMatcherEngine(
+            node_attrs=["element"],
+            wl1_filter=True,
+            max_mappings=None,
+        )
+
+        self.assertEqual(gm.get_mappings(host, pattern), [])
+        host.nodes[1]["element"] = "N"
+        self.assertEqual(gm.get_mappings(host, pattern), [{10: 1}])
+
+    def test_wl_filter_fails_open_for_unhashable_attributes(self):
+        host = nx.Graph()
+        host.add_node(1, neighbours=["C"])
+        pattern = nx.Graph()
+        pattern.add_node(10, neighbours=["C"])
+        gm = GraphMatcherEngine(
+            node_attrs=["neighbours"],
+            wl1_filter=True,
+            max_mappings=None,
+        )
+
+        self.assertEqual(gm.get_mappings(host, pattern), [{10: 1}])
+
+    def test_unlimited_full_isomorphism_enumerates_all_automorphisms(self):
+        graph = nx.cycle_graph(3)
+        gm = GraphMatcherEngine(node_attrs=[], edge_attrs=[], max_mappings=None)
+
+        self.assertEqual(len(gm.get_mappings(graph, graph.copy())), 6)
+
+    def test_full_isomorphism_respects_mapping_cap(self):
+        graph = nx.cycle_graph(3)
+        gm = GraphMatcherEngine(node_attrs=[], edge_attrs=[], max_mappings=2)
+
+        self.assertEqual(len(gm.get_mappings(graph, graph.copy())), 2)
+
+    def test_zero_mapping_cap_returns_no_mappings(self):
+        graph = nx.path_graph(2)
+        gm = GraphMatcherEngine(node_attrs=[], edge_attrs=[], max_mappings=0)
+
+        self.assertEqual(gm.get_mappings(graph, graph.copy()), [])
+
+    def test_negative_mapping_cap_is_rejected(self):
+        with self.assertRaises(ValueError):
+            GraphMatcherEngine(max_mappings=-1)
+
+    def test_directed_and_multigraph_dispatch(self):
+        directed = nx.DiGraph([(0, 1)])
+        directed_copy = nx.relabel_nodes(directed, {0: 10, 1: 11})
+        multi = nx.MultiGraph()
+        multi.add_edge(0, 1, order=1)
+        multi.add_edge(0, 1, order=2)
+        multi_copy = nx.relabel_nodes(multi, {0: 10, 1: 11})
+
+        directed_matcher = GraphMatcherEngine(
+            node_attrs=[], edge_attrs=[], max_mappings=None
+        )
+        multi_matcher = GraphMatcherEngine(
+            node_attrs=[], edge_attrs=["order"], max_mappings=None
+        )
+
+        self.assertTrue(directed_matcher.isomorphic(directed, directed_copy))
+        self.assertTrue(multi_matcher.isomorphic(multi, multi_copy))
+
     def test_available_backends(self):
         self.assertEqual(GraphMatcherEngine.available_backends(), ["nx"])
 

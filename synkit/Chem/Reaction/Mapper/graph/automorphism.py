@@ -55,17 +55,14 @@ def _discrete_orbits(n: int) -> List[FrozenSet[int]]:
 def node_orbits(lg, binary=False) -> List[FrozenSet[int]]:
     """Automorphism orbits of a labeled graph's atoms.
 
-    Parameters
-    ----------
-    lg : LabeledGraph
-    binary : bool, optional
-        Whether bond orders are binarised.
+    :param lg:
+    :type lg: LabeledGraph
+    :param binary: Whether bond orders are binarised.
+    :type binary: bool, optional
 
-    Returns
-    -------
-    list[frozenset[int]]
-        The orbits (a partition of the atom indices). Without synkit, the
-        discrete partition (one atom per orbit) is returned.
+    :return: The orbits (a partition of the atom indices). Without synkit, the
+              discrete partition (one atom per orbit) is returned.
+    :rtype: list[frozenset[int]]
     """
     n = len(lg.labels)
     if n > _MAX_ORBIT_NODES:

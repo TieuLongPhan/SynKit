@@ -72,19 +72,19 @@ def _strip_source_prefix(name: str) -> str:
 def config_to_ssa(
     motif_name: str, reactions: List[str], motif_config: MotifConfig
 ) -> List[Tuple[Dict[str, int], Dict[str, int], float, Dict[str, Any]]]:
-    """
-    Translate MotifConfig into a list of SSA-like reactions.
+    """Translate MotifConfig into a list of SSA-like reactions.
 
-    Notes:
-      - limited/seed: returned as init markers (rate=0 and meta['init']=N)
-      - rate_limited: Ø -> X with given rate
-      - immediate_sink: X -> Ø with very large rate (or engine-specific sentinel)
-      - export_after_T, buffered_sink: produce buffer transition entries with metadata
+    .. rubric:: Notes
 
-    Output tuple: (reactants, products, rate, meta)
-    - reactants/products: dict species->stoichiometry
-    - rate: float (0.0 for placeholders/markers; engines can interpret meta)
-    - meta: hints for engine (init, pulsed, buffer, threshold, delay_T)
+    limited/seed: returned as init markers (rate=0 and meta['init']=N)
+    rate_limited: Ø -> X with given rate
+    immediate_sink: X -> Ø with very large rate (or engine-specific sentinel)
+    export_after_T, buffered_sink: produce buffer transition entries with metadata
+
+        Output tuple: (reactants, products, rate, meta)
+        reactants/products: dict species->stoichiometry
+        rate: float (0.0 for placeholders/markers; engines can interpret meta)
+        meta: hints for engine (init, pulsed, buffer, threshold, delay_T)
     """
     ssa: List[Tuple[Dict[str, int], Dict[str, int], float, Dict[str, Any]]] = []
 

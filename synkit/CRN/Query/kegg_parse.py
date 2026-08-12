@@ -21,8 +21,7 @@ ReactionSmilesMissing = dict[str, list[str]]
 
 @dataclass(frozen=True, slots=True)
 class KEGGEquation:
-    """
-    Structured representation of a parsed KEGG reaction equation.
+    """Structured representation of a parsed KEGG reaction equation.
 
     :param reactants:
         Left-hand side of the equation as ``(compound_id, stoichiometry)``
@@ -36,8 +35,8 @@ class KEGGEquation:
         Whether the original equation used the reversible arrow ``<=>``.
     :type reversible: bool
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         equation = KEGGEquation(
@@ -53,33 +52,25 @@ class KEGGEquation:
 
 
 def parse_kegg_field_blocks(text: str, field: str) -> list[str]:
-    """
-    Extract payloads from a KEGG flatfile field, including continuation lines.
+    """Extract payloads from a KEGG flatfile field, including continuation lines.
 
-    Continuation lines are recognized as lines beginning with spaces or tabs and
-    are concatenated to the payload of the preceding field occurrence.
+    Continuation lines begin with spaces or tabs and are appended to the
+    preceding field occurrence.
 
-    :param text:
-        Raw KEGG flatfile text.
+    :param text: Raw KEGG flatfile text.
     :type text: str
-    :param field:
-        Flatfile field name such as ``"MODULE"``, ``"REACTION"``,
-        ``"EQUATION"``, or ``"NAME"``.
+    :param field: Flatfile field name such as ``"MODULE"``, ``"REACTION"``,
+                  ``"EQUATION"``, or ``"NAME"``.
     :type field: str
-
-    :returns:
-        One payload string per matching field occurrence.
+    :return: One payload string per matching field occurrence.
     :rtype: list[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
-        text = (
-            "MODULE      M00001 Glycolysis\n"
-            "            continuation line\n"
-        )
-        payloads = parse_kegg_field_blocks(text, "MODULE")
+       text = "MODULE      M00001 Glycolysis"
+       payloads = parse_kegg_field_blocks(text, "MODULE")
     """
     payloads: list[str] = []
     lines = text.splitlines()
@@ -110,8 +101,7 @@ def parse_kegg_field_blocks(text: str, field: str) -> list[str]:
 
 
 def normalize_module_id(module_id: str) -> Optional[str]:
-    """
-    Normalize a token to canonical KEGG module form.
+    """Normalize a token to canonical KEGG module form.
 
     Supported examples include strings such as ``"hsa_M00001"`` and
     ``"M00001"``, both of which normalize to ``"M00001"``.
@@ -120,13 +110,13 @@ def normalize_module_id(module_id: str) -> Optional[str]:
         Raw module token or containing text.
     :type module_id: str
 
-    :returns:
+    :return:
         Canonical KEGG module identifier, or ``None`` when no module identifier
         is present.
     :rtype: Optional[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         canonical = normalize_module_id("hsa_M00001")
@@ -136,8 +126,7 @@ def normalize_module_id(module_id: str) -> Optional[str]:
 
 
 def parse_side(side: str) -> list[CompoundStoich]:
-    """
-    Parse one side of a KEGG equation into compound/stoichiometry pairs.
+    """Parse one side of a KEGG equation into compound/stoichiometry pairs.
 
     For example, ``"2 C00139 + C00001"`` becomes
     ``[("C00139", 2), ("C00001", 1)]``.
@@ -146,15 +135,15 @@ def parse_side(side: str) -> list[CompoundStoich]:
         One side of a KEGG equation.
     :type side: str
 
-    :returns:
+    :return:
         Parsed ``(compound_id, coefficient)`` pairs.
     :rtype: list[tuple[str, int]]
 
     :raises ValueError:
         Raised when any term does not match KEGG compound-stoichiometry syntax.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         items = parse_side("2 C00139 + C00001")
@@ -179,8 +168,7 @@ def parse_side(side: str) -> list[CompoundStoich]:
 
 
 def parse_equation(equation: str) -> KEGGEquation:
-    """
-    Parse a KEGG equation string into reactants, products, and arrow type.
+    """Parse a KEGG equation string into reactants, products, and arrow type.
 
     Supported arrows are ``<=>``, ``<->``, ``=>``, ``->``, ``<=``, and ``<-``.
 
@@ -188,15 +176,15 @@ def parse_equation(equation: str) -> KEGGEquation:
         KEGG equation string.
     :type equation: str
 
-    :returns:
+    :return:
         Parsed equation object.
     :rtype: KEGGEquation
 
     :raises ValueError:
         Raised when the equation does not contain a supported KEGG arrow.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         parsed = parse_equation("C00001 + C00002 <=> C00003")
@@ -232,8 +220,7 @@ def parse_equation(equation: str) -> KEGGEquation:
 def get_compound_ids_from_equations(
     equations_by_rid: Mapping[str, Optional[str]],
 ) -> tuple[list[str], dict[str, KEGGEquation]]:
-    """
-    Collect all compound identifiers appearing across KEGG reaction equations.
+    """Collect all compound identifiers appearing across KEGG reaction equations.
 
     Empty or missing equation strings are skipped.
 
@@ -241,13 +228,13 @@ def get_compound_ids_from_equations(
         Mapping from reaction identifier to KEGG equation string.
     :type equations_by_rid: Mapping[str, Optional[str]]
 
-    :returns:
+    :return:
         A tuple containing the sorted unique compound identifiers and the parsed
         equations keyed by reaction identifier.
     :rtype: tuple[list[str], dict[str, KEGGEquation]]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         compound_ids, parsed = get_compound_ids_from_equations(
@@ -271,19 +258,18 @@ def get_compound_ids_from_equations(
 
 
 def get_compound_ids_from_text(text: str) -> list[str]:
-    """
-    Extract sorted unique KEGG compound identifiers from free text.
+    """Extract sorted unique KEGG compound identifiers from free text.
 
     :param text:
         Source text that may contain KEGG compound identifiers.
     :type text: str
 
-    :returns:
+    :return:
         Sorted unique KEGG compound identifiers.
     :rtype: list[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         ids = get_compound_ids_from_text("C00001 and C00002 appear here")
@@ -292,19 +278,18 @@ def get_compound_ids_from_text(text: str) -> list[str]:
 
 
 def molblock_to_smiles(molblock: Optional[str]) -> Optional[str]:
-    """
-    Convert a MOL block into canonical RDKit SMILES.
+    """Convert a MOL block into canonical RDKit SMILES.
 
     :param molblock:
         MOL block text, typically retrieved from a KEGG compound record.
     :type molblock: Optional[str]
 
-    :returns:
+    :return:
         Canonical RDKit SMILES when parsing succeeds, otherwise ``None``.
     :rtype: Optional[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         smiles = molblock_to_smiles(molblock_text)
@@ -320,8 +305,7 @@ def molblock_to_smiles(molblock: Optional[str]) -> Optional[str]:
 
 
 def expand_stoichiometry(items: Sequence[CompoundStoich]) -> list[str]:
-    """
-    Expand stoichiometric pairs into repeated KEGG compound identifiers.
+    """Expand stoichiometric pairs into repeated KEGG compound identifiers.
 
     For example, ``[("C00001", 2), ("C00002", 1)]`` becomes
     ``["C00001", "C00001", "C00002"]``.
@@ -330,12 +314,12 @@ def expand_stoichiometry(items: Sequence[CompoundStoich]) -> list[str]:
         Compound/coefficient pairs.
     :type items: Sequence[tuple[str, int]]
 
-    :returns:
+    :return:
         Expanded compound identifier list.
     :rtype: list[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         expanded = expand_stoichiometry([("C00001", 2), ("C00002", 1)])
@@ -350,8 +334,7 @@ def reaction_smiles_from_equation(
     parsed_equation: KEGGEquation,
     compounds_by_cid: Mapping[str, CompoundRecord],
 ) -> tuple[str, ReactionSmilesMissing]:
-    """
-    Build reaction SMILES from a parsed KEGG equation and compound table.
+    """Build reaction SMILES from a parsed KEGG equation and compound table.
 
     Stoichiometric multiplicities are expanded into repeated SMILES fragments.
     Missing compounds are reported separately for reactants and products.
@@ -364,13 +347,13 @@ def reaction_smiles_from_equation(
         provide a ``"smiles"`` entry.
     :type compounds_by_cid: Mapping[str, Mapping[str, Any]]
 
-    :returns:
+    :return:
         Tuple ``(reaction_smiles, missing)`` where ``missing`` contains lists of
         unresolved reactant and product KEGG compound identifiers.
     :rtype: tuple[str, dict[str, list[str]]]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         parsed = parse_equation("C00001 + C00002 => C00003")
@@ -410,16 +393,13 @@ def reaction_smiles_from_equation(
 def parse_module_reaction_directions(
     text: str,
 ) -> dict[str, tuple[list[str], list[str], str]]:
-    """
-    Parse directional hints from a KEGG MODULE entry.
+    """Parse directional hints from a KEGG MODULE entry.
 
-    Returns
-    -------
-    dict
-        Mapping:
-        {
-            reaction_id: (left_compound_ids, right_compound_ids, arrow)
-        }
+    :param text: KEGG MODULE flat-file text.
+    :type text: str
+    :return: Mapping from reaction IDs to left-side compound IDs, right-side
+        compound IDs, and the reaction arrow.
+    :rtype: dict[str, tuple[list[str], list[str], str]]
     """
     directions: dict[str, tuple[list[str], list[str], str]] = {}
 

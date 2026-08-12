@@ -14,8 +14,7 @@ from synkit.CRN.Props.stoich import (
 
 
 def _nullspace(a: np.ndarray, *, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute a numerical basis for the right null space of a matrix using SVD.
+    """Compute a numerical basis for the right null space of a matrix using SVD.
 
     The returned matrix has shape ``(n_cols, k)``, where each column is a basis
     vector spanning ``ker(a)``. This helper is used only for native
@@ -28,14 +27,14 @@ def _nullspace(a: np.ndarray, *, rtol: float = 1e-12) -> np.ndarray:
     :param rtol:
         Relative tolerance used to determine the numerical rank.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis of the right null space of ``a``.
     :rtype: np.ndarray
     :raises ValueError:
         If ``a`` is not two-dimensional.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         import numpy as np
@@ -70,8 +69,7 @@ def _nullspace(a: np.ndarray, *, rtol: float = 1e-12) -> np.ndarray:
 
 
 def _stoich_from_petri(net: PetriNet) -> Tuple[List[str], List[str], np.ndarray]:
-    """
-    Build a stoichiometric matrix directly from a :class:`PetriNet`.
+    """Build a stoichiometric matrix directly from a :class:`PetriNet`.
 
     Rows follow :attr:`PetriNet.place_order` and columns follow
     :attr:`PetriNet.transition_order`. Each column corresponds to one
@@ -81,13 +79,13 @@ def _stoich_from_petri(net: PetriNet) -> Tuple[List[str], List[str], np.ndarray]
     :param net:
         Petri net object.
     :type net: PetriNet
-    :returns:
+    :return:
         Tuple ``(species_order, reaction_order, S)``, where ``S`` is the net
         stoichiometric matrix.
     :rtype: Tuple[List[str], List[str], np.ndarray]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Petrinet.net import PetriNet
@@ -120,8 +118,7 @@ def _stoich_from_petri(net: PetriNet) -> Tuple[List[str], List[str], np.ndarray]
 
 
 def stoichiometric_matrix(crn: Any) -> Tuple[List[str], List[str], np.ndarray]:
-    """
-    Return row order, column order, and stoichiometric matrix for a network.
+    """Return row order, column order, and stoichiometric matrix for a network.
 
     This is a thin wrapper around :mod:`synkit.CRN.Props.stoich` for
     SynCRN-like graph inputs, augmented with explicit row and column orders so
@@ -137,14 +134,14 @@ def stoichiometric_matrix(crn: Any) -> Tuple[List[str], List[str], np.ndarray]:
     :param crn:
         Petri net, SynCRN-like object, or supported bipartite graph.
     :type crn: Any
-    :returns:
+    :return:
         Tuple ``(species_order, reaction_order, S)``, where ``species_order``
         defines the row labels of ``S`` and ``reaction_order`` defines the
         column labels.
     :rtype: Tuple[List[str], List[str], np.ndarray]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Structure import SynCRN
@@ -167,8 +164,7 @@ def stoichiometric_matrix(crn: Any) -> Tuple[List[str], List[str], np.ndarray]:
 
 
 def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute P-semiflows, also called place invariants.
+    """Compute P-semiflows, also called place invariants.
 
     P-semiflows form a basis of the left kernel of the stoichiometric matrix,
     that is ``ker(S^T)``. The returned matrix has shape ``(n_species, k)``,
@@ -185,12 +181,12 @@ def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
     :param rtol:
         Relative tolerance used for null-space detection.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis of the P-semiflow space.
     :rtype: np.ndarray
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Structure import SynCRN
@@ -208,8 +204,7 @@ def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
 
 
 def find_t_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute T-semiflows, also called transition invariants.
+    """Compute T-semiflows, also called transition invariants.
 
     T-semiflows form a basis of the right kernel of the stoichiometric matrix,
     that is ``ker(S)``. The returned matrix has shape ``(n_reactions, k)``,
@@ -226,12 +221,12 @@ def find_t_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
     :param rtol:
         Relative tolerance used for null-space detection.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis of the T-semiflow space.
     :rtype: np.ndarray
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Structure import SynCRN
@@ -254,8 +249,7 @@ def _select_semiflow_basis(
     kind: str,
     rtol: float,
 ) -> Tuple[List[str], np.ndarray]:
-    """
-    Select the appropriate semiflow basis together with its label order.
+    """Select the appropriate semiflow basis together with its label order.
 
     For P-semiflows, the returned order corresponds to species / places. For
     T-semiflows, the returned order corresponds to reactions / transitions.
@@ -269,14 +263,14 @@ def _select_semiflow_basis(
     :param rtol:
         Relative tolerance used for null-space detection.
     :type rtol: float
-    :returns:
+    :return:
         Tuple ``(order, basis)``, where ``order`` labels the rows of ``basis``.
     :rtype: Tuple[List[str], np.ndarray]
     :raises ValueError:
         If ``kind`` is not ``"p"`` or ``"t"``.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Structure import SynCRN
@@ -308,8 +302,7 @@ def _basis_column_support(
     *,
     support_tol: float,
 ) -> Dict[str, float]:
-    """
-    Convert one basis vector into a sparsified support dictionary.
+    """Convert one basis vector into a sparsified support dictionary.
 
     Entries whose absolute value is less than or equal to ``support_tol`` are
     discarded. Remaining entries are returned as a mapping from row label to
@@ -324,12 +317,12 @@ def _basis_column_support(
     :param support_tol:
         Threshold below which coefficients are treated as zero.
     :type support_tol: float
-    :returns:
+    :return:
         Sparse support mapping for one basis column.
     :rtype: Dict[str, float]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         import numpy as np
@@ -352,8 +345,7 @@ def semiflow_supports(
     rtol: float = 1e-12,
     support_tol: float = 1e-8,
 ) -> List[Dict[str, float]]:
-    """
-    Return sparsified P-semiflow or T-semiflow supports.
+    """Return sparsified P-semiflow or T-semiflow supports.
 
     The result is a list of sparse dictionaries, one per basis column. For
     P-semiflows, keys are species or place identifiers. For T-semiflows, keys
@@ -372,14 +364,14 @@ def semiflow_supports(
         Threshold below which basis coefficients are treated as zero when
         constructing sparse supports.
     :type support_tol: float
-    :returns:
+    :return:
         List of sparse support dictionaries.
     :rtype: List[Dict[str, float]]
     :raises ValueError:
         If ``kind`` is not ``"p"`` or ``"t"``.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Structure import SynCRN

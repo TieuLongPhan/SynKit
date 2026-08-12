@@ -4,8 +4,8 @@ This namespace contains image-based reaction rendering and reaction-rule
 visualization helpers. Graph-panel reaction drawing lives in
 :mod:`synkit.Vis.molecule`.
 
-Example
--------
+.. rubric:: Example
+
 .. code-block:: python
 
     from synkit.Vis.reaction import RXNVis

@@ -15,12 +15,11 @@ from ..Structure.backend import _CRNGraphBackend
 
 
 def _node_match(keys: Iterable[str]):
-    """
-    Build a simple node-attribute equality matcher for VF2.
+    """Build a simple node-attribute equality matcher for VF2.
 
     :param keys: Iterable of node attribute keys to compare.
     :type keys: Iterable[str]
-    :returns: Callable suitable for :class:`DiGraphMatcher`.
+    :return: Callable suitable for :class:`DiGraphMatcher`.
     :rtype: Callable[[Dict[str, Any], Dict[str, Any]], bool]
     """
     keys = tuple(keys)
@@ -41,8 +40,7 @@ def _should_stop(
     count: Optional[int] = None,
     max_count: Optional[int] = None,
 ) -> bool:
-    """
-    Check whether enumeration should stop due to timeout or count limits.
+    """Check whether enumeration should stop due to timeout or count limits.
 
     :param start: Start time in seconds (from :func:`time.time`).
     :type start: float
@@ -52,7 +50,7 @@ def _should_stop(
     :type count: Optional[int]
     :param max_count: Maximum number of results allowed, or None.
     :type max_count: Optional[int]
-    :returns: True if timeout or count limit has been reached.
+    :return: True if timeout or count limit has been reached.
     :rtype: bool
     """
     if timeout_sec is not None and (time.time() - start) > timeout_sec:
@@ -115,8 +113,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         self._matcher = _node_match(self.node_attr_keys)
 
     def __repr__(self) -> str:
-        """
-        :returns: String representation of the automorphism helper.
+        """:return: String representation of the automorphism helper.
         :rtype: str
         """
         return (
@@ -128,10 +125,9 @@ class CRNAutomorphism(_CRNGraphBackend):
     # --- internal helpers ---------------------------------------------------
 
     def _graph_matcher(self) -> DiGraphMatcher:
-        """
-        Build a DiGraphMatcher for G vs G with node attribute matching.
+        """Build a DiGraphMatcher for G vs G with node attribute matching.
 
-        :returns: Configured :class:`DiGraphMatcher` for automorphism search.
+        :return: Configured :class:`DiGraphMatcher` for automorphism search.
         :rtype: DiGraphMatcher
         """
         G = self.G
@@ -145,8 +141,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         max_count: Optional[int] = None,
         timeout_sec: Optional[float] = None,
     ) -> Iterator[Dict[Any, Any]]:
-        """
-        Lazy generator of automorphism mappings.
+        """Lazy generator of automorphism mappings.
 
         Each mapping is a dict ``{node -> node}`` representing a graph
         automorphism. Enumeration stops when ``max_count`` or ``timeout_sec``
@@ -156,7 +151,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         :type max_count: Optional[int]
         :param timeout_sec: Maximum wall-clock time in seconds, or None.
         :type timeout_sec: Optional[float]
-        :returns: Iterator over automorphism mappings.
+        :return: Iterator over automorphism mappings.
         :rtype: Iterator[Dict[Any, Any]]
         """
         GM = self._graph_matcher()
@@ -174,15 +169,14 @@ class CRNAutomorphism(_CRNGraphBackend):
         *,
         timeout_sec: Optional[float] = 5.0,
     ) -> bool:
-        """
-        Test quickly whether a non-identity automorphism exists.
+        """Test quickly whether a non-identity automorphism exists.
 
         Enumeration stops as soon as a mapping is found that is not the
         identity mapping (or when timeout is reached).
 
         :param timeout_sec: Maximum wall-clock time in seconds.
         :type timeout_sec: Optional[float]
-        :returns: True if a nontrivial automorphism is found.
+        :return: True if a nontrivial automorphism is found.
         :rtype: bool
         """
         GM = self._graph_matcher()
@@ -200,14 +194,13 @@ class CRNAutomorphism(_CRNGraphBackend):
         nodes: List[Any],
         mappings: Iterable[Dict[Any, Any]],
     ) -> Tuple[List[Set[Any]], int]:
-        """
-        Group nodes into orbits using a stream of automorphism mappings.
+        """Group nodes into orbits using a stream of automorphism mappings.
 
         :param nodes: List of nodes in the underlying graph.
         :type nodes: List[Any]
         :param mappings: Iterable of automorphism mappings ``{node -> node}``.
         :type mappings: Iterable[Dict[Any, Any]]
-        :returns: Tuple ``(orbits, used_count)`` where ``orbits`` is a list
+        :return: Tuple ``(orbits, used_count)`` where ``orbits`` is a list
                   of sets and ``used_count`` the number of mappings consumed.
         :rtype: Tuple[List[Set[Any]], int]
         """
@@ -244,8 +237,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         max_count: int = 100,
         timeout_sec: Optional[float] = 5.0,
     ) -> dict:
-        """
-        Run automorphism enumeration and return a :class:`CRNAutResult`.
+        """Run automorphism enumeration and return a :class:`CRNAutResult`.
 
         This method:
 
@@ -257,7 +249,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         :type max_count: int
         :param timeout_sec: Optional wall-clock timeout in seconds.
         :type timeout_sec: Optional[float]
-        :returns: Automorphism summary for the CRN-derived graph.
+        :return: Automorphism summary for the CRN-derived graph.
         :rtype: CRNAutResult
         """
         GM = self._graph_matcher()
@@ -305,8 +297,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         max_count: int = 1000,
         timeout_sec: float = 5.0,
     ) -> Dict[str, Any]:
-        """
-        Approximate node orbits from sampled automorphisms.
+        """Approximate node orbits from sampled automorphisms.
 
         Nodes that are mutually mapped by some automorphism are placed in
         the same orbit (using a union–find structure).
@@ -315,7 +306,7 @@ class CRNAutomorphism(_CRNGraphBackend):
         :type max_count: int
         :param timeout_sec: Maximum wall-clock time in seconds.
         :type timeout_sec: float
-        :returns: Summary with orbit sets and diagnostics.
+        :return: Summary with orbit sets and diagnostics.
         :rtype: Dict[str, Any]
         """
         res = self.summary(max_count=max_count, timeout_sec=timeout_sec)
@@ -337,8 +328,7 @@ def detect_automorphisms(
     max_count: Optional[int] = 5000,
     timeout_sec: Optional[float] = 10.0,
 ) -> Dict[str, Any]:
-    """
-    Convenience wrapper around :class:`CRNAutomorphism`.
+    """Convenience wrapper around :class:`CRNAutomorphism`.
 
     Runs automorphism summarization (and optionally orbit computation)
     with reasonable defaults.
@@ -360,7 +350,7 @@ def detect_automorphisms(
     :param timeout_sec: Maximum wall-clock time in seconds; if None, a large
                         default is used.
     :type timeout_sec: Optional[float]
-    :returns: Combined summary (and optionally orbit) information.
+    :return: Combined summary (and optionally orbit) information.
     :rtype: Dict[str, Any]
     """
     analyzer = CRNAutomorphism(

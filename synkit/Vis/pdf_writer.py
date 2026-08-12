@@ -15,18 +15,26 @@ class PdfWriter:
     """A utility class to create PDF reports with plots from a list of figures
     or dynamically generated plots.
 
-    Parameters:
-    - file (str): The file name of the output PDF.
-    - plot_fn (Optional[Callable], optional): Function to create a plot for a single data entry or row.
-        Expected interface: `plot_fn(data_entry, axis, **kwargs)`. Default is None.
-    - plot_per_row (bool, optional): If True, calls `plot_fn` for an entire row instead of individual subplots.
-        Default is False.
-    - max_pages (int, optional): Maximum number of pages to create. Default is 999.
-    - rows (int, optional): Number of plot rows per page. Default is 7.
-    - cols (int, optional): Number of plot columns per page. Default is 2.
-    - pagesize (Tuple[float, float], optional): Size of a single page (in inches). Default is (21, 29.7).
-    - width_ratios (Optional[List[float]], optional): Column width ratios. Default is None.
-    - show_progress (bool, optional): If True, displays a progress bar using `tqdm`. Default is True.
+    :param file: The file name of the output PDF.
+    :type file: str
+    :param plot_fn: Function to create a plot for a single data entry or row.
+                    Expected interface: `plot_fn(data_entry, axis, **kwargs)`. Default is None.
+    :type plot_fn: Optional[Callable], optional
+    :param plot_per_row: If True, calls `plot_fn` for an entire row instead of individual subplots.
+                         Default is False.
+    :type plot_per_row: bool, optional
+    :param max_pages: Maximum number of pages to create. Default is 999.
+    :type max_pages: int, optional
+    :param rows: Number of plot rows per page. Default is 7.
+    :type rows: int, optional
+    :param cols: Number of plot columns per page. Default is 2.
+    :type cols: int, optional
+    :param pagesize: Size of a single page (in inches). Default is (21, 29.7).
+    :type pagesize: Tuple[float, float], optional
+    :param width_ratios: Column width ratios. Default is None.
+    :type width_ratios: Optional[List[float]], optional
+    :param show_progress: If True, displays a progress bar using `tqdm`. Default is True.
+    :type show_progress: bool, optional
     """
 
     def __init__(
@@ -54,13 +62,12 @@ class PdfWriter:
     def plot(self, data: Union[List[plt.Figure], List], **kwargs):
         """Generate plots from data or save pre-generated figures to the PDF.
 
-        Parameters:
-        - data (Union[List[matplotlib.figure.Figure], List]): Input data or list of figures.
-          If a list of figures, they are saved directly. Otherwise, the `plot_fn` is called for each data entry.
-        - **kwargs: Additional keyword arguments passed to `plot_fn`.
+        :param data: Input data or figures. Figures are saved directly;
+                     otherwise ``plot_fn`` is called for each entry.
+        :type data: Union[List[matplotlib.figure.Figure], List]
+        :param kwargs: Additional keyword arguments passed to ``plot_fn``.
 
-        Returns:
-        - None
+        :return: None
         """
         # Case 1: Pre-generated figures
         if all(isinstance(item, plt.Figure) for item in data):
@@ -122,11 +129,10 @@ class PdfWriter:
     def save_figure(self, figure: plt.Figure):
         """Save a pre-generated matplotlib figure directly to the PDF.
 
-        Parameters:
-        - figure (matplotlib.figure.Figure): The figure to save.
+        :param figure: The figure to save.
+        :type figure: matplotlib.figure.Figure
 
-        Returns:
-        - None
+        :return: None
         """
         if not isinstance(figure, plt.Figure):
             raise ValueError("Input must be a matplotlib.figure.Figure.")
@@ -135,7 +141,6 @@ class PdfWriter:
     def close(self):
         """Close the PDF file, ensuring all pages are written.
 
-        Returns:
-        - None
+        :return: None
         """
         self.pdf_pages.close()

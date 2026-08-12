@@ -47,8 +47,7 @@ def _resolve_species_rule_incidence(
     u: Any,
     v: Any,
 ) -> Optional[Tuple[Any, Any]]:
-    """
-    Resolve an edge endpoint pair into a ``(species_node, rule_node)`` pair.
+    """Resolve an edge endpoint pair into a ``(species_node, rule_node)`` pair.
 
     This helper inspects node metadata and accepts either orientation
     ``species -> rule`` or ``rule -> species``. If the endpoints do not form
@@ -60,7 +59,7 @@ def _resolve_species_rule_incidence(
     :type u: Any
     :param v: Second endpoint.
     :type v: Any
-    :returns:
+    :return:
         A pair ``(species_node, rule_node)`` when the endpoints define a valid
         species-rule incidence, otherwise ``None``.
     :rtype: Optional[Tuple[Any, Any]]
@@ -83,8 +82,7 @@ def _accumulate_stoich_entry(
     role: Optional[str],
     coeff: float,
 ) -> None:
-    """
-    Accumulate one stoichiometric coefficient into ``S^-`` or ``S^+``.
+    """Accumulate one stoichiometric coefficient into ``S^-`` or ``S^+``.
 
     :param S_minus: Reactant stoichiometric matrix.
     :type S_minus: np.ndarray
@@ -100,7 +98,7 @@ def _accumulate_stoich_entry(
     :type role: Optional[str]
     :param coeff: Stoichiometric coefficient to add.
     :type coeff: float
-    :returns: ``None``. The matrices are modified in place.
+    :return: ``None``. The matrices are modified in place.
     :rtype: None
     """
     if role == "reactant":
@@ -110,15 +108,14 @@ def _accumulate_stoich_entry(
 
 
 def _iter_graph_edges_with_data(G: Any) -> Iterable[Tuple[Any, Any, Dict[str, Any]]]:
-    """
-    Yield graph edges as ``(u, v, data)`` triples for simple and multigraphs.
+    """Yield graph edges as ``(u, v, data)`` triples for simple and multigraphs.
 
     For multigraphs, parallel edges are yielded individually while discarding
     the internal edge key.
 
     :param G: NetworkX graph-like object.
     :type G: Any
-    :returns:
+    :return:
         Iterable of edge triples ``(u, v, data)`` where ``data`` is the edge
         attribute mapping.
     :rtype: Iterable[Tuple[Any, Any, Dict[str, Any]]]
@@ -134,8 +131,7 @@ def _iter_graph_edges_with_data(G: Any) -> Iterable[Tuple[Any, Any, Dict[str, An
 def build_S_minus_plus(
     crn: Any,
 ) -> Tuple[List[Any], List[Any], np.ndarray, np.ndarray]:
-    """
-    Build the reactant matrix ``S^-`` and product matrix ``S^+`` from a SynCRN.
+    """Build the reactant matrix ``S^-`` and product matrix ``S^+`` from a SynCRN.
 
     The input is interpreted as a bipartite species-rule incidence graph. Rows
     correspond to species nodes and columns correspond to rule nodes.
@@ -159,7 +155,7 @@ def build_S_minus_plus(
     :param crn:
         A NetworkX bipartite graph or a SynCRN-like object containing one.
     :type crn: Any
-    :returns:
+    :return:
         A 4-tuple ``(species_order, rule_order, S_minus, S_plus)`` where
         ``species_order`` defines row order, ``rule_order`` defines column
         order, ``S_minus`` contains reactant stoichiometries, and ``S_plus``
@@ -196,12 +192,11 @@ def build_S_minus_plus(
 
 
 def build_S(crn: Any) -> Tuple[List[Any], List[Any], np.ndarray]:
-    """
-    Build the stoichiometric matrix ``S = S^+ - S^-``.
+    """Build the stoichiometric matrix ``S = S^+ - S^-``.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
     :type crn: Any
-    :returns:
+    :return:
         A 3-tuple ``(species_order, rule_order, S)`` where ``S`` is the species
         x rule stoichiometric matrix.
     :rtype: Tuple[List[Any], List[Any], np.ndarray]
@@ -212,12 +207,11 @@ def build_S(crn: Any) -> Tuple[List[Any], List[Any], np.ndarray]:
 
 
 def stoichiometric_matrix(crn: Any) -> np.ndarray:
-    """
-    Return the species x rule stoichiometric matrix ``S``.
+    """Return the species x rule stoichiometric matrix ``S``.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
     :type crn: Any
-    :returns: Stoichiometric matrix with species as rows and rule nodes as columns.
+    :return: Stoichiometric matrix with species as rows and rule nodes as columns.
     :rtype: np.ndarray
     """
     _, _, S = build_S(crn)
@@ -225,14 +219,13 @@ def stoichiometric_matrix(crn: Any) -> np.ndarray:
 
 
 def stoichiometric_rank(crn: Any, *, tol: float = 1e-10) -> int:
-    """
-    Compute the numerical rank of the stoichiometric matrix.
+    """Compute the numerical rank of the stoichiometric matrix.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
     :type crn: Any
     :param tol: Numerical tolerance passed to ``numpy.linalg.matrix_rank``.
     :type tol: float
-    :returns: Rank of the stoichiometric matrix.
+    :return: Rank of the stoichiometric matrix.
     :rtype: int
     """
     S = stoichiometric_matrix(crn)
@@ -245,8 +238,7 @@ def stoichiometric_rank(crn: Any, *, tol: float = 1e-10) -> int:
 
 
 def _svd_null_space(A: np.ndarray, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute a null-space basis using SVD.
+    """Compute a null-space basis using SVD.
 
     This is used as a fallback when SciPy is unavailable.
 
@@ -254,7 +246,7 @@ def _svd_null_space(A: np.ndarray, rtol: float = 1e-12) -> np.ndarray:
     :type A: np.ndarray
     :param rtol: Relative singular-value threshold for rank detection.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis of the null space of ``A``.
     :rtype: np.ndarray
     """
@@ -273,14 +265,13 @@ def _svd_null_space(A: np.ndarray, rtol: float = 1e-12) -> np.ndarray:
 
 
 def _null_space(A: np.ndarray, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute a null-space basis using SciPy when available, otherwise SVD.
+    """Compute a null-space basis using SciPy when available, otherwise SVD.
 
     :param A: Input matrix.
     :type A: np.ndarray
     :param rtol: Relative threshold used to determine the numerical null space.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis of the null space of ``A``.
     :rtype: np.ndarray
     """
@@ -290,8 +281,7 @@ def _null_space(A: np.ndarray, rtol: float = 1e-12) -> np.ndarray:
 
 
 def left_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute a basis for the left null space ``ker(S^T)``.
+    """Compute a basis for the left null space ``ker(S^T)``.
 
     In CRN language, these directions correspond to conservation-law vectors
     over species.
@@ -300,7 +290,7 @@ def left_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
     :type crn: Any
     :param rtol: Relative tolerance used in null-space computation.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis of ``ker(S^T)``.
     :rtype: np.ndarray
     """
@@ -309,8 +299,7 @@ def left_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
 
 
 def right_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
-    """
-    Compute a basis for the right null space ``ker(S)``.
+    """Compute a basis for the right null space ``ker(S)``.
 
     In CRN or Petri-net language, these directions correspond to rule-flux
     modes or T-semiflows.
@@ -319,7 +308,7 @@ def right_nullspace(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
     :type crn: Any
     :param rtol: Relative tolerance used in null-space computation.
     :type rtol: float
-    :returns:
+    :return:
         Matrix whose columns form a basis of ``ker(S)``.
     :rtype: np.ndarray
     """
@@ -332,14 +321,13 @@ def left_right_kernels(
     *,
     rtol: float = 1e-12,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Compute both left and right kernels of the stoichiometric matrix.
+    """Compute both left and right kernels of the stoichiometric matrix.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
     :type crn: Any
     :param rtol: Relative tolerance used in null-space computation.
     :type rtol: float
-    :returns:
+    :return:
         Pair ``(left_basis, right_basis)`` where ``left_basis`` spans
         ``ker(S^T)`` and ``right_basis`` spans ``ker(S)``.
     :rtype: Tuple[np.ndarray, np.ndarray]
@@ -355,22 +343,20 @@ def left_right_kernels(
 
 
 def _lcm(a: int, b: int) -> int:
-    """
-    Compute the least common multiple of two integers.
+    """Compute the least common multiple of two integers.
 
     :param a: First integer.
     :type a: int
     :param b: Second integer.
     :type b: int
-    :returns: Least common multiple of ``a`` and ``b``.
+    :return: Least common multiple of ``a`` and ``b``.
     :rtype: int
     """
     return abs(a // gcd(a, b) * b) if a and b else abs(a or b)
 
 
 def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[int]:
-    """
-    Scale a floating vector to a minimal integer vector.
+    """Scale a floating vector to a minimal integer vector.
 
     The routine first normalizes the vector, then attempts rational
     reconstruction with bounded denominators. If that becomes unstable, a
@@ -380,7 +366,7 @@ def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[i
     :type vec: np.ndarray
     :param tol: Threshold below which entries are treated as zero.
     :type tol: float
-    :returns:
+    :return:
         Integer vector reduced by the greatest common divisor of its entries.
     :rtype: List[int]
     """
@@ -433,8 +419,7 @@ def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[i
 
 
 def integer_conservation_laws(crn: Any, *, rtol: float = 1e-12) -> List[List[int]]:
-    """
-    Return an approximate minimal integer basis for ``ker(S^T)``.
+    """Return an approximate minimal integer basis for ``ker(S^T)``.
 
     Each returned vector corresponds to an approximate conservation law over
     species, obtained by converting floating null-space basis vectors into
@@ -444,7 +429,7 @@ def integer_conservation_laws(crn: Any, *, rtol: float = 1e-12) -> List[List[int
     :type crn: Any
     :param rtol: Relative tolerance used in null-space computation.
     :type rtol: float
-    :returns:
+    :return:
         List of integer vectors approximating a basis of the left kernel.
     :rtype: List[List[int]]
     """
@@ -514,10 +499,9 @@ class StoichSummary:
 
     @property
     def is_full_rank(self) -> bool:
-        """
-        Whether the stoichiometric matrix has full rank.
+        """Whether the stoichiometric matrix has full rank.
 
-        :returns:
+        :return:
             ``True`` when ``rank == min(n_species, n_reactions)``,
             otherwise ``False``.
         :rtype: bool
@@ -526,21 +510,19 @@ class StoichSummary:
 
     @property
     def is_underdetermined(self) -> bool:
-        """
-        Whether the right kernel is non-trivial.
+        """Whether the right kernel is non-trivial.
 
         Equivalently, this checks whether ``rank < n_reactions``.
 
-        :returns: ``True`` if ``dim_right_kernel > 0``, else ``False``.
+        :return: ``True`` if ``dim_right_kernel > 0``, else ``False``.
         :rtype: bool
         """
         return self.rank < self.n_reactions
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert the summary into a plain dictionary.
+        """Convert the summary into a plain dictionary.
 
-        :returns: Dictionary representation of the summary.
+        :return: Dictionary representation of the summary.
         :rtype: Dict[str, Any]
         """
         return {
@@ -553,12 +535,11 @@ class StoichSummary:
 
     @classmethod
     def from_crn(cls, crn: Any) -> "StoichSummary":
-        """
-        Construct a summary directly from a CRN object or graph.
+        """Construct a summary directly from a CRN object or graph.
 
         :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
         :type crn: Any
-        :returns: Stoichiometric summary derived from the CRN.
+        :return: Stoichiometric summary derived from the CRN.
         :rtype: StoichSummary
         """
         S = stoichiometric_matrix(crn)
@@ -571,10 +552,9 @@ class StoichSummary:
         )
 
     def __str__(self) -> str:
-        """
-        Return a human-readable multi-line representation.
+        """Return a human-readable multi-line representation.
 
-        :returns: Formatted summary string.
+        :return: Formatted summary string.
         :rtype: str
         """
         lines = [
@@ -590,12 +570,11 @@ class StoichSummary:
 
 
 def summary(crn: Any) -> StoichSummary:
-    """
-    Compute a quick stoichiometric summary.
+    """Compute a quick stoichiometric summary.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
     :type crn: Any
-    :returns: Lightweight stoichiometric summary of the CRN.
+    :return: Lightweight stoichiometric summary of the CRN.
     :rtype: StoichSummary
     """
     return StoichSummary.from_crn(crn)

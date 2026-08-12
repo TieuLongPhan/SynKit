@@ -71,12 +71,11 @@ class CRNVisualizer:
         gv_node_attr: Optional[Dict[str, str]] = None,
         gv_edge_attr: Optional[Dict[str, str]] = None,
     ):
-        """
-        Bipartite plot (species left, reactions right).
+        """Bipartite plot (species left, reactions right).
 
         :param backend: 'nx' (NetworkX) or 'gv'.
         :type backend: str
-        :returns: For backend='nx' -> (fig, ax); for 'gv' -> Digraph
+        :return: For backend='nx' -> (fig, ax); for 'gv' -> Digraph
         """
         if backend == "nx":
             return self._bip_nx(
@@ -142,12 +141,11 @@ class CRNVisualizer:
         gv_node_attr: Optional[Dict[str, str]] = None,
         gv_edge_attr: Optional[Dict[str, str]] = None,
     ):
-        """
-        General CRN graph plot (spring layout in NX; chosen engine in Graphviz).
+        """General CRN graph plot (spring layout in NX; chosen engine in Graphviz).
 
         :param backend: 'nx' (NetworkX) or 'gv'.
         :type backend: str
-        :returns: For backend='nx' -> (fig, ax); for 'gv' -> Digraph
+        :return: For backend='nx' -> (fig, ax); for 'gv' -> Digraph
         """
         if backend == "nx":
             return self._crn_nx(
@@ -210,14 +208,13 @@ class CRNVisualizer:
         gv_node_attr: Optional[Dict[str, str]] = None,
         gv_edge_attr: Optional[Dict[str, str]] = None,
     ):
-        """
-        Species→species collapsed graph.
+        """Species→species collapsed graph.
 
         Uses `hg.to_species_graph()` if available. Otherwise, it builds the collapsed
         graph by connecting each reactant to each product for every reaction.
 
         :param backend: 'nx' (NetworkX) or 'gv' (Graphviz).
-        :returns: For 'nx' -> (fig, ax); for 'gv' -> Digraph
+        :return: For 'nx' -> (fig, ax); for 'gv' -> Digraph
         """
         if backend == "nx":
             return self._s2s_nx(

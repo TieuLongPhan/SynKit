@@ -902,26 +902,23 @@ def enumerate_kernel_optima(  # noqa: C901
     explicit_hs: bool = False,
     reaction_center_hs: bool = False,
 ):
-    """
-    Enumerate exact, symmetry-distinct optima for a kernel.
+    """Enumerate exact, symmetry-distinct optima for a kernel.
 
-    Parameters
-    ----------
-    kernel : Kernel
-        Uncertainty-region kernel.
-    rxn_smiles : str, optional
-        Original reaction SMILES. If supplied, each result receives mapped
-        reaction SMILES and ITS-hash deduplication is used when available.
-    unique : bool, optional
-        Collapse automorphism/ITS-equivalent optima.
-    electron_balance : bool, optional
-        If True, prefer maps not rejected by the explicit-H ITS heuristic.
-    explicit_hs : bool, optional
-        If True, include explicit mapped hydrogens in output reaction SMILES.
-    reaction_center_hs : bool, optional
-        If True, expand hydrogens only on heavy atoms incident to changed ITS
-        edges. This is intended for heavy-atom optimization with lightweight
-        reaction-center hydrogen display.
+    :param kernel: Uncertainty-region kernel.
+    :type kernel: Kernel
+    :param rxn_smiles: Original reaction SMILES. If supplied, each result receives mapped
+                       reaction SMILES and ITS-hash deduplication is used when available.
+    :type rxn_smiles: str, optional
+    :param unique: Collapse automorphism/ITS-equivalent optima.
+    :type unique: bool, optional
+    :param electron_balance: If True, prefer maps not rejected by the explicit-H ITS heuristic.
+    :type electron_balance: bool, optional
+    :param explicit_hs: If True, include explicit mapped hydrogens in output reaction SMILES.
+    :type explicit_hs: bool, optional
+    :param reaction_center_hs: If True, expand hydrogens only on heavy atoms incident to changed ITS
+                               edges. This is intended for heavy-atom optimization with lightweight
+                               reaction-center hydrogen display.
+    :type reaction_center_hs: bool, optional
     """
     solution = solve_kernel_blockwise(kernel, enumerate_all=True)
     enumeration_complete = True

@@ -1,40 +1,13 @@
-"""
-auto_est.py
-~~~~~~~~~~~
+"""Approximate automorphism orbits with 1-WL color refinement.
 
-Approximate node automorphism groups (orbits) via 1-WL color refinement,
-plus orbit- and component-aware deduplication utilities.
-
-Design goals (SynKit style)
----------------------------
-- OOP with a scikit-like ``fit() -> self``.
-- Deterministic output ordering.
-- Sphinx-style docstrings.
-- Helper methods and useful properties.
-- Optional "components style" grouping, analogous to exact Automorphism:
-  you can obtain *orbit-components* induced by a subset of nodes (anchors).
-
-Important note
---------------
-WL-1 provides an *approximate* orbit partition: distinct WL colors imply
-distinct orbits, but equal WL colors do not guarantee true symmetry.
-
-This module offers:
-- ``AutoEst.orbits``: WL-equivalence classes on the given graph
-- ``AutoEst.components(nodes)``: connected components on an induced subgraph
-- ``AutoEst.orbit_components(nodes)``: components of the orbit-quotient graph
-- ``AutoEst.deduplicate_host_orbits(mappings)``: host-orbit based pruning
-- ``AutoEst.deduplicate_pattern_orbits(mappings, pattern_orbits, ...)``:
-  pattern-orbit based pruning (anchor-aware)
-
-The anchor-aware deduplication follows your recent constraint:
-anchor components must not be pruned by orbit-independence.
+Distinct WL colors imply distinct orbits, while equal colors do not prove
+symmetry. The module also provides component-aware mapping deduplication;
+anchor components remain exempt from orbit-independence pruning.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import groupby
 from typing import (
     Any,
     Dict,
@@ -75,8 +48,7 @@ class _WLConfig:
 # Core estimator
 # --------------------------------------------------------------------------- #
 class AutoEst:
-    """
-    Approximate node automorphism groups (orbits) via 1-WL color refinement.
+    """Approximate node automorphism groups (orbits) via 1-WL color refinement.
 
     This class performs a Weisfeiler–Lehman (WL-1) style color refinement
     on the input graph to approximate a partition of nodes into
@@ -133,8 +105,8 @@ class AutoEst:
        * A. Dawar and G. Vagnozzi, *Generalizations of k-dimensional
          Weisfeiler–Leman stabilization*, arXiv preprint (2019/2020).
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         import networkx as nx
@@ -196,53 +168,48 @@ class AutoEst:
     # ------------------------------------------------------------------ #
     @property
     def graph(self) -> nx.Graph:
-        """
-        Underlying graph.
+        """Underlying graph.
 
-        :returns: Graph passed to the constructor.
+        :return: Graph passed to the constructor.
         :rtype: nx.Graph
         """
         return self._graph
 
     @property
     def node_attrs(self) -> Tuple[str, ...]:
-        """
-        Node attribute keys used in WL initialization.
+        """Node attribute keys used in WL initialization.
 
-        :returns: Node-attribute keys.
+        :return: Node-attribute keys.
         :rtype: tuple[str, ...]
         """
         return self._cfg.node_attrs
 
     @property
     def edge_attrs(self) -> Tuple[str, ...]:
-        """
-        Edge attribute keys used in WL refinement.
+        """Edge attribute keys used in WL refinement.
 
-        :returns: Edge-attribute keys.
+        :return: Edge-attribute keys.
         :rtype: tuple[str, ...]
         """
         return self._cfg.edge_attrs
 
     @property
     def max_iter(self) -> int:
-        """
-        Maximum number of WL refinement iterations.
+        """Maximum number of WL refinement iterations.
 
-        :returns: Maximum refinement iterations.
+        :return: Maximum refinement iterations.
         :rtype: int
         """
         return self._cfg.max_iter
 
     @property
     def anchor_component(self) -> FrozenSet[Hashable]:
-        """
-        Largest connected component of the fitted graph.
+        """Largest connected component of the fitted graph.
 
         This is a convenience “components-style” accessor. It is commonly used as
         an anchor set for match pruning and symmetry breaking.
 
-        :returns: The node-set of the largest connected component. If multiple
+        :return: The node-set of the largest connected component. If multiple
             components share the maximum size, the one with the smallest
             (sorted) node is returned for determinism.
         :rtype: frozenset[hashable]
@@ -257,7 +224,7 @@ class AutoEst:
         # Deterministic tie-break: size desc, then smallest node
         comps_sorted = sorted(
             comps,
-            key=lambda c: (-len(c), min(c) if c else 0),
+            key=lambda c: (-len(c), min((repr(node) for node in c), default="")),
         )
         return comps_sorted[0]
 
@@ -265,10 +232,9 @@ class AutoEst:
     # Fitting and results
     # ------------------------------------------------------------------ #
     def fit(self) -> AutoEst:
-        """
-        Run WL-1 refinement and compute approximate orbits.
+        """Run WL-1 refinement and compute approximate orbits.
 
-        :returns: The fitted estimator (``self``).
+        :return: The fitted estimator (``self``).
         :rtype: AutoEst
         """
         self._initialize_colors()
@@ -280,10 +246,9 @@ class AutoEst:
 
     @property
     def node_colors(self) -> Dict[Hashable, int]:
-        """
-        Node-to-color mapping after refinement.
+        """Node-to-color mapping after refinement.
 
-        :returns: Mapping node -> WL color id.
+        :return: Mapping node -> WL color id.
         :rtype: dict[hashable, int]
         """
         self._ensure_fitted()
@@ -291,10 +256,9 @@ class AutoEst:
 
     @property
     def orbits(self) -> List[FrozenSet[Hashable]]:
-        """
-        WL-equivalence classes (approximate automorphism orbits).
+        """WL-equivalence classes (approximate automorphism orbits).
 
-        :returns: List of frozensets, each representing an orbit.
+        :return: List of frozensets, each representing an orbit.
         :rtype: list[frozenset[hashable]]
         """
         self._ensure_fitted()
@@ -302,25 +266,23 @@ class AutoEst:
 
     @property
     def groups(self) -> List[List[Hashable]]:
-        """
-        Orbits represented as sorted lists.
+        """Orbits represented as sorted lists.
 
-        :returns: List of sorted node lists.
+        :return: List of sorted node lists.
         :rtype: list[list[hashable]]
         """
         self._ensure_fitted()
         out: List[List[Hashable]] = []
         for orb in self._orbits:
-            out.append(sorted(orb, key=lambda x: x))
-        out.sort(key=lambda g: (len(g), g[0] if g else 0))
+            out.append(sorted(orb, key=repr))
+        out.sort(key=lambda g: (len(g), repr(g[0]) if g else ""))
         return out
 
     @property
     def orbit_index(self) -> Dict[Hashable, int]:
-        """
-        Map each node to its orbit id.
+        """Map each node to its orbit id.
 
-        :returns: Mapping node -> orbit_id.
+        :return: Mapping node -> orbit_id.
         :rtype: dict[hashable, int]
         """
         self._ensure_fitted()
@@ -330,10 +292,9 @@ class AutoEst:
 
     @property
     def n_orbits(self) -> int:
-        """
-        Number of approximate orbits.
+        """Number of approximate orbits.
 
-        :returns: Number of orbits.
+        :return: Number of orbits.
         :rtype: int
         """
         self._ensure_fitted()
@@ -341,28 +302,25 @@ class AutoEst:
 
     @property
     def n_groups(self) -> int:
-        """
-        Alias for :attr:`n_orbits`.
+        """Alias for :attr:`n_orbits`.
 
-        :returns: Number of orbits.
+        :return: Number of orbits.
         :rtype: int
         """
         return self.n_orbits
 
     def __len__(self) -> int:
-        """
-        Number of orbits (0 if not fitted).
+        """Number of orbits (0 if not fitted).
 
-        :returns: Orbit count or 0.
+        :return: Orbit count or 0.
         :rtype: int
         """
         return self.n_orbits if self._fitted else 0
 
     def __repr__(self) -> str:
-        """
-        Summary representation.
+        """Summary representation.
 
-        :returns: Debug-friendly repr string.
+        :return: Debug-friendly repr string.
         :rtype: str
         """
         n_nodes = self._graph.number_of_nodes()
@@ -378,15 +336,14 @@ class AutoEst:
     def components(
         self, nodes: Optional[Iterable[Hashable]] = None
     ) -> List[FrozenSet[Hashable]]:
-        """
-        Compute connected components on an induced subgraph.
+        """Compute connected components on an induced subgraph.
 
         This mirrors the "components" utilities you used around Automorphism.
 
         :param nodes: Subset of nodes to induce. If None, uses all nodes.
         :type nodes: iterable[hashable] or None
 
-        :returns: Connected components as frozensets (deterministic order).
+        :return: Connected components as frozensets (deterministic order).
         :rtype: list[frozenset[hashable]]
 
         :raises RuntimeError: If not fitted.
@@ -397,8 +354,7 @@ class AutoEst:
     def orbit_components(
         self, nodes: Optional[Iterable[Hashable]] = None
     ) -> List[FrozenSet[int]]:
-        """
-        Components of the orbit-quotient graph restricted to an induced subgraph.
+        """Components of the orbit-quotient graph restricted to an induced subgraph.
 
         - First restrict to `nodes` (or all nodes).
         - Collapse nodes to their orbit ids.
@@ -411,7 +367,7 @@ class AutoEst:
         :param nodes: Subset of nodes. If None, uses all nodes.
         :type nodes: iterable[hashable] or None
 
-        :returns: List of connected components in orbit-id space.
+        :return: List of connected components in orbit-id space.
         :rtype: list[frozenset[int]]
 
         :raises RuntimeError: If not fitted.
@@ -421,7 +377,7 @@ class AutoEst:
         orbit_idx = self.orbit_index
         q = self._orbit_quotient_graph(keep, orbit_idx)
         comps = [frozenset(c) for c in nx.connected_components(q)]
-        return sorted(comps, key=lambda c: (len(c), min(c)))
+        return sorted(comps, key=lambda c: (len(c), min(map(repr, c))))
 
     # ------------------------------------------------------------------ #
     # Internal helpers
@@ -453,13 +409,12 @@ class AutoEst:
         self._colors = colors
 
     def _initial_label(self, node: Hashable) -> Tuple[Any, ...]:
-        """
-        Build initial label.
+        """Build initial label.
 
         :param node: Node id.
         :type node: hashable
 
-        :returns: Tuple label (degree + attr values).
+        :return: Tuple label (degree + attr values).
         :rtype: tuple
         """
         degree = self._graph.degree(node)
@@ -478,10 +433,9 @@ class AutoEst:
                 break
 
     def _refine_once(self) -> Tuple[Dict[Hashable, int], bool]:
-        """
-        Single WL sweep.
+        """Single WL sweep.
 
-        :returns: (new_colors, changed)
+        :return: (new_colors, changed)
         :rtype: tuple[dict[hashable, int], bool]
         """
         palette: Dict[Tuple[Any, ...], int] = {}
@@ -502,13 +456,12 @@ class AutoEst:
         return new_colors, changed
 
     def _refined_label(self, node: Hashable) -> Tuple[Any, ...]:
-        """
-        Combine current color with sorted neighbor signatures.
+        """Combine current color with sorted neighbor signatures.
 
         :param node: Node id.
         :type node: hashable
 
-        :returns: Refined label.
+        :return: Refined label.
         :rtype: tuple
         """
         base = self._colors[node]
@@ -523,15 +476,14 @@ class AutoEst:
     def _neighbor_signature(
         self, node: Hashable, neighbor: Hashable
     ) -> Tuple[Any, ...]:
-        """
-        Neighbor signature: (neighbor_color, edge_attr_1, ...).
+        """Neighbor signature: (neighbor_color, edge_attr_1, ...).
 
         :param node: Central node.
         :type node: hashable
         :param neighbor: Neighbor node.
         :type neighbor: hashable
 
-        :returns: Neighbor signature.
+        :return: Neighbor signature.
         :rtype: tuple
         """
         edge_data = self._graph.get_edge_data(node, neighbor, default={})
@@ -547,13 +499,15 @@ class AutoEst:
             color_to_nodes.setdefault(color, []).append(node)
 
         orbits = [frozenset(v) for v in color_to_nodes.values()]
-        self._orbits = sorted(orbits, key=lambda o: (len(o), min(o)))
+        self._orbits = sorted(
+            orbits,
+            key=lambda orbit: (len(orbit), min(map(repr, orbit))),
+        )
 
     def _build_orbit_index(self) -> Dict[Hashable, int]:
-        """
-        Build node -> orbit id mapping.
+        """Build node -> orbit id mapping.
 
-        :returns: Orbit index.
+        :return: Orbit index.
         :rtype: dict[hashable, int]
         """
         idx: Dict[Hashable, int] = {}
@@ -565,13 +519,12 @@ class AutoEst:
     def _normalize_nodes(
         self, nodes: Optional[Iterable[Hashable]]
     ) -> FrozenSet[Hashable]:
-        """
-        Normalize subset nodes.
+        """Normalize subset nodes.
 
         :param nodes: Subset or None.
         :type nodes: iterable[hashable] or None
 
-        :returns: Frozenset of nodes (validated).
+        :return: Frozenset of nodes (validated).
         :rtype: frozenset[hashable]
         """
         if nodes is None:
@@ -585,34 +538,37 @@ class AutoEst:
     def _components_on_induced(
         self, nodes: Optional[Iterable[Hashable]]
     ) -> List[FrozenSet[Hashable]]:
-        """
-        Connected components on induced subgraph.
+        """Connected components on induced subgraph.
 
         :param nodes: Subset or None.
         :type nodes: iterable[hashable] or None
 
-        :returns: Components in deterministic order.
+        :return: Components in deterministic order.
         :rtype: list[frozenset[hashable]]
         """
         keep = self._normalize_nodes(nodes)
         sub = self._graph.subgraph(keep)
-        comps = [frozenset(c) for c in nx.connected_components(sub)]
-        return sorted(comps, key=lambda c: (len(c), min(c)))
+        component_nodes = (
+            nx.weakly_connected_components(sub)
+            if sub.is_directed()
+            else nx.connected_components(sub)
+        )
+        comps = [frozenset(component) for component in component_nodes]
+        return sorted(comps, key=lambda c: (len(c), min(map(repr, c))))
 
     def _orbit_quotient_graph(
         self,
         keep_nodes: FrozenSet[Hashable],
         orbit_idx: Dict[Hashable, int],
     ) -> nx.Graph:
-        """
-        Build orbit quotient graph restricted to keep_nodes.
+        """Build orbit quotient graph restricted to keep_nodes.
 
         :param keep_nodes: Nodes to keep.
         :type keep_nodes: frozenset[hashable]
         :param orbit_idx: Node->orbit id.
         :type orbit_idx: dict[hashable, int]
 
-        :returns: Quotient graph in orbit-id space.
+        :return: Quotient graph in orbit-id space.
         :rtype: nx.Graph
         """
         q = nx.Graph()
@@ -652,7 +608,7 @@ class AutoEst:
         if missing:
             raise ValueError(
                 "Host nodes in mappings not present in fitted graph: "
-                f"{sorted(set(missing))}"
+                f"{sorted(set(missing), key=repr)}"
             )
 
     def _dedup_by_signature(
@@ -660,37 +616,39 @@ class AutoEst:
         mappings: List[Mapping[Hashable, Hashable]],
         sig_fn: Any,
     ) -> List[Mapping[Hashable, Hashable]]:
-        """
-        Deduplicate by computed signature (stable representative selection).
+        """Deduplicate by computed signature (stable representative selection).
 
         :param mappings: List of mappings.
         :type mappings: list[Mapping[hashable, hashable]]
         :param sig_fn: Function mapping mapping->signature.
         :type sig_fn: callable
 
-        :returns: Deduplicated list.
+        :return: Deduplicated list.
         :rtype: list[Mapping[hashable, hashable]]
         """
-        mappings_sorted = sorted(mappings, key=sig_fn)
+        seen = set()
         out: List[Mapping[Hashable, Hashable]] = []
-        for _, grp in groupby(mappings_sorted, key=sig_fn):
-            out.append(next(grp))
+        for mapping in mappings:
+            signature = sig_fn(mapping)
+            if signature in seen:
+                continue
+            seen.add(signature)
+            out.append(mapping)
         return out
 
     def _sort_orbits(
         self, pattern_orbits: Iterable[FrozenSet[Hashable]]
     ) -> Tuple[Tuple[Hashable, ...], ...]:
-        """
-        Deterministically sort orbits.
+        """Deterministically sort orbits.
 
         :param pattern_orbits: Orbits.
         :type pattern_orbits: iterable[frozenset[hashable]]
 
-        :returns: Tuple of sorted orbit tuples.
+        :return: Tuple of sorted orbit tuples.
         :rtype: tuple[tuple[hashable, ...], ...]
         """
-        orbs = [tuple(sorted(o, key=lambda x: x)) for o in pattern_orbits]
-        orbs.sort(key=lambda o: (len(o), o[0] if o else 0))
+        orbs = [tuple(sorted(o, key=repr)) for o in pattern_orbits]
+        orbs.sort(key=lambda orbit: (len(orbit), repr(orbit[0]) if orbit else ""))
         return tuple(orbs)
 
     def _dedup_pattern_orbits_no_anchor(
@@ -698,20 +656,19 @@ class AutoEst:
         mappings: List[Mapping[Hashable, Hashable]],
         orbits: Tuple[Tuple[Hashable, ...], ...],
     ) -> List[Mapping[Hashable, Hashable]]:
-        """
-        Pattern-orbit dedup without anchor.
+        """Pattern-orbit dedup without anchor.
 
         :param mappings: Mappings.
         :type mappings: list[Mapping[hashable, hashable]]
         :param orbits: Sorted orbit tuples.
         :type orbits: tuple[tuple[hashable, ...], ...]
 
-        :returns: Deduplicated mappings.
+        :return: Deduplicated mappings.
         :rtype: list[Mapping[hashable, hashable]]
         """
 
         def _sig(m: Mapping[Hashable, Hashable]) -> Tuple[Tuple[Hashable, ...], ...]:
-            return tuple(tuple(sorted(m[p] for p in orb)) for orb in orbits)
+            return tuple(tuple(sorted((m[p] for p in orb), key=repr)) for orb in orbits)
 
         return self._dedup_by_signature(mappings, _sig)
 
@@ -721,8 +678,7 @@ class AutoEst:
         orbits: Tuple[Tuple[Hashable, ...], ...],
         anchor: FrozenSet[Hashable],
     ) -> List[Mapping[Hashable, Hashable]]:
-        """
-        Pattern-orbit dedup with anchor (no pruning inside anchor nodes).
+        """Pattern-orbit dedup with anchor (no pruning inside anchor nodes).
 
         :param mappings: Mappings.
         :type mappings: list[Mapping[hashable, hashable]]
@@ -731,14 +687,16 @@ class AutoEst:
         :param anchor: Anchor nodes.
         :type anchor: frozenset[hashable]
 
-        :returns: Deduplicated mappings.
+        :return: Deduplicated mappings.
         :rtype: list[Mapping[hashable, hashable]]
         """
-        anchor_nodes = tuple(sorted(anchor, key=lambda x: x))
+        anchor_nodes = tuple(sorted(anchor, key=repr))
         free_orbits = tuple(orb for orb in orbits if not (set(orb) & anchor))
 
         def _sig(m: Mapping[Hashable, Hashable]) -> Tuple[Any, ...]:
-            free_part = tuple(tuple(sorted(m[p] for p in orb)) for orb in free_orbits)
+            free_part = tuple(
+                tuple(sorted((m[p] for p in orb), key=repr)) for orb in free_orbits
+            )
             anchor_part = tuple(m[p] for p in anchor_nodes)
             return (free_part, anchor_part)
 
@@ -754,8 +712,7 @@ def estimate_automorphism_groups(
     edge_attrs: Optional[Iterable[str]] = None,
     max_iter: int = 10,
 ) -> AutoEst:
-    """
-    Convenience function to fit :class:`AutoEst`.
+    """Convenience function to fit :class:`AutoEst`.
 
     :param graph: Input NetworkX graph.
     :type graph: nx.Graph
@@ -766,7 +723,7 @@ def estimate_automorphism_groups(
     :param max_iter: Maximum WL iterations.
     :type max_iter: int
 
-    :returns: Fitted estimator.
+    :return: Fitted estimator.
     :rtype: AutoEst
     """
     node_list = list(node_attrs) if node_attrs is not None else None

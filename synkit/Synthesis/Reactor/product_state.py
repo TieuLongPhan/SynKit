@@ -7,9 +7,10 @@ an orchestration facade rather than a dependency of its leaf helpers.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Dict, Mapping, Tuple
+from typing import Any, Dict, Iterable, Mapping, Tuple
 
 import networkx as nx
+from rdkit import Chem
 
 from synkit.Graph.Hyrogen._misc import implicit_hydrogen
 from synkit.Graph.ITS.its_decompose import its_decompose
@@ -31,6 +32,72 @@ def _product_value(value: Any) -> Any:
     if isinstance(value, tuple) and len(value) == 2:
         return value[1]
     return value
+
+
+def _electron_refresh_support(  # noqa: C901
+    its: nx.Graph,
+    rewrite_nodes: Iterable[Any],
+) -> frozenset[Any]:
+    """Return the exact one-local support of product electron recomputation.
+
+    The derived state at a vertex depends only on its intrinsic node fields
+    and on the electron orders of incident edges.  The rewrite implementation
+    writes intrinsic fields only at ``rewrite_nodes`` and writes edges only
+    between such nodes.  A presence change can additionally remove every
+    external incident edge, so neighbors across that boundary are included
+    whenever the actual endpoint edge state differs.  This is the complete
+    support of the local formal-charge functional, not a corpus assumption.
+    """
+
+    def side_values(value: Any) -> Tuple[Any, Any]:
+        if isinstance(value, tuple) and len(value) == 2:
+            return value
+        return value, value
+
+    def node_exists(node: Any, side: int) -> bool:
+        attrs = its.nodes[node]
+        present = attrs.get("present")
+        if isinstance(present, tuple) and len(present) == 2:
+            return bool(present[side])
+        return side_values(attrs.get("element"))[side] not in (None, "")
+
+    def edge_state(left: Any, right: Any, attrs: Mapping[str, Any], side: int) -> Any:
+        if not node_exists(left, side) or not node_exists(right, side):
+            return None
+        values = tuple(
+            side_values(attrs.get(name))[side]
+            for name in (
+                "order",
+                "kekule_order",
+                "sigma_order",
+                "pi_order",
+                "bond_type",
+            )
+        )
+        if all(value in (None, "", 0, 0.0) for value in values):
+            return None
+        return values
+
+    support = {node for node in rewrite_nodes if node in its}
+
+    # Every edge written by the rewrite has both endpoints in ``support``.
+    # Those endpoints are already scheduled, regardless of the edge delta.
+    # An edge crossing out of the mapped locus can therefore change endpoint
+    # state only when its mapped endpoint changes presence.  Test only those
+    # boundary edges instead of rescanning every incident edge of every
+    # application.  This is the same one-local support, derived directly from
+    # the rewrite locality invariant above.
+    presence_changes = []
+    for node in support:
+        if node_exists(node, 0) != node_exists(node, 1):
+            presence_changes.append(node)
+    for node in presence_changes:
+        for left, right, attrs in its.edges(node, data=True):
+            if left in support and right in support:
+                continue
+            if edge_state(left, right, attrs, 0) != edge_state(left, right, attrs, 1):
+                support.update((left, right))
+    return frozenset(support)
 
 
 def _template_charge_is_authoritative(
@@ -194,7 +261,12 @@ def _refresh_product_electron_fields(
 
     product = _prepared_electron_product_graph(its)
     refreshed = refresh_electron_fields(product)
+    structural_dirty_nodes = its.graph.get("_structural_exact_dirty_nodes")
+    structural_dirty_edges = its.graph.get("_structural_exact_dirty_edges")
     for node, attrs in refreshed.nodes(data=True):
+        its.nodes[node].pop("_structural_exact_node_sig", None)
+        if isinstance(structural_dirty_nodes, set):
+            structural_dirty_nodes.add(node)
         current_charge = its.nodes[node].get("charge")
         left_charge = (
             current_charge[0]
@@ -221,6 +293,9 @@ def _refresh_product_electron_fields(
                 )
                 its.nodes[node][key] = (left_value, attrs[key])
     for u, v, attrs in refreshed.edges(data=True):
+        its.edges[u, v].pop("_structural_exact_edge_sig", None)
+        if isinstance(structural_dirty_edges, set):
+            structural_dirty_edges.add((u, v))
         for key in ("kekule_order", "sigma_order", "pi_order"):
             if key not in attrs:
                 continue
@@ -234,7 +309,7 @@ def _refresh_product_electron_fields(
     its.graph["_product_electron_fields_current"] = True
 
 
-def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
+def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:  # noqa: C901
     """Refresh derived product fields without materialising a side graph.
 
     This path is exact while the aromatic Kekule phase is unchanged.
@@ -255,19 +330,43 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
                 return True
         return False
 
+    refresh_hint = its.graph.get("_product_refresh_nodes")
+    candidate_nodes = (
+        tuple(its)
+        if refresh_hint is None
+        else tuple(node for node in refresh_hint if node in its)
+    )
     product_nodes = {
-        node for node, attrs in its.nodes(data=True) if product_node_exists(attrs)
+        node for node in candidate_nodes if product_node_exists(its.nodes[node])
     }
-    product_edges = [
-        (left, right, attrs)
-        for left, right, attrs in its.edges(data=True)
-        if left in product_nodes
-        and right in product_nodes
-        and product_edge_exists(attrs)
-    ]
+
+    # Every changed edge is incident to a mapped rule node.  Build the exact
+    # local edge population once; unchanged edges elsewhere already carry
+    # valid scalar host fields and need no tuple-side refresh.
+    product_edges = []
+    structural_dirty_nodes = its.graph.get("_structural_exact_dirty_nodes")
+    structural_dirty_edges = its.graph.get("_structural_exact_dirty_edges")
+    seen_edges: set[frozenset[Any]] = set()
+    for node in product_nodes:
+        for left, right, attrs in its.edges(node, data=True):
+            edge_key = frozenset((left, right))
+            if edge_key in seen_edges:
+                continue
+            seen_edges.add(edge_key)
+            if (
+                left in its
+                and right in its
+                and product_node_exists(its.nodes[left])
+                and product_node_exists(its.nodes[right])
+                and product_edge_exists(attrs)
+            ):
+                product_edges.append((left, right, attrs))
 
     bond_sums: Dict[Any, float] = defaultdict(float)
     for left, right, attrs in product_edges:
+        attrs.pop("_structural_exact_edge_sig", None)
+        if isinstance(structural_dirty_edges, set):
+            structural_dirty_edges.add((left, right))
         sigma = float(_product_value(attrs.get("sigma_order", 0.0)) or 0.0)
         pi = float(_product_value(attrs.get("pi_order", 0.0)) or 0.0)
         bond_order = sigma + pi
@@ -282,6 +381,9 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
 
     for node in product_nodes:
         attrs = its.nodes[node]
+        attrs.pop("_structural_exact_node_sig", None)
+        if isinstance(structural_dirty_nodes, set):
+            structural_dirty_nodes.add(node)
         bond_sum = bond_sums[node]
         current_bond_sum = attrs.get("bond_order_sum")
         left_bond_sum = (
@@ -358,10 +460,18 @@ def _product_kekule_phase_is_dirty(its: nx.Graph) -> bool:
             return value
         return value, value
 
+    refresh_hint = its.graph.get("_product_refresh_nodes")
+    candidate_nodes = (
+        tuple(its)
+        if refresh_hint is None
+        else tuple(node for node in refresh_hint if node in its)
+    )
     aromatic_nodes = {
         node
-        for node, attrs in its.nodes(data=True)
-        if any(bool(value) for value in side_values(attrs.get("aromatic", False)))
+        for node in candidate_nodes
+        if any(
+            bool(value) for value in side_values(its.nodes[node].get("aromatic", False))
+        )
     }
     if not aromatic_nodes:
         return False
@@ -381,13 +491,19 @@ def _product_kekule_phase_is_dirty(its: nx.Graph) -> bool:
             if left != right:
                 return True
 
-    for left, right, attrs in its.edges(data=True):
-        if left not in aromatic_nodes or right not in aromatic_nodes:
-            continue
-        for name in ITS_STRUCTURAL_EDGE_ATTRS:
-            before, after = side_values(attrs.get(name))
-            if before != after:
-                return True
+    seen_edges: set[frozenset[Any]] = set()
+    for node in aromatic_nodes:
+        for left, right, attrs in its.edges(node, data=True):
+            edge_key = frozenset((left, right))
+            if edge_key in seen_edges:
+                continue
+            seen_edges.add(edge_key)
+            if left not in aromatic_nodes or right not in aromatic_nodes:
+                continue
+            for name in ITS_STRUCTURAL_EDGE_ATTRS:
+                before, after = side_values(attrs.get(name))
+                if before != after:
+                    return True
     return False
 
 
@@ -425,7 +541,10 @@ def _electron_product_charge(
     return product_attrs.get("recomputed_charge")
 
 
-def _reperceive_product_kekule_phase(product: nx.Graph, its: nx.Graph) -> nx.Graph:
+def _reperceive_product_kekule_phase(  # noqa: C901
+    product: nx.Graph,
+    its: nx.Graph,
+) -> nx.Graph:
     """Refresh aromatic sigma/pi phase from full product presentation bonds."""
     if not any(data.get("order") == 1.5 for _, _, data in product.edges(data=True)):
         return product
@@ -445,22 +564,53 @@ def _reperceive_product_kekule_phase(product: nx.Graph, its: nx.Graph) -> nx.Gra
             use_h_count=True,
             prefer_kekule_order=False,
         )
-        reperceived = MolToGraph(attr_profile="minimal").transform(
-            mol,
-            use_index_as_atom_map=True,
-        )
     except Exception as exc:
         raise ProductStatePerceptionError(
             "Could not reperceive the dirty aromatic product state."
         ) from exc
 
     refreshed = product.copy()
-    for u, v in refreshed.edges():
-        if not reperceived.has_edge(u, v):
-            continue
-        for key in ("kekule_order", "sigma_order", "pi_order"):
-            if key in reperceived[u][v]:
-                refreshed[u][v][key] = reperceived[u][v][key]
+    try:
+        # Only three edge fields are needed here.  Building a complete
+        # MolToGraph representation also derives every atom descriptor and
+        # stereo registry, which is substantially more work.  Read the
+        # Kekule bond phase directly from a sanitized RDKit copy instead.
+        kekule = Chem.Mol(mol)
+        Chem.Kekulize(kekule, clearAromaticFlags=True)
+        node_by_index = tuple(
+            atom.GetAtomMapNum() or atom.GetIdx() + 1 for atom in kekule.GetAtoms()
+        )
+        if len(node_by_index) != len(set(node_by_index)) or set(node_by_index) != set(
+            refreshed
+        ):
+            raise ValueError("Sanitized product atom identities are not bijective.")
+        for bond in kekule.GetBonds():
+            left = node_by_index[bond.GetBeginAtomIdx()]
+            right = node_by_index[bond.GetEndAtomIdx()]
+            if not refreshed.has_edge(left, right):
+                raise ValueError("Sanitized product bond is absent from the graph.")
+            order = float(bond.GetBondTypeAsDouble())
+            refreshed[left][right]["kekule_order"] = order
+            refreshed[left][right]["sigma_order"] = 1.0 if order > 0 else 0.0
+            refreshed[left][right]["pi_order"] = max(0.0, order - 1.0)
+    except Exception:
+        # Preserve the established conservative path for unusual third-party
+        # graphs whose atom maps cannot identify the sanitized RDKit bonds.
+        try:
+            reperceived = MolToGraph(attr_profile="minimal").transform(
+                mol,
+                use_index_as_atom_map=True,
+            )
+        except Exception as exc:
+            raise ProductStatePerceptionError(
+                "Could not reperceive the dirty aromatic product state."
+            ) from exc
+        for u, v in refreshed.edges():
+            if not reperceived.has_edge(u, v):
+                continue
+            for key in ("kekule_order", "sigma_order", "pi_order"):
+                if key in reperceived[u][v]:
+                    refreshed[u][v][key] = reperceived[u][v][key]
     return refreshed
 
 

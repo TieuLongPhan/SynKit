@@ -13,6 +13,7 @@ from synkit.IO import its_to_rsmi, rsmi_to_its
 from synkit.Synthesis.Reactor.fusion_validation import (
     FusionIssueCode,
     WildcardRole,
+    certify_fusion_postprocessing,
     validate_endpoint_preservation,
     validate_fusion_rsmi,
     validate_rbl_candidate,
@@ -101,7 +102,7 @@ def test_balanced_isolated_wildcards_are_removed_symmetrically() -> None:
 
 
 def test_fusion_validation_has_stable_machine_readable_issue_codes() -> None:
-    validation = validate_fusion_rsmi("[CH3:1].[H:2]>>[CH3:1]")
+    validation = validate_fusion_rsmi("[CH3:1].[H]>>[CH3:1]")
 
     assert not validation.valid
     assert FusionIssueCode.SIDE_ONLY_STANDALONE_HYDROGEN in {
@@ -110,6 +111,110 @@ def test_fusion_validation_has_stable_machine_readable_issue_codes() -> None:
     payload = validation.to_dict()
     assert payload["valid"] is False
     assert payload["issues"][0]["code"].startswith("FUSION_")
+
+
+def test_fusion_validation_allows_mapped_proton_to_become_bound() -> None:
+    protonation = "[H+:1].[NH2:2]>>[H:1][NH2+:2]"
+
+    assert validate_fusion_rsmi(protonation).valid
+
+
+def test_fusion_validation_preserves_bound_mapped_hydrogen_identities() -> None:
+    hydrogenation = "[CH2:3]=[CH2:4].[H:1][H:2]>>" "[CH2:3]([H:1])[CH2:4][H:2]"
+
+    assert validate_fusion_rsmi(hydrogenation).valid
+
+
+def test_fusion_validation_rejects_side_only_mapped_heavy_atom() -> None:
+    validation = validate_fusion_rsmi("C.[CH4:1]>>C")
+
+    assert not validation.valid
+    assert FusionIssueCode.ATOM_MAP_IMBALANCE in {
+        issue.code for issue in validation.issues
+    }
+
+
+def test_rbl_candidate_cannot_annihilate_a_mapped_heavy_atom() -> None:
+    validation = validate_rbl_candidate("C>>C", "C.[CH4:1]>>C")
+
+    assert not validation.valid
+    assert FusionIssueCode.ATOM_MAP_IMBALANCE in {
+        issue.code for issue in validation.issues
+    }
+
+
+def test_fusion_validation_rejects_mapped_isotope_transmutation() -> None:
+    validation = validate_fusion_rsmi("[12CH4:1]>>[13CH4:1]")
+
+    assert not validation.valid
+    assert FusionIssueCode.ISOTOPE_MAP_CONFLICT in {
+        issue.code for issue in validation.issues
+    }
+
+
+def test_postprocess_proof_certifies_typed_hydrogen_materialization() -> None:
+    source = nx.Graph()
+    source.add_node(
+        1,
+        element=("*", "*"),
+        hcount=(0, 0),
+        neighbors=([], []),
+        wildcard_role=WildcardRole.RADICAL_COMPLETION.value,
+    )
+    target = source.copy()
+    target.nodes[1]["element"] = ("H", "H")
+    target.nodes[1].pop("wildcard_role")
+
+    certification = certify_fusion_postprocessing(
+        source,
+        target,
+        materialize_hydrogen=True,
+    )
+
+    assert certification.valid
+    assert certification.evidence["postprocess_proof"]["kind"] == (
+        "typed_wildcard_hydrogen_materialization"
+    )
+    assert source.nodes[1]["element"] == ("*", "*")
+
+
+def test_postprocess_proof_rejects_query_wildcard_materialization() -> None:
+    source = nx.Graph()
+    source.add_node(
+        1,
+        element=("*", "*"),
+        hcount=(0, 0),
+        neighbors=([], []),
+        wildcard_role=WildcardRole.QUERY_ATOM.value,
+    )
+    target = source.copy()
+    target.nodes[1]["element"] = ("H", "H")
+    target.nodes[1].pop("wildcard_role")
+
+    certification = certify_fusion_postprocessing(
+        source,
+        target,
+        materialize_hydrogen=True,
+    )
+
+    assert not certification.valid
+    assert certification.issues[0].code is FusionIssueCode.PROOF_FAILED
+
+
+def test_postprocess_proof_rejects_isotope_change_as_nonidentity() -> None:
+    source = nx.Graph()
+    source.add_node(1, element="C", isotope=12, charge=0, radical=0)
+    target = nx.Graph()
+    target.add_node(2, element="C", isotope=13, charge=0, radical=0)
+
+    certification = certify_fusion_postprocessing(
+        source,
+        target,
+        materialize_hydrogen=False,
+    )
+
+    assert not certification.valid
+    assert certification.issues[0].code is FusionIssueCode.PROOF_FAILED
 
 
 def test_endpoint_preservation_returns_injective_embedding_proof() -> None:
@@ -128,6 +233,24 @@ def test_endpoint_preservation_returns_injective_embedding_proof() -> None:
         len({entry["candidate_component"] for entry in proof["reactant_embeddings"]})
         == 2
     )
+
+
+def test_endpoint_preservation_folds_bound_explicit_hydrogen_representation() -> None:
+    validation = validate_endpoint_preservation(
+        "CO>>CO",
+        "[CH3:1][O:2][H:3]>>[CH3:1][O:2][H:3]",
+    )
+
+    assert validation.valid
+
+
+def test_endpoint_preservation_does_not_erase_hydrogen_molecules() -> None:
+    validation = validate_endpoint_preservation(
+        "[H][H]>>[H][H]",
+        "C>>C",
+    )
+
+    assert not validation.valid
 
 
 def test_endpoint_preservation_rejects_a_changed_original_product() -> None:
@@ -279,6 +402,11 @@ def test_custom_legacy_wildcard_sentinel_still_adapts() -> None:
             SearchScope.FAST_PATHS_ONLY,
             TerminationPolicy.FIRST_VALID,
         ),
+        (
+            "fast_fusion",
+            SearchScope.BOUNDED_FUSION,
+            TerminationPolicy.FIRST_VALID,
+        ),
         ("early_stop", SearchScope.FUSION, TerminationPolicy.FIRST_VALID),
         ("full", SearchScope.FUSION, TerminationPolicy.EXHAUSTIVE),
     ),
@@ -422,6 +550,8 @@ def test_fast_track_rejects_an_invalid_quick_candidate() -> None:
 
     assert engine.fused_rsmis == []
     assert engine.result["reason"] == "fast_paths_no_solution"
+    assert engine.result["search_policy"]["scope"] == "fast_paths_only"
+    assert engine.result["fusion_search"] == {}
     assert any(
         issue["code"] == FusionIssueCode.PRODUCT_ENDPOINT_NOT_PRESERVED.value
         for report in engine.diagnostics["fusion"]

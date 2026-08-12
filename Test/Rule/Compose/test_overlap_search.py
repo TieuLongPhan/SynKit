@@ -84,9 +84,9 @@ def test_repeated_component_witnesses_survive_exact_quotienting() -> None:
     assert witness_counts == [1, 2]
     shared = next(group for group in result.classes if len(group.witnesses) == 2)
     assert len({witness.overlap_digest for witness in shared.witnesses}) == 1
-    assert {len(witness.overlap.interface.node_ids) for witness in shared.witnesses} == {
-        1
-    }
+    assert {
+        len(witness.overlap.interface.node_ids) for witness in shared.witnesses
+    } == {1}
 
 
 def test_exact_quotient_is_available_as_a_separate_proof_stage() -> None:
@@ -204,9 +204,9 @@ def test_composition_refusals_are_retained_with_their_failed_premise() -> None:
     assert result.raw_overlap_count == 5
     assert result.accepted_count + len(result.rejected) == 5
     assert result.rejected
-    assert {
-        rejection.issues[0].code for rejection in result.rejected
-    } == {CompositionIssueCode.PULLBACK_COMPLEMENT}
+    assert {rejection.issues[0].code for rejection in result.rejected} == {
+        CompositionIssueCode.PULLBACK_COMPLEMENT
+    }
 
 
 @pytest.mark.parametrize(
@@ -260,6 +260,4 @@ def test_search_does_not_mutate_source_rules() -> None:
         second.left.to_networkx(),
         second.right.to_networkx(),
     )
-    assert all(
-        nx.utils.graphs_equal(old, new) for old, new in zip(before, after)
-    )
+    assert all(nx.utils.graphs_equal(old, new) for old, new in zip(before, after))

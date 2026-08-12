@@ -2,8 +2,8 @@
 
 This namespace contains chemical-space scatter plotting and embedding helpers.
 
-Example
--------
+.. rubric:: Example
+
 .. code-block:: python
 
     from synkit.Vis.space import Embedding, scatter_plot

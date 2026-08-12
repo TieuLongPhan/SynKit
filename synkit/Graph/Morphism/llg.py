@@ -357,6 +357,99 @@ class LewisLabelledGraph:
             return {key: values[key] for key in self.schema.semantic_edge_keys}
         return values
 
+    def _matching_node_labels(self, node: Hashable) -> dict[str, Any]:
+        """Return semantic node labels with aromatic-system invariants.
+
+        :param node: Carrier node.
+        :type node: Hashable
+        :return: Labels used by isomorphisms and morphisms.
+        :rtype: dict[str, Any]
+        """
+        values = self.node_labels(node, semantic=True)
+        if self.schema != ELECTRON_LLG_SCHEMA or not values.get("aromatic", False):
+            return values
+        pi_valence = 0.0
+        for edge in self.edge_keys:
+            if node not in edge or not self._is_kekule_aromatic_edge(edge):
+                continue
+            pi_valence += float(self.edge_labels(edge, semantic=True)["pi_order"])
+        values["aromatic_pi_valence"] = pi_valence
+        return values
+
+    def _matching_edge_labels(self, edge: EdgeKey) -> dict[str, Any]:
+        """Return semantic edge labels with Kekulé phase normalized.
+
+        :param edge: Simple undirected edge key.
+        :type edge: EdgeKey
+        :return: Labels used by isomorphisms and morphisms.
+        :rtype: dict[str, Any]
+        """
+        values = self.edge_labels(edge, semantic=True)
+        if self._is_kekule_aromatic_edge(edge):
+            values["sigma_order"] = "aromatic_delocalized"
+            values["pi_order"] = "aromatic_delocalized"
+        return values
+
+    def _is_kekule_aromatic_edge(self, edge: EdgeKey) -> bool:
+        """Return whether an edge belongs to a normal Kekulé aromatic system.
+
+        :param edge: Simple undirected edge key.
+        :type edge: EdgeKey
+        :return: Whether Kekulé phase may be normalized for matching.
+        :rtype: bool
+        """
+        if self.schema != ELECTRON_LLG_SCHEMA:
+            return False
+        endpoints = tuple(edge)
+        if len(endpoints) != 2 or not all(
+            self.node_labels(node, semantic=True).get("aromatic", False)
+            for node in endpoints
+        ):
+            return False
+        values = self.edge_labels(edge, semantic=True)
+        return _numbers_equal(values.get("sigma_order"), 1) and any(
+            _numbers_equal(values.get("pi_order"), phase) for phase in (0, 1)
+        )
+
+    def _aromatic_component(self, node: Hashable) -> frozenset[Hashable]:
+        """Return the normal Kekulé aromatic component containing a node.
+
+        :param node: Carrier node.
+        :type node: Hashable
+        :return: Aromatic component, or an empty set for a non-aromatic node.
+        :rtype: frozenset[Hashable]
+        """
+        if not self.node_labels(node, semantic=True).get("aromatic", False):
+            return frozenset()
+        graph = nx.Graph()
+        graph.add_node(node)
+        graph.add_edges_from(
+            tuple(edge)
+            for edge in self.edge_keys
+            if self._is_kekule_aromatic_edge(edge)
+        )
+        return frozenset(nx.node_connected_component(graph, node))
+
+    def _matching_graph(self) -> nx.Graph:
+        """Return a graph containing only normalized matching labels.
+
+        :return: Mutable semantic comparison graph.
+        :rtype: nx.Graph
+        """
+        graph = nx.Graph()
+        graph.add_nodes_from(
+            (node, {"labels": self._matching_node_labels(node)})
+            for node in self.node_ids
+        )
+        for edge in self.edge_keys:
+            left, right = tuple(edge)
+            graph.add_edge(
+                left,
+                right,
+                labels=self._matching_edge_labels(edge),
+            )
+        return graph
+
     def to_networkx(self) -> nx.Graph:
         """Return a mutable copy. Frozen container values remain immutable."""
         graph = nx.Graph()
@@ -390,22 +483,109 @@ class LewisLabelledGraph:
         )
 
     def is_isomorphic(self, other: "LewisLabelledGraph") -> bool:
-        """Decide exact labeled-graph isomorphism; no digest is a proof."""
+        """Decide labeled-graph isomorphism; no digest is a proof.
+
+        Kekulé single/double placement is phase-invariant inside electron LLG
+        aromatic systems. Aromatic node state and local pi valence remain part
+        of the match, so phase normalization does not erase electron counts.
+        """
         if self.schema != other.schema:
             return False
         matcher = nx.algorithms.isomorphism.GraphMatcher(
-            self.to_networkx(),
-            other.to_networkx(),
-            node_match=lambda left, right: all(
-                left.get(key) == right.get(key)
-                for key in self.schema.semantic_node_keys
-            ),
-            edge_match=lambda left, right: all(
-                left.get(key) == right.get(key)
-                for key in self.schema.semantic_edge_keys
-            ),
+            self._matching_graph(),
+            other._matching_graph(),
+            node_match=lambda left, right: left["labels"] == right["labels"],
+            edge_match=lambda left, right: left["labels"] == right["labels"],
         )
         return matcher.is_isomorphic()
+
+
+def _complete_aromatic_morphism_nodes(
+    source: LewisLabelledGraph,
+    target: LewisLabelledGraph,
+    mapping: Mapping[Hashable, Hashable],
+) -> frozenset[Hashable]:
+    """Return source nodes whose complete aromatic systems are mapped.
+
+    :param source: Morphism source.
+    :type source: LewisLabelledGraph
+    :param target: Morphism target.
+    :type target: LewisLabelledGraph
+    :param mapping: Total source-to-target node mapping.
+    :type mapping: Mapping[Hashable, Hashable]
+    :return: Nodes eligible for Kekulé-phase-invariant comparison.
+    :rtype: frozenset[Hashable]
+    """
+    complete: set[Hashable] = set()
+    for node in source.node_ids:
+        source_component = source._aromatic_component(node)
+        if not source_component or source_component & complete:
+            continue
+        target_component = target._aromatic_component(mapping[node])
+        mapped_component = frozenset(mapping[item] for item in source_component)
+        if mapped_component == target_component:
+            complete.update(source_component)
+    return frozenset(complete)
+
+
+def _morphism_node_labels_preserved(
+    source: LewisLabelledGraph,
+    target: LewisLabelledGraph,
+    node: Hashable,
+    image: Hashable,
+    phase_invariant_nodes: frozenset[Hashable],
+) -> bool:
+    """Return whether one mapped node preserves matching semantics.
+
+    :param source: Morphism source.
+    :type source: LewisLabelledGraph
+    :param target: Morphism target.
+    :type target: LewisLabelledGraph
+    :param node: Source node.
+    :type node: Hashable
+    :param image: Target image node.
+    :type image: Hashable
+    :param phase_invariant_nodes: Complete mapped aromatic-system nodes.
+    :type phase_invariant_nodes: frozenset[Hashable]
+    :return: Whether node labels are preserved.
+    :rtype: bool
+    """
+    if node in phase_invariant_nodes:
+        return source._matching_node_labels(node) == target._matching_node_labels(image)
+    return source.node_labels(node, semantic=True) == target.node_labels(
+        image, semantic=True
+    )
+
+
+def _morphism_edge_labels_preserved(
+    source: LewisLabelledGraph,
+    target: LewisLabelledGraph,
+    edge: EdgeKey,
+    image_edge: EdgeKey,
+    phase_invariant_nodes: frozenset[Hashable],
+) -> bool:
+    """Return whether one mapped edge preserves matching semantics.
+
+    :param source: Morphism source.
+    :type source: LewisLabelledGraph
+    :param target: Morphism target.
+    :type target: LewisLabelledGraph
+    :param edge: Source edge.
+    :type edge: EdgeKey
+    :param image_edge: Target image edge.
+    :type image_edge: EdgeKey
+    :param phase_invariant_nodes: Complete mapped aromatic-system nodes.
+    :type phase_invariant_nodes: frozenset[Hashable]
+    :return: Whether edge labels are preserved.
+    :rtype: bool
+    """
+    if edge <= phase_invariant_nodes:
+        return source._matching_edge_labels(edge) == target._matching_edge_labels(
+            image_edge
+        )
+    return source.edge_labels(edge, semantic=True) == target.edge_labels(
+        image_edge, semantic=True
+    )
 
 
 @dataclass(frozen=True)
@@ -476,9 +656,16 @@ class LLGMorphism:
             raise LLGError(*issues)
 
         mapping = dict(pairs)
+        phase_invariant_nodes = _complete_aromatic_morphism_nodes(
+            self.source, self.target, mapping
+        )
         for node, image in pairs:
-            if self.source.node_labels(node, semantic=True) != self.target.node_labels(
-                image, semantic=True
+            if not _morphism_node_labels_preserved(
+                self.source,
+                self.target,
+                node,
+                image,
+                phase_invariant_nodes,
             ):
                 issues.append(
                     LLGIssue(
@@ -499,8 +686,12 @@ class LLGMorphism:
                     )
                 )
                 continue
-            if self.source.edge_labels(edge, semantic=True) != self.target.edge_labels(
-                image_edge, semantic=True
+            if not _morphism_edge_labels_preserved(
+                self.source,
+                self.target,
+                edge,
+                image_edge,
+                phase_invariant_nodes,
             ):
                 issues.append(
                     LLGIssue(

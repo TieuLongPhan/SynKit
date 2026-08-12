@@ -12,15 +12,14 @@ _TOKEN = re.compile(r"([A-Z][a-z]?)(\d*)$")
 
 
 def _parse_formula(formula: str) -> Dict[str, int]:
-    """
-    Parse a plain chemical formula into element counts.
+    """Parse a plain chemical formula into element counts.
 
     The parser accepts compact formulas without parentheses (e.g., ``"C2H6O"``),
     accumulates duplicated element symbols, and treats missing counts as ``1``.
 
     :param formula: Chemical formula string to parse.
     :type formula: str
-    :returns: Mapping from element symbol to integer count (only nonzero counts).
+    :return: Mapping from element symbol to integer count (only nonzero counts).
     :rtype: Dict[str, int]
     :raises ValueError: If the input is empty, not a string, or contains an invalid token.
     """
@@ -37,24 +36,22 @@ def _parse_formula(formula: str) -> Dict[str, int]:
 
 
 def _counts_key(counts: Dict[str, int]) -> Tuple[Tuple[str, int], ...]:
-    """
-    Convert an element-count mapping into a canonical, hashable key.
+    """Convert an element-count mapping into a canonical, hashable key.
 
     :param counts: Element counts for a species or a multiset sum.
     :type counts: Dict[str, int]
-    :returns: Sorted tuple of ``(element, count)`` pairs for nonzero counts.
+    :return: Sorted tuple of ``(element, count)`` pairs for nonzero counts.
     :rtype: Tuple[Tuple[str, int], ...]
     """
     return tuple(sorted((k, v) for k, v in counts.items() if v))
 
 
 def _multiset_from_tuple(t: Tuple[str, ...]) -> Dict[str, int]:
-    """
-    Build a name→multiplicity multiset from a tuple of species names.
+    """Build a name→multiplicity multiset from a tuple of species names.
 
     :param t: Tuple of species names (possibly with repeats).
     :type t: Tuple[str, ...]
-    :returns: Mapping name→multiplicity.
+    :return: Mapping name→multiplicity.
     :rtype: Dict[str, int]
     """
     d: Dict[str, int] = {}
@@ -67,14 +64,13 @@ def _sum_counts(
     spec_counts: Dict[str, Dict[str, int]],
     multiset: Dict[str, int],
 ) -> Dict[str, int]:
-    """
-    Sum element counts of a multiset of species.
+    """Sum element counts of a multiset of species.
 
     :param spec_counts: Precomputed element-counts for each species label.
     :type spec_counts: Dict[str, Dict[str, int]]
     :param multiset: Name→multiplicity mapping representing the LHS.
     :type multiset: Dict[str, int]
-    :returns: Total element counts of the multiset (nonzero only).
+    :return: Total element counts of the multiset (nonzero only).
     :rtype: Dict[str, int]
     """
     res: Dict[str, int] = {}
@@ -85,12 +81,11 @@ def _sum_counts(
 
 
 def _fmt_side(side: Dict[str, int]) -> str:
-    """
-    Human-readable formatter for one reaction side.
+    """Human-readable formatter for one reaction side.
 
     :param side: Name→coefficient mapping (``{species: coeff}``).
     :type side: Dict[str, int]
-    :returns: Pretty side string, e.g., ``"2 A + B"`` or ``"∅"``.
+    :return: Pretty side string, e.g., ``"2 A + B"`` or ``"∅"``.
     :rtype: str
     """
     if not side:
@@ -166,8 +161,7 @@ class CRNFormula:
         allow_overlap: Optional[bool] = None,
         deduplicate: Optional[bool] = None,
     ) -> "CRNFormula":
-        """
-        Update search parameters in a fluent style.
+        """Update search parameters in a fluent style.
 
         All arguments are optional; unspecified parameters retain their
         current values.
@@ -182,7 +176,7 @@ class CRNFormula:
         :type allow_overlap: bool, optional
         :param deduplicate: Whether to deduplicate stoichiometrically identical reactions.
         :type deduplicate: bool, optional
-        :returns: This instance for chaining.
+        :return: This instance for chaining.
         :rtype: CRNFormula
         """
         if max_reactants is not None:
@@ -198,10 +192,9 @@ class CRNFormula:
         return self
 
     def clear(self) -> "CRNFormula":
-        """
-        Clear internal species, reactions, errors, and cached network.
+        """Clear internal species, reactions, errors, and cached network.
 
-        :returns: This instance for chaining.
+        :return: This instance for chaining.
         :rtype: CRNFormula
         """
         self._species.clear()
@@ -214,15 +207,14 @@ class CRNFormula:
 
     # ----------------- ingestion -----------------
     def process_list(self, formulas: Sequence[str]) -> "CRNFormula":
-        """
-        Ingest a list of formula strings (labels equal to formulas by default).
+        """Ingest a list of formula strings (labels equal to formulas by default).
 
         Duplicate labels are made unique by suffixing ``#2``, ``#3``, etc.
-        Parsing errors are recorded in :pyattr:`errors`.
+        Parsing errors are recorded in :attr:`errors`.
 
         :param formulas: Sequence of chemical formulas, e.g., ``['CHN', 'C2H2N2']``.
         :type formulas: Sequence[str]
-        :returns: This instance for chaining.
+        :return: This instance for chaining.
         :rtype: CRNFormula
         """
         self._species = []
@@ -251,13 +243,12 @@ class CRNFormula:
         formula_key: str = "formula",
         id_key: Optional[str] = None,
     ) -> "CRNFormula":
-        """
-        Ingest a list of records containing formulas and optional IDs.
+        """Ingest a list of records containing formulas and optional IDs.
 
         If ``id_key`` is provided and present in a record, its value is used as
         the species label; otherwise the formula string is used. Duplicate labels
         are made unique by suffixing ``#2``, ``#3``, etc. Parsing errors are
-        recorded in :pyattr:`errors`.
+        recorded in :attr:`errors`.
 
         :param records: Sequence of dictionaries, each containing at least ``formula_key``.
         :type records: Sequence[Dict[str, Any]]
@@ -265,7 +256,7 @@ class CRNFormula:
         :type formula_key: str, optional
         :param id_key: Optional dictionary key providing a stable species label.
         :type id_key: str, optional
-        :returns: This instance for chaining.
+        :return: This instance for chaining.
         :rtype: CRNFormula
         """
         self._species = []
@@ -291,8 +282,7 @@ class CRNFormula:
 
     # ----------------- core build -----------------
     def build(self) -> "CRNFormula":
-        """
-        Enumerate reactions and construct a :class:`ReactionNetwork`.
+        """Enumerate reactions and construct a :class:`ReactionNetwork`.
 
         The enumeration includes:
           * **Synthesis**: all multisets of size ``1..max_reactants`` on the LHS
@@ -302,9 +292,9 @@ class CRNFormula:
             but having different labels.
 
         Stoichiometrically identical edges (same name→coeff maps) are deduplicated
-        if :pyattr:`deduplicate` is ``True``.
+        if :attr:`deduplicate` is ``True``.
 
-        :returns: This instance for chaining.
+        :return: This instance for chaining.
         :rtype: CRNFormula
         :raises CRNError: If :class:`Reaction` objects cannot be constructed.
         """
@@ -396,55 +386,50 @@ class CRNFormula:
     # ----------------- properties -----------------
     @property
     def species(self) -> List[str]:
-        """
-        Species labels ingested so far.
+        """Species labels ingested so far.
 
-        :returns: List of species names (labels).
+        :return: List of species names (labels).
         :rtype: List[str]
         """
         return list(self._species)
 
     @property
     def reactions(self) -> List[Tuple[Dict[str, int], Dict[str, int], str]]:
-        """
-        Raw reaction tuples produced by :py:meth:`build`.
+        """Raw reaction tuples produced by :py:meth:`build`.
 
         Each tuple contains ``(lhs_dict, rhs_dict, original_raw)`` in build order.
 
-        :returns: List of raw reaction triples.
+        :return: List of raw reaction triples.
         :rtype: List[Tuple[Dict[str, int], Dict[str, int], str]]
         """
         return list(self._rx_tuples)
 
     @property
     def network(self) -> Optional[ReactionNetwork]:
-        """
-        The constructed :class:`ReactionNetwork` (after :py:meth:`build`).
+        """The constructed :class:`ReactionNetwork` (after :py:meth:`build`).
 
-        :returns: ReactionNetwork instance or ``None`` if not built yet.
+        :return: ReactionNetwork instance or ``None`` if not built yet.
         :rtype: Optional[ReactionNetwork]
         """
         return self._net
 
     @property
     def errors(self) -> List[Tuple[int, Any, str]]:
-        """
-        Errors collected during ingestion.
+        """Errors collected during ingestion.
 
         Each entry is a triple ``(index, payload, message)`` describing the
         offending record and the associated error message.
 
-        :returns: List of ingestion errors.
+        :return: List of ingestion errors.
         :rtype: List[Tuple[int, Any, str]]
         """
         return list(self._errors)
 
     # ----------------- dunders / misc -----------------
     def __repr__(self) -> str:  # pragma: no cover (cosmetic)
-        """
-        Developer-friendly summary string.
+        """Developer-friendly summary string.
 
-        :returns: Short string containing species/reaction counts and settings.
+        :return: Short string containing species/reaction counts and settings.
         :rtype: str
         """
         n = len(self._species)

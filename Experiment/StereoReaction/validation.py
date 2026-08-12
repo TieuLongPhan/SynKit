@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import subprocess
 import sys
 from time import perf_counter, process_time
 
@@ -100,30 +101,40 @@ def _max_rss_mib() -> float:
     return _posix_rss_mib(maximum, sys.platform)
 
 
+def _resident_rss_mib() -> float:
+    """Return the current resident set when the platform exposes it."""
+    statm = Path("/proc/self/statm")
+    if statm.exists():
+        resident_pages = int(statm.read_text(encoding="ascii").split()[1])
+        page_size = os.sysconf("SC_PAGE_SIZE")
+        return resident_pages * page_size / (1024 * 1024)
+    return _max_rss_mib()
+
+
 def _value() -> StereoReactionValue:
     before = TetrahedralStereo((2, 1, 3, 4, "@H:2"), 1)
     after = before.invert()
     return StereoReactionValue(
         guards={"atom:2": before},
-        effects={
-            "atom:2": StereoChange.from_endpoints(before, after)
-        },
+        effects={"atom:2": StereoChange.from_endpoints(before, after)},
         outcomes={"atom:2": StereoOutcome("SINGLE")},
     )
 
 
-def validation_report() -> dict:
-    """Return stable environment, result, and budget evidence."""
+def _run_workload() -> dict:
+    """Run the measured workload in the current process."""
     value = _value()
     payload = value.normalized_json()
     expected_digest = sha256(payload.encode("utf-8")).hexdigest()
     start = perf_counter()
     cpu_start = process_time()
+    rss_samples = [_resident_rss_mib()]
     observed = set()
     for _index in range(ITERATIONS):
         restored = StereoReactionValue.from_json(payload)
         normalized = restored.normalized_json()
         observed.add(sha256(normalized.encode("utf-8")).hexdigest())
+    rss_samples.append(_resident_rss_mib())
     for _index in range(GRAPH_ITERATIONS):
         graph, report = project_reaction_stereo(
             value,
@@ -131,9 +142,12 @@ def validation_report() -> dict:
         )
         if not report.lossless or reaction_stereo_from_graph(graph) != value:
             raise RuntimeError("Reaction-stereo sidecar round trip failed.")
+        if _index % 25 == 0:
+            rss_samples.append(_resident_rss_mib())
     elapsed = perf_counter() - start
     cpu_elapsed = process_time() - cpu_start
-    rss_mib = _max_rss_mib()
+    rss_samples.append(_resident_rss_mib())
+    rss_mib = max(rss_samples)
     proof_bytes = len(payload.encode("utf-8"))
     observed_values = {
         "wall_seconds": round(elapsed, 6),
@@ -143,11 +157,24 @@ def validation_report() -> dict:
         "branch_count": 1,
         "assignment_count": 1,
     }
-    checks = {
-        name: observed_values[name] <= limit
-        for name, limit in BUDGETS.items()
-    }
-    checks["deterministic_digest"] = observed == {expected_digest}
+    observed_values["deterministic_digest"] = observed == {expected_digest}
+    return observed_values
+
+
+def validation_report() -> dict:
+    """Return stable environment, result, and budget evidence."""
+    completed = subprocess.run(
+        [sys.executable, str(Path(__file__).resolve()), "--worker"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    worker_values = json.loads(completed.stdout)
+    deterministic_digest = worker_values.pop("deterministic_digest")
+    observed_values = worker_values
+    checks = {name: observed_values[name] <= limit for name, limit in BUDGETS.items()}
+    checks["deterministic_digest"] = deterministic_digest
     return {
         "schema": "synkit.stereo-rxn-validation/1",
         "environment": {
@@ -169,9 +196,10 @@ def validation_report() -> dict:
 
 
 if __name__ == "__main__":
+    report = _run_workload() if "--worker" in sys.argv else validation_report()
     print(
         json.dumps(
-            validation_report(),
+            report,
             ensure_ascii=True,
             indent=2,
             sort_keys=True,

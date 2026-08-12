@@ -42,7 +42,7 @@ class TestRBLEngineExamples(unittest.TestCase):
             "[H:7][OH:4]"
         )
 
-        # Mirror the original behaviour: template was built as ITS and then
+        # Preserve compatibility: the template was built as ITS and then
         # serialized again to RSMI before passing to the engine.
         its_template = rsmi_to_its(raw_template, core=True)
         template = its_to_rsmi(its_template)

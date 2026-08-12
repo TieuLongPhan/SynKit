@@ -113,12 +113,13 @@ def strip_context(gml_text: str, remove_all: bool = True) -> str:
     'left' and 'right' sections, along with their edges, while preserving the
     original structure and formatting of the GML.
 
-    Parameters:
-    - gml_text (str): GML-like content describing a chemical reaction rule.
-    - remove_all (bool): Flag to determine if all edges should be removed from the 'context'.
+    :param gml_text: GML-like content describing a chemical reaction rule.
+    :type gml_text: str
+    :param remove_all: Flag to determine if all edges should be removed from the 'context'.
+    :type remove_all: bool
 
-    Returns:
-    - str: The modified GML content with the filtered 'context' section.
+    :return: The modified GML content with the filtered 'context' section.
+    :rtype: str
     """
     lines = gml_text.split("\n")
 
@@ -178,11 +179,11 @@ def _increment_gml_ids(gml_content: str) -> str:
     """Increment the numerical IDs within a GML content string if node id 0
     exists.
 
-    Parameters:
-    - gml_content (str): The GML content as a string.
+    :param gml_content: The GML content as a string.
+    :type gml_content: str
 
-    Returns:
-    - str: The modified GML content with incremented IDs.
+    :return: The modified GML content with incremented IDs.
+    :rtype: str
     """
     if "node [ id 0 " not in gml_content:
         return gml_content

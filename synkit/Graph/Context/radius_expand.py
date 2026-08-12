@@ -34,11 +34,11 @@ class RadiusExpand:
         """Identifies reaction center nodes in a graph based on the presence of
         unequal order edges.
 
-        Parameters:
-        - G (nx.Graph): Graph to analyze for reaction centers.
+        :param G: Graph to analyze for reaction centers.
+        :type G: nx.Graph
 
-        Returns:
-        - List[int]: A list of node indices identified as reaction centers based on unequal order edges.
+        :return: A list of node indices identified as reaction centers based on unequal order edges.
+        :rtype: List[int]
         """
         reaction_center_nodes: Set[int] = set()
         for u, v, data in G.edges(data=True):
@@ -58,14 +58,15 @@ class RadiusExpand:
         """Finds the n-level nearest neighbors around the specified center
         nodes in a graph.
 
-        Parameters:
-        - G (nx.Graph): The graph in which to search for neighboring nodes.
-        - center_nodes (List[int]): Initial center node indices.
-        - n_knn (int, optional): The number of neighbor levels to include (default is 1).
+        :param G: The graph in which to search for neighboring nodes.
+        :type G: nx.Graph
+        :param center_nodes: Initial center node indices.
+        :type center_nodes: List[int]
+        :param n_knn: The number of neighbor levels to include (default is 1).
+        :type n_knn: int, optional
 
-        Returns:
-        - Set[int]: A set of node indices including the original center nodes
-        and their nearest neighbors.
+        :return: A set of node indices including the original center nodes and their nearest neighbors.
+        :rtype: Set[int]
         """
         extended_nodes: Set[int] = set(center_nodes)
         for _ in range(n_knn):
@@ -80,13 +81,13 @@ class RadiusExpand:
         """Extracts a subgraph from the original graph containing the specified
         node indices.
 
-        Parameters:
-        - G (nx.Graph): The original graph.
-        - node_indices (List[int]): A list of node indices to include in the subgraph.
+        :param G: The original graph.
+        :type G: nx.Graph
+        :param node_indices: A list of node indices to include in the subgraph.
+        :type node_indices: List[int]
 
-        Returns:
-        - nx.Graph: A new graph that is a copy of the subgraph containing
-        only the specified nodes.
+        :return: A new graph that is a copy of the subgraph containing only the specified nodes.
+        :rtype: nx.Graph
         """
         return G.subgraph(node_indices).copy()
 
@@ -96,15 +97,15 @@ class RadiusExpand:
         reaction centers, and computes the longest extension path from these
         centers constrained by 'standard_order' edges.
 
-        Parameters:
-        - its (nx.Graph): The ITS graph representing the reaction network.
-        - n_knn (int, optional): The number of neighbor levels to include in the context subgraph.
-        Default is 0.
+        :param its: The ITS graph representing the reaction network.
+        :type its: nx.Graph
+        :param n_knn: The number of neighbor levels to include in the context subgraph.
+                      Default is 0.
+        :type n_knn: int, optional
 
-        Returns:
-        - Tuple[nx.Graph, Any]:
-            - The extracted context subgraph (K graph). If n_knn is 0, this is the reaction center graph,
-            if n_knn is -1, maximum n_knn is used.
+        :return: Extracted context graph. A zero radius returns the reaction
+                 center; ``-1`` uses the maximum radius.
+        :rtype: Tuple[nx.Graph, Any]
         """
         rc = get_rc(its)
         rc_nodes = list(rc.nodes())
@@ -128,18 +129,20 @@ class RadiusExpand:
         """Extracts the reaction context for a single reaction dictionary by
         computing both the context subgraph and the longest extension path.
 
-        Parameters:
-        - data (Dict[str, Any]): Reaction data containing at least an ITS graph.
-        - its_key (str, optional): Key in the dictionary for retrieving the ITS graph.
-        Default is ITS.
-        - context_key (str, optional): Key under which to store the extracted context subgraph.
-        Default is K.
-        - n_knn (int, optional): Number of neighbor levels to include for context extraction.
-        Default is 0.
+        :param data: Reaction data containing at least an ITS graph.
+        :type data: Dict[str, Any]
+        :param its_key: Key in the dictionary for retrieving the ITS graph.
+                        Default is ITS.
+        :type its_key: str, optional
+        :param context_key: Key under which to store the extracted context subgraph.
+                            Default is K.
+        :type context_key: str, optional
+        :param n_knn: Number of neighbor levels to include for context extraction.
+                      Default is 0.
+        :type n_knn: int, optional
 
-        Returns:
-        - Dict[str, Any]: The updated reaction data dictionary including
-        the extracted context subgraph under the key specified by context_key.
+        :return: Reaction data containing the extracted context graph.
+        :rtype: Dict[str, Any]
         """
         context_data: Dict[str, Any] = copy.copy(data)
         its = context_data[its_key]
@@ -160,20 +163,25 @@ class RadiusExpand:
         """Performs parallel extraction of reaction contexts for multiple
         reaction dictionaries.
 
-        Parameters:
-        - data (List[Dict[str, Any]]): A list of reaction data dictionaries, each containing an ITS graph.
-         - its_key (str, optional): Key in the dictionary for retrieving the ITS graph.
-        Default is ITS.
-        - context_key (str, optional): Key under which to store the extracted context subgraph.
-        Default is K.
-        - n_jobs (int, optional): Number of parallel jobs to use. Default is 1.
-        - verbose (int, optional): Verbosity level for the parallel processing. Default is 0.
-        - n_knn (int, optional): Number of neighbor levels to include for context extraction.
-        Default is 0.
+        :param data: A list of reaction data dictionaries, each containing an ITS graph.
+        :type data: List[Dict[str, Any]]
+        :param its_key: Key in the dictionary for retrieving the ITS graph.
+                        Default is ITS.
+        :type its_key: str, optional
+        :param context_key: Key under which to store the extracted context subgraph.
+                            Default is K.
+        :type context_key: str, optional
+        :param n_jobs: Number of parallel jobs to use. Default is 1.
+        :type n_jobs: int, optional
+        :param verbose: Verbosity level for the parallel processing. Default is 0.
+        :type verbose: int, optional
+        :param n_knn: Number of neighbor levels to include for context extraction.
+                      Default is 0.
+        :type n_knn: int, optional
 
-        Returns:
-        - List[Dict[str, Any]]: A list of updated reaction data dictionaries, each augmented with the
-          extracted context subgraph and the longest extension path.
+        :return: Reaction records augmented with their context graphs and
+                 longest extension paths.
+        :rtype: List[Dict[str, Any]]
         """
         return Parallel(n_jobs=n_jobs, verbose=verbose)(
             delayed(cls.context_extraction)(reaction, its_key, context_key, n_knn)
@@ -185,13 +193,14 @@ class RadiusExpand:
         """Removes edges from a graph where the specified edge attribute has a
         value of 0.
 
-        Parameters:
-        - graph (nx.Graph): The input graph to modify.
-        - property_key (str): The key of the edge attribute to check for removal;
-        edges with a value of 0 will be removed.
+        :param graph: The input graph to modify.
+        :type graph: nx.Graph
+        :param property_key: The key of the edge attribute to check for removal;
+                             edges with a value of 0 will be removed.
+        :type property_key: str
 
-        Returns:
-        - nx.Graph: A copy of the input graph with the specified edges removed.
+        :return: A copy of the input graph with the specified edges removed.
+        :rtype: nx.Graph
         """
         filtered_graph = graph.copy()
         edges_to_remove = [
@@ -211,12 +220,13 @@ class RadiusExpand:
         This method uses a depth-first search (DFS) strategy to explore all possible
         unique paths and returns the longest one.
 
-        Parameters:
-        - G (nx.Graph): The graph to search for extension paths.
-        - rc_nodes (List[int]): A list of reaction center node indices to serve as starting points for the search.
+        :param G: The graph to search for extension paths.
+        :type G: nx.Graph
+        :param rc_nodes: A list of reaction center node indices to serve as starting points for the search.
+        :type rc_nodes: List[int]
 
-        Returns:
-        - List[int]: A list of node indices representing the longest unique extension path found.
+        :return: A list of node indices representing the longest unique extension path found.
+        :rtype: List[int]
         """
 
         def dfs(node: int, visited: Set[int], path: List[int]) -> List[int]:

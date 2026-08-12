@@ -265,9 +265,12 @@ Important LLG fields:
 
 .. note::
 
-   Aromatic LLG matching is intentionally conservative. Aromaticity is still
-   useful for presentation and pruning, but full aromatic-system relabeling is
-   tracked as ongoing work.
+   Electron-complete LLG matching is invariant to the alternating Kekulé phase
+   inside aromatic systems. Stored ``sigma_order`` and ``pi_order`` values are
+   not mutated: matching normalizes only phase-equivalent aromatic edges and
+   still compares aromatic node state and local pi-electron valence. Non-
+   aromatic edges and partial aromatic-system morphisms remain strictly phase-
+   sensitive.
 
 Example: Construct and Visualize an ITS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,7 +382,7 @@ two categories:
        bond or one endpoint is outside that state; ``0`` means both atoms are
        present but no bond exists.
 
-This compact form intentionally avoids legacy ``typesGH`` and redundant
+This compact form avoids legacy ``typesGH`` and redundant
 ``*_step_history`` attributes in the new Lewis-labelled graph path.
 
 Example: LLG MTG changed core
@@ -445,9 +448,9 @@ outer-state ITS:
    step_rsmi = mtg.get_rsmi_steps()
    composed = mtg.get_compose_its()
 
-Use ``get_its_steps()`` when validating temporal history. Use
-``get_compose_its()`` when you need the net start/end reaction encoded as a
-single ITS graph.
+Use ``get_its_steps()`` to validate temporal history. Use
+``get_compose_its()`` to encode the net start/end reaction as a single ITS
+graph.
 
 Functional Groups
 -----------------

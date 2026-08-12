@@ -9,8 +9,6 @@ import networkx as nx
 
 from synkit.Graph import has_wildcard_node, remove_wildcard_nodes
 from synkit.Graph.Hyrogen._misc import h_to_implicit, has_XH
-from synkit.Graph.Matcher.automorphism import Automorphism
-from synkit.Graph.Matcher.dedup_matches import deduplicate_matches_with_anchor
 from synkit.Graph.Matcher.partial_matcher import PartialMatcher
 from synkit.Graph.Matcher.subgraph_matcher import (
     SubgraphSearchEngine,
@@ -22,6 +20,12 @@ from synkit.Synthesis.Reactor.matching_policy import (
     contextual_electron_pattern_graph,
     deduplicate_joint_rule_mappings,
     has_heavy_cross_component_correlation,
+)
+from synkit.Synthesis.Reactor.mapping_symmetry import (
+    deduplicate_exact_pattern_mappings,
+    deduplicate_free_host_component_mappings,
+    deduplicate_port_witness_mappings,
+    deduplicate_pure_coupling_mappings,
 )
 from synkit.Synthesis.Reactor.strategy import Strategy
 
@@ -94,7 +98,10 @@ class ReactorMatchingMixin:
                     threshold=self.embed_threshold,
                     pre_filter=self.embed_pre_filter,
                     max_results=max_results,
-                    prune_auto=True,
+                    # WL colour classes are not automorphism orbits in
+                    # general. Keep the exhaustive partial population here;
+                    # exact rule/product quotients below remain authoritative.
+                    prune_auto=False,
                 )
                 raw_maps = matcher.get_mappings()
             else:
@@ -218,11 +225,6 @@ class ReactorMatchingMixin:
                 or self.rule.stereo_outcomes
                 or self.rule.stereo_couplings
             )
-            automorphism_pattern = (
-                self._automorphism_pattern_graph(pattern_graph)
-                if self.automorphism and not stereo_sensitive
-                else None
-            )
             if len(raw_maps) < 2:
                 self._mappings = raw_maps
             elif certified_generic:
@@ -237,7 +239,9 @@ class ReactorMatchingMixin:
                     len(raw_maps),
                 )
             elif self.automorphism and not stereo_sensitive:
-                assert automorphism_pattern is not None
+                # Build transition roles only when a nontrivial mapping
+                # population can actually benefit from the exact quotient.
+                automorphism_pattern = self._automorphism_pattern_graph(pattern_graph)
                 components = [
                     frozenset(component)
                     for component in nx.connected_components(automorphism_pattern)
@@ -268,10 +272,11 @@ class ReactorMatchingMixin:
                     len(self._mappings),
                 )
             elif stereo_sensitive:
-                # Use pattern-only orbit pruning with descriptor-position
-                # roles. General host-orbit pruning remains deferred because
-                # it may exchange enantiotopic embeddings. Pure coupling rules
-                # receive a narrower reaction-locus canonicalization below.
+                # Wildcard ports are existential stereo witnesses rather than
+                # rewrite resources. Once a witness has passed the typed
+                # stereo predicate, retain one per identical structural map.
+                # Exact host-component and coupling group actions then remove
+                # only jointly realizable symmetry variants.
                 stereo_pattern = self._stereo_automorphism_pattern_graph(pattern_graph)
                 stereo_attrs = self._automorphism_node_attrs(
                     stereo_pattern,
@@ -279,27 +284,53 @@ class ReactorMatchingMixin:
                 )
                 if "_stereo_role" not in stereo_attrs:
                     stereo_attrs.append("_stereo_role")
-                stereo_auto = Automorphism(
-                    stereo_pattern,
-                    node_attr_keys=stereo_attrs,
-                    edge_attr_keys=edge_attrs,
-                )
-                self._mappings = deduplicate_matches_with_anchor(
+                port_unique = deduplicate_port_witness_mappings(
                     raw_maps,
-                    pattern_orbits=stereo_auto.orbits,
-                    pattern_anchor=stereo_auto.anchor_component,
-                )
-                before_coupling_prune = len(self._mappings)
-                self._mappings = self._deduplicate_pure_coupling_mappings(
-                    self._mappings,
                     stereo_pattern,
-                    stereo_auto.orbits,
+                )
+                # Preserve the established application-provenance population
+                # for reactant-side stereo guards/destruction. Product-side
+                # formation is covariant under the decorated pattern action,
+                # so it can use the exact quotient before rewrite.
+                product_side_stereo = (
+                    bool(self.rule.stereo_effects)
+                    and not self.rule.stereo_guards
+                    and not self.rule.stereo_couplings
+                    and all(
+                        change.before is None
+                        for change in self.rule.stereo_effects.values()
+                    )
+                )
+                pattern_unique = (
+                    deduplicate_exact_pattern_mappings(
+                        port_unique,
+                        stereo_pattern,
+                        node_attrs=stereo_attrs,
+                        edge_attrs=edge_attrs,
+                    )
+                    if product_side_stereo
+                    else port_unique
+                )
+                host_unique = deduplicate_free_host_component_mappings(
+                    pattern_unique,
+                    matching_host,
+                    node_attrs=stereo_attrs,
+                    edge_attrs=edge_attrs,
+                )
+                self._mappings = deduplicate_pure_coupling_mappings(
+                    host_unique,
+                    stereo_pattern,
+                    self.rule,
+                    node_attrs=stereo_attrs,
+                    edge_attrs=edge_attrs,
                 )
                 log.debug(
-                    "Stereo-sensitive pruning: %d → %d pattern mapping(s) → "
-                    "%d coupling-locus mapping(s)",
+                    "Stereo witness/exact symmetry: %d → %d → %d → %d "
+                    "→ %d mapping(s)",
                     len(raw_maps),
-                    before_coupling_prune,
+                    len(port_unique),
+                    len(pattern_unique),
+                    len(host_unique),
                     len(self._mappings),
                 )
             else:
@@ -630,7 +661,12 @@ class ReactorMatchingMixin:
             if isinstance(value, dict):
                 return tuple(sorted((key, freeze(item)) for key, item in value.items()))
             if isinstance(value, (list, tuple)):
-                return tuple(freeze(item) for item in value)
+                shallow = tuple(value)
+                try:
+                    hash(shallow)
+                except TypeError:
+                    return tuple(freeze(item) for item in value)
+                return shallow
             if isinstance(value, set):
                 return tuple(sorted((freeze(item) for item in value), key=repr))
             return value
@@ -877,97 +913,6 @@ class ReactorMatchingMixin:
                 for group in swappable_groups
             )
             signature = (fixed, component_bags)
-            if signature in seen:
-                continue
-            seen.add(signature)
-            unique.append(mapping)
-        return unique
-
-    def _deduplicate_pure_coupling_mappings(
-        self,
-        mappings: List[MappingDict],
-        pattern: nx.Graph,
-        pattern_orbits: List[frozenset[NodeId]],
-    ) -> List[MappingDict]:
-        """Prune provenance-only embeddings of a pure stereo coupling rule.
-
-        Coupled addition derives its local frame from the matched host E/Z
-        descriptor. Peripheral context choices therefore do not define new
-        applications. If both centers and incoming ligands are exchangeable
-        under pattern automorphism, whole-event reversal is canonicalized as
-        the same unordered chemical locus.
-        """
-        if (
-            len(mappings) < 2
-            or not self.rule.stereo_couplings
-            or self.rule.stereo_guards
-            or self.rule.stereo_effects
-            or self.rule.stereo_outcomes
-        ):
-            return mappings
-
-        pattern_by_map = {}
-        for node, attrs in pattern.nodes(data=True):
-            atom_map = attrs.get("atom_map", node)
-            if isinstance(atom_map, int):
-                pattern_by_map[atom_map] = node
-
-        dependencies = {
-            atom_map
-            for coupling in self.rule.stereo_couplings.values()
-            for atom_map in coupling.dependencies
-        }
-        changed_maps = set()
-        for left, right, attrs in self.rule.rc.raw.edges(data=True):
-            order = attrs.get("order")
-            if not (
-                isinstance(order, tuple) and len(order) == 2 and order[0] != order[1]
-            ):
-                continue
-            for node in (left, right):
-                atom_map = self.rule.rc.raw.nodes[node].get("atom_map", node)
-                if isinstance(atom_map, tuple):
-                    atom_map = atom_map[0]
-                if isinstance(atom_map, int):
-                    changed_maps.add(atom_map)
-        if not changed_maps or not changed_maps <= dependencies:
-            return mappings
-        if not dependencies <= set(pattern_by_map):
-            return mappings
-
-        orbit_by_node = {
-            node: index for index, orbit in enumerate(pattern_orbits) for node in orbit
-        }
-        seen = set()
-        unique = []
-        for mapping in mappings:
-            coupling_signature = []
-            for key, coupling in sorted(self.rule.stereo_couplings.items()):
-                center_nodes = tuple(
-                    pattern_by_map[value] for value in coupling.centers
-                )
-                ligand_nodes = tuple(
-                    pattern_by_map[value] for value in coupling.ligands
-                )
-                host_centers = tuple(mapping[node] for node in center_nodes)
-                host_ligands = tuple(mapping[node] for node in ligand_nodes)
-                centers_exchangeable = orbit_by_node.get(
-                    center_nodes[0]
-                ) == orbit_by_node.get(center_nodes[1])
-                ligands_exchangeable = orbit_by_node.get(
-                    ligand_nodes[0]
-                ) == orbit_by_node.get(ligand_nodes[1])
-                if centers_exchangeable and ligands_exchangeable:
-                    mapped_locus = (
-                        tuple(sorted(host_centers, key=repr)),
-                        tuple(sorted(host_ligands, key=repr)),
-                    )
-                else:
-                    mapped_locus = tuple(zip(host_centers, host_ligands))
-                coupling_signature.append(
-                    (key, coupling.kind, coupling.relation, mapped_locus)
-                )
-            signature = tuple(coupling_signature)
             if signature in seen:
                 continue
             seen.add(signature)

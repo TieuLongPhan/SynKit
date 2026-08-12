@@ -3,9 +3,9 @@
 IO
 ==
 
-The ``synkit.IO`` module provides format-conversion utilities for reaction informatics.
-It helps you move between string-based representations (SMILES/SMARTS) and graph-based
-representations used throughout SynKit, including **ITS** graphs and **DPO rules** in **GML**.
+The ``synkit.IO`` module converts between string-based representations
+(SMILES/SMARTS) and graph-based representations used throughout SynKit,
+including **ITS** graphs and **DPO rules** in **GML**.
 
 Supported conversions include:
 
@@ -16,7 +16,6 @@ Supported conversions include:
 .. raw:: html
 
    <style>
-     /* Optional: callout styling for consistent "Example output" blocks */
      .admonition.synkit-example-output { border-left-width: 6px; }
      .admonition.synkit-example-output .admonition-title { font-weight: 700; letter-spacing: 0.2px; }
      .admonition.synkit-example-output .admonition-title::before { content: "⟡ "; }
@@ -40,9 +39,9 @@ Below is an aldol condensation between an aldehyde and a ketone.
 Conversion to Reaction SMARTS
 -----------------------------
 
-Use :py:func:`~synkit.IO.rsmi_to_rsmarts` to transform a reaction SMILES/SMARTS string
-into a **reaction SMARTS template**. This step is useful when you want a normalized,
-atom-typed SMARTS representation for matching and rule construction.
+Use :py:func:`~synkit.IO.rsmi_to_rsmarts` to transform a reaction SMILES/SMARTS
+string into a normalized, atom-typed **reaction SMARTS template** for matching
+and rule construction.
 
 .. code-block:: python
    :caption: Converting reaction SMILES/SMARTS to a reaction SMARTS template

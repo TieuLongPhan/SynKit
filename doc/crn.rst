@@ -57,7 +57,7 @@ The ``synkit.CRN.Construct`` package expands reaction rules into a reaction-netw
 digraph, which can then be converted into a normalized
 :py:class:`~synkit.CRN.Structure.syncrn.SynCRN` object.
 
-This layer is useful when you want to generate a CRN from:
+This layer generates a CRN from:
 
 - a seed pool of starting molecules
 - a rule set
@@ -99,7 +99,7 @@ Query
 -----
 
 The ``synkit.CRN.Query`` package provides KEGG-oriented retrieval and curation
-utilities. It is the natural entry point when your CRN comes from a biological
+utilities. It is the natural entry point for CRNs derived from a biological
 pathway rather than from rule-based expansion.
 
 Key helpers include:
@@ -126,7 +126,7 @@ Example: retrieve a KEGG pathway as structured JSON
 
    pathway_data
 
-This query layer is especially useful when you want to:
+The query layer supports the following operations:
 
 - retrieve pathway reaction entries
 - keep compound metadata together with reactions
@@ -149,7 +149,7 @@ with supporting structural components:
 - :py:class:`~synkit.CRN.Structure.reaction.Reaction`
 - :py:class:`~synkit.CRN.Structure.rule.Rule`
 
-A ``SynCRN`` object is the preferred representation when you want:
+A ``SynCRN`` object is the preferred representation for:
 
 - stable species and reaction ordering
 - table-like and graph-like interoperability
@@ -175,8 +175,7 @@ Symmetry
 --------
 
 The ``synkit.CRN.Symmetry`` package supports CRN **isomorphism** and **canonicalization**.
-This is the right layer when you want to compare two networks independently of their
-original labeling.
+This layer compares networks independently of their original labeling.
 
 Relevant modules include:
 
@@ -253,14 +252,14 @@ Example: stoichiometric analysis
    :linenos:
 
    from synkit.CRN.Structure.syncrn import SynCRN
-   from synkit.CRN.Props.stoich import compute_stoich_summary
+   from synkit.CRN.Props.stoich import summary
 
    syn = SynCRN.from_reaction_strings([
        "A + B >> C",
        "C >> D",
    ])
 
-   stoich = compute_stoich_summary(syn)
+   stoich = summary(syn)
    print(stoich)
 
 Example: thermodynamic summary
@@ -282,22 +281,17 @@ Example: Jacobian or dynamical structure
    :caption: Compute symbolic dynamical structure
    :linenos:
 
-   from synkit.CRN.Props.dynamics import compute_jacobian_structure
+   from synkit.CRN.Props.dynamics import symbolic_jacobian
 
-   J = compute_jacobian_structure(syn)
+   species_order, rule_order, J = symbolic_jacobian(syn)
    print(J)
-
-.. note::
-   Exact function names may vary slightly across versions, but the ``Props`` package
-   is the correct place for stoichiometric, thermodynamic, and Jacobian-style CRN
-   analysis.
 
 Pathway
 -------
 
 The ``synkit.CRN.Pathway`` package provides pathway-level reasoning on top of a CRN.
-This is the right layer when you want to analyze whether a target is merely connected
-in the graph or actually reachable and realizable from a specified starting pool.
+This layer distinguishes graph connectivity from reachability and realizability
+under a specified starting pool.
 
 Relevant modules include:
 
@@ -319,7 +313,7 @@ Example: reachability
    :linenos:
 
    from synkit.CRN.Structure.syncrn import SynCRN
-   from synkit.CRN.Pathway.reachability import reachable_species
+   from synkit.CRN.Pathway.reachability import PathwayReachability
 
    syn = SynCRN.from_reaction_strings([
        "A + B >> C",
@@ -327,8 +321,8 @@ Example: reachability
        "E >> F",
    ])
 
-   reached = reachable_species(syn, seeds={"A", "B"})
-   print(reached)
+   result = PathwayReachability().load_syncrn(syn).compute_layers_set(["A", "B"])
+   print(sorted(result.species_first_depth))
 
 Example: realizability
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -337,9 +331,19 @@ Example: realizability
    :caption: Test whether a target can be realized from an initial pool
    :linenos:
 
-   from synkit.CRN.Pathway.realizability import is_realizable
+   from synkit.CRN.Pathway.realizability import PathwayRealizability
 
-   ok = is_realizable(syn, seeds={"A", "B"}, targets={"D"})
+   checker = PathwayRealizability().load_hypergraph_and_flow(
+       vertices=["A", "B", "C", "D"],
+       edges={
+           "r1": ({"A": 1, "B": 1}, {"C": 1}),
+           "r2": ({"C": 1}, {"D": 1}),
+       },
+       flow={"r1": 1, "r2": 1},
+       initial_marking={"A": 1, "B": 1},
+   )
+   checker.build_petri_net_from_flow()
+   ok, certificate = checker.is_realizable()
    print(ok)
 
 .. admonition:: Example output
@@ -358,7 +362,7 @@ A practical CRN workflow in SynKit is:
 2. Convert the result into :py:class:`~synkit.CRN.Structure.syncrn.SynCRN`
 3. Use **Props** to inspect stoichiometric, thermodynamic, or dynamical features
 4. Use **Pathway** to analyze reachability and realizability
-5. Use **Symmetry** when you need canonicalization or structural comparison
+5. Use **Symmetry** for canonicalization or structural comparison
 
 See Also
 --------

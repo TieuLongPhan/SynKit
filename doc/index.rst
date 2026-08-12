@@ -26,57 +26,12 @@ SynKit
 
 **SynKit** is a graph-based Python toolkit for reaction informatics: canonicalization, matching,
 rule manipulation, and lightweight chemical reaction network (CRN) exploration.
-It is designed to be modular, extensible, and friendly for both research and
-production workflows.
+Its modules support both research and production workflows.
 
 .. image:: ../Data/Figure/synkit_graphical_abstract.svg
    :alt: SynKit graphical abstract
    :align: center
    :width: 100%
-
-.. Core features
-.. -------------
-
-.. .. grid:: 1 1 2 2
-..    :gutter: 2
-
-..    .. grid-item-card::
-
-..       :octicon:`rocket` **Canonicalization**
-
-..       Reduce duplicate representations for molecules, reactions and CRNs.
-..       Supports exact and WL-based approximate backends for scale.
-
-..    .. grid-item-card::
-
-..       :octicon:`search` **Matching & Isomorphism**
-
-..       Fast component-aware subgraph search with symmetry-aware deduplication.
-
-..    .. grid-item-card::
-
-..       :octicon:`gear` **Rule objects and Transformation Workflows**
-
-..       Treat transformations as first-class objects (templates, ITS graphs, gluing).
-
-..    .. grid-item-card::
-
-..       :octicon:`graph` **CRN**
-
-..       Build, canonicalize, and analyze chemical reaction networks (directed/hypergraphs).
-
-..    .. grid-item-card::
-
-..       :octicon:`sync` **IO Conversion**
-
-..       Convert SMILES/SMARTS/GML and move between RDKit ↔ NetworkX representations.
-
-..    .. grid-item-card::
-
-..       :octicon:`terminal` **API & CLI**
-
-..       API with convenient CLI entrypoints for common tasks.
-
 
 Documentation quick links
 -------------------------
@@ -119,12 +74,6 @@ Documentation quick links
       :link-type: doc
 
       Molecule, reaction, ITS, and diagnostic graph rendering.
-
-   .. grid-item-card:: :octicon:`git-compare` Reaction Stereochemistry
-      :link: stereo_reactions
-      :link-type: doc
-
-      Typed semantics, rules, couplings, replay, and loss-aware interchange.
 
    .. grid-item-card:: :octicon:`terminal` API Reference
       :link: api/index
@@ -191,7 +140,6 @@ Funded by the European Union Horizon Europe Doctoral Network
    synthesis
    crn
    vis
-   stereo_reactions
    api/index
    reference
    changelog

@@ -65,7 +65,7 @@ def split_sigma_pi_order(order: float) -> tuple[float, float]:
 
     :param order: Numeric Kekule bond order.
     :type order: float
-    :returns: ``(sigma_order, pi_order)``.
+    :return: ``(sigma_order, pi_order)``.
     :rtype: tuple[float, float]
     """
     value = max(0.0, float(order))
@@ -85,7 +85,7 @@ def normalize_lwg_graph(graph: nx.Graph, *, in_place: bool = False) -> nx.Graph:
     :type graph: nx.Graph
     :param in_place: If ``True``, mutate ``graph`` directly.
     :type in_place: bool
-    :returns: Normalized graph.
+    :return: Normalized graph.
     :rtype: nx.Graph
     """
     target = graph if in_place else graph.copy()
@@ -112,7 +112,7 @@ def resolve_atom_maps(graph: nx.Graph, atom_maps: Iterable[int]) -> list[Any]:
     :type graph: nx.Graph
     :param atom_maps: Atom maps to resolve.
     :type atom_maps: Iterable[int]
-    :returns: Graph nodes in the same order as ``atom_maps``.
+    :return: Graph nodes in the same order as ``atom_maps``.
     :rtype: list[Any]
     :raises ValueError: If any atom map is missing or duplicated.
     """
@@ -142,7 +142,7 @@ def mapped_edge_nodes(
     :type atom_maps: Iterable[int]
     :param create: If ``True``, create a zero-order edge when absent.
     :type create: bool
-    :returns: Two graph nodes for the mapped edge.
+    :return: Two graph nodes for the mapped edge.
     :rtype: tuple[Any, Any]
     :raises ValueError: If the atom-map list is not length two, an atom map is
         missing, or the edge is absent while ``create=False``.
@@ -181,7 +181,7 @@ def normalize_edge(graph: nx.Graph, node_a: Any, node_b: Any) -> None:
     :type node_a: Any
     :param node_b: Second edge endpoint node.
     :type node_b: Any
-    :returns: ``None``; the edge attributes are updated in place.
+    :return: ``None``; the edge attributes are updated in place.
     :rtype: None
     """
     data = graph.edges[node_a, node_b]
@@ -219,7 +219,7 @@ def change_edge_order(
     :type remove_zero_edge: bool
     :param tol: Floating-point tolerance for zero/negative checks.
     :type tol: float
-    :returns: Edge edit report.
+    :return: Edge edit report.
     :rtype: EdgeChange
     :raises ValueError: If the edit would make the selected order negative.
     """
@@ -279,7 +279,7 @@ def change_lone_pairs(
     :type delta: float
     :param tol: Floating-point tolerance for zero/negative checks.
     :type tol: float
-    :returns: Lone-pair edit reports.
+    :return: Lone-pair edit reports.
     :rtype: list[LonePairChange]
     :raises ValueError: If any edit would make lone pairs negative.
     """

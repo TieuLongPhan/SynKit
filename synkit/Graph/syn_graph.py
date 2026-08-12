@@ -12,8 +12,8 @@ Key features
   (cached internally) to avoid upfront cost when not needed.
 * **Transparent delegation** – any unknown attribute/method is forwarded to the raw graph.
 
-Example
--------
+.. rubric:: Example
+
 >>> G = nx.Graph(); G.add_node(1, element='C')
 >>> SG = SynGraph(G)
 >>> SG.signature   # 32‑hex SHA‑256 digest
@@ -45,22 +45,26 @@ class SynGraph:
     """Wrapper around networkx.Graph providing both its original and
     (optionally) canonicalized form, plus a SHA-256 signature.
 
-    Parameters:
-    - graph (nx.Graph): The NetworkX graph to wrap.
-    - canonicaliser (Optional[GraphCanonicaliser]): If provided, used to
-      produce the canonical form; otherwise a default is constructed.
-    - canon (bool): If True (default), computes and stores both
-      `.canonical` and `.signature`. Otherwise they remain None.
+    :param graph: The NetworkX graph to wrap.
+    :type graph: nx.Graph
+    :param canonicaliser: If provided, used to
+                          produce the canonical form; otherwise a default is constructed.
+    :type canonicaliser: Optional[GraphCanonicaliser]
+    :param canon: If True (default), computes and stores both
+                  `.canonical` and `.signature`. Otherwise they remain None.
+    :type canon: bool
 
-    Public Properties:
-    - raw           nx.Graph            The original graph.
-    - canonical     Optional[nx.Graph]  The canonicalized graph (or None).
-    - signature     Optional[str]       The SHA-256 hex digest (or None).
+    .. rubric:: Attributes
 
-    Methods:
-    - get_nodes(data: bool = True) -> Iterable[…]
-    - get_edges(data: bool = True) -> Iterable[…]
-    - help()              Print this API summary.
+    * raw           nx.Graph            The original graph.
+    * canonical     Optional[nx.Graph]  The canonicalized graph (or None).
+    * signature     Optional[str]       The SHA-256 hex digest (or None).
+
+    .. rubric:: Methods
+
+    * get_nodes(data: bool = True) -> Iterable[…]
+    * get_edges(data: bool = True) -> Iterable[…]
+    * help()              Print this API summary.
     """
 
     def __init__(
@@ -71,10 +75,12 @@ class SynGraph:
     ) -> None:
         """Initialize a SynGraph wrapper.
 
-        Parameters:
-        - graph (nx.Graph): Input graph.
-        - canonicaliser (Optional[GraphCanonicaliser]): Canonicaliser instance.
-        - canon (bool): Whether to compute canonical form/signature.
+        :param graph: Input graph.
+        :type graph: nx.Graph
+        :param canonicaliser: Canonicaliser instance.
+        :type canonicaliser: Optional[GraphCanonicaliser]
+        :param canon: Whether to compute canonical form/signature.
+        :type canon: bool
         """
         self._raw: nx.Graph = graph
         self._canonicaliser: GraphCanonicaliser = canonicaliser or GraphCanonicaliser()
@@ -155,10 +161,8 @@ class SynGraph:
     ) -> Iterable[Union[Any, Tuple[Any, Dict[str, Any]]]]:
         """Yield nodes from the original graph.
 
-        Parameters
-        ----------
-        data : bool, default True
-            If True, yield (node, data_dict), else just node IDs.
+        :param data: If True, yield (node, data_dict), else just node IDs.
+        :type data: bool, default True
         """
         return self._raw.nodes(data=data)
 
@@ -167,10 +171,8 @@ class SynGraph:
     ) -> Iterable[Union[Tuple[Any, Any], Tuple[Any, Any, Dict[str, Any]]]]:
         """Yield edges from the original graph.
 
-        Parameters
-        ----------
-        data : bool, default True
-            If True, yield (u, v, data_dict), else just (u, v).
+        :param data: If True, yield (u, v, data_dict), else just (u, v).
+        :type data: bool, default True
         """
         return self._raw.edges(data=data)
 

@@ -17,7 +17,7 @@ class ReactionNetwork:
     - Construct with an iterable of reactions or :py:meth:`from_raw_list`.
     - Use fluent mutators (e.g., :py:meth:`keep_reactions`, :py:meth:`keep_molecules`)
       to refine the in-memory selection; each returns ``self`` for chaining.
-    - Access results via properties (:pyattr:`reactions`, :pyattr:`n_reactions`).
+    - Access results via properties (:attr:`reactions`, :attr:`n_reactions`).
 
     :param reactions: Initial reaction iterable.
     """
@@ -64,11 +64,10 @@ class ReactionNetwork:
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "ReactionNetwork":
-        """
-        Create a network from dictionary produced by :py:meth:`to_dict`.
+        """Create a network from dictionary produced by :py:meth:`to_dict`.
 
         :param d: Dictionary with a "reactions" list.
-        :returns: ReactionNetwork instance.
+        :return: ReactionNetwork instance.
         :raises CRNError: If the dictionary is malformed or Reaction construction fails.
         """
         try:
@@ -82,10 +81,9 @@ class ReactionNetwork:
 
     # ---- Serialization ----
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Serialize the full network (not the view) to a dict.
+        """Serialize the full network (not the view) to a dict.
 
-        :returns: Dict suitable for JSON serialization.
+        :return: Dict suitable for JSON serialization.
         """
         return {
             "reactions": [
@@ -95,11 +93,10 @@ class ReactionNetwork:
         }
 
     def to_json(self, path: str) -> "ReactionNetwork":
-        """
-        Save full network JSON to ``path`` and return ``self``.
+        """Save full network JSON to ``path`` and return ``self``.
 
         :param path: Output file path.
-        :returns: self
+        :return: self
         :raises CRNError: On file write errors.
         """
         apath = os.path.abspath(path)
@@ -112,11 +109,10 @@ class ReactionNetwork:
 
     @staticmethod
     def from_json(path: str) -> "ReactionNetwork":
-        """
-        Load network from JSON file.
+        """Load network from JSON file.
 
         :param path: Input file path.
-        :returns: New ReactionNetwork instance.
+        :return: New ReactionNetwork instance.
         :raises CRNError: If file I/O or JSON parsing fails, or content is invalid.
         """
         try:
@@ -140,20 +136,18 @@ class ReactionNetwork:
 
     # ---- Fluent view mutators ----
     def reset_view(self) -> "ReactionNetwork":
-        """
-        Reset any active view filters and return ``self``.
+        """Reset any active view filters and return ``self``.
 
-        :returns: self
+        :return: self
         """
         self._view_ids = None
         return self
 
     def keep_reactions(self, ids: Iterable[int]) -> "ReactionNetwork":
-        """
-        Restrict the active view to a set of reaction ids.
+        """Restrict the active view to a set of reaction ids.
 
         :param ids: Reaction ids to keep (iterable of ints).
-        :returns: self
+        :return: self
         :raises CRNError: If ids is not an iterable of integers.
         """
         try:
@@ -165,11 +159,10 @@ class ReactionNetwork:
         return self
 
     def keep_molecules(self, tokens: Iterable[str]) -> "ReactionNetwork":
-        """
-        Restrict view to reactions touching at least one token.
+        """Restrict view to reactions touching at least one token.
 
         :param tokens: Species tokens to match (iterable of strings).
-        :returns: self
+        :return: self
         :raises CRNError: If tokens is not an iterable of strings.
         """
         try:
@@ -189,10 +182,9 @@ class ReactionNetwork:
     # ---- Accessors / helpers ----
     @property
     def reactions(self) -> Dict[int, Reaction]:
-        """
-        Dictionary of reactions in the current view.
+        """Dictionary of reactions in the current view.
 
-        :returns: Mapping reaction id -> Reaction
+        :return: Mapping reaction id -> Reaction
         """
         if self._view_ids is None:
             return dict(self._reactions)
@@ -200,19 +192,17 @@ class ReactionNetwork:
 
     @property
     def n_reactions(self) -> int:
-        """
-        Number of reactions in the current view.
+        """Number of reactions in the current view.
 
-        :returns: int
+        :return: int
         """
         return len(self.reactions)
 
     def get_reaction(self, rid: int) -> Reaction:
-        """
-        Return the Reaction with the given id.
+        """Return the Reaction with the given id.
 
         :param rid: Reaction id.
-        :returns: Reaction instance.
+        :return: Reaction instance.
         :raises CRNError: If reaction id not found.
         """
         try:
@@ -221,11 +211,10 @@ class ReactionNetwork:
             raise CRNError(f"Reaction id {rid} not found in network")
 
     def add_reaction(self, reaction: Reaction) -> "ReactionNetwork":
-        """
-        Add a Reaction to the network.
+        """Add a Reaction to the network.
 
         :param reaction: Reaction object to add.
-        :returns: self
+        :return: self
         :raises CRNError: If a reaction with the same id already exists.
         """
         if reaction.id in self._reactions:
@@ -234,11 +223,10 @@ class ReactionNetwork:
         return self
 
     def remove_reaction(self, rid: int) -> "ReactionNetwork":
-        """
-        Remove a Reaction by id.
+        """Remove a Reaction by id.
 
         :param rid: Reaction id to remove.
-        :returns: self
+        :return: self
         :raises CRNError: If reaction id not found.
         """
         try:
@@ -252,10 +240,9 @@ class ReactionNetwork:
 
     # ---- Misc / dunder ----
     def __len__(self) -> int:
-        """
-        Length equals number of reactions in current view.
+        """Length equals number of reactions in current view.
 
-        :returns: int
+        :return: int
         """
         return self.n_reactions
 

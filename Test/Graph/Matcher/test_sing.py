@@ -2,10 +2,7 @@ import unittest
 
 import networkx as nx
 
-# Adjust this import to your actual package path, e.g.:
 from synkit.Graph.Matcher.sing import SING
-
-# from sing import SING
 
 
 class TestSINGBasic(unittest.TestCase):
@@ -41,6 +38,49 @@ class TestSINGBasic(unittest.TestCase):
 
 
 class TestSINGAttributes(unittest.TestCase):
+    def test_attribute_signatures_do_not_have_string_delimiter_collisions(self):
+        host = nx.Graph()
+        host.add_node(0, first="x|y", second="z")
+        query = nx.Graph()
+        query.add_node(10, first="x", second="y|z")
+
+        index = SING(host, max_path_length=0, node_att=["first", "second"])
+
+        self.assertEqual(index.search(query), [])
+
+    def test_attribute_signatures_preserve_value_types(self):
+        host = nx.Graph()
+        host.add_node(0, label=1)
+        query = nx.Graph()
+        query.add_node(10, label="1")
+
+        index = SING(host, max_path_length=0, node_att="label")
+
+        self.assertEqual(index.search(query), [])
+
+    def test_directed_incoming_edges_are_checked(self):
+        host = nx.DiGraph()
+        host.add_edge(0, 1)
+        host.nodes[0]["element"] = "C"
+        host.nodes[1]["element"] = "O"
+        query = nx.DiGraph()
+        query.add_edge(10, 11)
+        query.nodes[10]["element"] = "O"
+        query.nodes[11]["element"] = "C"
+
+        index = SING(host, max_path_length=0, node_att="element", edge_att=None)
+
+        self.assertEqual(index.search(query), [])
+
+    def test_query_self_loop_must_exist_in_host(self):
+        host = nx.path_graph(3)
+        query = nx.Graph()
+        query.add_edge(10, 10)
+
+        index = SING(host, max_path_length=0, node_att=[], edge_att=None)
+
+        self.assertEqual(index.search(query), [])
+
     def test_node_attribute_filtering(self) -> None:
         """Node attributes should restrict matches."""
         # Triangle with one special node

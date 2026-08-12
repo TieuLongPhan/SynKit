@@ -76,16 +76,15 @@ class MotifEnumerator:
         infer_missing: bool = False,
         show_n: int = 3,
     ) -> Dict[str, Any]:
-        """
-        Enumerate forward pathways for a motif.
+        """Enumerate forward pathways for a motif.
 
         :param name: motif name for printing
         :param reactions: list of raw reaction strings
         :param config: motif config (may contain 'sources' and 'sinks')
         :param infer_missing: if True, allow guarded inference of missing co-reactants
         :param show_n: how many examples to pretty-print
-        :returns: summary dict with keys name, n_raw, n_unique, examples, net, paths
-        :raises: NoPathwaysError if no pathways are found
+        :return: summary dict with keys name, n_raw, n_unique, examples, net, paths
+        :raises NoPathwaysError: If no pathways are found
         """
         print(f"\n=== Enumerating {name} (len={len(reactions)}) ===")
 

@@ -15,10 +15,9 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
 
     @staticmethod
     def _build_syn() -> SynCRN:
-        """
-        Build the standard SynCRN testcase.
+        """Build the standard SynCRN testcase.
 
-        :returns: Parsed SynCRN instance.
+        :return: Parsed SynCRN instance.
         :rtype: SynCRN
         """
         rxns = [
@@ -41,14 +40,13 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
         flow: dict[str, int] | None = None,
         initial_marking: dict[str, int] | None = None,
     ) -> PathwayRealizability:
-        """
-        Build a realizability instance from the SynCRN testcase.
+        """Build a realizability instance from the SynCRN testcase.
 
         :param flow: Requested reaction flow keyed by reaction token.
         :type flow: dict[str, int] | None
         :param initial_marking: Initial marking keyed by species label.
         :type initial_marking: dict[str, int] | None
-        :returns: Loaded realizability instance.
+        :return: Loaded realizability instance.
         :rtype: PathwayRealizability
         """
         syn = self._build_syn()
@@ -68,8 +66,7 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
         tail: dict[str, int],
         head: dict[str, int],
     ) -> str:
-        """
-        Find the reaction token whose tail/head multisets match exactly.
+        """Find the reaction token whose tail/head multisets match exactly.
 
         :param pr: Loaded realizability instance.
         :type pr: PathwayRealizability
@@ -77,7 +74,7 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
         :type tail: dict[str, int]
         :param head: Product multiset.
         :type head: dict[str, int]
-        :returns: Matching reaction token.
+        :return: Matching reaction token.
         :rtype: str
         :raises AssertionError: If no unique matching reaction is found.
         """
@@ -93,10 +90,9 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
         return matches[0]
 
     def _reaction_tokens(self) -> dict[str, str]:
-        """
-        Resolve a small semantic name -> reaction token map for the testcase.
+        """Resolve a small semantic name -> reaction token map for the testcase.
 
-        :returns: Mapping of convenient names to concrete reaction tokens.
+        :return: Mapping of convenient names to concrete reaction tokens.
         :rtype: dict[str, str]
         """
         pr = self._build_pr()

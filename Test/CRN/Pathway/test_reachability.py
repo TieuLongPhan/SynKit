@@ -11,10 +11,9 @@ class TestPathwayReachabilityFromSynCRN(unittest.TestCase):
 
     @staticmethod
     def _build_syn() -> SynCRN:
-        """
-        Build the standard SynCRN test network.
+        """Build the standard SynCRN test network.
 
-        :returns: Parsed SynCRN instance.
+        :return: Parsed SynCRN instance.
         :rtype: SynCRN
         """
         rxns = [
@@ -33,10 +32,9 @@ class TestPathwayReachabilityFromSynCRN(unittest.TestCase):
         return SynCRN.from_reaction_strings(rxns)
 
     def _build_rr(self) -> PathwayReachability:
-        """
-        Build a reachability engine from the SynCRN test network.
+        """Build a reachability engine from the SynCRN test network.
 
-        :returns: Loaded reachability engine.
+        :return: Loaded reachability engine.
         :rtype: PathwayReachability
         """
         syn = self._build_syn()

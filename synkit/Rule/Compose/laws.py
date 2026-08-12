@@ -97,10 +97,8 @@ class CommutationCertificate:
             self.independence.independent
             and all(item.certificate.replay().valid for item in applications)
             and self.result_isomorphism.is_isomorphism
-            and self.result_isomorphism.source
-            == self.first_then_second[1].result
-            and self.result_isomorphism.target
-            == self.second_then_first[1].result
+            and self.result_isomorphism.source == self.first_then_second[1].result
+            and self.result_isomorphism.target == self.second_then_first[1].result
         )
 
 
@@ -182,10 +180,10 @@ def _rule_access(rule: RuleSpan, match: Mapping[Hashable, Hashable]) -> RuleAcce
     return RuleAccess(
         frozenset(match.values()),
         frozenset(_map_edge(match, edge) for edge in left_edges),
-        frozenset(match[node] for node in set(rule.left.node_ids) - left_preserved_nodes),
         frozenset(
-            _map_edge(match, edge) for edge in left_edges - preserved_left_edges
+            match[node] for node in set(rule.left.node_ids) - left_preserved_nodes
         ),
+        frozenset(_map_edge(match, edge) for edge in left_edges - preserved_left_edges),
         frozenset(write_nodes),
         frozenset(write_edges),
         frozenset(added_host_edges),
@@ -321,8 +319,12 @@ def find_llg_isomorphism(
     matcher = nx.algorithms.isomorphism.GraphMatcher(
         source.to_networkx(),
         target.to_networkx(),
-        node_match=lambda left, right: all(left[key] == right[key] for key in node_keys),
-        edge_match=lambda left, right: all(left[key] == right[key] for key in edge_keys),
+        node_match=lambda left, right: all(
+            left[key] == right[key] for key in node_keys
+        ),
+        edge_match=lambda left, right: all(
+            left[key] == right[key] for key in edge_keys
+        ),
     )
     if not matcher.is_isomorphic():
         return None

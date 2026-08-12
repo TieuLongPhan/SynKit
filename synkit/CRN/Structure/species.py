@@ -31,10 +31,9 @@ class Species:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Return a JSON-like dictionary representation.
+        """Return a JSON-like dictionary representation.
 
-        :returns: Species as a dictionary.
+        :return: Species as a dictionary.
         :rtype: Dict[str, Any]
         """
         return {

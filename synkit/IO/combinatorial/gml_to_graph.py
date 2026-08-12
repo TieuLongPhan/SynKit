@@ -4,41 +4,30 @@ from typing import Tuple, List, Dict
 
 
 class GMLToGraph:
-    """
-    Parses a GML-like reaction rule into three NetworkX graphs: reactant (left),
+    """Parses a GML-like reaction rule into three NetworkX graphs: reactant (left),
     conserved context (context), and product (right). Preserves atom-map indices
     and original SMARTS labels, and attaches placeholder constraints (both
     table-style and multi-block Rest-style) to node and edge attributes.
 
-    Parameters
-    ----------
-    gml_text : str
-        The GML-like reaction rule text, containing 'left', 'context', 'right',
-        and 'constrainLabelAny' sections.
+    :param gml_text: The GML-like reaction rule text, containing 'left', 'context', 'right',
+                     and 'constrainLabelAny' sections.
+    :type gml_text: str
 
-    Attributes
-    ----------
-    graphs : Dict[str, nx.Graph]
-        A mapping of section names ('left', 'context', 'right') to the
-        corresponding parsed graphs.
-    placeholder_constraints : Dict[str, List[str]]
-        A mapping from placeholder labels (e.g. '_X') to their allowed values,
-        extracted from the 'constrainLabelAny' block.
+    :ivar graphs: A mapping of section names ('left', 'context', 'right') to the
+                  corresponding parsed graphs.
+    :vartype graphs: Dict[str, nx.Graph]
+    :ivar placeholder_constraints: A mapping from placeholder labels (e.g. '_X') to their allowed values,
+                                   extracted from the 'constrainLabelAny' block.
+    :vartype placeholder_constraints: Dict[str, List[str]]
     """
 
     def __init__(self, gml_text: str):
-        """
-        Initialize the parser with the full GML text.
+        """Initialize the parser with the full GML text.
 
-        Parameters
-        ----------
-        gml_text : str
-            GML-like rule text to be parsed.
+        :param gml_text: GML-like rule text to be parsed.
+        :type gml_text: str
 
-        Raises
-        ------
-        ValueError
-            If the provided gml_text is empty.
+        :raises ValueError: If the provided gml_text is empty.
         """
         if not gml_text:
             raise ValueError("gml_text must be a non-empty string")
@@ -49,21 +38,15 @@ class GMLToGraph:
         self.placeholder_constraints: Dict[str, List[str]] = {}
 
     def _parse_element(self, line: str, sec: str) -> None:
-        """
-        Parse a single GML line describing a node or an edge and insert it
+        """Parse a single GML line describing a node or an edge and insert it
         into the specified graph section.
 
-        Parameters
-        ----------
-        line : str
-            A line starting with 'node' or 'edge', e.g., 'node [ id 1 label "C" ]'.
-        sec : str
-            The target section in 'left', 'context', or 'right'.
+        :param line: A line starting with 'node' or 'edge', e.g., 'node [ id 1 label "C" ]'.
+        :type line: str
+        :param sec: The target section in 'left', 'context', or 'right'.
+        :type sec: str
 
-        Raises
-        ------
-        ValueError
-            If `sec` is not one of 'left', 'context', or 'right'.
+        :raises ValueError: If `sec` is not one of 'left', 'context', or 'right'.
         """
         if sec not in self.graphs:
             raise ValueError(f"Unknown section: {sec}")
@@ -118,21 +101,16 @@ class GMLToGraph:
                     self.graphs[sec].add_edge(u, v, **data)
 
     def _parse_constraints(self, lines: List[str], idx: int) -> int:
-        """
-        Parse placeholder constraints from the 'constrainLabelAny' block,
+        """Parse placeholder constraints from the 'constrainLabelAny' block,
         supporting both table and multi-block Rest styles.
 
-        Parameters
-        ----------
-        lines : List[str]
-            All lines of the GML text.
-        idx : int
-            The index of the first line inside the '[' of the block.
+        :param lines: All lines of the GML text.
+        :type lines: List[str]
+        :param idx: The index of the first line inside the '[' of the block.
+        :type idx: int
 
-        Returns
-        -------
-        int
-            The index of the closing ']' line of the block.
+        :return: The index of the closing ']' line of the block.
+        :rtype: int
         """
         while idx < len(lines):
             line = lines[idx].strip()
@@ -198,13 +176,10 @@ class GMLToGraph:
         self.graphs["context"].graph["placeholder_constraints"] = pc
 
     def transform(self) -> Tuple[nx.Graph, nx.Graph, nx.Graph]:
-        """
-        Parse the GML text, build the left, right, and context graphs, and return them.
+        """Parse the GML text, build the left, right, and context graphs, and return them.
 
-        Returns
-        -------
-        Tuple[nx.Graph, nx.Graph, nx.Graph]
-            A tuple (left_graph, right_graph, context_graph), each with attached constraints.
+        :return: A tuple (left_graph, right_graph, context_graph), each with attached constraints.
+        :rtype: Tuple[nx.Graph, nx.Graph, nx.Graph]
         """
         lines = self.gml_text.splitlines()
         section: str = ""
@@ -225,13 +200,10 @@ class GMLToGraph:
         return (self.graphs["left"], self.graphs["right"], self.graphs["context"])
 
     def __repr__(self) -> str:
-        """
-        Return a summary indicating the number of nodes in each graph.
+        """Return a summary indicating the number of nodes in each graph.
 
-        Returns
-        -------
-        str
-            A brief representation with node counts.
+        :return: A brief representation with node counts.
+        :rtype: str
         """
         return (
             f"<GMLToGraph left={self.graphs['left'].number_of_nodes()} nodes, "
@@ -240,13 +212,10 @@ class GMLToGraph:
         )
 
     def help(self) -> str:
-        """
-        Return a usage summary for the GMLToGraph parser.
+        """Return a usage summary for the GMLToGraph parser.
 
-        Returns
-        -------
-        str
-            Multi-line help text explaining the API.
+        :return: Multi-line help text explaining the API.
+        :rtype: str
         """
         return (
             "GMLToGraph(gml_text) -> (left, right, context) graphs\n"

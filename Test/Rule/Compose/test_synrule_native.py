@@ -61,7 +61,11 @@ def test_synrule_candidate_api_retains_every_symmetric_overlap() -> None:
     direct = search_synrule_compositions(first, second)
     method = first.composition_candidates(second)
 
-    assert (direct.raw_overlap_count, direct.accepted_count, direct.exact_class_count) == (
+    assert (
+        direct.raw_overlap_count,
+        direct.accepted_count,
+        direct.exact_class_count,
+    ) == (
         7,
         7,
         3,
@@ -78,10 +82,7 @@ def test_adapter_refuses_to_erase_stereo_semantics() -> None:
 
     with pytest.raises(SynRuleCompositionError) as error:
         first.to_rule_span()
-    assert (
-        error.value.issues[0].code
-        is SynRuleCompositionIssueCode.STEREO_UNSUPPORTED
-    )
+    assert error.value.issues[0].code is SynRuleCompositionIssueCode.STEREO_UNSUPPORTED
 
 
 def test_native_compose_submodule_has_no_mod_import() -> None:
@@ -91,7 +92,9 @@ def test_native_compose_submodule_has_no_mod_import() -> None:
         tree = ast.parse(source.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
-                imported_roots.update(alias.name.partition(".")[0] for alias in node.names)
+                imported_roots.update(
+                    alias.name.partition(".")[0] for alias in node.names
+                )
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imported_roots.add(node.module.partition(".")[0])
 

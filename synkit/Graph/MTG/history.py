@@ -120,9 +120,7 @@ class _UnionFind:
         )
 
 
-def _binding_carrier(
-    bindings: tuple[Any, ...], endpoint_node: Hashable
-) -> Carrier:
+def _binding_carrier(bindings: tuple[Any, ...], endpoint_node: Hashable) -> Carrier:
     for binding in bindings:
         mapping = dict(binding.mapping)
         if endpoint_node in mapping:
@@ -195,9 +193,7 @@ def _lineages(
     for index, group in enumerate(edge_union.groups()):
         endpoints: frozenset[str] | None = None
         for material_id, edge in group:
-            candidate = frozenset(
-                node_by_carrier[(material_id, node)] for node in edge
-            )
+            candidate = frozenset(node_by_carrier[(material_id, node)] for node in edge)
             if endpoints is None:
                 endpoints = candidate
             elif endpoints != candidate:
@@ -376,7 +372,10 @@ class OccurrenceMTG:
                     HistoryIssue(
                         HistoryIssueCode.INACTIVE_INPUT,
                         "An event consumes material absent at its process cut.",
-                        {"event": event_id, "materials": tuple(sorted(inputs - active))},
+                        {
+                            "event": event_id,
+                            "materials": tuple(sorted(inputs - active)),
+                        },
                     )
                 )
             if outputs & active:
@@ -478,9 +477,7 @@ class OccurrenceMTG:
         for material_id in sorted(material_ids):
             material = self.material_by_id[material_id]
             for node in material.value.node_ids:
-                graph.add_node(
-                    (material_id, node), **material.value.node_labels(node)
-                )
+                graph.add_node((material_id, node), **material.value.node_labels(node))
             for edge in material.value.edge_keys:
                 left, right = tuple(edge)
                 graph.add_edge(
@@ -497,10 +494,14 @@ class OccurrenceMTG:
         preserved = {}
         for lineage in self.node_lineages:
             initial = tuple(
-                member for member in lineage.members if member[0] in self.initial_material_ids
+                member
+                for member in lineage.members
+                if member[0] in self.initial_material_ids
             )
             final = tuple(
-                member for member in lineage.members if member[0] in self.final_material_ids
+                member
+                for member in lineage.members
+                if member[0] in self.final_material_ids
             )
             if len(initial) == len(final) == 1:
                 preserved[initial[0]] = final[0]
@@ -514,16 +515,18 @@ class OccurrenceMTG:
         preserved_edges = set()
         for lineage in self.edge_lineages:
             initial = tuple(
-                member for member in lineage.members if member[0] in self.initial_material_ids
+                member
+                for member in lineage.members
+                if member[0] in self.initial_material_ids
             )
             final = tuple(
-                member for member in lineage.members if member[0] in self.final_material_ids
+                member
+                for member in lineage.members
+                if member[0] in self.final_material_ids
             )
             if len(initial) == len(final) == 1:
                 material_id, edge = initial[0]
-                preserved_edges.add(
-                    frozenset((material_id, node) for node in edge)
-                )
+                preserved_edges.add(frozenset((material_id, node) for node in edge))
             elif len(initial) > 1 or len(final) > 1:
                 raise HistoryError(
                     HistoryIssue(
@@ -587,7 +590,9 @@ class OccurrenceMTG:
             if len(signatures) > 1:
                 changed_nodes.add(node)
         result = nx.MultiGraph()
-        result.graph.update(process_id=self.process_id, projection="minimal-changed-core")
+        result.graph.update(
+            process_id=self.process_id, projection="minimal-changed-core"
+        )
         for node in sorted(changed_nodes):
             result.add_node(node, **full.nodes[node])
         for left, right, key, attrs in changed_edges:

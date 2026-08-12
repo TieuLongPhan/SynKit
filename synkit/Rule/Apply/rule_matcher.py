@@ -97,7 +97,7 @@ class RuleMatcher:
     def get_result(self) -> Tuple[str, nx.Graph]:
         """Return the SMARTS and rule graph found during initialization.
 
-        :returns: A tuple (smarts, rule_graph).
+        :return: A tuple (smarts, rule_graph).
         :rtype: tuple[str, nx.Graph]
         """
         return self.result
@@ -105,7 +105,7 @@ class RuleMatcher:
     def _match_valid(self) -> Optional[Tuple[str, nx.Graph]]:
         """Attempt a direct (balanced) match of the rule.
 
-        :returns: (smarts, rule) if direct match succeeds; otherwise
+        :return: (smarts, rule) if direct match succeeds; otherwise
             None.
         :rtype: Optional[tuple[str, nx.Graph]]
         """
@@ -126,7 +126,7 @@ class RuleMatcher:
         First tries matching on product fragments, then on reactant
         fragments with the template inverted.
 
-        :returns: (smarts, rule) if a partial match is found; otherwise
+        :return: (smarts, rule) if a partial match is found; otherwise
             None.
         :rtype: Optional[tuple[str, nx.Graph]]
         """
@@ -170,7 +170,7 @@ class RuleMatcher:
         :type a: list[str]
         :param b: List in which to test membership.
         :type b: list[str]
-        :returns: True if set(a) is a subset of set(b); otherwise False.
+        :return: True if set(a) is a subset of set(b); otherwise False.
         :rtype: bool
         """
         return set(a).issubset(b)
@@ -183,7 +183,7 @@ class RuleMatcher:
     def help(self) -> None:
         """Print internal state and candidate SMARTS patterns for debugging.
 
-        :returns: None
+        :return: None
         :rtype: NoneType
         """
         print(f"RuleMatcher for RSMI: {self.rsmi!r}")
@@ -196,7 +196,7 @@ class RuleMatcher:
     def __str__(self) -> str:
         """Short string showing the RSMI and balance status.
 
-        :returns: Human‑readable summary.
+        :return: Human‑readable summary.
         :rtype: str
         """
         status = "balanced" if self.balanced else "unbalanced"
@@ -205,7 +205,7 @@ class RuleMatcher:
     def __repr__(self) -> str:
         """Detailed representation including rule size and balance.
 
-        :returns: repr string.
+        :return: repr string.
         :rtype: str
         """
         try:

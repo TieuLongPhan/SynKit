@@ -41,8 +41,8 @@ def transition_from_epd_step(step: Any) -> Transition:
     :rtype: Transition
     :raises ValueError: If the step cannot be interpreted.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.Vis.epd import transition_from_epd_step
@@ -121,8 +121,8 @@ def transitions_from_epd(epd: Iterable[Any]) -> List[Transition]:
     :return: List of normalized transitions.
     :rtype: List[Transition]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.Vis.epd import transitions_from_epd

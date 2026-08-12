@@ -35,7 +35,7 @@ class ReactionPathwayExplorer:
       allow_reuse=False). It avoids over-aggressive pruning by not relying on
       a compressed "seen" multiset key; instead it enumerates with a `used` set
       and checks stoichiometry at each choice.
-    - Expected Reaction API (present in your repo):
+    - Expected :class:`Reaction` API:
         - rx.reactants_can : Counter
         - rx.products_can  : Counter
         - rx.apply_forward(state, matched) -> Counter

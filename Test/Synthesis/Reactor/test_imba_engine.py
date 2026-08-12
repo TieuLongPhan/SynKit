@@ -7,7 +7,7 @@ from synkit.Synthesis.Reactor.imba_engine import ImbaEngine
 
 class TestImbaEngine(unittest.TestCase):
     def setUp(self):
-        # A complex standardized RSMI from your example
+        # Complex standardized RSMI fixture.
         self.smart = (
             "[cH:1]1[cH:14][c:10]2[c:23]([cH:11][n:25]1)[cH:17][cH:12][cH:4][c:31]2[NH2:28]."
             "[cH:2]1[c:20]([C:22]([OH:7])=[O:21])[s:18][c:24]([S:6][c:29]2[c:15]"

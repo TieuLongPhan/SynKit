@@ -20,20 +20,13 @@ class Strategy(str, Enum):
     def from_string(cls, value: Union[str, "Strategy"]) -> "Strategy":
         """Convert a string or Strategy to a Strategy enum.
 
-        Parameters
-        ----------
-        value : str or Strategy
-            The strategy to parse.
+        :param value: The strategy to parse.
+        :type value: str or Strategy
 
-        Returns
-        -------
-        Strategy
-            Parsed Strategy.
+        :return: Parsed Strategy.
+        :rtype: Strategy
 
-        Raises
-        ------
-        ValueError
-            If the input is not a valid Strategy.
+        :raises ValueError: If the input is not a valid Strategy.
         """
         if isinstance(value, cls):
             return value

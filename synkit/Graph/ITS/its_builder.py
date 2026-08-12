@@ -5,8 +5,7 @@ class ITSBuilder:
     """Build and annotate an Imaginary Transition State (ITS) graph from a base
     graph and a reaction-center (RC) graph.
 
-    :cvar None: This class only provides static methods and does not
-        maintain state.
+    This class only provides static methods and does not maintain state.
     """
 
     @staticmethod
@@ -16,9 +15,11 @@ class ITSBuilder:
 
         :param graph: The graph whose nodes will be renumbered.
         :type graph: nx.Graph
-        :returns: None
+        :return: None
         :rtype: NoneType
-        :example:
+
+        .. rubric:: Examples
+
         >>> G = nx.Graph()
         >>> G.add_node(5)
         >>> ITSBuilder.update_atom_map(G)
@@ -48,10 +49,12 @@ class ITSBuilder:
         :type G: nx.Graph
         :param RC: The reaction-center graph containing updated atom and bond changes.
         :type RC: nx.Graph
-        :returns: A new graph representing the ITS, with merged and initialized attributes.
+        :return: A new graph representing the ITS, with merged and initialized attributes.
         :rtype: nx.Graph
         :raises KeyError: If a required attribute is missing from G or RC during merging.
-        :example:
+
+        .. rubric:: Examples
+
         >>> from synkit.Graph.ITS.its_construction import ITSConstruction
         >>> base = nx.Graph()
         >>> # ... populate base with 'atom_map' and other attrs ...

@@ -354,6 +354,7 @@ def _proof_digest(
     validation_digest = []
     for item in validation:
         evidence = item.get("evidence", {})
+        postprocess = evidence.get("postprocess_proof", {})
         validation_digest.append(
             {
                 "valid": item.get("valid"),
@@ -368,6 +369,15 @@ def _proof_digest(
                 "stereo_policy": evidence.get("stereo_policy"),
                 "reactant_embeddings": len(evidence.get("reactant_embeddings", ())),
                 "product_embeddings": len(evidence.get("product_embeddings", ())),
+                "postprocess_proof": {
+                    "kind": postprocess.get("kind"),
+                    "source_digest": postprocess.get("source_digest"),
+                    "normalized_digest": postprocess.get("normalized_digest"),
+                    "target_digest": postprocess.get("target_digest"),
+                    "materialized_count": len(
+                        postprocess.get("materialized_nodes", ())
+                    ),
+                },
             }
         )
     payload = {

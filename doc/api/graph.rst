@@ -19,10 +19,6 @@ Core
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Graph.canon_graph
-   :members:
-   :show-inheritance:
-
 .. automodule:: synkit.Graph.utils
    :members:
    :show-inheritance:

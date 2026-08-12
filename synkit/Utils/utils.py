@@ -15,24 +15,25 @@ def stratified_random_sample(
     """Stratifies and samples data from a list of dictionaries based on a
     specified property key.
 
-    Parameters:
-    - data (List[Dict[str, any]]): The data to sample from, a list of dictionaries.
-    - property_key (str): The key in the dictionaries to stratify by.
-    - samples_per_class (int): The number of samples to take from each class.
-    Defaults to 1.
-    - seed (Optional[int], optional): The seed for the random number generator
-    for reproducibility. Defaults to 42.
-    - bypass (bool, optional): If True, classes with fewer than
-    `samples_per_class` entries will be skipped without raising an error.
-    Defaults to False.
+    :param data: The data to sample from, a list of dictionaries.
+    :type data: List[Dict[str, any]]
+    :param property_key: The key in the dictionaries to stratify by.
+    :type property_key: str
+    :param samples_per_class: The number of samples to take from each class.
+                              Defaults to 1.
+    :type samples_per_class: int
+    :param seed: The seed for the random number generator
+                 for reproducibility. Defaults to 42.
+    :type seed: Optional[int], optional
+    :param bypass: If True, classes with fewer than
+                   `samples_per_class` entries will be skipped without raising an error.
+                   Defaults to False.
+    :type bypass: bool, optional
 
-    Returns:
-    - List[Dict[str, any]]: A list of sampled dictionaries, where each entry corresponds
-    to a sampled item.
+    :return: A list of sampled dictionaries, where each entry corresponds to a sampled item.
+    :rtype: List[Dict[str, any]]
 
-    Raises:
-    - ValueError: If a class has fewer than `samples_per_class` entries
-    and `bypass` is False.
+    :raises ValueError: If a class has fewer than `samples_per_class` entries and `bypass` is False.
     """
 
     if seed is not None:
@@ -67,17 +68,17 @@ def stratified_random_sample(
 def calculate_processing_time(start_time_str: str, end_time_str: str) -> float:
     """Calculates the processing time in seconds between two timestamps.
 
-    Parameters:
-    - start_time_str (str): A string representing the start time in the format
-    'YYYY-MM-DD HH:MM:SS,fff'.
-    - end_time_str (str): A string representing the end time in the same format as
-    start_time_str.
+    :param start_time_str: A string representing the start time in the format
+                           'YYYY-MM-DD HH:MM:SS,fff'.
+    :type start_time_str: str
+    :param end_time_str: A string representing the end time in the same format as
+                         start_time_str.
+    :type end_time_str: str
 
-    Returns:
-    - float: The duration between the start and end time in seconds.
+    :return: The duration between the start and end time in seconds.
+    :rtype: float
 
-    Raises:
-    - ValueError: If the input strings do not match the expected format.
+    :raises ValueError: If the input strings do not match the expected format.
     """
     datetime_format = "%Y-%m-%d %H:%M:%S,%f"
 
@@ -96,22 +97,18 @@ def remove_explicit_hydrogen(
     for each node and removing hydrogen nodes that are not specified in the
     excluded indices.
 
-    Parameters
-    ----------
-    Graph : nx.Graph
-        The input graph with nodes expected to have an 'element' attribute.
-    excluded_indices : Iterable[int]
-        Indices of hydrogen nodes to be preserved and excluded from 'h_count' calculations.
+    :param Graph: The input graph with nodes expected to have an 'element' attribute.
+    :type Graph: nx.Graph
+    :param excluded_indices: Indices of hydrogen nodes to be preserved and excluded from 'h_count' calculations.
+    :type excluded_indices: Iterable[int]
 
-    Returns
-    -------
-    nx.Graph
-        The modified graph where each node has an 'h_count' attribute indicating the count
-        of hydrogen neighbors, and specific hydrogens have been removed unless listed in
-        excluded_indices.
+    :return: The modified graph where each node has an 'h_count' attribute indicating the count
+              of hydrogen neighbors, and specific hydrogens have been removed unless listed in
+              excluded_indices.
+    :rtype: nx.Graph
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     This function operates on a copy of the input graph and does not alter the original.
     """
     G = Graph.copy()
@@ -144,20 +141,17 @@ def fix_implicit_hydrogen(Graph: nx.Graph, indices: Iterable[int]) -> nx.Graph:
     also included in the specified indices. This function works on a copy of
     the provided graph and returns the modified copy.
 
-    Parameters
-    ----------
-    - Graph (nx.Graph): The input graph where nodes have an 'element' attribute
-    and possibly an 'hcount'.
-    - indices (Iterable[int]): Indices of nodes to check for neighboring hydrogen atoms
-    that are also in the indices list.
+    :param Graph: Graph whose nodes contain ``element`` and optionally
+                  ``hcount`` attributes.
+    :type Graph: nx.Graph
+    :param indices: Nodes whose neighboring explicit hydrogens should reduce
+                    their implicit hydrogen count.
+    :type indices: Iterable[int]
+    :return: Graph copy with adjusted ``hcount`` values.
+    :rtype: nx.Graph
 
-    Returns
-    -------
-    - nx.Graph: A modified copy of the original graph with adjusted
-    'hcount' for specific nodes.
+    .. rubric:: Notes
 
-    Notes
-    -----
     Ensure the 'hcount' exists and is appropriately structured before using this
     function. It is assumed that 'hcount' is a mutable integer that can be directly
     decremented.

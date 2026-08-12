@@ -151,7 +151,7 @@ def test_validation_report_is_deterministic_bounded_and_schema_stable():
     replay = deepcopy(report)
 
     assert report["schema"] == "synkit.stereo-rxn-validation/1"
-    assert report["status"] == "PASS"
+    assert report["status"] == "PASS", report
     assert all(report["checks"].values())
     assert report["observed"]["branch_count"] <= 2
     assert report["observed"]["assignment_count"] <= 2
@@ -182,7 +182,7 @@ def test_generated_validation_evidence_is_machine_readable_and_passing(
     report = json.loads(evidence.read_text(encoding="utf-8"))
 
     assert report["schema"] == "synkit.stereo-rxn-validation/1"
-    assert report["status"] == "PASS"
+    assert report["status"] == "PASS", report
     assert all(report["checks"].values())
     assert set(report["observed"]) == set(report["budgets"])
 

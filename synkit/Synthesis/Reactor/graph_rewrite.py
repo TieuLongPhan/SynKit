@@ -26,17 +26,25 @@ def _implicit_heavy_hydrogens(
     preserve_mapped_hydrogens: bool = False,
 ) -> nx.Graph:
     """Convert ordinary heavy-atom-bound explicit H nodes into hcount."""
-    normalized = graph.copy()
     removable = []
-    for node, attrs in normalized.nodes(data=True):
+    for node, attrs in graph.nodes(data=True):
         if attrs.get("element") != "H":
             continue
-        neighbors = list(normalized.neighbors(node))
+        neighbors = list(graph.neighbors(node))
         heavy_neighbors = [
-            nbr for nbr in neighbors if normalized.nodes[nbr].get("element") != "H"
+            nbr for nbr in neighbors if graph.nodes[nbr].get("element") != "H"
         ]
         if heavy_neighbors and len(heavy_neighbors) == len(neighbors):
             removable.append((node, heavy_neighbors))
+
+    # Parsed heavy-atom graphs normally contain no removable explicit H.
+    # Returning the immutable matching input is then exact and avoids a full
+    # graph copy; the copy-on-write branch below preserves the old contract
+    # whenever normalization actually changes state.
+    if not removable:
+        return graph
+
+    normalized = graph.copy()
 
     for h, heavy_neighbors in removable:
         if not normalized.has_node(h):
@@ -62,14 +70,14 @@ def _invert_template(
     resolved_format = format or detect_its_format(tpl)
     if resolved_format == "tuple":
         reverter = ITSReverter(tpl)
-        l, r = reverter.to_reactant_graph(), reverter.to_product_graph()
+        left, right = reverter.to_reactant_graph(), reverter.to_product_graph()
         return ITSConstruction().construct(
-            r,
-            l,
+            right,
+            left,
             balance_its=balance_its,
         )
-    l, r = its_decompose(tpl)
-    return ITSConstruction().ITSGraph(r, l, balance_its=balance_its)
+    left, right = its_decompose(tpl)
+    return ITSConstruction().ITSGraph(right, left, balance_its=balance_its)
 
 
 # ==================================================================
@@ -122,9 +130,7 @@ def _get_explicit_map(
     original_nodes = set(host)
     cache_key = frozenset(expand_nodes)
     cached_host = (
-        expanded_host_cache.get(cache_key)
-        if expanded_host_cache is not None
-        else None
+        expanded_host_cache.get(cache_key) if expanded_host_cache is not None else None
     )
     if cached_host is None:
         host_explicit = h_to_explicit(host, expand_nodes)
@@ -279,13 +285,28 @@ def _prepare_rewrite_batch_host(
     reaction_center: nx.Graph,
     pattern_has_explicit_h: bool,
     electron_aware: bool,
+    *,
+    seed_structural_signatures: bool = False,
 ) -> Tuple[nx.Graph, bool]:
     """Return a reusable prepared host when every application is total."""
     if pattern_has_explicit_h or any(
         not set(reaction_center).issubset(mapping) for mapping in mappings
     ):
         return host, False
-    return _prepare_rewrite_host(host, electron_aware=electron_aware), True
+    prepared = _prepare_rewrite_host(host, electron_aware=electron_aware)
+    if seed_structural_signatures and len(mappings) >= 2:
+        # Exact labels of unchanged context are mapping-invariant. NetworkX
+        # copies their immutable values into every application, so materialize
+        # them once and invalidate only the local write/electron support below.
+        from synkit.Synthesis.Reactor import deduplication as _deduplication
+
+        prepared.graph["electron_aware_rewrite"] = electron_aware
+        prepared.graph[_deduplication._EXACT_NODE_PALETTE] = {}
+        prepared.graph[_deduplication._EXACT_EDGE_PALETTE] = {}
+        prepared.graph[_deduplication._EXACT_IDENTITY_CACHE] = {}
+        _deduplication._attach_exact_structural_signatures(prepared)
+        prepared.graph["_structural_signatures_seeded"] = True
+    return prepared, True
 
 
 def _glue_graph(
@@ -305,12 +326,22 @@ def _glue_graph(
     anchor_explicit_embedding: bool = True,
     host_prepared: bool = False,
     expanded_host_cache: Dict[frozenset[Any], nx.Graph] | None = None,
+    consume_prepared_host: bool = False,
 ) -> List[nx.Graph]:
     list_its: List[nx.Graph] = []
     # NetworkX copies node/edge attribute dictionaries.  Rewrite values
     # are replaced rather than mutated in place, so recursively copying
     # every tuple and stereo descriptor only adds mapping-sized overhead.
-    host_g = host.copy()
+    # A prepared batch host is a private working copy.  Its last application
+    # can safely take ownership instead of cloning the full molecular graph
+    # once more; earlier applications have already received independent
+    # copies.  Explicit-H expansion may branch and therefore keeps the
+    # conservative copy path.
+    host_g = (
+        host
+        if consume_prepared_host and host_prepared and not pattern_has_explicit_H
+        else host.copy()
+    )
     if electron_aware is None:
         electron_aware = _is_electron_aware_template(rc)
 
@@ -359,6 +390,13 @@ def _glue_graph(
     for m in mappings:
 
         its = host_g if reuse_prepared_host else host_g.copy()
+        if its.graph.get("_structural_signatures_seeded", False):
+            # Graph.copy() deliberately shares immutable label values. Dirty
+            # supports, in contrast, must be private to this application.
+            its.graph["_structural_exact_dirty_nodes"] = set()
+            its.graph["_structural_exact_dirty_edges"] = set()
+        structural_dirty_nodes = its.graph.get("_structural_exact_dirty_nodes")
+        structural_dirty_edges = its.graph.get("_structural_exact_dirty_edges")
         if pattern_has_explicit_H and restore_unmatched_explicit_h:
             _restore_unmatched_pattern_hydrogens(its, m)
         # Materialize wildcard nodes for partial mappings.
@@ -388,6 +426,9 @@ def _glue_graph(
         # merge nodes -------------------------------------------
         for rc_n, host_n in m.items():
             if its.has_node(host_n):
+                its.nodes[host_n].pop("_structural_exact_node_sig", None)
+                if isinstance(structural_dirty_nodes, set):
+                    structural_dirty_nodes.add(host_n)
                 _node_glue(its.nodes[host_n], rc.nodes[rc_n])
                 if electron_aware:
                     rc_element = rc.nodes[rc_n].get("element")
@@ -412,8 +453,13 @@ def _glue_graph(
                 continue
             if not its.has_edge(hu, hv):
                 its.add_edge(hu, hv, **dict(rc_attr))
+                if isinstance(structural_dirty_edges, set):
+                    structural_dirty_edges.add((hu, hv))
             else:
                 host_attr = its[hu][hv]
+                host_attr.pop("_structural_exact_edge_sig", None)
+                if isinstance(structural_dirty_edges, set):
+                    structural_dirty_edges.add((hu, hv))
                 rc_order = rc_attr.get("order", (0, 0))
                 if relative_pi_edges and frozenset((u, v)) in relative_pi_edges:
                     # Apply the rule delta to the matched host edge. Thus
@@ -474,6 +520,16 @@ def _glue_graph(
                             host_attr[key] = rule_value
         its.graph["electron_aware_rewrite"] = electron_aware
         if electron_aware:
+            # Retain the exact one-local support of the electron functional:
+            # mapped write nodes plus boundary neighbors whose incident edge
+            # state actually changes. Consumers that receive an ITS without
+            # this proof hint retain the conservative whole-graph path.
+            its.graph["_product_refresh_nodes"] = (
+                _product_state._electron_refresh_support(
+                    its,
+                    m.values(),
+                )
+            )
             its.graph["_product_electron_fields_current"] = False
             its.graph["_product_kekule_phase_dirty"] = (
                 _product_state._product_kekule_phase_is_dirty(its)

@@ -7,9 +7,8 @@ from collections import Counter
 from .exceptions import InvalidReactionError, StandardizationError
 from .utils import split_components, normalize_counter
 
-# Optional external standardizer—replace with your actual import.
+# Optional package standardizer.
 try:
-    # e.g., from synkit or your own module
     from ..Chem.Reaction.standardize import Standardize  # type: ignore
 except Exception:  # pragma: no cover
     Standardize = None  # type: ignore
@@ -24,7 +23,7 @@ class Reaction:
     ----------
     - Use :py:meth:`standardize` to set the canonical form.
     - Use :py:meth:`build` once to populate reactants/products.
-    - Query derived data via properties (:pyattr:`reactants_can`, :pyattr:`products_can`, etc.).
+    - Query derived data via properties (:attr:`reactants_can`, :attr:`products_can`, etc.).
 
     :param id: Stable index of the reaction.
     :param original_raw: Original reaction SMILES (keeps atom maps).
@@ -40,12 +39,11 @@ class Reaction:
     def standardize(
         self, standardizer: Optional["Standardize"] = None, *, remove_aam: bool = True
     ) -> "Reaction":
-        """
-        Standardize ``original_raw`` to ``canonical_raw``.
+        """Standardize ``original_raw`` to ``canonical_raw``.
 
         :param standardizer: Optional standardizer instance.
         :param remove_aam: Whether to drop atom maps.
-        :returns: ``self`` for chaining.
+        :return: ``self`` for chaining.
         :raises StandardizationError: If standardization fails irrecoverably.
         """
         if standardizer is None:
@@ -62,10 +60,9 @@ class Reaction:
         return self
 
     def build(self) -> "Reaction":
-        """
-        Parse canonical/raw string into reactant/product multisets.
+        """Parse canonical/raw string into reactant/product multisets.
 
-        :returns: ``self`` for chaining.
+        :return: ``self`` for chaining.
         :raises InvalidReactionError: If the string is malformed.
         """
         rs = self.canonical_raw or self.original_raw
@@ -100,12 +97,11 @@ class Reaction:
     def can_fire_forward(
         self, state: Counter, min_overlap: int = 1
     ) -> Tuple[bool, Counter]:
-        """
-        Check if the reaction can fire forward given ``state``.
+        """Check if the reaction can fire forward given ``state``.
 
         :param state: Current state.
         :param min_overlap: Minimum matched instances required.
-        :returns: (ok, matched_subset).
+        :return: (ok, matched_subset).
         """
         matched = self.reactants_can & state
         return (sum(matched.values()) >= min_overlap, matched)
@@ -113,12 +109,11 @@ class Reaction:
     def apply_forward(
         self, state: Counter, matched: Optional[Counter] = None
     ) -> Counter:
-        """
-        Apply the reaction forward to ``state``.
+        """Apply the reaction forward to ``state``.
 
         :param state: Current state.
         :param matched: Subset to consume (defaults to maximal overlap).
-        :returns: New state.
+        :return: New state.
         """
         use = matched if matched is not None else (self.reactants_can & state)
         new_state = state - use

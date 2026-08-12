@@ -40,7 +40,7 @@ class TransformationFP:
 
         :param arr: Array of non-negative fingerprint values.
         :type arr: np.ndarray
-        :returns: RDKit bit vector with positive values encoded as 1.
+        :return: RDKit bit vector with positive values encoded as 1.
         :rtype: cDataStructs.ExplicitBitVect
         :raises ValueError: If the array contains negative or non-finite values.
         """
@@ -74,7 +74,7 @@ class TransformationFP:
         :type return_array: bool
         :param kwargs: Additional keyword arguments passed to `SmilesFeaturizer.featurize_smiles`.
         :type kwargs: Any
-        :returns: Reaction fingerprint as a NumPy array or RDKit bit vector.
+        :return: Reaction fingerprint as a NumPy array or RDKit bit vector.
         :rtype: Union[np.ndarray, cDataStructs.ExplicitBitVect]
         :raises ValueError: If `reaction_smiles` is not correctly formatted.
         """
@@ -106,7 +106,7 @@ class TransformationFP:
     def help(self) -> None:
         """Print usage summary for the TransformationFP class.
 
-        :returns: None
+        :return: None
         :rtype: NoneType
         """
         print("TransformationFP: compute reaction fingerprints via vector subtraction.")
@@ -131,7 +131,7 @@ class TransformationFP:
     def __str__(self) -> str:
         """Short description of the transformer.
 
-        :returns: Class name.
+        :return: Class name.
         :rtype: str
         """
         return "<TransformationFP>"

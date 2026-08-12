@@ -7,11 +7,10 @@ class WLHash:
     """A class that implements the Weisfeiler-Lehman graph hashing algorithm,
     supporting multiple node/edge attributes for hashing.
 
-    Attributes:
-    - node: A single attribute name or a list of attribute names for nodes used in hashing.
-    - edge: A single attribute name or a list of attribute names for edges used in hashing.
-    - iterations: Number of iterations for the Weisfeiler-Lehman algorithm.
-    - digest_size: Length of the hash to be generated.
+    :ivar node: A single attribute name or a list of attribute names for nodes used in hashing.
+    :ivar edge: A single attribute name or a list of attribute names for edges used in hashing.
+    :ivar iterations: Number of iterations for the Weisfeiler-Lehman algorithm.
+    :ivar digest_size: Length of the hash to be generated.
     """
 
     def __init__(
@@ -23,11 +22,10 @@ class WLHash:
     ):
         """Initializes the WLHash class with configuration for hashing.
 
-        Parameters:
-        - node: A node attribute name or list of node attribute names.
-        - edge: An edge attribute name or list of edge attribute names.
-        - iterations: The number of WL iterations (default 5).
-        - digest_size: The length of the generated hash (default 16).
+        :param node: A node attribute name or list of node attribute names.
+        :param edge: An edge attribute name or list of edge attribute names.
+        :param iterations: The number of WL iterations (default 5).
+        :param digest_size: The length of the generated hash (default 16).
         """
         self.node = node
         self.edge = edge

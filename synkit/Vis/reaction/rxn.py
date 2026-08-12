@@ -119,7 +119,7 @@ class RXNVis:
         :param return_bytes: If ``True``, return raw PNG bytes instead of a
             ``PIL.Image.Image``.
         :type return_bytes: bool
-        :returns: Rendered image or PNG bytes.
+        :return: Rendered image or PNG bytes.
         :rtype: Union[PIL.Image.Image, bytes]
         :raises ValueError: If the input cannot be parsed.
         """
@@ -173,7 +173,7 @@ class RXNVis:
 
         :param smiles: Molecule or reaction SMILES.
         :type smiles: str
-        :returns: Rendered and cropped image.
+        :return: Rendered and cropped image.
         :rtype: PIL.Image.Image
         """
         drawer = rdMolDraw2D.MolDraw2DCairo(self.width, self.height, 0, 0)
@@ -233,7 +233,7 @@ class RXNVis:
 
         :param rsmi: Atom-mapped reaction SMILES containing ``">>"``.
         :type rsmi: str
-        :returns: A 4-tuple ``(changed_atom_maps, formed_bonds,
+        :return: A 4-tuple ``(changed_atom_maps, formed_bonds,
             broken_bonds, changed_order_bonds)`` where each bond set contains
             ``frozenset({map_a, map_b})`` pairs.
         :rtype: Tuple[Set[int], Set[FrozenSet[int]], Set[FrozenSet[int]], Set[FrozenSet[int]]]
@@ -315,7 +315,7 @@ class RXNVis:
         :type broken: Set[FrozenSet[int]]
         :param changed_order: Bond pairs whose order changed.
         :type changed_order: Set[FrozenSet[int]]
-        :returns: Rendered molecule image.
+        :return: Rendered molecule image.
         :rtype: PIL.Image.Image
         """
         if mol.GetNumConformers() == 0:
@@ -383,7 +383,7 @@ class RXNVis:
 
         :param smiles: Atom-mapped reaction SMILES.
         :type smiles: str
-        :returns: Composed reaction image.
+        :return: Composed reaction image.
         :rtype: PIL.Image.Image
         """
         reactants_smi, products_smi = smiles.split(">>", 1)
@@ -449,7 +449,7 @@ class RXNVis:
         :type width: int
         :param height: Image height in pixels.
         :type height: int
-        :returns: Separator image.
+        :return: Separator image.
         :rtype: PIL.Image.Image
         """
         bg = tuple(int(c * 255) for c in self.background_colour)
@@ -501,7 +501,7 @@ class RXNVis:
         :type arrow_w: int
         :param plus_w: Width in pixels for each '+' separator.
         :type plus_w: int
-        :returns: Final composed reaction image.
+        :return: Final composed reaction image.
         :rtype: PIL.Image.Image
         """
         all_mol_imgs = r_imgs + p_imgs

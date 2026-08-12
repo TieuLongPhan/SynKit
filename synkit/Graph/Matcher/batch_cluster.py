@@ -18,17 +18,17 @@ class BatchCluster:
         """Initializes an AutoCat instance which uses isomorphism checks for
         categorizing new graphs or rules.
 
-        Parameters:
-        - node_label_names (List[str]): Names of the node attributes to use in
-          isomorphism checks.
-        - node_label_default (List[Any]): Default values for node attributes if they are
-          missing in the graph data.
-        - edge_attribute (str): The edge attribute to consider when checking isomorphism
-          between graphs.
+        :param node_label_names: Names of the node attributes to use in
+                                 isomorphism checks.
+        :type node_label_names: List[str]
+        :param node_label_default: Default values for node attributes if they are
+                                   missing in the graph data.
+        :type node_label_default: List[Any]
+        :param edge_attribute: The edge attribute to consider when checking isomorphism
+                               between graphs.
+        :type edge_attribute: str
 
-        Raises:
-        - ValueError: If the lengths of `node_label_names` and `node_label_default`
-          do not match.
+        :raises ValueError: If the lengths of `node_label_names` and `node_label_default` do not match.
         """
         self.backend = backend.lower()
         if self.backend != "nx":
@@ -62,17 +62,22 @@ class BatchCluster:
         """Checks and classifies a graph or rule based on existing templates
         using either graph or rule isomorphism.
 
-        Parameters:
-        - data (Dict): A dictionary representing a graph or rule with its attributes and
-        classification.
-        - templates (List[Dict]): Dynamic templates used for categorization. If None, initializes to an empty list.
-        - rule_key (str): Key to access the graph or rule data within the dictionary.
-        - attribute_key (str): An attribute used to filter templates before isomorphism check.
-        - nodeMatch (Optional[Callable]): A function to match nodes, defaults to a predefined generic_node_match.
-        - edgeMatch (Optional[Callable]): A function to match edges, defaults to a predefined generic_edge_match.
+        :param data: A dictionary representing a graph or rule with its attributes and
+                     classification.
+        :type data: Dict
+        :param templates: Dynamic templates used for categorization. If None, initializes to an empty list.
+        :type templates: List[Dict]
+        :param rule_key: Key to access the graph or rule data within the dictionary.
+        :type rule_key: str
+        :param attribute_key: An attribute used to filter templates before isomorphism check.
+        :type attribute_key: str
+        :param nodeMatch: A function to match nodes, defaults to a predefined generic_node_match.
+        :type nodeMatch: Optional[Callable]
+        :param edgeMatch: A function to match edges, defaults to a predefined generic_edge_match.
+        :type edgeMatch: Optional[Callable]
 
-        Returns:
-        - Dict: The updated dictionary with its classification.
+        :return: The updated dictionary with its classification.
+        :rtype: Dict
         """
         # Ensure that templates are not None
         if templates is None:
@@ -112,15 +117,15 @@ class BatchCluster:
     def batch_dicts(input_list, batch_size):
         """Splits a list of dictionaries into batches of a specified size.
 
-        Args:
-        input_list (list of dict): The list of dictionaries to be batched.
-        batch_size (int): The size of each batch.
+        :param input_list: The list of dictionaries to be batched.
+        :type input_list: list of dict
+        :param batch_size: The size of each batch.
+        :type batch_size: int
 
-        Returns:
-        list of list of dict: A list where each element is a batch (sublist) of dictionaries.
+        :return: A list where each element is a batch (sublist) of dictionaries.
+        :rtype: list of list of dict
 
-        Raises:
-        ValueError: If batch_size is less than 1.
+        :raises ValueError: If batch_size is less than 1.
         """
 
         # Validate batch_size to ensure it's a positive integer
@@ -149,14 +154,14 @@ class BatchCluster:
         """Processes a list of graph data entries, classifying each based on
         existing templates.
 
-        Parameters:
-        - data (List[Dict]): A list of dictionaries, each representing a graph or rule
-          to be classified.
-        - templates (List[Dict]): Dynamic templates used for categorization.
+        :param data: A list of dictionaries, each representing a graph or rule
+                     to be classified.
+        :type data: List[Dict]
+        :param templates: Dynamic templates used for categorization.
+        :type templates: List[Dict]
 
-        Returns:
-        - Tuple[List[Dict], List[Dict]]: A tuple containing the list of classified data
-          and the updated templates.
+        :return: A tuple containing the list of classified data and the updated templates.
+        :rtype: Tuple[List[Dict], List[Dict]]
         """
         for entry in data:
             _, templates = self.lib_check(entry, templates, rule_key, attribute_key)
@@ -175,15 +180,19 @@ class BatchCluster:
         templates if there is only one batch and no initial templates are
         provided.
 
-        Parameters:
-        - data (List[Dict]): Data to process.
-        - templates (List[Dict]): Templates for categorization.
-        - rule_key (str): Key to access rule or graph data.
-        - attribute_key (str): Key to access attributes used for filtering.
-        - batch_size (Optional[int]): Size of batches for processing, if not provided, processes all data at once.
+        :param data: Data to process.
+        :type data: List[Dict]
+        :param templates: Templates for categorization.
+        :type templates: List[Dict]
+        :param rule_key: Key to access rule or graph data.
+        :type rule_key: str
+        :param attribute_key: Key to access attributes used for filtering.
+        :type attribute_key: str
+        :param batch_size: Size of batches for processing, if not provided, processes all data at once.
+        :type batch_size: Optional[int]
 
-        Returns:
-        - Tuple[List[Dict], List[Dict]]: The processed data and the potentially updated templates.
+        :return: The processed data and the potentially updated templates.
+        :rtype: Tuple[List[Dict], List[Dict]]
         """
         if batch_size is not None:
             batches = self.batch_dicts(data, batch_size)

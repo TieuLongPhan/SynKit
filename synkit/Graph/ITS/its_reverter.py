@@ -7,8 +7,7 @@ Side = Literal["reactant", "product", "r", "p", 0, 1]
 
 
 class ITSReverter:
-    """
-    Reconstruct reactant/product molecular graphs from an ITS-style graph.
+    """Reconstruct reactant/product molecular graphs from an ITS-style graph.
 
     Expected ITS format
     -------------------
@@ -26,16 +25,16 @@ class ITSReverter:
 
     where index 0 = reactant side and index 1 = product side.
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     - ``typesGH`` is not required for reconstruction.
     - ``standard_order`` is a reaction-delta attribute and is not used to rebuild
       a side-specific molecular graph.
     - By default, isolated atoms are kept. This is important for cases where a
       mapped atom becomes disconnected on one side.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         reverter = ITSReverter(its)
@@ -85,12 +84,11 @@ class ITSReverter:
 
     @staticmethod
     def _side_to_index(side: Side) -> int:
-        """
-        Convert side identifier to tuple index.
+        """Convert side identifier to tuple index.
 
         :param side: Side specifier.
         :type side: Side
-        :returns: 0 for reactant, 1 for product.
+        :return: 0 for reactant, 1 for product.
         :rtype: int
         :raises ValueError: If the side is invalid.
         """
@@ -102,8 +100,7 @@ class ITSReverter:
 
     @staticmethod
     def _pick_side_value(value: Any, idx: int) -> Any:
-        """
-        Pick one side from a paired ITS attribute.
+        """Pick one side from a paired ITS attribute.
 
         If ``value`` is a 2-tuple, return the selected side.
         Otherwise return the value unchanged.
@@ -112,7 +109,7 @@ class ITSReverter:
         :type value: Any
         :param idx: Side index.
         :type idx: int
-        :returns: Side-specific value.
+        :return: Side-specific value.
         :rtype: Any
         """
         if isinstance(value, tuple) and len(value) == 2:
@@ -121,8 +118,7 @@ class ITSReverter:
 
     @classmethod
     def _node_exists_on_side(cls, attrs: dict[str, Any], idx: int) -> bool:
-        """
-        Decide whether a node exists on a given side.
+        """Decide whether a node exists on a given side.
 
         A node is treated as present if its side-specific ``element`` is not empty.
 
@@ -130,7 +126,7 @@ class ITSReverter:
         :type attrs: dict[str, Any]
         :param idx: Side index.
         :type idx: int
-        :returns: Whether the node exists on that side.
+        :return: Whether the node exists on that side.
         :rtype: bool
         """
         present = attrs.get("present")
@@ -142,8 +138,7 @@ class ITSReverter:
 
     @classmethod
     def _edge_exists_on_side(cls, attrs: dict[str, Any], idx: int) -> bool:
-        """
-        Decide whether an edge exists on a given side.
+        """Decide whether an edge exists on a given side.
 
         Priority:
         1. ``order``
@@ -154,7 +149,7 @@ class ITSReverter:
         :type attrs: dict[str, Any]
         :param idx: Side index.
         :type idx: int
-        :returns: Whether the bond exists on that side.
+        :return: Whether the bond exists on that side.
         :rtype: bool
         """
         order = cls._pick_side_value(attrs.get("order"), idx)
@@ -179,8 +174,7 @@ class ITSReverter:
         keep_keys: Optional[tuple[str, ...]] = None,
         exclude_keys: Optional[set[str]] = None,
     ) -> dict[str, Any]:
-        """
-        Extract side-specific attributes from a paired ITS attribute dict.
+        """Extract side-specific attributes from a paired ITS attribute dict.
 
         :param attrs: ITS attribute dictionary.
         :type attrs: dict[str, Any]
@@ -190,7 +184,7 @@ class ITSReverter:
         :type keep_keys: Optional[tuple[str, ...]]
         :param exclude_keys: Optional set of keys to exclude.
         :type exclude_keys: Optional[set[str]]
-        :returns: Flattened side-specific attribute dictionary.
+        :return: Flattened side-specific attribute dictionary.
         :rtype: dict[str, Any]
         """
         out: dict[str, Any] = {}
@@ -230,8 +224,7 @@ class ITSReverter:
         recompute_neighbors: bool = False,
         drop_isolated: bool = False,
     ) -> nx.Graph:
-        """
-        Reconstruct one side-specific molecular graph.
+        """Reconstruct one side-specific molecular graph.
 
         :param side:
             Which side to reconstruct.
@@ -251,7 +244,7 @@ class ITSReverter:
             If ``True``, remove nodes with degree 0 after reconstruction.
             Default is ``False`` so disconnected mapped atoms are preserved.
         :type drop_isolated: bool
-        :returns:
+        :return:
             Side-specific molecular graph.
         :rtype: nx.Graph
         """
@@ -311,14 +304,13 @@ class ITSReverter:
         recompute_neighbors: bool = False,
         drop_isolated: bool = False,
     ) -> nx.Graph:
-        """
-        Reconstruct the reactant-side graph.
+        """Reconstruct the reactant-side graph.
 
         :param recompute_neighbors: Whether to recompute ``neighbors``.
         :type recompute_neighbors: bool
         :param drop_isolated: Whether to remove isolated nodes.
         :type drop_isolated: bool
-        :returns: Reactant molecular graph.
+        :return: Reactant molecular graph.
         :rtype: nx.Graph
         """
         return self.to_graph(
@@ -332,14 +324,13 @@ class ITSReverter:
         recompute_neighbors: bool = False,
         drop_isolated: bool = False,
     ) -> nx.Graph:
-        """
-        Reconstruct the product-side graph.
+        """Reconstruct the product-side graph.
 
         :param recompute_neighbors: Whether to recompute ``neighbors``.
         :type recompute_neighbors: bool
         :param drop_isolated: Whether to remove isolated nodes.
         :type drop_isolated: bool
-        :returns: Product molecular graph.
+        :return: Product molecular graph.
         :rtype: nx.Graph
         """
         return self.to_graph(

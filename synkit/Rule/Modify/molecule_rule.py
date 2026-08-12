@@ -18,11 +18,11 @@ class MoleculeRule:
         """Remove all contents from the 'left' and 'right' sections of a
         chemical rule description.
 
-        Parameters:
-        - input_str (str): The string representation of the rule.
+        :param input_str: The string representation of the rule.
+        :type input_str: str
 
-        Returns:
-        - str: The modified string with cleared 'left' and 'right' sections.
+        :return: The modified string with cleared 'left' and 'right' sections.
+        :rtype: str
         """
         # Pattern to match 'left [' to the matching ']'
         left_pattern = r"(left \[)(.*?)(^\s*\])"
@@ -45,11 +45,11 @@ class MoleculeRule:
         """Generate atom-mapped SMILES by assigning unique map numbers to each
         atom in the molecule.
 
-        Parameters:
-        - smiles (str): The SMILES string representing the molecule.
+        :param smiles: The SMILES string representing the molecule.
+        :type smiles: str
 
-        Returns:
-        - Optional[str]: The atom-mapped SMILES string, or None if the SMILES string is invalid.
+        :return: The atom-mapped SMILES string, or None if the SMILES string is invalid.
+        :rtype: Optional[str]
         """
         mol = Chem.MolFromSmiles(smiles)
         if not mol:
@@ -66,11 +66,11 @@ class MoleculeRule:
     def generate_molecule_smart(smiles: str) -> Optional[str]:
         """Generate a SMARTS-like string from atom-mapped SMILES.
 
-        Parameters:
-        - smiles (str): The SMILES string representing the molecule.
+        :param smiles: The SMILES string representing the molecule.
+        :type smiles: str
 
-        Returns:
-        - Optional[str]: The SMARTS-like string derived from atom-mapped SMILES, or None if the SMILES is invalid.
+        :return: The SMARTS-like string derived from atom-mapped SMILES, or None if the SMILES is invalid.
+        :rtype: Optional[str]
         """
         atom_map_smiles = MoleculeRule.generate_atom_map(smiles)
         if atom_map_smiles is None:
@@ -88,14 +88,17 @@ class MoleculeRule:
     ) -> Optional[str]:
         """Generate a GML representation of the molecule rule from SMILES.
 
-        Parameters:
-        - smiles (str): The SMILES string representing the molecule.
-        - name (str, optional): The rule name used in GML generation. Defaults to 'molecule'.
-        - explicit_hydrogen (bool, optional): Whether to include explicit hydrogen atoms in GML. Defaults to True.
-        - sanitize (bool, optional): Whether to sanitize the molecule before conversion. Defaults to True.
+        :param smiles: The SMILES string representing the molecule.
+        :type smiles: str
+        :param name: The rule name used in GML generation. Defaults to 'molecule'.
+        :type name: str, optional
+        :param explicit_hydrogen: Whether to include explicit hydrogen atoms in GML. Defaults to True.
+        :type explicit_hydrogen: bool, optional
+        :param sanitize: Whether to sanitize the molecule before conversion. Defaults to True.
+        :type sanitize: bool, optional
 
-        Returns:
-        - Optional[str]: The GML representation of the molecule rule, or None if invalid.
+        :return: The GML representation of the molecule rule, or None if invalid.
+        :rtype: Optional[str]
         """
         rsmi = self.generate_molecule_smart(smiles)
         if rsmi is None:

@@ -16,13 +16,16 @@ from synkit.Graph.Morphism import (
 )
 from synkit.Graph.Morphism import StereoEffect
 
-from .identity import FUSION_WL_ITERATIONS
+from .identity import FUSION_NODE_IDENTITY_KEYS, FUSION_WL_ITERATIONS
 
-DEFAULT_INTERFACE_NODE_KEYS = (
-    "element",
-    "aromatic",
-    "charge",
-    "radical",
+# A proof-bearing interface must compare the same chemical/Lewis state used by
+# exact candidate identity.  Matcher attributes remain independently
+# configurable and may be deliberately coarser for candidate discovery.
+# ``hcount`` is excluded at the interface because an overlap may resolve an
+# implicit hydrogen against an explicit completion port.  The completed graph
+# identity still checks the effective hydrogen inventory after substitution.
+DEFAULT_INTERFACE_NODE_KEYS = tuple(
+    key for key in FUSION_NODE_IDENTITY_KEYS if key != "hcount"
 )
 DEFAULT_INTERFACE_EDGE_KEYS = ("order",)
 

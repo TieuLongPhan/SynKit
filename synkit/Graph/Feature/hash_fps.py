@@ -10,14 +10,14 @@ class HashFPs:
         """Initialize the HashFPs class with a graph and configuration
         settings.
 
-        Parameters:
-        - graph (nx.Graph): The graph to be fingerprinted.
-        - numBits (int): Number of bits in the output binary hash. Default is 256 bits.
-        - hash_alg (str): The hash algorithm to use, such as 'sha256' or 'sha512'.
+        :param graph: The graph to be fingerprinted.
+        :type graph: nx.Graph
+        :param numBits: Number of bits in the output binary hash. Default is 256 bits.
+        :type numBits: int
+        :param hash_alg: The hash algorithm to use, such as 'sha256' or 'sha512'.
+        :type hash_alg: str
 
-        Raises:
-        - ValueError: If `numBits` is non-positive or if `hash_alg` is not supported
-        by hashlib.
+        :raises ValueError: If `numBits` is non-positive or if `hash_alg` is not supported by hashlib.
         """
         self.graph = graph
         self.numBits = numBits
@@ -40,14 +40,15 @@ class HashFPs:
         """Generate a binary hash fingerprint of the graph based on its paths
         and cycles.
 
-        Parameters:
-        - start_node (Optional[int]): The starting node index for path detection.
-        - end_node (Optional[int]): The ending node index for path detection.
-        - max_path_length (Optional[int]): The maximum length for paths to be considered.
+        :param start_node: The starting node index for path detection.
+        :type start_node: Optional[int]
+        :param end_node: The ending node index for path detection.
+        :type end_node: Optional[int]
+        :param max_path_length: The maximum length for paths to be considered.
+        :type max_path_length: Optional[int]
 
-        Returns:
-        - str: A binary string representing the truncated hash of the graph's structural
-        features.
+        :return: A binary string representing the truncated hash of the graph's structural features.
+        :rtype: str
         """
         hash_object = self.initialize_hash()
         features = self.extract_features(start_node, end_node, max_path_length)
@@ -67,13 +68,15 @@ class HashFPs:
     ) -> str:
         """Extract features from the graph based on paths and cycles.
 
-        Parameters:
-        - start_node (Optional[int]): The starting node for path detection.
-        - end_node (Optional[int]): The ending node for path detection.
-        - max_path_length (Optional[int]): Cutoff for path length during detection.
+        :param start_node: The starting node for path detection.
+        :type start_node: Optional[int]
+        :param end_node: The ending node for path detection.
+        :type end_node: Optional[int]
+        :param max_path_length: Cutoff for path length during detection.
+        :type max_path_length: Optional[int]
 
-        Returns:
-        - str: A string of concatenated feature values.
+        :return: A string of concatenated feature values.
+        :rtype: str
         """
         cycles = list(nx.simple_cycles(self.graph))
         paths = []
@@ -93,12 +96,13 @@ class HashFPs:
         """Finalize the hash using the features extracted and return the hash
         as a binary string.
 
-        Parameters:
-        - hash_object (Any): The hash object.
-        - features (str): Concatenated string of graph features.
+        :param hash_object: The hash object.
+        :type hash_object: Any
+        :param features: Concatenated string of graph features.
+        :type features: str
 
-        Returns:
-        - str: The final binary string of the hash, truncated or extended to `numBits`.
+        :return: The final binary string of the hash, truncated or extended to `numBits`.
+        :rtype: str
         """
         hash_object.update(features.encode())
         full_hash_binary = bin(int(hash_object.hexdigest(), 16))[2:]
@@ -112,12 +116,13 @@ class HashFPs:
         """Extend hash length using iterative hashing until the desired bit
         length is achieved.
 
-        Parameters:
-        - hash_object (hashlib._Hash): The hash object for iterative deepening.
-        - remaining_bits (int): Number of bits needed to reach `numBits`.
+        :param hash_object: The hash object for iterative deepening.
+        :type hash_object: hashlib._Hash
+        :param remaining_bits: Number of bits needed to reach `numBits`.
+        :type remaining_bits: int
 
-        Returns:
-        - str: Additional binary data to achieve the desired hash length.
+        :return: Additional binary data to achieve the desired hash length.
+        :rtype: str
         """
         additional_data = ""
         while (

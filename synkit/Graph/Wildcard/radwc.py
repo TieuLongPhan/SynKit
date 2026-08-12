@@ -5,16 +5,15 @@ from typing import Tuple, Optional
 
 
 class RadWC:
-    """
-    Static utility for appending wildcard dummy atoms ([*]) with atom-map
+    """Static utility for appending wildcard dummy atoms ``[*]`` with atom-map
     indices to all radical centers **in the product block** of a reaction SMILES.
 
     - Reactant and agent blocks are not modified.
     - Only atoms in the product with unpaired electrons are considered.
-    - Each product radical gets a new [*:N] with unique map number (auto or user-supplied).
+    - Each product radical gets a new ``[*:N]`` with a unique map number.
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> rxn = '[CH2:1][OH:2]>>[CH2:1][O:2]'
     >>> RadWC.transform(rxn)
     '[CH2:1][OH:2]>>[CH2:1][O:2]'
@@ -25,20 +24,19 @@ class RadWC:
 
     @staticmethod
     def transform(rxn_smiles: str, start_map: Optional[int] = None) -> str:
-        """
-        Add [*] wildcards (with atom-map index) to every radical in the
+        """Add [*] wildcards (with atom-map index) to every radical in the
         product block of the input reaction SMILES.
 
         :param rxn_smiles: Reaction SMILES, 2 or 3 blocks (R>>P or R>A>P).
         :type  rxn_smiles: str
         :param start_map: Optional; first atom-map index for wildcards.
         :type  start_map: int or None
-        :returns: Modified reaction SMILES with product wildcards.
+        :return: Modified reaction SMILES with product wildcards.
         :rtype: str
         :raises ValueError: On parse error or invalid input.
 
-        Example
-        -------
+        .. rubric:: Example
+
         >>> RadWC.transform('[CH2:1][OH:2]>>[CH:1].[OH:2]')
         '[CH2:1][OH:2]>>[CH:1]([*:3]).[OH:2]'
         """
@@ -90,12 +88,11 @@ class RadWC:
 
     @staticmethod
     def _split_reaction(rxn: str) -> Tuple[str, Optional[str], str]:
-        """
-        Split a reaction SMILES into (reactant, agent or None, product).
+        """Split a reaction SMILES into (reactant, agent or None, product).
 
         :param rxn: Reaction SMILES string.
         :type  rxn: str
-        :returns: (reactant, agent, product) tuple (agent may be None).
+        :return: (reactant, agent, product) tuple (agent may be None).
         :rtype: Tuple[str, Optional[str], str]
         :raises ValueError: If the SMILES does not contain 2 or 3 '>'s.
         """

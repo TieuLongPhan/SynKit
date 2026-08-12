@@ -3,8 +3,8 @@
 This namespace groups scalar molecular graph renderers and reaction-panel
 helpers.
 
-Example
--------
+.. rubric:: Example
+
 .. code-block:: python
 
     from synkit.IO.chem_converter import smiles_to_graph

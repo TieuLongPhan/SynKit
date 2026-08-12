@@ -109,9 +109,7 @@ def test_retained_abc_matrix_includes_completed_raw_stress_runs():
         ("B", "formal"): (
             REPORT_ROOT / "B" / "global_formal_canonicalization_report.json"
         ),
-        ("B", "raw"): (
-            REPORT_ROOT / "B" / "global_raw_canonicalization_report.json"
-        ),
+        ("B", "raw"): (REPORT_ROOT / "B" / "global_raw_canonicalization_report.json"),
         ("C", "formal"): (
             REPORT_ROOT / "C" / "global_formal_canonicalization_report.json"
         ),
@@ -150,12 +148,14 @@ def test_retained_abc_matrix_includes_completed_raw_stress_runs():
     for budget in ("A", "B"):
         formal = reports[(budget, "formal")]["summary"]
         raw = reports[(budget, "raw")]["summary"]
-        assert raw["formal_assignment_tuples_invariant"] == formal[
-            "formal_assignment_tuples_invariant"
-        ]
-        assert raw["observed_global_canonical_classes"] == formal[
-            "observed_global_canonical_classes"
-        ]
+        assert (
+            raw["formal_assignment_tuples_invariant"]
+            == formal["formal_assignment_tuples_invariant"]
+        )
+        assert (
+            raw["observed_global_canonical_classes"]
+            == formal["observed_global_canonical_classes"]
+        )
 
     raw_c = reports[("C", "raw")]
     assert [record["record_id"] for record in raw_c["records"]] == ["VS146"]

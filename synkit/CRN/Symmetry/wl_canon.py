@@ -137,8 +137,7 @@ class WLCanonicalResult:
 
 
 class WLCanonicalizer:
-    """
-    Fast approximate canonicalizer for SynKit CRN graphs using direction-aware
+    """Fast approximate canonicalizer for SynKit CRN graphs using direction-aware
     1-WL refinement.
 
     This class is designed as a lightweight companion to the exact CRN
@@ -198,8 +197,8 @@ class WLCanonicalizer:
         attributes participate in WL coloring.
     :type config: Optional[SymmetryConfig]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Sym import WLCanonicalizer, SymmetryConfig
@@ -230,8 +229,7 @@ class WLCanonicalizer:
         automorphism_cap: int = 10**18,
         config: Optional[SymmetryConfig] = None,
     ) -> None:
-        """
-        Initialize the WL canonicalizer.
+        """Initialize the WL canonicalizer.
 
         :param source:
             Input CRN representation.
@@ -273,12 +271,12 @@ class WLCanonicalizer:
             Symmetry semantics configuration.
         :type config: Optional[SymmetryConfig]
 
-        :returns:
+        :return:
             None.
         :rtype: None
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(
@@ -311,15 +309,14 @@ class WLCanonicalizer:
         self._cache_key_last: Optional[Tuple[Any, ...]] = None
 
     def __repr__(self) -> str:
-        """
-        Return a concise representation.
+        """Return a concise representation.
 
-        :returns:
+        :return:
             String representation.
         :rtype: str
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -333,15 +330,14 @@ class WLCanonicalizer:
 
     @property
     def G(self) -> nx.DiGraph:
-        """
-        Return the prepared graph.
+        """Return the prepared graph.
 
-        :returns:
+        :return:
             Prepared directed graph.
         :rtype: nx.DiGraph
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -351,15 +347,14 @@ class WLCanonicalizer:
 
     @property
     def graph_type(self) -> str:
-        """
-        Return the graph representation type.
+        """Return the graph representation type.
 
-        :returns:
+        :return:
             Graph representation type.
         :rtype: str
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn, include_rule=True)
@@ -368,15 +363,14 @@ class WLCanonicalizer:
         return self._graph_type
 
     def _cache_key(self) -> Tuple[Any, ...]:
-        """
-        Build a conservative cache key for the current graph and parameters.
+        """Build a conservative cache key for the current graph and parameters.
 
-        :returns:
+        :return:
             Cache key tuple.
         :rtype: Tuple[Any, ...]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -398,8 +392,7 @@ class WLCanonicalizer:
         )
 
     def _node_seed(self, v: Any) -> str:
-        """
-        Compute the initial WL color for one node.
+        """Compute the initial WL color for one node.
 
         The seed combines the semantic node token and the directed degree.
 
@@ -407,7 +400,7 @@ class WLCanonicalizer:
             Node identifier.
         :type v: Any
 
-        :returns:
+        :return:
             Initial hashed node color.
         :rtype: str
         """
@@ -416,14 +409,13 @@ class WLCanonicalizer:
         return hash_text(f"N|{tok}|{deg}", digest_size=self.digest_size)
 
     def _edge_sig(self, attrs: Dict[str, Any]) -> str:
-        """
-        Compute a hashed signature for one edge attribute dictionary.
+        """Compute a hashed signature for one edge attribute dictionary.
 
         :param attrs:
             Edge attributes.
         :type attrs: Dict[str, Any]
 
-        :returns:
+        :return:
             Hashed edge signature.
         :rtype: str
         """
@@ -433,8 +425,7 @@ class WLCanonicalizer:
         )
 
     def _edge_sig_between(self, u: Any, v: Any) -> str:
-        """
-        Return a stable signature for the edge between two nodes.
+        """Return a stable signature for the edge between two nodes.
 
         For multigraphs, the minimum signature over parallel edges is used to
         keep the behavior deterministic.
@@ -447,7 +438,7 @@ class WLCanonicalizer:
             Target node.
         :type v: Any
 
-        :returns:
+        :return:
             Stable edge signature.
         :rtype: str
         """
@@ -475,8 +466,7 @@ class WLCanonicalizer:
         *,
         direction: str,
     ) -> List[str]:
-        """
-        Collect colored neighbor-edge descriptors for one node.
+        """Collect colored neighbor-edge descriptors for one node.
 
         :param colors:
             Current node colors.
@@ -490,7 +480,7 @@ class WLCanonicalizer:
             Neighborhood direction, one of ``"in"``, ``"out"``, or ``"undir"``.
         :type direction: str
 
-        :returns:
+        :return:
             Sorted color-edge descriptors.
         :rtype: List[str]
         """
@@ -521,14 +511,13 @@ class WLCanonicalizer:
         return items
 
     def _refine_once(self, colors: Dict[Any, str]) -> Dict[Any, str]:
-        """
-        Perform one WL refinement round.
+        """Perform one WL refinement round.
 
         :param colors:
             Current node colors.
         :type colors: Dict[Any, str]
 
-        :returns:
+        :return:
             Refined node colors.
         :rtype: Dict[Any, str]
         """
@@ -557,8 +546,7 @@ class WLCanonicalizer:
 
     @staticmethod
     def _colors_equal(a: Dict[Any, str], b: Dict[Any, str]) -> bool:
-        """
-        Compare two color mappings exactly.
+        """Compare two color mappings exactly.
 
         :param a:
             First color mapping.
@@ -568,7 +556,7 @@ class WLCanonicalizer:
             Second color mapping.
         :type b: Dict[Any, str]
 
-        :returns:
+        :return:
             ``True`` if both mappings are identical.
         :rtype: bool
         """
@@ -578,14 +566,13 @@ class WLCanonicalizer:
 
     @staticmethod
     def _buckets_from_colors(colors: Dict[Any, str]) -> Dict[str, List[Any]]:
-        """
-        Group nodes by final color.
+        """Group nodes by final color.
 
         :param colors:
             Node-to-color mapping.
         :type colors: Dict[Any, str]
 
-        :returns:
+        :return:
             Color buckets.
         :rtype: Dict[str, List[Any]]
         """
@@ -596,14 +583,13 @@ class WLCanonicalizer:
 
     @staticmethod
     def _orbits_from_buckets(buckets: Dict[str, List[Any]]) -> List[Set[Any]]:
-        """
-        Build approximate orbit sets from color buckets.
+        """Build approximate orbit sets from color buckets.
 
         :param buckets:
             Color buckets.
         :type buckets: Dict[str, List[Any]]
 
-        :returns:
+        :return:
             Approximate orbit sets.
         :rtype: List[Set[Any]]
         """
@@ -618,8 +604,7 @@ class WLCanonicalizer:
         G: nx.DiGraph,
         colors: Dict[Any, str],
     ) -> List[Any]:
-        """
-        Build a deterministic node order from final colors.
+        """Build a deterministic node order from final colors.
 
         :param G:
             Input graph.
@@ -629,22 +614,21 @@ class WLCanonicalizer:
             Final color mapping.
         :type colors: Dict[Any, str]
 
-        :returns:
+        :return:
             Deterministic canonical order.
         :rtype: List[Any]
         """
         return sorted(G.nodes(), key=lambda v: (colors[v], str(v)))
 
     def _run(self) -> _WLState:
-        """
-        Run WL refinement once and cache the result.
+        """Run WL refinement once and cache the result.
 
-        :returns:
+        :return:
             Internal cached WL state.
         :rtype: _WLState
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -703,15 +687,14 @@ class WLCanonicalizer:
         return self._state_cache
 
     def colors(self) -> Dict[Any, str]:
-        """
-        Return final WL colors.
+        """Return final WL colors.
 
-        :returns:
+        :return:
             Mapping from node to final color.
         :rtype: Dict[Any, str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -720,19 +703,18 @@ class WLCanonicalizer:
         return dict(self._run().colors)
 
     def color_of(self, v: Any) -> str:
-        """
-        Return the final WL color of one node.
+        """Return the final WL color of one node.
 
         :param v:
             Node identifier.
         :type v: Any
 
-        :returns:
+        :return:
             Final WL color.
         :rtype: str
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -741,15 +723,14 @@ class WLCanonicalizer:
         return self._run().colors[v]
 
     def orbits(self) -> List[Set[Any]]:
-        """
-        Return approximate WL orbit sets.
+        """Return approximate WL orbit sets.
 
-        :returns:
+        :return:
             Approximate orbits induced by final WL colors.
         :rtype: List[Set[Any]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -758,28 +739,26 @@ class WLCanonicalizer:
         return [set(x) for x in self._run().orbits]
 
     def wl_orbits(self) -> List[Set[Any]]:
-        """
-        Alias for :meth:`orbits`.
+        """Alias for :meth:`orbits`.
 
-        :returns:
+        :return:
             Approximate WL orbit sets.
         :rtype: List[Set[Any]]
         """
         return self.orbits()
 
     def has_nontrivial_automorphism(self) -> bool:
-        """
-        Heuristically detect whether symmetry may be present.
+        """Heuristically detect whether symmetry may be present.
 
         This is approximate and simply checks whether any WL color cell has size
         greater than one.
 
-        :returns:
+        :return:
             ``True`` if WL detects a non-singleton cell, else ``False``.
         :rtype: bool
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -788,15 +767,14 @@ class WLCanonicalizer:
         return any(len(cell) > 1 for cell in self._run().cells)
 
     def canonical_order(self) -> List[Any]:
-        """
-        Return the deterministic WL node order.
+        """Return the deterministic WL node order.
 
-        :returns:
+        :return:
             WL-based canonical node order.
         :rtype: List[Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -805,15 +783,14 @@ class WLCanonicalizer:
         return list(self._run().canonical_order)
 
     def canonical_key(self) -> Any:
-        """
-        Return the canonical key induced by the WL order.
+        """Return the canonical key induced by the WL order.
 
-        :returns:
+        :return:
             WL canonical key.
         :rtype: Any
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -822,15 +799,14 @@ class WLCanonicalizer:
         return graph_key_from_order(self.G, self.canonical_order(), self.config)
 
     def canonical_graph(self) -> nx.DiGraph:
-        """
-        Return the canonically relabeled graph using the WL order.
+        """Return the canonically relabeled graph using the WL order.
 
-        :returns:
+        :return:
             WL-canonically relabeled graph.
         :rtype: nx.DiGraph
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -842,15 +818,14 @@ class WLCanonicalizer:
         return nx.relabel_nodes(self.G, mapping, copy=True)
 
     def graph(self) -> nx.DiGraph:
-        """
-        Alias for :meth:`canonical_graph`, matching the older canon style.
+        """Alias for :meth:`canonical_graph`, matching the older canon style.
 
-        :returns:
+        :return:
             WL-canonically relabeled graph.
         :rtype: nx.DiGraph
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -859,15 +834,14 @@ class WLCanonicalizer:
         return self.canonical_graph()
 
     def canonical_result(self) -> WLCanonicalResult:
-        """
-        Build an approximate canonicalization result in a CRN-canon-like format.
+        """Build an approximate canonicalization result in a CRN-canon-like format.
 
-        :returns:
+        :return:
             Approximate canonicalization result.
         :rtype: WLCanonicalResult
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -900,18 +874,17 @@ class WLCanonicalizer:
         return self._summary_cache
 
     def summary(self) -> Dict[str, Any]:
-        """
-        Return a dictionary summary in a format close to the exact canonicalizer.
+        """Return a dictionary summary in a format close to the exact canonicalizer.
 
         The reported automorphism count and orbit sets are WL-based
         approximations.
 
-        :returns:
+        :return:
             Summary dictionary.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -936,19 +909,18 @@ class WLCanonicalizer:
         }
 
     def fast_signature(self) -> Tuple[Any, ...]:
-        """
-        Return a fast graph signature using graph statistics and WL color
+        """Return a fast graph signature using graph statistics and WL color
         histogram.
 
         This is useful as a cheap prefilter before exact graph isomorphism or
         exact canonicalization.
 
-        :returns:
+        :return:
             Fast graph signature.
         :rtype: Tuple[Any, ...]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             wl = WLCanonicalizer(syn)
@@ -966,8 +938,7 @@ class WLCanonicalizer:
 
 
 def wl_canonical(source: Any, **kwargs: Any) -> nx.DiGraph:
-    """
-    Convenience function returning the WL-canonically relabeled graph.
+    """Convenience function returning the WL-canonically relabeled graph.
 
     :param source:
         Input CRN representation.
@@ -977,12 +948,12 @@ def wl_canonical(source: Any, **kwargs: Any) -> nx.DiGraph:
         Additional keyword arguments forwarded to :class:`WLCanonicalizer`.
     :type kwargs: Any
 
-    :returns:
+    :return:
         WL-canonically relabeled graph.
     :rtype: nx.DiGraph
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.CRN.Sym import SymmetryConfig, wl_canonical

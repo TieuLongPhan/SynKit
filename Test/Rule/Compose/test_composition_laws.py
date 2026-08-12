@@ -162,12 +162,8 @@ def test_sequential_and_composed_application_agree_in_larger_context() -> None:
     host = _llg({"target": 0, "context": 9})
 
     first_application = apply_dpo(first, host, {"p1:L": "target"})
-    second_application = apply_dpo(
-        second, first_application.result, {"p2:L": "target"}
-    )
-    composed_application = apply_dpo(
-        composition.rule, host, {"p1:L": "target"}
-    )
+    second_application = apply_dpo(second, first_application.result, {"p2:L": "target"})
+    composed_application = apply_dpo(composition.rule, host, {"p1:L": "target"})
     witness = find_llg_isomorphism(
         second_application.result, composed_application.result
     )
@@ -198,9 +194,7 @@ def test_associativity_holds_up_to_a_replayable_rule_isomorphism() -> None:
 
 def test_rule_isomorphism_witness_replay_detects_a_tampered_layer_map() -> None:
     rule = _state_rule(0, 1, "p")
-    relabeled = RuleSpan.from_mapping(
-        _llg({10: 0}), _llg({20: 1}), {10: 20}, name="p"
-    )
+    relabeled = RuleSpan.from_mapping(_llg({10: 0}), _llg({20: 1}), {10: 20}, name="p")
     witness = find_rule_span_isomorphism(rule, relabeled)
     assert witness is not None
 
@@ -267,9 +261,7 @@ def test_label_write_conflict_is_not_normalized_to_a_commuting_result() -> None:
     )
 
     assert not decision.independent
-    assert {issue.code for issue in decision.issues} == {
-        LawIssueCode.LABEL_WRITE_NODE
-    }
+    assert {issue.code for issue in decision.issues} == {LawIssueCode.LABEL_WRITE_NODE}
     with pytest.raises(LawError) as error:
         commute_independent(
             first,
@@ -299,9 +291,7 @@ def test_edge_label_write_conflict_is_typed() -> None:
     )
 
     assert not decision.independent
-    assert {issue.code for issue in decision.issues} == {
-        LawIssueCode.LABEL_WRITE_EDGE
-    }
+    assert {issue.code for issue in decision.issues} == {LawIssueCode.LABEL_WRITE_EDGE}
 
 
 def test_two_rules_cannot_both_add_the_same_simple_edge() -> None:

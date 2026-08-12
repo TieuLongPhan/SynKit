@@ -23,24 +23,22 @@ class Pathway:
 
     # ---- Fluent mutators ----
     def append(self, rid: int, state_after: Counter) -> "Pathway":
-        """
-        Append a step to the pathway.
+        """Append a step to the pathway.
 
         :param rid: Reaction id.
         :param state_after: State after applying the reaction.
-        :returns: self
+        :return: self
         """
         self.reaction_ids.append(rid)
         self.states.append(Counter(state_after))
         return self
 
     def extend(self, rids: List[int], states_after: List[Counter]) -> "Pathway":
-        """
-        Extend pathway by multiple steps.
+        """Extend pathway by multiple steps.
 
         :param rids: Reaction ids.
         :param states_after: List of states after each reaction.
-        :returns: self
+        :return: self
         """
         self.reaction_ids.extend(list(rids))
         self.states.extend([Counter(s) for s in states_after])
@@ -64,29 +62,26 @@ class Pathway:
 
     # ---- Accessors for original / canonical RSMI strings ----
     def as_original_rsmi_list(self, network: ReactionNetwork) -> List[str]:
-        """
-        Return the original (atom-mapped) reaction SMILES sequence for this pathway.
+        """Return the original (atom-mapped) reaction SMILES sequence for this pathway.
 
         :param network: ReactionNetwork instance that contains the Reaction objects.
-        :returns: list of original_raw strings in forward order.
+        :return: list of original_raw strings in forward order.
         """
         return [network.reactions[rid].original_raw for rid in self.reaction_ids]
 
     def as_canonical_rsmi_list(self, network: ReactionNetwork) -> List[str]:
-        """
-        Return the canonical (standardized) reaction SMILES sequence for this pathway.
+        """Return the canonical (standardized) reaction SMILES sequence for this pathway.
 
         :param network: ReactionNetwork instance that contains the Reaction objects.
-        :returns: list of canonical_raw strings in forward order.
+        :return: list of canonical_raw strings in forward order.
         """
         return [network.reactions[rid].canonical_raw for rid in self.reaction_ids]
 
     # ---- Analytics ----
     def compute_flow(self) -> Tuple[Counter, Counter]:
-        """
-        Compute inflow/outflow for the full pathway w.r.t. its initial state.
+        """Compute inflow/outflow for the full pathway w.r.t. its initial state.
 
-        :returns: (inflow_counter, outflow_counter)
+        :return: (inflow_counter, outflow_counter)
         """
         if not self.states:
             return Counter(), Counter()

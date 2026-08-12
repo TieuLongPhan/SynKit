@@ -226,8 +226,7 @@ def visualize_reaction(  # noqa: C901
     fixed_bond_length: Optional[float] = None,
     padding: float = 0.06,
 ) -> Union[str, Any]:  # Any covers PIL.Image.Image when Cairo is available
-    """
-    More visual RDKit reaction rendering.
+    """More visual RDKit reaction rendering.
 
     Improvements vs Draw.ReactionToImage:
     - Uses rdMolDraw2D for cleaner SVG/Cairo output and better control.
@@ -235,37 +234,33 @@ def visualize_reaction(  # noqa: C901
     - Optional atom-map labels overlay (useful for debugging / talktorials).
     - Title/legend support.
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     - `highlight_changes=True` works best when rsmi contains atom-maps like [C:1].
-    - For PNG/PIL output, your RDKit must be built with Cairo support.
+    - PNG/PIL output requires an RDKit build with Cairo support.
 
-    Parameters
-    ----------
-    rsmi : str
-        Reaction SMILES / SMARTS (e.g. '[CH3:1][Br:2]>>[CH3:1][OH:2]').
-    size : (w, h), optional
-        Canvas size in pixels. If omitted, a compact size is inferred from
-        the number of reaction components and atoms.
-    svg : bool
-        If True return SVG string; else return PIL image (Cairo).
-    kekulize : bool
-        If True kekulize molecules before drawing (sometimes nicer for aromatic).
-    show_atom_maps : bool
-        If True, draw atom-map numbers as labels.
-    highlight_changes : bool
-        If True, detect and highlight changed bonds (requires atom maps).
-    legend : str | None
-        Optional title at the top.
-    fixed_bond_length : float, optional
-        Affects perceived scale / whitespace. If omitted, a readable default
-        is chosen for the inferred canvas.
-    padding : float
-        Relative padding around the drawing.
+    :param rsmi: Reaction SMILES / SMARTS (e.g. '[CH3:1][Br:2]>>[CH3:1][OH:2]').
+    :type rsmi: str
+    :param size: Canvas size in pixels. If omitted, a compact size is inferred from
+                 the number of reaction components and atoms.
+    :type size: (w, h), optional
+    :param svg: If True return SVG string; else return PIL image (Cairo).
+    :type svg: bool
+    :param kekulize: If True kekulize molecules before drawing (sometimes nicer for aromatic).
+    :type kekulize: bool
+    :param show_atom_maps: If True, draw atom-map numbers as labels.
+    :type show_atom_maps: bool
+    :param highlight_changes: If True, detect and highlight changed bonds (requires atom maps).
+    :type highlight_changes: bool
+    :param legend: Optional title at the top.
+    :type legend: str | None
+    :param fixed_bond_length: Affects perceived scale / whitespace. If omitted, a readable default
+                              is chosen for the inferred canvas.
+    :type fixed_bond_length: float, optional
+    :param padding: Relative padding around the drawing.
+    :type padding: float
 
-    Returns
-    -------
-    str (SVG) or PIL.Image.Image
+    :rtype: str (SVG) or PIL.Image.Image
     """
     rxn = rdChemReactions.ReactionFromSmarts(rsmi, useSmiles=True)
     if rxn is None:
@@ -363,7 +358,7 @@ def visualize_reaction(  # noqa: C901
             return _add_pil_title(image, legend, canvas_size) if legend else image
 
     except Exception:
-        # Safe fallback (still decent) if DrawReaction signature differs in your RDKit build
+        # Fall back when the installed RDKit has a different DrawReaction signature.
         from rdkit.Chem import Draw as _Draw
 
         fallback = _Draw.ReactionToImage(

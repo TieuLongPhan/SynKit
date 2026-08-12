@@ -380,10 +380,11 @@ def its_decompose(its_graph: nx.Graph, nodes_share="typesGH", edges_share="order
     :type nodes_share: str
     :param edges_share: Edge attribute key storing (order_G, order_H) tuples.
     :type edges_share: str
-    :returns: A tuple of two graphs (G, H) reconstructed from the ITS.
+    :return: A tuple of two graphs (G, H) reconstructed from the ITS.
     :rtype: Tuple[nx.Graph, nx.Graph]
 
-    :example:
+    .. rubric:: Examples
+
     >>> its = nx.Graph()
     >>> # ... set its.nodes[n]['typesGH'] and its.edges[e]['order'] ...
     >>> G, H = its_decompose(its)
@@ -439,15 +440,17 @@ def compare_graphs(
 ) -> bool:
     """Compare two graphs based on specified node and edge attributes.
 
-    Parameters:
-    - graph1 (nx.Graph): The first graph to compare.
-    - graph2 (nx.Graph): The second graph to compare.
-    - node_attrs (list): A list of node attribute names to include in the comparison.
-    - edge_attrs (list): A list of edge attribute names to include in the comparison.
+    :param graph1: The first graph to compare.
+    :type graph1: nx.Graph
+    :param graph2: The second graph to compare.
+    :type graph2: nx.Graph
+    :param node_attrs: A list of node attribute names to include in the comparison.
+    :type node_attrs: list
+    :param edge_attrs: A list of edge attribute names to include in the comparison.
+    :type edge_attrs: list
 
-    Returns:
-    - bool: True if both graphs are identical with respect to the specified attributes,
-    otherwise False.
+    :return: True if both graphs are identical with respect to the specified attributes, otherwise False.
+    :rtype: bool
     """
     # Compare node sets
     if set(graph1.nodes()) != set(graph2.nodes()):
@@ -492,19 +495,15 @@ def enumerate_tautomers(reaction_smiles: str) -> Optional[List[str]]:
     molecule. The function returns a list of reaction SMILES strings for each
     tautomer of the reactants combined with the canonical product.
 
-    Parameters:
-    - reaction_smiles (str): A SMILES string of the reaction formatted as
-    'reactants>>products'.
+    :param reaction_smiles: A SMILES string of the reaction formatted as
+                            'reactants>>products'.
+    :type reaction_smiles: str
 
-    Returns:
-    - List[str] | None: A list of SMILES strings for the reaction, with each string
-    representing a different
-    - tautomer of the reactants combined with the canonicalized products. Returns None if
-    an error occurs or if invalid SMILES strings are provided.
+    :return: Reaction SMILES for each reactant tautomer combined with the
+             canonicalized products, or ``None`` for invalid input.
+    :rtype: List[str] | None
 
-    Raises:
-    - ValueError: If the provided SMILES strings cannot be converted to molecule objects,
-    indicating invalid input.
+    :raises ValueError: If the SMILES strings cannot be converted to molecules.
     """
     try:
         # Split the input reaction SMILES string into reactants and products
@@ -553,15 +552,13 @@ def mapping_success_rate(list_mapping_data):
     """Calculate the success rate of entries containing atom mappings in a list
     of data strings.
 
-    Parameters:
-    - list_mapping_in_data (list of str): List containing strings to be searched for atom
-    mappings.
+    :param list_mapping_data: Strings to search for atom mappings.
+    :type list_mapping_data: list[str]
 
-    Returns:
-    - float: The success rate of finding atom mappings in the list as a percentage.
+    :return: The success rate of finding atom mappings in the list as a percentage.
+    :rtype: float
 
-    Raises:
-    - ValueError: If the input list is empty.
+    :raises ValueError: If the input list is empty.
     """
     atom_map_pattern = re.compile(r":\d+")
     if not list_mapping_data:

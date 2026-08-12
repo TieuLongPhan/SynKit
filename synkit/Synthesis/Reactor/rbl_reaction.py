@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Self, Sequence, Union
 import networkx as nx
 
 from synkit.Chem.utils import reverse_reaction
+from synkit.Rule.syn_rule import SynRule
 from synkit.Synthesis.Reactor.fusion_validation import (
     FusionIssue,
     FusionIssueCode,
@@ -20,43 +21,138 @@ ITSLike = Any
 
 
 class RBLReactionMixin:
+    @staticmethod
+    def _normalize_duplicate_atom_maps(graph: nx.Graph) -> nx.Graph:
+        """Assign deterministic unique AAM labels when fused sources collide."""
+        result = graph.copy()
+
+        def endpoint_maps(value: Any) -> tuple[Any, ...]:
+            if isinstance(value, (tuple, list)) and len(value) == 2:
+                return tuple(value)
+            return (value,)
+
+        seen: List[set[Any]] = [set(), set()]
+        duplicate = False
+        for _, data in result.nodes(data=True):
+            values = endpoint_maps(data.get("atom_map"))
+            for index, value in enumerate(values):
+                if value in (None, 0):
+                    continue
+                bucket = seen[min(index, 1)]
+                if value in bucket:
+                    duplicate = True
+                bucket.add(value)
+        if not duplicate:
+            return result
+
+        for atom_map, node in enumerate(sorted(result.nodes, key=repr), start=1):
+            old = result.nodes[node].get("atom_map")
+            result.nodes[node]["atom_map"] = (
+                (atom_map, atom_map)
+                if isinstance(old, (tuple, list)) and len(old) == 2
+                else atom_map
+            )
+        result.graph["atom_maps_normalized_after_fusion"] = True
+        return result
+
+    @staticmethod
+    def _identity_standardize(rsmi: str) -> str:
+        """Return a whitespace-normalized reaction when no standardizer exists."""
+        return rsmi.strip()
+
+    def _canonical_split(self, rsmi: str) -> Optional[tuple[str, str]]:
+        """Canonicalize and split a reaction into its two endpoints."""
+        canon = self.standardize_fn(rsmi)
+        try:
+            reactants, products = canon.split(">>", 1)
+        except (AttributeError, ValueError):
+            self.logger.debug("Canonical split failed for reaction: %s", rsmi)
+            return None
+        return reactants, products
+
+    def _reset_run_state(self) -> None:
+        """Reset per-run outputs while retaining reusable configuration."""
+        self._forward_its = []
+        self._backward_its = []
+        self._fused_its = []
+        self._fused_rsmis = []
+        self._fusion_candidates = []
+        self._fusion_search_stats = {}
+        self._latest_postprocessed_its = None
+        self._latest_output_validation = None
+        self._diagnostics = {
+            "forward": [],
+            "backward": [],
+            "quick_check": [],
+            "fusion": [],
+        }
+        self._last_stop_mode = "not_run"
+        self._last_stop_reason = "not_run"
+        self._last_stop_metadata = {}
+        self._active_search_policy = self.search_policy
+
+    def _record_stop(
+        self,
+        *,
+        mode: str,
+        reason: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Record the stable termination description for the current run."""
+        self._last_stop_mode = mode
+        self._last_stop_reason = reason
+        self._last_stop_metadata = dict(metadata or {})
+
     def _prepare_from_graph(self, template: nx.Graph) -> ITSLike:
-        """
-        Internal helper: prepare a template from a NetworkX graph.
+        """Internal helper: prepare a template from a NetworkX graph.
 
         :param template: ITS-like NetworkX graph.
         :type template: nx.Graph
-        :returns: Standardized ITS-like object.
+        :return: Standardized ITS-like object.
         :rtype: ITSLike
         """
-        temp = self.h_to_implicit_fn(template)
+        # Compatibility modes historically folded every explicit hydrogen into
+        # its heavy-atom ``hcount``.  The verified path must retain mapped H
+        # identities: they are reaction-rule vertices, not display details.
+        temp = (
+            self.h_to_implicit_fn(template) if self.implicit_temp else template.copy()
+        )
         return self.standardize_h_fn(temp)
 
     def _prepare_from_str(self, template: str) -> ITSLike:
-        """
-        Internal helper: prepare a template from a reaction SMILES string.
+        """Internal helper: prepare a template from a reaction SMILES string.
 
         :param template: Reaction SMILES.
         :type template: str
-        :returns: Standardized ITS-like object.
+        :return: Standardized ITS-like object.
         :rtype: ITSLike
         """
-        cleaned = self.remove_explicit_H_fn(template)
+        # Only an implicit-H template is allowed to discard explicit H atoms.
+        # In particular, a mapped transfer such as O:3-H:4 -> O:2-H:4 must
+        # retain H:4 as a first-class rule vertex in verified mode.
+        cleaned = (
+            self.remove_explicit_H_fn(template) if self.implicit_temp else template
+        )
         temp = self.rsmi_to_its_fn(cleaned, core=True)
         return self.standardize_h_fn(temp)
 
-    def prepare_template(self, template: Union[str, nx.Graph, ITSLike]) -> Self:
-        """
-        Prepare a reaction template into a standardized ITS representation.
+    def prepare_template(
+        self,
+        template: Union[str, nx.Graph, SynRule, ITSLike],
+    ) -> Self:
+        """Prepare a reaction template into a standardized ITS representation.
 
-        :param template: Template as reaction SMILES, graph or ITS-like.
-        :type template: str | nx.Graph | ITSLike
-        :returns: The current engine instance (for chaining).
+        :param template: Template as reaction SMILES, graph, normalized
+            :class:`SynRule`, or ITS-like value.
+        :type template: str | nx.Graph | SynRule | ITSLike
+        :return: The current engine instance (for chaining).
         :rtype: RBLEngine
         """
         self._template_raw = template
 
-        if isinstance(template, nx.Graph):
+        if isinstance(template, SynRule):
+            self._template_its = template
+        elif isinstance(template, nx.Graph):
             self._template_its = self._prepare_from_graph(template)
         elif isinstance(template, str):
             self._template_its = self._prepare_from_str(template)
@@ -77,12 +173,11 @@ class RBLReactionMixin:
         fmt: str = "tuple",
         explicit_hydrogen: bool = False,
     ) -> Optional[str]:
-        """
-        Safely convert ITS to RSMI, returning ``None`` on failure.
+        """Safely convert ITS to RSMI, returning ``None`` on failure.
 
         :param its_graph: ITS-like graph to convert.
         :type its_graph: ITSLike
-        :returns: Reaction SMILES or ``None`` on failure.
+        :return: Reaction SMILES or ``None`` on failure.
         :rtype: Optional[str]
         """
         try:
@@ -193,12 +288,11 @@ class RBLReactionMixin:
         self._diagnostics["fusion"].append(payload)
 
     def _safe_rsmi_to_its(self, rsmi: str) -> Optional[ITSLike]:
-        """
-        Safely convert RSMI to ITS, returning ``None`` on failure.
+        """Safely convert RSMI to ITS, returning ``None`` on failure.
 
         :param rsmi: Reaction SMILES to convert.
         :type rsmi: str
-        :returns: ITS-like object or ``None`` on failure.
+        :return: ITS-like object or ``None`` on failure.
         :rtype: Optional[ITSLike]
         """
         try:
@@ -208,15 +302,14 @@ class RBLReactionMixin:
             return None
 
     def _decorate_radical(self, rsmi: str, invert: bool) -> Optional[str]:
-        """
-        Apply radical wildcard decoration (and optional inversion).
+        """Apply radical wildcard decoration (and optional inversion).
 
         :param rsmi: Reaction SMILES to decorate.
         :type rsmi: str
         :param invert: Whether to reverse the reaction (products↔reactants)
             after decoration.
         :type invert: bool
-        :returns: Decorated (and possibly inverted) reaction SMILES, or
+        :return: Decorated (and possibly inverted) reaction SMILES, or
             ``None`` on failure.
         :rtype: Optional[str]
         """
@@ -237,8 +330,7 @@ class RBLReactionMixin:
         pattern: ITSLike,
         invert: bool,
     ) -> List[ITSLike]:
-        """
-        Internal helper: apply template to substrate using :class:`SynReactor`.
+        """Internal helper: apply template to substrate using :class:`SynReactor`.
 
         For each resulting ITS, the method performs:
 
@@ -255,7 +347,7 @@ class RBLReactionMixin:
         :type pattern: ITSLike
         :param invert: Whether to run the reactor in inverted mode.
         :type invert: bool
-        :returns: List of ITS-like objects after decoration.
+        :return: List of ITS-like objects after decoration.
         :rtype: list[ITSLike]
         """
         self.logger.debug(
@@ -282,7 +374,11 @@ class RBLReactionMixin:
         its_list: Sequence[ITSLike] = getattr(reactor, "its", []) or []
 
         for its_graph in its_list:
-            rsmi = self._safe_its_to_rsmi(its_graph, fmt="typesGH")
+            rsmi = self._safe_its_to_rsmi(
+                its_graph,
+                fmt="typesGH",
+                explicit_hydrogen=self.explicit_h,
+            )
             if rsmi is None:
                 continue
 
@@ -307,23 +403,22 @@ class RBLReactionMixin:
         pattern: Optional[ITSLike] = None,
         invert: bool = False,
     ) -> Self:
-        """
-        Public wrapper around :meth:`_run_reaction` that updates engine state.
+        """Public wrapper around :meth:`_run_reaction` that updates engine state.
 
         If ``pattern`` is ``None``, the last prepared template
-        (:pyattr:`template_its`) is used.
+        (:attr:`template_its`) is used.
 
-        Results are stored in :pyattr:`forward_its` (for ``invert=False``)
-        or :pyattr:`backward_its` (for ``invert=True``).
+        Results are stored in :attr:`forward_its` (for ``invert=False``)
+        or :attr:`backward_its` (for ``invert=True``).
 
         :param substrate: Substrate reaction string or ITS-like object.
         :type substrate: str | ITSLike
         :param pattern: Optional template ITS; if ``None``, use
-            :pyattr:`template_its`.
+            :attr:`template_its`.
         :type pattern: ITSLike or None
         :param invert: If ``True``, store results as backward ITS.
         :type invert: bool
-        :returns: The current engine instance.
+        :return: The current engine instance.
         :rtype: RBLEngine
         :raises ValueError: If no template pattern was provided or prepared.
         """

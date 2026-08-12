@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import warnings
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
@@ -125,6 +126,13 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         while still finalizing electron fields and validating stereo state.
         This policy is independent of mapping-level ``automorphism`` pruning.
     :type dedup_its: bool
+    :param product_deduplication: Post-rewrite quotient policy when
+        ``dedup_its`` is true. ``"structural"`` keeps the exact internal
+        application and ITS quotients. ``"deferred"`` finalizes every product
+        state but leaves application/product endpoint identity to downstream
+        serialized-output canonicalization; it is restricted to
+        ``stereo_mode="ignore"``.
+    :type product_deduplication: str
     :param serialization_errors: Raw ITS serialization policy. ``"raise"``
         preserves the compatibility behavior; ``"skip"`` returns all
         serializable results in their original order and reports omitted raw
@@ -172,6 +180,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     automorphism: bool = True
     preserve_mapped_hydrogens: bool = False
     dedup_its: bool = True
+    product_deduplication: str = "structural"
     stereo_assignment_limit: int | None = None
     stereo_branch_limit: int | None = None
     serialization_errors: str = "raise"
@@ -227,6 +236,14 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             )
         if not isinstance(self.dedup_its, bool):
             raise TypeError("dedup_its must be a bool.")
+        if self.product_deduplication not in {"structural", "deferred"}:
+            raise ValueError(
+                "product_deduplication must be 'structural' or 'deferred'."
+            )
+        if self.product_deduplication == "deferred" and self.stereo_mode != "ignore":
+            raise ValueError(
+                "deferred product deduplication requires stereo_mode='ignore'."
+            )
         if self.serialization_errors not in {"raise", "skip"}:
             raise ValueError("serialization_errors must be 'raise' or 'skip'.")
         if self.stereo_assignment_limit is not None and (
@@ -262,12 +279,12 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         stereo_semantics: str = "orbit",
         preserve_mapped_hydrogens: bool = False,
         dedup_its: bool = True,
+        product_deduplication: str = "structural",
         serialization_errors: str = "raise",
         stereo_assignment_limit: int | None = None,
         stereo_branch_limit: int | None = None,
     ) -> "SynReactor":
-        """
-        Alternate constructor: build a SynReactor directly from SMILES.
+        """Alternate constructor: build a SynReactor directly from SMILES.
 
         :param smiles: SMILES string for the substrate.
         :type smiles: str
@@ -306,6 +323,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         :param dedup_its: Consolidate equivalent post-rewrite ITS graphs while
             preserving all correctness finalization and validation steps.
         :type dedup_its: bool
+        :param product_deduplication: ``"structural"`` performs exact internal
+            application and ITS quotienting. ``"deferred"`` leaves endpoint
+            identity to downstream canonicalized serialization and requires
+            ``stereo_mode="ignore"``.
+        :type product_deduplication: str
         :param serialization_errors: Raw ITS serialization policy, either
             ``"raise"`` (default) or ``"skip"``.
         :type serialization_errors: str
@@ -315,7 +337,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         :param stereo_branch_limit: Optional hard cap on generated stereo
             product branches.
         :type stereo_branch_limit: Optional[int]
-        :returns: A new `SynReactor` instance.
+        :return: A new `SynReactor` instance.
         :rtype: SynReactor
         """
         return cls(
@@ -335,6 +357,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             stereo_semantics=stereo_semantics,
             preserve_mapped_hydrogens=preserve_mapped_hydrogens,
             dedup_its=dedup_its,
+            product_deduplication=product_deduplication,
             serialization_errors=serialization_errors,
             stereo_assignment_limit=stereo_assignment_limit,
             stereo_branch_limit=stereo_branch_limit,
@@ -361,7 +384,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     @property
     def graph(self) -> SynGraph:  # noqa: D401 – read‑only property
         """Lazily wrap the substrate into a SynGraph.
-        :returns: The reaction substrate as a `SynGraph`.
+        :return: The reaction substrate as a `SynGraph`.
         :rtype: SynGraph
         """
         if self._graph is None:
@@ -371,7 +394,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     @property
     def rule(self) -> SynRule:  # noqa: D401
         """Lazily wrap the template into a SynRule.
-        :returns: The reaction template as a `SynRule`.
+        :return: The reaction template as a `SynRule`.
         :rtype: SynRule
         """
         if self._rule is None:
@@ -381,7 +404,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     @property
     def its_list(self) -> List[nx.Graph]:
         """Build ITS graphs for exact rewrite representatives.
-        :returns: A list of ITS (Internal Transition State) graphs.
+        :return: A list of ITS (Internal Transition State) graphs.
         """
         if self._its is None:
             host_raw = self._matching_host_graph()
@@ -403,7 +426,19 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                 or self.rule.stereo_outcomes
                 or self.rule.stereo_couplings
             )
-            if self.dedup_its and not certified_generic and not stereo_sensitive:
+            exact_endpoint_certificate = (
+                self.dedup_its
+                and self.product_deduplication == "structural"
+                and not host_raw.is_directed()
+                and not host_raw.is_multigraph()
+            )
+            if (
+                self.dedup_its
+                and self.product_deduplication == "structural"
+                and not certified_generic
+                and not stereo_sensitive
+                and not exact_endpoint_certificate
+            ):
                 mapping_population = len(application_mappings)
                 application_mappings = self._deduplicate_rewrite_equivalent_mappings(
                     application_mappings,
@@ -415,6 +450,16 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     mapping_population,
                     len(application_mappings),
                 )
+            elif exact_endpoint_certificate and not certified_generic:
+                # Complete mapping enumeration followed by an injective
+                # canonical certificate is exact and cheaper here than an
+                # additional sufficient-but-not-necessary source quotient.
+                # The finalized endpoint certificate remains the only merge
+                # authority, so no application is discarded heuristically.
+                log.debug(
+                    "Retained %d application(s) for exact endpoint certificates",
+                    len(application_mappings),
+                )
             rewrite_host, rewrite_host_prepared = (
                 _graph_rewrite._prepare_rewrite_batch_host(
                     host_raw,
@@ -422,6 +467,9 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     rc_raw,
                     self._flag_pattern_has_explicit_H,
                     electron_aware,
+                    seed_structural_signatures=(
+                        self.dedup_its and self.product_deduplication == "structural"
+                    ),
                 )
             )
             self._its = []
@@ -475,6 +523,10 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     anchor_explicit_embedding=self.dedup_its,
                     host_prepared=rewrite_host_prepared,
                     expanded_host_cache=expanded_host_cache,
+                    consume_prepared_host=(
+                        rewrite_host_prepared
+                        and mapping_index == len(application_mappings) - 1
+                    ),
                 )
                 stereo_batch: List[nx.Graph] = []
                 for rewrite_index, candidate in enumerate(its_batch):
@@ -506,8 +558,11 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                 its for its in self._its if self._validate_product_stereo_registry(its)
             ]
             if self.dedup_its:
-                self._its = self._deduplicate_coupling_face_products(self._its)
-                self._its = self._deduplicate_structural_its(self._its)
+                if self.product_deduplication == "structural":
+                    self._its = self._deduplicate_coupling_face_products(self._its)
+                    self._its = self._deduplicate_structural_its(self._its)
+                else:
+                    self._its = self._finalize_product_electron_fields(self._its)
             else:
                 self._its = self._finalize_product_electron_fields(self._its)
             log.debug("Built %d ITS graph(s)", len(self._its))
@@ -516,10 +571,34 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     @property
     def smarts_list(self) -> List[str]:
         """Serialise each ITS graph to a reaction-SMARTS string.
-        :returns: A list of SMARTS strings (inverted if `invert=True`).
+        :return: A list of SMARTS strings (inverted if `invert=True`).
         """
         if self._smarts is None:
-            serialized = [self._to_smarts(g) for g in self.its_list]
+            serializer_parameters = inspect.signature(self._to_smarts).parameters
+            cache_supported = {
+                "reactant_smiles",
+                "preserved_hydrogen_maps",
+            }.issubset(serializer_parameters)
+            reactant_cache: Dict[Tuple[int, ...], str] = {}
+            serialized = []
+            for graph in self.its_list:
+                if (
+                    not cache_supported
+                    or self._flag_pattern_has_explicit_H
+                    or not graph.graph.get("electron_aware_rewrite", False)
+                ):
+                    serialized.append(self._to_smarts(graph))
+                    continue
+                preserved = tuple(self._tuple_preserved_hydrogen_maps(graph))
+                cached_reactant = reactant_cache.get(preserved)
+                value = self._to_smarts(
+                    graph,
+                    reactant_smiles=cached_reactant,
+                    preserved_hydrogen_maps=preserved,
+                )
+                serialized.append(value)
+                if value is not None and cached_reactant is None:
+                    reactant_cache[preserved] = value.partition(">>")[0]
             failed = tuple(
                 index for index, value in enumerate(serialized) if value is None
             )
@@ -832,168 +911,68 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             anchor_explicit_embedding,
         )
 
-    @staticmethod
-    def _is_electron_aware_template(rc: nx.Graph) -> bool:
-        return _graph_rewrite._is_electron_aware_template(rc)
+    _is_electron_aware_template = staticmethod(
+        _graph_rewrite._is_electron_aware_template
+    )
+    _merge_application_orbits = staticmethod(_deduplication._merge_application_orbits)
+    _chemical_rewrite_role = staticmethod(_deduplication._chemical_rewrite_role)
+    _prepare_its_for_structural_cluster = staticmethod(
+        _deduplication._prepare_its_for_structural_cluster
+    )
+    _cluster_structural_its = staticmethod(_deduplication._cluster_structural_its)
+    _finalize_product_electron_fields = staticmethod(
+        _deduplication._finalize_product_electron_fields
+    )
+    _deduplicate_structural_its = staticmethod(
+        _deduplication._deduplicate_structural_its
+    )
+    _deduplicate_coupling_face_products = staticmethod(
+        _deduplication._deduplicate_coupling_face_products
+    )
+    _deduplicate_rewrite_equivalent_mappings = staticmethod(
+        _deduplication._deduplicate_rewrite_equivalent_mappings
+    )
+    _components_are_equivalent = staticmethod(_deduplication._components_are_equivalent)
+    _pair_electron_aware_node_attrs = staticmethod(
+        _product_state._pair_electron_aware_node_attrs
+    )
+    _ensure_host_atom_maps = staticmethod(_product_state._ensure_host_atom_maps)
+    _refresh_product_electron_fields = staticmethod(
+        _product_state._refresh_product_electron_fields
+    )
+    _refresh_product_electron_fields_direct = staticmethod(
+        _product_state._refresh_product_electron_fields_direct
+    )
+    _product_kekule_phase_is_dirty = staticmethod(
+        _product_state._product_kekule_phase_is_dirty
+    )
+    _prepared_electron_product_graph = staticmethod(
+        _product_state._prepared_electron_product_graph
+    )
+    _electron_product_charge = staticmethod(_product_state._electron_product_charge)
+    _reperceive_product_kekule_phase = staticmethod(
+        _product_state._reperceive_product_kekule_phase
+    )
+    _product_graph_for_diagnostics = staticmethod(
+        _product_state._product_graph_for_diagnostics
+    )
+    _explicit_h = staticmethod(_serialization._explicit_h)
+    _explicit_h_tuple = staticmethod(_serialization._explicit_h_tuple)
+    _ensure_tuple_atom_maps = staticmethod(_serialization._ensure_tuple_atom_maps)
+    _tuple_preserved_hydrogen_maps = staticmethod(
+        _serialization._tuple_preserved_hydrogen_maps
+    )
+    _tuple_endpoint_graphs = staticmethod(_serialization._tuple_endpoint_graphs)
 
     @staticmethod
-    def _merge_application_orbits(
-        representative: nx.Graph,
-        members: List[nx.Graph],
-    ) -> None:
-        _deduplication._merge_application_orbits(representative, members)
-
-    @staticmethod
-    def _chemical_rewrite_role(role: Any) -> Any:
-        return _deduplication._chemical_rewrite_role(role)
-
-    @staticmethod
-    def _prepare_its_for_structural_cluster(
+    def _to_smarts(
         its: nx.Graph,
         *,
-        refresh_electrons: bool = True,
-        hash_iterations: int = 5,
-    ) -> nx.Graph:
-        return _deduplication._prepare_its_for_structural_cluster(
+        reactant_smiles: Optional[str] = None,
+        preserved_hydrogen_maps: Optional[Tuple[int, ...]] = None,
+    ) -> str:
+        return _serialization._to_smarts(
             its,
-            refresh_electrons=refresh_electrons,
-            hash_iterations=hash_iterations,
+            reactant_smiles=reactant_smiles,
+            preserved_hydrogen_maps=preserved_hydrogen_maps,
         )
-
-    @staticmethod
-    def _cluster_structural_its(
-        its_graphs: List[nx.Graph],
-        *,
-        refresh_electrons: bool,
-        hash_iterations: int = 5,
-    ) -> List[nx.Graph]:
-        return _deduplication._cluster_structural_its(
-            its_graphs,
-            refresh_electrons=refresh_electrons,
-            hash_iterations=hash_iterations,
-        )
-
-    @staticmethod
-    def _finalize_product_electron_fields(
-        its_graphs: List[nx.Graph],
-    ) -> List[nx.Graph]:
-        return _deduplication._finalize_product_electron_fields(its_graphs)
-
-    @staticmethod
-    def _deduplicate_structural_its(
-        its_graphs: List[nx.Graph],
-    ) -> List[nx.Graph]:
-        return _deduplication._deduplicate_structural_its(its_graphs)
-
-    @staticmethod
-    def _deduplicate_coupling_face_products(
-        its_graphs: List[nx.Graph],
-    ) -> List[nx.Graph]:
-        return _deduplication._deduplicate_coupling_face_products(its_graphs)
-
-    @staticmethod
-    def _deduplicate_rewrite_equivalent_mappings(
-        mappings: List[MappingDict],
-        host: nx.Graph,
-        reaction_center: nx.Graph,
-    ) -> List[MappingDict]:
-        return _deduplication._deduplicate_rewrite_equivalent_mappings(
-            mappings,
-            host,
-            reaction_center,
-        )
-
-    @staticmethod
-    def _components_are_equivalent(
-        pattern: nx.Graph,
-        left: frozenset[NodeId],
-        right: frozenset[NodeId],
-        node_attrs: List[str],
-        edge_attrs: List[str],
-    ) -> bool:
-        return _deduplication._components_are_equivalent(
-            pattern,
-            left,
-            right,
-            node_attrs,
-            edge_attrs,
-        )
-
-    @staticmethod
-    def _pair_electron_aware_node_attrs(
-        host_n: Dict[str, Any],
-        rc_n: Dict[str, Any],
-        *,
-        preserve_unchanged_state: bool = False,
-        relative_resources: frozenset[str] = frozenset(),
-    ) -> None:
-        _product_state._pair_electron_aware_node_attrs(
-            host_n,
-            rc_n,
-            preserve_unchanged_state=preserve_unchanged_state,
-            relative_resources=relative_resources,
-        )
-
-    @staticmethod
-    def _ensure_host_atom_maps(host: nx.Graph) -> None:
-        _product_state._ensure_host_atom_maps(host)
-
-    @staticmethod
-    def _refresh_product_electron_fields(its: nx.Graph) -> None:
-        _product_state._refresh_product_electron_fields(its)
-
-    @staticmethod
-    def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:
-        _product_state._refresh_product_electron_fields_direct(its)
-
-    @staticmethod
-    def _product_kekule_phase_is_dirty(its: nx.Graph) -> bool:
-        return _product_state._product_kekule_phase_is_dirty(its)
-
-    @staticmethod
-    def _prepared_electron_product_graph(its: nx.Graph) -> nx.Graph:
-        return _product_state._prepared_electron_product_graph(its)
-
-    @staticmethod
-    def _electron_product_charge(
-        its: nx.Graph,
-        node: Any,
-        product_attrs: Mapping[str, Any],
-    ) -> Any:
-        return _product_state._electron_product_charge(its, node, product_attrs)
-
-    @staticmethod
-    def _reperceive_product_kekule_phase(
-        product: nx.Graph,
-        its: nx.Graph,
-    ) -> nx.Graph:
-        return _product_state._reperceive_product_kekule_phase(product, its)
-
-    @staticmethod
-    def _product_graph_for_diagnostics(its: nx.Graph) -> nx.Graph:
-        return _product_state._product_graph_for_diagnostics(its)
-
-    # --------------------- explicit‑H handling -------------------------
-    @staticmethod
-    def _explicit_h(rc: nx.Graph) -> nx.Graph:
-        return _serialization._explicit_h(rc)
-
-    @staticmethod
-    def _explicit_h_tuple(rc: nx.Graph) -> nx.Graph:
-        return _serialization._explicit_h_tuple(rc)
-
-    @staticmethod
-    def _ensure_tuple_atom_maps(graph: nx.Graph) -> None:
-        _serialization._ensure_tuple_atom_maps(graph)
-
-    @staticmethod
-    def _tuple_preserved_hydrogen_maps(its: nx.Graph) -> List[int]:
-        return _serialization._tuple_preserved_hydrogen_maps(its)
-
-    @staticmethod
-    def _tuple_endpoint_graphs(its: nx.Graph) -> Tuple[nx.Graph, nx.Graph]:
-        return _serialization._tuple_endpoint_graphs(its)
-
-    @staticmethod
-    def _to_smarts(its: nx.Graph) -> str:
-        return _serialization._to_smarts(its)

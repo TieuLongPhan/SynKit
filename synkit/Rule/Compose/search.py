@@ -187,9 +187,7 @@ def _node_order_key(
 ) -> tuple[str, int, tuple[str, ...], str]:
     incident = tuple(
         sorted(
-            repr(_edge_labels(graph, edge))
-            for edge in graph.edge_keys
-            if node in edge
+            repr(_edge_labels(graph, edge)) for edge in graph.edge_keys if node in edge
         )
     )
     return repr(_labels(graph, node)), len(incident), incident, repr(node)
@@ -222,8 +220,12 @@ def _component_embedding_count(
     matcher = nx.algorithms.isomorphism.GraphMatcher(
         first_graph,
         second_graph,
-        node_match=lambda left, right: all(left[key] == right[key] for key in node_keys),
-        edge_match=lambda left, right: all(left[key] == right[key] for key in edge_keys),
+        node_match=lambda left, right: all(
+            left[key] == right[key] for key in node_keys
+        ),
+        edge_match=lambda left, right: all(
+            left[key] == right[key] for key in edge_keys
+        ),
     )
     count = 0
     for _ in matcher.subgraph_monomorphisms_iter():
@@ -255,13 +257,19 @@ def extended_component_match_matrix(
         )
     first_components = tuple(
         sorted(
-            (frozenset(part) for part in nx.connected_components(first_right.to_networkx())),
+            (
+                frozenset(part)
+                for part in nx.connected_components(first_right.to_networkx())
+            ),
             key=lambda part: _component_order_key(first_right, part),
         )
     )
     second_components = tuple(
         sorted(
-            (frozenset(part) for part in nx.connected_components(second_left.to_networkx())),
+            (
+                frozenset(part)
+                for part in nx.connected_components(second_left.to_networkx())
+            ),
             key=lambda part: _component_order_key(second_left, part),
         )
     )
@@ -473,12 +481,14 @@ def _boundary_key(rule: RuleSpan) -> tuple[Any, ...]:
     environment = rule.environment
     return (
         rule.boundary.value,
-        None
-        if environment is None
-        else (
-            environment.name,
-            environment.element_delta,
-            environment.electron_delta,
+        (
+            None
+            if environment is None
+            else (
+                environment.name,
+                environment.element_delta,
+                environment.electron_delta,
+            )
         ),
     )
 
@@ -617,9 +627,7 @@ def canonical_rule_identity(rule: RuleSpan, *, permutation_limit: int) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def canonical_overlap_digest(
-    overlap: RuleOverlap, *, permutation_limit: int
-) -> str:
+def canonical_overlap_digest(overlap: RuleOverlap, *, permutation_limit: int) -> str:
     """Return a carrier-map-invariant digest of both overlap arms."""
     code = _canonical_code(_overlap_graph(overlap), permutation_limit)
     payload = json.dumps(

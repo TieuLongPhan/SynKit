@@ -5,18 +5,16 @@ Synthesis
 
 The ``synkit.Synthesis`` package provides a unified interface for **reaction prediction**
 and **chemical reaction network (CRN) exploration**. It applies rule-based graph rewriting
-to molecular structures, allowing you to enumerate candidate products (forward mode) or
+to molecular structures and enumerates candidate products (forward mode) or
 candidate precursors (backward mode) from reaction templates.
 
 .. raw:: html
 
    <style>
-     /* Optional: makes "Example output" boxes look a bit more like callouts */
      .synkit-admonition-title {
        font-weight: 700;
        letter-spacing: 0.2px;
      }
-     /* Slightly soften code blocks inside admonitions */
      .admonition .highlight pre {
        border-radius: 8px;
      }
@@ -220,7 +218,7 @@ Example: Backward Prediction (NetworkX)
 Example: Implicit-H Template (NetworkX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If your template is written in an **implicit-H** form, enable it via ``implicit_temp=True``
+For templates written in **implicit-H** form, enable ``implicit_temp=True``
 while keeping ``explicit_h=False``.
 
 .. code-block:: python
@@ -319,8 +317,10 @@ LLG rewrite policy:
        ``(2, 1)`` therefore becomes ``(1, 0)`` and consumes one lone pair
        from the matched host instead of assigning an absolute product count.
    * - Aromaticity
-     - Aromatic flags are still useful for matching and display, but aromatic
-       ``order=1.5`` is not used as the LLG-authoritative rewrite value.
+     - Electron LLG matching normalizes phase-equivalent Kekulé placement
+       inside aromatic systems while retaining aromatic node state and local
+       pi-electron valence. Stored sigma/pi values remain authoritative during
+       rewriting; partial aromatic-system morphisms remain phase-sensitive.
 
 Radical-based linking
 ---------------------
@@ -333,23 +333,33 @@ shared core.
 Choose the execution mode according to the required recall and cost:
 
 - ``"fast_track"`` performs only a cheap reactor round-trip.
-- ``"early_stop"`` (the default) also constructs ITS candidates but stops
-  before maximum-common-subgraph (MCS) fusion.
+- ``"fast_fusion"`` adds a WL-ranked, bounded categorical-fusion fallback and
+  always reports an incomplete search when that fallback is used.
+- ``"early_stop"`` (the default) tries both cheap paths first, then performs
+  MCS fusion and stops at the first validated candidate.
 - ``"full"`` performs wildcard-aware MCS fusion and returns all collected
-  unique candidates; it is the most expensive mode.
+  unique candidates within the declared maximum-MCS scope.
+- ``"verified"`` uses uncapped exact maximum-MCS mappings, explicit mapped
+  hydrogen, categorical pushouts, and proof-checked post-processing. It is
+  complete within that mapping scope, not over every smaller overlap.
 
 .. code-block:: python
    :caption: Run the RBL engine with its default exact MCS matcher
 
-   from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+   from synkit.Synthesis.Reactor import RBLEngine, RBL_RESULT_SCHEMA
 
    engine = RBLEngine(mode="early_stop")
    result = engine.process(reaction_rsmi, template)
    candidates = result.fused_rsmis
+   assert result.result["schema"] == RBL_RESULT_SCHEMA
 
 Use ``mode="full"`` only when the early path does not provide enough
-candidates. ``matcher_cls`` accepts ``ApproxMCSMatcher`` for a faster,
-heuristic alternative on large or highly symmetric ITS graphs.
+candidates, and ``mode="verified"`` when every returned fusion must carry a
+construction proof. ``matcher_cls`` accepts ``ApproxMCSMatcher`` for a faster,
+heuristic alternative on large or highly symmetric ITS graphs; this does not
+provide the verified profile's completeness-within-scope claim.
+The serializable ``result`` mapping uses the versioned
+``synkit.rbl-result/1`` contract.
 
 See Also
 --------

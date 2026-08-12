@@ -19,8 +19,7 @@ __all__ = [
 
 
 def split_components(side: str) -> List[str]:
-    """
-    Split a reaction side into species tokens.
+    """Split a reaction side into species tokens.
 
     Rules
     -----
@@ -28,8 +27,8 @@ def split_components(side: str) -> List[str]:
     - Preserve a single token like 'Source.X' intact (special inflow syntax).
     - Strip whitespace; ignore empty tokens.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     >>> split_components("A.B")
     ['A', 'B']
     >>> split_components("W+X")

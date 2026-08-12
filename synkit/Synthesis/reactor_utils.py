@@ -13,14 +13,13 @@ def _get_unique_aam(list_aam: list) -> list:
     using the `rsmi_to_its` function. Then, it performs iterative clustering of the ITS graphs
     based on matching nodes and edges, returning a list of unique AAMs based on the clustering results.
 
-    Parameters:
-    - list_aam (list): A list of AAM strings that will be converted to ITS graphs and clustered.
+    :param list_aam: A list of AAM strings that will be converted to ITS graphs and clustered.
+    :type list_aam: list
 
-    Returns:
-    - list: A list of unique AAMs based on the iterative clustering process.
+    :return: A list of unique AAMs based on the iterative clustering process.
+    :rtype: list
 
-    Raises:
-    - Exception: If an error occurs during the conversion or clustering process, an exception is raised.
+    :raises Exception: If an error occurs during the conversion or clustering process, an exception is raised.
     """
     its_list = [rsmi_to_its(i) for i in list_aam]
 
@@ -43,14 +42,13 @@ def _get_connected_subgraphs(gml: str, invert: bool = False):
     subgraphs based on the 'smart' representation split or a list of subgraphs,
     depending on the invert flag.
 
-    Parameters:
-    - gml: str, the GML string to be converted into a 'smart' format.
-    - invert: bool, determines the output behavior:
-      - If True, returns the count of subgraphs in the second part (p).
-      - If False, returns the list of subgraphs from the first part (r).
-
-    Returns:
-    - A list of subgraphs if invert is False, or an integer count if invert is True.
+    :param gml: GML string to convert to SMARTS.
+    :type gml: str
+    :param invert: Count product components instead of reactant components.
+    :type invert: bool
+    :return: Number of connected components on the selected reaction side.
+    :rtype: int
+    :raises ValueError: If ``gml`` is empty or lacks the ``>>`` delimiter.
     """
     # Validate GML input (ensure it's a valid non-empty string)
     if not isinstance(gml, str) or not gml.strip():
@@ -78,13 +76,11 @@ def _get_reagent(original_smiles: list, output_rsmi: str, invert: bool = False):
     """Identifies reagents present in the original SMILES list that are absent
     in the processed output SMILES string.
 
-    Parameters:
-    - original_smiles: list of SMILES strings representing the original reagents.
-    - output_rsmi: SMILES string of the reaction, which is standardized and split to obtain new SMILES strings.
-    - invert: bool, flag to choose between reactants or products for comparison.
+    :param original_smiles: list of SMILES strings representing the original reagents.
+    :param output_rsmi: SMILES string of the reaction, which is standardized and split to obtain new SMILES strings.
+    :param invert: bool, flag to choose between reactants or products for comparison.
 
-    Returns:
-    - List of SMILES strings found in original but not in the new list.
+    :return: List of SMILES strings found in original but not in the new list.
     """
     output_rsmi = Standardize().fit(output_rsmi)
     reactants, products = output_rsmi.split(">>")
@@ -108,11 +104,11 @@ def _get_reagent_rsmi(rsmi: str) -> List[str]:
     of a reaction SMILES string, suggesting these elements are unchanged by the
     chemical reaction.
 
-    Parameters:
-    - rsmi (str): A reaction SMILES string formatted as "reactants>>products".
+    :param rsmi: A reaction SMILES string formatted as "reactants>>products".
+    :type rsmi: str
 
-    Returns:
-    - List[str]: A list of unique reagents that appear on both sides of the reaction, unchanged.
+    :return: A list of unique reagents that appear on both sides of the reaction, unchanged.
+    :rtype: List[str]
     """
     # Standardize the input reaction SMILES
     rsmi = Standardize().fit(rsmi)
@@ -143,17 +139,14 @@ def _remove_reagent(rsmi: str) -> str:
     (reactants and products) and removes one occurrence of each common molecule from
     both sides.
 
-    Parameters:
-    - rsmi (str): A SMILES string representing a chemical reaction in the form:
-    'reactant1.reactant2...>>product1.product2...'
+    :param rsmi: A SMILES string representing a chemical reaction in the form:
+                 'reactant1.reactant2...>>product1.product2...'
+    :type rsmi: str
 
-    Returns:
-    - str: A new SMILES string with the common molecules removed, in the form:
-    'reactant1.reactant2...>>product1.product2...'
+    :return: Reaction SMILES with common molecules removed from both sides.
 
-    Example:
-    >>> remove_reagent_from_smiles('CC=O.CC=O.CCC=O>>CC=CO.CC=O.CC=O')
-    'CCC=O>>CC=CO'
+              Example: >>> remove_reagent_from_smiles('CC=O.CC=O.CCC=O>>CC=CO.CC=O.CC=O') 'CCC=O>>CC=CO'
+    :rtype: str
     """
 
     # Split the input SMILES string into reactants and products
@@ -198,12 +191,11 @@ def _add_reagent(rsmi: str, reagents: list):
     """Modifies the SMILES representation of a reaction by adding additional
     reagents.
 
-    Parameters:
-    - rsmi: str, the SMILES reaction string, expected to contain '>>' separating reactants and products.
-    - reagents: list, a list of reagent SMILES strings to be added.
+    :param rsmi: str, the SMILES reaction string, expected to contain '>>' separating reactants and products.
+    :param reagents: list, a list of reagent SMILES strings to be added.
 
-    Returns:
-    - str: a new SMILES string with reagents added to both reactants and products.
+    :return: a new SMILES string with reagents added to both reactants and products.
+    :rtype: str
     """
     if not reagents:
         return rsmi  # Return original if no reagents are added
@@ -228,14 +220,16 @@ def _add_reagent(rsmi: str, reagents: list):
 def _calculate_max_depth(reaction_tree, current_node=None, depth=0):
     """Calculate the maximum depth of a reaction tree.
 
-    Parameters:
-    - reaction_tree (dict): A dictionary where keys are reaction SMILES (RSMI)
-    and values are lists of product reactions.
-    - current_node (str): The current node in the tree being explored (reaction SMILES).
-    - depth (int): The current depth of the tree.
+    :param reaction_tree: A dictionary where keys are reaction SMILES (RSMI)
+                          and values are lists of product reactions.
+    :type reaction_tree: dict
+    :param current_node: The current node in the tree being explored (reaction SMILES).
+    :type current_node: str
+    :param depth: The current depth of the tree.
+    :type depth: int
 
-    Returns:
-    - int: The maximum depth of the tree.
+    :return: The maximum depth of the tree.
+    :rtype: int
     """
     # If current_node is None, start from the root node (first key in the reaction tree)
     if current_node is None:
@@ -266,15 +260,18 @@ def _find_all_paths(
     """Recursively find all paths from the root to the maximum depth in the
     reaction tree.
 
-    Parameters:
-    - reaction_tree (dict): A dictionary of reaction SMILES with products.
-    - current_node (str): The current node (reaction SMILES).
-    - target_depth (int): The depth at which the product matches the root's product.
-    - current_depth (int): The current depth of the search.
-    - path (list): The current path in the tree.
+    :param reaction_tree: A dictionary of reaction SMILES with products.
+    :type reaction_tree: dict
+    :param current_node: The current node (reaction SMILES).
+    :type current_node: str
+    :param target_depth: The depth at which the product matches the root's product.
+    :type target_depth: int
+    :param current_depth: The current depth of the search.
+    :type current_depth: int
+    :param path: The current path in the tree.
+    :type path: list
 
-    Returns:
-    - List of all paths to the max depth.
+    :return: List of all paths to the max depth.
     """
     if path is None:
         path = []

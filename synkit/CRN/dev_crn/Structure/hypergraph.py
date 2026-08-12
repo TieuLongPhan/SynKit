@@ -23,25 +23,15 @@ from .hyperedge import HyperEdge
 
 
 class CRNHyperGraph:
-    """
-    Directed hypergraph representation of a chemical reaction network.
+    """Directed hypergraph representation of a chemical reaction network.
 
-    Responsibilities:
-      - add/remove reactions
-      - species/edge bookkeeping and indices
-      - incidence / stoichiometric matrix construction
-      - simple traversal (neighbors, paths)
-      - merging & copying
+    The graph tracks reactions, species, indices, incidence data, traversal,
+    merging, and copying. Instances are initialized empty and populated through
+    their mutation methods. Higher-level structural analyses live in separate
+    property modules.
 
-    The class focuses on topological / stoichiometric representation; higher-level
-    structural analyses (deficiency, injectivity, siphons, etc.) should be implemented
-    in separate ``props`` modules that import this hypergraph for data.
+    .. rubric:: Examples
 
-    :param: (constructed empty; use methods to populate)
-    :type: CRNHyperGraph
-
-    Examples
-    --------
     .. code-block:: python
 
         from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
@@ -88,8 +78,7 @@ class CRNHyperGraph:
         rule: Optional[str] = None,
         edge_id: Optional[str] = None,
     ) -> HyperEdge:
-        """
-        Add a reaction edge to the hypergraph.
+        """Add a reaction edge to the hypergraph.
 
         :param reactant_side: mapping/iterable or RXNSide for reactants
         :type reactant_side: Union[RXNSide, Mapping[str, int], Iterable[str], Iterable[Tuple[str, int]]]
@@ -99,7 +88,7 @@ class CRNHyperGraph:
         :type rule: Optional[str]
         :param edge_id: optional explicit id; if omitted an id is generated
         :type edge_id: Optional[str]
-        :returns: created HyperEdge
+        :return: created HyperEdge
         :rtype: HyperEdge
         :raises ValueError: if both sides are empty
         :raises KeyError: if edge_id already exists
@@ -146,8 +135,7 @@ class CRNHyperGraph:
         *,
         parse_rule_from_suffix: bool = True,
     ) -> HyperEdge:
-        """
-        Parse a reaction string like "A+B>>C" and add the reaction.
+        """Parse a reaction string like "A+B>>C" and add the reaction.
 
         Optionally parse a trailing suffix " | rule=R1" to set the rule when
         parse_rule_from_suffix=True and rule is None.
@@ -158,7 +146,7 @@ class CRNHyperGraph:
         :type rule: Optional[str]
         :param parse_rule_from_suffix: whether to parse suffix for rule
         :type parse_rule_from_suffix: bool
-        :returns: created HyperEdge
+        :return: created HyperEdge
         :rtype: HyperEdge
         :raises ValueError: if ">>" separator missing
         """
@@ -191,8 +179,7 @@ class CRNHyperGraph:
         rules: Optional[Sequence[Optional[str]]] = None,
         prefer_suffix: bool = False,
     ) -> "CRNHyperGraph":
-        """
-        Build a graph from reaction strings with flexible rule sources.
+        """Build a graph from reaction strings with flexible rule sources.
 
         :param reactions: Input reactions. Accepted forms:
                         - Iterable[str] (if `rules` is provided, it is zipped)
@@ -207,7 +194,7 @@ class CRNHyperGraph:
         :type rules: Optional[Sequence[Optional[str]]]
         :param prefer_suffix: If True, suffix rule takes precedence over an explicit per-line rule.
         :type prefer_suffix: bool
-        :returns: A new graph instance (self) populated with the given reactions.
+        :return: A new graph instance (self) populated with the given reactions.
         :rtype: CRNHyperGraph
         :raises ValueError: If a reaction string lacks the ">>" separator, or if `rules` length mismatches.
         """
@@ -392,12 +379,11 @@ class CRNHyperGraph:
     # traversal / path finding
     # -----------------------
     def neighbors(self, species: str) -> Set[str]:
-        """
-        One-step product neighbors from a species.
+        """One-step product neighbors from a species.
 
         :param species: source species label
         :type species: str
-        :returns: set of product species reachable in one reaction
+        :return: set of product species reachable in one reaction
         :rtype: Set[str]
         :raises KeyError: if species absent
         """
@@ -416,8 +402,7 @@ class CRNHyperGraph:
         max_hops: int = 4,
         max_paths: Optional[int] = None,
     ) -> List[List[str]]:
-        """
-        Enumerate simple species->species paths up to hop limit (BFS).
+        """Enumerate simple species->species paths up to hop limit (BFS).
 
         :param source: start species
         :type source: str
@@ -427,7 +412,7 @@ class CRNHyperGraph:
         :type max_hops: int
         :param max_paths: optionally stop after this many paths
         :type max_paths: Optional[int]
-        :returns: list of paths (each path is a list of species labels)
+        :return: list of paths (each path is a list of species labels)
         :rtype: List[List[str]]
         """
         if source not in self.species or target not in self.species:
@@ -461,8 +446,7 @@ class CRNHyperGraph:
         Tuple[List[str], List[str], Dict[Tuple[str, str], int]],
         Tuple[List[str], List[str], np.ndarray],
     ]:
-        """
-        Construct incidence/stoichiometric matrix.
+        """Construct incidence/stoichiometric matrix.
 
         If sparse=True (default), returns (species_order, edge_order, mapping)
         where mapping[(species, edge_id)] = signed_count (reactants negative, products positive).
@@ -471,7 +455,7 @@ class CRNHyperGraph:
 
         :param sparse: whether to return sparse mapping or dense matrix
         :type sparse: bool
-        :returns: tuple (species_order, edge_order, mapping/matrix)
+        :return: tuple (species_order, edge_order, mapping/matrix)
         :rtype: Union[Tuple[List[str], List[str], Dict[Tuple[str, str], int]], Tuple[List[str], List[str], np.ndarray]]
         """
         species_order = self.species_list()
@@ -542,8 +526,8 @@ class CRNHyperGraph:
 
         :param species: species label
         :type species: str
-        :param mol_id: molecule identifier (e.g. int, str, or other hashable type)
-        :type mol_id: Any
+        :param mol: Molecule object or identifier.
+        :type mol: Any
         :raises KeyError: if species is not present in the hypergraph
         """
         if species not in self.species:
@@ -551,12 +535,11 @@ class CRNHyperGraph:
         self.species_to_mol[species] = mol
 
     def get_mol(self, species: str) -> Any:
-        """
-        Get the molecule identifier for a species.
+        """Get the molecule identifier for a species.
 
         :param species: species label
         :type species: str
-        :returns: molecule identifier associated with the species
+        :return: molecule identifier associated with the species
         :rtype: Any
         :raises KeyError: if species is not present or has no molecule assigned
         """

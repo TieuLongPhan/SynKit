@@ -23,6 +23,14 @@ class TestRCCluster(unittest.TestCase):
             len(self.clusterer.nodeLabelNames), len(self.clusterer.nodeLabelDefault)
         )
 
+    def test_empty_inputs_are_supported(self):
+        self.assertEqual(self.clusterer.iterative_cluster([], []), ([], {}))
+        self.assertEqual(self.clusterer.fit([]), [])
+
+    def test_attribute_length_must_match_rule_count(self):
+        with self.assertRaises(ValueError):
+            self.clusterer.iterative_cluster([self.graphs[0]["RC"]], [])
+
     def test_auto_cluster(self):
         """Test the auto_cluster method functionality."""
         rc = [value["RC"] for value in self.graphs]
@@ -62,7 +70,7 @@ class TestRCCluster(unittest.TestCase):
         clusters, _ = self.clusterer.iterative_cluster(
             rc, atom_count, nodeMatch=None, edgeMatch=None
         )
-        self.assertEqual(len(clusters), 27)  # wrong value but almost correct
+        self.assertEqual(len(clusters), 29)
 
         # cluster with signature
         clusters, _ = self.clusterer.iterative_cluster(

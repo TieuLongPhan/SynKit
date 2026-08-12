@@ -41,9 +41,7 @@ def test_reference_filters_reproduce_the_published_104_reactions() -> None:
 
 
 def test_reference_methods_reproduce_known_class_count() -> None:
-    reaction = next(
-        item for item in load_pickle(DATASET) if item["R-id"] == "R-3666"
-    )
+    reaction = next(item for item in load_pickle(DATASET) if item["R-id"] == "R-3666")
 
     result = run_reference_methods(reaction["ITS"])
 
@@ -54,9 +52,7 @@ def test_reference_methods_reproduce_known_class_count() -> None:
 
 
 def test_new_hextend_uses_the_same_full_its_class_contract() -> None:
-    reaction = next(
-        item for item in load_pickle(DATASET) if item["R-id"] == "R-3666"
-    )
+    reaction = next(item for item in load_pickle(DATASET) if item["R-id"] == "R-3666")
 
     rows = run_hextend([reaction], repetitions=1, timeout=10)
     new_row = next(row for row in rows if row["method"] == "hextend_new")
@@ -67,9 +63,7 @@ def test_new_hextend_uses_the_same_full_its_class_contract() -> None:
 
 def test_ambiguous_two_hydrogen_transfer_does_not_collapse() -> None:
     """R-50548 exposes legacy relabeling instead of transfer enumeration."""
-    reaction = next(
-        item for item in load_pickle(DATASET) if item["R-id"] == "R-50548"
-    )
+    reaction = next(item for item in load_pickle(DATASET) if item["R-id"] == "R-50548")
 
     rows = run_hextend([reaction], repetitions=1, timeout=10)
     by_method = {row["method"]: row for row in rows}
@@ -79,17 +73,13 @@ def test_ambiguous_two_hydrogen_transfer_does_not_collapse() -> None:
     assert by_method["hextend_new"]["completed_its"] == 2
     assert by_method["hextend_new"]["unique_classes"] == 2
 
-    unique_rc, unique_its, signatures = HExtend.extend_unique_full_its(
-        reaction["ITS"]
-    )
+    unique_rc, unique_its, signatures = HExtend.extend_unique_full_its(reaction["ITS"])
     assert len(unique_rc) == len(unique_its) == len(signatures) == 2
 
 
 def test_hydrogen_distance_invariant_splits_symmetric_rc_collision() -> None:
     """R-16362 avoids an expensive exact match after its RC hash collision."""
-    reaction = next(
-        item for item in load_pickle(DATASET) if item["R-id"] == "R-16362"
-    )
+    reaction = next(item for item in load_pickle(DATASET) if item["R-id"] == "R-16362")
 
     _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
     distance_signatures = {
@@ -104,9 +94,7 @@ def test_hydrogen_distance_invariant_splits_symmetric_rc_collision() -> None:
 
 
 def test_hydrogen_distance_invariant_is_map_independent() -> None:
-    reaction = next(
-        item for item in load_pickle(DATASET) if item["R-id"] == "R-16362"
-    )
+    reaction = next(item for item in load_pickle(DATASET) if item["R-id"] == "R-16362")
     _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
     original = completed_its[0]
     relabeled = nx.relabel_nodes(
@@ -131,9 +119,7 @@ def test_rc_anchored_quotient_matches_exact_clustering_on_full_corpus() -> None:
     payload, _ = select_reference_cases(load_pickle(DATASET))
 
     for reaction in payload:
-        _, completed_its, signatures = HExtend.extend_its(
-            reaction["ITS"]
-        )
+        _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
         expected, _ = baseline.iterative_cluster(
             completed_its,
             nodeMatch=baseline.nodeMatch,
@@ -148,9 +134,7 @@ def test_rc_anchored_quotient_matches_exact_clustering_on_full_corpus() -> None:
 
 
 def test_anchored_quotient_does_not_mutate_candidate_graphs() -> None:
-    reaction = next(
-        item for item in load_pickle(DATASET) if item["R-id"] == "R-51355"
-    )
+    reaction = next(item for item in load_pickle(DATASET) if item["R-id"] == "R-51355")
     _, completed_its, signatures = HExtend.extend_its(reaction["ITS"])
     before = [
         {node: dict(attributes) for node, attributes in graph.nodes(data=True)}
@@ -216,9 +200,7 @@ def test_timed_call_runs_without_posix_interval_timers(monkeypatch) -> None:
 
 
 def test_runner_is_executable() -> None:
-    runner = Path(
-        "Experiment/Lewis/hydrogen_expand/run_comparison.sh"
-    ).resolve()
+    runner = Path("Experiment/Lewis/hydrogen_expand/run_comparison.sh").resolve()
 
     assert runner.is_file()
     assert runner.read_text(encoding="utf-8").startswith("#!/usr/bin/env bash")

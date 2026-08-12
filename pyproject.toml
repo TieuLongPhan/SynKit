@@ -39,7 +39,7 @@ docs = [
   "pydata-sphinx-theme",
   "sphinx-rtd-theme",
 
-  # Your enabled extensions
+  # Sphinx extensions
   "sphinxcontrib-bibtex",
   "sphinx-design",
   "sphinx-copybutton",
@@ -49,8 +49,7 @@ docs = [
   # (still requires the system `dot` binary to render diagrams)
   "graphviz",
 
-  # Nice-to-have for markdown in docs if you ever add .md pages
-  # (safe even if unused)
+  # Markdown source support
   "myst-parser",
 ]
 
@@ -80,3 +79,11 @@ include = [
 [tool.hatch.build.targets.sdist.force-include]
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
+
+[tool.coverage.run]
+source = ["synkit"]
+
+[tool.coverage.report]
+fail_under = 70
+precision = 1
+show_missing = true

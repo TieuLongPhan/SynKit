@@ -9,7 +9,6 @@ class TestRuleCluster(unittest.TestCase):
         # Create an instance of HierContext with max_radius=3.
         self.cluster = HierContext(max_radius=3)
         # Load test data from a pickle file.
-        # Ensure this file exists at the specified location: "Data/Testcase/graph.pkl.gz"
         self.data = load_from_pickle("Data/Testcase/graph.pkl.gz")
         # Verify that the loaded data is a non-empty list.
         self.assertIsInstance(self.data, list)
@@ -89,15 +88,12 @@ class TestRuleCluster(unittest.TestCase):
         )
 
         # Check that templates are processed correctly.
-        # Depending on your dummy clustering behavior, update these expected values.
         self.assertGreater(len(templates), 0, "Templates list should not be empty.")
         self.assertEqual(
             templates[0]["class"],
             0,
             "Expected the first template's 'class' to be 0 after processing.",
         )
-        # If you expect a specific number of templates from your test data, verify it.
-        # Here, we expect 61 templates. Change if necessary.
         self.assertEqual(len(templates), 61, "Unexpected number of templates produced.")
         self.assertIn("K", templates[0], "Template should contain the context key 'K'.")
 

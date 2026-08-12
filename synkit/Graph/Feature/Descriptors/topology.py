@@ -535,17 +535,20 @@ class Topology:
         filter_heavy: bool = True,
         max_nodes: int = 20000,
     ) -> Dict[str, Any]:
-        """
-        Quick ring information for a graph (STATIC/CLASS utility).
+        """Quick ring information for a graph (STATIC/CLASS utility).
 
-        Parameters
-        ----------
-        G : networkx.Graph or None
-        method : {'cyclomatic','min_basis','cycle_basis'}
-        sizes : bool - return ring sizes (list of ints)
-        membership : bool - return node membership lists for each ring
-        filter_heavy : bool - drop hydrogens first if nodes have element attrs
-        max_nodes : int - guard to avoid expensive basis methods on huge graphs
+        :param G:
+        :type G: networkx.Graph or None
+        :param method:
+        :type method: {'cyclomatic','min_basis','cycle_basis'}
+        :param sizes:
+        :type sizes: bool - return ring sizes (list of ints)
+        :param membership:
+        :type membership: bool - return node membership lists for each ring
+        :param filter_heavy:
+        :type filter_heavy: bool - drop hydrogens first if nodes have element attrs
+        :param max_nodes:
+        :type max_nodes: int - guard to avoid expensive basis methods on huge graphs
         """
         if G is None:
             return {

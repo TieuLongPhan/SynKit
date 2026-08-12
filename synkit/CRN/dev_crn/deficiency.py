@@ -1,5 +1,4 @@
-"""
-DeficiencyAnalyzer: object-oriented deficiency computations and checks.
+"""DeficiencyAnalyzer: object-oriented deficiency computations and checks.
 
 This module provides :class:`DeficiencyAnalyzer` — a compact, chainable,
 well-documented OOP wrapper to compute deficiency-related quantities and
@@ -20,8 +19,8 @@ with the following conventions:
 If a :class:`CRNHyperGraph` is provided, it is converted via
 :func:`hypergraph_to_bipartite`.
 
-References
-----------
+.. rubric:: References
+
 - Horn & Jackson (1972), J. R. Stat. Phys.  : complex-balanced systems.
 - Feinberg (1979, 1987, 1988), various CRNT papers: deficiency theory.
 """
@@ -88,8 +87,7 @@ class DeficiencySummary:
 
 
 class DeficiencyAnalyzer:
-    """
-    Compute deficiency quantities and run standard structural checks.
+    """Compute deficiency quantities and run standard structural checks.
 
     The class is intentionally *fluent*: mutating operations return ``self``
     so calls can be chained. Use the property accessors to retrieve results.
@@ -112,8 +110,8 @@ class DeficiencyAnalyzer:
         rank (default: :func:`stoichiometric_rank`).
     :type rank_fn: Optional[Callable[[Any], int]]
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
        from synkit.CRN.Hypergraph.hypergraph import CRNHyperGraph
@@ -154,8 +152,7 @@ class DeficiencyAnalyzer:
         self,
         G: nx.Graph,
     ) -> Tuple[List[Tuple[int, ...]], Dict[Tuple[int, ...], int], nx.DiGraph]:
-        """
-        Build complex vectors and the directed complex graph from a bipartite graph.
+        """Build complex vectors and the directed complex graph from a bipartite graph.
 
         For each reaction node:
 
@@ -172,11 +169,11 @@ class DeficiencyAnalyzer:
 
         :param G: Bipartite species/reaction graph.
         :type G: networkx.Graph
-        :returns: Tuple ``(complex_list, index_map, complex_graph)``.
+        :return: Tuple ``(complex_list, index_map, complex_graph)``.
         :rtype: Tuple[List[Tuple[int, ...]], Dict[Tuple[int, ...], int], nx.DiGraph]
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            complexes, idx_map, CG = analyzer._complex_vectors(G)
@@ -228,8 +225,7 @@ class DeficiencyAnalyzer:
     # -------------------------
 
     def compute_summary(self) -> "DeficiencyAnalyzer":
-        """
-        Compute basic structural quantities and deficiency.
+        """Compute basic structural quantities and deficiency.
 
         Populates:
 
@@ -241,11 +237,11 @@ class DeficiencyAnalyzer:
         This corresponds to the global deficiency definition in
         Feinberg (1979, 1987).
 
-        :returns: Self, to allow fluent chaining.
+        :return: Self, to allow fluent chaining.
         :rtype: DeficiencyAnalyzer
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            analyzer = DeficiencyAnalyzer(hg)
@@ -289,8 +285,7 @@ class DeficiencyAnalyzer:
         return self
 
     def _linkage_class_stoich_rank(self, linkage_class: Iterable[int]) -> int:
-        """
-        Compute stoichiometric rank :math:`s_\\ell` for one linkage class.
+        """Compute stoichiometric rank :math:`s_\\ell` for one linkage class.
 
         The rank is computed from the span of complex-difference vectors
         :math:`y' - y` over edges :math:`y \\to y'` within the linkage class.
@@ -300,7 +295,7 @@ class DeficiencyAnalyzer:
 
         :param linkage_class: Iterable of complex indices in that linkage class.
         :type linkage_class: Iterable[int]
-        :returns: Stoichiometric rank for the linkage class.
+        :return: Stoichiometric rank for the linkage class.
         :rtype: int
         :raises RuntimeError: If :meth:`compute_summary` has not been called.
         """
@@ -327,19 +322,18 @@ class DeficiencyAnalyzer:
         return int(np.linalg.matrix_rank(D))
 
     def compute_linkage_deficiencies(self) -> "DeficiencyAnalyzer":
-        """
-        Compute per-linkage-class deficiencies :math:`\\delta_\\ell = n_\\ell - 1 - s_\\ell`.
+        """Compute per-linkage-class deficiencies :math:`\\delta_\\ell = n_\\ell - 1 - s_\\ell`.
 
         This is the deficiency decomposition from Feinberg (1979, 1987).
 
         Results are stored in ``self._linkage_deficiencies``.
 
-        :returns: Self, to allow fluent chaining.
+        :return: Self, to allow fluent chaining.
         :rtype: DeficiencyAnalyzer
         :raises RuntimeError: If :meth:`compute_summary` has not been called.
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            analyzer.compute_summary().compute_linkage_deficiencies()
@@ -365,21 +359,20 @@ class DeficiencyAnalyzer:
     # -------------------------
 
     def check_deficiency_zero(self) -> bool:
-        """
-        Check structural hypotheses of the **Deficiency Zero Theorem**.
+        """Check structural hypotheses of the **Deficiency Zero Theorem**.
 
         Hypotheses checked (Feinberg, 1979; Horn & Jackson, 1972):
 
         - global deficiency :math:`\\delta = 0`,
         - network is weakly reversible.
 
-        :returns: ``True`` if the structural hypotheses for the Deficiency Zero
+        :return: ``True`` if the structural hypotheses for the Deficiency Zero
             Theorem hold.
         :rtype: bool
         :raises RuntimeError: If :meth:`compute_summary` has not been called.
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            if analyzer.compute_summary().check_deficiency_zero():
@@ -392,8 +385,7 @@ class DeficiencyAnalyzer:
         return self._summary.deficiency == 0 and self._summary.weakly_reversible
 
     def check_deficiency_one(self) -> bool:
-        """
-        Check structural hypotheses of the **Deficiency One Theorem**.
+        """Check structural hypotheses of the **Deficiency One Theorem**.
 
         Structural checks (Feinberg, 1987):
 
@@ -401,13 +393,13 @@ class DeficiencyAnalyzer:
         - per-linkage-class deficiencies sum to 1,
         - each per-linkage-class deficiency :math:`\\le 1`.
 
-        :returns: ``True`` if structural counts satisfy Deficiency One hypotheses.
+        :return: ``True`` if structural counts satisfy Deficiency One hypotheses.
         :rtype: bool
         :raises RuntimeError: If :meth:`compute_summary` and
             :meth:`compute_linkage_deficiencies` have not been called.
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            ok = (
@@ -440,19 +432,18 @@ class DeficiencyAnalyzer:
 
     @staticmethod
     def _is_weakly_reversible(G: nx.DiGraph) -> bool:
-        """
-        Test weak reversibility of the complex graph.
+        """Test weak reversibility of the complex graph.
 
         A network is weakly reversible if each undirected linkage class is
         strongly connected as a directed subgraph (Feinberg, 1979).
 
         :param G: Complex graph (directed).
         :type G: networkx.DiGraph
-        :returns: ``True`` if weakly reversible.
+        :return: ``True`` if weakly reversible.
         :rtype: bool
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            weak = DeficiencyAnalyzer._is_weakly_reversible(CG)
@@ -465,20 +456,19 @@ class DeficiencyAnalyzer:
         return True
 
     def check_regularity(self) -> bool:
-        """
-        Coarse regularity test used by the **Deficiency One Algorithm**.
+        """Coarse regularity test used by the **Deficiency One Algorithm**.
 
         This checks that each linkage class has exactly one terminal strongly
         connected component (terminal SCC). It is a graph-level sufficient
         condition for the regularity required in the algorithm of
         Feinberg (1988).
 
-        :returns: ``True`` if the coarse regularity condition holds.
+        :return: ``True`` if the coarse regularity condition holds.
         :rtype: bool
         :raises RuntimeError: If :meth:`compute_summary` has not been called.
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            reg = analyzer.compute_summary().check_regularity()
@@ -509,8 +499,7 @@ class DeficiencyAnalyzer:
         return True
 
     def run_deficiency_one_algorithm(self) -> "DeficiencyAnalyzer":
-        """
-        Run the structural **Deficiency One Algorithm** (Feinberg, 1987, 1988).
+        """Run the structural **Deficiency One Algorithm** (Feinberg, 1987, 1988).
 
         This method combines:
 
@@ -541,17 +530,15 @@ class DeficiencyAnalyzer:
         Theorem; it does **not** attempt to construct explicit rate
         constants or multiple equilibria.
 
-        :returns: Self, to allow fluent chaining.
+        :return: Self, to allow fluent chaining.
         :rtype: DeficiencyAnalyzer
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            analyzer = DeficiencyAnalyzer(hg)
-           analyzer.compute_summary() \
-                   .compute_linkage_deficiencies() \
-                   .run_deficiency_one_algorithm()
+           analyzer.compute_summary()                    .compute_linkage_deficiencies()                    .run_deficiency_one_algorithm()
 
            result = analyzer.deficiency_one_structural
            if result["hypotheses_satisfied"]:
@@ -603,8 +590,7 @@ class DeficiencyAnalyzer:
     # -------------------------
 
     def nondegeneracy_test(self, tol: float = 1e-9) -> "DeficiencyAnalyzer":
-        """
-        Nondegeneracy test based on the left-nullspace :math:`\\ker(S^T)`.
+        """Nondegeneracy test based on the left-nullspace :math:`\\ker(S^T)`.
 
         The test computes a numerical basis of :math:`\\ker(S^T)` using SVD
         and performs a simple heuristic analysis of which species dominate
@@ -616,13 +602,13 @@ class DeficiencyAnalyzer:
 
         :param tol: Numerical tolerance for singular-value cutoff.
         :type tol: float
-        :returns: Self, to allow fluent chaining.
+        :return: Self, to allow fluent chaining.
         :rtype: DeficiencyAnalyzer
         :raises RuntimeError: If ``stoich_fn`` is missing or
             :meth:`compute_summary` has not been called.
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            analyzer.compute_summary().nondegeneracy_test(tol=1e-10)
@@ -710,10 +696,9 @@ class DeficiencyAnalyzer:
 
     @property
     def nondegeneracy_result(self) -> Optional[Dict[str, object]]:
-        """
-        Return the result of the last :meth:`nondegeneracy_test` or ``None``.
+        """Return the result of the last :meth:`nondegeneracy_test` or ``None``.
 
-        :returns: Dictionary with keys:
+        :return: Dictionary with keys:
             ``nullity``, ``basis``, ``per_basis``,
             ``largest_relevant_present``, ``max_complex_size``, ``tolerance``.
         :rtype: Optional[Dict[str, object]]
@@ -727,8 +712,7 @@ class DeficiencyAnalyzer:
     def compute_crn_deficiency(
         self, *, run_nondegeneracy: bool = False
     ) -> "DeficiencyAnalyzer":
-        """
-        High-level convenience method to compute all main CRN deficiency properties.
+        """High-level convenience method to compute all main CRN deficiency properties.
 
         This is a thin wrapper around:
 
@@ -743,11 +727,11 @@ class DeficiencyAnalyzer:
         :param run_nondegeneracy: If ``True``, also run
             :meth:`nondegeneracy_test` with default tolerance.
         :type run_nondegeneracy: bool
-        :returns: Self, to allow fluent chaining.
+        :return: Self, to allow fluent chaining.
         :rtype: DeficiencyAnalyzer
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            analyzer = DeficiencyAnalyzer(hg)
@@ -769,46 +753,42 @@ class DeficiencyAnalyzer:
 
     @property
     def summary(self) -> Optional[DeficiencySummary]:
-        """
-        Return computed deficiency summary or ``None``.
+        """Return computed deficiency summary or ``None``.
 
-        :returns: Summary dataclass with counts, rank and deficiency.
+        :return: Summary dataclass with counts, rank and deficiency.
         :rtype: Optional[DeficiencySummary]
         """
         return self._summary
 
     @property
     def linkage_deficiencies(self) -> Optional[List[int]]:
-        """
-        Return per-linkage-class deficiencies or ``None``.
+        """Return per-linkage-class deficiencies or ``None``.
 
-        :returns: List of per-linkage-class deficiencies.
+        :return: List of per-linkage-class deficiencies.
         :rtype: Optional[List[int]]
         """
         return self._linkage_deficiencies
 
     @property
     def deficiency_one_structural(self) -> Optional[Dict[str, Any]]:
-        """
-        Return the structural result from the Deficiency One front-end (or ``None``).
+        """Return the structural result from the Deficiency One front-end (or ``None``).
 
-        :returns: Dictionary with structural pass flag and a short note,
+        :return: Dictionary with structural pass flag and a short note,
             or ``None`` if :meth:`run_deficiency_one_algorithm` has not been called.
         :rtype: Optional[Dict[str, Any]]
         """
         return self._structural_one_result
 
     def as_dict(self) -> Dict[str, Any]:
-        """
-        Return a serialisable dict with computed fields.
+        """Return a serialisable dict with computed fields.
 
-        :returns: Dictionary of computed outputs including summary, linkage
+        :return: Dictionary of computed outputs including summary, linkage
             deficiencies, structural Deficiency One result and nondegeneracy
             diagnostics (if available).
         :rtype: Dict[str, Any]
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            analyzer.compute_crn_deficiency(run_nondegeneracy=True)
@@ -837,15 +817,14 @@ class DeficiencyAnalyzer:
         return out
 
     def explain(self) -> str:
-        """
-        Return a short human-readable explanation of analysis state.
+        """Return a short human-readable explanation of analysis state.
 
-        :returns: One-line explanation string summarising deficiency, number
+        :return: One-line explanation string summarising deficiency, number
             of linkage classes and weak reversibility.
         :rtype: str
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
            analyzer.compute_summary()
@@ -860,10 +839,9 @@ class DeficiencyAnalyzer:
         )
 
     def __repr__(self) -> str:
-        """
-        Return a concise representation showing the current deficiency if known.
+        """Return a concise representation showing the current deficiency if known.
 
-        :returns: Representation string.
+        :return: Representation string.
         :rtype: str
         """
         return (

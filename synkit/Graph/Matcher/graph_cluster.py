@@ -36,19 +36,19 @@ class GraphCluster:
         clustering of graph nodes and edges based on specified attributes and
         their matching criteria.
 
-        Parameters:
-        - node_label_names (List[str]): A list of node attribute names to be considered
-          for matching. Each attribute name corresponds to a property of the nodes in the
-          graph. Default values provided.
-        - node_label_default (List[Any]): Default values for each of the node attributes
-          specified in `node_label_names`. These are used where node attributes are missing.
-          The length and order of this list should match `node_label_names`.
-        - edge_attribute (str): The name of the edge attribute to consider for matching
-          edges. This attribute is used to assess edge similarity.
+        :param node_label_names: A list of node attribute names to be considered
+                                 for matching. Each attribute name corresponds to a property of the nodes in the
+                                 graph. Default values provided.
+        :type node_label_names: List[str]
+        :param node_label_default: Default values for each of the node attributes
+                                   specified in `node_label_names`. These are used where node attributes are missing.
+                                   The length and order of this list should match `node_label_names`.
+        :type node_label_default: List[Any]
+        :param edge_attribute: The name of the edge attribute to consider for matching
+                               edges. This attribute is used to assess edge similarity.
+        :type edge_attribute: str
 
-        Raises:
-        - ValueError: If the lengths of `node_label_names` and `node_label_default` do not
-          match.
+        :raises ValueError: If the lengths of `node_label_names` and `node_label_default` do not match.
         """
         self.backend = backend.lower()
         if self.backend != "nx":
@@ -83,30 +83,31 @@ class GraphCluster:
         structural or attribute-based similarities depending on the given
         attributes.
 
-        Parameters:
-        - rules (List[str]): List of rules, potentially serialized strings of rule
-          representations.
-        - attributes (Optional[List[Any]]): Attributes associated with each rule for
-          preliminary comparison, e.g., labels or properties.
+        :param rules: List of rules, potentially serialized strings of rule
+                      representations.
+        :type rules: List[str]
+        :param attributes: Attributes associated with each rule for
+                           preliminary comparison, e.g., labels or properties.
+        :type attributes: Optional[List[Any]]
 
-        Returns:
-        - Tuple[List[Set[int]], Dict[int, int]]: A tuple containing a list of sets
-          (clusters), where each set contains indices of rules in the same cluster,
-          and a dictionary mapping each rule index to its cluster index.
+        :return: Rule-index clusters and a mapping from each rule index to its
+                 cluster index.
+        :rtype: Tuple[List[Set[int]], Dict[int, int]]
         """
         native_rules = [_as_native_graph(rule) for rule in rules]
 
         if attributes is None:
             attributes_sorted = [1] * len(rules)
         else:
-            if isinstance(attributes[0], str):
-                attributes_sorted = attributes
-            elif isinstance(attributes, List):
-                attributes_sorted = [sorted(value) for value in attributes]
-            elif isinstance(attributes, OrderedDict):
-                attributes_sorted = [
-                    OrderedDict(sorted(value.items())) for value in attributes
-                ]
+            if len(attributes) != len(rules):
+                raise ValueError("attributes must have the same length as rules")
+            attributes_sorted = []
+            for value in attributes:
+                if isinstance(value, OrderedDict):
+                    value = OrderedDict(sorted(value.items(), key=repr))
+                elif isinstance(value, (list, tuple, set, frozenset)):
+                    value = tuple(sorted(value, key=repr))
+                attributes_sorted.append(value)
 
         visited = set()
         clusters = []
@@ -153,18 +154,21 @@ class GraphCluster:
         based on the similarity, potentially using provided templates for
         clustering, or generating new templates.
 
-        Parameters:
-        - data (List[Dict]): A list containing dictionaries, each representing a
-          rule along with metadata.
-        - rule_key (str): The key in the dictionaries under `data` where the rule data
-          is stored.
-        - attribute_key (str): The key in the dictionaries under `data` where rule
-          attributes are stored.
+        :param data: A list containing dictionaries, each representing a
+                     rule along with metadata.
+        :type data: List[Dict]
+        :param rule_key: The key in the dictionaries under `data` where the rule data
+                         is stored.
+        :type rule_key: str
+        :param attribute_key: The key in the dictionaries under `data` where rule
+                              attributes are stored.
+        :type attribute_key: str
 
-        Returns:
-        - List[Dict]: Updated list of dictionaries with an added 'class' key for cluster
-          identification.
+        :return: Updated list of dictionaries with an added 'class' key for cluster identification.
+        :rtype: List[Dict]
         """
+        if not data:
+            return data
         if isinstance(data[0][rule_key], str):
             if strip:
                 rules = [strip_context(entry[rule_key]) for entry in data]

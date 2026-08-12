@@ -13,16 +13,12 @@ def has_XH(G: nx.Graph) -> bool:
     A heavy atom is any atom whose 'element' attribute is not 'H'.
     This function searches for any edge that connects a heavy atom to a hydrogen atom.
 
-    Parameters
-    ----------
-    G : nx.Graph
-        A graph where each node has an 'element' attribute indicating the atom type.
+    :param G: A graph where each node has an 'element' attribute indicating the atom type.
+    :type G: nx.Graph
 
-    Returns
-    -------
-    bool
-        True if at least one edge connects a hydrogen atom ('H') to a heavy atom (element ≠ 'H').
-        False otherwise.
+    :return: True if at least one edge connects a hydrogen atom ('H') to a heavy atom (element ≠ 'H').
+              False otherwise.
+    :rtype: bool
     """
     for u, v, _ in G.edges(data=True):
         el_u = G.nodes[u].get("element")
@@ -38,16 +34,12 @@ def has_HH(G: nx.Graph) -> bool:
     A heavy atom is any atom whose 'element' attribute is not 'H'.
     This function searches for any edge that connects a heavy atom to a hydrogen atom.
 
-    Parameters
-    ----------
-    G : nx.Graph
-        A graph where each node has an 'element' attribute indicating the atom type.
+    :param G: A graph where each node has an 'element' attribute indicating the atom type.
+    :type G: nx.Graph
 
-    Returns
-    -------
-    bool
-        True if at least one edge connects a hydrogen atom ('H') to a heavy atom (element ≠ 'H').
-        False otherwise.
+    :return: True if at least one edge connects a hydrogen atom ('H') to a heavy atom (element ≠ 'H').
+              False otherwise.
+    :rtype: bool
     """
     for u, v, _ in G.edges(data=True):
         el_u = G.nodes[u].get("element")
@@ -63,17 +55,13 @@ def h_to_implicit(G: nx.Graph) -> nx.Graph:
     For each hydrogen atom ('element' == 'H'), its neighbor (assumed to be a heavy atom)
     will have its 'hcount' attribute incremented. The hydrogen nodes are then removed.
 
-    Parameters
-    ----------
-    G : nx.Graph
-        Input graph with explicit hydrogen atoms as nodes (element='H').
-        Heavy atoms must have 'element' and optionally 'hcount' attributes.
+    :param G: Input graph with explicit hydrogen atoms as nodes (element='H').
+              Heavy atoms must have 'element' and optionally 'hcount' attributes.
+    :type G: nx.Graph
 
-    Returns
-    -------
-    nx.Graph
-        A copy of the original graph with hydrogen atoms removed and their counts
-        added to the corresponding heavy atoms' 'hcount' attribute.
+    :return: A copy of the original graph with hydrogen atoms removed and their counts
+              added to the corresponding heavy atoms' 'hcount' attribute.
+    :rtype: nx.Graph
     """
     H2 = G.copy()
     h_nodes = [n for n, d in H2.nodes(data=True) if d.get("element") == "H"]
@@ -111,19 +99,14 @@ def h_to_explicit(G: nx.Graph, nodes: List[int] = None, its: bool = False) -> nx
     new hydrogen nodes, connects them to the node with a single bond (order=1.0), and
     decrements the node's 'hcount'. Optionally updates the 'typesGH' field if present.
 
-    Parameters
-    ----------
-    G : nx.Graph
-        Input graph with heavy atoms containing 'hcount' indicating implicit hydrogens.
+    :param G: Input graph with heavy atoms containing 'hcount' indicating implicit hydrogens.
+    :type G: nx.Graph
+    :param nodes: List of node IDs (typically heavy atoms) on which to expand implicit hydrogens.
+    :type nodes: List[int]
 
-    nodes : List[int]
-        List of node IDs (typically heavy atoms) on which to expand implicit hydrogens.
-
-    Returns
-    -------
-    nx.Graph
-        A copy of the graph with new explicit hydrogen nodes added and connected
-        to the specified heavy atoms.
+    :return: A copy of the graph with new explicit hydrogen nodes added and connected
+              to the specified heavy atoms.
+    :rtype: nx.Graph
     """
     if nodes is None or len(nodes) == 0:
         nodes = G.nodes()
@@ -241,15 +224,17 @@ def implicit_hydrogen(
     hydrogen node and adjusts based on hydrogens that need to be preserved.
     Non-preserved hydrogen nodes are removed from the graph.
 
-    Parameters:
-    - graph (nx.Graph): A NetworkX graph representing the molecule, where each node has an 'element'
-      attribute for the element type (e.g., 'C', 'H') and an 'atom_map' attribute for atom mapping.
-    - preserve_atom_maps (Set[int]): Set of atom map numbers for hydrogens that should be preserved.
-    - reindex (bool): If true, reindexes node indices and atom maps sequentially after modifications.
+    :param graph: A NetworkX graph representing the molecule, where each node has an 'element'
+                  attribute for the element type (e.g., 'C', 'H') and an 'atom_map' attribute for atom mapping.
+    :type graph: nx.Graph
+    :param preserve_atom_maps: Set of atom map numbers for hydrogens that should be preserved.
+    :type preserve_atom_maps: Set[int]
+    :param reindex: If true, reindexes node indices and atom maps sequentially after modifications.
+    :type reindex: bool
 
-    Returns:
-    - nx.Graph: A new NetworkX graph with updated hydrogen atoms, where non-preserved hydrogens
-      have been removed and hydrogen counts adjusted for non-hydrogen atoms.
+    :return: Graph with non-preserved hydrogens removed and hydrogen counts
+             adjusted on the remaining atoms.
+    :rtype: nx.Graph
     """
     # Create a deep copy of the graph to avoid in-place modifications
     new_graph = copy(graph)
@@ -358,12 +343,11 @@ def check_equivariant_graph(
 ) -> Tuple[List[Tuple[int, int]], int]:
     """Checks for isomorphism among a list of ITS graphs.
 
-    Parameters:
-    - its_graphs (List[nx.Graph]): A list of ITS graphs.
+    :param its_graphs: A list of ITS graphs.
+    :type its_graphs: List[nx.Graph]
 
-    Returns:
-    - List[Tuple[int, int]]: A list of tuples representing pairs of indices of
-    isomorphic graphs.
+    :return: A list of tuples representing pairs of indices of isomorphic graphs.
+    :rtype: List[Tuple[int, int]]
     """
     nodeLabelNames = ["typesGH"]
     nodeLabelDefault = [()]
@@ -386,11 +370,11 @@ def check_explicit_hydrogen(graph: nx.Graph) -> tuple:
     """Counts the explicit hydrogen nodes in the given graph and collects their
     IDs.
 
-    Parameters:
-    - graph (nx.Graph): The graph to inspect.
+    :param graph: The graph to inspect.
+    :type graph: nx.Graph
 
-    Returns:
-    tuple: A tuple containing the number of hydrogen nodes and a list of their node IDs.
+    :return: A tuple containing the number of hydrogen nodes and a list of their node IDs.
+    :rtype: tuple
     """
     hydrogen_nodes = [
         node_id
@@ -405,12 +389,13 @@ def check_hcount_change(react_graph: nx.Graph, prod_graph: nx.Graph) -> int:
     corresponding nodes in the reactant and product graphs. It considers both
     hydrogen formation and breakage.
 
-    Parameters:
-    - react_graph (nx.Graph): The graph representing reactants.
-    - prod_graph (nx.Graph): The graph representing products.
+    :param react_graph: The graph representing reactants.
+    :type react_graph: nx.Graph
+    :param prod_graph: The graph representing products.
+    :type prod_graph: nx.Graph
 
-    Returns:
-    int: The maximum hydrogen change observed across all nodes.
+    :return: The maximum hydrogen change observed across all nodes.
+    :rtype: int
     """
 
     def _coerce_hcount(value: Any) -> int:
@@ -450,11 +435,11 @@ def get_cycle_member_rings(G: nx.Graph, type="minimal") -> List[int]:
     overlap and returns a list of the sizes of these cycles (member rings),
     sorted in ascending order.
 
-    Parameters:
-    - G (nx.Graph): The NetworkX graph to be analyzed.
+    :param G: The NetworkX graph to be analyzed.
+    :type G: nx.Graph
 
-    Returns:
-    - List[int]: A sorted list of cycle sizes (member rings) found in the graph.
+    :return: A sorted list of cycle sizes (member rings) found in the graph.
+    :rtype: List[int]
     """
     if not isinstance(G, nx.Graph):
         raise TypeError("Input must be a networkx Graph object.")
@@ -475,14 +460,12 @@ def get_priority(reaction_centers: List[Any]) -> List[int]:
     indices based on the shortest reaction paths and maximum ring sizes, and
     adjusting for certain graph types by modifying the ring information.
 
-    Parameters:
-    - reaction_centers: List[Any], a list of reaction centers where each center should be
-    capable of being analyzed for graph type and ring sizes.
+    :param reaction_centers: List[Any], a list of reaction centers where each center should be
+                             capable of being analyzed for graph type and ring sizes.
 
-    Returns:
-    - List[int]: A list of indices from the original list of reaction centers that meet
-    the criteria of having the shortest reaction steps and/or the largest ring sizes.
-    Returns indices with minimum reaction steps if no indices meet both criteria.
+    :return: Indices selected by shortest reaction path and largest ring size,
+             falling back to the shortest-path indices.
+    :rtype: List[int]
     """
     # Extract topology types and ring sizes from reaction centers
     topo_type = [
@@ -523,13 +506,13 @@ def get_priority(reaction_centers: List[Any]) -> List[int]:
 
 
 def _normalize_h_pair(h_react: int, h_prod: int) -> Tuple[int, int]:
-    """
-    Normalize reactant/product hydrogen counts to relative change form.
+    """Normalize reactant/product hydrogen counts to relative change form.
 
-    Examples:
-        - (1, 1) -> (0, 0)
-        - (2, 1) -> (1, 0)
-        - (1, 2) -> (0, 1)
+    .. rubric:: Examples
+
+    (1, 1) -> (0, 0)
+    (2, 1) -> (1, 0)
+    (1, 2) -> (0, 1)
 
     :param h_react: Hydrogen count in reactant state.
     :type h_react: int

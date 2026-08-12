@@ -39,13 +39,12 @@ class _MolLike(Protocol):
 # Internal small helpers
 # -----------------------------
 def compute_gasteiger_inplace(mol: Chem.Mol | Any) -> None:
-    """
-    Compatibility helper: compute Gasteiger charges in-place (best-effort).
+    """Compatibility helper: compute Gasteiger charges in-place (best-effort).
     Reintroduced for backward compatibility with code that imports this from
     synkit.Chem.Molecule.descriptors.
 
     :param mol: RDKit Mol (or mol-like object) to annotate. Mutates in place.
-    :returns: None
+    :return: None
     """
     try:
         AllChem.ComputeGasteigerCharges(mol)
@@ -55,12 +54,11 @@ def compute_gasteiger_inplace(mol: Chem.Mol | Any) -> None:
 
 
 def _make_copy_and_sanitize(mol: Chem.Mol | _MolLike, sanitize: bool) -> Chem.Mol:
-    """
-    Make a defensive copy of ``mol`` and optionally sanitize it.
+    """Make a defensive copy of ``mol`` and optionally sanitize it.
 
     :param mol: input molecule-like object
     :param sanitize: whether to call ``Chem.SanitizeMol`` on the copy
-    :returns: copied (and possibly sanitized) RDKit Mol
+    :return: copied (and possibly sanitized) RDKit Mol
     """
     m = Chem.Mol(mol)
     if sanitize:
@@ -73,11 +71,10 @@ def _make_copy_and_sanitize(mol: Chem.Mol | _MolLike, sanitize: bool) -> Chem.Mo
 
 
 def _safe_get_gasteiger_value(atom: Any) -> float:
-    """
-    Extract a Gasteiger charge value from an RDKit atom, tolerant to API variants.
+    """Extract a Gasteiger charge value from an RDKit atom, tolerant to API variants.
 
     :param atom: RDKit atom-like object.
-    :returns: float value (0.0 on failure).
+    :return: float value (0.0 on failure).
     """
     try:
         if atom.HasProp("_GasteigerCharge"):
@@ -238,8 +235,7 @@ class PerMolDescriptors:
         sanitize: bool = True,
         normalize: Optional[str] = None,
     ) -> "PerMolDescriptors":
-        """
-        Best-effort compute per-atom descriptors for the given molecule.
+        """Best-effort compute per-atom descriptors for the given molecule.
 
         This function delegates work to small helpers for clarity and easier
         testing. Behavior is identical to the previous implementation.
@@ -247,7 +243,7 @@ class PerMolDescriptors:
         :param mol: RDKit molecule (or duck-typed equivalent).
         :param sanitize: try to sanitize the copied molecule (default True).
         :param normalize: normalization method: None (default), "zscore", or "minmax".
-        :returns: PerMolDescriptors instance.
+        :return: PerMolDescriptors instance.
         """
         # Defensive copy and optional sanitization
         m = _make_copy_and_sanitize(mol, sanitize)
@@ -278,13 +274,12 @@ class PerMolDescriptors:
     def from_smiles(
         cls, smiles: str, sanitize: bool = True, normalize: Optional[str] = None
     ) -> "PerMolDescriptors":
-        """
-        Parse SMILES and compute descriptors.
+        """Parse SMILES and compute descriptors.
 
         :param smiles: SMILES string to parse.
         :param sanitize: try to sanitize the parsed molecule (default True).
         :param normalize: optional normalization ("zscore" | "minmax" | None).
-        :returns: PerMolDescriptors instance.
+        :return: PerMolDescriptors instance.
         :raises ValueError: if SMILES fails to parse.
         """
         m = Chem.MolFromSmiles(smiles)
@@ -301,18 +296,16 @@ class PerMolDescriptors:
 
     @property
     def num_atoms(self) -> int:
-        """
-        Infer atom count from stored lists (prefers gasteiger length).
+        """Infer atom count from stored lists (prefers gasteiger length).
 
-        :returns: inferred atom count.
+        :return: inferred atom count.
         """
         return len(self.gasteiger)
 
     def to_dict(self) -> Dict[str, List[float]]:
-        """
-        Convert to a plain dictionary.
+        """Convert to a plain dictionary.
 
-        :returns: dict with the per-atom lists.
+        :return: dict with the per-atom lists.
         """
         return {
             "gasteiger": list(self.gasteiger),
@@ -323,10 +316,12 @@ class PerMolDescriptors:
 
 
 class PerMolDescriptorsBuilder:
-    """
-    Fluent builder for PerMolDescriptors.
+    """Fluent builder for :class:`PerMolDescriptors`.
 
-    Usage example:
+    .. rubric:: Example
+
+    .. code-block:: python
+
         desc = (
             PerMolDescriptorsBuilder(mol)
             .compute_gasteiger()
@@ -342,8 +337,7 @@ class PerMolDescriptorsBuilder:
     """
 
     def __init__(self, mol: Chem.Mol | _MolLike, sanitize: bool = True):
-        """
-        Create a builder for the given molecule.
+        """Create a builder for the given molecule.
 
         :param mol: RDKit Mol or equivalent.
         :param sanitize: try to sanitize the internal copy (default True).
@@ -369,30 +363,27 @@ class PerMolDescriptorsBuilder:
 
     # ---------- Chainable compute methods --------------------------------
     def compute_gasteiger(self) -> "PerMolDescriptorsBuilder":
-        """
-        Compute Gasteiger charges (best-effort) and store internally.
+        """Compute Gasteiger charges (best-effort) and store internally.
 
-        :returns: self (chainable).
+        :return: self (chainable).
         """
         self._gasteiger = _compute_gasteiger_list(self._mol, self._n_atoms)
         self._built = None
         return self
 
     def compute_estate(self) -> "PerMolDescriptorsBuilder":
-        """
-        Compute EState indices (best-effort).
+        """Compute EState indices (best-effort).
 
-        :returns: self (chainable).
+        :return: self (chainable).
         """
         self._estate = _compute_estate_list(self._mol, self._n_atoms)
         self._built = None
         return self
 
     def compute_crippen(self) -> "PerMolDescriptorsBuilder":
-        """
-        Compute Crippen per-atom contributions (best-effort).
+        """Compute Crippen per-atom contributions (best-effort).
 
-        :returns: self (chainable).
+        :return: self (chainable).
         """
         cr_logp, cr_mr = _compute_crippen_lists(self._mol, self._n_atoms)
         self._crippen_logp = cr_logp
@@ -402,11 +393,10 @@ class PerMolDescriptorsBuilder:
 
     # ---------- Normalization --------------------------------------------
     def normalize(self, method: Optional[str]) -> "PerMolDescriptorsBuilder":
-        """
-        Normalize any computed vectors using ``method`` ("zscore" | "minmax" | None).
+        """Normalize any computed vectors using ``method`` ("zscore" | "minmax" | None).
 
         :param method: normalization method or None to skip.
-        :returns: self (chainable).
+        :return: self (chainable).
         """
         if method is None:
             self._normalized_method = None
@@ -430,13 +420,12 @@ class PerMolDescriptorsBuilder:
 
     # ---------- Finalize / retrieve -------------------------------------
     def build(self) -> "PerMolDescriptorsBuilder":
-        """
-        Finalize internal state and prepare the immutable PerMolDescriptors.
+        """Finalize internal state and prepare the immutable PerMolDescriptors.
 
         The method stores the result internally and returns ``self``. Use the
         ``.descriptor`` property to access the final object.
 
-        :returns: self
+        :return: self
         """
         # If a vector wasn't computed, fill with zeros of appropriate length
         n = self._n_atoms
@@ -452,11 +441,10 @@ class PerMolDescriptorsBuilder:
 
     @property
     def descriptor(self) -> PerMolDescriptors:
-        """
-        Retrieve the built PerMolDescriptors. If not built yet, ``build()`` is
+        """Retrieve the built PerMolDescriptors. If not built yet, ``build()`` is
         called implicitly.
 
-        :returns: PerMolDescriptors
+        :return: PerMolDescriptors
         """
         if self._built is None:
             self.build()

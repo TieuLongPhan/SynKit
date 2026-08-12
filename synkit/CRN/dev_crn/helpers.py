@@ -7,15 +7,14 @@ from typing import Any, List, Set, Tuple
 def replay_pathway_and_collect_inferred(
     net: Any, pathway: Any, *, start: Counter | None = None
 ) -> Counter:
-    """
-    Replay ``pathway`` from ``start`` (defaults to seeding one copy of each declared
+    """Replay ``pathway`` from ``start`` (defaults to seeding one copy of each declared
     Source.* reaction in the network) and return a Counter of species that had to
     be inferred (seeded) to satisfy full stoichiometry at each step.
 
     :param net: ReactionNetwork instance.
     :param pathway: Pathway-like object with .reaction_ids attribute.
     :param start: Optional starting Counter (if None seeds Source.* tokens once).
-    :returns: Counter of inferred species -> counts.
+    :return: Counter of inferred species -> counts.
     """
     if start is None:
         start = Counter()
@@ -47,12 +46,11 @@ def replay_pathway_and_collect_inferred(
 
 
 def dedupe_pathways_by_canonical(net: Any, pathways: List[Any]) -> List[Any]:
-    """
-    Deduplicate Pathway objects by canonical reaction sequence. Keeps first-seen.
+    """Deduplicate Pathway objects by canonical reaction sequence. Keeps first-seen.
 
     :param net: ReactionNetwork instance.
     :param pathways: list of Pathway objects.
-    :returns: list of unique Pathway objects.
+    :return: list of unique Pathway objects.
     """
     seen: Set[Tuple[str, ...]] = set()
     uniq: List[Any] = []

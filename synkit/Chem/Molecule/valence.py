@@ -17,12 +17,11 @@ class _AtomLike(Protocol):
 
 
 class ValenceResolver:
-    """
-    Warning-free valence utilities for RDKit atoms.
+    """Warning-free valence utilities for RDKit atoms.
 
     These helpers retrieve **explicit**, **implicit**, and **total** valences
     while silencing common deprecation or signature warnings across RDKit
-    versions. They first try the modern keyword-argument API and gracefully
+    versions. They first try the modern keyword-argument API and then
     fall back to older call signatures or legacy methods.
 
     Preferred (modern) RDKit API:
@@ -35,17 +34,17 @@ class ValenceResolver:
         - ``atom.GetImplicitValence()``
         - ``atom.GetNumImplicitHs()`` (as a last resort for implicit)
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     * Returned values are coerced to Python ``int`` and guaranteed non-negative,
       with ``0`` returned if all strategies fail.
-    * Values reflect the *current* state of the atom. If you modify hydrogen
-      counts, aromaticity, or bond orders, query again.
+    * Values reflect the current atom state and must be queried again after
+      changes to hydrogen counts, aromaticity, or bond orders.
     * ``Chem.Atom`` is an alias of ``rdchem.Atom``, but a structural duck-type
       ``_AtomLike`` protocol is provided for static typing tools.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     >>> from rdkit import Chem
     >>> m = Chem.MolFromSmiles("CCO")
     >>> a = m.GetAtomWithIdx(1)  # central carbon
@@ -57,15 +56,14 @@ class ValenceResolver:
 
     @staticmethod
     def explicit(atom: Chem.Atom | _AtomLike) -> int:
-        """
-        Return the **explicit valence** of an atom.
+        """Return the **explicit valence** of an atom.
 
         Tries modern ``GetValence(which=EXPLICIT)`` first, then older positional
         form, then ``GetExplicitValence()``. Returns ``0`` on failure.
 
         :param atom: RDKit atom instance.
         :type atom: rdchem.Atom
-        :returns: Explicit valence (non-negative integer).
+        :return: Explicit valence (non-negative integer).
         :rtype: int
         """
         # Modern keyword form (preferred; avoids RDKit warnings)
@@ -84,8 +82,7 @@ class ValenceResolver:
 
     @staticmethod
     def implicit(atom: Chem.Atom | _AtomLike) -> int:
-        """
-        Return the **implicit valence** of an atom.
+        """Return the **implicit valence** of an atom.
 
         Tries modern ``GetValence(which=IMPLICIT)`` first, then older positional
         form, then ``GetImplicitValence()``, finally falls back to the number of
@@ -93,7 +90,7 @@ class ValenceResolver:
 
         :param atom: RDKit atom instance.
         :type atom: rdchem.Atom
-        :returns: Implicit valence (non-negative integer).
+        :return: Implicit valence (non-negative integer).
         :rtype: int
         """
         # Modern keyword form (preferred)
@@ -116,12 +113,11 @@ class ValenceResolver:
 
     @staticmethod
     def total(atom: Chem.Atom | _AtomLike) -> int:
-        """
-        Return the **total valence** (explicit + implicit).
+        """Return the **total valence** (explicit + implicit).
 
         :param atom: RDKit atom instance.
         :type atom: rdchem.Atom
-        :returns: Total valence as ``explicit(atom) + implicit(atom)``.
+        :return: Total valence as ``explicit(atom) + implicit(atom)``.
         :rtype: int
         """
         return ValenceResolver.explicit(atom) + ValenceResolver.implicit(atom)

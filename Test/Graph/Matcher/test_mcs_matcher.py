@@ -84,6 +84,45 @@ class TestMCSMatcher(unittest.TestCase):
         self.assertEqual(matcher.num_mappings, 0)
         self.assertEqual(matcher.last_size, 0)
 
+    def test_mixed_node_identifier_types_are_supported(self) -> None:
+        graph_1 = nx.Graph()
+        graph_1.add_edge(1, "x", order=1)
+        graph_2 = nx.Graph()
+        graph_2.add_edge(2, "y", order=1)
+        nx.set_node_attributes(graph_1, "C", "element")
+        nx.set_node_attributes(graph_2, "C", "element")
+
+        matcher = MCSMatcher().find_common_subgraph(graph_1, graph_2, mcs=True)
+
+        self.assertEqual(matcher.last_size, 2)
+
+    def test_empty_edge_attributes_mean_unlabelled_edges(self) -> None:
+        graph_1 = self._path_with_labels(2)
+        graph_2 = self._path_with_labels(2)
+        graph_2.edges[0, 1]["order"] = 2
+
+        matcher = MCSMatcher(edge_attrs=[]).find_common_subgraph(
+            graph_1,
+            graph_2,
+            mcs=True,
+        )
+
+        self.assertEqual(matcher.last_size, 2)
+
+    def test_directed_mcs_preserves_edge_orientation(self) -> None:
+        graph_1 = nx.DiGraph()
+        graph_1.add_edge(0, 1, order=1)
+        graph_1.nodes[0]["element"] = "C"
+        graph_1.nodes[1]["element"] = "O"
+        graph_2 = nx.DiGraph()
+        graph_2.add_edge(10, 11, order=1)
+        graph_2.nodes[10]["element"] = "O"
+        graph_2.nodes[11]["element"] = "C"
+
+        matcher = MCSMatcher().find_common_subgraph(graph_1, graph_2, mcs=True)
+
+        self.assertEqual(matcher.last_size, 1)
+
     # # ------------------------------------------------------------------
     # # Orientation / swapping behaviour
     # # ------------------------------------------------------------------

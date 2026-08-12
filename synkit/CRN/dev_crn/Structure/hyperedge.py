@@ -9,8 +9,7 @@ from .rxn import RXNSide
 
 @dataclass
 class HyperEdge:
-    """
-    Reaction hyperedge container: reactants -> products.
+    """Reaction hyperedge container: reactants -> products.
 
     :param id: Unique edge identifier (string).
     :type id: str
@@ -24,8 +23,8 @@ class HyperEdge:
                  Defaults to ``"r"``.
     :type rule: str
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         from synkit.CRN.Hypergraph.hyperedge import HyperEdge

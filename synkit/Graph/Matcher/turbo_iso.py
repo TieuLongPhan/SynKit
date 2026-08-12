@@ -1,6 +1,36 @@
-import networkx as nx
 from collections import defaultdict
-from typing import Any, Dict, List, Set, Union, Optional
+from typing import Any, Dict, List, Set, Tuple, Union, Optional
+
+import networkx as nx
+
+_MISSING_LABEL = object()
+
+
+def _freeze_label_value(value: Any) -> Any:
+    """Encode common attribute values without delimiter or type collisions."""
+    value_type = type(value)
+    if value_type in {str, int, float, bool, bytes, type(None)}:
+        return value_type, value
+    if isinstance(value, dict):
+        return (
+            dict,
+            frozenset(
+                (_freeze_label_value(key), _freeze_label_value(item))
+                for key, item in value.items()
+            ),
+        )
+    if isinstance(value, list):
+        return list, tuple(_freeze_label_value(item) for item in value)
+    if isinstance(value, tuple):
+        return tuple, tuple(_freeze_label_value(item) for item in value)
+    if isinstance(value, (set, frozenset)):
+        return value_type, frozenset(_freeze_label_value(item) for item in value)
+    try:
+        hash(value)
+    except TypeError:
+        return value_type, repr(value)
+    return value_type, value
+
 
 ######################################################################
 # TurboISO – Optimised
@@ -28,6 +58,8 @@ class TurboISO:
         edge_label: Union[str, List[str], None] = None,
         distance_threshold: int = 5000,
     ) -> None:
+        if graph.is_multigraph():
+            raise ValueError("TurboISO does not support multigraphs")
         self.G = graph
         # --- normalise attribute selectors -----------------------------------
         self.node_label = (
@@ -39,8 +71,8 @@ class TurboISO:
             else ([edge_label] if isinstance(edge_label, str) else list(edge_label))
         )
         # --- signature cache + label buckets ---------------------------------
-        self._sig: Dict[Any, str] = {}
-        self._label_buckets: Dict[str, Set[Any]] = defaultdict(set)
+        self._sig: Dict[Any, Tuple[Any, ...]] = {}
+        self._label_buckets: Dict[Tuple[Any, ...], Set[Any]] = defaultdict(set)
         for v in self.G.nodes:
             sig = self._node_signature(v)
             self._sig[v] = sig
@@ -51,7 +83,7 @@ class TurboISO:
         self.distance_threshold = distance_threshold
 
     # ------------------------------------------------------------------ util
-    def _node_signature(self, v: Any, G: Optional[nx.Graph] = None) -> str:
+    def _node_signature(self, v: Any, G: Optional[nx.Graph] = None) -> Tuple[Any, ...]:
         """Return cached signature for host graph, else compute for Q."""
         if G is None or G is self.G:
             # host graph – cached
@@ -59,13 +91,18 @@ class TurboISO:
                 return self._sig[v]
             # fall back (shouldn’t happen)
             G = self.G
-        parts = [str(G.nodes[v].get(a, "#")) for a in self.node_label]
-        return "|".join(parts)
+        return tuple(
+            _freeze_label_value(G.nodes[v].get(attr, _MISSING_LABEL))
+            for attr in self.node_label
+        )
 
-    def _edge_signature(self, u: Any, v: Any, H: nx.Graph) -> str:
+    def _edge_signature(self, u: Any, v: Any, H: nx.Graph) -> Tuple[Any, ...]:
         if not self.edge_label:
-            return ""
-        return "|".join(str(H[u][v].get(a, "#")) for a in self.edge_label)
+            return ()
+        return tuple(
+            _freeze_label_value(H[u][v].get(attr, _MISSING_LABEL))
+            for attr in self.edge_label
+        )
 
     # --------------------------------------------------------- init filter
     def _init_candidates(self, Q: nx.Graph) -> Dict[Any, Set[Any]]:
@@ -138,6 +175,10 @@ class TurboISO:
     def search(
         self, Q: nx.Graph, prune: bool = False
     ) -> Union[List[Dict[Any, Any]], bool]:
+        if Q.is_multigraph():
+            raise ValueError("TurboISO does not support multigraph queries")
+        if not Q:
+            return True if prune else [{}]
         C = self._init_candidates(Q)
         # optional distance filter only if pool still large
         pool_size = sum(len(vs) for vs in C.values())
@@ -167,15 +208,28 @@ class TurboISO:
                     continue
                 # adjacency & edge label check
                 good = True
-                for qnbr in Q.neighbors(q):
-                    if qnbr in mapping:
-                        hnbr = mapping[qnbr]
-                        if not self.G.has_edge(h, hnbr):
+                if Q.has_edge(q, q):
+                    if not self.G.has_edge(h, h) or (
+                        self.edge_label
+                        and self._edge_signature(q, q, Q)
+                        != self._edge_signature(h, h, self.G)
+                    ):
+                        good = False
+                for qnbr, hnbr in mapping.items():
+                    if Q.has_edge(q, qnbr):
+                        if not self.G.has_edge(h, hnbr) or (
+                            self.edge_label
+                            and self._edge_signature(q, qnbr, Q)
+                            != self._edge_signature(h, hnbr, self.G)
+                        ):
                             good = False
                             break
-                        if self.edge_label and self._edge_signature(
-                            q, qnbr, Q
-                        ) != self._edge_signature(h, hnbr, self.G):
+                    if Q.is_directed() and Q.has_edge(qnbr, q):
+                        if not self.G.has_edge(hnbr, h) or (
+                            self.edge_label
+                            and self._edge_signature(qnbr, q, Q)
+                            != self._edge_signature(hnbr, h, self.G)
+                        ):
                             good = False
                             break
                 if not good:
@@ -190,8 +244,17 @@ class TurboISO:
 
         # iterate over root candidates
         for hroot in C[root]:
+            if Q.has_edge(root, root) and (
+                not self.G.has_edge(hroot, hroot)
+                or (
+                    self.edge_label
+                    and self._edge_signature(root, root, Q)
+                    != self._edge_signature(hroot, hroot, self.G)
+                )
+            ):
+                continue
             # build candidate region around hroot within radius
-            if nx.is_connected(Q):
+            if not Q.is_directed() and nx.is_connected(Q):
                 region = set(
                     nx.single_source_shortest_path_length(
                         self.G, hroot, cutoff=radius

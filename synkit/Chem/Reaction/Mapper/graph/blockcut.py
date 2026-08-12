@@ -46,15 +46,13 @@ def _to_nx(graph, n):
 class BlockCutTree:
     """Block-cut-tree decomposition.
 
-    Attributes
-    ----------
-    blocks : list[frozenset[int]]
-        Biconnected components (node sets). A bridge edge is a block of size 2.
-    articulation_points : set[int]
-        Cut vertices shared between blocks.
-    tree : networkx.Graph
-        Bipartite block-cut tree with nodes ``("B", block_index)`` and
-        ``("C", cut_vertex)``.
+    :ivar blocks: Biconnected components (node sets). A bridge edge is a block of size 2.
+    :vartype blocks: list[frozenset[int]]
+    :ivar articulation_points: Cut vertices shared between blocks.
+    :vartype articulation_points: set[int]
+    :ivar tree: Bipartite block-cut tree with nodes ``("B", block_index)`` and
+                ``("C", cut_vertex)``.
+    :vartype tree: networkx.Graph
     """
 
     blocks: List[FrozenSet[int]]
@@ -65,16 +63,12 @@ class BlockCutTree:
 def block_cut_tree(graph, n):
     """Compute the block-cut-tree decomposition of a labeled-graph adjacency dict.
 
-    Parameters
-    ----------
-    graph : dict[int, dict[int, number]]
-        Adjacency (edge weights ignored).
-    n : int
-        Number of nodes.
+    :param graph: Adjacency (edge weights ignored).
+    :type graph: dict[int, dict[int, number]]
+    :param n: Number of nodes.
+    :type n: int
 
-    Returns
-    -------
-    BlockCutTree
+    :rtype: BlockCutTree
     """
     if not HAS_NX:
         raise ImportError("networkx is required for block-cut-tree decomposition")

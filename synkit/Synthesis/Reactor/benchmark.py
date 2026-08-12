@@ -90,14 +90,13 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
     def _get_host(
         data: List[Dict[str, Any]], reaction_key: str = "reactions"
     ) -> List[Dict[str, Any]]:
-        """
-        Populate 'r' and 'p' SMILES fields for each dict entry.
+        """Populate 'r' and 'p' SMILES fields for each dict entry.
 
         :param data: List of dict entries.
         :type data: list of dict
         :param reaction_key: Key for reaction-SMILES string.
         :type reaction_key: str
-        :returns: Same list with 'r' and 'p' keys added.
+        :return: Same list with 'r' and 'p' keys added.
         :rtype: list of dict
         :raises ValueError: If any string lacks '>>'.
         """
@@ -115,14 +114,11 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
         self,
         rules: Iterable[Any],
     ) -> List[Dict[str, Any]]:
-        """
-        Perform forward (invert=False) on 'r' and backward (invert=True) on 'p'.
+        """Perform forward (invert=False) on 'r' and backward (invert=True) on 'p'.
 
         :param rules: Iterable of rule graphs or SMILES.
         :type rules: iterable
-        :param reaction_key: Key for reaction-SMILES (unused here).
-        :type reaction_key: str
-        :returns: List of dicts each with keys 'fw','bw','fw_count','bw_count'.
+        :return: List of dicts each with keys 'fw','bw','fw_count','bw_count'.
         :rtype: list of dict
         """
         fw_out = super().fit(rules, invert=False)
@@ -138,10 +134,9 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
         return self._data
 
     def describe(self) -> str:
-        """
-        Return detailed configuration for Benchmark, including reaction_key.
+        """Return detailed configuration for Benchmark, including reaction_key.
 
-        :returns: Multi-line summary.
+        :return: Multi-line summary.
         :rtype: str
         """
         base = super().describe().splitlines()

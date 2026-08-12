@@ -247,9 +247,7 @@ def test_second_rule_cannot_add_an_edge_already_supplied_by_first_rule() -> None
         _llg({"x": 0, "y": 0}, (("x", "y", 1),)),
         {"a": "x", "b": "y"},
     )
-    overlap = RuleOverlap.from_mapping(
-        first.right, second.left, {10: "a", 20: "b"}
-    )
+    overlap = RuleOverlap.from_mapping(first.right, second.left, {10: "a", 20: "b"})
 
     with pytest.raises(CompositionError) as error:
         compose_rules(first, second, overlap)

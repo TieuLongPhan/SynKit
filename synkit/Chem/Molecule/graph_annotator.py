@@ -12,8 +12,7 @@ NodeData = Dict[str, Any]
 
 
 class GraphAnnotator:
-    """
-    Compute optional topology annotations for a NetworkX molecular graph.
+    """Compute optional topology annotations for a NetworkX molecular graph.
 
     The annotator mutates a graph (in-place by default) or a shallow copy if
     `in_place=False`. Methods are chainable and return ``self``; use the
@@ -27,8 +26,8 @@ class GraphAnnotator:
       - conjugated/pi connected component size -> ``conj_component_size``
       - ring sizes via cycle basis -> ``ring_sizes`` and updated ``in_ring``
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     * Graph nodes are expected to carry an ``'element'`` key (string) and may
       optionally have ``'aromatic'`` or ``'is_halogen'`` boolean flags.
     * Edge attributes used: ``'order'`` (numeric-like) and ``'conjugated'``.

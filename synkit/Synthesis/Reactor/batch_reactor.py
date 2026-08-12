@@ -1,4 +1,5 @@
 import logging
+import weakref
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import networkx as nx
@@ -9,6 +10,100 @@ from synkit.Synthesis.Reactor.rule_filter import RuleFilter
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 
 __all__ = ["BatchReactor"]
+
+_UNSUPPORTED_CACHE_VALUE = object()
+
+
+def _freeze_cache_value(value: Any, active: set[int] | None = None) -> Any:
+    """Return an exact hashable value, or a sentinel for unsupported state."""
+    value_type = type(value)
+    if value_type in {str, int, float, bool, bytes, type(None)}:
+        return value_type, value
+    if active is None:
+        active = set()
+    value_id = id(value)
+    if value_id in active:
+        return _UNSUPPORTED_CACHE_VALUE
+    active.add(value_id)
+    try:
+        if isinstance(value, dict):
+            records = []
+            for key, item in value.items():
+                frozen_key = _freeze_cache_value(key, active)
+                frozen_item = _freeze_cache_value(item, active)
+                if (
+                    frozen_key is _UNSUPPORTED_CACHE_VALUE
+                    or frozen_item is _UNSUPPORTED_CACHE_VALUE
+                ):
+                    return _UNSUPPORTED_CACHE_VALUE
+                records.append((frozen_key, frozen_item))
+            return dict, frozenset(records)
+        if isinstance(value, list):
+            records = tuple(_freeze_cache_value(item, active) for item in value)
+            return (
+                _UNSUPPORTED_CACHE_VALUE
+                if _UNSUPPORTED_CACHE_VALUE in records
+                else (list, records)
+            )
+        if isinstance(value, tuple):
+            records = tuple(_freeze_cache_value(item, active) for item in value)
+            return (
+                _UNSUPPORTED_CACHE_VALUE
+                if _UNSUPPORTED_CACHE_VALUE in records
+                else (tuple, records)
+            )
+        if isinstance(value, (set, frozenset)):
+            records = tuple(_freeze_cache_value(item, active) for item in value)
+            return (
+                _UNSUPPORTED_CACHE_VALUE
+                if _UNSUPPORTED_CACHE_VALUE in records
+                else (value_type, frozenset(records))
+            )
+        # A lossy repr or identity token could conflate states after object-id
+        # reuse. Failing open preserves correctness for third-party objects.
+        return _UNSUPPORTED_CACHE_VALUE
+    finally:
+        active.remove(value_id)
+
+
+def _graph_cache_state(graph: nx.Graph) -> Any:
+    """Capture exact graph topology and supported attribute state."""
+    graph_attrs = _freeze_cache_value(graph.graph)
+    node_records = []
+    for node, attrs in graph.nodes(data=True):
+        frozen_node = _freeze_cache_value(node)
+        frozen_attrs = _freeze_cache_value(attrs)
+        if (
+            frozen_node is _UNSUPPORTED_CACHE_VALUE
+            or frozen_attrs is _UNSUPPORTED_CACHE_VALUE
+        ):
+            return _UNSUPPORTED_CACHE_VALUE
+        node_records.append((frozen_node, frozen_attrs))
+
+    edge_records = []
+    edges = (
+        graph.edges(keys=True, data=True)
+        if graph.is_multigraph()
+        else (
+            (left, right, None, attrs) for left, right, attrs in graph.edges(data=True)
+        )
+    )
+    for left, right, key, attrs in edges:
+        frozen = tuple(
+            _freeze_cache_value(value) for value in (left, right, key, attrs)
+        )
+        if _UNSUPPORTED_CACHE_VALUE in frozen:
+            return _UNSUPPORTED_CACHE_VALUE
+        edge_records.append(frozen)
+    if graph_attrs is _UNSUPPORTED_CACHE_VALUE:
+        return _UNSUPPORTED_CACHE_VALUE
+    return (
+        type(graph),
+        graph_attrs,
+        frozenset(node_records),
+        frozenset(edge_records),
+    )
+
 
 # =============================================================================
 # Low-level rule application
@@ -24,8 +119,7 @@ def _apply_rule_raw(
     explicit_h: bool,
     implicit_temp: bool,
 ) -> List[str]:
-    """
-    Apply one rule graph to a substrate graph using SynReactor.
+    """Apply one rule graph to a substrate graph using SynReactor.
 
     :param substrate: Graph representing the substrate molecule.
     :type substrate: networkx.Graph
@@ -39,7 +133,7 @@ def _apply_rule_raw(
     :type explicit_h: bool
     :param implicit_temp: Use implicit templates in SynReactor.
     :type implicit_temp: bool
-    :returns: A list of product SMARTS strings or reaction SMILES.
+    :return: A list of product SMARTS strings or reaction SMILES.
     :rtype: list of str
     """
     try:
@@ -69,7 +163,9 @@ class _RuleApplier:
     """
     Callable wrapper around `_apply_rule_raw` with a FIFO cache.
 
-    The cache is a per-process dict keyed by (substrate_id, rule_id, invert).
+    Entries are indexed by object identity and validated against exact graph
+    snapshots before reuse, so graph mutation and Python id reuse cannot
+    produce stale results.
     """
 
     __slots__ = (
@@ -101,8 +197,10 @@ class _RuleApplier:
         self._strategy = strategy
         self._explicit_h = explicit_h
         self._implicit_temp = implicit_temp
-        self._cache = {} if cache_enabled else None  # type: ignore[var-annotated]
-        self._cache_max = cache_maxsize
+        self._cache = (  # type: ignore[var-annotated]
+            {} if cache_enabled and cache_maxsize > 0 else None
+        )
+        self._cache_max = max(0, int(cache_maxsize))
 
     def _execute(
         self,
@@ -126,25 +224,46 @@ class _RuleApplier:
         rule: nx.Graph,
         inv: bool,
     ) -> List[str]:
-        """
-        Apply a rule to a substrate, using the cache if enabled.
+        """Apply a rule to a substrate, using the cache if enabled.
 
         :param substrate: Substrate graph.
         :param rule: Rule graph.
         :param inv: Inversion flag.
-        :returns: List of reaction outputs.
+        :return: List of reaction outputs.
         """
         if self._cache is None:
             return self._execute(substrate, rule, inv)
 
         key = (id(substrate), id(rule), inv)
-        if key in self._cache:
-            return self._cache[key]
+        entry = self._cache.get(key)
+        substrate_state = _graph_cache_state(substrate)
+        rule_state = _graph_cache_state(rule)
+        cacheable = (
+            substrate_state is not _UNSUPPORTED_CACHE_VALUE
+            and rule_state is not _UNSUPPORTED_CACHE_VALUE
+        )
+        if entry is not None and cacheable:
+            substrate_ref, rule_ref, old_substrate_state, old_rule_state, result = entry
+            if (
+                substrate_ref() is substrate
+                and rule_ref() is rule
+                and old_substrate_state == substrate_state
+                and old_rule_state == rule_state
+            ):
+                return list(result)
 
         res = self._execute(substrate, rule, inv)
+        if not cacheable:
+            return res
         if len(self._cache) >= self._cache_max:
             self._cache.pop(next(iter(self._cache)))  # FIFO eviction
-        self._cache[key] = res
+        self._cache[key] = (
+            weakref.ref(substrate),
+            weakref.ref(rule),
+            substrate_state,
+            rule_state,
+            tuple(res),
+        )
         return res
 
 
@@ -254,10 +373,9 @@ class BatchReactor:
         )
 
     def help(self) -> str:
-        """
-        Return usage examples and API description.
+        """Return usage examples and API description.
 
-        :returns: Multi-line help text.
+        :return: Multi-line help text.
         :rtype: str
         """
         return (
@@ -265,14 +383,13 @@ class BatchReactor:
             "explicit_h=True, implicit_temp=False, strategy='bt', dedupe=True, "
             "entry_n_jobs=1, rule_n_jobs=1, parallel_rules=False, allow_nested=False, "
             "cache_enabled=True, cache_maxsize=32768, logger=None)" + "\n"
-            "Use .fit(rules, invert=False) to apply reaction rules to your SMILES batch."
+            "Use .fit(rules, invert=False) to apply reaction rules to the SMILES batch."
         )
 
     def describe(self) -> str:
-        """
-        Return a configuration summary.
+        """Return a configuration summary.
 
-        :returns: Human-readable settings overview.
+        :return: Human-readable settings overview.
         :rtype: str
         """
         lines = [
@@ -319,14 +436,13 @@ class BatchReactor:
         *,
         invert: bool = False,
     ) -> List[Dict[str, Any]]:
-        """
-        Apply reaction rules to each substrate in the batch.
+        """Apply reaction rules to each substrate in the batch.
 
         :param rules: Iterable of rule graphs or SMILES strings.
         :type rules: iterable
         :param invert: Whether to apply rules in reverse direction.
         :type invert: bool
-        :returns: A list of dicts, each with:
+        :return: A list of dicts, each with:
             - "out": list of product SMARTS/reaction SMILES
             - "count": number of outputs
         :rtype: list of dict
@@ -358,12 +474,11 @@ class BatchReactor:
     # ------------------------------------------------------------------
 
     def _to_graph(self, entry: Union[str, Dict[str, Any]]) -> nx.Graph:
-        """
-        Convert a SMILES string or dict entry into a networkx Graph.
+        """Convert a SMILES string or dict entry into a networkx Graph.
 
         :param entry: SMILES or dict holding SMILES under host_key.
         :type entry: str or dict
-        :returns: Molecule graph.
+        :return: Molecule graph.
         :rtype: networkx.Graph
         :raises KeyError: if host_key is missing for dict.
         :raises TypeError: if entry is not str or dict.
@@ -382,12 +497,11 @@ class BatchReactor:
 
     @staticmethod
     def _ensure_graph_rules(rules: Iterable[Any]) -> List[nx.Graph]:
-        """
-        Convert an iterable of SMILES or graph rules into graph objects.
+        """Convert an iterable of SMILES or graph rules into graph objects.
 
         :param rules: Iterable of rule SMILES or networkx.Graph.
         :type rules: iterable
-        :returns: List of rule graphs.
+        :return: List of rule graphs.
         :rtype: list of networkx.Graph
         :raises ValueError: if a rule SMILES is invalid.
         :raises TypeError: for unsupported rule types.
@@ -408,8 +522,7 @@ class BatchReactor:
     def _apply_bulk(
         self, g: nx.Graph, rules: List[nx.Graph], invert: bool
     ) -> List[str]:
-        """
-        Apply a list of rule graphs to a substrate graph.
+        """Apply a list of rule graphs to a substrate graph.
 
         :param g: Substrate graph.
         :type g: networkx.Graph
@@ -417,7 +530,7 @@ class BatchReactor:
         :type rules: list of networkx.Graph
         :param invert: Direction flag.
         :type invert: bool
-        :returns: Flattened list of reaction outputs.
+        :return: Flattened list of reaction outputs.
         :rtype: list of str
         """
         jobs = 1

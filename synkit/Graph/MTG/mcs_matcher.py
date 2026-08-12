@@ -53,16 +53,14 @@ __all__ = ["MCSMatcher"]
 class MCSMatcher:
     """Common / maximum‑common subgraph matcher.
 
-    Parameters
-    ----------
-    node_label_names : list[str], optional
-        Node attribute keys to compare (default ``["element"]``).
-    node_label_defaults : list[Any], optional
-        Fallback values when an attribute is missing (default ``["*"]``).
-    edge_attribute : str, optional
-        Edge attribute storing the scalar *order* (default ``"order"``).
-    allow_shift : bool, optional
-        Placeholder for future asymmetric rules (ignored for scalars).
+    :param node_label_names: Node attribute keys to compare (default ``["element"]``).
+    :type node_label_names: list[str], optional
+    :param node_label_defaults: Fallback values when an attribute is missing (default ``["*"]``).
+    :type node_label_defaults: list[Any], optional
+    :param edge_attribute: Edge attribute storing the scalar *order* (default ``"order"``).
+    :type edge_attribute: str, optional
+    :param allow_shift: Placeholder for future asymmetric rules (ignored for scalars).
+    :type allow_shift: bool, optional
     """
 
     def __init__(
@@ -154,14 +152,14 @@ class MCSMatcher:
     ) -> None:
         """Search for subgraph isomorphisms and cache the mappings.
 
-        Parameters
-        ----------
-        G1 : nx.Graph  - *pattern* graph (searched as a subgraph)
-        G2 : nx.Graph  - *host* graph
-        mcs : bool, optional
-            If *True*, keep only mappings of maximum size.
-        mcs_mol : bool, optional
-            If *True*, match entire connected components (largest molecules).
+        :param G1:
+        :type G1: nx.Graph  - *pattern* graph (searched as a subgraph)
+        :param G2:
+        :type G2: nx.Graph  - *host* graph
+        :param mcs: If *True*, keep only mappings of maximum size.
+        :type mcs: bool, optional
+        :param mcs_mol: If *True*, match entire connected components (largest molecules).
+        :type mcs_mol: bool, optional
         """
         self._mappings.clear()
         self._last_size = 0

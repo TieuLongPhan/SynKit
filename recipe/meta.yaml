@@ -14,11 +14,11 @@ build:
 
 requirements:
   host:
-    - python >=3.11,<3.12     # ensure same Python minor version
+    - python >=3.11,<3.13
     - pip
     - hatchling               # PEP517 build backend
   run:
-    - python >=3.11,<3.12
+    - python >=3.11,<3.13
     - scikit-learn >=1.4.0
     - pandas >=1.5.3
     - rdkit >=2025.3.1

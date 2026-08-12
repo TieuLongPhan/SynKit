@@ -221,6 +221,74 @@ class TestPartialMatcher(unittest.TestCase):
         self.assertEqual(matcher.num_pattern_components, 2)
         self.assertIsInstance(matcher.help, str)
 
+    def test_embedding_estimate_is_a_true_upper_bound_for_subgraphs(self) -> None:
+        host = nx.cycle_graph(3)
+        pattern = nx.path_graph(2)
+        matcher = PartialMatcher(
+            host=host,
+            pattern=pattern,
+            node_attrs=[],
+            edge_attrs=[],
+            strategy=Strategy.COMPONENT,
+            max_results=None,
+            partial=False,
+            threshold=None,
+        ).estimate_embeddings_wl()
+
+        self.assertEqual(matcher.num_mappings, 6)
+        self.assertGreaterEqual(
+            matcher.approx_embedding_count,
+            matcher.num_mappings,
+        )
+
+    def test_zero_result_cap_returns_no_partial_mappings(self) -> None:
+        matcher = PartialMatcher(
+            host=self._make_host_path(5),
+            pattern=self._make_simple_pattern(),
+            node_attrs=[],
+            edge_attrs=[],
+            max_results=0,
+        ).estimate_embeddings_wl()
+
+        self.assertEqual(matcher.get_mappings(), [])
+        self.assertEqual(matcher.approx_embedding_count, 0)
+
+    def test_global_cap_does_not_truncate_component_domains(self) -> None:
+        pattern = nx.Graph()
+        pattern.add_nodes_from(("left", "right"))
+        matcher = PartialMatcher(
+            host=nx.path_graph(2),
+            pattern=pattern,
+            node_attrs=[],
+            edge_attrs=[],
+            strategy=Strategy.ALL,
+            max_results=1,
+            partial=False,
+            threshold=None,
+        )
+
+        self.assertEqual(matcher.num_mappings, 1)
+        self.assertEqual(set(matcher.get_mappings()[0]), {"left", "right"})
+        self.assertEqual(set(matcher.get_mappings()[0].values()), {0, 1})
+
+    def test_negative_partial_caps_are_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "max_results"):
+            PartialMatcher(
+                host=self._make_host_path(5),
+                pattern=self._make_simple_pattern(),
+                node_attrs=[],
+                edge_attrs=[],
+                max_results=-1,
+            )
+        with self.assertRaisesRegex(ValueError, "threshold"):
+            PartialMatcher(
+                host=self._make_host_path(5),
+                pattern=self._make_simple_pattern(),
+                node_attrs=[],
+                edge_attrs=[],
+                threshold=-1,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

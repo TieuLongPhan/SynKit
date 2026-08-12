@@ -142,7 +142,7 @@ class AAMValidator:
 
         :param its_graphs: A list of ITS graphs to compare.
         :type its_graphs: list of networkx.Graph
-        :returns:
+        :return:
             - A list of index‐pairs `(i, j)` where `its_graphs[i]` is isomorphic to `its_graphs[j]`.
             - The total count of such isomorphic pairs.
         :rtype: tuple (list of tuple of int, int, int)
@@ -191,7 +191,7 @@ class AAMValidator:
         :param constitutional_only: Convert only attributes used by the
             ITS/RC isomorphism test and omit graph-level stereo descriptors.
         :type constitutional_only: bool
-        :returns: Dictionary with Boolean ``"ITS"`` and ``"RC"`` verdicts.
+        :return: Dictionary with Boolean ``"ITS"`` and ``"RC"`` verdicts.
         :rtype: Dict[str, bool]
         """
         its_graphs, rc_graphs = [], []
@@ -279,7 +279,7 @@ class AAMValidator:
             on only one side before graph comparison. If None, use the
             instance default or False for class-level calls.
         :type strip_unbalanced_maps: bool or None
-        :returns:
+        :return:
             - `True` if any tautomer matches.
             - `False` if none match.
             - `None` if an error occurs.
@@ -333,7 +333,7 @@ class AAMValidator:
             on only one side before graph comparison. If None, use the
             instance default or False for class-level calls.
         :type strip_unbalanced_maps: bool or None
-        :returns: Validation result for this single pair.
+        :return: Validation result for this single pair.
         :rtype: bool
         """
         strip_unbalanced_maps = cls._resolve_strip_unbalanced_maps(
@@ -393,7 +393,7 @@ class AAMValidator:
             on only one side before graph comparison. If None, use the
             instance default or False for class-level calls.
         :type strip_unbalanced_maps: bool or None
-        :returns: A list of dicts, one per mapper, with keys:
+        :return: A list of dicts, one per mapper, with keys:
                   - `"mapper"`: the mapper name
                   - `"accuracy"`: percentage correct (float)
                   - `"results"`: list of individual bool results

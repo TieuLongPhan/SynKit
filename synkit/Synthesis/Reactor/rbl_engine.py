@@ -12,7 +12,8 @@ from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
 from synkit.Synthesis.Reactor.syn_reactor import SynReactor
 from synkit.Graph.Wildcard.its_merge import fuse_its_graphs
 from synkit.Graph.Fusion import (
-    FUSION_PROOF_SCHEMA,
+    DEFAULT_INTERFACE_EDGE_KEYS,
+    DEFAULT_INTERFACE_NODE_KEYS,
     FusionCandidate,
     FusionConstructionError,
     FusionInterface,
@@ -20,6 +21,7 @@ from synkit.Graph.Fusion import (
     construct_pushout,
     fusion_candidate_from_construction,
     fusion_candidates_exactly_equivalent,
+    graphs_exactly_equivalent,
 )
 from synkit.Graph.Matcher.mcs_matcher import MCSMatcher
 from synkit.Graph.Matcher.wl_sel import WLSel
@@ -30,6 +32,7 @@ from synkit.Graph.Wildcard.graph_wc import GraphCollectionSelector
 from synkit.Synthesis.Reactor.fusion_validation import (
     FusionIssueCode,
     FusionValidation,
+    certify_fusion_postprocessing,
     validate_fusion_rsmi,
     validate_rbl_candidate,
     validate_wildcard_mapping_roles,
@@ -41,13 +44,13 @@ from synkit.Synthesis.Reactor.rbl_policy import (
 )
 from synkit.Synthesis.Reactor.rbl_matching import RBLMatchingMixin
 from synkit.Synthesis.Reactor.rbl_reaction import RBLReactionMixin
+from synkit.Synthesis.Reactor.rbl_state import RBLStateMixin
 
 ITSLike = Any
 
 
-class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
-    """
-    Radical-based linking (RBL) engine for bidirectional template
+class RBLEngine(RBLStateMixin, RBLReactionMixin, RBLMatchingMixin):
+    """Radical-based linking (RBL) engine for bidirectional template
     application and ITS-graph fusion using wildcard-based subgraph
     matching.
 
@@ -81,8 +84,8 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
     * :class:`MCSMatcher` (default)
         - Exhaustive maximum-common-subgraph search based on
           :class:`networkx.algorithms.isomorphism.GraphMatcher`.
-        - Respects :paramref:`prune_wc` and
-          :paramref:`prune_automorphisms`.
+        - Respects ``prune_wc`` and
+          ``prune_automorphisms``.
         - Produces exact MCS mappings but can be expensive on large or
           highly symmetric graphs.
 
@@ -104,7 +107,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
     Early-stop semantics
     --------------------
     The engine exposes two orthogonal control flags:
-    :paramref:`early_stop` and :paramref:`fast_paths_only`.
+    ``early_stop`` and ``fast_paths_only``.
 
     * If :attr:`early_stop` is ``True``:
 
@@ -132,8 +135,14 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
     * If :attr:`early_stop` is ``False``, the same loop runs without
       early exit, collecting all fused ITS and fused RSMIs.
 
-    Fast-path-only mode
-    -------------------
+    Fast-track and fast-path-only modes
+    -----------------------------------
+    ``mode="fast_track"`` runs only the two cheap paths and never enters MCS
+    or fusion. ``mode="fast_fusion"`` first tries those paths and then searches
+    a bounded, WL-ranked prefix of fusion pairs. WL scores affect order only;
+    they are not treated as a semantic filter. The default bound is eight pairs
+    and the result always reports ``complete=False`` when fusion is used.
+
     * If :attr:`fast_paths_only` is ``True`` (or
       :meth:`process` is called with ``fast_paths_only=True``):
 
@@ -146,7 +155,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         2. :meth:`_early_stop_on_nonwildcard`
 
       * If neither path yields a solution, the engine returns with
-        empty :pyattr:`fused_its` / :pyattr:`fused_rsmis` and
+        empty :attr:`fused_its` / :attr:`fused_rsmis` and
         ``result['mode'] == "fast_paths_only"`` and
         ``result['reason'] == "fast_paths_no_solution"``.
 
@@ -165,113 +174,79 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
 
     This gives fine-grained external control over how templates are
     embedded and how hydrogens are handled during the reaction stage.
+    ``mode="verified"`` deliberately overrides these two flags with
+    ``implicit_temp=False`` and ``explicit_h=True`` so mapped hydrogen
+    identities cannot be erased from a proof-safe rule application.
 
-    Parameters
-    ----------
-    :param wildcard_element: Element symbol used to denote wildcard
-        atoms (default ``"*"``, as in your wildcard framework).
-    :type wildcard_element: str, optional
-    :param element_key: Node attribute key that stores the element
-        symbol (default ``"element"``).
-    :type element_key: str, optional
-    :param node_attrs: Node attributes used by the matcher when
-        comparing nodes. Defaults to
-        ``["element", "aromatic", "charge"]``.
-    :type node_attrs: Sequence[str] or None, optional
-    :param edge_attrs: Edge attributes used by the matcher when
-        comparing bonds. Defaults to ``["order"]``.
-    :type edge_attrs: Sequence[str] or None, optional
-    :param prune_wc: If ``True``, ask the matcher to prune wildcard
-        nodes from both graphs before matching (when supported by the
-        matcher class).
-    :type prune_wc: bool, optional
-    :param prune_automorphisms: If ``True``, ask the matcher (for
-        example :class:`MCSMatcher` or :class:`ApproxMCSMatcher`) to
-        prune automorphism-equivalent mappings, typically collapsing
-        mappings that cover the same host-node set.
-    :type prune_automorphisms: bool, optional
-    :param mcs_side: Side of the reaction centres to match when using
-        :meth:`MCSMatcher.find_rc_mapping`. Typical values are ``"l"``,
-        ``"r"`` or ``"op"``.
-    :type mcs_side: str, optional
-    :param early_stop: If ``True``, activate the multi-stage pruning
-        described above **and** enable streaming early-stop inside the
-        fusion loop.
-    :type early_stop: bool, optional
-    :param fast_paths_only: If ``True``, only fast paths (quick-check
-        and non-wildcard ITS early-stop) are used. The expensive fusion
-        stage is skipped entirely, even if :attr:`early_stop` is
-        ``True``. This can be overridden per-call in :meth:`process`.
-    :type fast_paths_only: bool, optional
-    :param search_policy: Explicit search scope and termination policy. This
-        is mutually exclusive with the compatibility ``mode`` presets.
-    :type search_policy: RBLSearchPolicy or None, optional
-    :param max_mappings_per_pair: Hard cap on the number of mappings to
-        consider for each (forward ITS, backward ITS) pair. Default is
-        ``1``.
-    :type max_mappings_per_pair: int, optional
-    :param implicit_temp: Flag forwarded to :class:`SynReactor`
-        (``implicit_temp`` argument). Controls whether the template is
-        treated as implicit.
-    :type implicit_temp: bool, optional
-    :param explicit_h: Flag forwarded to :class:`SynReactor`
-        (``explicit_h`` argument). Controls whether explicit hydrogens
-        are kept during reaction application.
-    :type explicit_h: bool, optional
-    :param preserve_original_sides: Original endpoints that every accepted
-        candidate must preserve through a component-injective exact subgraph
-        embedding. RBL defaults to ``("products",)`` because it may
-        reconstruct the reactant set while preserving the observed target.
-    :type preserve_original_sides: Sequence[str], optional
-    :param embed_threshold: Hard cap forwarded to :class:`SynReactor`
-        (``embed_threshold`` argument), typically controlling the
-        maximum number of embeddings before the reactor aborts.
-    :type embed_threshold: int, optional
-    :param reactor_cls: Class used to instantiate the reactor. Must be
-        compatible with :class:`SynReactor` and expose an ``its``
-        attribute and (optionally) ``smarts``.
-    :type reactor_cls: type, optional
-    :param wildcard_adder_cls: Class used to decorate reactions with
-        radical wildcards. Defaults to :class:`RadicalWildcardAdder`.
-    :type wildcard_adder_cls: type, optional
-    :param matcher_cls: Class used for ITS matching. By default this is
-        :class:`MCSMatcher` (exact MCS). It can be replaced by
-        :class:`ApproxMCSMatcher` for a greedy, approximate search that
-        is much faster but not guaranteed to be globally optimal.
-    :type matcher_cls: type[MCSMatcher] or type[ApproxMCSMatcher], optional
-    :param fuse_fn: Function used to fuse ITS graphs based on a core
-        mapping. Defaults to :func:`fuse_its_graphs`.
-    :type fuse_fn: Callable[[ITSLike, ITSLike, Dict[Any, Any]], ITSLike], optional
-    :param remove_explicit_H_fn: Function that removes explicit
-        hydrogens from a reaction SMILES. Defaults to
-        :func:`synkit.Chem.utils.remove_explicit_H_from_rsmi`.
-    :type remove_explicit_H_fn: Callable[[str], str], optional
-    :param rsmi_to_its_fn: Function to convert RSMI to ITS; defaults to
-        :func:`synkit.IO.rsmi_to_its`.
-    :type rsmi_to_its_fn: Callable[..., ITSLike], optional
-    :param its_to_rsmi_fn: Function to convert ITS to RSMI; defaults to
-        :func:`synkit.IO.its_to_rsmi`.
-    :type its_to_rsmi_fn: Callable[[ITSLike], str], optional
-    :param h_to_implicit_fn: Function to convert explicit hydrogens to
-        implicit in an ITS or graph; defaults to
-        :func:`synkit.Graph.Hyrogen._misc.h_to_implicit`.
-    :type h_to_implicit_fn: Callable[[ITSLike], ITSLike], optional
-    :param standardize_h_fn: Function to perform final hydrogen
-        standardization; defaults to
-        :func:`synkit.Graph.Hyrogen._misc.standardize_hydrogen`.
-    :type standardize_h_fn: Callable[[ITSLike], ITSLike], optional
-    :param standardize_fn: Function used by the quick-check and
-        verification for reaction canonicalization. It should take a
-        reaction string and return a canonicalized reaction string.
-        Typical usage is ``Standardize().fit``. Defaults to a simple
-        identity standardizer that strips whitespace.
-    :type standardize_fn: Callable[[str], str] or None, optional
-    :param logger: Logger for debug information. If ``None``, a
-        module-level logger is created.
-    :type logger: logging.Logger or None, optional
+    :param wildcard_element: Value used for wildcard atom elements.
+    :type wildcard_element: Any
+    :param element_key: Node attribute containing the element symbol.
+    :type element_key: str
+    :param node_attrs: Node attributes used for candidate matching.
+    :type node_attrs: Sequence[str] | None
+    :param edge_attrs: Edge attributes used for candidate matching.
+    :type edge_attrs: Sequence[str] | None
+    :param prune_wc: Remove wildcard nodes before matching when supported.
+    :type prune_wc: bool
+    :param prune_automorphisms: Collapse automorphism-equivalent mappings.
+    :type prune_automorphisms: bool
+    :param mcs_side: Reaction-center side passed to the MCS matcher.
+    :type mcs_side: str
+    :param early_stop: Stop after the first valid result.
+    :type early_stop: bool
+    :param fast_paths_only: Restrict processing to quick-check and
+                            non-wildcard paths.
+    :type fast_paths_only: bool
+    :param mode: Compatibility search profile name.
+    :type mode: str | None
+    :param search_policy: Explicit search scope and termination policy;
+                          mutually exclusive with ``mode``.
+    :type search_policy: RBLSearchPolicy | None
+    :param max_pairs: Maximum number of ranked forward/backward pairs.
+    :type max_pairs: int | None
+    :param max_mappings_per_pair: Maximum mappings evaluated for each pair;
+                                  zero means unbounded.
+    :type max_mappings_per_pair: int
+    :param component_matching: Enable component-assignment matching.
+    :type component_matching: bool | None
+    :param fusion_backend: Fusion materialization backend.
+    :type fusion_backend: str | None
+    :param implicit_temp: Treat the reactor template as implicit-H.
+    :type implicit_temp: bool
+    :param explicit_h: Retain explicit hydrogens during reactor application.
+    :type explicit_h: bool
+    :param electron_diagnostics: Collect electron-accounting diagnostics.
+    :type electron_diagnostics: bool
+    :param preserve_original_sides: Original reaction sides that accepted
+                                     candidates must preserve.
+    :type preserve_original_sides: Sequence[str]
+    :param embed_threshold: Reactor embedding limit.
+    :type embed_threshold: int
+    :param reactor_cls: Reactor implementation.
+    :type reactor_cls: type
+    :param wildcard_adder_cls: Radical-wildcard decorator implementation.
+    :type wildcard_adder_cls: type
+    :param matcher_cls: ITS matcher implementation.
+    :type matcher_cls: type
+    :param fuse_fn: Legacy ITS-fusion function.
+    :type fuse_fn: Callable[[ITSLike, ITSLike, Dict[Any, Any]], ITSLike]
+    :param remove_explicit_H_fn: Reaction explicit-hydrogen remover.
+    :type remove_explicit_H_fn: Callable[[str], str]
+    :param rsmi_to_its_fn: Reaction-to-ITS converter.
+    :type rsmi_to_its_fn: Callable[..., ITSLike]
+    :param its_to_rsmi_fn: ITS-to-reaction converter.
+    :type its_to_rsmi_fn: Callable[[ITSLike], str]
+    :param h_to_implicit_fn: Explicit-to-implicit hydrogen converter.
+    :type h_to_implicit_fn: Callable[[ITSLike], ITSLike]
+    :param standardize_h_fn: ITS hydrogen standardizer.
+    :type standardize_h_fn: Callable[[ITSLike], ITSLike]
+    :param standardize_fn: Reaction canonicalizer used for quick checks.
+    :type standardize_fn: Callable[[str], str] | None
+    :param logger: Diagnostic logger.
+    :type logger: logging.Logger | None
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     Exact MCS back-end
     ~~~~~~~~~~~~~~~~~~
     Use the default :class:`MCSMatcher` for exact MCS fusion:
@@ -333,7 +308,10 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         fast_paths_only: bool = False,
         mode: str | None = None,
         search_policy: RBLSearchPolicy | None = None,
+        max_pairs: int | None = None,
         max_mappings_per_pair: int = 1,
+        component_matching: bool | None = None,
+        fusion_backend: str | None = None,
         implicit_temp: bool = True,
         explicit_h: bool = False,
         electron_diagnostics: bool = False,
@@ -364,10 +342,22 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         self.edge_attrs: List[str] = (
             list(edge_attrs) if edge_attrs is not None else ["order"]
         )
+        # Candidate discovery may intentionally use a coarse configurable
+        # label set. Proof construction may not: its interface uses the fixed
+        # isotope/Lewis contract independently of matcher tuning, while the
+        # completed-graph proof handles hydrogen presentation equivalence.
+        self.interface_node_attrs = list(DEFAULT_INTERFACE_NODE_KEYS)
+        self.interface_edge_attrs = list(DEFAULT_INTERFACE_EDGE_KEYS)
         verified_mode = mode == "verified"
         if verified_mode:
             prune_automorphisms = False
             max_mappings_per_pair = 0
+            max_pairs = None
+            # Proof-safe rule application keeps mapped hydrogen as an explicit
+            # graph vertex.  Folding it into an implicit template destroys the
+            # identity needed to certify proton-transfer rules.
+            implicit_temp = False
+            explicit_h = True
         self.prune_wc: bool = prune_wc
         self.prune_automorphisms: bool = prune_automorphisms
         self.mcs_side: str = mcs_side
@@ -382,7 +372,10 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         elif mode is not None:
             self.search_policy = RBLSearchPolicy.from_mode(mode)
         elif fast_paths_only:
-            self.search_policy = RBLSearchPolicy.from_mode("fast_track")
+            self.search_policy = RBLSearchPolicy(
+                SearchScope.FAST_PATHS_ONLY,
+                TerminationPolicy.FIRST_VALID,
+            )
         elif early_stop:
             self.search_policy = RBLSearchPolicy.from_mode("early_stop")
         else:
@@ -391,7 +384,31 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
             self.search_policy.termination is TerminationPolicy.FIRST_VALID
         )
         self.fast_paths_only = self.search_policy.scope is SearchScope.FAST_PATHS_ONLY
+        if max_pairs is None and self.search_policy.scope is SearchScope.BOUNDED_FUSION:
+            max_pairs = 8
+        if max_pairs is not None and int(max_pairs) <= 0:
+            raise ValueError("max_pairs must be positive or None.")
+        self.max_pairs: int | None = None if max_pairs is None else int(max_pairs)
         self.max_mappings_per_pair: int = max(0, int(max_mappings_per_pair))
+        if component_matching is None:
+            component_matching = not (
+                not self.prune_automorphisms and self.max_mappings_per_pair == 0
+            )
+        if verified_mode:
+            component_matching = False
+        self.component_matching = bool(component_matching)
+        if fusion_backend is None:
+            fusion_backend = (
+                "categorical_pushout"
+                if verified_mode
+                or self.search_policy.scope is SearchScope.BOUNDED_FUSION
+                else "legacy_its_merge"
+            )
+        if fusion_backend not in {"categorical_pushout", "legacy_its_merge"}:
+            raise ValueError(
+                "fusion_backend must be 'categorical_pushout' or " "'legacy_its_merge'."
+            )
+        self.fusion_backend = fusion_backend
 
         # Reactor behaviour flags
         self.implicit_temp: bool = bool(implicit_temp)
@@ -455,207 +472,6 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         self._last_stop_metadata: Dict[str, Any] = {}
         self._active_search_policy = self.search_policy
 
-    # ------------------------------------------------------------------
-    # Small helpers
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _identity_standardize(rsmi: str) -> str:
-        """
-        Fallback standardizer: strip whitespace only.
-
-        :param rsmi: Reaction string to standardize.
-        :type rsmi: str
-        :returns: Standardized reaction string.
-        :rtype: str
-        """
-        return rsmi.strip()
-
-    def _canonical_split(self, rsmi: str) -> Optional[tuple[str, str]]:
-        """
-        Canonicalize a reaction string and split into reactants/products.
-
-        :param rsmi: Reaction SMILES string.
-        :type rsmi: str
-        :returns: Tuple of canonical ``(reactants, products)`` or ``None`` if
-            the split fails.
-        :rtype: Optional[tuple[str, str]]
-        """
-        canon = self.standardize_fn(rsmi)
-        try:
-            reactants, products = canon.split(">>", 1)
-        except ValueError:
-            self.logger.debug("Canonical split failed for reaction: %s", rsmi)
-            return None
-        return reactants, products
-
-    def _reset_run_state(self) -> None:
-        """
-        Reset per-run state before a new :meth:`process` call.
-
-        This does not clear the prepared template, allowing reuse across
-        multiple reactions.
-        """
-        self._forward_its = []
-        self._backward_its = []
-        self._fused_its = []
-        self._fused_rsmis = []
-        self._fusion_candidates = []
-        self._fusion_search_stats = {}
-        self._latest_postprocessed_its = None
-        self._latest_output_validation = None
-        self._diagnostics = {
-            "forward": [],
-            "backward": [],
-            "quick_check": [],
-            "fusion": [],
-        }
-        self._last_stop_mode = "not_run"
-        self._last_stop_reason = "not_run"
-        self._last_stop_metadata = {}
-        self._active_search_policy = self.search_policy
-
-    def _record_stop(
-        self,
-        *,
-        mode: str,
-        reason: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        """
-        Record termination mode, reason and optional metadata for the last run.
-
-        :param mode: High-level mode describing how the pipeline finished
-            (e.g. ``"quick_check"``, ``"early_stop"``, ``"full_pipeline"``).
-        :type mode: str
-        :param reason: Human-readable reason (e.g. ``"quick_check_match"``,
-            ``"early_stop_first_valid"``, ``"no_fused_its"``).
-        :type reason: str
-        :param metadata: Optional, small JSON-serialisable dictionary with
-            auxiliary information (e.g. counts).
-        :type metadata: dict[str, Any] or None
-        """
-        self._last_stop_mode = mode
-        self._last_stop_reason = reason
-        self._last_stop_metadata = dict(metadata or {})
-
-    # ------------------------------------------------------------------
-    # Properties exposing results
-    # ------------------------------------------------------------------
-
-    @property
-    def template_its(self) -> Optional[ITSLike]:
-        """
-        Standardized ITS representation of the last prepared template.
-
-        :returns: Template ITS or ``None`` if not prepared.
-        :rtype: Optional[ITSLike]
-        """
-        return self._template_its
-
-    @property
-    def forward_its(self) -> List[ITSLike]:
-        """
-        ITS graphs obtained from the last **forward** application.
-
-        :returns: List of forward ITS graphs.
-        :rtype: list[ITSLike]
-        """
-        return list(self._forward_its)
-
-    @property
-    def backward_its(self) -> List[ITSLike]:
-        """
-        ITS graphs obtained from the last **backward** (invert) application.
-
-        :returns: List of backward ITS graphs.
-        :rtype: list[ITSLike]
-        """
-        return list(self._backward_its)
-
-    @property
-    def fused_its(self) -> List[ITSLike]:
-        """
-        Fused ITS graphs obtained after wildcard-based core matching.
-
-        :returns: List of fused ITS graphs.
-        :rtype: list[ITSLike]
-        """
-        return list(self._fused_its)
-
-    @property
-    def fused_rsmis(self) -> List[str]:
-        """
-        Post-processed reaction SMILES derived from the fused ITS graphs.
-
-        :returns: List of fused reaction SMILES.
-        :rtype: list[str]
-        """
-        return list(self._fused_rsmis)
-
-    @property
-    def fusion_candidates(self) -> List[FusionCandidate]:
-        """Return proof-bearing Sprint 15 candidates from the fusion stage."""
-        return list(self._fusion_candidates)
-
-    @property
-    def last_reaction(self) -> Optional[str]:
-        """
-        Last processed reaction RSMI string.
-
-        :returns: Reaction SMILES or ``None`` if :meth:`process` was not run.
-        :rtype: Optional[str]
-        """
-        return self._last_reaction
-
-    @property
-    def result(self) -> Dict[str, Any]:
-        """
-        Summary of the result from the last :meth:`process` call.
-
-        The dictionary contains:
-
-        * ``"fused_rsmis"``: list of final fused reaction strings.
-        * ``"mode"``: high-level termination mode
-          (e.g. ``"quick_check"``, ``"early_stop"``, ``"full_pipeline"``,
-          ``"fast_paths_only"``).
-        * ``"reason"``: short explanation of how/why the pipeline finished.
-        * ``"metadata"``: small auxiliary dictionary with extra details.
-        * ``"n_forward_its"``: number of forward ITS graphs.
-        * ``"n_backward_its"``: number of backward ITS graphs.
-        * ``"n_fused_its"``: number of fused ITS graphs.
-
-        :returns: Summary dictionary with fused SMILES and termination info.
-        :rtype: dict[str, Any]
-        """
-        return {
-            "fused_rsmis": list(self._fused_rsmis),
-            "mode": self._last_stop_mode,
-            "reason": self._last_stop_reason,
-            "metadata": dict(self._last_stop_metadata),
-            "n_forward_its": len(self._forward_its),
-            "n_backward_its": len(self._backward_its),
-            "n_fused_its": len(self._fused_its),
-            "fusion_proof_schema": FUSION_PROOF_SCHEMA,
-            "fusion_candidates": [
-                candidate.to_dict() for candidate in self._fusion_candidates
-            ],
-            "fusion_search": dict(self._fusion_search_stats),
-            "verified_fusion_mode": self.verified_mode,
-            "search_policy": self._active_search_policy.to_dict(),
-            "acceptance_policy": {
-                "preserve_original_sides": list(self.preserve_original_sides),
-                "relation": "component_injective_subgraph",
-                "use_chirality": True,
-            },
-            "diagnostics": self.diagnostics,
-        }
-
-    @property
-    def diagnostics(self) -> Dict[str, List[Dict[str, Any]]]:
-        """Electron diagnostics grouped by reactor stage."""
-        return {stage: list(reports) for stage, reports in self._diagnostics.items()}
-
     def _fuse_and_postprocess(
         self,
         fw_its: Sequence[ITSLike],
@@ -663,6 +479,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         *,
         replace_wc: bool,
         early_stop: bool,
+        max_pairs: int | None = None,
     ) -> None:
         """
         Core fusion + post-processing loop.
@@ -675,7 +492,8 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         1. Use the configured matcher (:class:`MCSMatcher` or
         :class:`ApproxMCSMatcher`) to obtain mappings.
         2. Take at most :attr:`max_mappings_per_pair` mappings.
-        3. Fuse the ITS graphs using :attr:`fuse_fn`.
+        3. Construct the audited pushout, then use either that graph or the
+           configured legacy compatibility fusion backend.
         4. Immediately post-process the fused graph via
         :meth:`_postprocess_single`.
 
@@ -684,7 +502,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         WL-selected pairs/mappings and collects all fused ITS and fused
         RSMIs.
 
-        On return, :pyattr:`_fused_its`, :pyattr:`_fused_rsmis` and the
+        On return, :attr:`_fused_its`, :attr:`_fused_rsmis` and the
         result bookkeeping attributes are updated.
 
         :param fw_its: Forward ITS graphs.
@@ -695,15 +513,29 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         :type replace_wc: bool
         :param early_stop: Whether to stop after the first valid fused RSMI.
         :type early_stop: bool
+        :param max_pairs: Optional hard prefix bound after deterministic pair
+            ranking. ``None`` explores every pair.
+        :type max_pairs: int or None
         """
         fused_graphs: List[ITSLike] = []
         fused_rsmis: List[str] = []
         rw_adder = self.wildcard_adder_cls()
 
         # --- WL-based candidate selection instead of naive nested loops ---
-        selector = WLSel(fw_its, bw_its)
+        # The selector is an ordering heuristic only.  A similarity threshold
+        # is not a sound admissibility predicate for graph fusion.
+        selector = WLSel(
+            fw_its,
+            bw_its,
+            element_key=self.element_key,
+            node_attrs=self.node_attrs,
+            edge_attrs=self.edge_attrs,
+            min_score=0.0,
+        )
         selector.build_signatures().score_pairs(top_k=None)
-        pairs = selector.pair_indices
+        all_pairs = selector.pair_indices
+        pairs = all_pairs if max_pairs is None else all_pairs[:max_pairs]
+        n_pairs_truncated = len(all_pairs) - len(pairs)
 
         n_pairs = 0
         n_mappings_total = 0
@@ -711,6 +543,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         n_candidates_deduplicated = 0
         n_mappings_truncated = 0
         candidate_buckets: Dict[str, List[FusionCandidate]] = {}
+        accepted_final_graphs: List[nx.Graph] = []
 
         for i_fw, i_bw in pairs:
             fw = fw_its[i_fw]
@@ -723,13 +556,21 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                 bw,
                 mcs=True,
                 mcs_mol=False,
-                component=True,
+                component=self.component_matching,
                 side=self.mcs_side,
             )
 
             mappings = matcher.get_mappings(direction="G1_to_G2") or []
             if not mappings:
                 continue
+
+            if self.verified_mode:
+                completed_mappings: List[Dict[Any, Any]] = []
+                for mapping in mappings:
+                    completed_mappings.extend(
+                        self._complete_typed_wildcard_ports(fw, bw, mapping)
+                    )
+                mappings = completed_mappings
 
             mapping_count = len(mappings)
             if self.max_mappings_per_pair > 0:
@@ -766,8 +607,8 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                         fw,
                         bw,
                         mapping,
-                        node_keys=self.node_attrs,
-                        edge_keys=self.edge_attrs,
+                        node_keys=self.interface_node_attrs,
+                        edge_keys=self.interface_edge_attrs,
                         element_key=self.element_key,
                         wildcard_element=self.wildcard_element,
                     )
@@ -775,8 +616,8 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                         fw,
                         bw,
                         interface,
-                        node_keys=self.node_attrs,
-                        edge_keys=self.edge_attrs,
+                        node_keys=self.interface_node_attrs,
+                        edge_keys=self.interface_edge_attrs,
                         element_key=self.element_key,
                         wildcard_element=self.wildcard_element,
                     )
@@ -804,33 +645,41 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                         },
                     )
                     continue
-                try:
+                if self.fusion_backend == "categorical_pushout":
+                    fused_graph = proof_construction.graph.copy()
+                else:
+                    # Compatibility backend.  Its output is accepted only as
+                    # a plain result unless it later proves exactly equivalent
+                    # to the audited pushout graph.
                     try:
-                        fused_graph = self.fuse_fn(
-                            fw,
-                            bw,
-                            mapping,
-                            remove_wildcards=True,
+                        try:
+                            fused_graph = self.fuse_fn(
+                                fw,
+                                bw,
+                                mapping,
+                                remove_wildcards=True,
+                            )
+                        except TypeError:
+                            fused_graph = self.fuse_fn(  # type: ignore[arg-type]
+                                fw,
+                                bw,
+                                mapping,
+                            )
+                    except Exception as exc:  # pragma: no cover - defensive
+                        n_mappings_rejected += 1
+                        self._record_fusion_failure(
+                            FusionIssueCode.OPERATION_FAILED,
+                            "Legacy ITS graph fusion failed for the mapping.",
+                            source="construction",
+                            context={
+                                **diagnostic_context,
+                                "error": type(exc).__name__,
+                            },
                         )
-                    except TypeError:
-                        fused_graph = self.fuse_fn(  # type: ignore[arg-type]
-                            fw,
-                            bw,
-                            mapping,
-                        )
-                except Exception as exc:  # pragma: no cover - defensive
-                    n_mappings_rejected += 1
-                    self.logger.debug("Fusion failed for mapping %s: %s", mapping, exc)
-                    self._record_fusion_failure(
-                        FusionIssueCode.OPERATION_FAILED,
-                        "ITS graph fusion failed for the selected mapping.",
-                        source="construction",
-                        context={
-                            **diagnostic_context,
-                            "error": type(exc).__name__,
-                        },
-                    )
-                    continue
+                        continue
+
+                if self.verified_mode:
+                    fused_graph = self._normalize_duplicate_atom_maps(fused_graph)
 
                 # The base implementation populates these caches, while a
                 # subclass override safely falls back to reparsing/revalidating.
@@ -859,6 +708,30 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                         context=diagnostic_context,
                     )
                     continue
+                postprocess_proof = certify_fusion_postprocessing(
+                    proof_construction.graph,
+                    final_graph,
+                    materialize_hydrogen=replace_wc,
+                    element_key=self.element_key,
+                    wildcard_element=self.wildcard_element,
+                )
+                proof_equivalent = postprocess_proof.valid
+                if not proof_equivalent:
+                    self._record_fusion_failure(
+                        FusionIssueCode.PROOF_FAILED,
+                        "Post-processing changed the graph certified by the pushout "
+                        "outside the audited normalization contract.",
+                        source="verified_proof",
+                        context={
+                            **diagnostic_context,
+                            "issues": [
+                                issue.to_dict() for issue in postprocess_proof.issues
+                            ],
+                        },
+                    )
+                    if self.verified_mode:
+                        n_mappings_rejected += 1
+                        continue
                 proof_validation = self._latest_output_validation
                 if proof_validation is None:
                     proof_validation = (
@@ -874,23 +747,36 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                             allow_wildcards=not replace_wc,
                         )
                     )
-                candidate = fusion_candidate_from_construction(
-                    proof_construction,
-                    rsmi=rsmi_final,
-                    validation=(proof_validation.to_dict(),),
-                    graph=final_graph,
-                )
-                bucket = candidate_buckets.setdefault(candidate.canonical_signature, [])
                 if any(
-                    fusion_candidates_exactly_equivalent(candidate, previous)
-                    for previous in bucket
+                    graphs_exactly_equivalent(final_graph, previous)
+                    for previous in accepted_final_graphs
                 ):
                     n_candidates_deduplicated += 1
                     continue
-
-                self._fusion_candidates.append(candidate)
-                bucket.append(candidate)
-                fused_graphs.append(fused_graph)
+                if proof_equivalent:
+                    validation_payload = proof_validation.to_dict()
+                    validation_payload["evidence"] = {
+                        **validation_payload.get("evidence", {}),
+                        **postprocess_proof.evidence,
+                    }
+                    candidate = fusion_candidate_from_construction(
+                        proof_construction,
+                        rsmi=rsmi_final,
+                        validation=(validation_payload,),
+                        graph=final_graph,
+                    )
+                    bucket = candidate_buckets.setdefault(
+                        candidate.canonical_signature,
+                        [],
+                    )
+                    if not any(
+                        fusion_candidates_exactly_equivalent(candidate, previous)
+                        for previous in bucket
+                    ):
+                        self._fusion_candidates.append(candidate)
+                        bucket.append(candidate)
+                accepted_final_graphs.append(final_graph)
+                fused_graphs.append(final_graph)
                 fused_rsmis.append(rsmi_final)
                 if early_stop:
                     self.logger.debug(
@@ -904,13 +790,28 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                     self._fused_rsmis = fused_rsmis
                     self._fusion_search_stats = {
                         "complete": False,
+                        "complete_within_mapping_scope": False,
                         "termination": "first_valid",
                         "pairs_explored": n_pairs,
                         "mappings_explored": n_mappings_total,
                         "mappings_rejected": n_mappings_rejected,
-                        "candidates_valid": len(self._fusion_candidates),
+                        "candidates_valid": len(fused_rsmis),
+                        "proof_candidates": len(self._fusion_candidates),
                         "candidates_deduplicated": n_candidates_deduplicated,
                         "mappings_truncated": n_mappings_truncated,
+                        "pair_candidates": len(all_pairs),
+                        "pairs_truncated": n_pairs_truncated,
+                        "component_matching": self.component_matching,
+                        "mapping_scope": (
+                            "single_component_assignment"
+                            if self.component_matching
+                            else "maximum_common_subgraphs"
+                        ),
+                        "pair_ordering": "wl_no_cutoff",
+                        "fusion_backend": self.fusion_backend,
+                        "interface_completion": (
+                            "maximal_typed_leaf_ports" if self.verified_mode else "none"
+                        ),
                     }
                     self._record_stop(
                         mode="early_stop",
@@ -930,28 +831,55 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
                     return
 
         # No early-stop taken: finalise results
-        ranked = sorted(
-            zip(self._fusion_candidates, fused_graphs, fused_rsmis, strict=True),
-            key=lambda record: (
-                record[0].score,
-                record[0].canonical_signature,
-                record[0].proof_digest,
-            ),
+        ranked_outputs = sorted(
+            zip(fused_graphs, fused_rsmis, strict=True),
+            key=lambda record: record[1],
         )
-        self._fusion_candidates = [record[0] for record in ranked]
-        self._fused_its = [record[1] for record in ranked]
-        self._fused_rsmis = [record[2] for record in ranked]
-        search_complete = n_mappings_truncated == 0 and not self.prune_automorphisms
+        self._fused_its = [record[0] for record in ranked_outputs]
+        self._fused_rsmis = [record[1] for record in ranked_outputs]
+        self._fusion_candidates.sort(
+            key=lambda candidate: (
+                candidate.score,
+                candidate.canonical_signature,
+                candidate.proof_digest,
+            )
+        )
+        mapping_scope_complete = (
+            n_pairs_truncated == 0
+            and n_mappings_truncated == 0
+            and not self.prune_automorphisms
+            and not self.component_matching
+            and self.matcher_cls is MCSMatcher
+        )
         self._fusion_search_stats = {
-            "complete": search_complete,
-            "termination": "exhaustive" if search_complete else "bounded",
+            # MCS is an ordering/search restriction, not a proof that smaller
+            # admissible overlaps cannot produce additional valid fusions.
+            "complete": False,
+            "complete_within_mapping_scope": mapping_scope_complete,
+            "termination": (
+                "mapping_scope_exhausted" if mapping_scope_complete else "bounded"
+            ),
             "pairs_explored": n_pairs,
             "mappings_explored": n_mappings_total,
             "mappings_rejected": n_mappings_rejected,
-            "candidates_valid": len(self._fusion_candidates),
+            "candidates_valid": len(self._fused_rsmis),
+            "proof_candidates": len(self._fusion_candidates),
             "candidates_deduplicated": n_candidates_deduplicated,
             "mappings_truncated": n_mappings_truncated,
             "automorphism_pruned": self.prune_automorphisms,
+            "pair_candidates": len(all_pairs),
+            "pairs_truncated": n_pairs_truncated,
+            "component_matching": self.component_matching,
+            "mapping_scope": (
+                "single_component_assignment"
+                if self.component_matching
+                else "maximum_common_subgraphs"
+            ),
+            "pair_ordering": "wl_no_cutoff",
+            "fusion_backend": self.fusion_backend,
+            "interface_completion": (
+                "maximal_typed_leaf_ports" if self.verified_mode else "none"
+            ),
         }
 
         if not fused_graphs:
@@ -1007,8 +935,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         rw_adder: Optional[RadicalWildcardAdder] = None,
         diagnostic_context: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
-        """
-        Post-process a single fused ITS graph to a fused RSMI string.
+        """Post-process a single fused ITS graph to a fused RSMI string.
 
         Pipeline:
 
@@ -1026,7 +953,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         :param rw_adder: Optional pre-instantiated wildcard adder. If
             ``None``, a new one is constructed.
         :type rw_adder: RadicalWildcardAdder or None
-        :returns: Final fused reaction SMILES or ``None`` if any step fails.
+        :return: Final fused reaction SMILES or ``None`` if any step fails.
         :rtype: Optional[str]
         """
         self._latest_postprocessed_its = None
@@ -1034,7 +961,11 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         if rw_adder is None:
             rw_adder = self.wildcard_adder_cls()
 
-        rsmi1 = self._safe_its_to_rsmi(graph, fmt="tuple")
+        rsmi1 = self._safe_its_to_rsmi(
+            graph,
+            fmt="tuple",
+            explicit_hydrogen=self.explicit_h,
+        )
         if rsmi1 is None:
             self._record_fusion_failure(
                 FusionIssueCode.SERIALIZATION_FAILED,
@@ -1111,13 +1042,12 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         replace_wc: bool = True,
         fast_paths_only: Optional[bool] = None,
     ) -> RBLEngine:
-        """
-        Run the full RBL pipeline on a reaction RSMI and a template.
+        """Run the full RBL pipeline on a reaction RSMI and a template.
 
         1. Split the reaction into reactants/products via ``'>>'``.
         2. Optionally attempt a quick-check (:meth:`_quick_check`) if
            early-stop or fast-paths-only logic is active. On success,
-           store the solution as the sole entry in :pyattr:`fused_rsmis`.
+           store the solution as the sole entry in :attr:`fused_rsmis`.
         3. Prepare the template via :meth:`prepare_template`.
         4. Run forward and backward template application via :meth:`react`.
         5. Optionally attempt :meth:`_early_stop_on_nonwildcard` to exploit
@@ -1143,7 +1073,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
             engine-level :attr:`fast_paths_only` flag. If ``None``,
             the attribute value is used.
         :type fast_paths_only: bool or None
-        :returns: The current engine instance.
+        :return: The current engine instance.
         :rtype: RBLEngine
         :raises ValueError: If the reaction string does not contain ``'>>'``
             or if template preparation fails.
@@ -1164,7 +1094,10 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         if fast_paths_only is None:
             policy = self.search_policy
         elif fast_paths_only:
-            policy = RBLSearchPolicy.from_mode("fast_track")
+            policy = RBLSearchPolicy(
+                SearchScope.FAST_PATHS_ONLY,
+                TerminationPolicy.FIRST_VALID,
+            )
         else:
             policy = RBLSearchPolicy(
                 SearchScope.FUSION,
@@ -1172,6 +1105,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
             )
         self._active_search_policy = policy
         fast_only = policy.scope is SearchScope.FAST_PATHS_ONLY
+        bounded_fusion = policy.scope is SearchScope.BOUNDED_FUSION
         stop_first = policy.termination is TerminationPolicy.FIRST_VALID
         run_fast_paths = stop_first
 
@@ -1273,6 +1207,7 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
             self._backward_its,
             replace_wc=replace_wc,
             early_stop=stop_first,
+            max_pairs=self.max_pairs if bounded_fusion else None,
         )
 
         return self
@@ -1282,12 +1217,11 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
     # ------------------------------------------------------------------
 
     def help(self) -> str:
-        """
-        Return a short textual description of the current engine state.
+        """Return a short textual description of the current engine state.
 
         Useful for quick inspection in interactive sessions.
 
-        :returns: Multi-line human-readable summary string.
+        :return: Multi-line human-readable summary string.
         :rtype: str
         """
         template_ready = self._template_its is not None
@@ -1304,6 +1238,9 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
             f"  fast_paths_only    : {self.fast_paths_only}\n"
             f"  search_policy      : {self.search_policy.to_dict()!r}\n"
             f"  max_maps/pair      : {self.max_mappings_per_pair}\n"
+            f"  max_pairs          : {self.max_pairs!r}\n"
+            f"  component_matching : {self.component_matching}\n"
+            f"  fusion_backend     : {self.fusion_backend!r}\n"
             f"  implicit_temp      : {self.implicit_temp}\n"
             f"  explicit_h         : {self.explicit_h}\n"
             f"  preserve_sides     : {self.preserve_original_sides!r}\n"
@@ -1321,10 +1258,9 @@ class RBLEngine(RBLReactionMixin, RBLMatchingMixin):
         )
 
     def __repr__(self) -> str:
-        """
-        Return a concise summary representation of the engine.
+        """Return a concise summary representation of the engine.
 
-        :returns: One-line representation string.
+        :return: One-line representation string.
         :rtype: str
         """
         return (

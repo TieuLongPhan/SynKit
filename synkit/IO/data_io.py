@@ -36,7 +36,7 @@ def load_database(pathname: str = "./Data/database.json") -> List[Dict]:
     :param pathname: The path from where the database will be loaded.
         Defaults to './Data/database.json'.
     :type pathname: str
-    :returns: The loaded database.
+    :return: The loaded database.
     :rtype: list[dict]
     :raises ValueError: If there is an error reading the file.
     """
@@ -65,7 +65,7 @@ def load_from_pickle(filename: str) -> List[Any]:
 
     :param filename: The name of the pickle file to load data from.
     :type filename: str
-    :returns: The data loaded from the pickle file.
+    :return: The data loaded from the pickle file.
     :rtype: list
     """
     with open(filename, "rb") as file:
@@ -77,7 +77,7 @@ def load_gml_as_text(gml_file_path: str) -> Optional[str]:
 
     :param gml_file_path: The file path to the GML file.
     :type gml_file_path: str
-    :returns: The text content of the GML file, or None if the file does
+    :return: The text content of the GML file, or None if the file does
         not exist or an error occurs.
     :rtype: str or None
     """
@@ -99,7 +99,7 @@ def save_text_as_gml(gml_text: str, file_path: str) -> bool:
     :type gml_text: str
     :param file_path: The file path where the GML text will be saved.
     :type file_path: str
-    :returns: True if saving was successful, False otherwise.
+    :return: True if saving was successful, False otherwise.
     :rtype: bool
     """
     try:
@@ -129,7 +129,7 @@ def load_compressed(filename: str) -> ndarray:
 
     :param filename: The path of the .npz file to load.
     :type filename: str
-    :returns: The loaded NumPy array.
+    :return: The loaded NumPy array.
     :rtype: numpy.ndarray
     :raises KeyError: If the .npz file does not contain an array with
         the key 'array'.
@@ -161,7 +161,7 @@ def load_model(filename: str) -> Any:
     :param filename: The path to the file from which the model will be
         loaded.
     :type filename: str
-    :returns: The loaded machine learning model.
+    :return: The loaded machine learning model.
     :rtype: object
     """
     model = load(filename)
@@ -189,7 +189,7 @@ def load_dict_from_json(file_path: str) -> Optional[dict]:
     :param file_path: The path to the JSON file from which to load the
         dictionary.
     :type file_path: str
-    :returns: The dictionary loaded from the JSON file, or None if an
+    :return: The dictionary loaded from the JSON file, or None if an
         error occurs.
     :rtype: dict or None
     """
@@ -209,7 +209,7 @@ def load_from_pickle_generator(file_path: str) -> Generator[Any, None, None]:
 
     :param file_path: The path to the pickle file to load.
     :type file_path: str
-    :yields: A single item from the list of dictionaries stored in the
+    :yield: A single item from the list of dictionaries stored in the
         pickle file.
     :rtype: Any
     """
@@ -234,7 +234,7 @@ def collect_data(num_batches: int, temp_dir: str, file_template: str) -> List[An
     :param file_template: The template string for batch file names,
         expecting an integer formatter.
     :type file_template: str
-    :returns: A list of aggregated data items from all batch files.
+    :return: A list of aggregated data items from all batch files.
     :rtype: list
     """
     collected_data: List[Any] = []
@@ -262,7 +262,7 @@ def load_list_from_file(file_path: str) -> list:
 
     :param file_path: The path to the file to read the list from.
     :type file_path: str
-    :returns: The list loaded from the file.
+    :return: The list loaded from the file.
     :rtype: list
     """
     with open(file_path, "r") as file:

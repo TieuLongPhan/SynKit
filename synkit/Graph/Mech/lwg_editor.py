@@ -106,8 +106,8 @@ class LWGEditor:
     * ``Sigma/Pi-``: +1 on each source bond endpoint.
     * ``Sigma/Pi+``: -1 on each target bond endpoint.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         from synkit.Graph.Mech import LWGEditor
@@ -140,7 +140,7 @@ class LWGEditor:
             ``[action, source, target]`` where ``action`` is a label such as
             ``"LP-/Sigma+"`` and source/target are atom-map lists.
         :type epd_typed: Sequence[Sequence[Any]]
-        :returns: Edited graph sequence, product graph, match flags, and
+        :return: Edited graph sequence, product graph, match flags, and
             per-step edit reports.
         :rtype: LWGEditResult
         :raises ValueError: If the RSMI is malformed, a typed action is
@@ -207,7 +207,7 @@ class LWGEditor:
 
         :param graph: Lewis graph with ``kekule_order`` or sigma/pi edge fields.
         :type graph: nx.Graph
-        :returns: Canonical SMILES, or ``None`` when RDKit reconstruction fails.
+        :return: Canonical SMILES, or ``None`` when RDKit reconstruction fails.
         :rtype: str | None
         """
         try:
@@ -229,7 +229,7 @@ class LWGEditor:
         :type final_graph: nx.Graph
         :param product_graph: Product-side graph.
         :type product_graph: nx.Graph
-        :returns: Whether mapped atoms and mapped Kekule edge orders match.
+        :return: Whether mapped atoms and mapped Kekule edge orders match.
         :rtype: bool
         """
         return _mapped_node_signature(final_graph) == _mapped_node_signature(
@@ -246,7 +246,7 @@ class LWGEditor:
         :type final_graph: nx.Graph
         :param product_graph: Product-side graph.
         :type product_graph: nx.Graph
-        :returns: Whether mapped atom formal charges match exactly.
+        :return: Whether mapped atom formal charges match exactly.
         :rtype: bool
         """
         return _mapped_charge_signature(final_graph) == _mapped_charge_signature(

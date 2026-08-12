@@ -23,7 +23,7 @@ class NXToGML:
         :param charge: The charge value, which can be positive,
             negative, or zero.
         :type charge: int
-        :returns: The string representation of the charge (e.g. '+',
+        :return: The string representation of the charge (e.g. '+',
             '2+', '-', '3-', '').
         :rtype: str
         """
@@ -47,7 +47,7 @@ class NXToGML:
         :type graph2: nx.Graph
         :param attributes: List of attribute names to check for changes.
         :type attributes: list[str]
-        :returns: Node identifiers that have changes in the specified
+        :return: Node identifiers that have changes in the specified
             attributes.
         :rtype: list[int]
         """
@@ -82,7 +82,7 @@ class NXToGML:
         :param explicit_hydrogen: Whether to explicitly include hydrogen
             atoms in the output.
         :type explicit_hydrogen: bool
-        :returns: The GML string representation of the graph for the
+        :return: The GML string representation of the graph for the
             specified section.
         :rtype: str
         """
@@ -150,7 +150,7 @@ class NXToGML:
         :param explicit_hydrogen: Whether to explicitly include hydrogen
             atoms in the output.
         :type explicit_hydrogen: bool
-        :returns: The GML string representation of the rule.
+        :return: The GML string representation of the rule.
         :rtype: str
         """
         gml_str = "rule [\n"
@@ -187,7 +187,7 @@ class NXToGML:
         :param explicit_hydrogen: Whether to explicitly include hydrogen
             atoms in the output.
         :type explicit_hydrogen: bool
-        :returns: The GML string representing the chemical rule.
+        :return: The GML string representing the chemical rule.
         :rtype: str
         """
         L, R, K = graph_rules

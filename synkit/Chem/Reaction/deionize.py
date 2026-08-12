@@ -27,7 +27,7 @@ class Deionize:
         :type charges: List[int]
         :param smiles: Corresponding SMILES strings for each ion.
         :type smiles: List[str]
-        :returns: A tuple of two lists:
+        :return: A tuple of two lists:
                   - groups of SMILES strings forming neutral sets,
                   - groups of their corresponding charges.
         :rtype: Tuple[List[List[str]], List[List[int]]]
@@ -66,7 +66,7 @@ class Deionize:
         :param charges: Formal charge of the ion (negative integer).
             Defaults to -1.
         :type charges: int
-        :returns: SMILES of the uncharged molecule.
+        :return: SMILES of the uncharged molecule.
         :rtype: str
         """
         if smiles == "[N-]=[N+]=[N-]":
@@ -88,7 +88,7 @@ class Deionize:
         :param charges: Formal charge of the ion (positive integer).
             Defaults to 1.
         :type charges: int
-        :returns: SMILES of the uncharged molecule.
+        :return: SMILES of the uncharged molecule.
         :rtype: str
         """
         if charges == 1:
@@ -105,7 +105,7 @@ class Deionize:
 
         :param charge_smiles: SMILES string with ionic and non‑ionic parts.
         :type charge_smiles: str
-        :returns: SMILES string with charges neutralized.
+        :return: SMILES string with charges neutralized.
         :rtype: str
         """
         parts = charge_smiles.split(".")
@@ -146,7 +146,7 @@ class Deionize:
 
         :param reaction_smiles: Reaction SMILES string.
         :type reaction_smiles: str
-        :returns: Reaction SMILES with '[NH4+].[OH-]' replaced by 'N.O'
+        :return: Reaction SMILES with '[NH4+].[OH-]' replaced by 'N.O'
             or 'O.N'.
         :rtype: str
         """
@@ -173,7 +173,7 @@ class Deionize:
         :type uncharge_smiles_func: Callable[[str], str]
         :param n_jobs: Number of parallel jobs to run. Defaults to 4.
         :type n_jobs: int
-        :returns: List of updated reaction dicts with:
+        :return: List of updated reaction dicts with:
                   - 'success': bool indicating formula match
                   - 'new_reactants' / 'new_products'
                   - 'standardized_reactions'

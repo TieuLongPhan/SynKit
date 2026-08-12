@@ -18,14 +18,13 @@ ABSTRACT_JSON = CASE_DIR / "hsa00010_abstract.json"
 
 
 def get_hsa00010_fixes() -> List[Dict[str, Any]]:
-    """
-    Return curated manual fixes for hsa00010 extraction/imputation.
+    """Return curated manual fixes for hsa00010 extraction/imputation.
 
     These include:
     - reaction text corrections for missing/ambiguous KEGG entries
     - compound SMILES for species absent from the default KEGG compound pool
 
-    :returns:
+    :return:
         List of fix dictionaries accepted by ``KEGGImputer.impute_pathway``.
     :rtype: List[Dict[str, Any]]
     """
@@ -89,10 +88,9 @@ def ensure_output_dir() -> None:
 
 
 def extract_pathway() -> Dict[str, Any]:
-    """
-    Extract KEGG pathway data for hsa00010.
+    """Extract KEGG pathway data for hsa00010.
 
-    :returns:
+    :return:
         Raw pathway JSON-like dictionary.
     :rtype: Dict[str, Any]
     """
@@ -107,14 +105,13 @@ def extract_pathway() -> Dict[str, Any]:
 
 
 def impute_pathway(pathway_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Impute missing reactions and compound SMILES for hsa00010.
+    """Impute missing reactions and compound SMILES for hsa00010.
 
     :param pathway_data:
         Raw extracted pathway data.
     :type pathway_data: Dict[str, Any]
 
-    :returns:
+    :return:
         Imputed pathway dictionary.
     :rtype: Dict[str, Any]
     """
@@ -130,14 +127,13 @@ def impute_pathway(pathway_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def build_abstract_reactions(imputed_pathway: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Build the abstract reaction representation from the imputed pathway.
+    """Build the abstract reaction representation from the imputed pathway.
 
     :param imputed_pathway:
         Imputed pathway dictionary.
     :type imputed_pathway: Dict[str, Any]
 
-    :returns:
+    :return:
         Abstract reaction dataset.
     :rtype: Dict[str, Any]
     """
@@ -157,10 +153,9 @@ def build_abstract_reactions(imputed_pathway: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def main() -> Dict[str, Any]:
-    """
-    Run the full hsa00010 KEGG -> imputed -> abstract workflow.
+    """Run the full hsa00010 KEGG -> imputed -> abstract workflow.
 
-    :returns:
+    :return:
         Dictionary containing raw, imputed, and abstract outputs.
     :rtype: Dict[str, Any]
     """

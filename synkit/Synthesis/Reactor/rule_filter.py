@@ -1,5 +1,6 @@
 import networkx as nx
 from typing import Union, List, Any
+from synkit.Graph import remove_wildcard_nodes
 from synkit.Graph.Matcher.turbo_iso import TurboISO
 from synkit.Graph.Matcher.sing import SING
 from synkit.Graph.ITS import its_decompose
@@ -33,7 +34,7 @@ class RuleFilter:
     :type distance_threshold: int
     :param sing_max_path: Maximum path length for SING engine.
     :type sing_max_path: int
-    :returns: An instance with only the rules that matched.
+    :return: An instance with only the rules that matched.
     :rtype: RuleFilter
     """
 
@@ -113,9 +114,15 @@ class RuleFilter:
 
         :param pattern: The query graph pattern to match.
         :type pattern: nx.Graph
-        :returns: True if pattern is found, False otherwise.
+        :return: True if pattern is found, False otherwise.
         :rtype: bool
         """
+        # SynReactor treats wildcard nodes as omitted context during
+        # structural matching. A pre-filter must apply the same projection or
+        # it can discard a rule that the authoritative matcher accepts.
+        pattern = remove_wildcard_nodes(pattern, inplace=False)
+        if not pattern:
+            return True
         if self._engine == "turbo":
             return bool(self._matcher.search(pattern, prune=True))
         if self._engine == "sing":
@@ -132,7 +139,7 @@ class RuleFilter:
     def host(self) -> nx.Graph:
         """The explicit host graph.
 
-        :returns: The host graph used for matching.
+        :return: The host graph used for matching.
         :rtype: nx.Graph
         """
         return self._host
@@ -141,7 +148,7 @@ class RuleFilter:
     def rules(self) -> List[Any]:
         """Original list of rules provided.
 
-        :returns: The list of rules.
+        :return: The list of rules.
         :rtype: list
         """
         return list(self._rules)
@@ -150,7 +157,7 @@ class RuleFilter:
     def patterns(self) -> List[nx.Graph]:
         """Decomposed subgraph queries used internally.
 
-        :returns: List of ITS-decomposed query graphs.
+        :return: List of ITS-decomposed query graphs.
         :rtype: list of nx.Graph
         """
         return list(self._patterns)
@@ -159,7 +166,7 @@ class RuleFilter:
     def matches(self) -> List[bool]:
         """Boolean list indicating which patterns were found.
 
-        :returns: List of booleans aligned with `patterns`.
+        :return: List of booleans aligned with `patterns`.
         :rtype: list of bool
         """
         return list(self._matches)
@@ -168,7 +175,7 @@ class RuleFilter:
     def new_rules(self) -> List[Any]:
         """Subset of rules for which `matches[i]` is True.
 
-        :returns: Filtered list of matching rules.
+        :return: Filtered list of matching rules.
         :rtype: list
         """
         return list(self._new_rules)
@@ -177,7 +184,7 @@ class RuleFilter:
     def engine(self) -> str:
         """Matching engine in use.
 
-        :returns: The name of the engine.
+        :return: The name of the engine.
         :rtype: str
         """
         return self._engine
@@ -185,7 +192,7 @@ class RuleFilter:
     def __repr__(self) -> str:
         """Concise representation of the filter.
 
-        :returns: Representation string.
+        :return: Representation string.
         :rtype: str
         """
         return (
@@ -197,7 +204,7 @@ class RuleFilter:
     def __help__(self) -> str:
         """Return the class docstring for interactive help.
 
-        :returns: The class documentation.
+        :return: The class documentation.
         :rtype: str
         """
         return self.__doc__

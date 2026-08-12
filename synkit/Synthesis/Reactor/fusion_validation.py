@@ -20,6 +20,10 @@ from synkit.Graph.Morphism.constraints import (
     WildcardRole,
     adapt_legacy_node_state,
 )
+from synkit.Graph.Fusion.identity import (
+    graph_identity_digest,
+    graphs_exactly_equivalent,
+)
 from synkit.Graph.Stereo import (
     mapped_stereo_subgraph_registries_match,
     stereo_registry_layers,
@@ -39,6 +43,13 @@ _ENDPOINT_NODE_ATTRS = (
 _ENDPOINT_EDGE_ATTRS = ("order", "sigma_order", "pi_order", "aromatic")
 
 
+def _mapped_smiles_mol(smiles: str) -> Chem.Mol | None:
+    """Parse mapped SMILES without discarding heavy-atom-bound H identities."""
+    parameters = Chem.SmilesParserParams()
+    parameters.removeHs = False
+    return Chem.MolFromSmiles(smiles, parameters)
+
+
 class FusionIssueCode(str, Enum):
     """Stable machine-readable issue codes emitted by fusion validation."""
 
@@ -47,7 +58,9 @@ class FusionIssueCode(str, Enum):
     DANGLING_WILDCARD = "FUSION_DANGLING_WILDCARD"
     SIDE_ONLY_STANDALONE_HYDROGEN = "FUSION_SIDE_ONLY_STANDALONE_HYDROGEN"
     DUPLICATE_ATOM_MAP = "FUSION_DUPLICATE_ATOM_MAP"
+    ATOM_MAP_IMBALANCE = "FUSION_ATOM_MAP_IMBALANCE"
     ELEMENT_MAP_CONFLICT = "FUSION_ELEMENT_MAP_CONFLICT"
+    ISOTOPE_MAP_CONFLICT = "FUSION_ISOTOPE_MAP_CONFLICT"
     HYDROGEN_MAP_IMBALANCE = "FUSION_HYDROGEN_MAP_IMBALANCE"
     WILDCARD_ROLE_CONFLICT = "FUSION_WILDCARD_ROLE_CONFLICT"
     INTERFACE_INVALID = "FUSION_INTERFACE_INVALID"
@@ -123,13 +136,111 @@ def _mapped_elements(mol: Chem.Mol) -> tuple[dict[int, str], list[int]]:
     return elements, maps
 
 
-def _standalone_hydrogens(mol: Chem.Mol) -> Counter[int]:
-    """Count disconnected explicit H atoms, keyed by map number (or zero)."""
-    return Counter(
-        int(atom.GetAtomMapNum())
+def _mapped_isotopes(mol: Chem.Mol) -> dict[int, int]:
+    return {
+        int(atom.GetAtomMapNum()): int(atom.GetIsotope())
         for atom in mol.GetAtoms()
-        if atom.GetAtomicNum() == 1 and atom.GetDegree() == 0
+        if atom.GetAtomMapNum() > 0
+    }
+
+
+def _unmapped_standalone_hydrogens(mol: Chem.Mol) -> Counter[str]:
+    """Count untraceable isolated H atoms by isotope/charge/radical state.
+
+    A mapped H may legitimately move from a standalone proton or hydride into
+    a bond; its conserved atom-map identity proves that it was transferred.
+    An unmapped isolated H has no such identity and must remain endpoint
+    symmetric to cross the verified representation boundary.
+    """
+    return Counter(
+        f"isotope={atom.GetIsotope()},charge={atom.GetFormalCharge()},"
+        f"radical={atom.GetNumRadicalElectrons()}"
+        for atom in mol.GetAtoms()
+        if (
+            atom.GetAtomicNum() == 1
+            and atom.GetDegree() == 0
+            and atom.GetAtomMapNum() <= 0
+        )
     )
+
+
+def _mapped_identity_issues(
+    endpoints: Sequence[tuple[str, Chem.Mol]],
+) -> list[FusionIssue]:
+    """Validate uniqueness, side symmetry, and element-stable mapped atoms."""
+    issues: list[FusionIssue] = []
+    endpoint_elements: list[dict[int, str]] = []
+    for side, mol in endpoints:
+        elements, maps = _mapped_elements(mol)
+        endpoint_elements.append(elements)
+        duplicates = sorted(
+            atom_map for atom_map, count in Counter(maps).items() if count > 1
+        )
+        if duplicates:
+            issues.append(
+                _issue(
+                    FusionIssueCode.DUPLICATE_ATOM_MAP,
+                    "An atom-map identity occurs more than once on one endpoint.",
+                    side=side,
+                    atom_maps=duplicates,
+                )
+            )
+
+    reactant_elements, product_elements = endpoint_elements
+    reactant_maps = set(reactant_elements)
+    product_maps = set(product_elements)
+    if reactant_maps != product_maps:
+        issues.append(
+            _issue(
+                FusionIssueCode.ATOM_MAP_IMBALANCE,
+                "Mapped atom identities are not side-symmetric.",
+                reactants_only=sorted(reactant_maps - product_maps),
+                products_only=sorted(product_maps - reactant_maps),
+            )
+        )
+    conflicts = {
+        atom_map: (reactant_elements[atom_map], product_elements[atom_map])
+        for atom_map in sorted(reactant_maps & product_maps)
+        if reactant_elements[atom_map] != product_elements[atom_map]
+    }
+    if conflicts:
+        issues.append(
+            _issue(
+                FusionIssueCode.ELEMENT_MAP_CONFLICT,
+                "Mapped atom identities change element across the reaction.",
+                conflicts=conflicts,
+            )
+        )
+
+    endpoint_isotopes = [_mapped_isotopes(mol) for _, mol in endpoints]
+    isotope_conflicts = {
+        atom_map: (endpoint_isotopes[0][atom_map], endpoint_isotopes[1][atom_map])
+        for atom_map in sorted(reactant_maps & product_maps)
+        if endpoint_isotopes[0][atom_map] != endpoint_isotopes[1][atom_map]
+    }
+    if isotope_conflicts:
+        issues.append(
+            _issue(
+                FusionIssueCode.ISOTOPE_MAP_CONFLICT,
+                "Mapped atom identities change isotope across the reaction.",
+                conflicts=isotope_conflicts,
+            )
+        )
+
+    hydrogen_maps = [
+        {atom_map for atom_map, element in elements.items() if element == "H"}
+        for elements in endpoint_elements
+    ]
+    if hydrogen_maps[0] != hydrogen_maps[1]:
+        issues.append(
+            _issue(
+                FusionIssueCode.HYDROGEN_MAP_IMBALANCE,
+                "Mapped explicit hydrogen identities are not side-symmetric.",
+                reactants=sorted(hydrogen_maps[0]),
+                products=sorted(hydrogen_maps[1]),
+            )
+        )
+    return issues
 
 
 def validate_fusion_rsmi(
@@ -140,10 +251,11 @@ def validate_fusion_rsmi(
     """Validate endpoint invariants of a fused reaction SMILES.
 
     This is not a reaction-balancing oracle.  It guards the representation
-    boundary most vulnerable during RBL fusion: parseability, unique atom-map
-    identities, element preservation, symmetric mapped hydrogen presence,
-    no side-only isolated H, and no unresolved wildcard unless explicitly
-    requested by the caller.
+    boundary most vulnerable during RBL fusion: parseability, unique and
+    side-symmetric atom-map identities, element preservation, no side-only
+    *unmapped* isolated H, and no unresolved wildcard unless explicitly
+    requested by the caller. A mapped isolated H may become bound because its
+    symmetric map identity already certifies atom conservation.
     """
     if not isinstance(rsmi, str) or rsmi.count(">>") != 1:
         issue = _issue(
@@ -156,7 +268,7 @@ def validate_fusion_rsmi(
     mols: list[Chem.Mol] = []
     issues: list[FusionIssue] = []
     for side, smiles in (("reactants", reactants), ("products", products)):
-        mol = Chem.MolFromSmiles(smiles)
+        mol = _mapped_smiles_mol(smiles)
         if mol is None:
             issues.append(
                 _issue(
@@ -192,61 +304,14 @@ def validate_fusion_rsmi(
                     )
                 )
 
-    endpoint_elements: list[dict[int, str]] = []
-    endpoint_maps: list[list[int]] = []
-    for side, mol in (
-        ("reactants", reactant_mol),
-        ("products", product_mol),
-    ):
-        elements, maps = _mapped_elements(mol)
-        endpoint_elements.append(elements)
-        endpoint_maps.append(maps)
-        duplicates = sorted(
-            atom_map for atom_map, count in Counter(maps).items() if count > 1
+    issues.extend(
+        _mapped_identity_issues(
+            (("reactants", reactant_mol), ("products", product_mol))
         )
-        if duplicates:
-            issues.append(
-                _issue(
-                    FusionIssueCode.DUPLICATE_ATOM_MAP,
-                    "An atom-map identity occurs more than once on one endpoint.",
-                    side=side,
-                    atom_maps=duplicates,
-                )
-            )
+    )
 
-    reactant_elements, product_elements = endpoint_elements
-    conflicts = {
-        atom_map: (reactant_elements[atom_map], product_elements[atom_map])
-        for atom_map in sorted(reactant_elements.keys() & product_elements.keys())
-        if reactant_elements[atom_map] != product_elements[atom_map]
-    }
-    if conflicts:
-        issues.append(
-            _issue(
-                FusionIssueCode.ELEMENT_MAP_CONFLICT,
-                "Mapped atom identities change element across the reaction.",
-                conflicts=conflicts,
-            )
-        )
-
-    reactant_h_maps = {
-        atom_map for atom_map, element in reactant_elements.items() if element == "H"
-    }
-    product_h_maps = {
-        atom_map for atom_map, element in product_elements.items() if element == "H"
-    }
-    if reactant_h_maps != product_h_maps:
-        issues.append(
-            _issue(
-                FusionIssueCode.HYDROGEN_MAP_IMBALANCE,
-                "Mapped explicit hydrogen identities are not side-symmetric.",
-                reactants=sorted(reactant_h_maps),
-                products=sorted(product_h_maps),
-            )
-        )
-
-    reactant_standalone = _standalone_hydrogens(reactant_mol)
-    product_standalone = _standalone_hydrogens(product_mol)
+    reactant_standalone = _unmapped_standalone_hydrogens(reactant_mol)
+    product_standalone = _unmapped_standalone_hydrogens(product_mol)
     if reactant_standalone != product_standalone:
         issues.append(
             _issue(
@@ -272,6 +337,11 @@ def _parse_unmapped_endpoint_graph(side: str) -> nx.Graph | None:
     mol = Chem.Mol(mol)
     for atom in mol.GetAtoms():
         atom.SetAtomMapNum(0)
+    # Endpoint preservation is a molecular-graph claim, independent of
+    # whether a bound hydrogen was serialized explicitly to retain its AAM
+    # identity.  Clear AAM first, then fold only RDKit-removable bound H; H2
+    # and standalone hydrogen components remain explicit.
+    mol = Chem.RemoveHs(mol)
     return MolToGraph(
         node_attrs=list(_ENDPOINT_NODE_ATTRS),
         edge_attrs=list(_ENDPOINT_EDGE_ATTRS),
@@ -463,11 +533,11 @@ def validate_wildcard_mapping_roles(
 ) -> FusionValidation:
     """Reject an explicit mapping that conflates wildcard semantics.
 
-    Wildcards pruned before matching never enter this contract.  If a matcher
-    does map wildcard nodes, both ends must be wildcards and must carry the
-    same declared :class:`WildcardRole`.  Missing roles fail closed because
-    accepting them would recreate the untyped ``* == *`` ambiguity that this
-    boundary is intended to expose.
+    Wildcards pruned before matching never enter this contract.  A
+    wildcard-to-wildcard mapping requires compatible declared roles.  A typed
+    wildcard may instead map to a concrete node admitted by its declared
+    domain; the verified interface subsequently proves owner incidence and
+    substitution.  Missing roles fail closed.
     """
     scalar_wildcard = (
         wildcard_element[0] if isinstance(wildcard_element, tuple) else wildcard_element
@@ -516,16 +586,54 @@ def validate_wildcard_mapping_roles(
         if constraint1 is not None and constraint2 is not None:
             compatibility = constraint1.relabel_owner(mapping).intersect(constraint2)
 
-        if (
-            not wildcard1
-            or not wildcard2
-            or compatibility is None
-            or not compatibility.valid
-        ):
+        concrete_constraint = constraint1 if wildcard1 else constraint2
+        concrete_attrs = attrs2 if wildcard1 else attrs1
+        concrete_element = concrete_attrs.get(element_key)
+        if isinstance(concrete_element, (tuple, list)) and len(concrete_element) == 2:
+            concrete_element = (
+                concrete_element[0]
+                if concrete_element[0] == concrete_element[1]
+                else None
+            )
+        concrete_charge = concrete_attrs.get("charge", 0)
+        concrete_radical = concrete_attrs.get("radical", 0)
+        if isinstance(concrete_charge, (tuple, list)) and len(concrete_charge) == 2:
+            concrete_charge = (
+                concrete_charge[0] if concrete_charge[0] == concrete_charge[1] else None
+            )
+        if isinstance(concrete_radical, (tuple, list)) and len(concrete_radical) == 2:
+            concrete_radical = (
+                concrete_radical[0]
+                if concrete_radical[0] == concrete_radical[1]
+                else None
+            )
+        concrete_ok = (
+            concrete_constraint is not None
+            and concrete_constraint.virtual_kind is None
+            and (
+                concrete_constraint.elements is None
+                or concrete_element in concrete_constraint.elements
+            )
+            and (
+                concrete_constraint.charges is None
+                or concrete_charge in concrete_constraint.charges
+            )
+            and (
+                concrete_constraint.radicals is None
+                or concrete_radical in concrete_constraint.radicals
+            )
+        )
+        valid = (
+            compatibility is not None and compatibility.valid
+            if wildcard1 and wildcard2
+            else concrete_ok
+        )
+
+        if not valid:
             issues.append(
                 _issue(
                     FusionIssueCode.WILDCARD_ROLE_CONFLICT,
-                    "Mapped wildcard nodes require identical declared roles.",
+                    "Mapped wildcards require compatible typed constraints.",
                     graph1_node=node1,
                     graph2_node=node2,
                     graph1_role=(
@@ -545,11 +653,182 @@ def validate_wildcard_mapping_roles(
     return FusionValidation(valid=not issues, issues=tuple(issues))
 
 
+def _normalize_completion_materialization(
+    source: nx.Graph,
+    *,
+    element_key: str,
+    wildcard_element: Any,
+    role_key: str,
+    allowed_roles: set[str],
+) -> tuple[nx.Graph, list[dict[str, str]], list[FusionIssue]]:
+    """Materialize typed completion ports on a copy of the source graph."""
+    normalized = source.copy()
+    scalar_wildcard = (
+        wildcard_element[0] if isinstance(wildcard_element, tuple) else wildcard_element
+    )
+    wildcard_values = (wildcard_element, scalar_wildcard)
+    materialized: list[dict[str, str]] = []
+    issues: list[FusionIssue] = []
+    for node, attributes in normalized.nodes(data=True):
+        if attributes.get(element_key) not in wildcard_values:
+            continue
+        raw_role = attributes.get(role_key)
+        role = raw_role.value if isinstance(raw_role, WildcardRole) else raw_role
+        if role not in allowed_roles:
+            issues.append(
+                _issue(
+                    FusionIssueCode.PROOF_FAILED,
+                    "Only typed completion wildcards may materialize as hydrogen.",
+                    node=repr(node),
+                    wildcard_role=role,
+                )
+            )
+            continue
+        attributes[element_key] = (
+            ("H", "H") if isinstance(attributes.get(element_key), tuple) else "H"
+        )
+        types_gh = attributes.get("typesGH")
+        if isinstance(types_gh, tuple) and len(types_gh) == 2:
+            attributes["typesGH"] = tuple(
+                (
+                    (("H",) + tuple(endpoint[1:]))
+                    if isinstance(endpoint, tuple) and endpoint
+                    else endpoint
+                )
+                for endpoint in types_gh
+            )
+        attributes.pop(role_key, None)
+        materialized.append({"node": repr(node), "role": str(role)})
+
+    for _, attributes in normalized.nodes(data=True):
+        neighbors = attributes.get("neighbors")
+        if isinstance(neighbors, tuple) and len(neighbors) == 2:
+            attributes["neighbors"] = tuple(
+                ["H" if item == scalar_wildcard else item for item in endpoint or ()]
+                for endpoint in neighbors
+            )
+        elif isinstance(neighbors, list):
+            attributes["neighbors"] = [
+                "H" if item == scalar_wildcard else item for item in neighbors
+            ]
+    return normalized, materialized, issues
+
+
+def certify_fusion_postprocessing(
+    source: nx.Graph,
+    target: nx.Graph,
+    *,
+    materialize_hydrogen: bool,
+    element_key: str = "element",
+    wildcard_element: Any = ("*", "*"),
+    role_key: str = "wildcard_role",
+) -> FusionValidation:
+    """Certify the narrow representation change allowed after a pushout.
+
+    An exact graph identity is always accepted.  When hydrogen
+    materialisation is requested, a wildcard may additionally become H only
+    when it has an explicit completion role.  The consumed role annotation
+    and wildcard tokens in cached neighbour/type fields are updated before an
+    exact map-invariant graph comparison.  No nodes or edges may be added,
+    removed, or otherwise changed.
+
+    This is deliberately narrower than general reaction standardisation: a
+    query atom, attachment port, side-presence placeholder, or untyped legacy
+    wildcard is never evidence for a hydrogen atom.
+    """
+    source_digest = graph_identity_digest(source)
+    target_digest = graph_identity_digest(target)
+    if graphs_exactly_equivalent(source, target):
+        return FusionValidation(
+            valid=True,
+            evidence={
+                "postprocess_proof": {
+                    "kind": "identity",
+                    "source_digest": source_digest,
+                    "normalized_digest": source_digest,
+                    "target_digest": target_digest,
+                    "materialized_nodes": [],
+                }
+            },
+        )
+
+    allowed_roles = {
+        WildcardRole.RADICAL_COMPLETION.value,
+        WildcardRole.HYDROGEN_COMPLETION.value,
+    }
+    if not materialize_hydrogen:
+        return FusionValidation(
+            valid=False,
+            issues=(
+                _issue(
+                    FusionIssueCode.PROOF_FAILED,
+                    "Post-processing changed the certified pushout graph.",
+                    source_digest=source_digest,
+                    target_digest=target_digest,
+                ),
+            ),
+        )
+
+    normalized, materialized, issues = _normalize_completion_materialization(
+        source,
+        element_key=element_key,
+        wildcard_element=wildcard_element,
+        role_key=role_key,
+        allowed_roles=allowed_roles,
+    )
+
+    if issues:
+        return FusionValidation(valid=False, issues=tuple(issues))
+    if not materialized:
+        return FusionValidation(
+            valid=False,
+            issues=(
+                _issue(
+                    FusionIssueCode.PROOF_FAILED,
+                    "The graph changed without a typed wildcard materialisation.",
+                    source_digest=source_digest,
+                    target_digest=target_digest,
+                ),
+            ),
+        )
+
+    normalized_digest = graph_identity_digest(normalized)
+    if not graphs_exactly_equivalent(normalized, target):
+        return FusionValidation(
+            valid=False,
+            issues=(
+                _issue(
+                    FusionIssueCode.PROOF_FAILED,
+                    "Post-processing exceeds typed wildcard-to-hydrogen materialisation.",
+                    source_digest=source_digest,
+                    normalized_digest=normalized_digest,
+                    target_digest=target_digest,
+                    materialized_nodes=materialized,
+                ),
+            ),
+        )
+
+    return FusionValidation(
+        valid=True,
+        evidence={
+            "postprocess_proof": {
+                "kind": "typed_wildcard_hydrogen_materialization",
+                "source_digest": source_digest,
+                "normalized_digest": normalized_digest,
+                "target_digest": target_digest,
+                "materialized_nodes": materialized,
+                "allowed_roles": sorted(allowed_roles),
+            }
+        },
+    )
+
+
 __all__: Sequence[str] = (
     "FusionIssue",
     "FusionIssueCode",
     "FusionValidation",
     "WildcardRole",
+    "certify_fusion_postprocessing",
     "validate_fusion_rsmi",
     "validate_endpoint_preservation",
     "validate_rbl_candidate",

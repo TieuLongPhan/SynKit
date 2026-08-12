@@ -13,6 +13,7 @@ else
 fi
 
 "${PYTHON_BIN}" scripts/check_python_file_size.py
+"${PYTHON_BIN}" scripts/check_docstring_style.py
 
 flake8 "${paths[@]}" \
   --count \

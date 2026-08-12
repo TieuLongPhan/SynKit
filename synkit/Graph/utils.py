@@ -117,8 +117,8 @@ def print_graph_attributes(G: nx.Graph) -> None:
     rendering that exposes ordered local references, parity, provenance,
     endpoint states, and reference replacements.
 
-    Parameters:
-        G (nx.Graph): A NetworkX graph (Graph, DiGraph, MultiGraph, etc.).
+    :param G: A NetworkX graph (Graph, DiGraph, MultiGraph, etc.).
+    :type G: nx.Graph
     """
     print("🔹 Nodes and their attributes:")
     for node, attr in G.nodes(data=True):
@@ -155,18 +155,14 @@ def remove_wildcard_nodes(G: nx.Graph, inplace: bool = True) -> nx.Graph:
 
     A wildcard node is identified by having its 'element' attribute equal to '*'.
 
-    Parameters
-    ----------
-    G : nx.Graph
-        The input graph from which wildcard nodes will be removed.
-    inplace : bool, optional
-        If True, modify the input graph in place and return it.
-        If False (default), a copy of the graph is created and the removal is applied to the copy.
+    :param G: The input graph from which wildcard nodes will be removed.
+    :type G: nx.Graph
+    :param inplace: If True, modify the input graph in place and return it.
+                    If False (default), a copy of the graph is created and the removal is applied to the copy.
+    :type inplace: bool, optional
 
-    Returns
-    -------
-    nx.Graph
-        The graph after removing all wildcard nodes.
+    :return: The graph after removing all wildcard nodes.
+    :rtype: nx.Graph
     """
     if not inplace:
         G = G.copy()
@@ -184,8 +180,7 @@ def has_wildcard_node(
     element_attr: str = "element",
     wildcard: Any = "*",
 ) -> bool:
-    """
-    Fast check: return True if any node has its `element_attr` equal to the wildcard,
+    """Fast check: return True if any node has its `element_attr` equal to the wildcard,
     using the public API with minimal overhead.
 
     :param G: Graph to inspect.
@@ -194,7 +189,7 @@ def has_wildcard_node(
     :type element_attr: str
     :param wildcard: Value considered wildcard (e.g., "*").
     :type wildcard: Any
-    :returns: True if at least one node's element_attr == wildcard.
+    :return: True if at least one node's element_attr == wildcard.
     :rtype: bool
     """
     # iterate over just the attribute value, not the full dict
@@ -215,28 +210,22 @@ def add_wildcard_subgraph_for_unmapped(
     """Extend G with wildcard nodes/edges for every L-node not already mapped,
     preserving original L->G mapping and returning the full mapping.
 
-    Parameters
-    ----------
-    G : nx.Graph
-        Target graph. If inplace=False (default), operates on a shallow copy.
-    L : nx.Graph
-        Pattern/reference graph containing full nodes and edges.
-    mapping : Dict[L_node, G_node]
-        Partial mapping from pattern L nodes to graph G nodes.
-    edge_keys : List[str], optional
-        Edge attributes to copy (first element if list/tuple). Default ['order'].
-    inplace : bool, optional
-        If True, modify G in place; otherwise modify a copy.
-    tuple_mode : bool, optional
-        If True, scalarize tuple ITS node attrs onto the left side before
-        adding wildcard placeholders to the host graph.
+    :param G: Target graph. If inplace=False (default), operates on a shallow copy.
+    :type G: nx.Graph
+    :param L: Pattern/reference graph containing full nodes and edges.
+    :type L: nx.Graph
+    :param mapping: Partial mapping from pattern L nodes to graph G nodes.
+    :type mapping: Dict[L_node, G_node]
+    :param edge_keys: Edge attributes to copy (first element if list/tuple). Default ['order'].
+    :type edge_keys: List[str], optional
+    :param inplace: If True, modify G in place; otherwise modify a copy.
+    :type inplace: bool, optional
+    :param tuple_mode: If True, scalarize tuple ITS node attrs onto the left side before
+                       adding wildcard placeholders to the host graph.
+    :type tuple_mode: bool, optional
 
-    Returns
-    -------
-    G_ext : nx.Graph
-        Extended graph with added wildcard nodes and edges.
-    full_map : Dict[L_node, G_node]
-        Combined L->G mapping, original plus newly added wildcard nodes.
+    :return: Extended graph and combined mapping containing original and newly
+             added wildcard nodes.
     """
     # Use a copy if not in-place
     G_ext = G if inplace else G.copy()
@@ -308,16 +297,12 @@ def clean_graph_keep_largest_component(graph: nx.Graph) -> nx.Graph:
     the 'standard_order' attribute is exactly 0, then retain only the largest
     connected component.
 
-    Parameters
-    ----------
-    graph : nx.Graph
-        The input molecular graph.
+    :param graph: The input molecular graph.
+    :type graph: nx.Graph
 
-    Returns
-    -------
-    nx.Graph
-        A modified copy of the original graph with specified edges removed
-        and only the largest connected component preserved.
+    :return: A modified copy of the original graph with specified edges removed
+              and only the largest connected component preserved.
+    :rtype: nx.Graph
     """
     # Work on a copy to avoid side effects
     G = graph.copy()
