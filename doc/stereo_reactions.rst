@@ -124,7 +124,7 @@ Compatibility, migration, and limitations
 Schema ``synkit.reaction-stereo/2`` is canonical; v1 remains readable, while a
 lossy downgrade refuses. Fusion proof v1 remains readable but cannot acquire
 v2 evidence retroactively. Mechanism schema ``2.0.0-draft1`` is independently
-versioned from package ``1.6.1``.
+versioned from package ``1.6.2b1``.
 
 Upgrade existing values with ``StereoReactionValue.from_dict`` or
 ``from_json``; both accept v1 and normalize to

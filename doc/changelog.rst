@@ -1,6 +1,18 @@
 Changelog
 =========
 
+Version 1.6.2b1
+---------------
+
+- Made mechanism replay charges authoritative from committed electron-resource
+  deltas and separated exact Lewis-state validity from invariant-residual
+  ``DELTA_CONSISTENT`` verification.
+- Added explicit, atom-selected ``closed_shell_pair`` endpoint comparison with
+  provenance-bearing ``NORMALIZED`` certificates; strict resource comparison
+  remains the default.
+- Deprecated ``LWGEditor.matches_product`` as exact verification because it is
+  only a projected charge/canonical-SMILES match.
+
 Version 1.6.1
 -------------
 

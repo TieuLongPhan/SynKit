@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.6.1"
+version = "1.6.2b1"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -62,12 +62,14 @@ documentation = "https://tieulongphan.github.io/SynKit/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["synkit"]
+core-metadata-version = "2.4"
 
 [tool.hatch.build.targets.wheel.force-include]
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
 
 [tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
 include = [
   "/synkit",
   "/LICENSE",

@@ -1,6 +1,10 @@
 name: PyPI publish
 
 on:
+  push:
+    branches: ["mtg"]
+    paths:
+      - pyproject.toml
   release:
     types: [published]
   workflow_dispatch:
@@ -53,6 +57,25 @@ jobs:
           print(f"Release tag matches project version: {project_version}")
           PY
 
+      - name: Validate mtg push carries a beta version
+        if: github.event_name == 'push'
+        run: |
+          python - <<'PY'
+          import tomllib
+          from packaging.version import Version
+
+          with open("pyproject.toml", "rb") as handle:
+              data = tomllib.load(handle)
+
+          project_version = Version(data["project"]["version"])
+          if not project_version.is_prerelease:
+              raise SystemExit(
+                  "Push publishing from mtg requires a prerelease version; "
+                  f"found {project_version}"
+              )
+          print(f"Validated mtg beta version: {project_version}")
+          PY
+
       - name: Build source and wheel distributions
         run: python -m build --sdist --wheel
 
@@ -72,7 +95,9 @@ jobs:
   publish:
     name: Publish package to PyPI
     needs: build
-    if: github.event_name == 'release'
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/mtg')
     runs-on: ubuntu-latest
 
     environment:

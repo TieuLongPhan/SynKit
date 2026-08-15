@@ -580,6 +580,25 @@ class MechanisticStep:
 class VerificationCertificate:
     status: Literal["VALID", "INVALID", "INCOMPLETE", "UNSUPPORTED"]
     schema_version: str = SCHEMA_VERSION
+    verification_level: Literal[
+        "EXACT", "DELTA_CONSISTENT", "NORMALIZED", "INVALID"
+    ] = "INVALID"
+    transition_valid: bool = False
+    delta_charge_match: bool = False
+    endpoint_match: bool = False
+    absolute_lwg_valid: bool = False
+    initial_absolute_residuals: Mapping[int, int | float] = field(
+        default_factory=dict
+    )
+    product_absolute_residuals: Mapping[int, int | float] = field(
+        default_factory=dict
+    )
+    initial_global_electron_residual: int | float = 0
+    product_global_electron_residual: int | float = 0
+    absolute_residuals_invariant: bool = False
+    endpoint_resource_policy: str = "strict"
+    normalization_evidence: tuple[Mapping[str, Any], ...] = ()
+    diagnostics: tuple[str, ...] = ()
     step_reports: tuple[Mapping[str, Any], ...] = ()
     issues: tuple[VerificationIssue, ...] = ()
     final_match: Mapping[str, Any] = field(default_factory=dict)
@@ -589,6 +608,21 @@ class VerificationCertificate:
         return {
             "status": self.status,
             "schema_version": self.schema_version,
+            "verification_level": self.verification_level,
+            "transition_valid": self.transition_valid,
+            "delta_charge_match": self.delta_charge_match,
+            "endpoint_match": self.endpoint_match,
+            "absolute_lwg_valid": self.absolute_lwg_valid,
+            "initial_absolute_residuals": dict(self.initial_absolute_residuals),
+            "product_absolute_residuals": dict(self.product_absolute_residuals),
+            "initial_global_electron_residual": self.initial_global_electron_residual,
+            "product_global_electron_residual": self.product_global_electron_residual,
+            "absolute_residuals_invariant": self.absolute_residuals_invariant,
+            "endpoint_resource_policy": self.endpoint_resource_policy,
+            "normalization_evidence": [
+                dict(item) for item in self.normalization_evidence
+            ],
+            "diagnostics": list(self.diagnostics),
             "step_reports": [dict(report) for report in self.step_reports],
             "issues": [issue.to_dict() for issue in self.issues],
             "final_match": dict(self.final_match),
@@ -600,6 +634,35 @@ class VerificationCertificate:
         return cls(
             status=value["status"],
             schema_version=value.get("schema_version", SCHEMA_VERSION),
+            verification_level=value.get("verification_level", "INVALID"),
+            transition_valid=bool(value.get("transition_valid", False)),
+            delta_charge_match=bool(value.get("delta_charge_match", False)),
+            endpoint_match=bool(value.get("endpoint_match", False)),
+            absolute_lwg_valid=bool(value.get("absolute_lwg_valid", False)),
+            initial_absolute_residuals={
+                int(atom_map): residual
+                for atom_map, residual in value.get(
+                    "initial_absolute_residuals", {}
+                ).items()
+            },
+            product_absolute_residuals={
+                int(atom_map): residual
+                for atom_map, residual in value.get(
+                    "product_absolute_residuals", {}
+                ).items()
+            },
+            initial_global_electron_residual=value.get(
+                "initial_global_electron_residual", 0
+            ),
+            product_global_electron_residual=value.get(
+                "product_global_electron_residual", 0
+            ),
+            absolute_residuals_invariant=bool(
+                value.get("absolute_residuals_invariant", False)
+            ),
+            endpoint_resource_policy=value.get("endpoint_resource_policy", "strict"),
+            normalization_evidence=tuple(value.get("normalization_evidence", ())),
+            diagnostics=tuple(value.get("diagnostics", ())),
             step_reports=tuple(value.get("step_reports", ())),
             issues=tuple(
                 VerificationIssue.from_dict(issue) for issue in value.get("issues", ())

@@ -109,3 +109,4 @@ Experiment/Lewis/FLOWER/replay-results*/
 
 # RBL long-run checkpoints are resumable local state, not retained evidence.
 Experiment/RBL/*checkpoint*.jsonl
+request.md

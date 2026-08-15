@@ -42,6 +42,7 @@ class GroupReplayReport:
     status: str
     changed_atom_maps: tuple[int, ...]
     issues: tuple[VerificationIssue, ...] = ()
+    charge_updates: tuple[dict[str, Any], ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -50,6 +51,7 @@ class GroupReplayReport:
             "status": self.status,
             "changed_atom_maps": list(self.changed_atom_maps),
             "issues": [issue.to_dict() for issue in self.issues],
+            "charge_updates": [dict(update) for update in self.charge_updates],
         }
 
 
@@ -67,7 +69,14 @@ class MechanismReplayResult:
 
 
 class MechanismReplayer:
-    """Replay simultaneous groups against one common pre-state per group."""
+    """Replay simultaneous groups against one common pre-state per group.
+
+    Formal charges are propagated from committed sigma, pi, lone-pair, and
+    radical deltas. Absolute Lewis-state residuals are retained as an
+    independent certificate claim. Endpoint resource comparison is strict by
+    default; ``closed_shell_pair`` is an explicit, atom-selected comparison
+    policy for a two-radical/one-lone-pair serialization boundary.
+    """
 
     def __init__(
         self,
@@ -76,6 +85,8 @@ class MechanismReplayer:
         aromatic_policy: str = "presentation",
         repair: bool = False,
         verify_stereo: str = "off",
+        endpoint_resource_policy: str | None = None,
+        closed_shell_atom_maps: set[int] | tuple[int, ...] | list[int] | None = None,
     ) -> None:
         if validation not in {"strict", "diagnostic"}:
             raise ValueError("validation must be 'strict' or 'diagnostic'.")
@@ -87,6 +98,14 @@ class MechanismReplayer:
         if verify_stereo not in {"off", "endpoint", "stepwise"}:
             raise ValueError("verify_stereo must be 'off', 'endpoint', or 'stepwise'.")
         self.verify_stereo = verify_stereo
+        if endpoint_resource_policy not in {None, "strict", "closed_shell_pair"}:
+            raise ValueError("Unsupported endpoint resource policy.")
+        self.endpoint_resource_policy = endpoint_resource_policy
+        self.closed_shell_atom_maps = frozenset(
+            int(atom_map) for atom_map in (closed_shell_atom_maps or ())
+        )
+        if any(atom_map <= 0 for atom_map in self.closed_shell_atom_maps):
+            raise ValueError("Closed-shell atom maps must be positive integers.")
 
     def replay(self, record: MechanismRecord) -> MechanismReplayResult:  # noqa: C901
         reactants, products = record.mapped_reaction.split(">>", 1)
@@ -96,16 +115,30 @@ class MechanismReplayer:
         self._seed_mechanism_stereo(expected)
         self._select_endpoint_stereo(current, record, side="reactant")
         self._select_endpoint_stereo(expected, record, side="product")
+        endpoint_policy, closed_shell_atom_maps = self._resolve_endpoint_policy(record)
         intermediates: list[nx.Graph] = []
         reports: list[GroupReplayReport] = []
         canonical_neighbor_changes: list[dict[str, Any]] = []
         issues: list[VerificationIssue] = list(record.grammar_issues())
         issues.extend(self._graph_mapping_issues(current, side="reactant"))
         issues.extend(self._graph_mapping_issues(expected, side="product"))
-        issues.extend(audit_local_electron_state(current).issues)
-        issues.extend(audit_local_electron_state(expected).issues)
+        initial_absolute_audit = audit_local_electron_state(current)
+        product_absolute_audit = audit_local_electron_state(expected)
+        issues.extend(self._blocking_audit_issues(initial_absolute_audit.issues))
+        issues.extend(self._blocking_audit_issues(product_absolute_audit.issues))
+        issues.extend(
+            self._endpoint_policy_issues(
+                current,
+                expected,
+                policy=endpoint_policy,
+                atom_maps=closed_shell_atom_maps,
+            )
+        )
         issues.extend(self._endpoint_stereo_issues(current, side="reactant"))
         issues.extend(self._endpoint_stereo_issues(expected, side="product"))
+        initial_absolute = self._absolute_state(current)
+        product_absolute = self._absolute_state(expected)
+        committed_absolute_states = [initial_absolute]
         mtg = nx.DiGraph(schema="synkit-mtg-2.0-draft1")
         mtg.add_node(0, graph=deepcopy(current), status="INITIAL")
 
@@ -128,6 +161,7 @@ class MechanismReplayer:
                             break
                         continue
                     current = next_graph
+                    committed_absolute_states.append(self._absolute_state(current))
                     intermediates.append(deepcopy(current))
                     state_index += 1
                     mtg.add_node(state_index, graph=deepcopy(current), status="VALID")
@@ -230,11 +264,50 @@ class MechanismReplayer:
             current,
             expected,
             include_stereo=self.verify_stereo in {"endpoint", "stepwise"},
+            endpoint_resource_policy=endpoint_policy,
+            closed_shell_atom_maps=closed_shell_atom_maps,
         )
         final_match["stereo_verification"] = self.verify_stereo
         final_match["stereo_verification_performed"] = self.verify_stereo != "off"
         final_match["canonical_neighbor_changes"] = canonical_neighbor_changes
-        if not issues and not final_match["matches"]:
+        transition_valid = not any(issue.severity == "error" for issue in issues)
+        observed_charges = self._mapped_charges(current)
+        expected_charges = self._mapped_charges(expected)
+        delta_charge_match = observed_charges == expected_charges
+        residuals_invariant = all(
+            state == initial_absolute
+            for state in (*committed_absolute_states[1:], product_absolute)
+        )
+        if transition_valid and not delta_charge_match:
+            issues.append(
+                VerificationIssue(
+                    "DELTA_CHARGE_MISMATCH",
+                    "Delta-derived final charges do not match the mapped product.",
+                    atom_maps=tuple(
+                        sorted(
+                            atom_map
+                            for atom_map in set(observed_charges) | set(expected_charges)
+                            if observed_charges.get(atom_map)
+                            != expected_charges.get(atom_map)
+                        )
+                    ),
+                    expected=expected_charges,
+                    observed=observed_charges,
+                )
+            )
+        if transition_valid and not residuals_invariant:
+            issues.append(
+                VerificationIssue(
+                    "ABSOLUTE_RESIDUAL_CHANGED",
+                    "Absolute Lewis residuals changed across delta replay.",
+                    expected=initial_absolute,
+                    observed={
+                        "committed_states": committed_absolute_states[1:],
+                        "product": product_absolute,
+                    },
+                )
+            )
+        if transition_valid and not final_match["matches"]:
             issues.append(
                 VerificationIssue(
                     "FINAL_PRODUCT_MISMATCH",
@@ -248,8 +321,40 @@ class MechanismReplayer:
             if not any(issue.severity == "error" for issue in issues)
             else "INVALID"
         )
+        absolute_lwg_valid = initial_absolute_audit.valid and product_absolute_audit.valid
+        normalization_required = bool(
+            final_match.get("matches")
+            and not final_match.get("raw_matches", final_match["matches"])
+            and final_match.get("normalization_evidence")
+        )
+        if status == "INVALID":
+            verification_level = "INVALID"
+        elif normalization_required:
+            verification_level = "NORMALIZED"
+        elif absolute_lwg_valid:
+            verification_level = "EXACT"
+        else:
+            verification_level = "DELTA_CONSISTENT"
+        diagnostics = []
+        if not absolute_lwg_valid:
+            diagnostics.append("ABSOLUTE_LEWIS_STATE_INCOMPLETE")
+        if normalization_required:
+            diagnostics.append("ENDPOINT_RESOURCE_NORMALIZED")
         certificate = VerificationCertificate(
             status=status,
+            verification_level=verification_level,
+            transition_valid=transition_valid,
+            delta_charge_match=delta_charge_match,
+            endpoint_match=bool(final_match["matches"]),
+            absolute_lwg_valid=absolute_lwg_valid,
+            initial_absolute_residuals=initial_absolute["atom_residuals"],
+            product_absolute_residuals=product_absolute["atom_residuals"],
+            initial_global_electron_residual=initial_absolute["global_residual"],
+            product_global_electron_residual=product_absolute["global_residual"],
+            absolute_residuals_invariant=residuals_invariant,
+            endpoint_resource_policy=endpoint_policy,
+            normalization_evidence=tuple(final_match.get("normalization_evidence", ())),
+            diagnostics=tuple(diagnostics),
             step_reports=tuple(report.to_dict() for report in reports),
             issues=tuple(issues),
             final_match=final_match,
@@ -319,16 +424,19 @@ class MechanismReplayer:
 
         try:
             lookup = self._atom_map_lookup(graph)
+            charge_deltas = self._charge_deltas(deltas)
+            charge_updates = self._commit_charge_deltas(
+                graph,
+                lookup,
+                charge_deltas,
+            )
             self._commit_bond_deltas(graph, lookup, deltas)
             self._commit_atom_deltas(graph, lookup, deltas)
             refresh_electron_fields(graph, in_place=True)
-            for atom_map in changed:
-                node = lookup[atom_map]
-                if "valence_electrons" in graph.nodes[node]:
-                    graph.nodes[node]["charge"] = recompute_charge(graph, node)
-            electron_audit = audit_local_electron_state(graph, repair=self.repair)
-            issues.extend(electron_audit.issues)
+            electron_audit = audit_local_electron_state(graph)
+            issues.extend(self._blocking_audit_issues(electron_audit.issues))
         except (KeyError, ValueError) as exc:
+            charge_updates = ()
             issues.append(
                 VerificationIssue(
                     "UNBALANCED_EVENT_GROUP",
@@ -343,8 +451,58 @@ class MechanismReplayer:
             "INVALID" if any(issue.severity == "error" for issue in issues) else "VALID"
         )
         return graph if status == "VALID" else pre_state, GroupReplayReport(
-            step_id, group.group_id, status, changed, tuple(issues)
+            step_id,
+            group.group_id,
+            status,
+            changed,
+            tuple(issues),
+            tuple(charge_updates),
         )
+
+    @staticmethod
+    def _charge_deltas(
+        deltas: Counter[ElectronLocus],
+    ) -> Counter[int]:
+        """Derive formal-charge deltas from committed electron resources."""
+        result: Counter[int] = Counter()
+        for locus, electron_delta in deltas.items():
+            if electron_delta == 0:
+                continue
+            if locus.kind in {SIGMA, PI}:
+                charge_delta = -electron_delta / 2
+                for atom_map in locus.atom_maps:
+                    result[atom_map] += charge_delta
+            elif locus.kind in {LONE_PAIR, RADICAL}:
+                result[locus.atom_maps[0]] -= electron_delta
+        return result
+
+    @staticmethod
+    def _commit_charge_deltas(
+        graph: nx.Graph,
+        lookup: dict[int, Any],
+        charge_deltas: Counter[int],
+    ) -> tuple[dict[str, Any], ...]:
+        """Apply delta-authoritative charges without an absolute Lewis rewrite."""
+        updates = []
+        for atom_map in sorted(charge_deltas):
+            delta = charge_deltas[atom_map]
+            if isinstance(delta, float) and delta.is_integer():
+                delta = int(delta)
+            node = lookup[atom_map]
+            before = graph.nodes[node].get("charge", 0)
+            after = before + delta
+            if isinstance(after, float) and after.is_integer():
+                after = int(after)
+            graph.nodes[node]["charge"] = after
+            updates.append(
+                {
+                    "atom_map": atom_map,
+                    "before": before,
+                    "delta": delta,
+                    "after": after,
+                }
+            )
+        return tuple(updates)
 
     @staticmethod
     def _atom_map_lookup(graph: nx.Graph) -> dict[int, Any]:
@@ -456,28 +614,217 @@ class MechanismReplayer:
             attrs["radical"] = radicals
 
     def _compare_graphs(
-        self, observed: nx.Graph, expected: nx.Graph, *, include_stereo: bool = False
+        self,
+        observed: nx.Graph,
+        expected: nx.Graph,
+        *,
+        include_stereo: bool = False,
+        endpoint_resource_policy: str | None = None,
+        closed_shell_atom_maps: frozenset[int] | None = None,
     ) -> dict[str, Any]:
         presentation_edges: set[frozenset[int]] | None = None
         if self.aromatic_policy == "presentation":
             presentation_edges = self._mapped_aromatic_edges(
                 observed
             ) | self._mapped_aromatic_edges(expected)
-        observed_sig = self._graph_signature(
+        raw_observed_sig = self._graph_signature(
             observed,
             include_stereo=include_stereo,
             presentation_edges=presentation_edges,
         )
-        expected_sig = self._graph_signature(
+        raw_expected_sig = self._graph_signature(
             expected,
             include_stereo=include_stereo,
             presentation_edges=presentation_edges,
         )
+        policy = endpoint_resource_policy or self.endpoint_resource_policy or "strict"
+        selected_maps = (
+            self.closed_shell_atom_maps
+            if closed_shell_atom_maps is None
+            else closed_shell_atom_maps
+        )
+        normalization_evidence: tuple[dict[str, Any], ...] = ()
+        observed_sig = raw_observed_sig
+        expected_sig = raw_expected_sig
+        if policy == "closed_shell_pair":
+            observed_working, observed_evidence = self._closed_shell_pair_copy(
+                observed,
+                selected_maps,
+                side="observed",
+            )
+            expected_working, expected_evidence = self._closed_shell_pair_copy(
+                expected,
+                selected_maps,
+                side="expected",
+            )
+            normalization_evidence = (*observed_evidence, *expected_evidence)
+            observed_sig = self._graph_signature(
+                observed_working,
+                include_stereo=include_stereo,
+                presentation_edges=presentation_edges,
+            )
+            expected_sig = self._graph_signature(
+                expected_working,
+                include_stereo=include_stereo,
+                presentation_edges=presentation_edges,
+            )
         return {
             "matches": observed_sig == expected_sig,
+            "raw_matches": raw_observed_sig == raw_expected_sig,
             "observed": observed_sig,
             "expected": expected_sig,
+            "raw_observed": raw_observed_sig,
+            "raw_expected": raw_expected_sig,
             "aromatic_policy": self.aromatic_policy,
+            "endpoint_resource_policy": policy,
+            "normalization_evidence": list(normalization_evidence),
+        }
+
+    @classmethod
+    def _closed_shell_pair_copy(
+        cls,
+        graph: nx.Graph,
+        atom_maps: frozenset[int],
+        *,
+        side: str,
+    ) -> tuple[nx.Graph, tuple[dict[str, Any], ...]]:
+        """Normalize explicitly selected diradical scalars on a graph copy."""
+        working = deepcopy(graph)
+        lookup = cls._atom_map_lookup(working)
+        evidence = []
+        for atom_map in sorted(atom_maps):
+            node = lookup.get(atom_map)
+            if node is None:
+                continue
+            attrs = working.nodes[node]
+            if int(attrs.get("radical", 0)) != 2:
+                continue
+            before = {
+                "charge": attrs.get("charge", 0),
+                "lone_pairs": int(attrs.get("lone_pairs", 0)),
+                "radical": 2,
+            }
+            attrs["lone_pairs"] = before["lone_pairs"] + 1
+            attrs["radical"] = 0
+            after = {
+                "charge": attrs.get("charge", 0),
+                "lone_pairs": attrs["lone_pairs"],
+                "radical": 0,
+            }
+            evidence.append(
+                {
+                    "atom_map": atom_map,
+                    "element": str(attrs.get("element", "*")),
+                    "side": side,
+                    "before": before,
+                    "after": after,
+                    "policy_name": "closed_shell_pair",
+                    "policy_version": "1.0",
+                }
+            )
+        return working, tuple(evidence)
+
+    def _resolve_endpoint_policy(
+        self,
+        record: MechanismRecord,
+    ) -> tuple[str, frozenset[int]]:
+        policy = self.endpoint_resource_policy
+        atom_maps = self.closed_shell_atom_maps
+        if policy is None:
+            policy = str(record.metadata.get("endpoint_resource_policy", "strict"))
+            atom_maps = frozenset(
+                int(atom_map)
+                for atom_map in record.metadata.get("closed_shell_atom_maps", atom_maps)
+            )
+        if policy not in {"strict", "closed_shell_pair"}:
+            raise ValueError(f"Unsupported endpoint resource policy: {policy!r}.")
+        return policy, atom_maps
+
+    @classmethod
+    def _endpoint_policy_issues(
+        cls,
+        reactant: nx.Graph,
+        product: nx.Graph,
+        *,
+        policy: str,
+        atom_maps: frozenset[int],
+    ) -> tuple[VerificationIssue, ...]:
+        if policy != "closed_shell_pair":
+            return ()
+        if not atom_maps:
+            return (
+                VerificationIssue(
+                    "CLOSED_SHELL_ATOM_MAPS_REQUIRED",
+                    "The closed-shell-pair policy requires explicit mapped atoms.",
+                ),
+            )
+        reactant_maps = set(cls._atom_map_lookup(reactant))
+        product_maps = set(cls._atom_map_lookup(product))
+        missing = atom_maps - (reactant_maps & product_maps)
+        if not missing:
+            return ()
+        return (
+            VerificationIssue(
+                "CLOSED_SHELL_ATOM_MAP_MISSING",
+                "Every selected closed-shell atom must occur on both endpoints.",
+                atom_maps=tuple(sorted(missing)),
+            ),
+        )
+
+    @staticmethod
+    def _blocking_audit_issues(
+        issues: tuple[VerificationIssue, ...],
+    ) -> tuple[VerificationIssue, ...]:
+        """Keep malformed resources blocking while absolute mismatch is diagnostic."""
+        absolute_codes = {
+            "LOCAL_ELECTRON_MISMATCH",
+            "GLOBAL_ELECTRON_MISMATCH",
+        }
+        return tuple(issue for issue in issues if issue.code not in absolute_codes)
+
+    @staticmethod
+    def _number(value: float) -> int | float:
+        return int(value) if float(value).is_integer() else value
+
+    @classmethod
+    def _absolute_state(cls, graph: nx.Graph) -> dict[str, Any]:
+        atom_residuals = {}
+        expected_total = 0.0
+        represented_total = 0.0
+        for node, attrs in graph.nodes(data=True):
+            atom_map = int(attrs.get("atom_map", 0) or 0)
+            if "valence_electrons" in attrs:
+                residual = float(attrs.get("charge", 0)) - float(
+                    recompute_charge(graph, node)
+                )
+                if residual:
+                    atom_residuals[atom_map] = cls._number(residual)
+                expected_total += (
+                    float(attrs["valence_electrons"])
+                    + float(attrs.get("hcount", 0))
+                    - float(attrs.get("charge", 0))
+                )
+            represented_total += (
+                2 * float(attrs.get("lone_pairs", 0))
+                + float(attrs.get("radical", 0))
+                + 2 * float(attrs.get("hcount", 0))
+            )
+        represented_total += 2 * sum(
+            float(attrs.get("sigma_order", 0.0))
+            + float(attrs.get("pi_order", 0.0))
+            for _, _, attrs in graph.edges(data=True)
+        )
+        return {
+            "atom_residuals": atom_residuals,
+            "global_residual": cls._number(represented_total - expected_total),
+        }
+
+    @staticmethod
+    def _mapped_charges(graph: nx.Graph) -> dict[int, int | float]:
+        return {
+            int(attrs["atom_map"]): attrs.get("charge", 0)
+            for _, attrs in graph.nodes(data=True)
+            if int(attrs.get("atom_map", 0) or 0) > 0
         }
 
     def _graph_signature(
@@ -525,7 +872,8 @@ class MechanismReplayer:
         }
         edges = {}
         for left, right, attrs in graph.edges(data=True):
-            key = tuple(sorted((node_keys[left], node_keys[right]), key=repr))
+            endpoints = tuple(sorted((node_keys[left], node_keys[right]), key=repr))
+            key = f"{endpoints[0]!r}|{endpoints[1]!r}"
             mapped_key = (
                 frozenset((node_keys[left], node_keys[right]))
                 if all(type(node_keys[node]) is int for node in (left, right))

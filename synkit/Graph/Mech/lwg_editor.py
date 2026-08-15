@@ -76,7 +76,10 @@ class LWGEditResult:
     :type smiles_match: bool
     :param matches_product: Product-match flag used by the editor. This requires
         ``charge_match`` and ``smiles_match``; strict Kekule alternation
-        differences are diagnostic only.
+        differences are diagnostic only. This legacy projected-serialization
+        flag is deprecated as evidence of exact structure or electron-resource
+        identity; use ``MechanismReplayer`` verification certificates for new
+        release gates.
     :type matches_product: bool
     :param step_reports: Per-action edit reports.
     :type step_reports: list[LWGStepReport]
