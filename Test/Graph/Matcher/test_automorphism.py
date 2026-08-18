@@ -107,6 +107,22 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
 
         self.assertEqual(unique, original_copy)
 
+    def test_joint_mappings_with_same_image_are_not_merged_by_vertex_orbits(
+        self,
+    ) -> None:
+        """One-node orbits cannot certify a simultaneous tuple action."""
+        graph = nx.path_graph(2)
+        auto = Automorphism(graph)
+        mappings = [{"a": 0, "b": 1}, {"a": 1, "b": 0}]
+
+        unique = deduplicate_matches_with_anchor(
+            mappings,
+            host_anchor=auto.anchor_component,
+            host_orbits=auto.orbits,
+        )
+
+        self.assertEqual(unique, mappings)
+
     def test_vertex_transitive_host_keeps_distinct_edge_orbits(self) -> None:
         """A joint quotient must distinguish inequivalent host edge orbits."""
         host = nx.cartesian_product(nx.cycle_graph(7), nx.cycle_graph(11))
@@ -120,6 +136,21 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
         )
 
         self.assertEqual(unique, [horizontal, vertical])
+
+    def test_pattern_vertex_orbits_do_not_imply_joint_group_action(self) -> None:
+        """Path orbit swaps are correlated, not an independent S2 x S2."""
+        mappings = [
+            {0: 10, 1: 11, 2: 12, 3: 13},
+            {0: 13, 1: 11, 2: 12, 3: 10},
+        ]
+        pattern_orbits = [frozenset({0, 3}), frozenset({1, 2})]
+
+        unique = deduplicate_matches_with_anchor(
+            mappings,
+            pattern_orbits=pattern_orbits,
+        )
+
+        self.assertEqual(unique, mappings)
 
     def test_inequivalent_mappings_are_kept(self) -> None:
         """Mappings hitting different orbits must not be collapsed."""
@@ -150,6 +181,34 @@ class TestAutomorphismDeduplicate(unittest.TestCase):
         self.assertIn("Automorphism", rep)
         self.assertIn("orbits=", rep)
         self.assertIn("nodes=", rep)
+
+
+class TestAutomorphismGraphKinds(unittest.TestCase):
+    def test_empty_attribute_lists_mean_unlabelled_graph(self) -> None:
+        graph = nx.Graph()
+        graph.add_edge(0, 1)
+        graph.nodes[0]["element"] = "C"
+        graph.nodes[1]["element"] = "O"
+
+        auto = Automorphism(graph, node_attr_keys=[], edge_attr_keys=[])
+
+        self.assertEqual(auto.n_automorphisms, 2)
+
+    def test_directed_graph_uses_directed_matcher(self) -> None:
+        graph = nx.DiGraph([(0, 1), (1, 2)])
+
+        auto = Automorphism(graph, node_attr_keys=[], edge_attr_keys=[])
+
+        self.assertEqual(auto.n_automorphisms, 1)
+
+    def test_multidigraph_uses_multidirected_matcher(self) -> None:
+        graph = nx.MultiDiGraph()
+        graph.add_edge(0, 1, order=1)
+        graph.add_edge(0, 1, order=2)
+
+        auto = Automorphism(graph, node_attr_keys=[], edge_attr_keys=["order"])
+
+        self.assertEqual(auto.n_automorphisms, 1)
 
 
 if __name__ == "__main__":

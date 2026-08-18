@@ -18,7 +18,7 @@ class FixAAM:
 
         :param mol: RDKit molecule with existing atom‐map annotations.
         :type mol: Chem.Mol
-        :returns: The same Mol object with each atom’s map number
+        :return: The same Mol object with each atom’s map number
             increased by one.
         :rtype: Chem.Mol
         """
@@ -33,7 +33,7 @@ class FixAAM:
 
         :param smiles: SMILES string containing atom‐map annotations.
         :type smiles: str
-        :returns: SMILES string with every atom‐map number increased by
+        :return: SMILES string with every atom‐map number increased by
             one.
         :rtype: str
         :raises ValueError: If the input SMILES cannot be parsed into an
@@ -54,7 +54,7 @@ class FixAAM:
         :param rsmi: Reaction SMILES in 'reactants>>products' format
             with atom‐map tags.
         :type rsmi: str
-        :returns: New reaction SMILES string where each atom‐map number
+        :return: New reaction SMILES string where each atom‐map number
             in both halves is increased by one.
         :rtype: str
         """

@@ -66,47 +66,40 @@ _RELATIVE_NODE_RESOURCES = ("lone_pairs",)
 
 
 class SynRule:
-    """
-    Immutable reaction template: rc, left, and right fragments as SynGraph Object.
+    """Immutable reaction template: rc, left, and right fragments as SynGraph Object.
 
-    Parameters
-    ----------
-    rc_graph : nx.Graph
-        Raw reaction-centre (RC) graph.
-    name : str, default ``"rule"``
-        Identifier for the rule.
-    canonicaliser : Optional[GraphCanonicaliser]
-        Custom canonicaliser; if *None* a default is created.
-    canon : bool, default ``True``
-        If *True*, build canonical forms and SHA-256 signatures.
-    implicit_h : bool, default ``True``
-        Convert explicit hydrogens in the **rc/left/right** fragments to an
-        integer ``hcount`` attribute and record cross-fragment hydrogen pairs
-        in a ``h_pairs`` attribute.
-    stereo_outcomes : mapping, optional
-        Explicit product-branch declarations keyed by descriptor target. A
-        ``RACEMIC`` outcome uses the stored product descriptor as a reference
-        orientation and makes application emit it and its inverse.
-    stereo_couplings : mapping, optional
-        Coupled rule operations keyed by their central bond target. A vicinal
-        addition may be declared compactly as ``{"bond:2-3": "ANTI"}``;
-        centers and delivered ligands are inferred from the structural edit.
+    :param rc_graph: Raw reaction-centre (RC) graph.
+    :type rc_graph: nx.Graph
+    :param name: Identifier for the rule.
+    :type name: str, default ``"rule"``
+    :param canonicaliser: Custom canonicaliser; if *None* a default is created.
+    :type canonicaliser: Optional[GraphCanonicaliser]
+    :param canon: If *True*, build canonical forms and SHA-256 signatures.
+    :type canon: bool, default ``True``
+    :param implicit_h: Convert explicit hydrogens in the **rc/left/right** fragments to an
+                       integer ``hcount`` attribute and record cross-fragment hydrogen pairs
+                       in a ``h_pairs`` attribute.
+    :type implicit_h: bool, default ``True``
+    :param stereo_outcomes: Explicit product-branch declarations keyed by descriptor target. A
+                            ``RACEMIC`` outcome uses the stored product descriptor as a reference
+                            orientation and makes application emit it and its inverse.
+    :type stereo_outcomes: mapping, optional
+    :param stereo_couplings: Coupled rule operations keyed by their central bond target. A vicinal
+                             addition may be declared compactly as ``{"bond:2-3": "ANTI"}``;
+                             centers and delivered ligands are inferred from the structural edit.
+    :type stereo_couplings: mapping, optional
 
-    Attributes
-    ----------
-    rc : SynGraph
-        Wrapped reaction‐centre graph.
-    left : SynGraph
-        Wrapped left fragment.
-    right : SynGraph
-        Wrapped right fragment.
-    canonical_smiles : Optional[Tuple[str,str]]
-        Pair of left/right fragment SHA‐256 signatures (or None if canon=False).
+    :ivar rc: Wrapped reaction‐centre graph.
+    :vartype rc: SynGraph
+    :ivar left: Wrapped left fragment.
+    :vartype left: SynGraph
+    :ivar right: Wrapped right fragment.
+    :vartype right: SynGraph
+    :ivar canonical_smiles: Pair of left/right fragment SHA‐256 signatures (or None if canon=False).
+    :vartype canonical_smiles: Optional[Tuple[str,str]]
     """
 
-    # ------------------------------------------------------------------ #
-    # Alternate constructors                                             #
-    # ------------------------------------------------------------------ #
+    # Alternate constructors
     @classmethod
     def from_smart(
         cls,
@@ -159,9 +152,7 @@ class SynRule:
             stereo_couplings=stereo_couplings,
         )
 
-    # ------------------------------------------------------------------ #
-    # Initialiser                                                        #
-    # ------------------------------------------------------------------ #
+    # Initializer
     def __init__(
         self,
         rc: nx.Graph,
@@ -279,7 +270,7 @@ class SynRule:
                 self._reverse_stereo_query_policies
             )
 
-        # ---------- wrap graphs ---------------------------------------- #
+        # Wrap graphs.
         self.rc = SynGraph(rc_graph, self._canonicaliser, canon=canon)
         self.left = SynGraph(left_graph, self._canonicaliser, canon=canon)
         self.right = SynGraph(right_graph, self._canonicaliser, canon=canon)
@@ -290,9 +281,7 @@ class SynRule:
             (self.left.signature, self.right.signature) if canon else None
         )
 
-    # ================================================================== #
-    # Private utilities                                                  #
-    # ================================================================== #
+    # Private utilities
     def _validate_stereo_outcomes(self) -> None:
         """Require explicit branching declarations to match stored effects."""
         for key, outcome in self.stereo_outcomes.items():
@@ -704,9 +693,7 @@ class SynRule:
                     tuple(list(prod_attr[:2]) + [right_h] + list(prod_attr[3:])),
                 )
 
-    # ================================================================== #
-    # Dunder methods                                                     #
-    # ================================================================== #
+    # Dunder methods
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, SynRule)
@@ -913,9 +900,58 @@ class SynRule:
             f"stereo={self._stereo_repr()})"
         )
 
-    # ================================================================== #
-    # Public API                                                         #
-    # ================================================================== #
+    # Public API
+    def to_rule_span(
+        self,
+        *,
+        electron_complete: bool | None = None,
+        boundary: str = "abstract",
+        environment: Any = None,
+    ) -> Any:
+        """Return the native non-stereo LLG/DPO view of this rule."""
+        from synkit.Rule.Compose import synrule_to_span
+
+        return synrule_to_span(
+            self,
+            electron_complete=electron_complete,
+            boundary=boundary,
+            environment=environment,
+        )
+
+    def compose(
+        self,
+        other: "SynRule",
+        overlap: Mapping[Any, Any],
+        *,
+        overlap_edges: set[frozenset[Any]] | None = None,
+        electron_complete: bool | None = None,
+    ) -> Any:
+        """Natively compose with ``other`` along one explicit overlap map."""
+        from synkit.Rule.Compose import compose_synrules
+
+        options = {
+            "overlap_edges": overlap_edges,
+            "electron_complete": electron_complete,
+        }
+        return compose_synrules(self, other, overlap, **options)
+
+    def composition_candidates(
+        self,
+        other: "SynRule",
+        *,
+        limits: Any = None,
+        electron_complete: bool | None = None,
+    ) -> Any:
+        """Return every bounded native composition class and witness."""
+        from synkit.Rule.Compose import search_synrule_compositions
+
+        return search_synrule_compositions(
+            self,
+            other,
+            limits=limits,
+            electron_complete=electron_complete,
+        )
+
     def non_invertible_stereo_targets(self) -> tuple[str, ...]:
         """Return targets whose stereo relation has no unique inverse."""
         return tuple(
@@ -949,7 +985,10 @@ class SynRule:
         if non_invertible:
             raise NonInvertibleStereoEffectError(non_invertible)
 
-        left_graph, right_graph = self._decompose(self.rc.raw, self._format)
+        # These are the authoritative endpoint graphs produced from the
+        # normalized reaction centre during construction. Reusing them avoids
+        # a redundant full ITS reversion on every backward replay.
+        left_graph, right_graph = self.left.raw, self.right.raw
         if self._format == "tuple":
             reversed_graph = ITSConstruction.construct(
                 right_graph,

@@ -7,8 +7,8 @@ class LongestPath:
     def __init__(self, G: nx.Graph):
         """Initializes the LongestPath object with a graph.
 
-        Parameters:
-        - G (nx.Graph): The networkx graph.
+        :param G: The networkx graph.
+        :type G: nx.Graph
         """
         self.G = G
         self.vertices = len(G.nodes)
@@ -17,11 +17,11 @@ class LongestPath:
         """Performs a Breadth-First Search (BFS) from a given node `u` to find
         the farthest node and its distance.
 
-        Parameters:
-        - u (int): The starting node for the BFS.
+        :param u: The starting node for the BFS.
+        :type u: int
 
-        Returns:
-        - Tuple[int, int]: The farthest node from `u` and its distance.
+        :return: The farthest node from `u` and its distance.
+        :rtype: Tuple[int, int]
         """
         # Initialize visited and distance dictionaries
         visited = {i: False for i in self.G.nodes}
@@ -59,8 +59,8 @@ class LongestPath:
         This method performs a BFS on every unvisited component to find the
         farthest node and computes the longest path across all components.
 
-        Returns:
-            int: The length of the longest path in the graph across all components.
+        :return: The length of the longest path in the graph across all components.
+        :rtype: int
         """
         visited_components: Set[int] = set()
         longest_path: int = 0

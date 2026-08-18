@@ -79,8 +79,7 @@ class IRInternalResult:
 
 
 class IRCanonicalEngine:
-    """
-    Exact individualize-refine engine for canonical labeling and automorphism search.
+    """Exact individualize-refine engine for canonical labeling and automorphism search.
 
     This engine starts from a Weisfeiler-Lehman (WL) coloring, then applies an
     exact individualize-refine search on ambiguous cells. It is shared by both
@@ -114,15 +113,15 @@ class IRCanonicalEngine:
         in node and edge tokens.
     :type config: Optional[SymmetryConfig]
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     Exact automorphism counting is generally harder than obtaining a single
     canonical order. Therefore, this class caches completed exact runs so later
     canonicalization and automorphism queries can reuse the same result instead
     of rerunning the search.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         from synkit.CRN.Sym._ir import IRCanonicalEngine
@@ -203,10 +202,9 @@ class IRCanonicalEngine:
 
     @property
     def G(self) -> nx.DiGraph:
-        """
-        Return the internal directed graph used by the engine.
+        """Return the internal directed graph used by the engine.
 
-        :returns:
+        :return:
             Directed graph produced by :class:`WLCanonicalizer`.
         :rtype: nx.DiGraph
         """
@@ -214,23 +212,21 @@ class IRCanonicalEngine:
 
     @property
     def graph_type(self) -> str:
-        """
-        Return the graph type label reported by the WL canonicalizer.
+        """Return the graph type label reported by the WL canonicalizer.
 
-        :returns:
+        :return:
             Graph type identifier.
         :rtype: str
         """
         return self.wl.graph_type
 
     def _prepare_static_caches(self) -> None:
-        """
-        Precompute static per-node caches used during refinement.
+        """Precompute static per-node caches used during refinement.
 
         This stores node tokens, degree pairs, predecessor signatures, successor
         signatures, and a simple activity score for branch ordering.
 
-        :returns:
+        :return:
             ``None``.
         :rtype: None
         """
@@ -248,22 +244,20 @@ class IRCanonicalEngine:
 
     @staticmethod
     def _part_key(part: Sequence[Sequence[Any]]) -> Tuple[Tuple[Any, ...], ...]:
-        """
-        Convert a partition into a hashable cache key.
+        """Convert a partition into a hashable cache key.
 
         :param part:
             Partition represented as a sequence of cells.
         :type part: Sequence[Sequence[Any]]
 
-        :returns:
+        :return:
             Immutable tuple-of-tuples representation of the partition.
         :rtype: Tuple[Tuple[Any, ...], ...]
         """
         return tuple(tuple(cell) for cell in part)
 
     def _cell_signature(self, v: Any, part: Sequence[Sequence[Any]]) -> Tuple[Any, ...]:
-        """
-        Compute the refinement signature of a node with respect to a partition.
+        """Compute the refinement signature of a node with respect to a partition.
 
         The signature combines node token, degree, and per-cell incident edge
         token multisets. This is the core feature used to split cells during
@@ -277,7 +271,7 @@ class IRCanonicalEngine:
             Current partition.
         :type part: Sequence[Sequence[Any]]
 
-        :returns:
+        :return:
             Signature tuple used for exact refinement.
         :rtype: Tuple[Any, ...]
         """
@@ -320,8 +314,7 @@ class IRCanonicalEngine:
         return sig
 
     def _refine(self, part: Sequence[Sequence[Any]]) -> List[List[Any]]:
-        """
-        Refine a partition until it becomes stable.
+        """Refine a partition until it becomes stable.
 
         Cells are repeatedly split using :meth:`_cell_signature` until no further
         refinement is possible.
@@ -330,7 +323,7 @@ class IRCanonicalEngine:
             Input partition.
         :type part: Sequence[Sequence[Any]]
 
-        :returns:
+        :return:
             Stable refined partition.
         :rtype: List[List[Any]]
         """
@@ -368,10 +361,9 @@ class IRCanonicalEngine:
                 return result
 
     def _initial_partition(self) -> List[List[Any]]:
-        """
-        Build the initial partition from WL colors and node tokens.
+        """Build the initial partition from WL colors and node tokens.
 
-        :returns:
+        :return:
             Refined initial partition.
         :rtype: List[List[Any]]
         """
@@ -387,8 +379,7 @@ class IRCanonicalEngine:
         return self._refine(part)
 
     def _target_cell(self, part: Sequence[Sequence[Any]]) -> List[Any]:
-        """
-        Choose the next ambiguous cell to individualize.
+        """Choose the next ambiguous cell to individualize.
 
         Preference is given to smaller cells, then cells with higher total
         activity, then token and string-based tie breaking.
@@ -397,7 +388,7 @@ class IRCanonicalEngine:
             Current partition.
         :type part: Sequence[Sequence[Any]]
 
-        :returns:
+        :return:
             Selected ambiguous cell.
         :rtype: List[Any]
         """
@@ -415,8 +406,7 @@ class IRCanonicalEngine:
     def _candidate_order_key(
         self, v: Any, part: Sequence[Sequence[Any]]
     ) -> Tuple[Any, ...]:
-        """
-        Build a sorting key for candidates within the chosen target cell.
+        """Build a sorting key for candidates within the chosen target cell.
 
         :param v:
             Candidate node.
@@ -426,7 +416,7 @@ class IRCanonicalEngine:
             Current partition.
         :type part: Sequence[Sequence[Any]]
 
-        :returns:
+        :return:
             Candidate ordering key.
         :rtype: Tuple[Any, ...]
         """
@@ -440,8 +430,7 @@ class IRCanonicalEngine:
     def _slice_result(
         res: IRInternalResult, max_count: Optional[int], *, force_stopped: bool = False
     ) -> IRInternalResult:
-        """
-        Return a truncated copy of an exact result.
+        """Return a truncated copy of an exact result.
 
         :param res:
             Full internal result.
@@ -457,7 +446,7 @@ class IRCanonicalEngine:
             the original full result completed.
         :type force_stopped: bool
 
-        :returns:
+        :return:
             Possibly truncated internal result.
         :rtype: IRInternalResult
         """
@@ -494,8 +483,7 @@ class IRCanonicalEngine:
         timeout_sec: Optional[float],
         stop_after_two: bool,
     ) -> Optional[IRInternalResult]:
-        """
-        Reuse a previously completed exact result when valid.
+        """Reuse a previously completed exact result when valid.
 
         :param max_count:
             Requested maximum number of stored automorphisms.
@@ -510,7 +498,7 @@ class IRCanonicalEngine:
             non-uniqueness.
         :type stop_after_two: bool
 
-        :returns:
+        :return:
             Cached result if reusable, otherwise ``None``.
         :rtype: Optional[IRInternalResult]
         """
@@ -523,10 +511,9 @@ class IRCanonicalEngine:
     def _initialize_run_state(
         self,
     ) -> Tuple[float, List[List[Any]], List[Any], Tuple[Any, ...]]:
-        """
-        Prepare the initial state for an exact run.
+        """Prepare the initial state for an exact run.
 
-        :returns:
+        :return:
             Tuple containing start time, initial refined partition, WL order, and
             the canonical key of the WL order.
         :rtype: Tuple[float, List[List[Any]], List[Any], Tuple[Any, ...]]
@@ -540,8 +527,7 @@ class IRCanonicalEngine:
     def _build_child_partition(
         self, part: Sequence[Sequence[Any]], target: Sequence[Any], chosen: Any
     ) -> List[List[Any]]:
-        """
-        Create a child partition by individualizing one node from a target cell.
+        """Create a child partition by individualizing one node from a target cell.
 
         :param part:
             Current partition.
@@ -555,7 +541,7 @@ class IRCanonicalEngine:
             Node to isolate into its own singleton cell.
         :type chosen: Any
 
-        :returns:
+        :return:
             Child partition after individualization.
         :rtype: List[List[Any]]
         """
@@ -584,8 +570,7 @@ class IRCanonicalEngine:
     ) -> Tuple[
         Optional[Tuple[Any, ...]], Optional[List[Any]], List[List[Any]], int, bool
     ]:
-        """
-        Process a fully individualized partition.
+        """Process a fully individualized partition.
 
         :param part:
             Fully discrete partition.
@@ -615,7 +600,7 @@ class IRCanonicalEngine:
             Whether to stop once two equivalent canonical orders are found.
         :type stop_after_two: bool
 
-        :returns:
+        :return:
             Updated ``(best_key, best_order, sample_perms, count, should_stop_now)``.
         :rtype: Tuple[Optional[Tuple[Any, ...]], Optional[List[Any]], List[List[Any]], int, bool]
         """
@@ -649,8 +634,7 @@ class IRCanonicalEngine:
         count: int,
         stopped: bool,
     ) -> IRInternalResult:
-        """
-        Assemble the final :class:`IRInternalResult`.
+        """Assemble the final :class:`IRInternalResult`.
 
         :param start:
             Start time returned by :func:`perf_counter`.
@@ -676,7 +660,7 @@ class IRCanonicalEngine:
             Whether the search stopped early.
         :type stopped: bool
 
-        :returns:
+        :return:
             Internal result object.
         :rtype: IRInternalResult
         """
@@ -705,8 +689,7 @@ class IRCanonicalEngine:
         timeout_sec: Optional[float] = None,
         stop_after_two: bool = False,
     ) -> IRInternalResult:
-        """
-        Run exact individualize-refine search.
+        """Run exact individualize-refine search.
 
         This method computes a canonical order exactly and, when requested,
         counts automorphisms of the best canonical form.
@@ -726,7 +709,7 @@ class IRCanonicalEngine:
             This is useful for fast uniqueness testing.
         :type stop_after_two: bool
 
-        :returns:
+        :return:
             Exact-search internal result.
         :rtype: IRInternalResult
         """
@@ -897,14 +880,13 @@ class IRCanonicalEngine:
     def canonical_result(
         self, *, timeout_sec: Optional[float] = None
     ) -> CanonicalResult:
-        """
-        Compute the exact canonicalization result.
+        """Compute the exact canonicalization result.
 
         :param timeout_sec:
             Optional timeout in seconds.
         :type timeout_sec: Optional[float]
 
-        :returns:
+        :return:
             Public canonicalization result.
         :rtype: CanonicalResult
         """
@@ -927,8 +909,7 @@ class IRCanonicalEngine:
         timeout_sec: Optional[float] = None,
         stop_after_two: bool = False,
     ) -> AutomorphismResult:
-        """
-        Compute the automorphism result.
+        """Compute the automorphism result.
 
         :param max_count:
             Optional cap on the number of stored sample mappings.
@@ -942,7 +923,7 @@ class IRCanonicalEngine:
             Whether to stop once two automorphisms are found.
         :type stop_after_two: bool
 
-        :returns:
+        :return:
             Public automorphism result.
         :rtype: AutomorphismResult
         """

@@ -1,0 +1,606 @@
+"""Permanent compatibility and validation contracts for RBL fusion."""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+
+import networkx as nx
+import pytest
+
+from synkit.Chem.Reaction.aam_validator import AAMValidator
+from synkit.IO import its_to_rsmi, rsmi_to_its
+from synkit.Synthesis.RBL import (
+    FusionIssueCode,
+    WildcardRole,
+    certify_fusion_postprocessing,
+    validate_endpoint_preservation,
+    validate_fusion_rsmi,
+    validate_rbl_candidate,
+    validate_wildcard_mapping_roles,
+)
+from synkit.Synthesis.RBL import RBLEngine
+from synkit.Synthesis.RBL.policy import (
+    RBLSearchPolicy,
+    SearchScope,
+    TerminationPolicy,
+)
+
+CASES = (
+    (
+        "esterification",
+        "CCC(=O)(O)>>CCC(=O)OC",
+        (
+            "[CH3:1][C:2](=[O:3])[OH:4].[CH3:5][O:6][H:7]>>"
+            "[CH3:1][C:2](=[O:3])[O:6][CH3:5].[H:7][OH:4]"
+        ),
+        (
+            "[CH3:1][CH2:2][C:3](=[O:4])[OH:5].[CH3:6][O:7][H:8]>>"
+            "[CH3:1][CH2:2][C:3](=[O:4])[O:5][CH3:6].[OH:7][H:8]"
+        ),
+    ),
+    (
+        "transesterification",
+        "CCC(=O)OC>>CCC(=O)OCC",
+        "[C:1][O:2].[O:3][H:4]>>[C:1][O:3].[O:2][H:4]",
+        (
+            "[CH3:1][CH2:2][C:3](=[O:4])[O:8][H:9]."
+            "[OH:5][CH2:6][CH3:7]>>"
+            "[CH3:1][CH2:2][C:3](=[O:4])[O:5][CH2:6][CH3:7]."
+            "[OH:8][H:9]"
+        ),
+    ),
+)
+
+
+def test_subgraph_matcher_has_a_clean_cold_import() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from synkit.Graph.Matcher.subgraph_matcher import "
+            "SubgraphSearchEngine; print(SubgraphSearchEngine.__name__)",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip() == "SubgraphSearchEngine"
+
+
+@pytest.mark.parametrize("name,reaction,template,expected", CASES)
+def test_rbl_preserves_explicit_hydrogen_aam_contract(
+    name: str,
+    reaction: str,
+    template: str,
+    expected: str,
+) -> None:
+    prepared = RBLEngine().prepare_template(template).template_its
+    engine = RBLEngine(mode="full").process(reaction, prepared, replace_wc=True)
+
+    assert engine.fused_rsmis, f"{name}: no fused candidates"
+    assert any(
+        AAMValidator.smiles_check(candidate, expected)
+        for candidate in engine.fused_rsmis
+    ), f"{name}: no candidate is AAM-equivalent to the compatibility golden"
+    assert all(
+        validate_fusion_rsmi(candidate).valid for candidate in engine.fused_rsmis
+    )
+    assert engine.result["acceptance_policy"] == {
+        "task": "compatibility",
+        "preserve_original_sides": ["products"],
+        "relation": "component_injective_subgraph",
+        "use_chirality": True,
+    }
+
+
+def test_balanced_isolated_wildcards_are_removed_symmetrically() -> None:
+    rsmi = "[CH3:1].[*:7].[*:8]>>[CH3:1].[*:8].[*:9]"
+    assert RBLEngine._strip_balanced_isolated_wildcards(rsmi) == (
+        "[CH3:1].[*:7]>>[CH3:1].[*:9]"
+    )
+
+
+def test_fusion_validation_has_stable_machine_readable_issue_codes() -> None:
+    validation = validate_fusion_rsmi("[CH3:1].[H]>>[CH3:1]")
+
+    assert not validation.valid
+    assert FusionIssueCode.SIDE_ONLY_STANDALONE_HYDROGEN in {
+        issue.code for issue in validation.issues
+    }
+    payload = validation.to_dict()
+    assert payload["valid"] is False
+    assert payload["issues"][0]["code"].startswith("FUSION_")
+
+
+def test_fusion_validation_allows_mapped_proton_to_become_bound() -> None:
+    protonation = "[H+:1].[NH2:2]>>[H:1][NH2+:2]"
+
+    assert validate_fusion_rsmi(protonation).valid
+
+
+def test_fusion_validation_preserves_bound_mapped_hydrogen_identities() -> None:
+    hydrogenation = "[CH2:3]=[CH2:4].[H:1][H:2]>>" "[CH2:3]([H:1])[CH2:4][H:2]"
+
+    assert validate_fusion_rsmi(hydrogenation).valid
+
+
+def test_fusion_validation_rejects_side_only_mapped_heavy_atom() -> None:
+    validation = validate_fusion_rsmi("C.[CH4:1]>>C")
+
+    assert not validation.valid
+    assert FusionIssueCode.ATOM_MAP_IMBALANCE in {
+        issue.code for issue in validation.issues
+    }
+
+
+def test_rbl_candidate_cannot_annihilate_a_mapped_heavy_atom() -> None:
+    validation = validate_rbl_candidate("C>>C", "C.[CH4:1]>>C")
+
+    assert not validation.valid
+    assert FusionIssueCode.ATOM_MAP_IMBALANCE in {
+        issue.code for issue in validation.issues
+    }
+
+
+def test_fusion_validation_rejects_mapped_isotope_transmutation() -> None:
+    validation = validate_fusion_rsmi("[12CH4:1]>>[13CH4:1]")
+
+    assert not validation.valid
+    assert FusionIssueCode.ISOTOPE_MAP_CONFLICT in {
+        issue.code for issue in validation.issues
+    }
+
+
+def test_postprocess_proof_certifies_typed_hydrogen_materialization() -> None:
+    source = nx.Graph()
+    source.add_node(
+        1,
+        element=("*", "*"),
+        hcount=(0, 0),
+        neighbors=([], []),
+        wildcard_role=WildcardRole.RADICAL_COMPLETION.value,
+    )
+    target = source.copy()
+    target.nodes[1]["element"] = ("H", "H")
+    target.nodes[1].pop("wildcard_role")
+
+    certification = certify_fusion_postprocessing(
+        source,
+        target,
+        materialize_hydrogen=True,
+    )
+
+    assert certification.valid
+    assert certification.evidence["postprocess_proof"]["kind"] == (
+        "typed_wildcard_hydrogen_materialization"
+    )
+    assert source.nodes[1]["element"] == ("*", "*")
+
+
+def test_postprocess_proof_rejects_query_wildcard_materialization() -> None:
+    source = nx.Graph()
+    source.add_node(
+        1,
+        element=("*", "*"),
+        hcount=(0, 0),
+        neighbors=([], []),
+        wildcard_role=WildcardRole.QUERY_ATOM.value,
+    )
+    target = source.copy()
+    target.nodes[1]["element"] = ("H", "H")
+    target.nodes[1].pop("wildcard_role")
+
+    certification = certify_fusion_postprocessing(
+        source,
+        target,
+        materialize_hydrogen=True,
+    )
+
+    assert not certification.valid
+    assert certification.issues[0].code is FusionIssueCode.PROOF_FAILED
+
+
+def test_postprocess_proof_rejects_isotope_change_as_nonidentity() -> None:
+    source = nx.Graph()
+    source.add_node(1, element="C", isotope=12, charge=0, radical=0)
+    target = nx.Graph()
+    target.add_node(2, element="C", isotope=13, charge=0, radical=0)
+
+    certification = certify_fusion_postprocessing(
+        source,
+        target,
+        materialize_hydrogen=False,
+    )
+
+    assert not certification.valid
+    assert certification.issues[0].code is FusionIssueCode.PROOF_FAILED
+
+
+def test_endpoint_preservation_returns_injective_embedding_proof() -> None:
+    validation = validate_endpoint_preservation(
+        "CC.O>>CCO",
+        "CC.O.N>>CCO.Cl",
+    )
+
+    assert validation.valid
+    proof = validation.evidence
+    assert proof["matcher"] == "synkit.SubgraphSearchEngine"
+    assert proof["stereo_policy"] == "synkit.relative_stereo_subgraph"
+    assert len(proof["reactant_embeddings"]) == 2
+    assert len(proof["product_embeddings"]) == 1
+    assert (
+        len({entry["candidate_component"] for entry in proof["reactant_embeddings"]})
+        == 2
+    )
+
+
+def test_endpoint_preservation_folds_bound_explicit_hydrogen_representation() -> None:
+    validation = validate_endpoint_preservation(
+        "CO>>CO",
+        "[CH3:1][O:2][H:3]>>[CH3:1][O:2][H:3]",
+    )
+
+    assert validation.valid
+
+
+def test_endpoint_preservation_does_not_erase_hydrogen_molecules() -> None:
+    validation = validate_endpoint_preservation(
+        "[H][H]>>[H][H]",
+        "C>>C",
+    )
+
+    assert not validation.valid
+
+
+def test_endpoint_preservation_rejects_a_changed_original_product() -> None:
+    validation = validate_endpoint_preservation("CC>>CO", "CC>>CN")
+
+    assert not validation.valid
+    assert validation.issues[0].code == (FusionIssueCode.PRODUCT_ENDPOINT_NOT_PRESERVED)
+
+
+def test_endpoint_preservation_respects_component_multiplicity() -> None:
+    validation = validate_endpoint_preservation("C.C>>C", "CC>>C")
+
+    assert not validation.valid
+    assert validation.issues[0].code == (
+        FusionIssueCode.REACTANT_ENDPOINT_NOT_PRESERVED
+    )
+
+
+def test_endpoint_preservation_ignores_atom_map_labels() -> None:
+    validation = validate_endpoint_preservation(
+        "C>>[CH3:1][OH:2]",
+        "N>>[CH3:7][OH:9].Cl",
+        required_sides=("products",),
+    )
+
+    assert validation.valid
+
+
+def test_endpoint_preservation_respects_specified_stereo() -> None:
+    validation = validate_endpoint_preservation(
+        "C>>F[C@](Cl)(Br)I",
+        "N>>F[C@@](Cl)(Br)I",
+        required_sides=("products",),
+    )
+
+    assert not validation.valid
+    assert validation.issues[0].code == (FusionIssueCode.PRODUCT_ENDPOINT_NOT_PRESERVED)
+
+
+def test_rbl_can_request_conservative_preservation_of_both_sides() -> None:
+    validation = validate_rbl_candidate(
+        "CO>>CC",
+        "N>>CC.O",
+        preserve_sides=("reactants", "products"),
+    )
+
+    assert not validation.valid
+    assert FusionIssueCode.REACTANT_ENDPOINT_NOT_PRESERVED in {
+        issue.code for issue in validation.issues
+    }
+
+
+def test_wildcard_role_inventory_is_explicit() -> None:
+    assert len(set(WildcardRole)) == 6
+    assert WildcardRole.QUERY_ATOM != WildcardRole.HYDROGEN_COMPLETION
+    assert WildcardRole.STEREO_LIGAND_PORT != WildcardRole.ATTACHMENT_PORT
+
+
+@pytest.mark.parametrize("role", tuple(WildcardRole))
+def test_each_wildcard_role_rejects_conflation(role: WildcardRole) -> None:
+    roles = tuple(WildcardRole)
+    incompatible = roles[(roles.index(role) + 1) % len(roles)]
+    query_contract = (
+        {"owner": 1, "stereo_slot": 0}
+        if role is WildcardRole.STEREO_LIGAND_PORT
+        else {}
+    )
+    completion_contract = (
+        {"owner": 2, "stereo_slot": 0}
+        if incompatible is WildcardRole.STEREO_LIGAND_PORT
+        else {}
+    )
+    query = nx.Graph()
+    query.add_node(
+        1,
+        element=("*", "*"),
+        wildcard_role=role.value,
+        **query_contract,
+    )
+    completion = nx.Graph()
+    completion.add_node(
+        2,
+        element=("*", "*"),
+        wildcard_role=incompatible.value,
+        **completion_contract,
+    )
+
+    validation = validate_wildcard_mapping_roles(query, completion, {1: 2})
+    assert not validation.valid
+    assert validation.issues[0].code == FusionIssueCode.WILDCARD_ROLE_CONFLICT
+
+    completion.nodes[2]["wildcard_role"] = role.value
+    if role is WildcardRole.STEREO_LIGAND_PORT:
+        completion.nodes[2].update(owner=2, stereo_slot=0)
+    else:
+        completion.nodes[2].pop("owner", None)
+        completion.nodes[2].pop("stereo_slot", None)
+    assert validate_wildcard_mapping_roles(query, completion, {1: 2}).valid
+
+
+def test_stereo_ligand_port_requires_mapped_owner_and_ordered_slot() -> None:
+    query = nx.Graph()
+    query.add_node(
+        1,
+        element="*",
+        wildcard_role=WildcardRole.STEREO_LIGAND_PORT.value,
+        owner=3,
+        stereo_slot=1,
+    )
+    query.add_node(3, element="C")
+    candidate = nx.Graph()
+    candidate.add_node(
+        2,
+        element="*",
+        wildcard_role=WildcardRole.STEREO_LIGAND_PORT.value,
+        owner=4,
+        stereo_slot=1,
+    )
+    candidate.add_node(4, element="C")
+
+    assert validate_wildcard_mapping_roles(query, candidate, {1: 2, 3: 4}).valid
+    candidate.nodes[2]["stereo_slot"] = 2
+    invalid = validate_wildcard_mapping_roles(query, candidate, {1: 2, 3: 4})
+    assert not invalid.valid
+    assert invalid.issues[0].context["constraint_issues"][0]["code"] == (
+        "MORPHISM_METADATA_CONFLICT"
+    )
+
+
+def test_custom_legacy_wildcard_sentinel_still_adapts() -> None:
+    query = nx.Graph()
+    query.add_node(1, element="R", wildcard_role=WildcardRole.QUERY_ATOM.value)
+    candidate = nx.Graph()
+    candidate.add_node(2, element="R", wildcard_role=WildcardRole.QUERY_ATOM.value)
+
+    assert validate_wildcard_mapping_roles(
+        query,
+        candidate,
+        {1: 2},
+        wildcard_element="R",
+    ).valid
+
+
+@pytest.mark.parametrize(
+    "mode,scope,termination",
+    (
+        (
+            "fast_track",
+            SearchScope.FAST_PATHS_ONLY,
+            TerminationPolicy.FIRST_VALID,
+        ),
+        (
+            "fast_fusion",
+            SearchScope.BOUNDED_FUSION,
+            TerminationPolicy.FIRST_VALID,
+        ),
+        ("early_stop", SearchScope.FUSION, TerminationPolicy.FIRST_VALID),
+        ("full", SearchScope.FUSION, TerminationPolicy.EXHAUSTIVE),
+    ),
+)
+def test_legacy_modes_are_explicit_search_policy_presets(
+    mode: str,
+    scope: SearchScope,
+    termination: TerminationPolicy,
+) -> None:
+    engine = RBLEngine(mode=mode)
+
+    expected = RBLSearchPolicy.from_mode(mode)
+    assert expected.scope is scope
+    assert expected.termination is termination
+    assert engine.search_policy == expected
+    assert engine.result["search_policy"] == expected.to_dict()
+
+
+def test_explicit_search_policy_is_accepted_without_a_mode() -> None:
+    policy = RBLSearchPolicy(
+        SearchScope.FUSION,
+        TerminationPolicy.FIRST_VALID,
+    )
+    engine = RBLEngine(search_policy=policy)
+
+    assert engine.search_policy is policy
+    with pytest.raises(ValueError, match="either mode or search_policy"):
+        RBLEngine(mode="full", search_policy=policy)
+
+
+def test_negative_mapping_limit_is_rejected() -> None:
+    with pytest.raises(ValueError, match="max_mappings_per_pair"):
+        RBLEngine(max_mappings_per_pair=-1)
+
+
+def test_verified_mode_honours_explicit_search_budgets() -> None:
+    engine = RBLEngine(
+        mode="verified",
+        max_pairs=3,
+        max_mappings_per_pair=2,
+    )
+
+    assert engine.max_pairs == 3
+    assert engine.max_mappings_per_pair == 2
+
+
+def test_wider_search_with_the_same_acceptance_task_retains_fast_candidates() -> None:
+    class DirectCandidateEngine(RBLEngine):
+        def _quick_check(self, rsmi: str, template: object) -> str:
+            return rsmi
+
+        def _run_reaction(
+            self,
+            substrate: object,
+            pattern: object,
+            invert: bool,
+        ) -> list[object]:
+            return []
+
+    reaction = "CC>>CO"
+    template = "[C:1]>>[C:1]"
+    fast = DirectCandidateEngine(mode="fast_track").process(reaction, template)
+
+    assert fast.fused_rsmis
+    wider = DirectCandidateEngine(mode="full").process(reaction, template)
+    assert set(fast.fused_rsmis) <= set(wider.fused_rsmis)
+
+
+def test_full_search_honours_explicit_pair_budget() -> None:
+    _name, reaction, template, _expected = CASES[0]
+    full = RBLEngine(mode="full", max_pairs=2).process(reaction, template)
+
+    assert full.result["fusion_search"]["pairs_explored"] <= 2
+    assert full.result["fusion_search"]["pairs_truncated"] >= 0
+
+
+@pytest.mark.parametrize("_name,reaction,template,_expected", CASES)
+@pytest.mark.parametrize("mode", ("fast_track", "early_stop", "full"))
+@pytest.mark.parametrize("replace_wc", (True, False))
+def test_every_mode_uses_the_same_fusion_acceptance_contract(
+    _name: str,
+    reaction: str,
+    template: str,
+    _expected: str,
+    mode: str,
+    replace_wc: bool,
+) -> None:
+    engine = RBLEngine(mode=mode).process(
+        reaction,
+        template,
+        replace_wc=replace_wc,
+    )
+
+    assert all(
+        validate_rbl_candidate(
+            reaction,
+            candidate,
+            allow_wildcards=not replace_wc,
+        ).valid
+        for candidate in engine.fused_rsmis
+    )
+
+
+@pytest.mark.parametrize("_name,reaction,template,_expected", CASES)
+def test_full_mode_candidate_order_is_deterministic(
+    _name: str,
+    reaction: str,
+    template: str,
+    _expected: str,
+) -> None:
+    first = RBLEngine(mode="full").process(reaction, template).fused_rsmis
+    second = RBLEngine(mode="full").process(reaction, template).fused_rsmis
+
+    assert first == second
+
+
+@pytest.mark.parametrize("_name,reaction,template,expected", CASES)
+def test_template_fragment_permutation_preserves_compatibility_result(
+    _name: str,
+    reaction: str,
+    template: str,
+    expected: str,
+) -> None:
+    reactants, products = template.split(">>", 1)
+    permuted = (
+        ".".join(reversed(reactants.split(".")))
+        + ">>"
+        + ".".join(reversed(products.split(".")))
+    )
+
+    results = RBLEngine(mode="full").process(reaction, permuted).fused_rsmis
+    assert any(AAMValidator.smiles_check(candidate, expected) for candidate in results)
+
+
+@pytest.mark.parametrize("_name,reaction,template,_expected", CASES)
+def test_explicit_h_fusion_serialization_round_trip_preserves_aam(
+    _name: str,
+    reaction: str,
+    template: str,
+    _expected: str,
+) -> None:
+    results = RBLEngine(mode="full").process(reaction, template).fused_rsmis
+
+    for candidate in results:
+        replayed = its_to_rsmi(
+            rsmi_to_its(candidate, format="tuple"),
+            format="tuple",
+            explicit_hydrogen=True,
+        )
+        assert AAMValidator.smiles_check(candidate, replayed)
+
+
+def test_explicit_and_implicit_input_h_presentations_are_equivalent() -> None:
+    _name, _reaction, template, expected = CASES[0]
+    explicit_reaction = "CCC(=O)[OH]>>CCC(=O)OC"
+
+    results = (
+        RBLEngine(mode="full")
+        .process(
+            explicit_reaction,
+            template,
+        )
+        .fused_rsmis
+    )
+    assert any(AAMValidator.smiles_check(candidate, expected) for candidate in results)
+
+
+def test_fast_track_rejects_an_invalid_quick_candidate() -> None:
+    class InvalidQuickEngine(RBLEngine):
+        def _quick_check(self, rsmi: str, template: object) -> str:
+            # Chemically parseable, but it changes the observed product CO
+            # into CN and therefore lacks an endpoint-preservation proof.
+            return "CC>>CN"
+
+        def _run_reaction(
+            self,
+            substrate: object,
+            pattern: object,
+            invert: bool,
+        ) -> list[object]:
+            return []
+
+    engine = InvalidQuickEngine(mode="fast_track").process(
+        "CC>>CO",
+        "[C:1]>>[C:1]",
+    )
+
+    assert engine.fused_rsmis == []
+    assert engine.result["reason"] == "fast_paths_no_solution"
+    assert engine.result["search_policy"]["scope"] == "fast_paths_only"
+    assert engine.result["fusion_search"] == {}
+    assert any(
+        issue["code"] == FusionIssueCode.PRODUCT_ENDPOINT_NOT_PRESERVED.value
+        for report in engine.diagnostics["fusion"]
+        for issue in report["issues"]
+    )

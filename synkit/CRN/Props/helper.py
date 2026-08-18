@@ -4,6 +4,14 @@ from typing import Any, Dict, List, Tuple
 
 import networkx as nx
 
+from ..kinds import (
+    REACTION_KINDS,
+    SPECIES_KINDS,
+    is_reaction_node,
+    is_species_node,
+    node_kind,
+)
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -53,15 +61,21 @@ def _as_graph(crn: Any) -> nx.Graph:
 
 
 def _node_kind(data: Dict[str, Any]) -> str:
-    return str(data.get("kind", "")).strip().lower()
+    return node_kind(data)
 
 
 def _is_species_node(data: Dict[str, Any]) -> bool:
-    return _node_kind(data) == "species"
+    return is_species_node(data)
 
 
 def _is_rule_node(data: Dict[str, Any]) -> bool:
-    return _node_kind(data) == "rule"
+    """Return whether a node is a reaction node.
+
+    Accepts both ``kind="reaction"`` and the legacy ``kind="rule"``; see
+    :mod:`synkit.CRN.kinds`. The historical name is kept because it is
+    referenced throughout :mod:`synkit.CRN.Props`.
+    """
+    return is_reaction_node(data)
 
 
 def _normalize_role(role: Any) -> str | None:
@@ -101,17 +115,35 @@ def _species_and_rule_order(
 ) -> Tuple[List[Any], List[Any], Dict[Any, int], Dict[Any, int]]:
     """
     Return stable ordering and indices for species rows and rule columns.
+
+    :raises ValueError:
+        If the graph contains nodes whose ``kind`` is not recognised while no
+        reaction node was found at all. That combination almost always means an
+        unsupported node-kind vocabulary rather than a genuinely reaction-free
+        network, and silently returning an empty matrix would corrupt every
+        downstream result.
     """
     G = _as_graph(crn)
 
     species_nodes: List[Any] = []
     rule_nodes: List[Any] = []
+    unknown_kinds: set = set()
 
     for node, data in sorted(G.nodes(data=True), key=_node_sort_key):
         if _is_species_node(data):
             species_nodes.append(node)
         elif _is_rule_node(data):
             rule_nodes.append(node)
+        else:
+            unknown_kinds.add(_node_kind(data))
+
+    if unknown_kinds and not rule_nodes:
+        raise ValueError(
+            "No reaction nodes found, but the graph contains nodes with "
+            f"unrecognised kind(s) {sorted(unknown_kinds)!r}. Reaction nodes "
+            f"must use one of {sorted(REACTION_KINDS)!r} and species nodes "
+            f"{sorted(SPECIES_KINDS)!r} (see synkit.CRN.kinds)."
+        )
 
     species_index = {node: i for i, node in enumerate(species_nodes)}
     rule_index = {node: j for j, node in enumerate(rule_nodes)}

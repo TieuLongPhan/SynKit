@@ -34,7 +34,7 @@ class WCMatcher:
 
     Attribute matching
     ------------------
-    Node attributes (for keys listed in :pydata:`node_attrs`):
+    Node attributes (for keys listed in :data:`node_attrs`):
 
     • ``str`` and ``bool``: must match **exactly**.
     • ``int`` and ``float``: pattern value ≤ host value (lower-bound semantics).
@@ -45,7 +45,7 @@ class WCMatcher:
           host counts (multiset inclusion).
         - Wildcard neighbour labels impose no constraint.
 
-    Edge attributes (for keys listed in :pydata:`edge_attrs`):
+    Edge attributes (for keys listed in :data:`edge_attrs`):
 
     • Same typed semantics as node attributes (str/bool exact, numeric ≤).
 
@@ -89,7 +89,7 @@ class WCMatcher:
         atom type. Defaults to ``"element"``.
     :type element_key: str
     :param node_attrs: Node attribute keys to be checked in addition to
-        :pydata:`element_key`. If ``"neighbors"`` is included, neighbour
+        :data:`element_key`. If ``"neighbors"`` is included, neighbour
         lists are compared with lower-bound / wildcard semantics.
     :type node_attrs: Sequence[str] | None
     :param edge_attrs: Edge attribute keys to be checked with typed
@@ -143,10 +143,9 @@ class WCMatcher:
         self._is_match: bool = False
 
     def __repr__(self) -> str:
-        """
-        String representation for debugging.
+        """String representation for debugging.
 
-        :returns: Short summary including match status and node counts.
+        :return: Short summary including match status and node counts.
         :rtype: str
         """
         status = "matched" if self._is_match else "unmatched"
@@ -159,15 +158,14 @@ class WCMatcher:
     # ------------------------------------------------------------------ public API
 
     def fit(self) -> "WCMatcher":
-        """
-        Run the wildcard-aware core isomorphism search.
+        """Run the wildcard-aware core isomorphism search.
 
         The method computes the **core** subgraph isomorphism (ignoring
         wildcard nodes) and stores the mapping internally. Use
-        :pyattr:`is_match` and :pyattr:`core_mapping_without_wildcard_regions`
+        :attr:`is_match` and :attr:`core_mapping_without_wildcard_regions`
         to inspect the result.
 
-        :returns: Self, to allow fluent chaining.
+        :return: Self, to allow fluent chaining.
         :rtype: WCMatcher
         """
         pattern_core = self._build_pattern_core()
@@ -201,51 +199,46 @@ class WCMatcher:
 
     @property
     def is_match(self) -> bool:
-        """
-        Whether a wildcard-compatible **core** mapping was found.
+        """Whether a wildcard-compatible **core** mapping was found.
 
-        :returns: ``True`` if the core pattern matches a subgraph of the host.
+        :return: ``True`` if the core pattern matches a subgraph of the host.
         :rtype: bool
         """
         return self._is_match
 
     @property
     def pattern_graph(self) -> GraphType:
-        """
-        Graph that was treated as the **pattern** (may contain wildcards).
+        """Graph that was treated as the **pattern** (may contain wildcards).
 
-        :returns: Pattern graph.
+        :return: Pattern graph.
         :rtype: GraphType
         """
         return self._pattern
 
     @property
     def host_graph(self) -> GraphType:
-        """
-        Graph that was treated as the **host**.
+        """Graph that was treated as the **host**.
 
-        :returns: Host graph.
+        :return: Host graph.
         :rtype: GraphType
         """
         return self._host
 
     @property
     def core_mapping_without_wildcard_regions(self) -> Dict[Any, Any]:
-        """
-        Mapping from **non-wildcard pattern nodes → host nodes**.
+        """Mapping from **non-wildcard pattern nodes → host nodes**.
 
         Wildcard nodes in the pattern are ignored in this mapping. This is the
         clean "core" mapping without any enlargement due to wildcard regions.
 
-        :returns: Mapping from pattern-core nodes to host nodes.
+        :return: Mapping from pattern-core nodes to host nodes.
         :rtype: dict[Any, Any]
         """
         return dict(self._core_mapping)
 
     @property
     def wildcard_subgraph_mapping(self) -> Dict[Any, Set[Any]]:
-        """
-        Mapping from each **wildcard pattern node** to a set of host nodes
+        """Mapping from each **wildcard pattern node** to a set of host nodes
         forming its wildcard subgraph region.
 
         Construction heuristic
@@ -257,14 +250,14 @@ class WCMatcher:
         3. For each anchor ``h`` in the host, add all neighbours of ``h``
            that are **not already used** by any core mapping.
 
-        Notes
-        -----
+        .. rubric:: Notes
+
         • If there is no core mapping (``is_match == False``), the result is
           an empty dict.
         • If a wildcard's anchors cannot be mapped (e.g. missing in core),
           its region is an empty set.
 
-        :returns: Mapping ``wildcard_pattern_node → set(host_nodes_in_region)``.
+        :return: Mapping ``wildcard_pattern_node → set(host_nodes_in_region)``.
         :rtype: dict[Any, set[Any]]
         """
         if not self._is_match:
@@ -305,10 +298,9 @@ class WCMatcher:
 
     @property
     def help(self) -> str:
-        """
-        Human-readable summary of the matcher behaviour.
+        """Human-readable summary of the matcher behaviour.
 
-        :returns: Description string summarising semantics and attributes.
+        :return: Description string summarising semantics and attributes.
         :rtype: str
         """
         return (
@@ -327,8 +319,7 @@ class WCMatcher:
     def _choose_host_pattern(
         self, G1: GraphType, G2: GraphType
     ) -> Tuple[GraphType, GraphType, bool]:
-        """
-        Decide which graph is host and which is pattern.
+        """Decide which graph is host and which is pattern.
 
         Preference
         ----------
@@ -340,7 +331,7 @@ class WCMatcher:
         :type G1: GraphType
         :param G2: Second input graph.
         :type G2: GraphType
-        :returns: Tuple ``(host, pattern, pattern_is_G1)``.
+        :return: Tuple ``(host, pattern, pattern_is_G1)``.
         :rtype: tuple[GraphType, GraphType, bool]
         """
         has_wc1 = self._graph_has_wildcard(G1)
@@ -356,12 +347,11 @@ class WCMatcher:
         return G1, G2, False
 
     def _graph_has_wildcard(self, G: GraphType) -> bool:
-        """
-        Check whether a graph contains at least one wildcard node.
+        """Check whether a graph contains at least one wildcard node.
 
         :param G: Graph to inspect.
         :type G: GraphType
-        :returns: ``True`` if a wildcard node is present.
+        :return: ``True`` if a wildcard node is present.
         :rtype: bool
         """
         key = self._element_key
@@ -374,13 +364,12 @@ class WCMatcher:
     # ------------------------------------------------------------------ internals: pattern core construction
 
     def _build_pattern_core(self) -> GraphType:
-        """
-        Build the core pattern graph (non-wildcard nodes only).
+        """Build the core pattern graph (non-wildcard nodes only).
 
         Wildcard nodes (with ``element == wildcard_element``) are removed,
         and the induced subgraph is returned.
 
-        :returns: Core pattern graph without wildcard nodes.
+        :return: Core pattern graph without wildcard nodes.
         :rtype: GraphType
         """
         key = self._element_key
@@ -395,8 +384,7 @@ class WCMatcher:
     # ------------------------------------------------------------------ internals: typed attribute comparison
 
     def _typed_leq(self, host_val: Any, pat_val: Any) -> bool:
-        """
-        Typed comparison of attribute values.
+        """Typed comparison of attribute values.
 
         Rules
         -----
@@ -409,7 +397,7 @@ class WCMatcher:
         :type host_val: Any
         :param pat_val: Attribute value from the pattern graph.
         :type pat_val: Any
-        :returns: ``True`` if ``host_val`` satisfies the pattern constraint.
+        :return: ``True`` if ``host_val`` satisfies the pattern constraint.
         :rtype: bool
         """
         if pat_val is None:
@@ -430,8 +418,7 @@ class WCMatcher:
         host_neigh: Optional[Iterable[Any]],
         pat_neigh: Optional[Iterable[Any]],
     ) -> bool:
-        """
-        Compare neighbour \"element\" lists with wildcard & lower-bound semantics.
+        """Compare neighbour "element" lists with wildcard & lower-bound semantics.
 
         • Pattern neighbour list may contain wildcard entries
           (``self._wildcard_element``).
@@ -444,7 +431,7 @@ class WCMatcher:
         :type host_neigh: Iterable[Any] | None
         :param pat_neigh: Neighbour labels in the pattern.
         :type pat_neigh: Iterable[Any] | None
-        :returns: ``True`` if host neighbours satisfy the pattern constraints.
+        :return: ``True`` if host neighbours satisfy the pattern constraints.
         :rtype: bool
         """
         if pat_neigh is None:
@@ -473,8 +460,7 @@ class WCMatcher:
         key: str,
         wc: str,
     ) -> bool:
-        """
-        Check node-level attributes including element & neighbours.
+        """Check node-level attributes including element & neighbours.
 
         :param host_attr: Host node attribute dictionary.
         :type host_attr: dict[str, Any]
@@ -484,7 +470,7 @@ class WCMatcher:
         :type key: str
         :param wc: Wildcard element value.
         :type wc: str
-        :returns: ``True`` if host node satisfies pattern node constraints.
+        :return: ``True`` if host node satisfies pattern node constraints.
         :rtype: bool
         """
         host_el = host_attr.get(key)
@@ -510,14 +496,13 @@ class WCMatcher:
         host_attr: Dict[str, Any],
         pat_attr: Dict[str, Any],
     ) -> bool:
-        """
-        Check edge-level attributes using typed semantics.
+        """Check edge-level attributes using typed semantics.
 
         :param host_attr: Host edge attribute dictionary.
         :type host_attr: dict[str, Any]
         :param pat_attr: Pattern edge attribute dictionary.
         :type pat_attr: dict[str, Any]
-        :returns: ``True`` if host edge satisfies pattern edge constraints.
+        :return: ``True`` if host edge satisfies pattern edge constraints.
         :rtype: bool
         """
         for name in self._edge_attrs:
@@ -528,27 +513,26 @@ class WCMatcher:
     # ------------------------------------------------------------------ internals: GraphMatcher construction
 
     def _make_graph_matcher(self, pattern_core: GraphType) -> Any:
-        """
-        Build a NetworkX GraphMatcher for host vs. pattern_core.
+        """Build a NetworkX GraphMatcher for host vs. pattern_core.
 
         Default behaviour
         -----------------
         • Node match:
-            - :pydata:`element_key`: exact, unless pattern element is
-              :pydata:`wildcard_element`.
-            - For keys in :pyattr:`_node_attrs`:
+            - :data:`element_key`: exact, unless pattern element is
+              :data:`wildcard_element`.
+            - For keys in :attr:`_node_attrs`:
                 * If key == ``"neighbors"``: use neighbour lower-bound semantics.
                 * Else: typed comparison via :meth:`_typed_leq`.
-            - Then apply optional :pydata:`node_match` predicate if given.
+            - Then apply optional :data:`node_match` predicate if given.
         • Edge match:
-            - For keys in :pyattr:`_edge_attrs`: typed comparison via
+            - For keys in :attr:`_edge_attrs`: typed comparison via
               :meth:`_typed_leq`.
-            - Then optional :pydata:`edge_match` predicate if given.
+            - Then optional :data:`edge_match` predicate if given.
 
         :param pattern_core: Induced subgraph of the pattern on non-wildcard
             nodes.
         :type pattern_core: GraphType
-        :returns: Instance of :class:`GraphMatcher` or
+        :return: Instance of :class:`GraphMatcher` or
             :class:`MultiGraphMatcher` depending on the host type.
         :rtype: Any
         """

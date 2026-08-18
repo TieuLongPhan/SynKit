@@ -50,21 +50,17 @@ def _edge(graph, i, j):
 def wl_node_colors(graph, n, init=None, max_iter=None):
     """1-WL stable node colours.
 
-    Parameters
-    ----------
-    graph : dict[int, dict[int, number]]
-        Adjacency with edge weights; ``graph[i][j]`` is the bond order.
-    n : int
-        Number of nodes (indices ``0..n-1``).
-    init : sequence, optional
-        Initial colours (defaults to all-equal).
-    max_iter : int, optional
-        Iteration cap (defaults to ``n``).
+    :param graph: Adjacency with edge weights; ``graph[i][j]`` is the bond order.
+    :type graph: dict[int, dict[int, number]]
+    :param n: Number of nodes (indices ``0..n-1``).
+    :type n: int
+    :param init: Initial colours (defaults to all-equal).
+    :type init: sequence, optional
+    :param max_iter: Iteration cap (defaults to ``n``).
+    :type max_iter: int, optional
 
-    Returns
-    -------
-    list[int]
-        Canonical integer colours, stable under further 1-WL refinement.
+    :return: Canonical integer colours, stable under further 1-WL refinement.
+    :rtype: list[int]
     """
     colors = _canonicalize(init if init is not None else [0] * n)
     if max_iter is None:
@@ -90,10 +86,8 @@ def wl_graph_hash(graph, n, init=None):
 def two_wl_pair_colors(graph, n, init=None, max_iter=None):
     """2-FWL stable colours for every ordered pair ``(i, j)``.
 
-    Returns
-    -------
-    dict[tuple[int, int], int]
-        Canonical integer colour for each ordered pair.
+    :return: Canonical integer colour for each ordered pair.
+    :rtype: dict[tuple[int, int], int]
     """
     node_colors = wl_node_colors(graph, n, init)
     if max_iter is None:
@@ -156,22 +150,18 @@ def two_wl_node_colors(graph, n, init=None, targets=None):
 def selective_two_wl_refine(graph, n, colors=None, max_nodes=200):
     """Refine 1-WL colours with 2-FWL, but only on still-ambiguous classes.
 
-    Parameters
-    ----------
-    graph : dict[int, dict[int, number]]
-        Adjacency with edge weights.
-    n : int
-        Number of nodes.
-    colors : sequence, optional
-        Initial colours (defaults to all-equal).
-    max_nodes : int, optional
-        Skip the (cubic) 2-FWL pass when ``n`` exceeds this, returning the plain
-        1-WL colouring. Guards against pathological cost on large molecules.
+    :param graph: Adjacency with edge weights.
+    :type graph: dict[int, dict[int, number]]
+    :param n: Number of nodes.
+    :type n: int
+    :param colors: Initial colours (defaults to all-equal).
+    :type colors: sequence, optional
+    :param max_nodes: Skip the (cubic) 2-FWL pass when ``n`` exceeds this, returning the plain
+                      1-WL colouring. Guards against pathological cost on large molecules.
+    :type max_nodes: int, optional
 
-    Returns
-    -------
-    list[int]
-        Refined colours, never coarser than 1-WL.
+    :return: Refined colours, never coarser than 1-WL.
+    :rtype: list[int]
     """
     c1 = wl_node_colors(graph, n, colors)
 

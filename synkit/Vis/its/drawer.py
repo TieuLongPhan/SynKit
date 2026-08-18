@@ -67,8 +67,8 @@ def draw_its_graph(
     :param aromatic_style: Aromatic style for molecular panels.
     :type aromatic_style: str
     :param include_delta_panel: In projection mode, include a diagnostic ITS
-        graph panel.
-        :type include_delta_panel: bool
+                                graph panel.
+    :type include_delta_panel: bool
     :param projection: If ``True``, draw reactant/product molecular projection
         panels plus an ITS delta panel. If ``False``, draw only the ITS graph.
     :type projection: bool
@@ -83,7 +83,7 @@ def draw_its_graph(
     :param electron_label_mode: ``"charge"``, ``"lone_pair"``, ``"radical"``,
         or ``"all"``.
     :type electron_label_mode: str
-    :returns: ``(fig, axes)``.
+    :return: ``(fig, axes)``.
     :rtype: tuple[plt.Figure, list[plt.Axes]]
     """
 

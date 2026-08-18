@@ -39,8 +39,7 @@ def raise_timeout(_signum, _frame) -> None:
 
 def _supports_interval_timer() -> bool:
     return all(
-        hasattr(signal, name)
-        for name in ("SIGALRM", "ITIMER_REAL", "setitimer")
+        hasattr(signal, name) for name in ("SIGALRM", "ITIMER_REAL", "setitimer")
     )
 
 
@@ -517,10 +516,11 @@ def main() -> int:
     reference_matches = {}
     for key, rows in reference_groups.items():
         outputs = [row for row in rows if row["status"] == "OUTPUT"]
-        reference_matches[key] = (
-            {row["method"] for row in outputs} == expected_reference_methods
-            and len({int(row["unique_classes"]) for row in outputs}) == 1
-        )
+        reference_matches[key] = {
+            row["method"] for row in outputs
+        } == expected_reference_methods and len(
+            {int(row["unique_classes"]) for row in outputs}
+        ) == 1
     reference_agreement = {
         "comparisons": len(reference_matches),
         "matches": sum(reference_matches.values()),
@@ -561,9 +561,7 @@ def main() -> int:
                 "provenance-aware candidate enumeration followed by full-ITS "
                 "classification"
             ),
-            "method_a": (
-                "classify every hydrogen permutation by full ITS isomorphism"
-            ),
+            "method_a": ("classify every hydrogen permutation by full ITS isomorphism"),
             "method_b": (
                 "classify by base-ITS automorphisms plus anchored co-extension"
             ),

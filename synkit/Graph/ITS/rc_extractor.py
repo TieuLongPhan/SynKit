@@ -6,8 +6,7 @@ import networkx as nx
 
 
 class RCExtractor:
-    """
-    Extract reaction-center information from an ITS graph.
+    """Extract reaction-center information from an ITS graph.
 
     This class identifies the reaction center (RC) from an imaginary transition
     state (ITS) graph using simple structural change rules on paired node and
@@ -62,8 +61,8 @@ class RCExtractor:
     - ``conjugated``
     - ``in_ring``
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     - All original ITS node and edge attributes are preserved.
     - The extracted RC subgraph stores metadata in ``graph.graph["rc"]``.
     - Endpoints of RC edges are automatically included as RC nodes.
@@ -75,8 +74,8 @@ class RCExtractor:
       ``"node_attrs"``, ``"edge_attrs"``, ``"default_node_attrs"``, and
       ``"default_edge_attrs"``.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         import networkx as nx
@@ -244,17 +243,16 @@ class RCExtractor:
 
     @staticmethod
     def _normalize_h_pair(h_react: int, h_prod: int) -> Tuple[int, int]:
-        """
-        Normalize reactant and product hydrogen counts to relative change form.
+        """Normalize reactant and product hydrogen counts to relative change form.
 
         This removes the shared hydrogen baseline and keeps only the relative
         hydrogen change between the two states.
 
-        Examples:
+        .. rubric:: Examples
 
-        - ``(1, 1) -> (0, 0)``
-        - ``(2, 1) -> (1, 0)``
-        - ``(1, 2) -> (0, 1)``
+        ``(1, 1) -> (0, 0)``
+        ``(2, 1) -> (1, 0)``
+        ``(1, 2) -> (0, 1)``
 
         :param h_react: Hydrogen count in the reactant state.
         :type h_react: int
@@ -263,8 +261,8 @@ class RCExtractor:
         :return: Normalized hydrogen pair.
         :rtype: Tuple[int, int]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             RCExtractor._normalize_h_pair(2, 1)  # (1, 0)
@@ -289,8 +287,7 @@ class RCExtractor:
 
     @classmethod
     def _hcount_diff(cls, value: Any) -> bool:
-        """
-        Check whether a hydrogen-count pair differs after normalization.
+        """Check whether a hydrogen-count pair differs after normalization.
 
         Hydrogen counts are treated specially. Instead of directly comparing the
         raw pair, the shared hydrogen baseline is removed first by calling
@@ -302,8 +299,8 @@ class RCExtractor:
             ``False``.
         :rtype: bool
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             RCExtractor._hcount_diff((1, 1))  # False
@@ -332,8 +329,7 @@ class RCExtractor:
 
     @classmethod
     def _node_reasons(cls, attrs: dict[str, Any]) -> list[str]:
-        """
-        Determine why a node belongs to the reaction center.
+        """Determine why a node belongs to the reaction center.
 
         Each tracked node attribute is inspected, and any attribute whose paired
         values differ is recorded as a reaction-center reason. The ``hcount``
@@ -345,8 +341,8 @@ class RCExtractor:
             node.
         :rtype: list[str]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             attrs = {
@@ -477,8 +473,7 @@ class RCExtractor:
         its: nx.Graph,
         include_context_edges: bool = True,
     ) -> nx.Graph:
-        """
-        Extract the reaction-center subgraph from an ITS graph.
+        """Extract the reaction-center subgraph from an ITS graph.
 
         By default, the returned graph is the induced subgraph on all
         reaction-center nodes. Set ``include_context_edges=False`` to retain
@@ -508,8 +503,8 @@ class RCExtractor:
             ``graph.graph["rc"]``.
         :rtype: nx.Graph
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             import networkx as nx
@@ -594,8 +589,7 @@ class RCExtractor:
         return rc_graph
 
     def annotate(self, its: nx.Graph) -> nx.Graph:
-        """
-        Return a full ITS graph annotated with reaction-center flags.
+        """Return a full ITS graph annotated with reaction-center flags.
 
         This method copies the full ITS graph and adds per-node and per-edge
         reaction-center annotations without removing non-reaction-center
@@ -621,8 +615,8 @@ class RCExtractor:
             annotations attached to nodes, edges, and graph metadata.
         :rtype: nx.Graph
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             import networkx as nx

@@ -24,7 +24,7 @@ from synkit.Mechanism import (
 )
 from synkit.Rule.Compose._identity import cluster_rule_objects
 from synkit.Rule.syn_rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 from synkit.Synthesis.reactor_utils import _get_unique_aam
 
 ATOM_DESCRIPTORS = (

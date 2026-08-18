@@ -8,8 +8,7 @@ import requests
 
 @dataclass(slots=True)
 class KEGGClient:
-    """
-    Lightweight REST client for the KEGG API.
+    """Lightweight REST client for the KEGG API.
 
     This client provides a minimal wrapper around the KEGG REST interface and
     returns raw response text for a requested endpoint.
@@ -21,8 +20,8 @@ class KEGGClient:
         Request timeout in seconds.
     :type timeout: float
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         client = KEGGClient(
@@ -36,14 +35,13 @@ class KEGGClient:
     timeout: float = 60.0
 
     def get_text(self, path: str) -> str:
-        """
-        Send ``GET <base_url>/<path>`` and return the response body as text.
+        """Send ``GET <base_url>/<path>`` and return the response body as text.
 
         :param path:
             Relative KEGG REST path, for example ``"get/hsa00010"``.
         :type path: str
 
-        :returns:
+        :return:
             Raw text returned by the KEGG REST API.
         :rtype: str
 
@@ -52,8 +50,8 @@ class KEGGClient:
         :raises requests.RequestException:
             Raised for transport-level request failures.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             client = KEGGClient()
@@ -67,8 +65,7 @@ class KEGGClient:
         return response.text
 
     def get_optional_text(self, path: str) -> Optional[str]:
-        """
-        Send a GET request and return the response text when available.
+        """Send a GET request and return the response text when available.
 
         Unlike :meth:`get_text`, this method suppresses
         :class:`requests.HTTPError` and returns ``None`` for HTTP-level
@@ -78,7 +75,7 @@ class KEGGClient:
             Relative KEGG REST path.
         :type path: str
 
-        :returns:
+        :return:
             Response text if the request succeeds, otherwise ``None`` when an
             HTTP error occurs.
         :rtype: Optional[str]
@@ -87,8 +84,8 @@ class KEGGClient:
             Raised for non-HTTP request failures, such as connection errors or
             timeouts.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             client = KEGGClient()

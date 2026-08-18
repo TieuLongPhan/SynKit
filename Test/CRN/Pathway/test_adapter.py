@@ -22,10 +22,9 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
 
     @staticmethod
     def _build_syn() -> SynCRN:
-        """
-        Build the standard SynCRN testcase.
+        """Build the standard SynCRN testcase.
 
-        :returns: Parsed SynCRN instance.
+        :return: Parsed SynCRN instance.
         :rtype: SynCRN
         """
         rxns = [
@@ -44,24 +43,22 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         return SynCRN.from_reaction_strings(rxns)
 
     def _incidence(self):
-        """
-        Extract canonical incidence from the SynCRN testcase.
+        """Extract canonical incidence from the SynCRN testcase.
 
-        :returns: Canonical SynCRN incidence object.
+        :return: Canonical SynCRN incidence object.
         :rtype: object
         """
         return extract_syncrn_incidence(self._build_syn())
 
     @staticmethod
     def _find_species_id_by_label(incidence, label: str) -> str:
-        """
-        Resolve an internal species id by species label.
+        """Resolve an internal species id by species label.
 
         :param incidence: Canonical incidence object.
         :type incidence: object
         :param label: Species label to resolve.
         :type label: str
-        :returns: Internal species id.
+        :return: Internal species id.
         :rtype: str
         """
         matches = [
@@ -79,8 +76,7 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         tail_labels: dict[str, int],
         head_labels: dict[str, int],
     ) -> str:
-        """
-        Resolve an internal reaction id by exact stoichiometry in label space.
+        """Resolve an internal reaction id by exact stoichiometry in label space.
 
         :param incidence: Canonical incidence object.
         :type incidence: object
@@ -88,7 +84,7 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         :type tail_labels: dict[str, int]
         :param head_labels: Product multiset in species-label space.
         :type head_labels: dict[str, int]
-        :returns: Internal reaction id.
+        :return: Internal reaction id.
         :rtype: str
         """
         matches = []

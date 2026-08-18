@@ -14,12 +14,14 @@ class PathFPs:
         """Initialize the PathFPs class to create a binary fingerprint based on
         paths in a graph.
 
-        Parameters:
-        - graph (nx.Graph): Graph on which to perform analysis.
-        - max_length (int): Limit on path lengths considered in the fingerprint.
-        - nBits (int): Size of the binary fingerprint in bits.
-        - hash_alg (str): Cryptographic hash function used for path hashing.
-        - hash_function (Callable): Hash function initialized from hashlib.
+        :param graph: Graph on which to perform analysis.
+        :type graph: nx.Graph
+        :param max_length: Limit on path lengths considered in the fingerprint.
+        :type max_length: int
+        :param nBits: Size of the binary fingerprint in bits.
+        :type nBits: int
+        :param hash_alg: Cryptographic hash function used for path hashing.
+        :type hash_alg: str
         """
         self.graph = graph
         self.max_length = max_length
@@ -31,9 +33,8 @@ class PathFPs:
         """Generate a binary string fingerprint of the graph by hashing paths
         up to a certain length and combining them.
 
-        Returns:
-        - str: A binary string of length `nBits` that represents the fingerprint of the
-        graph.
+        :return: A binary string of length `nBits` that represents the fingerprint of the graph.
+        :rtype: str
         """
         fingerprint = ""
         for node in self.graph.nodes():
@@ -64,13 +65,14 @@ class PathFPs:
         """Extend the hash length using iterative hashing until the desired bit
         length is achieved.
 
-        Parameters:
-        - hash_object (hashlib._Hash): The hash object used for iterative deepening.
-        - remaining_bits (int): Number of bits needed to complete the fingerprint
-        to `nBits`.
+        :param hash_object: The hash object used for iterative deepening.
+        :type hash_object: hashlib._Hash
+        :param remaining_bits: Number of bits needed to complete the fingerprint
+                               to `nBits`.
+        :type remaining_bits: int
 
-        Returns:
-        - str: Additional binary data to achieve the desired hash length.
+        :return: Additional binary data to achieve the desired hash length.
+        :rtype: str
         """
         additional_data = ""
         while len(additional_data) * 4 < remaining_bits:

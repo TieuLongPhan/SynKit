@@ -68,8 +68,8 @@ class ITSExpand:
     The optional ``preserve_older_map`` mode keeps existing atom-map numbers
     from the input RSMI by reindexing the side graph before ITS reconstruction.
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     ``preserve_older_map=True`` is intended for the ITS expansion path only.
     It should not be combined with ``relabel=True``, because ``ITSRelabel``
     globally renumbers atom maps.
@@ -91,7 +91,7 @@ class ITSExpand:
 
         :param rsmi: Reaction SMILES string in ``reactant>>product`` format.
         :type rsmi: str
-        :returns: Reactant-side SMILES and product-side SMILES.
+        :return: Reactant-side SMILES and product-side SMILES.
         :rtype: tuple[str, str]
         :raises ValueError: If the input is not a valid two-sided RSMI.
         """
@@ -111,7 +111,7 @@ class ITSExpand:
 
         :param data: Node attribute dictionary.
         :type data: dict
-        :returns: Atom-map number. Returns ``0`` if absent or falsy.
+        :return: Atom-map number. Returns ``0`` if absent or falsy.
         :rtype: int
         """
         return int(data.get("atom_map", 0) or 0)
@@ -122,7 +122,7 @@ class ITSExpand:
 
         :param graph: Molecular graph.
         :type graph: networkx.Graph
-        :returns: List of nonzero atom-map numbers.
+        :return: List of nonzero atom-map numbers.
         :rtype: list[int]
         """
         return [
@@ -193,7 +193,7 @@ class ITSExpand:
 
         :param graph: Molecular side graph.
         :type graph: networkx.Graph
-        :returns: A partial old-node to new-node mapping and the used node IDs.
+        :return: A partial old-node to new-node mapping and the used node IDs.
         :rtype: tuple[dict, set[int]]
         """
         mapping = {}
@@ -228,7 +228,7 @@ class ITSExpand:
         :type mapping: dict
         :param used_ids: Node IDs already occupied by mapped atoms.
         :type used_ids: set[int]
-        :returns: Complete old-node to new-node mapping.
+        :return: Complete old-node to new-node mapping.
         :rtype: dict
         """
         n_nodes = graph.number_of_nodes()
@@ -333,7 +333,7 @@ class ITSExpand:
 
         :param graph: Molecular side graph.
         :type graph: networkx.Graph
-        :returns: Old-node to new-node mapping.
+        :return: Old-node to new-node mapping.
         :rtype: dict
         :raises ValueError: If atom-map values are duplicated or incompatible
             with contiguous node IDs.
@@ -417,7 +417,7 @@ class ITSExpand:
         :type graph: networkx.Graph
         :param mapping: Old-node to new-node mapping.
         :type mapping: dict
-        :returns: Rebuilt graph with remapped node IDs.
+        :return: Rebuilt graph with remapped node IDs.
         :rtype: networkx.Graph
         """
         new_graph = graph.__class__()
@@ -441,8 +441,8 @@ class ITSExpand:
         whereas the side graph produced by ``smiles_to_graph(...)`` may use
         RDKit-style atom indices as node IDs.
 
-        Example
-        -------
+        .. rubric:: Example
+
         Before reindexing:
 
         .. code-block:: text
@@ -463,7 +463,7 @@ class ITSExpand:
         :type graph: networkx.Graph
         :param contiguous: Whether the returned node IDs must be ``1..N``.
         :type contiguous: bool
-        :returns: Reindexed side graph.
+        :return: Reindexed side graph.
         :rtype: networkx.Graph
         :raises ValueError: If atom-map numbers cannot be safely used as node
             IDs while preserving ``1..N`` indexing.
@@ -1052,12 +1052,13 @@ class ITSExpand:
             sanitized graph serialization. Disable only for the minimal RSMI
             adapter, whose validation is performed separately.
         :type standardize_output: bool
-        :returns: Fully mapped RSMI and structured expansion evidence.
+        :return: Fully mapped RSMI and structured expansion evidence.
         :rtype: ITSExpansionResult
         :raises ValueError: If input RSMI format is invalid, if incompatible
             options are used, or if side-graph reindexing is unsafe.
 
-        :example:
+        .. rubric:: Examples
+
         >>> expander = ITSExpand()
         >>> expander.expand_aam_with_its(
         ...     "CC[CH2:3][Cl:1].[N:2]>>CC[CH2:3][N:2].[Cl:1]",
@@ -1200,7 +1201,7 @@ class ITSExpand:
         :param preserve_radical_state: Transport endpoint radical counts as a
             required graph attribute. This does not enable validation guards.
         :type preserve_radical_state: bool
-        :returns: Completely mapped reaction SMILES.
+        :return: Completely mapped reaction SMILES.
         :rtype: str
         """
         return cls.expand_aam_with_its(

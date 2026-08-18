@@ -59,7 +59,7 @@ def draw_graph(
     :type layout: str
     :param pos: Optional fixed positions.
     :type pos: Optional[Mapping[Any, Tuple[float, float]]]
-    :returns: ``(figure, axes)``.
+    :return: ``(figure, axes)``.
     :rtype: Tuple[plt.Figure, plt.Axes]
     """
 

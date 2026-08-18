@@ -36,22 +36,21 @@ def parse_atom_list(text: str) -> list[int]:
 
     :param text: Atom-map text such as ``"10"`` or ``"10,11"``.
     :type text: str
-    :returns: Parsed atom-map numbers.
+    :return: Parsed atom-map numbers.
     :rtype: list[int]
     """
     return [int(x.strip()) for x in text.split(",") if x.strip()]
 
 
 def parse_arrow_step(step: str) -> tuple[list[int], list[int]]:
-    """
-    Convert one arrow-code step.
+    """Convert one arrow-code step.
 
     For example, ``"10=20"`` becomes ``([10], [20])`` and
     ``"12=11,12"`` becomes ``([12], [11, 12])``.
 
     :param step: One arrow-code step containing a left and right side.
     :type step: str
-    :returns: Parsed left-side and right-side atom-map lists.
+    :return: Parsed left-side and right-side atom-map lists.
     :rtype: tuple[list[int], list[int]]
     :raises ValueError: If ``step`` does not contain ``"="``.
     """
@@ -67,7 +66,7 @@ def split_arrow_code(arrow_code: str) -> list[str]:
 
     :param arrow_code: Semicolon-separated arrow code.
     :type arrow_code: str
-    :returns: Individual stripped arrow-code steps.
+    :return: Individual stripped arrow-code steps.
     :rtype: list[str]
     """
     return [s.strip() for s in arrow_code.split(";") if s.strip()]
@@ -82,7 +81,7 @@ def ef_arrow_code_to_arrow_code(ef_arrow_code: str) -> str:
 
     :param ef_arrow_code: Semicolon-separated hyphen-form electron-flow code.
     :type ef_arrow_code: str
-    :returns: Equivalent equals-form SynKit arrow code.
+    :return: Equivalent equals-form SynKit arrow code.
     :rtype: str
     :raises ValueError: If a step does not contain exactly one ``"-"``.
     """
@@ -105,7 +104,7 @@ def arrow_code_to_ef_arrow_code(arrow_code: str) -> str:
 
     :param arrow_code: Semicolon-separated SynKit arrow code.
     :type arrow_code: str
-    :returns: Equivalent hyphen-form electron-flow code.
+    :return: Equivalent hyphen-form electron-flow code.
     :rtype: str
     """
     return ";".join(step.replace("=", "-", 1) for step in split_arrow_code(arrow_code))
@@ -120,7 +119,7 @@ def split_ef_smirks(ef_smirks: str) -> tuple[str, str]:
 
     :param ef_smirks: RSMI followed by whitespace and electron-flow code.
     :type ef_smirks: str
-    :returns: Reaction SMILES and hyphen-form electron-flow code.
+    :return: Reaction SMILES and hyphen-form electron-flow code.
     :rtype: tuple[str, str]
     :raises ValueError: If the input lacks an RSMI arrow or flow code.
     """
@@ -141,7 +140,7 @@ def arrow_atom_maps(arrow_code: str) -> set[int]:
 
     :param arrow_code: Semicolon-separated arrow code.
     :type arrow_code: str
-    :returns: Atom-map numbers referenced by the code.
+    :return: Atom-map numbers referenced by the code.
     :rtype: set[int]
     """
     maps: set[int] = set()
@@ -159,7 +158,7 @@ def classify_arrow_shape(step: str) -> str:
 
     :param step: One arrow-code step.
     :type step: str
-    :returns: Shape label such as ``"a=b"`` or ``"a,b=c,d"``.
+    :return: Shape label such as ``"a=b"`` or ``"a,b=c,d"``.
     :rtype: str
     """
     lhs, rhs = parse_arrow_step(step)
@@ -184,7 +183,7 @@ def check_arrow_code_coverage(arrow_codes: list[str]) -> dict[str, Any]:
 
     :param arrow_codes: Arrow codes to inspect.
     :type arrow_codes: list[str]
-    :returns: Shape counts, unsupported steps, and an all-supported flag.
+    :return: Shape counts, unsupported steps, and an all-supported flag.
     :rtype: dict[str, Any]
     """
     shape_counter = Counter()
@@ -218,14 +217,13 @@ def check_arrow_code_coverage(arrow_codes: list[str]) -> dict[str, Any]:
 
 
 def extract_atom_maps_from_smiles(smiles: str) -> list[int]:
-    """
-    Extract atom-map numbers from bracket atoms.
+    """Extract atom-map numbers from bracket atoms.
 
     For example, ``"[CH:10]"`` yields ``10`` and ``"[N+:61]"`` yields ``61``.
 
     :param smiles: SMILES or SMIRKS fragment.
     :type smiles: str
-    :returns: Atom-map numbers found in bracket atoms.
+    :return: Atom-map numbers found in bracket atoms.
     :rtype: list[int]
     """
     return [int(x) for x in ATOM_MAP_RE.findall(smiles)]
@@ -236,7 +234,7 @@ def duplicate_atom_maps_in_side(smiles: str) -> dict[int, int]:
 
     :param smiles: Reactant-side or product-side SMILES text.
     :type smiles: str
-    :returns: Mapping of duplicated atom-map numbers to occurrence counts.
+    :return: Mapping of duplicated atom-map numbers to occurrence counts.
     :rtype: dict[int, int]
     """
     counts = Counter(extract_atom_maps_from_smiles(smiles))
@@ -252,7 +250,7 @@ def remove_duplicate_atom_maps(rsmi: str) -> tuple[str, dict[str, dict[int, int]
 
     :param rsmi: Reaction text in ``reactants>>products`` format.
     :type rsmi: str
-    :returns: Cleaned reaction and removed occurrence counts by endpoint.
+    :return: Cleaned reaction and removed occurrence counts by endpoint.
     :rtype: tuple[str, dict[str, dict[int, int]]]
     :raises ValueError: If the reaction does not contain exactly one arrow.
     """
@@ -289,8 +287,7 @@ def validate_arrow_maps(
     raise_on_arrow_duplicates: bool = True,
     raise_on_missing_arrow_maps: bool = True,
 ) -> dict[str, Any]:
-    """
-    Validate atom maps before SynKit.
+    """Validate atom maps before SynKit.
 
     Rules
     -----
@@ -307,7 +304,7 @@ def validate_arrow_maps(
     :type raise_on_arrow_duplicates: bool
     :param raise_on_missing_arrow_maps: Whether missing arrow atom maps are fatal.
     :type raise_on_missing_arrow_maps: bool
-    :returns: Validation diagnostics.
+    :return: Validation diagnostics.
     :rtype: dict[str, Any]
     :raises ValueError: If the RSMI is malformed or enabled validation fails.
     """
@@ -368,8 +365,7 @@ def validate_arrow_maps(
 
 
 def remove_non_arrow_atom_maps(rsmi: str, arrow_code: str) -> str:
-    """
-    Keep only atom maps involved in arrow_code.
+    """Keep only atom maps involved in arrow_code.
     Remove every other atom map.
 
     This is important because some source SMIRKS have duplicated
@@ -384,7 +380,7 @@ def remove_non_arrow_atom_maps(rsmi: str, arrow_code: str) -> str:
     :type rsmi: str
     :param arrow_code: Arrow code whose atom maps should be preserved.
     :type arrow_code: str
-    :returns: Reaction SMILES with non-arrow atom maps removed.
+    :return: Reaction SMILES with non-arrow atom maps removed.
     :rtype: str
     """
     keep_maps = arrow_atom_maps(arrow_code)
@@ -412,8 +408,7 @@ def remove_non_arrow_atom_maps(rsmi: str, arrow_code: str) -> str:
 
 
 def generic_convert_step(step: str) -> list[Any]:
-    """
-    Generic graph-independent conversion.
+    """Generic graph-independent conversion.
 
     Supported grammar
     -----------------
@@ -435,7 +430,7 @@ def generic_convert_step(step: str) -> list[Any]:
 
     :param step: One arrow-code step.
     :type step: str
-    :returns: Generic LP/B conversion record.
+    :return: Generic LP/B conversion record.
     :rtype: list[Any]
     :raises ValueError: If the step shape is unsupported.
     """
@@ -467,7 +462,7 @@ def generic_convert_arrow_code(arrow_code: str) -> list[list[Any]]:
 
     :param arrow_code: Semicolon-separated arrow code.
     :type arrow_code: str
-    :returns: Generic conversion records for each step.
+    :return: Generic conversion records for each step.
     :rtype: list[list[Any]]
     """
     return [generic_convert_step(step) for step in split_arrow_code(arrow_code)]
@@ -490,8 +485,7 @@ def build_its_from_rsmi(
     explicit_hydrogen: bool = False,
     preserve_radical_state: bool = False,
 ):
-    """
-    Build SynKit ITS graph from reaction SMILES.
+    """Build SynKit ITS graph from reaction SMILES.
 
     Pipeline
     --------
@@ -528,13 +522,13 @@ def build_its_from_rsmi(
     :param preserve_radical_state: Preserve supplied endpoint radical counts
         during partial-AAM reconstruction.
     :type preserve_radical_state: bool
-    :returns: ITS graph, expanded RSMI, cleaned RSMI, and validation diagnostics.
+    :return: ITS graph, expanded RSMI, cleaned RSMI, and validation diagnostics.
     :rtype: tuple
     :raises ImportError: If required SynKit conversion helpers are unavailable.
     """
     if CanonRSMI is None or rsmi_to_its is None:
         raise ImportError(
-            "SynKit is not available. Run this code inside your SynKit environment."
+            "SynKit conversion helpers are unavailable in this environment."
         )
 
     diagnostics = validate_arrow_maps(
@@ -631,14 +625,13 @@ def _endpoint_electron_states(
 
 
 def atom_map_to_nodes(its) -> dict[int, list[Any]]:
-    """
-    Build atom-map-number -> list of ITS node ids.
+    """Build atom-map-number -> list of ITS node ids.
 
     This catches ambiguous duplicated atom maps after ITS construction.
 
     :param its: ITS graph.
     :type its: networkx.Graph
-    :returns: Mapping from atom-map number to ITS node IDs.
+    :return: Mapping from atom-map number to ITS node IDs.
     :rtype: dict[int, list[Any]]
     """
     mapping: dict[int, list[Any]] = {}
@@ -666,7 +659,7 @@ def get_unique_node_for_atom_map(
     :type strict: bool
     :param atom_map_nodes: Optional precomputed atom-map to node index.
     :type atom_map_nodes: Optional[dict[int, list[Any]]]
-    :returns: Unique ITS node ID, or ``None`` when missing and ``strict`` is false.
+    :return: Unique ITS node ID, or ``None`` when missing and ``strict`` is false.
     :rtype: Optional[Any]
     :raises ValueError: If the atom map is missing in strict mode or is ambiguous.
     """
@@ -688,8 +681,7 @@ def get_unique_node_for_atom_map(
 
 
 def extract_order_from_edge_data(edge_data: Any) -> tuple[float, float]:
-    """
-    Extract SynKit ITS edge order.
+    """Extract SynKit ITS edge order.
 
     Expected normal edge format:
         {"order": (reactant_order, product_order)}
@@ -699,7 +691,7 @@ def extract_order_from_edge_data(edge_data: Any) -> tuple[float, float]:
 
     :param edge_data: ITS edge attributes.
     :type edge_data: Any
-    :returns: Reactant-side and product-side bond orders.
+    :return: Reactant-side and product-side bond orders.
     :rtype: tuple[float, float]
     """
     if edge_data is None:
@@ -726,8 +718,7 @@ def get_its_bond_order(
     context: str = "",
     atom_map_nodes: Optional[dict[int, list[Any]]] = None,
 ) -> tuple[float, float]:
-    """
-    Return ITS bond order for atom-map pair.
+    """Return ITS bond order for atom-map pair.
 
     For example, an edge with order ``(0.0, 1.0)`` represents new bond
     formation from reactants to products.
@@ -744,7 +735,7 @@ def get_its_bond_order(
     :type context: str
     :param atom_map_nodes: Optional precomputed atom-map to node index.
     :type atom_map_nodes: Optional[dict[int, list[Any]]]
-    :returns: Reactant-side and product-side bond orders.
+    :return: Reactant-side and product-side bond orders.
     :rtype: tuple[float, float]
     :raises ValueError: If strict lookup fails.
     """
@@ -788,7 +779,7 @@ def is_zero(x: float, tol: float = 1e-6) -> bool:
     :type x: float
     :param tol: Absolute tolerance.
     :type tol: float
-    :returns: Whether ``x`` is within tolerance of zero.
+    :return: Whether ``x`` is within tolerance of zero.
     :rtype: bool
     """
     return abs(x) < tol
@@ -801,27 +792,21 @@ def is_one(x: float, tol: float = 1e-6) -> bool:
     :type x: float
     :param tol: Absolute tolerance.
     :type tol: float
-    :returns: Whether ``x`` is within tolerance of one.
+    :return: Whether ``x`` is within tolerance of one.
     :rtype: bool
     """
     return abs(x - 1.0) < tol
 
 
 def bond_minus_type(reactant_order: float) -> str:
-    """
-    Type consumed bond/electron-pair source.
+    """Type consumed bond/electron-pair source.
 
-    Rules
-    -----
-    reactant_order == 1.0  -> Sigma-
-    reactant_order >  1.0  -> Pi-
-        includes double, triple, aromatic 1.5
-
-    unknown                -> B-
+    A bond order of one maps to ``Sigma-``; larger orders, including aromatic
+    order 1.5, map to ``Pi-``. Unknown orders map to ``B-``.
 
     :param reactant_order: Bond order on the reactant side.
     :type reactant_order: float
-    :returns: Typed consumed-bond label.
+    :return: Typed consumed-bond label.
     :rtype: str
     """
     if is_one(reactant_order):
@@ -837,8 +822,7 @@ def bond_plus_type(
     reactant_order: float,
     product_order: float,
 ) -> str:
-    """
-    Type formed/increased bond destination.
+    """Type formed/increased bond destination.
 
     Rules
     -----
@@ -853,7 +837,7 @@ def bond_plus_type(
     :type reactant_order: float
     :param product_order: Bond order on the product side.
     :type product_order: float
-    :returns: Typed formed-bond label.
+    :return: Typed formed-bond label.
     :rtype: str
     """
     if product_order <= 0:
@@ -950,8 +934,7 @@ def typed_convert_step(
     atom_map_nodes: Optional[dict[int, list[Any]]] = None,
     electron_count: Literal[1, 2] = 2,
 ) -> list[Any]:
-    """
-    Convert one arrow-code step into typed LP/Sigma/Pi format.
+    """Convert one arrow-code step into typed LP/Sigma/Pi format.
 
     Important
     ---------
@@ -968,7 +951,7 @@ def typed_convert_step(
     :type atom_map_nodes: Optional[dict[int, list[Any]]]
     :param electron_count: Electrons carried by the annotated arrow.
     :type electron_count: Literal[1, 2]
-    :returns: Typed LP/Sigma/Pi conversion record.
+    :return: Typed LP/Sigma/Pi conversion record.
     :rtype: list[Any]
     :raises ValueError: If the step shape is unsupported or strict lookup fails.
     """
@@ -1138,7 +1121,7 @@ def typed_convert_arrow_code(
     :type strict_bond_lookup: bool
     :param electron_count: Electrons carried by every supplied arrow.
     :type electron_count: Literal[1, 2]
-    :returns: Typed conversion records for each step.
+    :return: Typed conversion records for each step.
     :rtype: list[list[Any]]
     """
     atom_map_nodes = atom_map_to_nodes(its)
@@ -1165,8 +1148,7 @@ def convert_arrow_code(
     its=None,
     strict_bond_lookup: bool = True,
 ) -> dict[str, Any]:
-    """
-    Convert arrow code into generic and typed formats.
+    """Convert arrow code into generic and typed formats.
 
     If ``its`` is ``None``, ``typed_converted`` is ``None``.
 
@@ -1176,7 +1158,7 @@ def convert_arrow_code(
     :type its: Optional[networkx.Graph]
     :param strict_bond_lookup: Whether missing typed bond lookups should raise.
     :type strict_bond_lookup: bool
-    :returns: Arrow code with generic and optional typed conversions.
+    :return: Arrow code with generic and optional typed conversions.
     :rtype: dict[str, Any]
     """
     converted = generic_convert_arrow_code(arrow_code)
@@ -1205,8 +1187,7 @@ def convert_reaction_arrow(
     remove_non_arrow_maps: bool = True,
     strict_bond_lookup: bool = True,
 ) -> dict[str, Any]:
-    """
-    Complete wrapper.
+    """Complete wrapper.
 
     reaction SMILES + arrow code
         -> clean non-arrow maps
@@ -1230,7 +1211,7 @@ def convert_reaction_arrow(
     :type remove_non_arrow_maps: bool
     :param strict_bond_lookup: Whether missing typed bond lookups should raise.
     :type strict_bond_lookup: bool
-    :returns: Conversion result and ITS preparation metadata.
+    :return: Conversion result and ITS preparation metadata.
     :rtype: dict[str, Any]
     """
     its, expanded_rsmi, rsmi_for_its, diagnostics = build_its_from_rsmi(
@@ -1274,7 +1255,7 @@ def ef_smirks_to_epd(
     :type orbital_class: Optional[str]
     :param strict_bond_lookup: Whether missing ITS bond lookups should raise.
     :type strict_bond_lookup: bool
-    :returns: Completed AAM, generic EPD, typed ``epd_lw``, and diagnostics.
+    :return: Completed AAM, generic EPD, typed ``epd_lw``, and diagnostics.
     :rtype: dict[str, Any]
     """
     reaction_smiles, ef_arrow_code = split_ef_smirks(ef_smirks)
@@ -1310,7 +1291,7 @@ def epd_to_ef_smirks(complete_aam: str, epd: list[list[Any]]) -> str:
     :type complete_aam: str
     :param epd: Generic or typed EPD records of ``[action, source, target]``.
     :type epd: list[list[Any]]
-    :returns: EF-SMIRKS text with a hyphen-form electron-flow code.
+    :return: EF-SMIRKS text with a hyphen-form electron-flow code.
     :rtype: str
     :raises ValueError: If AAM or EPD records are malformed or unsupported.
     """
@@ -1363,16 +1344,10 @@ def convert_record(
     remove_non_arrow_maps: bool = True,
     strict_bond_lookup: bool = True,
 ) -> dict[str, Any]:
-    """
-    Convert one dictionary record.
+    """Convert one dictionary record.
 
-    Expected input keys
-    -------------------
-    {
-        "SMIRKS": "...>>...",
-        "arrow_code": "...",
-        "orbital pair classification": "pi_empty"
-    }
+    The record is expected to contain reaction, arrow-code, and optional orbital
+    classification fields under the configured keys.
 
     :param record: Source record to convert.
     :type record: dict[str, Any]
@@ -1388,7 +1363,7 @@ def convert_record(
     :type remove_non_arrow_maps: bool
     :param strict_bond_lookup: Whether missing typed bond lookups should raise.
     :type strict_bond_lookup: bool
-    :returns: Converted record with original metadata preserved.
+    :return: Converted record with original metadata preserved.
     :rtype: dict[str, Any]
     """
     reaction_smiles = record[reaction_key]
@@ -1422,8 +1397,7 @@ def convert_records(
     strict_bond_lookup: bool = True,
     keep_errors: bool = False,
 ) -> list[dict[str, Any]]:
-    """
-    Batch conversion.
+    """Batch conversion.
 
     keep_errors=False:
         raise immediately on first error.
@@ -1447,7 +1421,7 @@ def convert_records(
     :type strict_bond_lookup: bool
     :param keep_errors: Whether to collect conversion failures instead of raising.
     :type keep_errors: bool
-    :returns: Converted records, including failures when ``keep_errors`` is true.
+    :return: Converted records, including failures when ``keep_errors`` is true.
     :rtype: list[dict[str, Any]]
     """
     results = []

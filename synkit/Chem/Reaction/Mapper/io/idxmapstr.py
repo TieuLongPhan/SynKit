@@ -39,20 +39,15 @@ def parse_index_mapping_string(pair_str, base=0):
 
 
 def fmt_idxs(idxs, base=0):
-    """
-    Convert a sorted list of indices into a compact string such as '1-3,5,7'.
+    """Convert a sorted list of indices into a compact string such as '1-3,5,7'.
 
-    Parameters
-    ----------
-    idxs : list[int]
-        Sorted list of indices.
-    base : int, optional (default=0)
-        If 1, convert output to 1-based indices.
+    :param idxs: Sorted list of indices.
+    :type idxs: list[int]
+    :param base: If 1, convert output to 1-based indices.
+    :type base: int, optional (default=0)
 
-    Returns
-    -------
-    str
-        Compact string representation.
+    :return: Compact string representation.
+    :rtype: str
     """
     shifted = [idx + base for idx in idxs]
     return ",".join(_format_index_run(start, end) for start, end in _runs(shifted))

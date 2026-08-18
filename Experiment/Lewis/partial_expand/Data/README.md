@@ -8,8 +8,8 @@ accuracy.
 
 The methods are:
 
-- `synkit`: the fixed `ITSExpand.expand_rsmi` implementation from the current
-  LWG checkout and `synkit` environment;
+- `synkit`: `ITSExpand.expand_rsmi` for the general corpus and
+  `complete_radical_aam` for `RMechDB`, using the current checkout;
 - `gm`: historical GranMapache expansion;
 - `rb1`: historical `PartialAAMs.extend`;
 - `rb2`: historical `PartialAAMs.extend_g`.

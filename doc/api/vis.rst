@@ -4,22 +4,22 @@ Visualization
 Visualization utilities for molecule graphs, reactions, ITS graphs, diagnostic
 graph adapters, CRNs, embeddings, and output export helpers.
 
-Modern molecule/reaction/ITS renderers
---------------------------------------
+Molecule, reaction, ITS, and MTG renderers
+------------------------------------------
 
-.. automodule:: synkit.Vis.molecule_drawer
+.. automodule:: synkit.Vis.molecule.drawer
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.reaction_drawer
+.. automodule:: synkit.Vis.molecule.reaction
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.its_drawer
+.. automodule:: synkit.Vis.its.drawer
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Vis.mtg_drawer
+.. automodule:: synkit.Vis.mtg.drawer
    :members:
    :show-inheritance:
 
@@ -71,9 +71,8 @@ Reaction, graph, and chemical-space utilities
 CRN visualizer
 --------------
 
-.. automodule:: synkit.Vis.crn.visualizer
-   :members:
-   :show-inheritance:
+The :mod:`synkit.Vis.crn` compatibility namespace re-exports the CRN
+visualization API documented under :doc:`crn`.
 
 .. automodule:: synkit.Vis.pdf_writer
    :members:

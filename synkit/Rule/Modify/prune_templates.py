@@ -9,10 +9,11 @@ class PruneTemplate:
         """Initialize the PruneTemplate object with the provided templates and
         graph key.
 
-        Parameters:
-        - templates (List[List[Dict[str, Any]]]): A list of lists containing dictionaries
-        where the graph can be accessed by the provided graph_key.
-        - graph_key (str): The key used to access the graph from each template dictionary.
+        :param templates: A list of lists containing dictionaries
+                          where the graph can be accessed by the provided graph_key.
+        :type templates: List[List[Dict[str, Any]]]
+        :param graph_key: The key used to access the graph from each template dictionary.
+        :type graph_key: str
         """
         self.max_radius = len(templates)
         self.templates = deepcopy(templates)
@@ -25,15 +26,17 @@ class PruneTemplate:
         """Remove edges from the input graph where a given attribute equals a
         specified value.
 
-        Parameters:
-        - input_graph (nx.Graph): The input graph from which edges will be removed.
-        - attribute (str, optional): The edge attribute based on which edges will
-        be removed. Default is 'standard_order'.
-        - value (Any, optional): The value of the attribute that determines
-        which edges to remove. Default is 0.
+        :param input_graph: The input graph from which edges will be removed.
+        :type input_graph: nx.Graph
+        :param attribute: The edge attribute based on which edges will
+                          be removed. Default is 'standard_order'.
+        :type attribute: str, optional
+        :param value: The value of the attribute that determines
+                      which edges to remove. Default is 0.
+        :type value: Any, optional
 
-        Returns:
-            nx.Graph: A new graph with the specified edges removed.
+        :return: A new graph with the specified edges removed.
+        :rtype: nx.Graph
         """
         # Find edges where the specified attribute equals the given value
         graph = deepcopy(input_graph)
@@ -51,8 +54,8 @@ class PruneTemplate:
         """Prune the templates by removing subgraphs where the longest path is
         shorter than the radius.
 
-        Returns:
-            List[List[Dict[str, Any]]]: The pruned list of templates.
+        :return: The pruned list of templates.
+        :rtype: List[List[Dict[str, Any]]]
         """
         for radius, template in enumerate(self.templates):
             if radius > 0:

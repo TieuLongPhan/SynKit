@@ -1,85 +1,126 @@
-# from __future__ import annotations
+"""Structural, thermodynamic and dynamical properties of reaction networks.
 
-# """
-# High-level structural and dynamical properties for chemical reaction networks.
+Three layers live here:
 
-# This subpackage provides a CRN-agnostic API that works with either
-# :class:`CRNNetwork` (legacy core representation) or
-# :class:`CRNHyperGraph` (new hypergraph-based representation).
+- **stoichiometry** — the matrix ``S``, its rank and kernels, and integer
+  conservation laws;
+- **CRNT** (:mod:`~synkit.CRN.Props.deficiency`) — complexes, linkage classes,
+  weak reversibility, deficiency, and the Deficiency Zero and Deficiency One
+  theorems;
+- **thermodynamics and dynamics** — conservativity, consistency, symbolic
+  Jacobians and structural singularity.
 
-# Most public functions accept ``crn`` of type :data:`CRNLike` and internally
-# convert to :class:`CRNNetwork` using
-# :func:`synkit.CRN.Hypergraph.adapters.hypergraph_to_crnnetwork`.
-# """
+Every function here accepts a *CRN-like* input: a
+:class:`~synkit.CRN.Structure.syncrn.SynCRN`, a species-reaction bipartite
+NetworkX graph, or any object exposing ``to_digraph()``. Reaction nodes may be
+spelled ``kind="reaction"`` or ``kind="rule"``; see :mod:`synkit.CRN.kinds`.
 
-# from typing import Union
+.. rubric:: Example
 
-# from ..core import CRNNetwork
-# from ..Hypergraph.hypergraph import CRNHyperGraph
+.. code-block:: python
 
-# CRNLike = Union[CRNNetwork, CRNHyperGraph]
+    from synkit.CRN.Structure import SynCRN
+    from synkit.CRN.Props import integer_conservation_laws, summary
 
-# # Re-export commonly used helpers
-# from .stoich import (
-#     stoichiometric_matrix,
-#     stoichiometric_rank,
-#     left_nullspace,
-# )
+    crn = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
+    print(summary(crn))
+    print(integer_conservation_laws(crn))
+"""
 
-# from .deficiency import (
-#     DeficiencySummary,
-#     compute_deficiency_summary,
-#     deficiency_zero_theorem_applicable,
-# )
+from __future__ import annotations
 
-# from .petri import (
-#     find_p_semiflows,
-#     find_t_semiflows,
-#     find_siphons,
-#     find_traps,
-#     siphon_persistence_condition,
-# )
+from .stoich import (
+    StoichSummary,
+    build_S,
+    build_S_minus_plus,
+    conserved_moieties,
+    integer_conservation_laws,
+    left_nullspace,
+    left_right_kernels,
+    right_nullspace,
+    stoichiometric_matrix,
+    stoichiometric_rank,
+    summary,
+)
+from .deficiency import (
+    Complex,
+    CRNTSummary,
+    complex_graph,
+    complexes,
+    crnt_summary,
+    deficiency,
+    deficiency_one_verdict,
+    deficiency_zero_verdict,
+    is_deficiency_one_applicable,
+    is_deficiency_zero_applicable,
+    is_reversible,
+    is_weakly_reversible,
+    linkage_class_deficiencies,
+    linkage_classes,
+    strong_linkage_classes,
+    terminal_strong_linkage_classes,
+)
+from .thermo import (
+    ThermoSummary,
+    compute_conservativity,
+    compute_thermo_summary,
+    has_irreversible_futile_cycles,
+    is_conservative,
+    is_consistent,
+)
+from .dynamics import (
+    StructuralSingularitySummary,
+    jacobian_sign_pattern,
+    jacobian_sparsity,
+    species_influence_graph,
+    structural_singularity_summary,
+    symbolic_jacobian,
+    symbolic_reactivity_matrix,
+)
 
-# from .injectivity import (
-#     build_species_reaction_graph,
-#     count_sr_cycles,
-#     is_sr_graph_acyclic,
-# )
-
-# from .thermo import (
-#     ThermoSummary,
-#     compute_thermo_summary,
-# )
-
-# from .dynamics import (
-#     DynamicTheoremSummary,
-#     summarize_dynamics,
-# )
-
-# __all__ = [
-#     "CRNLike",
-#     # stoich
-#     "stoichiometric_matrix",
-#     "stoichiometric_rank",
-#     "left_nullspace",
-#     # deficiency
-#     "DeficiencySummary",
-#     "compute_deficiency_summary",
-#     "deficiency_zero_theorem_applicable",
-#     # petri
-#     "find_p_semiflows",
-#     "find_t_semiflows",
-#     "find_siphons",
-#     "find_traps",
-#     "siphon_persistence_condition",
-#     # injectivity
-#     "build_species_reaction_graph",
-#     "count_sr_cycles",
-#     "is_sr_graph_acyclic",
-#     # thermo
-#     "ThermoSummary",
-#     "compute_thermo_summary",
-#     # dynamics
-#     "DynamicTheoremSummary",
-#     "summarize_dynamics",
-# ]
+__all__ = [
+    # stoichiometry
+    "StoichSummary",
+    "build_S",
+    "build_S_minus_plus",
+    "conserved_moieties",
+    "integer_conservation_laws",
+    "left_nullspace",
+    "left_right_kernels",
+    "right_nullspace",
+    "stoichiometric_matrix",
+    "stoichiometric_rank",
+    "summary",
+    # CRNT: complexes, linkage classes, deficiency
+    "Complex",
+    "CRNTSummary",
+    "complex_graph",
+    "complexes",
+    "crnt_summary",
+    "deficiency",
+    "deficiency_one_verdict",
+    "deficiency_zero_verdict",
+    "is_deficiency_one_applicable",
+    "is_deficiency_zero_applicable",
+    "is_reversible",
+    "is_weakly_reversible",
+    "linkage_class_deficiencies",
+    "linkage_classes",
+    "strong_linkage_classes",
+    "terminal_strong_linkage_classes",
+    # thermodynamics
+    "ThermoSummary",
+    "compute_conservativity",
+    "compute_thermo_summary",
+    "has_irreversible_futile_cycles",
+    "is_conservative",
+    "is_consistent",
+    # dynamics
+    "StructuralSingularitySummary",
+    "jacobian_sign_pattern",
+    "jacobian_sparsity",
+    "species_influence_graph",
+    "structural_singularity_summary",
+    "symbolic_jacobian",
+    "symbolic_reactivity_matrix",
+]

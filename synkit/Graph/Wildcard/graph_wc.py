@@ -7,15 +7,14 @@ GraphLike = nx.Graph
 
 
 class GraphCollectionSelector:
-    """
-    Chainable selector for a collection of NetworkX graphs.
+    """Chainable selector for a collection of NetworkX graphs.
 
     The selector never mutates input graphs. Filtering methods are
     chainable (return ``self``) and the final selection is available via
-    the :pyattr:`filtered` property or :py:meth:`to_list`.
+    the :attr:`filtered` property or :py:meth:`to_list`.
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> selector = GraphCollectionSelector(graphs)
     >>> selector.select_with_wc().select_by_node_attr("charge", 0).to_list()
 
@@ -80,12 +79,11 @@ class GraphCollectionSelector:
     def select_by_pred(
         self, predicate: Callable[[GraphLike], bool]
     ) -> "GraphCollectionSelector":
-        """
-        Keep graphs for which ``predicate(graph)`` is True.
+        """Keep graphs for which ``predicate(graph)`` is True.
 
         :param predicate: Callable that receives a graph and returns True
             to keep it.
-        :returns: self (chainable)
+        :return: self (chainable)
         """
         self._filtered = [g for g in self._filtered if predicate(g)]
         self._last_stats = None
@@ -97,15 +95,14 @@ class GraphCollectionSelector:
         require_all_nodes: bool = False,
         include: bool = True,
     ) -> "GraphCollectionSelector":
-        """
-        Select graphs according to a predicate applied to node attribute dicts.
+        """Select graphs according to a predicate applied to node attribute dicts.
 
         :param node_pred: Callable receiving a node attribute dict and
             returning a boolean.
         :param require_all_nodes: If True, require *all* nodes in a graph to
             satisfy ``node_pred``. If False, require *any* node to satisfy it.
         :param include: If True, keep graphs that match; if False, drop them.
-        :returns: self (chainable)
+        :return: self (chainable)
         """
         if require_all_nodes:
 
@@ -129,8 +126,7 @@ class GraphCollectionSelector:
         include: bool = True,
         match_any: bool = True,
     ) -> "GraphCollectionSelector":
-        """
-        Keep graphs based on node attribute equality.
+        """Keep graphs based on node attribute equality.
 
         By default this keeps graphs that contain *at least one* node
         such that ``node[key] == value`` (i.e., ``match_any=True``).
@@ -142,7 +138,7 @@ class GraphCollectionSelector:
         :param match_any: If True, criterion is satisfied if *any* node
             matches (default). If False, criterion requires *all* nodes
             to match (rarely used).
-        :returns: self (chainable)
+        :return: self (chainable)
         """
 
         def node_eq(data: dict) -> bool:
@@ -161,8 +157,7 @@ class GraphCollectionSelector:
         include: bool = True,
         match_any: bool = True,
     ) -> "GraphCollectionSelector":
-        """
-        Keep graphs that contain a node whose ``node[key]`` is in
+        """Keep graphs that contain a node whose ``node[key]`` is in
         ``values`` (or, when ``match_any=False``, require all nodes to be
         in ``values``).
 
@@ -173,7 +168,7 @@ class GraphCollectionSelector:
         :param match_any: If True, criterion is satisfied if any node
             belongs to ``values``. If False, all nodes must belong to
             ``values``.
-        :returns: self (chainable)
+        :return: self (chainable)
         """
         value_set: Set[Any] = set(values)
 
@@ -193,8 +188,7 @@ class GraphCollectionSelector:
         wildcard: str = "*",
         select_with_wc: bool = True,
     ) -> "GraphCollectionSelector":
-        """
-        Convenience wrapper to select graphs *with* or *without* wildcard
+        """Convenience wrapper to select graphs *with* or *without* wildcard
         nodes.
 
         :param element_key: Node attribute key storing elements (default: "element").
@@ -202,7 +196,7 @@ class GraphCollectionSelector:
         :param select_with_wc: If True, keep graphs that contain at
             least one node with ``node[element_key] == wildcard``.
             If False, keep graphs that do NOT contain any such node.
-        :returns: self (chainable)
+        :return: self (chainable)
         """
 
         def is_wc_node(data: dict) -> bool:
@@ -219,10 +213,9 @@ class GraphCollectionSelector:
         element_key: str = "element",
         wildcard: str = "*",
     ) -> "GraphCollectionSelector":
-        """
-        Shorthand for selecting graphs that contain at least one wildcard node.
+        """Shorthand for selecting graphs that contain at least one wildcard node.
 
-        :returns: self (chainable)
+        :return: self (chainable)
         """
         return self.select_wc(
             element_key=element_key, wildcard=wildcard, select_with_wc=True
@@ -233,10 +226,9 @@ class GraphCollectionSelector:
         element_key: str = "element",
         wildcard: str = "*",
     ) -> "GraphCollectionSelector":
-        """
-        Shorthand for selecting graphs that contain no wildcard nodes.
+        """Shorthand for selecting graphs that contain no wildcard nodes.
 
-        :returns: self (chainable)
+        :return: self (chainable)
         """
         return self.select_wc(
             element_key=element_key, wildcard=wildcard, select_with_wc=False
@@ -253,14 +245,13 @@ class GraphCollectionSelector:
         return list(self._filtered)
 
     def to_list(self) -> List[GraphLike]:
-        """Alias for :pyattr:`filtered`."""
+        """Alias for :attr:`filtered`."""
         return self.filtered
 
     def reset(self) -> "GraphCollectionSelector":
-        """
-        Reset the selection to the original input list.
+        """Reset the selection to the original input list.
 
-        :returns: self (chainable)
+        :return: self (chainable)
         """
         self._filtered = list(self._original)
         self._last_stats = None
@@ -270,8 +261,7 @@ class GraphCollectionSelector:
     # Summary helpers
     # --------------------
     def stats(self) -> dict:
-        """
-        Compute and return a small summary of the current selection.
+        """Compute and return a small summary of the current selection.
 
         The result includes:
           - original_count: number of input graphs
@@ -280,7 +270,7 @@ class GraphCollectionSelector:
             across selected graphs to the set of observed values
             (limited to attributes present on at least one node).
 
-        :returns: dictionary summary
+        :return: dictionary summary
         """
         # cache simple summaries for repeated calls
         if self._last_stats is not None:
@@ -303,10 +293,9 @@ class GraphCollectionSelector:
         return dict(stats)
 
     def describe(self) -> str:
-        """
-        Human-friendly one-line description of current selector state.
+        """Human-friendly one-line description of current selector state.
 
-        :returns: description string
+        :return: description string
         """
         return (
             f"GraphCollectionSelector: {len(self._filtered)}/"

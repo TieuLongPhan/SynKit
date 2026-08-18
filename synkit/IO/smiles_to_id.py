@@ -9,12 +9,13 @@ def smiles_to_iupac(smiles_string: str, timeout: int = 1):
     """Converts a SMILES string to its corresponding IUPAC name(s) using the
     PubChem PUG REST API.
 
-    Parameters:
-    - smiles_string (str): The SMILES string of the compound (e.g., "C=O" for formaldehyde).
-    - timeout (int, optional): The timeout in seconds for the request. Default is 1 second.
+    :param smiles_string: The SMILES string of the compound (e.g., "C=O" for formaldehyde).
+    :type smiles_string: str
+    :param timeout: The timeout in seconds for the request. Default is 1 second.
+    :type timeout: int, optional
 
-    Returns:
-    - list: A list of IUPAC names associated with the SMILES string. Returns an empty list if none found.
+    :return: A list of IUPAC names associated with the SMILES string. Returns an empty list if none found.
+    :rtype: list
     """
     # URL encode the SMILES string to handle special characters
     encoded_smiles = urllib.parse.quote(smiles_string)
@@ -66,12 +67,13 @@ def smiles_to_iupac(smiles_string: str, timeout: int = 1):
 def batch_process_smiles(smiles_batch: List[str], timeout=1):
     """Processes a batch of SMILES strings to get IUPAC names.
 
-    Parameters:
-    - smiles_batch (list): A list of SMILES strings to process.
-    - timeout (int): Timeout for requests (in seconds).
+    :param smiles_batch: A list of SMILES strings to process.
+    :type smiles_batch: list
+    :param timeout: Timeout for requests (in seconds).
+    :type timeout: int
 
-    Returns:
-    - list: A list of IUPAC name results for each SMILES in the batch.
+    :return: A list of IUPAC name results for each SMILES in the batch.
+    :rtype: list
     """
     return [smiles_to_iupac(smiles, timeout) for smiles in smiles_batch]
 
@@ -82,14 +84,17 @@ def get_iupac_for_smiles_list(
     """Convert a list of SMILES strings to their corresponding IUPAC names
     using the PubChem API with batch processing.
 
-    Parameters:
-    smiles_list (list): A list of SMILES strings to be converted to IUPAC names.
-    batch_size (int): Number of SMILES strings to process in each batch.
-    n_jobs (int): Number of parallel jobs to run for batch processing.
-    timeout (int): Timeout for requests (in seconds).
+    :param smiles_list: A list of SMILES strings to be converted to IUPAC names.
+    :type smiles_list: list
+    :param batch_size: Number of SMILES strings to process in each batch.
+    :type batch_size: int
+    :param n_jobs: Number of parallel jobs to run for batch processing.
+    :type n_jobs: int
+    :param timeout: Timeout for requests (in seconds).
+    :type timeout: int
 
-    Returns:
-    dict: A dictionary with SMILES as keys and lists of IUPAC names as values.
+    :return: A dictionary with SMILES as keys and lists of IUPAC names as values.
+    :rtype: dict
     """
     # Split the list into smaller batches
     # fmt: off

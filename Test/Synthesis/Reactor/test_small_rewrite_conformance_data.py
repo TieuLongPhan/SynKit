@@ -8,7 +8,7 @@ from synkit.Chem.Reaction import audit_explicit_h_reaction
 from synkit.Graph.Stereo import StereoOutcome
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
 DATA_PATH = ROOT / "Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json"

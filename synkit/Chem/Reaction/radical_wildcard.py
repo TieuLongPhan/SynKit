@@ -7,8 +7,7 @@ from typing import Tuple, List, Optional, Dict
 def clean_wc(
     rsmi: str, invert: bool = False, max_frag: bool = False, wild_card: bool = True
 ) -> str:
-    """
-    Clean wildcard-containing fragments from one side of a reaction SMILES,
+    """Clean wildcard-containing fragments from one side of a reaction SMILES,
     optionally selecting the largest remaining fragment.
 
     :param rsmi: Reaction SMILES string in the form 'R>>P'.
@@ -19,12 +18,12 @@ def clean_wc(
     :type max_frag: bool
     :param wild_card: If True, remove fragments containing '*' before selection.
     :type wild_card: bool
-    :returns: The processed reaction SMILES.
+    :return: The processed reaction SMILES.
     :rtype: str
     :raises ValueError: If input does not split into reactant and product.
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> clean_wc('A.B>>C.*', invert=False, wild_card=True)
     'A.B>>C'
     >>> clean_wc('A.B>>C.D', invert=False, max_frag=True)
@@ -75,8 +74,8 @@ class RadicalWildcardAdder:
                       If None, the next unused index is auto-determined from the input SMILES.
     :type start_map: Optional[int]
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> adder = RadicalWildcardAdder(start_map=8)
     >>> rxn = "[C:2][OH:4].[O:6][H:7]>>[C:2][O:6].[OH:4][H:7]"
     >>> print(adder.transform(rxn))
@@ -109,7 +108,7 @@ class RadicalWildcardAdder:
         :param rxn_smiles: Reaction SMILES string, two-component or
             three-component.
         :type rxn_smiles: str
-        :returns: Modified reaction SMILES with consistent wildcard
+        :return: Modified reaction SMILES with consistent wildcard
             attachments.
         :rtype: str
         :raises ValueError: If the SMILES is not valid or fragments fail
@@ -211,7 +210,7 @@ class RadicalWildcardAdder:
 
         :param rxn: The reaction SMILES string.
         :type rxn: str
-        :returns: Tuple of (reactants_block, agents_block or None,
+        :return: Tuple of (reactants_block, agents_block or None,
             products_block).
         :rtype: Tuple[str, Optional[str], str]
         :raises ValueError: If the SMILES does not contain 2 or 3 '>'

@@ -855,9 +855,7 @@ save_json(
     },
 )
 
-# Exact symbolic determinant check is attempted only for sufficiently small systems.
-# Your glycolysis network has 40 species, so keep max_exact_size below that unless you
-# explicitly want a very large symbolic computation.
+# The 40-species network is too large for the default exact symbolic check.
 try:
     dyn_summary = structural_singularity_summary(
         syn,

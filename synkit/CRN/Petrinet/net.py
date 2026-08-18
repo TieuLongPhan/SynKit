@@ -17,6 +17,8 @@ from typing import (
 
 import networkx as nx
 
+from ..kinds import REACTION_KINDS, SPECIES_KINDS
+
 Place = str
 TransitionId = str
 Marking = Mapping[Place, int]
@@ -25,8 +27,7 @@ Multiset = Mapping[str, int]
 
 @dataclass(frozen=True)
 class SynCRNIncidence:
-    """
-    Canonical species--reaction incidence view extracted from a SynCRN-like object.
+    """Canonical species--reaction incidence view extracted from a SynCRN-like object.
 
     This dataclass stores a normalized incidence representation that can be
     constructed either from a SynCRN-style object exposing ``species`` and
@@ -75,8 +76,8 @@ class SynCRNIncidence:
         Additional extraction metadata.
     :type metadata: Dict[str, Any]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         incidence = SynCRNIncidence(
@@ -103,8 +104,7 @@ class SynCRNIncidence:
 
 @dataclass
 class Transition:
-    """
-    Petri-net transition with stoichiometric input/output multisets.
+    """Petri-net transition with stoichiometric input/output multisets.
 
     A transition corresponds to one reaction node in the source SynCRN-like
     representation.
@@ -128,8 +128,8 @@ class Transition:
         Optional transition metadata dictionary.
     :type metadata: Dict[str, Any]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         t = Transition(
@@ -148,10 +148,9 @@ class Transition:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __repr__(self) -> str:  # pragma: no cover - simple repr
-        """
-        Return a compact debug representation.
+        """Return a compact debug representation.
 
-        :returns:
+        :return:
             Readable transition representation.
         :rtype: str
         """
@@ -160,8 +159,7 @@ class Transition:
 
 
 def _safe_int(x: Any, default: int = 0) -> int:
-    """
-    Convert a value to ``int`` with fallback.
+    """Convert a value to ``int`` with fallback.
 
     :param x:
         Value to convert.
@@ -169,7 +167,7 @@ def _safe_int(x: Any, default: int = 0) -> int:
     :param default:
         Fallback value used if conversion fails.
     :type default: int
-    :returns:
+    :return:
         Converted integer value.
     :rtype: int
     """
@@ -180,22 +178,21 @@ def _safe_int(x: Any, default: int = 0) -> int:
 
 
 def _coerce_stoich(x: Any) -> int:
-    """
-    Validate and normalize a stoichiometric coefficient.
+    """Validate and normalize a stoichiometric coefficient.
 
     The value is converted to ``int`` and must be strictly positive.
 
     :param x:
         Candidate stoichiometric coefficient.
     :type x: Any
-    :returns:
+    :return:
         Positive stoichiometric coefficient.
     :rtype: int
     :raises ValueError:
         If the resulting value is not strictly positive.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         _coerce_stoich(2)      # 2
@@ -208,8 +205,7 @@ def _coerce_stoich(x: Any) -> int:
 
 
 def _naturalish_key(x: Any) -> Tuple[int, str, str]:
-    """
-    Build a stable sorting key for mixed identifiers.
+    """Build a stable sorting key for mixed identifiers.
 
     Numeric-looking strings are sorted numerically first, while all other
     objects are sorted by type name and representation.
@@ -217,7 +213,7 @@ def _naturalish_key(x: Any) -> Tuple[int, str, str]:
     :param x:
         Object used as an identifier.
     :type x: Any
-    :returns:
+    :return:
         Tuple suitable for deterministic ordering.
     :rtype: Tuple[int, str, str]
     """
@@ -228,13 +224,12 @@ def _naturalish_key(x: Any) -> Tuple[int, str, str]:
 
 
 def _graph_node_kind(attrs: Mapping[str, Any]) -> str:
-    """
-    Normalize the ``kind`` attribute of a graph node.
+    """Normalize the ``kind`` attribute of a graph node.
 
     :param attrs:
         Node attribute mapping.
     :type attrs: Mapping[str, Any]
-    :returns:
+    :return:
         Lowercased and stripped node kind.
     :rtype: str
     """
@@ -247,8 +242,7 @@ def _edge_side_from_graph(
     eattrs: Mapping[str, Any],
     reaction_node: Hashable,
 ) -> str:
-    """
-    Infer whether an incidence edge belongs to the left or right side.
+    """Infer whether an incidence edge belongs to the left or right side.
 
     The function first checks the explicit edge attribute ``role``:
 
@@ -270,7 +264,7 @@ def _edge_side_from_graph(
     :param reaction_node:
         Node corresponding to the reaction / transition.
     :type reaction_node: Hashable
-    :returns:
+    :return:
         Either ``"lhs"`` or ``"rhs"``.
     :rtype: str
     """
@@ -283,8 +277,7 @@ def _edge_side_from_graph(
 
 
 def _extract_from_syncrn_object(crn: Any) -> SynCRNIncidence:
-    """
-    Extract canonical incidence information from a SynCRN-like object.
+    """Extract canonical incidence information from a SynCRN-like object.
 
     The input object is expected to expose:
 
@@ -298,12 +291,12 @@ def _extract_from_syncrn_object(crn: Any) -> SynCRNIncidence:
     :param crn:
         SynCRN-like object.
     :type crn: Any
-    :returns:
+    :return:
         Canonical incidence representation.
     :rtype: SynCRNIncidence
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         incidence = _extract_from_syncrn_object(crn)
@@ -353,8 +346,7 @@ def _extract_from_syncrn_object(crn: Any) -> SynCRNIncidence:
 def _partition_syncrn_nodes(
     crn: nx.DiGraph,
 ) -> Tuple[List[Hashable], List[Hashable]]:
-    """
-    Partition graph nodes into species nodes and reaction nodes.
+    """Partition graph nodes into species nodes and reaction nodes.
 
     Nodes with ``kind == "species"`` are treated as species nodes.
     Nodes with ``kind in {"reaction", "rule"}`` are treated as reaction nodes.
@@ -362,7 +354,7 @@ def _partition_syncrn_nodes(
     :param crn:
         SynCRN bipartite digraph.
     :type crn: nx.DiGraph
-    :returns:
+    :return:
         Pair ``(species_nodes, reaction_nodes)``.
     :rtype: Tuple[List[Hashable], List[Hashable]]
     """
@@ -371,9 +363,9 @@ def _partition_syncrn_nodes(
 
     for node, attrs in crn.nodes(data=True):
         kind = _graph_node_kind(attrs)
-        if kind == "species":
+        if kind in SPECIES_KINDS:
             species_nodes.append(node)
-        elif kind in {"reaction", "rule"}:
+        elif kind in REACTION_KINDS:
             reaction_nodes.append(node)
 
     species_nodes.sort(key=lambda n: _naturalish_key(crn.nodes[n].get("syncrn_id", n)))
@@ -385,8 +377,7 @@ def _build_species_index(
     crn: nx.DiGraph,
     species_nodes: Iterable[Hashable],
 ) -> Tuple[List[str], Dict[str, str], Dict[str, Hashable], Dict[Hashable, str]]:
-    """
-    Build canonical species metadata from graph nodes.
+    """Build canonical species metadata from graph nodes.
 
     :param crn:
         Source graph.
@@ -394,7 +385,7 @@ def _build_species_index(
     :param species_nodes:
         Iterable of species node ids.
     :type species_nodes: Iterable[Hashable]
-    :returns:
+    :return:
         Tuple containing species order, labels, source node ids, and reverse lookup.
     :rtype: Tuple[List[str], Dict[str, str], Dict[str, Hashable], Dict[Hashable, str]]
     """
@@ -423,8 +414,7 @@ def _build_reaction_index(
     crn: nx.DiGraph,
     reaction_nodes: Iterable[Hashable],
 ) -> Tuple[List[str], Dict[str, str], Dict[str, Hashable], Dict[Hashable, str]]:
-    """
-    Build canonical reaction metadata from graph nodes.
+    """Build canonical reaction metadata from graph nodes.
 
     :param crn:
         Source graph.
@@ -432,7 +422,7 @@ def _build_reaction_index(
     :param reaction_nodes:
         Iterable of reaction node ids.
     :type reaction_nodes: Iterable[Hashable]
-    :returns:
+    :return:
         Tuple containing reaction order, labels, source node ids, and reverse lookup.
     :rtype: Tuple[List[str], Dict[str, str], Dict[str, Hashable], Dict[Hashable, str]]
     """
@@ -462,8 +452,7 @@ def _accumulate_incidence_from_edges(
     reaction_node: Hashable,
     species_node_to_id: Mapping[Hashable, str],
 ) -> Tuple[Dict[str, int], Dict[str, int]]:
-    """
-    Accumulate input and output stoichiometry for one reaction node.
+    """Accumulate input and output stoichiometry for one reaction node.
 
     Both incoming and outgoing graph edges are inspected. The edge role is
     inferred via :func:`_edge_side_from_graph`.
@@ -477,7 +466,7 @@ def _accumulate_incidence_from_edges(
     :param species_node_to_id:
         Mapping from species graph node to canonical species id.
     :type species_node_to_id: Mapping[Hashable, str]
-    :returns:
+    :return:
         Pair ``(pre, post)`` for the reaction.
     :rtype: Tuple[Dict[str, int], Dict[str, int]]
     """
@@ -515,8 +504,7 @@ def _build_pre_post_from_graph(
     reaction_node_to_id: Mapping[Hashable, str],
     species_node_to_id: Mapping[Hashable, str],
 ) -> Tuple[Dict[str, Dict[str, int]], Dict[str, Dict[str, int]]]:
-    """
-    Build reaction-wise pre and post incidence maps from a graph.
+    """Build reaction-wise pre and post incidence maps from a graph.
 
     :param crn:
         Source graph.
@@ -530,7 +518,7 @@ def _build_pre_post_from_graph(
     :param species_node_to_id:
         Mapping from species graph node to canonical species id.
     :type species_node_to_id: Mapping[Hashable, str]
-    :returns:
+    :return:
         Pair ``(pre, post)`` keyed by reaction id.
     :rtype: Tuple[Dict[str, Dict[str, int]], Dict[str, Dict[str, int]]]
     """
@@ -549,8 +537,7 @@ def _build_pre_post_from_graph(
 
 
 def _extract_from_syncrn_digraph(crn: nx.DiGraph) -> SynCRNIncidence:
-    """
-    Extract canonical incidence information from a SynCRN bipartite digraph.
+    """Extract canonical incidence information from a SynCRN bipartite digraph.
 
     The graph is expected to use node attribute ``kind`` with values:
 
@@ -571,14 +558,14 @@ def _extract_from_syncrn_digraph(crn: nx.DiGraph) -> SynCRNIncidence:
     :param crn:
         SynCRN bipartite directed graph.
     :type crn: nx.DiGraph
-    :returns:
+    :return:
         Canonical incidence representation extracted from the graph.
     :rtype: SynCRNIncidence
     :raises TypeError:
         If ``crn`` is not a :class:`networkx.DiGraph`.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         g = syn.to_digraph()
@@ -627,8 +614,7 @@ def _extract_from_syncrn_digraph(crn: nx.DiGraph) -> SynCRNIncidence:
 
 
 def extract_syncrn_incidence(crn: Any) -> SynCRNIncidence:
-    """
-    Extract a canonical incidence view from a SynCRN-like object or digraph.
+    """Extract a canonical incidence view from a SynCRN-like object or digraph.
 
     The function accepts three input styles:
 
@@ -639,14 +625,14 @@ def extract_syncrn_incidence(crn: Any) -> SynCRNIncidence:
     :param crn:
         SynCRN-like object or bipartite digraph.
     :type crn: Any
-    :returns:
+    :return:
         Canonical incidence representation.
     :rtype: SynCRNIncidence
     :raises TypeError:
         If the input cannot be interpreted as a supported SynCRN source.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         incidence = extract_syncrn_incidence(crn)
@@ -671,8 +657,7 @@ def extract_syncrn_incidence(crn: Any) -> SynCRNIncidence:
 
 
 class PetriNet:
-    """
-    Minimal Petri net container with marking semantics and SynCRN metadata.
+    """Minimal Petri net container with marking semantics and SynCRN metadata.
 
     Places correspond to species and transitions correspond to reactions.
     The class stores a lightweight Petri-net representation with utilities
@@ -680,27 +665,18 @@ class PetriNet:
     transitions, and converting between mapping-based and tuple-based
     markings.
 
-    Attributes
-    ----------
-    places:
-        Set of place identifiers.
-    transitions:
-        Mapping from transition id to :class:`Transition`.
-    place_labels:
-        Optional human-readable labels for places.
-    transition_labels:
-        Optional human-readable labels for transitions.
-    place_source_node_ids:
-        Provenance mapping for places.
-    transition_source_node_ids:
-        Provenance mapping for transitions.
-    graph_attrs:
-        Graph-level metadata copied from the source.
-    metadata:
-        Additional metadata.
+    :ivar places: Set of place identifiers.
+    :ivar transitions: Mapping from transition id to :class:`Transition`.
+    :ivar place_labels: Optional human-readable labels for places.
+    :ivar transition_labels: Optional human-readable labels for transitions.
+    :ivar place_source_node_ids: Provenance mapping for places.
+    :ivar transition_source_node_ids: Provenance mapping for transitions.
+    :ivar graph_attrs: Graph-level metadata copied from the source.
+    :ivar metadata: Additional metadata.
 
-    Example
-    -------
+
+    .. rubric:: Example
+
     .. code-block:: python
 
         net = PetriNet()
@@ -715,10 +691,9 @@ class PetriNet:
     """
 
     def __init__(self) -> None:
-        """
-        Initialize an empty Petri net.
+        """Initialize an empty Petri net.
 
-        :returns:
+        :return:
             None
         :rtype: None
         """
@@ -735,18 +710,17 @@ class PetriNet:
 
     @classmethod
     def from_syncrn(cls, crn: Any) -> "PetriNet":
-        """
-        Build a Petri-net view directly from SynCRN incidence data.
+        """Build a Petri-net view directly from SynCRN incidence data.
 
         :param crn:
             SynCRN-like object or SynCRN bipartite digraph.
         :type crn: Any
-        :returns:
+        :return:
             Petri net constructed from the canonical incidence view.
         :rtype: PetriNet
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             net = PetriNet.from_syncrn(crn)
@@ -783,10 +757,9 @@ class PetriNet:
 
     @property
     def place_order(self) -> List[Place]:
-        """
-        Return places in insertion order.
+        """Return places in insertion order.
 
-        :returns:
+        :return:
             Ordered place identifiers.
         :rtype: List[Place]
         """
@@ -794,10 +767,9 @@ class PetriNet:
 
     @property
     def transition_order(self) -> List[TransitionId]:
-        """
-        Return transitions in insertion order.
+        """Return transitions in insertion order.
 
-        :returns:
+        :return:
             Ordered transition identifiers.
         :rtype: List[TransitionId]
         """
@@ -810,8 +782,7 @@ class PetriNet:
         label: Optional[str] = None,
         source_node_id: Optional[Hashable] = None,
     ) -> None:
-        """
-        Add a place to the Petri net.
+        """Add a place to the Petri net.
 
         If the place already exists, only optional metadata is updated.
 
@@ -824,7 +795,7 @@ class PetriNet:
         :param source_node_id:
             Optional provenance node id from the source CRN.
         :type source_node_id: Optional[Hashable]
-        :returns:
+        :return:
             None
         :rtype: None
         """
@@ -846,8 +817,7 @@ class PetriNet:
         source_reaction_id: Optional[str] = None,
         metadata: Optional[MutableMapping[str, Any]] = None,
     ) -> None:
-        """
-        Add or replace a transition in the Petri net.
+        """Add or replace a transition in the Petri net.
 
         Zero or invalid non-positive weights are filtered out before storage.
         Any places referenced by ``pre`` or ``post`` are created automatically.
@@ -870,12 +840,12 @@ class PetriNet:
         :param metadata:
             Optional metadata attached to the transition.
         :type metadata: Optional[MutableMapping[str, Any]]
-        :returns:
+        :return:
             None
         :rtype: None
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             net.add_transition(
@@ -913,8 +883,7 @@ class PetriNet:
             self.transition_labels[tid] = str(label)
 
     def enabled(self, marking: Marking, tid: TransitionId) -> bool:
-        """
-        Test whether a transition is enabled under a marking.
+        """Test whether a transition is enabled under a marking.
 
         A transition is enabled if every required input place has at least the
         corresponding token count.
@@ -925,7 +894,7 @@ class PetriNet:
         :param tid:
             Transition identifier.
         :type tid: TransitionId
-        :returns:
+        :return:
             ``True`` if the transition is enabled, else ``False``.
         :rtype: bool
         """
@@ -933,8 +902,7 @@ class PetriNet:
         return all(int(marking.get(p, 0)) >= w for p, w in t.pre.items())
 
     def fire(self, marking: Marking, tid: TransitionId) -> Dict[Place, int]:
-        """
-        Fire a transition and return the successor marking.
+        """Fire a transition and return the successor marking.
 
         This function does not itself check enabledness. If the transition is
         not enabled, negative token counts may appear in the result.
@@ -945,12 +913,12 @@ class PetriNet:
         :param tid:
             Transition identifier to fire.
         :type tid: TransitionId
-        :returns:
+        :return:
             Successor marking after consuming ``pre`` and producing ``post``.
         :rtype: Dict[Place, int]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             m0 = {"A": 2, "B": 1}
@@ -965,13 +933,12 @@ class PetriNet:
         return nxt
 
     def marking_to_tuple(self, m: Marking) -> Tuple[int, ...]:
-        """
-        Convert a mapping-based marking into a tuple in place order.
+        """Convert a mapping-based marking into a tuple in place order.
 
         :param m:
             Marking mapping.
         :type m: Marking
-        :returns:
+        :return:
             Tuple of token counts aligned to :attr:`place_order`.
         :rtype: Tuple[int, ...]
         """
@@ -981,15 +948,14 @@ class PetriNet:
         return tuple(arr)
 
     def tuple_to_marking(self, values: Iterable[int]) -> Dict[Place, int]:
-        """
-        Convert a tuple-like token vector into a sparse marking mapping.
+        """Convert a tuple-like token vector into a sparse marking mapping.
 
         Zero entries are omitted from the returned dictionary.
 
         :param values:
             Iterable of token counts aligned to :attr:`place_order`.
         :type values: Iterable[int]
-        :returns:
+        :return:
             Sparse marking mapping.
         :rtype: Dict[Place, int]
         """
@@ -1001,45 +967,42 @@ class PetriNet:
         }
 
     def place_name(self, p: Place) -> str:
-        """
-        Return the display label of a place if available.
+        """Return the display label of a place if available.
 
         :param p:
             Place identifier.
         :type p: Place
-        :returns:
+        :return:
             Display label or the identifier itself.
         :rtype: str
         """
         return self.place_labels.get(p, p)
 
     def transition_name(self, tid: TransitionId) -> str:
-        """
-        Return the display label of a transition if available.
+        """Return the display label of a transition if available.
 
         :param tid:
             Transition identifier.
         :type tid: TransitionId
-        :returns:
+        :return:
             Display label or the identifier itself.
         :rtype: str
         """
         return self.transition_labels.get(tid, tid)
 
     def to_pre_post(self) -> Dict[str, Any]:
-        """
-        Export the Petri net as place-indexed pre/post adjacency maps.
+        """Export the Petri net as place-indexed pre/post adjacency maps.
 
         The returned structure is often convenient for reachability, firing,
         or incidence-based downstream algorithms.
 
-        :returns:
+        :return:
             Dictionary containing places, transitions, labels, pre/post maps,
             graph attributes, and metadata.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             data = net.to_pre_post()
@@ -1066,10 +1029,9 @@ class PetriNet:
         }
 
     def __repr__(self) -> str:  # pragma: no cover - simple repr
-        """
-        Return a compact debug representation.
+        """Return a compact debug representation.
 
-        :returns:
+        :return:
             Readable Petri net summary.
         :rtype: str
         """

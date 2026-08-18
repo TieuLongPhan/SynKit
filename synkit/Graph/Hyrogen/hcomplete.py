@@ -89,19 +89,27 @@ class HComplete(HydrogenCompletionAlgorithms):
         """Processes a single graph data dictionary by modifying hydrogen
         counts and other features based on configuration settings.
 
-        Parameters:
-        - graph_data (Dict[str, nx.Graph]): Dictionary containing the graph data.
-        - its_key (str): Key where the ITS graph is stored.
-        - rc_key (str): Key where the RC graph is stored.
-        - ignore_aromaticity (bool): If True, aromaticity is ignored during processing. Default is False.
-        - balance_its (bool): If True, the ITS is balanced. Default is True.
-        - get_priority_graph (bool): If True, priority is given to graph data during processing. Default is False.
-        - max_hydrogen (int): Maximum number of hydrogens that can be handled in the inference step.
-        - format (str): ITS representation: "auto", "typesGH", or "tuple".
-        - max_candidates (Optional[int]): Optional cap for enumerated hydrogen assignments.
+        :param graph_data: Dictionary containing the graph data.
+        :type graph_data: Dict[str, nx.Graph]
+        :param its_key: Key where the ITS graph is stored.
+        :type its_key: str
+        :param rc_key: Key where the RC graph is stored.
+        :type rc_key: str
+        :param ignore_aromaticity: If True, aromaticity is ignored during processing. Default is False.
+        :type ignore_aromaticity: bool
+        :param balance_its: If True, the ITS is balanced. Default is True.
+        :type balance_its: bool
+        :param get_priority_graph: If True, priority is given to graph data during processing. Default is False.
+        :type get_priority_graph: bool
+        :param max_hydrogen: Maximum number of hydrogens that can be handled in the inference step.
+        :type max_hydrogen: int
+        :param format: ITS representation: "auto", "typesGH", or "tuple".
+        :type format: str
+        :param max_candidates: Optional cap for enumerated hydrogen assignments.
+        :type max_candidates: Optional[int]
 
-        Returns:
-        - Dict[str, Optional[nx.Graph]]: Dictionary with updated ITS and RC graph data, or None if processing fails.
+        :return: Dictionary with updated ITS and RC graph data, or None if processing fails.
+        :rtype: Dict[str, Optional[nx.Graph]]
         """
         graphs = copy(graph_data)
         its = graphs.get(its_key, None)
@@ -135,22 +143,31 @@ class HComplete(HydrogenCompletionAlgorithms):
         """Processes a list of graph data dictionaries in parallel to optimize
         the hydrogen completion and other graph modifications.
 
-        Parameters:
-        - graph_data_list (List[Dict[str, nx.Graph]]): List of dictionaries containing the graph data.
-        - its_key (str): Key where the ITS graph is stored.
-        - rc_key (str): Key where the RC graph is stored.
-        - n_jobs (int): Number of parallel jobs to run.
-        - verbose (int): Verbosity level for the parallel process.
-        - ignore_aromaticity (bool): If True, aromaticity is ignored during processing. Default is False.
-        - balance_its (bool): If True, the ITS is balanced. Default is True.
-        - get_priority_graph (bool): If True, priority is given to graph data during processing. Default is False.
-        - max_hydrogen (int): Maximum number of hydrogens that can be handled in the inference step.
-        - format (str): ITS representation: "auto", "typesGH", or "tuple".
-        - max_candidates (Optional[int]): Optional cap for enumerated hydrogen assignments.
+        :param graph_data_list: List of dictionaries containing the graph data.
+        :type graph_data_list: List[Dict[str, nx.Graph]]
+        :param its_key: Key where the ITS graph is stored.
+        :type its_key: str
+        :param rc_key: Key where the RC graph is stored.
+        :type rc_key: str
+        :param n_jobs: Number of parallel jobs to run.
+        :type n_jobs: int
+        :param verbose: Verbosity level for the parallel process.
+        :type verbose: int
+        :param ignore_aromaticity: If True, aromaticity is ignored during processing. Default is False.
+        :type ignore_aromaticity: bool
+        :param balance_its: If True, the ITS is balanced. Default is True.
+        :type balance_its: bool
+        :param get_priority_graph: If True, priority is given to graph data during processing. Default is False.
+        :type get_priority_graph: bool
+        :param max_hydrogen: Maximum number of hydrogens that can be handled in the inference step.
+        :type max_hydrogen: int
+        :param format: ITS representation: "auto", "typesGH", or "tuple".
+        :type format: str
+        :param max_candidates: Optional cap for enumerated hydrogen assignments.
+        :type max_candidates: Optional[int]
 
-        Returns:
-        - List[Dict[str, Optional[nx.Graph]]]: List of dictionaries with
-        updated ITS and RC graph data, or None if processing fails.
+        :return: List of dictionaries with updated ITS and RC graph data, or None if processing fails.
+        :rtype: List[Dict[str, Optional[nx.Graph]]]
         """
         processed_data = Parallel(n_jobs=n_jobs, verbose=verbose)(
             delayed(self.process_single_graph_data)(
@@ -251,20 +268,29 @@ class HComplete(HydrogenCompletionAlgorithms):
         product graphs, adjusting hydrogen nodes accordingly and assessing
         graph equivalence.
 
-        Parameters:
-        - graph_data (Dict[str, nx.Graph]): Dictionary containing the graph data.
-        - its_key (str): Key for the ITS graph in the dictionary.
-        - rc_key (str): Key for the RC graph in the dictionary.
-        - react_graph (nx.Graph): Graph representing the reactants.
-        - prod_graph (nx.Graph): Graph representing the products.
-        - ignore_aromaticity (bool): If True, aromaticity will not be considered in processing.
-        - balance_its (bool): If True, balances the ITS graph.
-        - get_priority_graph (bool): If True, processes graphs with priority considerations.
-        - format (str): ITS representation: "auto", "typesGH", or "tuple".
-        - max_candidates (Optional[int]): Optional cap for enumerated hydrogen assignments.
+        :param graph_data: Dictionary containing the graph data.
+        :type graph_data: Dict[str, nx.Graph]
+        :param its_key: Key for the ITS graph in the dictionary.
+        :type its_key: str
+        :param rc_key: Key for the RC graph in the dictionary.
+        :type rc_key: str
+        :param react_graph: Graph representing the reactants.
+        :type react_graph: nx.Graph
+        :param prod_graph: Graph representing the products.
+        :type prod_graph: nx.Graph
+        :param ignore_aromaticity: If True, aromaticity will not be considered in processing.
+        :type ignore_aromaticity: bool
+        :param balance_its: If True, balances the ITS graph.
+        :type balance_its: bool
+        :param get_priority_graph: If True, processes graphs with priority considerations.
+        :type get_priority_graph: bool
+        :param format: ITS representation: "auto", "typesGH", or "tuple".
+        :type format: str
+        :param max_candidates: Optional cap for enumerated hydrogen assignments.
+        :type max_candidates: Optional[int]
 
-        Returns:
-        - Dict[str, Optional[nx.Graph]]: Updated graph dictionary with potentially modified ITS and RC graphs.
+        :return: Updated graph dictionary with potentially modified ITS and RC graphs.
+        :rtype: Dict[str, Optional[nx.Graph]]
         """
         result = HComplete._complete_from_side_graphs(
             react_graph,
@@ -639,19 +665,24 @@ class HComplete(HydrogenCompletionAlgorithms):
         adjusting hydrogen counts, exploring all possible configurations of
         hydrogen node additions or removals.
 
-        Parameters:
-        - react_graph (nx.Graph): The reactant graph.
-        - prod_graph (nx.Graph): The product graph.
-        - ignore_aromaticity (bool): If True, aromaticity is ignored.
-        - balance_its (bool): If True, attempts to balance the ITS by adjusting hydrogen nodes.
-        - get_priority_graph (bool): If True, additional priority-based processing
-        is applied to select optimal graph configurations.
-        - format (str): ITS representation: "auto", "typesGH", or "tuple".
-        - max_candidates (Optional[int]): Optional cap for enumerated hydrogen assignments.
+        :param react_graph: The reactant graph.
+        :type react_graph: nx.Graph
+        :param prod_graph: The product graph.
+        :type prod_graph: nx.Graph
+        :param ignore_aromaticity: If True, aromaticity is ignored.
+        :type ignore_aromaticity: bool
+        :param balance_its: If True, attempts to balance the ITS by adjusting hydrogen nodes.
+        :type balance_its: bool
+        :param get_priority_graph: If True, additional priority-based processing
+                                   is applied to select optimal graph configurations.
+        :type get_priority_graph: bool
+        :param format: ITS representation: "auto", "typesGH", or "tuple".
+        :type format: str
+        :param max_candidates: Optional cap for enumerated hydrogen assignments.
+        :type max_candidates: Optional[int]
 
-        Returns:
-        - List[Tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph, str]]: Candidate
-        reactant, product, ITS, RC, and RC-signature tuples.
+        :return: Candidate reactant, product, ITS, RC, and RC-signature tuples.
+        :rtype: List[Tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph, str]]
         """
         resolved_format = HComplete._resolve_graph_pair_format(
             react_graph, prod_graph, format
@@ -927,15 +958,17 @@ class HComplete(HydrogenCompletionAlgorithms):
         """Creates and returns a new graph with added hydrogen nodes based on
         the input graph and node ID pairs.
 
-        Parameters:
-        - graph (nx.Graph): The base graph to which the nodes will be added.
-        - node_id_pairs (Iterable[Tuple[int, int]]): Pairs of node IDs (original node, new
-        hydrogen node) to link with hydrogen.
-        - atom_map_update (bool): If True, update the 'atom_map' attribute with the new
-        hydrogen node ID; otherwise, retain the original node's 'atom_map'.
+        :param graph: The base graph to which the nodes will be added.
+        :type graph: nx.Graph
+        :param node_id_pairs: Pairs of node IDs (original node, new
+                              hydrogen node) to link with hydrogen.
+        :type node_id_pairs: Iterable[Tuple[int, int]]
+        :param atom_map_update: If True, update the 'atom_map' attribute with the new
+                                hydrogen node ID; otherwise, retain the original node's 'atom_map'.
+        :type atom_map_update: bool
 
-        Returns:
-        - nx.Graph: A new graph instance with the added hydrogen nodes.
+        :return: A new graph instance with the added hydrogen nodes.
+        :rtype: nx.Graph
         """
         new_graph = graph.copy()
         for node_id, new_hydrogen_node_id in node_id_pairs:

@@ -59,8 +59,7 @@ class PetriSummary:
 
 
 class PetriAnalyzer:
-    """
-    OOP wrapper for Petri-net style analysis on SynCRN-like inputs.
+    """OOP wrapper for Petri-net style analysis on SynCRN-like inputs.
 
     Accepted inputs are canonical SynCRN objects, SynCRN bipartite digraphs,
     and :class:`PetriNet` objects.
@@ -80,8 +79,8 @@ class PetriAnalyzer:
         Optional maximum siphon/trap size considered during enumeration.
     :type max_siphon_size: Optional[int]
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         analyzer = PetriAnalyzer(crn, rtol=1e-12, max_siphon_size=4)
@@ -128,20 +127,18 @@ class PetriAnalyzer:
 
     @property
     def petri(self) -> PetriNet:
-        """
-        Return the internal Petri-net representation.
+        """Return the internal Petri-net representation.
 
-        :returns:
+        :return:
             Internal Petri-net view used for structural analysis.
         :rtype: PetriNet
         """
         return self._petri
 
     def _orders(self) -> Tuple[List[str], List[str]]:
-        """
-        Return place and transition orders from the stoichiometric view.
+        """Return place and transition orders from the stoichiometric view.
 
-        :returns:
+        :return:
             Tuple ``(place_order, transition_order)``.
         :rtype: Tuple[List[str], List[str]]
         """
@@ -149,20 +146,18 @@ class PetriAnalyzer:
         return places, transitions
 
     def _ensure_persistence_computed(self) -> bool:
-        """
-        Check whether persistence has already been computed.
+        """Check whether persistence has already been computed.
 
-        :returns:
+        :return:
             ``True`` if persistence results are available.
         :rtype: bool
         """
         return self._persistence_ok is not None
 
     def _persistence_details_as_dict(self) -> Optional[Dict[str, Any]]:
-        """
-        Convert cached persistence details into a serializable dictionary.
+        """Convert cached persistence details into a serializable dictionary.
 
-        :returns:
+        :return:
             Dictionary form of persistence details, or ``None`` if unavailable.
         :rtype: Optional[Dict[str, Any]]
         """
@@ -180,10 +175,9 @@ class PetriAnalyzer:
         }
 
     def _summary_ready(self) -> bool:
-        """
-        Check whether all ingredients required for :attr:`summary` are present.
+        """Check whether all ingredients required for :attr:`summary` are present.
 
-        :returns:
+        :return:
             ``True`` if a full summary can be constructed.
         :rtype: bool
         """
@@ -196,15 +190,14 @@ class PetriAnalyzer:
         )
 
     def compute_semiflows(self) -> "PetriAnalyzer":
-        """
-        Compute and cache P-semiflows and T-semiflows.
+        """Compute and cache P-semiflows and T-semiflows.
 
-        :returns:
+        :return:
             The analyzer itself, enabling method chaining.
         :rtype: PetriAnalyzer
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             analyzer = PetriAnalyzer(crn).compute_semiflows()
@@ -216,15 +209,14 @@ class PetriAnalyzer:
         return self
 
     def compute_siphons_traps(self) -> "PetriAnalyzer":
-        """
-        Compute and cache siphons and traps.
+        """Compute and cache siphons and traps.
 
-        :returns:
+        :return:
             The analyzer itself, enabling method chaining.
         :rtype: PetriAnalyzer
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             analyzer = PetriAnalyzer(crn).compute_siphons_traps()
@@ -240,18 +232,17 @@ class PetriAnalyzer:
         return self
 
     def check_persistence(self) -> "PetriAnalyzer":
-        """
-        Evaluate and cache the siphon-based persistence condition.
+        """Evaluate and cache the siphon-based persistence condition.
 
         Both the boolean persistence condition and the detailed explanation
         structure are computed and stored.
 
-        :returns:
+        :return:
             The analyzer itself, enabling method chaining.
         :rtype: PetriAnalyzer
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             analyzer = PetriAnalyzer(crn).check_persistence()
@@ -271,18 +262,17 @@ class PetriAnalyzer:
         return self
 
     def compute_all(self) -> "PetriAnalyzer":
-        """
-        Compute all supported Petri-style diagnostics.
+        """Compute all supported Petri-style diagnostics.
 
         This is equivalent to calling :meth:`compute_semiflows`,
         :meth:`compute_siphons_traps`, and :meth:`check_persistence` in sequence.
 
-        :returns:
+        :return:
             The analyzer itself, enabling method chaining.
         :rtype: PetriAnalyzer
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             analyzer = PetriAnalyzer(crn).compute_all()
@@ -292,10 +282,9 @@ class PetriAnalyzer:
 
     @property
     def p_semiflows(self) -> Optional[np.ndarray]:
-        """
-        Return cached P-semiflows.
+        """Return cached P-semiflows.
 
-        :returns:
+        :return:
             Cached P-semiflow basis, or ``None`` if not yet computed.
         :rtype: Optional[numpy.ndarray]
         """
@@ -303,10 +292,9 @@ class PetriAnalyzer:
 
     @property
     def t_semiflows(self) -> Optional[np.ndarray]:
-        """
-        Return cached T-semiflows.
+        """Return cached T-semiflows.
 
-        :returns:
+        :return:
             Cached T-semiflow basis, or ``None`` if not yet computed.
         :rtype: Optional[numpy.ndarray]
         """
@@ -314,10 +302,9 @@ class PetriAnalyzer:
 
     @property
     def siphons(self) -> Optional[List[Set[str]]]:
-        """
-        Return cached siphons.
+        """Return cached siphons.
 
-        :returns:
+        :return:
             Cached siphons, or ``None`` if not yet computed.
         :rtype: Optional[List[Set[str]]]
         """
@@ -325,10 +312,9 @@ class PetriAnalyzer:
 
     @property
     def traps(self) -> Optional[List[Set[str]]]:
-        """
-        Return cached traps.
+        """Return cached traps.
 
-        :returns:
+        :return:
             Cached traps, or ``None`` if not yet computed.
         :rtype: Optional[List[Set[str]]]
         """
@@ -336,10 +322,9 @@ class PetriAnalyzer:
 
     @property
     def persistence_ok(self) -> Optional[bool]:
-        """
-        Return cached persistence status.
+        """Return cached persistence status.
 
-        :returns:
+        :return:
             Cached persistence status, or ``None`` if not yet computed.
         :rtype: Optional[bool]
         """
@@ -347,10 +332,9 @@ class PetriAnalyzer:
 
     @property
     def persistence_details(self) -> Optional[PersistenceCheckResult]:
-        """
-        Return cached detailed persistence analysis.
+        """Return cached detailed persistence analysis.
 
-        :returns:
+        :return:
             Cached persistence detail object, or ``None`` if not yet computed.
         :rtype: Optional[PersistenceCheckResult]
         """
@@ -358,10 +342,9 @@ class PetriAnalyzer:
 
     @property
     def summary(self) -> Optional[PetriSummary]:
-        """
-        Return a structured summary if all diagnostics are available.
+        """Return a structured summary if all diagnostics are available.
 
-        :returns:
+        :return:
             A :class:`PetriSummary` if all components are computed, otherwise
             ``None``.
         :rtype: Optional[PetriSummary]
@@ -381,15 +364,14 @@ class PetriAnalyzer:
         )
 
     def as_dict(self) -> Dict[str, Any]:
-        """
-        Convert the current analyzer state into a serializable dictionary.
+        """Convert the current analyzer state into a serializable dictionary.
 
-        :returns:
+        :return:
             Dictionary containing cached analysis results and metadata.
         :rtype: Dict[str, Any]
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             analyzer = PetriAnalyzer(crn).compute_all()
@@ -415,16 +397,15 @@ class PetriAnalyzer:
         }
 
     def explain(self) -> str:
-        """
-        Return a compact human-readable explanation of current results.
+        """Return a compact human-readable explanation of current results.
 
-        :returns:
+        :return:
             Summary string describing persistence and the number of computed
             objects, or a message indicating that no computation has been run.
         :rtype: str
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             analyzer = PetriAnalyzer(crn).compute_all()
@@ -447,10 +428,9 @@ class PetriAnalyzer:
         )
 
     def __repr__(self) -> str:
-        """
-        Return a concise developer-facing representation.
+        """Return a concise developer-facing representation.
 
-        :returns:
+        :return:
             String representation of the analyzer status.
         :rtype: str
         """

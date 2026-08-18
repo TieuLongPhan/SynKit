@@ -12,6 +12,7 @@ from synkit.Graph.Stereo import stereo_identity_signature, stereo_isomorphic
 
 FUSION_NODE_IDENTITY_KEYS = (
     "element",
+    "isotope",
     "aromatic",
     "charge",
     "radical",

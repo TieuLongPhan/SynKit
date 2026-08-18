@@ -15,8 +15,8 @@ class GraphSignature:
     def __init__(self, graph: nx.Graph):
         """Initializes the GraphSignature class with a specified graph.
 
-        Parameters:
-        - graph (nx.Graph): A NetworkX graph instance.
+        :param graph: A NetworkX graph instance.
+        :type graph: nx.Graph
         """
         self.graph = graph
         self._validate_graph()
@@ -26,9 +26,8 @@ class GraphSignature:
         'charge'), and all edges have the required 'order' attribute as int,
         float, or tuple of two floats, and optionally the 'state' attribute.
 
-        Raises:
-        - ValueError: If any node is missing the 'element' or 'charge' attribute,
-                      or if any edge is missing the 'order' attribute or has an invalid type.
+        :raises ValueError: If required node or edge attributes are missing or
+                            have invalid types.
         """
         for node, data in self.graph.nodes(data=True):
             if "element" not in data:
@@ -67,12 +66,13 @@ class GraphSignature:
         state, and optionally including neighbor information and topological
         context.
 
-        Parameters:
-        - include_neighbors (bool): Whether to include neighbors' details in the edge signature.
-        - max_hop (int): Maximum number of hops to include for neighbor-level structural information.
+        :param include_neighbors: Whether to include neighbors' details in the edge signature.
+        :type include_neighbors: bool
+        :param max_hop: Maximum number of hops to include for neighbor-level structural information.
+        :type max_hop: int
 
-        Returns:
-        - str: A concatenated and sorted string of edge representations.
+        :return: A concatenated and sorted string of edge representations.
+        :rtype: str
         """
         edge_signature_parts = []
 
@@ -143,12 +143,13 @@ class GraphSignature:
     def _get_khop_neighbors(self, node, max_hop):
         """Retrieves the k-hop neighborhood information for a given node.
 
-        Parameters:
-        - node (int): The node for which to get neighborhood information.
-        - max_hop (int): Maximum number of hops for neighborhood exploration.
+        :param node: The node for which to get neighborhood information.
+        :type node: int
+        :param max_hop: Maximum number of hops for neighborhood exploration.
+        :type max_hop: int
 
-        Returns:
-        - str: A concatenated string representing the k-hop neighborhood information.
+        :return: A concatenated string representing the k-hop neighborhood information.
+        :rtype: str
         """
         k_hop_neighbors = []
         current_hop_neighbors = [node]
@@ -175,11 +176,11 @@ class GraphSignature:
         """Generates a Weisfeiler-Lehman (WL) hash for the graph to capture its
         structural features.
 
-        Parameters:
-        - iterations (int): Number of WL iterations to perform.
+        :param iterations: Number of WL iterations to perform.
+        :type iterations: int
 
-        Returns:
-        - str: A hexadecimal hash representing the WL feature.
+        :return: A hexadecimal hash representing the WL feature.
+        :rtype: str
         """
         # Initialize labels with both 'element' and 'charge'
         labels = {
@@ -214,14 +215,15 @@ class GraphSignature:
         """Combines edge, various spectral invariants, and WL hash into a
         single comprehensive graph signature.
 
-        Parameters:
-        - include_wl_hash (bool): Whether to include the Weisfeiler-Lehman hash.
-        - include_spectral (bool): Whether to include spectral invariants.
-        - include_combined_hash (bool): Whether to include the combined hash.
-        - include_neighbors (bool): Whether to include neighbor information in edge signatures.
+        :param include_wl_hash: Whether to include the Weisfeiler-Lehman hash.
+        :type include_wl_hash: bool
+        :param include_neighbors: Whether to include neighbor information in edge signatures.
+        :type include_neighbors: bool
+        :param max_hop: Maximum neighborhood depth used by edge signatures.
+        :type max_hop: int
 
-        Returns:
-        - str: A concatenated string representing the complete graph signature.
+        :return: A concatenated string representing the complete graph signature.
+        :rtype: str
         """
         signatures = []
 

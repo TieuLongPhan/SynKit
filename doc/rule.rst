@@ -11,7 +11,6 @@ portable graph-rewriting operators that can be analyzed, normalized, and reused 
 .. raw:: html
 
    <style>
-     /* Optional: keep the cards visually consistent and slightly more compact */
      .sd-card { border-radius: 10px; }
      .sd-card-title { font-weight: 700; }
    </style>
@@ -36,7 +35,7 @@ portable graph-rewriting operators that can be analyzed, normalized, and reused 
       :class-card: sd-shadow-sm
 
       Edit and normalize rule templates: handle hydrogens, tune context,
-      and adjust matching behavior to improve robustness across heterogeneous data.
+      and adjust matching behavior across heterogeneous data.
 
 Package layout
 --------------
@@ -90,8 +89,8 @@ Context and hydrogen handling
 
 Real-world datasets often mix implicit/explicit hydrogens, inconsistent aromaticity flags,
 and different atom-mapping conventions. Utilities in :py:mod:`synkit.Rule.Modify` (together with
-related helpers in :py:mod:`synkit.Chem` and :py:mod:`synkit.Graph`) help normalize templates and
-improve matching robustness.
+related helpers in :py:mod:`synkit.Chem` and :py:mod:`synkit.Graph`) normalize
+templates and align matching behavior.
 
 Typical operations include:
 

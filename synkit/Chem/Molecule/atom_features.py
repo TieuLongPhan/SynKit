@@ -79,14 +79,13 @@ class AtomFeatureExtractor:
     # ---------------- fluent / compatibility API -------------------------
 
     def build(self, atom: Chem.Atom | _AtomLike) -> "AtomFeatureExtractor":
-        """
-        Compute features for *one* atom and store them internally.
+        """Compute features for *one* atom and store them internally.
 
         Returns self to enable chaining. The result dictionary can be accessed
         via the ``feature`` property.
 
         :param atom: RDKit Atom instance (or Atom-like object).
-        :returns: self
+        :return: self
         """
         if self.profile == "full":
             self._last_feature = self._build_full(atom)
@@ -95,23 +94,21 @@ class AtomFeatureExtractor:
         return self
 
     def build_dict(self, atom: Chem.Atom | _AtomLike) -> Dict[str, Any]:
-        """
-        Backwards-compatible helper that returns the computed feature dict
+        """Backwards-compatible helper that returns the computed feature dict
         directly (does not alter ``.feature`` or ``.all_features``).
 
         :param atom: RDKit Atom instance (or Atom-like object).
-        :returns: feature dictionary
+        :return: feature dictionary
         """
         if self.profile == "full":
             return self._build_full(atom)
         return self._build_minimal(atom)
 
     def build_all(self) -> "AtomFeatureExtractor":
-        """
-        Compute features for *all* atoms in the molecule and store them in
+        """Compute features for *all* atoms in the molecule and store them in
         ``.all_features``. Returns self for chaining.
 
-        :returns: self
+        :return: self
         """
         features: List[Dict[str, Any]] = []
         try:
@@ -151,11 +148,10 @@ class AtomFeatureExtractor:
     # ---------------- minimal (backwards-compatible) --------------------
 
     def _build_minimal(self, atom: Chem.Atom | _AtomLike) -> Dict[str, Any]:
-        """
-        Minimal feature set, intended to match the original helper.
+        """Minimal feature set, intended to match the original helper.
 
         :param atom: RDKit Atom instance (or Atom-like object).
-        :returns: dict of features.
+        :return: dict of features.
         """
         # Gasteiger (tolerant access)
         gcharge = 0.0
@@ -200,11 +196,10 @@ class AtomFeatureExtractor:
     # ---------------- full profile (extra descriptors) ------------------
 
     def _build_full(self, atom: Chem.Atom | _AtomLike) -> Dict[str, Any]:
-        """
-        Full feature set, extends minimal with additional computed properties.
+        """Full feature set, extends minimal with additional computed properties.
 
         :param atom: RDKit Atom instance (or Atom-like object).
-        :returns: dict of features
+        :return: dict of features
         """
         d = self._build_minimal(atom)
 
@@ -329,15 +324,14 @@ class AtomFeatureExtractor:
     def _dist_to(
         self, predicate: Callable[[Chem.Atom], bool], start_idx: int, maxd: int = 99
     ) -> int:
-        """
-        Shortest-path distance (in bonds) from atom ``start_idx`` to the first
+        """Shortest-path distance (in bonds) from atom ``start_idx`` to the first
         atom that satisfies ``predicate``. Returns ``maxd`` if none found
         within the search limit.
 
         :param predicate: callable that accepts an RDKit atom and returns bool.
         :param start_idx: starting atom index.
         :param maxd: maximum distance to search (defaults to 99).
-        :returns: integer distance (0 means start atom satisfies predicate).
+        :return: integer distance (0 means start atom satisfies predicate).
         """
         try:
             seen = {start_idx}

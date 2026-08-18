@@ -11,8 +11,7 @@ from .wl_canon import WLCanonicalizer
 
 
 class CRNAutomorphism:
-    """
-    Exact automorphism analysis for a chemical reaction network graph.
+    """Exact automorphism analysis for a chemical reaction network graph.
 
     This class provides a convenient public interface for exact automorphism
     queries, orbit extraction, and quick nontrivial-symmetry checks. When
@@ -50,14 +49,14 @@ class CRNAutomorphism:
         If ``None``, :meth:`SymmetryConfig.semantic` is used.
     :type config: Optional[SymmetryConfig]
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     For best performance, construct a :class:`CRNCanonicalizer` first and pass
     it here so canonicalization and automorphism queries reuse the same cached
     exact search engine.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         from synkit.CRN.Sym.auto import CRNAutomorphism
@@ -120,14 +119,13 @@ class CRNAutomorphism:
     def _build_from_canonicalizer(
         source: CRNCanonicalizer,
     ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
-        """
-        Reuse components from an existing canonicalizer.
+        """Reuse components from an existing canonicalizer.
 
         :param source:
             Canonicalizer instance.
         :type source: CRNCanonicalizer
 
-        :returns:
+        :return:
             Tuple ``(config, wl, engine)``.
         :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
         """
@@ -137,14 +135,13 @@ class CRNAutomorphism:
     def _build_from_engine(
         source: IRCanonicalEngine,
     ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
-        """
-        Reuse components from an existing exact IR engine.
+        """Reuse components from an existing exact IR engine.
 
         :param source:
             Exact IR engine.
         :type source: IRCanonicalEngine
 
-        :returns:
+        :return:
             Tuple ``(config, wl, engine)``.
         :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
         """
@@ -160,8 +157,7 @@ class CRNAutomorphism:
         wl_digest_size: int,
         config: Optional[SymmetryConfig],
     ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
-        """
-        Build fresh WL and exact IR components from a raw source object.
+        """Build fresh WL and exact IR components from a raw source object.
 
         :param source:
             Input source object.
@@ -187,7 +183,7 @@ class CRNAutomorphism:
             Optional symmetry configuration.
         :type config: Optional[SymmetryConfig]
 
-        :returns:
+        :return:
             Tuple ``(config, wl, engine)``.
         :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
         """
@@ -221,8 +217,7 @@ class CRNAutomorphism:
         wl_digest_size: int,
         config: Optional[SymmetryConfig],
     ) -> Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]:
-        """
-        Build or reuse the internal symmetry-analysis components.
+        """Build or reuse the internal symmetry-analysis components.
 
         :param source:
             Input source, canonicalizer, or engine.
@@ -248,7 +243,7 @@ class CRNAutomorphism:
             Optional symmetry configuration.
         :type config: Optional[SymmetryConfig]
 
-        :returns:
+        :return:
             Tuple ``(config, wl, engine)``.
         :rtype: Tuple[SymmetryConfig, WLCanonicalizer, IRCanonicalEngine]
         """
@@ -267,10 +262,9 @@ class CRNAutomorphism:
 
     @property
     def G(self) -> nx.DiGraph:
-        """
-        Return the internal directed graph used for analysis.
+        """Return the internal directed graph used for analysis.
 
-        :returns:
+        :return:
             Internal directed graph.
         :rtype: nx.DiGraph
         """
@@ -278,10 +272,9 @@ class CRNAutomorphism:
 
     @property
     def graph_type(self) -> str:
-        """
-        Return the graph type label.
+        """Return the graph type label.
 
-        :returns:
+        :return:
             Graph type string.
         :rtype: str
         """
@@ -293,8 +286,7 @@ class CRNAutomorphism:
         max_count: Optional[int] = None,
         timeout_sec: Optional[float] = None,
     ) -> Iterator[Dict[Any, Any]]:
-        """
-        Iterate over sampled automorphism mappings.
+        """Iterate over sampled automorphism mappings.
 
         This method delegates to the exact IR engine and yields the sampled
         automorphism mappings that were collected during the search.
@@ -307,12 +299,12 @@ class CRNAutomorphism:
             Optional timeout in seconds.
         :type timeout_sec: Optional[float]
 
-        :yields:
+        :yield:
             Automorphism mappings as ``node -> node`` dictionaries.
         :rtype: Iterator[Dict[Any, Any]]
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             auto = CRNAutomorphism(crn)
@@ -326,8 +318,7 @@ class CRNAutomorphism:
     def has_nontrivial_automorphism(
         self, *, timeout_sec: Optional[float] = 5.0
     ) -> bool:
-        """
-        Check whether the graph has a nontrivial automorphism.
+        """Check whether the graph has a nontrivial automorphism.
 
         A fast WL-based orbit test is used first. If WL leaves no ambiguous
         cells, the graph is treated as having no nontrivial automorphism.
@@ -338,7 +329,7 @@ class CRNAutomorphism:
             Optional timeout in seconds for the exact fallback check.
         :type timeout_sec: Optional[float]
 
-        :returns:
+        :return:
             ``True`` if a nontrivial automorphism exists.
         :rtype: bool
         """
@@ -355,8 +346,7 @@ class CRNAutomorphism:
         max_count: int = 100,
         timeout_sec: Optional[float] = 5.0,
     ) -> AutomorphismResult:
-        """
-        Compute an automorphism summary.
+        """Compute an automorphism summary.
 
         :param max_count:
             Maximum number of sampled mappings to retain.
@@ -366,7 +356,7 @@ class CRNAutomorphism:
             Optional timeout in seconds.
         :type timeout_sec: Optional[float]
 
-        :returns:
+        :return:
             Automorphism summary result.
         :rtype: AutomorphismResult
         """
@@ -380,8 +370,7 @@ class CRNAutomorphism:
         max_count: int = 1000,
         timeout_sec: Optional[float] = 5.0,
     ) -> List[Set[Any]]:
-        """
-        Compute orbit classes from sampled automorphisms.
+        """Compute orbit classes from sampled automorphisms.
 
         :param max_count:
             Maximum number of sampled mappings to retain.
@@ -391,19 +380,18 @@ class CRNAutomorphism:
             Optional timeout in seconds.
         :type timeout_sec: Optional[float]
 
-        :returns:
+        :return:
             Orbit partition induced by the sampled automorphisms.
         :rtype: List[Set[Any]]
         """
         return self.summary(max_count=max_count, timeout_sec=timeout_sec).orbits
 
     def wl_orbits(self) -> List[Set[Any]]:
-        """
-        Return approximate WL color-class orbits.
+        """Return approximate WL color-class orbits.
 
         These are faster but weaker than exact automorphism orbits.
 
-        :returns:
+        :return:
             WL-based orbit partition.
         :rtype: List[Set[Any]]
         """
@@ -417,8 +405,7 @@ def detect_automorphisms(
     timeout_sec: Optional[float] = 5.0,
     **kwargs: Any,
 ) -> AutomorphismResult:
-    """
-    Convenience wrapper for automorphism detection.
+    """Convenience wrapper for automorphism detection.
 
     :param source:
         Input source, canonicalizer, or engine.
@@ -436,12 +423,12 @@ def detect_automorphisms(
         Additional keyword arguments forwarded to :class:`CRNAutomorphism`.
     :type kwargs: Any
 
-    :returns:
+    :return:
         Automorphism summary result.
     :rtype: AutomorphismResult
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         result = detect_automorphisms(crn, max_count=50, timeout_sec=10.0)

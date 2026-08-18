@@ -22,7 +22,7 @@ def _get_partial_aam(smart: str) -> str:
 
     :param smart: A reaction SMARTS of the form "R>>P".
     :type smart: str
-    :returns: An unbalanced, partial‐AAM reaction SMILES "retained>>partial".
+    :return: An unbalanced, partial‐AAM reaction SMILES "retained>>partial".
     :rtype: str
     :raises RuntimeError:
         If graph decomposition, molecule conversion, or SMILES generation fails.
@@ -74,7 +74,7 @@ def _remove_small_smiles(smiles: str) -> str:
 
     :param smiles: The input SMILES string.
     :type smiles: str
-    :returns: Canonical SMILES of the largest fragment.
+    :return: Canonical SMILES of the largest fragment.
     :rtype: str
     :raises ValueError:
         - If `smiles` is invalid.
@@ -116,7 +116,7 @@ def _create_unbalanced_aam(rsmi: str, side: str = "right") -> str:
         - "right": clean only the product side,
         - "both" : clean both sides.
     :type side: str
-    :returns: A new reaction SMILES "reactant>>product" with small fragments removed.
+    :return: A new reaction SMILES "reactant>>product" with small fragments removed.
     :rtype: str
     :raises ValueError:
       - If `rsmi` doesn’t contain exactly one ">>".

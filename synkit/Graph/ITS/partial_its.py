@@ -14,7 +14,7 @@ class PartialITS:
     * edges categorised as **unchanged**, **broken** or **formed** and stored as
       an ``order`` tuple ``(o_G, o_H)``, and
     * a convenience edge attribute ``standard_order = o_G - o_H`` (optionally
-      zeroed when |Δ| < 1 to ignore aromaticity changes).
+      zeroed when the absolute delta is below 1 to ignore aromaticity changes).
     """
 
     # ---------------------------------------------------------------------
@@ -31,7 +31,7 @@ class PartialITS:
         :param graph: graph to query.
         :param node: node identifier.
         :param defaults: mapping of attribute → default value.
-        :returns: tuple in the order of *defaults.keys()*.
+        :return: tuple in the order of *defaults.keys()*.
         """
         return tuple(
             graph.nodes[node].get(attr, default) for attr, default in defaults.items()
@@ -48,8 +48,8 @@ class PartialITS:
         """Attach ``standard_order`` edge attribute in‑place.
 
         :param graph: ITS graph with ``order`` tuples.
-        :param ignore_aromaticity: if *True*, set Δ=0 when |Δ|<1.
-        :returns: *graph* (for chaining).
+        :param ignore_aromaticity: If true, zero deltas with magnitude below 1.
+        :return: *graph* (for chaining).
         """
         for u, v, data in graph.edges(data=True):
             o_g, o_h = data.get("order", (0, 0))
@@ -179,11 +179,11 @@ class PartialITS:
         :param G: reactant graph.
         :param H: product graph.
         :keyword ignore_aromaticity: if *True*, set ``standard_order`` to 0 when
-                                     |Δ|<1.
+                                     magnitude below 1.
         :keyword attributes_defaults: mapping of attribute → default value used
                                       for the ``typesGH`` tuples.  If *None*, a
                                       small sensible default set is used.
-        :returns: an ITS graph with nodes, ``typesGH`` tuples and annotated
+        :return: an ITS graph with nodes, ``typesGH`` tuples and annotated
                   edges.
         """
         # ------------------------------------------------------------------

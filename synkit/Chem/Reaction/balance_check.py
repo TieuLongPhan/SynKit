@@ -30,7 +30,7 @@ class BalanceReactionCheck:
 
         :param smiles: SMILES string of the molecule.
         :type smiles: str
-        :returns: Elemental formula (e.g., "C6H6") or empty string if
+        :return: Elemental formula (e.g., "C6H6") or empty string if
             invalid.
         :rtype: str
         """
@@ -50,7 +50,7 @@ class BalanceReactionCheck:
         :type input_data: str or List[Union[str, Dict[str, str]]]
         :param rsmi_column: Key in dicts for the reaction SMILES. Defaults to "reactions".
         :type rsmi_column: str
-        :returns: List of dicts with a single key `rsmi_column` mapping to each reaction.
+        :return: List of dicts with a single key `rsmi_column` mapping to each reaction.
         :rtype: List[Dict[str, str]]
         :raises ValueError: If `input_data` is neither str nor list.
         """
@@ -74,7 +74,7 @@ class BalanceReactionCheck:
         :param reaction_smiles: Reaction SMILES in 'reactants>>products'
             format.
         :type reaction_smiles: str
-        :returns: Tuple of (reactants, products) SMILES.
+        :return: Tuple of (reactants, products) SMILES.
         :rtype: Tuple[str, str]
         """
         return tuple(reaction_smiles.split(">>"))
@@ -86,7 +86,7 @@ class BalanceReactionCheck:
         :param reaction_smiles: Reaction SMILES in 'reactants>>products'
             format.
         :type reaction_smiles: str
-        :returns: True if reactant and product formulas match, else
+        :return: True if reactant and product formulas match, else
             False.
         :rtype: bool
         """
@@ -105,7 +105,7 @@ class BalanceReactionCheck:
         :type reaction_dict: Dict[str, str]
         :param rsmi_column: Key for reaction SMILES in `reaction_dict`.
         :type rsmi_column: str
-        :returns: Original dict augmented with `"balanced": bool`.
+        :return: Original dict augmented with `"balanced": bool`.
         :rtype: Dict[str, Any]
         """
         rsmi = reaction_dict[rsmi_column]
@@ -125,7 +125,7 @@ class BalanceReactionCheck:
         :param rsmi_column: Key for reaction SMILES in each dict.
             Defaults to "reactions".
         :type rsmi_column: str
-        :returns: Tuple (balanced_list, unbalanced_list) of dicts each
+        :return: Tuple (balanced_list, unbalanced_list) of dicts each
             including `"balanced"`.
         :rtype: Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]
         """

@@ -5,12 +5,11 @@ from typing import Any, Callable, Dict, Hashable, Iterator, List, Optional, Tupl
 
 
 def _clean_counts(counts: Dict[str, int] | None = None) -> Dict[str, int]:
-    """
-    Normalize a species-to-coefficient mapping.
+    """Normalize a species-to-coefficient mapping.
 
     :param counts: Raw mapping from species id to stoichiometric coefficient.
     :type counts: Dict[str, int] | None
-    :returns: Cleaned mapping with strictly positive integer coefficients.
+    :return: Cleaned mapping with strictly positive integer coefficients.
     :rtype: Dict[str, int]
     """
     out: Dict[str, int] = {}
@@ -58,32 +57,29 @@ class RXNSide:
         return iter(self.counts.items())
 
     def items(self) -> List[Tuple[str, int]]:
-        """
-        Return the side as a list of ``(species_id, coeff)`` pairs.
+        """Return the side as a list of ``(species_id, coeff)`` pairs.
 
-        :returns: Side entries.
+        :return: Side entries.
         :rtype: List[Tuple[str, int]]
         """
         return list(self.counts.items())
 
     def get(self, species_id: str, default: int = 0) -> int:
-        """
-        Get the coefficient for one species.
+        """Get the coefficient for one species.
 
         :param species_id: Internal species id.
         :type species_id: str
         :param default: Value to return when species is absent.
         :type default: int
-        :returns: Stoichiometric coefficient.
+        :return: Stoichiometric coefficient.
         :rtype: int
         """
         return self.counts.get(species_id, default)
 
     def to_dict(self) -> Dict[str, int]:
-        """
-        Return a JSON-like dictionary representation.
+        """Return a JSON-like dictionary representation.
 
-        :returns: Species-to-coefficient mapping.
+        :return: Species-to-coefficient mapping.
         :rtype: Dict[str, int]
         """
         return dict(self.counts)
@@ -149,14 +145,13 @@ class Reaction:
         side: RXNSide,
         species_token: Callable[[str], str],
     ) -> str:
-        """
-        Format one reaction side as text.
+        """Format one reaction side as text.
 
         :param side: Left or right side.
         :type side: RXNSide
         :param species_token: Function mapping internal species ids to display text.
         :type species_token: Callable[[str], str]
-        :returns: Human-readable reaction side.
+        :return: Human-readable reaction side.
         :rtype: str
         """
         if not side:
@@ -177,8 +172,7 @@ class Reaction:
         include_step: bool = False,
         arrow: str = ">>",
     ) -> str:
-        """
-        Format the full reaction as text.
+        """Format the full reaction as text.
 
         :param species_token: Function mapping internal species ids to display text.
         :type species_token: Callable[[str], str]
@@ -190,7 +184,7 @@ class Reaction:
         :type include_step: bool
         :param arrow: Arrow string used between sides.
         :type arrow: str
-        :returns: Human-readable reaction string.
+        :return: Human-readable reaction string.
         :rtype: str
         """
         lhs = self.format_side(self.lhs, species_token)
@@ -215,10 +209,9 @@ class Reaction:
         return text
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Return a JSON-like dictionary representation.
+        """Return a JSON-like dictionary representation.
 
-        :returns: Reaction as a dictionary.
+        :return: Reaction as a dictionary.
         :rtype: Dict[str, Any]
         """
         return {

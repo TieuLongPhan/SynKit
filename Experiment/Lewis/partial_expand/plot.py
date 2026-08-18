@@ -274,9 +274,7 @@ def _runtime_violin_panel(axis, samples: dict[str, list[float]]) -> None:
     for position, method in zip(positions, RUNTIME_METHODS):
         method_values = samples[method]
         mean = statistics.mean(method_values)
-        sample_std = (
-            statistics.stdev(method_values) if len(method_values) > 1 else 0.0
-        )
+        sample_std = statistics.stdev(method_values) if len(method_values) > 1 else 0.0
         maximum = max(method_values)
         quartiles = statistics.quantiles(method_values, n=4, method="inclusive")
         for percentile, style in zip(quartiles, (":", "--", ":")):

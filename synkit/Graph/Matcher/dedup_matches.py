@@ -8,12 +8,11 @@ Sig = Tuple[Tuple, Tuple]
 def _build_host_orbit_index(
     host_orbits: Iterable[FrozenSet[int]],
 ) -> Dict[int, int]:
-    """
-    Build host node -> host orbit index.
+    """Build host node -> host orbit index.
 
     :param host_orbits:
         Iterable of host orbits.
-    :returns:
+    :return:
         Dict mapping host node to orbit index.
     """
     host_orbit_index: Dict[int, int] = {}
@@ -26,8 +25,7 @@ def _build_host_orbit_index(
 def _make_host_repr(
     host_orbits: Optional[Iterable[FrozenSet[int]]],
 ) -> Callable[[int], int]:
-    """
-    Create a function that maps host node to its representative.
+    """Create a function that maps host node to its representative.
 
     If host orbits are provided, the representative is the host-orbit index.
     This is sound only for a one-node mapping; callers with joint mappings
@@ -35,7 +33,7 @@ def _make_host_repr(
 
     :param host_orbits:
         Host orbits or None.
-    :returns:
+    :return:
         Callable mapping host node -> representative integer.
     :raises ValueError:
         If host orbits are provided but a host node is not covered.
@@ -60,22 +58,21 @@ def _prepare_pattern_orbits(
     pattern_orbits: Optional[Iterable[FrozenSet[int]]],
     pattern_anchor: FrozenSet[int],
 ) -> Tuple[List[Tuple[int, ...]], Tuple[int, ...]]:
-    """
-    Prepare free pattern orbits and anchored nodes.
+    """Prepare free pattern orbits and anchored nodes.
 
     :param pattern_orbits:
         Pattern orbits or None.
     :param pattern_anchor:
         Anchor nodes of the pattern.
-    :returns:
+    :return:
         (free_pattern_orbits, anchored_pattern_nodes)
     """
     if pattern_orbits is None:
         return ([], ())
 
-    orbits_sorted = [tuple(sorted(o)) for o in pattern_orbits]
+    orbits_sorted = [tuple(sorted(o, key=repr)) for o in pattern_orbits]
     free_orbits = [o for o in orbits_sorted if not set(o) & pattern_anchor]
-    anchored_nodes = tuple(sorted(pattern_anchor))
+    anchored_nodes = tuple(sorted(pattern_anchor, key=repr))
     return (free_orbits, anchored_nodes)
 
 
@@ -84,8 +81,7 @@ def _free_sig_from_pattern_orbits(
     free_pattern_orbits: List[Tuple[int, ...]],
     host_repr: Callable[[int], int],
 ) -> Tuple:
-    """
-    Compute free signature using pattern orbits (partial-match safe).
+    """Compute free signature using pattern orbits (partial-match safe).
 
     Each orbit contributes a pair:
         (present_pattern_nodes_sorted, sorted(host_repr(images)))
@@ -96,7 +92,7 @@ def _free_sig_from_pattern_orbits(
         Pattern orbits disjoint from anchor.
     :param host_repr:
         Host representative function.
-    :returns:
+    :return:
         Free signature tuple.
     """
     if not free_pattern_orbits:
@@ -110,8 +106,8 @@ def _free_sig_from_pattern_orbits(
         if not present:
             continue
 
-        present_sorted = tuple(sorted(present))
-        image = tuple(sorted(host_repr(mapping[p]) for p in present_sorted))
+        present_sorted = tuple(sorted(present, key=repr))
+        image = tuple(sorted((host_repr(mapping[p]) for p in present_sorted), key=repr))
         parts.append((present_sorted, image))
 
     return tuple(parts)
@@ -121,25 +117,23 @@ def _free_sig_host_only(
     mapping: Dict[int, int],
     host_repr: Callable[[int], int],
 ) -> Tuple:
-    """
-    Compute free signature using host-only symmetry (mapping values only).
+    """Compute free signature using host-only symmetry (mapping values only).
 
     :param mapping:
         Pattern -> host mapping.
     :param host_repr:
         Host representative function.
-    :returns:
+    :return:
         Free signature tuple.
     """
-    return (tuple(sorted(host_repr(h) for h in mapping.values())),)
+    return (tuple(sorted((host_repr(h) for h in mapping.values()), key=repr)),)
 
 
 def _anchor_sig(
     mapping: Dict[int, int],
     anchored_pattern_nodes: Tuple[int, ...],
 ) -> Tuple:
-    """
-    Compute anchor signature: exact placement for anchored pattern nodes
+    """Compute anchor signature: exact placement for anchored pattern nodes
     that are present in the mapping.
 
     Returned as (pattern_node, host_node) pairs for stability.
@@ -148,7 +142,7 @@ def _anchor_sig(
         Pattern -> host mapping.
     :param anchored_pattern_nodes:
         Sorted anchored pattern nodes.
-    :returns:
+    :return:
         Anchor signature tuple.
     """
     if not anchored_pattern_nodes:
@@ -166,18 +160,17 @@ def deduplicate_matches_with_anchor(
     host_orbits: Optional[Iterable[FrozenSet[int]]] = None,
     host_anchor: Optional[FrozenSet[int]] = None,
 ) -> List[Dict[int, int]]:
-    """
-    Deduplicate pattern→host matches with optional anchor-aware symmetry
+    """Deduplicate pattern→host matches with optional anchor-aware symmetry
     breaking on both pattern and host sides.
 
-    This function supports *partial* mappings: a match may map only a subset
-    of pattern nodes. Orbit-based signatures are computed using only orbit
-    nodes present in each mapping.
+    This function supports *partial* mappings. Orbit partitions are sufficient
+    to quotient singleton mappings only; joint mappings are returned unchanged
+    because their equivalence requires complete automorphism group elements.
 
     Rules
     -----
     - Matches are always interpreted as **pattern → host** mappings.
-    - If ``pattern_orbits`` is provided:
+    - For singleton mappings, if ``pattern_orbits`` is provided:
         * Pattern nodes inside ``pattern_anchor`` are fixed when present.
         * Pattern orbits disjoint from the anchor are deduplicated up to
           permutation.
@@ -185,7 +178,8 @@ def deduplicate_matches_with_anchor(
         * A one-node mapping may be deduplicated by its host vertex orbit.
         * Joint mappings remain distinct because vertex orbits do not encode
           the simultaneous action of the host automorphism group.
-    - If **both orbit arguments are None**, return matches unchanged.
+    - Joint mappings, or mappings with both orbit arguments absent, are
+      returned unchanged.
 
     :param matches:
         Iterable of pattern → host mapping dictionaries.
@@ -198,13 +192,13 @@ def deduplicate_matches_with_anchor(
     :param host_anchor:
         Anchor component of the host graph (optional). Kept for API symmetry;
         host anchoring is handled indirectly by orbit collapsing.
-    :returns:
+    :return:
         Deduplicated list of pattern → host mappings, preserving input order.
     :raises ValueError:
         If ``host_orbits`` is provided but a mapping contains a host node not
         covered by any host orbit.
     """
-    # silence "unused" while keeping the API you asked for
+    # Reserved for API compatibility.
     _ = host_anchor
 
     if pattern_orbits is None and host_orbits is None:
@@ -213,6 +207,12 @@ def deduplicate_matches_with_anchor(
     pattern_anchor = pattern_anchor or frozenset()
     mappings = list(matches)
     joint_mapping = any(len(mapping) > 1 for mapping in mappings)
+    if joint_mapping:
+        # Vertex orbits describe where one vertex may move. They do not encode
+        # which simultaneous permutations across one or several orbits belong
+        # to the same group element. A joint quotient needs the complete group
+        # action, not only its orbit partition.
+        return mappings
     host_repr = _make_host_repr(None if joint_mapping else host_orbits)
 
     free_pattern_orbits, anchored_pattern_nodes = _prepare_pattern_orbits(

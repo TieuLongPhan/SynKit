@@ -19,25 +19,27 @@ from Experiment.Lewis.common import (  # noqa: E402
 )
 from Experiment.Lewis.rule_replay.benchmark import extract_rule  # noqa: E402
 from Experiment.Lewis.rule_replay import benchmark as replay_benchmark  # noqa: E402
-from synkit.Synthesis.Reactor.matching_policy import (  # noqa: E402
+from synkit.Synthesis.Reactor.matching.policy import (  # noqa: E402
     contextual_electron_pattern_graph,
     deduplicate_joint_rule_mappings,
 )
 from synkit.Graph.Matcher.subgraph_matcher import (  # noqa: E402
     electron_aware_node_match,
 )
-from synkit.Synthesis.Reactor.product_state import (  # noqa: E402
+from synkit.Synthesis.Reactor.core.product import (  # noqa: E402
     ProductStatePerceptionError,
     _electron_product_charge,
     _reperceive_product_kekule_phase,
 )
-from synkit.Synthesis.Reactor import product_state as product_state_module  # noqa: E402
-from synkit.Synthesis.Reactor.deduplication import (  # noqa: E402
+from synkit.Synthesis.Reactor.core import product as product_state_module  # noqa: E402
+from synkit.Synthesis.Reactor.output.deduplication import (  # noqa: E402
     _finalize_product_electron_fields,
+)
+from synkit.Synthesis.Reactor.output.structural import (  # noqa: E402
     _prepare_its_for_structural_cluster,
 )
 from synkit.IO.graph_to_mol import GraphToMol  # noqa: E402
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor  # noqa: E402
+from synkit.Synthesis.Reactor import SynReactor  # noqa: E402
 
 SPECTATOR_METAL = (
     "[NH3:1].[CH3:2][Cl:3].[O:4]=[Ag:5]>>" "[NH3+:1][CH3:2].[Cl-:3].[O:4]=[Ag:5]"
@@ -299,6 +301,23 @@ def test_dirty_aromatic_reperception_fails_closed(monkeypatch) -> None:
     assert call["prefer_kekule_order"] is False
 
 
+def test_dirty_aromatic_reperception_does_not_swallow_replay_timeout(
+    monkeypatch,
+) -> None:
+    product = nx.Graph()
+    product.add_nodes_from([(1, {"element": "C"}), (2, {"element": "C"})])
+    product.add_edge(1, 2, order=1.5)
+    its = product.copy()
+    its.graph["_product_kekule_phase_dirty"] = True
+
+    def timeout(*_args, **_kwargs):
+        raise replay_benchmark.CaseTimeout("alarm")
+
+    monkeypatch.setattr(GraphToMol, "graph_to_mol", timeout)
+    with pytest.raises(replay_benchmark.CaseTimeout):
+        _reperceive_product_kekule_phase(product, its)
+
+
 def test_unperceivable_candidate_is_rejected_without_losing_valid_ones(
     monkeypatch,
 ) -> None:
@@ -535,6 +554,33 @@ def test_replay_timeout_excludes_evidence_postprocessing(monkeypatch) -> None:
         "serialization",
         "canonicalization",
     }
+
+
+def test_replay_timeout_is_reported_at_the_replay_boundary(monkeypatch) -> None:
+    class FakeReactor:
+        mappings = [{1: 1}]
+
+        @property
+        def its_list(self):
+            raise replay_benchmark.CaseTimeout("alarm")
+
+    monkeypatch.setattr(replay_benchmark, "make_reactor", lambda *_args: FakeReactor())
+    monkeypatch.setattr(replay_benchmark, "_set_timeout", lambda _seconds: None)
+
+    result = replay_benchmark.replay_direction(
+        host="C",
+        expected="C>>C",
+        rule=object(),
+        representation="tuple",
+        direction="forward",
+        embedding_threshold=None,
+        case_timeout=30.0,
+    )
+
+    assert result["status"] == "ERROR"
+    assert result["stage"] == "rewriting"
+    assert result["error_type"] == "CaseTimeout"
+    assert result["mapping_count"] == 1
 
 
 def test_replay_runs_when_interval_timers_are_unavailable(monkeypatch) -> None:

@@ -21,17 +21,22 @@ def plot_recognition_coverage_curve(
     optional F2 scores annotated. Styled with Seaborn for enhanced visual
     appearance.
 
-    Parameters:
-    - data (dict): Nested dictionary containing the data for each radii,
-    formatted as shown in example.
-    - coverage_col (str): Key name for the coverage data in the dictionary.
-    - recognition_col (str): Key name for the recognition data in the dictionary.
-    - f2_score_col (str): Key name for the F2 score data in the dictionary.
-    - figsize (tuple): Figure size for the plot, default is (8, 6).
-    - show_f2 (bool): Whether to show F2 scores on the curve, default is True.
+    :param data: Nested dictionary containing the data for each radii,
+                 formatted as shown in example.
+    :type data: dict
+    :param coverage_col: Key name for the coverage data in the dictionary.
+    :type coverage_col: str
+    :param recognition_col: Key name for the recognition data in the dictionary.
+    :type recognition_col: str
+    :param f2_score_col: Key name for the F2 score data in the dictionary.
+    :type f2_score_col: str
+    :param figsize: Figure size for the plot, default is (8, 6).
+    :type figsize: tuple
+    :param show_f2: Whether to show F2 scores on the curve, default is True.
 
-    Example Data format:
-    {'radii_0': {'Novelty': 96.44, 'Coverage': 93.98, 'Recognition': 3.55, ...}}
+                    Example Data format:
+                    {'radii_0': {'Novelty': 96.44, 'Coverage': 93.98, 'Recognition': 3.55, ...}}
+    :type show_f2: bool
     """
     df = pd.DataFrame(data).T
 
@@ -69,16 +74,19 @@ def plot_f2_scores_line(data, figsize=(8, 6), show_f2=True, show_legend=True):
     """Plots F2 scores across different radii using a line plot, showing the
     trend of F2 score changes, and annotated with optional F2 scores.
 
-    Parameters:
-    - data (dict): Dictionary containing nested dictionaries with 'F2_score'
-    and possibly other metrics.
-    - figsize (tuple): Figure size for the plot, default is (8, 6).
-    - show_f2 (bool): Whether to show F2 scores on the curve, default is True.
-    - show_legend (bool): Whether to show the legend on the plot, default is True.
+    :param data: Dictionary containing nested dictionaries with 'F2_score'
+                 and possibly other metrics.
+    :type data: dict
+    :param figsize: Figure size for the plot, default is (8, 6).
+    :type figsize: tuple
+    :param show_f2: Whether to show F2 scores on the curve, default is True.
+    :type show_f2: bool
+    :param show_legend: Whether to show the legend on the plot, default is True.
 
-    Example Data format:
-    {'radii_0': {'Novelty': 96.44, 'Coverage': 93.98, 'Recognition': 3.55,
-    'F2_score': 0.15}, ...}
+                        Example Data format:
+                        {'radii_0': {'Novelty': 96.44, 'Coverage': 93.98, 'Recognition': 3.55,
+                        'F2_score': 0.15}, ...}
+    :type show_legend: bool
     """
     # Convert the nested dictionary into a DataFrame and prepare for plotting
     df = pd.DataFrame(data).T

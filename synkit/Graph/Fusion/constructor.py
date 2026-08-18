@@ -456,7 +456,28 @@ def _merge_node_attributes(
     else:
         preferred = forward
     merged = copy.deepcopy(dict(preferred))
+    wildcard_only_keys = {
+        "wildcard_role",
+        "owner",
+        "elements",
+        "charges",
+        "radicals",
+        "bond_orders",
+        "side",
+        "capacity",
+        "resource_budget",
+        "stereo_slot",
+        "virtual_kind",
+        "mapped_identity",
+        "materialization",
+    }
+    resolving_to_concrete = forward_wc != backward_wc
     for key, value in backward.items():
+        # The constraint is retained in the interface/provenance proof.  Once
+        # its wildcard node is identified with a concrete atom, wildcard-only
+        # metadata must not leak onto that concrete quotient node.
+        if resolving_to_concrete and key in wildcard_only_keys:
+            continue
         merged.setdefault(key, copy.deepcopy(value))
     return merged
 

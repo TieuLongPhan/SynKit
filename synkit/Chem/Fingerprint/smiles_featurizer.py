@@ -58,7 +58,7 @@ class SmilesFeaturizer:
 
         :param smiles: The SMILES string to convert.
         :type smiles: str
-        :returns: RDKit Mol object corresponding to the SMILES.
+        :return: RDKit Mol object corresponding to the SMILES.
         :rtype: Chem.Mol
         :raises ValueError: If the SMILES string is invalid.
         """
@@ -73,7 +73,7 @@ class SmilesFeaturizer:
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
-        :returns: MACCS keys fingerprint bit vector.
+        :return: MACCS keys fingerprint bit vector.
         :rtype: ExplicitBitVect
         """
         return MACCSkeys.GenMACCSKeys(mol)
@@ -86,7 +86,7 @@ class SmilesFeaturizer:
         :type mol: Chem.Mol
         :param nBits: Length of the fingerprint vector.
         :type nBits: int
-        :returns: Avalon fingerprint bit vector.
+        :return: Avalon fingerprint bit vector.
         :rtype: ExplicitBitVect
         """
         return fpAvalon.GetAvalonFP(mol, nBits)
@@ -106,7 +106,7 @@ class SmilesFeaturizer:
         :param useFeatures: If True, generate a Feature‑Class
             fingerprint (FCFP).
         :type useFeatures: bool
-        :returns: Morgan fingerprint bit vector.
+        :return: Morgan fingerprint bit vector.
         :rtype: ExplicitBitVect
         """
         return AllChem.GetMorganFingerprintAsBitVect(
@@ -127,7 +127,7 @@ class SmilesFeaturizer:
         :type fpSize: int
         :param nBitsPerHash: Bits per hash for path hashing.
         :type nBitsPerHash: int
-        :returns: RDKit topological fingerprint bit vector.
+        :return: RDKit topological fingerprint bit vector.
         :rtype: ExplicitBitVect
         """
         return Chem.RDKFingerprint(
@@ -140,7 +140,7 @@ class SmilesFeaturizer:
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
-        :returns: Atom Pair fingerprint as an integer vector.
+        :return: Atom Pair fingerprint as an integer vector.
         :rtype: ExplicitBitVect
         """
         return Pairs.GetAtomPairFingerprint(mol)
@@ -151,7 +151,7 @@ class SmilesFeaturizer:
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
-        :returns: Torsion fingerprint as an integer vector.
+        :return: Torsion fingerprint as an integer vector.
         :rtype: ExplicitBitVect
         """
         return Torsions.GetTopologicalTorsionFingerprintAsIntVect(mol)
@@ -162,7 +162,7 @@ class SmilesFeaturizer:
 
         :param mol: RDKit Mol object.
         :type mol: Chem.Mol
-        :returns: 2D pharmacophore fingerprint bit vector.
+        :return: 2D pharmacophore fingerprint bit vector.
         :rtype: ExplicitBitVect
         """
         return Generate.Gen2DFingerprint(mol, Gobbi_Pharm2D.factory)
@@ -190,7 +190,7 @@ class SmilesFeaturizer:
                        - `radius` for ECFP/FCFP
                        - `maxPath`, `fpSize`, `nBitsPerHash` for RDKit FP
         :type kwargs: dict
-        :returns: Fingerprint as a NumPy array (if `convert_to_array`) or RDKit bit vector.
+        :return: Fingerprint as a NumPy array (if `convert_to_array`) or RDKit bit vector.
         :rtype: np.ndarray or ExplicitBitVect
         :raises ValueError: If `fingerprint_type` is unsupported.
         """
@@ -240,7 +240,7 @@ class SmilesFeaturizer:
     def __str__(self) -> str:
         """Short description of the featurizer.
 
-        :returns: Class name.
+        :return: Class name.
         :rtype: str
         """
         return "<SmilesFeaturizer>"
@@ -248,7 +248,7 @@ class SmilesFeaturizer:
     def help(self) -> None:
         """Print supported fingerprint types and usage summary.
 
-        :returns: None
+        :return: None
         :rtype: NoneType
         """
         print("SmilesFeaturizer supports the following fingerprint types:")

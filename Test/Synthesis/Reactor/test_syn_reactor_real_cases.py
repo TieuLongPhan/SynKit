@@ -7,7 +7,7 @@ from rdkit import Chem
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.IO import load_database
 from synkit.IO.chem_converter import detect_its_format, rsmi_to_its
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 
 class TestSynReactorRealCases(unittest.TestCase):

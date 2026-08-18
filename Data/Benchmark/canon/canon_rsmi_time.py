@@ -19,23 +19,18 @@ def benchmark_smart_canonicalisation(
     smart_key: str = "smart",
     node_attrs: List[str] = ["element", "aromatic", "charge", "hcount", "neighbors"],
 ) -> Dict[str, List[float]]:
-    """
-    Benchmark per-record canonicalisation times for various backends.
+    """Benchmark per-record canonicalisation times for various backends.
 
-    Parameters
-    ----------
-    records : List[Dict[str, Any]]
-        Each dict must contain the SMART(SMILES/SMARTS) under `smart_key`.
-    smart_key : str
-        Key in each dict for the string to canonicalise.
-    node_attrs : List[str]
-        Node-attribute keys for CanonRSMI.
+    :param records: Each dict must contain the SMART(SMILES/SMARTS) under `smart_key`.
+    :type records: List[Dict[str, Any]]
+    :param smart_key: Key in each dict for the string to canonicalise.
+    :type smart_key: str
+    :param node_attrs: Node-attribute keys for CanonRSMI.
+    :type node_attrs: List[str]
 
-    Returns
-    -------
-    Dict[str, List[float]]
-        Mapping from backend labels ('generic', 'wl_1'…'wl_3', 'morgan_1'…'morgan_3')
-        to a list of processing times (seconds) for each record.
+    :return: Mapping from backend labels ('generic', 'wl_1'…'wl_3', 'morgan_1'…'morgan_3')
+              to a list of processing times (seconds) for each record.
+    :rtype: Dict[str, List[float]]
     """
     df = pd.DataFrame(records)
 

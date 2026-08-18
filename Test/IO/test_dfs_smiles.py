@@ -96,7 +96,7 @@ class TestDFSSmiles(unittest.TestCase):
         dfs = "[H]1[N]2([H]4)[]3.[H]5"
         s = dfs_to_smiles(dfs, keep_map=False)
         self.assertNotIn(":", s)
-        # make sure wildcard present but unmapped
+        # The wildcard remains present but unmapped.
         self.assertIn("[*]", s)
 
     def test_multidigit_maps(self):

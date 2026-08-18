@@ -1,6 +1,98 @@
 Changelog
 =========
 
+.. _implementation-plan:
+
+Implementation plan
+-------------------
+
+.. list-table:: Planned production releases
+   :header-rows: 1
+   :widths: 14 18 68
+
+   * - Release
+     - Status
+     - Primary outcome
+   * - ``1.7.0``
+     - Planned
+     - Production molecular stereochemistry.
+   * - ``1.8.0``
+     - Planned
+     - Complete, reproducible, and efficient CRN exploration.
+   * - ``1.9.0``
+     - Planned
+     - Stable mechanism trajectory graph model and interchange.
+   * - ``2.0.0``
+     - Planned
+     - Unified stereo-aware reaction, rewriting, and verification APIs.
+
+Unreleased
+----------
+
+**CRN — correctness**
+
+- Replaced the float-kernel basis behind ``integer_conservation_laws`` with an
+  exact integer basis of ``ker(S^T)`` computed by rational row reduction. The
+  previous implementation returned vectors that were not conservation laws at
+  all on networks such as the two-site phosphorylation cycle.
+- Added ``conserved_moieties`` for the non-negative, inclusion-minimal
+  conservation laws — the moiety pools with a chemical reading.
+- Fixed ``CRNVis``: its default palette named a palette that does not exist, so
+  constructing it with defaults always raised, and every domain layout rejected
+  the keyword arguments ``compute_layout`` passes, so no CRN could be drawn.
+- Made ``synkit.CRN.Visualize.validation.node_sort_key`` recognise reaction
+  nodes through the shared node-kind vocabulary, so ``kind="reaction"`` and
+  ``kind="rule"`` graphs draw identically.
+- Made node ordering natural (digit-aware), so ``r_2`` precedes ``r_10`` and a
+  graph round-trip no longer permutes a network's reactions.
+
+**CRN — new capabilities**
+
+- Added ``synkit.CRN.Props.deficiency``: complexes, linkage classes, strong and
+  terminal strong linkage classes, weak reversibility, reversibility,
+  deficiency, per-linkage-class deficiencies, and the Deficiency Zero and
+  Deficiency One theorems. Ranks are exact over rationals.
+- Added ``synkit.CRN.IO``: self-contained SBML Level 3 Version 2 import and
+  export, for interoperability with ``crnpy``, CRNT4SBML, CoNtRol and COPASI.
+  No ``libsbml`` installation is required.
+- Added ``synkit.CRN.Query.to_syncrn``: build a ``SynCRN`` directly from KEGG
+  equations or a KEGG module, with reversible-equation expansion and optional
+  currency-metabolite removal.
+- Added ``synkit.CRN.Benchmark``: a validation set with independent
+  cross-checks, a scaling benchmark, and a reproducible KEGG case study over
+  four cached metabolic modules. ``Experiment/CRN/run_all.py`` regenerates
+  every reported result.
+
+**CRN — API**
+
+- ``SynCRN.from_reaction_strings`` now mints the same prefixed ids as
+  ``from_digraph`` (``s_1`` / ``r_1`` / ``rule_1``). The legacy shared-namespace
+  scheme remains available as ``id_style="numeric"``. **Breaking** for code that
+  hard-coded the old numeric ids.
+- ``SynCRN.to_stoichiometric_matrices`` now returns ``numpy`` arrays instead of
+  nested Python lists, and accepts ``sparse=True`` for ``scipy.sparse`` output
+  and ``dtype=`` for the element type. **Breaking** for code relying on list
+  semantics.
+- Removed ``synkit.Vis.crn.CRNVisualizer``, which plotted a hypergraph object
+  that no longer exists. ``synkit.Vis.crn`` now re-exports the single CRN
+  visualizer from ``synkit.CRN.Visualize``.
+- Moved ``numpy`` from the ``all`` extra to the core dependencies, where the
+  code has always assumed it.
+- Split ``synkit/CRN/Structure/syncrn.py`` into ``_parse``, ``_graph_io`` and
+  ``_matrices`` alongside the ``SynCRN`` class.
+
+Version 1.6.2
+-------------
+
+- Made mechanism replay charges authoritative from committed electron-resource
+  deltas and separated exact Lewis-state validity from invariant-residual
+  ``DELTA_CONSISTENT`` verification.
+- Added explicit, atom-selected ``closed_shell_pair`` endpoint comparison with
+  provenance-bearing ``NORMALIZED`` certificates; strict resource comparison
+  remains the default.
+- Deprecated ``LWGEditor.matches_product`` as exact verification because it is
+  only a projected charge/canonical-SMILES match.
+
 Version 1.6.1
 -------------
 
@@ -66,9 +158,13 @@ Version 1.5.0
 
 **Synthesis**
 
-- Expanded ``RBLEngine`` with explicit ``fast_track``, ``early_stop``, and
-  ``full`` execution modes, pluggable exact or approximate MCS matching, and
-  wildcard-aware ITS fusion.
+- Expanded ``RBLEngine`` with explicit ``fast_track``, ``fast_fusion``,
+  ``early_stop``, ``full``, and proof-bearing ``verified`` execution modes,
+  pluggable exact or approximate MCS matching, and wildcard-aware ITS fusion.
+- Hardened fusion identity for isotopes and Lewis state, required
+  side-symmetric mapped atoms, and separated coarse matcher labels from the
+  stricter categorical-interface contract; hydrogen presentation remains an
+  explicit completed-graph proof obligation.
 
 **EF-SMIRKS conversion**
 

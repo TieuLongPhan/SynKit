@@ -30,11 +30,11 @@
    Center width controls
    ========================================================================= */
 .bd-page-width {
-  max-width: var(--sk-page-max-width) !important;        /* CHANGE HERE */
+  max-width: var(--sk-page-max-width) !important;
 }
 
 .bd-main .bd-content .bd-article-container {
-  max-width: var(--sk-article-max-width) !important;     /* CHANGE HERE */
+  max-width: var(--sk-article-max-width) !important;
 }
 
 .bd-content {
@@ -86,12 +86,8 @@
   display: none;
 }
 
-/* =========================================================================
-   IMPORTANT: Force LEFT sidebar to be a real left column on desktop
-   If your nav still "moves to top", this is the fix.
-   ========================================================================= */
+/* Keep the primary navigation in the left desktop column. */
 @media (min-width: 992px) {
-  /* show primary sidebar */
   .bd-sidebar-primary {
     display: block !important;
     visibility: visible !important;
@@ -103,7 +99,6 @@
     overflow: auto;
   }
 
-  /* ensure nav content inside is not collapsed away */
   .bd-sidebar-primary .sidebar-primary-items,
   .bd-sidebar-primary .bd-docs-nav,
   .bd-sidebar-primary nav {

@@ -8,7 +8,7 @@ from rdkit.Chem import rdCIPLabeler
 from synkit.Graph.ITS.its_reverter import ITSReverter
 from synkit.Graph.Stereo import StereoCoupling
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
 DATA_PATH = (

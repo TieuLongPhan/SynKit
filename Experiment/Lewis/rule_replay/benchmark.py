@@ -14,6 +14,7 @@ import sys
 import time
 from typing import Any
 
+import networkx as nx
 from rdkit import RDLogger
 
 HERE = Path(__file__).resolve().parent
@@ -29,11 +30,18 @@ from Experiment.Lewis.common import (  # noqa: E402
     read_json,
     sha256,
     timing_summary,
+    unique_standardized_reactions,
     write_json,
 )
-from synkit.IO.chem_converter import rsmi_to_its  # noqa: E402
+from synkit.Graph.ITS.its_reverter import ITSReverter  # noqa: E402
+from synkit.Graph.ITS.rc_extractor import RCExtractor  # noqa: E402
+from synkit.IO.chem_converter import (  # noqa: E402
+    DEFAULT_EDGE_ATTRS,
+    DEFAULT_NODE_ATTRS,
+    rsmi_to_its,
+)
 from synkit.Rule import SynRule  # noqa: E402
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor  # noqa: E402
+from synkit.Synthesis.Reactor import SynReactor  # noqa: E402
 
 REPRESENTATIONS = ("tuple", "typesGH")
 DIRECTIONS = ("forward", "backward")
@@ -50,8 +58,15 @@ HAS_FORMAT = "format" in inspect.signature(SynRule.__init__).parameters
 RESULTS_ROOT = HERE / "Data"
 
 
-class CaseTimeout(TimeoutError):
-    """Raised when one replay direction exceeds its wall-time ceiling."""
+class CaseTimeout(BaseException):
+    """Cancel a replay direction that exceeds its wall-time ceiling.
+
+    This deliberately does not inherit from :class:`Exception`.  Candidate-
+    level chemistry code uses broad ``except Exception`` handlers to reject
+    malformed products and continue with the remaining embeddings.  A replay
+    timeout is control flow rather than a malformed candidate and must cross
+    those recovery boundaries unchanged.
+    """
 
 
 def _raise_timeout(_signum, _frame) -> None:
@@ -60,8 +75,7 @@ def _raise_timeout(_signum, _frame) -> None:
 
 def _supports_interval_timer() -> bool:
     return all(
-        hasattr(signal, name)
-        for name in ("SIGALRM", "ITIMER_REAL", "setitimer")
+        hasattr(signal, name) for name in ("SIGALRM", "ITIMER_REAL", "setitimer")
     )
 
 
@@ -96,6 +110,17 @@ def parse_args() -> argparse.Namespace:
         "--embedding-threshold",
         type=int,
         help="Optional embedding cap (default: complete uncapped enumeration)",
+    )
+    parser.add_argument(
+        "--product-deduplication",
+        choices=("structural", "deferred"),
+        default="structural",
+        help=(
+            "Endpoint quotient policy: structural runs exact pre-rewrite "
+            "application and post-rewrite attributed-ITS quotients (default); "
+            "deferred is an output-set diagnostic and is excluded from the "
+            "primary efficiency comparison"
+        ),
     )
     parser.add_argument("--progress-every", type=int, default=500)
     parser.add_argument(
@@ -136,12 +161,69 @@ def extract_rule(reaction: str, representation: str) -> SynRule:
     return SynRule(graph, canon=False, implicit_h=True, format="tuple")
 
 
+def extract_rule_and_hosts(
+    reaction: str,
+    representation: str,
+) -> tuple[SynRule, dict[str, str | nx.Graph]]:
+    """Parse one reaction once and reuse its endpoint graphs as replay hosts."""
+    if representation == "typesGH":
+        reactants, products = reaction.split(">>", 1)
+        return extract_rule(reaction, representation), {
+            "forward": canonical_unmapped_side(reactants),
+            "backward": canonical_unmapped_side(products),
+        }
+
+    full = rsmi_to_its(
+        reaction,
+        core=False,
+        drop_non_aam=False,
+        use_index_as_atom_map=True,
+        format="tuple",
+    )
+    core = RCExtractor(
+        node_attrs=DEFAULT_NODE_ATTRS,
+        edge_attrs=DEFAULT_EDGE_ATTRS,
+        preserve_full_attrs=False,
+    ).extract(full, include_context_edges=False)
+    rule = SynRule(core, canon=False, implicit_h=True, format="tuple")
+    reverter = ITSReverter(full)
+    hosts = {
+        "forward": reverter.to_graph(
+            "reactant",
+            node_attrs=DEFAULT_NODE_ATTRS,
+            edge_attrs=DEFAULT_EDGE_ATTRS,
+        ),
+        "backward": reverter.to_graph(
+            "product",
+            node_attrs=DEFAULT_NODE_ATTRS,
+            edge_attrs=DEFAULT_EDGE_ATTRS,
+        ),
+    }
+    for direction, graph in hosts.items():
+        # The benchmark ignores stereo and AAM in both matching and endpoint
+        # identity. Relabel in insertion order because downstream RDKit
+        # re-perception returns consecutive node IDs in that same order.
+        # Retaining source atom-map IDs here could attach refreshed Kekule
+        # fields to the wrong bonds when map order and insertion order differ.
+        graph = nx.convert_node_labels_to_integers(
+            graph,
+            first_label=1,
+            ordering="default",
+        )
+        graph.graph.pop("stereo_descriptors", None)
+        for _, attrs in graph.nodes(data=True):
+            attrs["atom_map"] = 0
+        hosts[direction] = graph
+    return rule, hosts
+
+
 def make_reactor(
-    host: str,
+    host: str | nx.Graph,
     rule: SynRule,
     representation: str,
     direction: str,
     embedding_threshold: int | None,
+    product_deduplication: str = "structural",
 ) -> SynReactor:
     return SynReactor(
         host,
@@ -155,19 +237,22 @@ def make_reactor(
         template_format=representation,
         radical_policy="strict" if representation == "tuple" else "ignore",
         stereo_mode="ignore",
+        product_deduplication=product_deduplication,
     )
 
 
 def replay_direction(
     *,
-    host: str,
+    host: str | nx.Graph,
     expected: str,
     rule: SynRule,
     representation: str,
     direction: str,
     embedding_threshold: int | None,
     case_timeout: float | None,
+    product_deduplication: str = "structural",
     failure_sample_limit: int = 0,
+    standardized_reaction_sink: set[str] | None = None,
 ) -> dict[str, Any]:
     previous_handler = None
     if case_timeout is not None and _supports_interval_timer():
@@ -187,6 +272,7 @@ def replay_direction(
             representation,
             direction,
             embedding_threshold,
+            product_deduplication,
         )
         stage_seconds[stage] = time.perf_counter() - stage_started
         stage = "matching"
@@ -209,7 +295,9 @@ def replay_direction(
         stage_seconds[stage] = time.perf_counter() - stage_started
         stage = "canonicalization"
         stage_started = time.perf_counter()
-        generated = {canonical_unmapped_reaction(item) for item in reactions}
+        generated = unique_standardized_reactions(reactions)
+        if standardized_reaction_sink is not None:
+            standardized_reaction_sink.update(generated)
         stage_seconds[stage] = time.perf_counter() - stage_started
         recovered = expected in generated
         result = {
@@ -219,6 +307,8 @@ def replay_direction(
             "rewrite_count": len(rewritten),
             "serialized_count": len(reactions),
             "unique_reaction_count": len(generated),
+            "unique_standardized_reaction_count": len(generated),
+            "duplicate_reaction_count": len(reactions) - len(generated),
             "seconds": time.perf_counter() - started,
             "expansion_seconds": sum(
                 stage_seconds[name]
@@ -234,7 +324,7 @@ def replay_direction(
                 generated_sample_truncated=(len(ordered) > failure_sample_limit),
             )
         return result
-    except Exception as exc:
+    except (CaseTimeout, Exception) as exc:
         stage_seconds[stage] = time.perf_counter() - stage_started
         result = {
             "status": "ERROR",
@@ -264,6 +354,9 @@ def benchmark(
 ) -> dict[str, Any]:
     counts: Counter[str] = Counter()
     durations: dict[str, list[float]] = defaultdict(list)
+    global_unique: dict[str, set[str]] = {
+        direction: set() for direction in args.directions
+    }
     output = args.output_dir / f"{representation}-cases.jsonl.gz"
     wall_started = time.perf_counter()
     with open_text(output, "wt") as handle:
@@ -272,14 +365,9 @@ def benchmark(
             reaction = str(row["reaction"])
             case: dict[str, Any] = {"record_id": record_id, "directions": {}}
             try:
-                reactants, products = reaction.split(">>", 1)
                 expected = canonical_unmapped_reaction(reaction)
-                hosts = {
-                    "forward": canonical_unmapped_side(reactants),
-                    "backward": canonical_unmapped_side(products),
-                }
                 extraction_started = time.perf_counter()
-                rule = extract_rule(reaction, representation)
+                rule, hosts = extract_rule_and_hosts(reaction, representation)
                 case["extraction_seconds"] = time.perf_counter() - extraction_started
                 counts["rule_extracted"] += 1
             except Exception as exc:
@@ -301,11 +389,22 @@ def benchmark(
                     direction=direction,
                     embedding_threshold=args.embedding_threshold,
                     case_timeout=args.case_timeout,
+                    product_deduplication=args.product_deduplication,
+                    standardized_reaction_sink=global_unique[direction],
                 )
                 case["directions"][direction] = result
                 durations[direction].append(float(result["seconds"]))
                 counts[f"{direction}:attempted"] += 1
                 counts[f"{direction}:{result['status'].lower()}"] += 1
+                counts[f"{direction}:serialized"] += int(
+                    result.get("serialized_count", 0)
+                )
+                counts[f"{direction}:unique_standardized"] += int(
+                    result.get("unique_standardized_reaction_count", 0)
+                )
+                counts[f"{direction}:duplicates_removed"] += int(
+                    result.get("duplicate_reaction_count", 0)
+                )
                 if result.get("error_type") == "CaseTimeout":
                     counts[f"{direction}:timeout"] += 1
             case["status"] = (
@@ -338,10 +437,46 @@ def benchmark(
             "timeout_scope": "each expansion stage",
             "embedding_threshold": args.embedding_threshold,
             "automorphism": True,
+            "host_preparation": (
+                "reuse parsed reaction-side graphs with insertion-order node normalization"
+                if representation == "tuple"
+                else "canonical endpoint SMILES"
+            ),
+            "product_deduplication": args.product_deduplication,
+            "application_equivalence": (
+                "complete valid mappings modulo exact transition-rule "
+                "automorphisms; simple graphs retain every representative "
+                "until endpoint certification"
+                if args.product_deduplication == "structural"
+                else "not computed; diagnostic output-set semantics only"
+            ),
+            "product_equivalence": (
+                "injective canonical attributed-graph certificate after "
+                "electron-state finalization, with exact tree/VF2 fallback"
+                if args.product_deduplication == "structural"
+                else "not computed; diagnostic output-set semantics only"
+            ),
             "reaction_center_edge_policy": "changed",
             "recovery": "canonical full reaction without AAM or stereo",
+            "output_deduplication": (
+                "standardize both sides, canonicalize and sort components, "
+                "then remove exact duplicates"
+            ),
         },
         "counts": dict(sorted(counts.items())),
+        "output_population": {
+            direction: {
+                "serialized_total": counts[f"{direction}:serialized"],
+                "per_case_unique_standardized_total": counts[
+                    f"{direction}:unique_standardized"
+                ],
+                "duplicates_removed_within_cases": counts[
+                    f"{direction}:duplicates_removed"
+                ],
+                "global_unique_standardized": len(global_unique[direction]),
+            }
+            for direction in args.directions
+        },
         "timing_seconds": {
             "wall": time.perf_counter() - wall_started,
             "directions": {
@@ -371,6 +506,7 @@ def retained_results(
                 "selection": report["selection"],
                 "policy": report["policy"],
                 "counts": report["counts"],
+                "output_population": report.get("output_population", {}),
             }
         )
     return {

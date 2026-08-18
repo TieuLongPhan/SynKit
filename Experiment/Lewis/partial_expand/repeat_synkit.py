@@ -147,10 +147,7 @@ def run_repetitions(
         stem = f"synkit-run-{repetition:02d}"
         report = output_dir / f"{stem}.json"
         cases = output_dir / f"{stem}-cases.jsonl.gz"
-        timings = (
-            output_dir
-            / f"{suite}-synkit-run-{repetition:02d}-timings.json.gz"
-        )
+        timings = output_dir / f"{suite}-synkit-run-{repetition:02d}-timings.json.gz"
         if not force and any(path.exists() for path in (report, cases, timings)):
             raise FileExistsError(f"Refusing to overwrite {stem}; pass --force")
         command = [

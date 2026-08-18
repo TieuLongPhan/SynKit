@@ -126,6 +126,64 @@ def test_concrete_node_and_edge_corruption_fail_before_construction() -> None:
     assert edge_error.value.issues[0].code is FusionInterfaceIssueCode.EDGE_CONFLICT
 
 
+def test_interface_rejects_mismatched_radical_and_isotope_state() -> None:
+    forward, backward, mapping = _sources()
+    backward.nodes[10]["radical"] = 1
+    with pytest.raises(FusionInterfaceError) as radical_error:
+        FusionInterface.from_mapping(forward, backward, mapping)
+    assert radical_error.value.issues[0].code is FusionInterfaceIssueCode.NODE_CONFLICT
+
+    backward.nodes[10]["radical"] = 0
+    forward.nodes[1]["isotope"] = 12
+    backward.nodes[10]["isotope"] = 13
+    with pytest.raises(FusionInterfaceError) as isotope_error:
+        FusionInterface.from_mapping(forward, backward, mapping)
+    assert isotope_error.value.issues[0].code is FusionInterfaceIssueCode.NODE_CONFLICT
+
+
+def test_interface_rejects_conflicting_effective_hydrogen_counts() -> None:
+    forward = nx.Graph()
+    forward.add_node(
+        1,
+        element="C",
+        charge=0,
+        radical=0,
+        aromatic=False,
+        hcount=(1, 1),
+    )
+    backward = nx.Graph()
+    backward.add_node(
+        10,
+        element="C",
+        charge=0,
+        radical=0,
+        aromatic=False,
+        hcount=(2, 2),
+    )
+
+    with pytest.raises(FusionInterfaceError) as error:
+        FusionInterface.from_mapping(forward, backward, {1: 10})
+
+    assert error.value.issues[0].code is FusionInterfaceIssueCode.NODE_CONFLICT
+
+
+def test_interface_normalizes_explicit_hydrogen_neighbor_bookkeeping() -> None:
+    forward = nx.Graph()
+    forward.add_node(1, element="C", charge=0, radical=0, hcount=1)
+    backward = nx.Graph()
+    backward.add_node(
+        10,
+        element="C",
+        charge=0,
+        radical=0,
+        hcount=0,
+        neighbors=["H"],
+    )
+
+    interface = FusionInterface.from_mapping(forward, backward, {1: 10})
+    assert interface.interface_nodes == frozenset({0})
+
+
 def test_wildcard_roles_and_owner_incidence_cannot_be_conflated() -> None:
     forward = nx.Graph()
     forward.add_node(1, element="*", wildcard_role="attachment_port", owner=2)
@@ -204,6 +262,78 @@ def test_wildcard_to_concrete_resolution_checks_chemical_domain(
         assert error.value.issues[0].code is (
             FusionInterfaceIssueCode.WILDCARD_CONFLICT
         )
+
+
+def test_wildcard_to_concrete_resolution_checks_bond_resource_contract() -> None:
+    forward = nx.Graph()
+    forward.add_node(
+        1,
+        element="*",
+        wildcard_role=WildcardRole.ATTACHMENT_PORT.value,
+        owner=2,
+        bond_orders={2.0},
+        resource_budget=0,
+    )
+    forward.add_node(2, element="C", charge=0, radical=0)
+    forward.add_edge(1, 2, order=1.0)
+
+    backward = nx.Graph()
+    backward.add_node(10, element="O", charge=0, radical=0)
+    backward.add_node(20, element="C", charge=0, radical=0)
+    backward.add_edge(10, 20, order=1.0)
+
+    with pytest.raises(FusionInterfaceError) as error:
+        FusionInterface.from_mapping(forward, backward, {1: 10, 2: 20})
+
+    assert error.value.issues[0].code is (
+        FusionInterfaceIssueCode.WILDCARD_CONFLICT
+    )
+
+
+def test_wildcard_to_concrete_resolution_accepts_complete_contract() -> None:
+    forward = nx.Graph()
+    forward.add_node(
+        1,
+        element="*",
+        wildcard_role=WildcardRole.ATTACHMENT_PORT.value,
+        owner=2,
+        elements={"O"},
+        bond_orders={1.0},
+        capacity=1,
+        resource_budget=1,
+    )
+    forward.add_node(2, element="C", charge=0, radical=0)
+    forward.add_edge(1, 2, order=1.0)
+
+    backward = nx.Graph()
+    backward.add_node(10, element="O", charge=0, radical=0)
+    backward.add_node(20, element="C", charge=0, radical=0)
+    backward.add_edge(10, 20, order=1.0)
+
+    interface = FusionInterface.from_mapping(
+        forward,
+        backward,
+        {1: 10, 2: 20},
+    )
+    assert interface.substitutions[0].bond_orders == frozenset({1.0})
+
+
+def test_reverse_wildcard_resolution_does_not_taint_concrete_node() -> None:
+    forward = nx.Graph()
+    forward.add_node(1, element="C", charge=0, radical=0, side="concrete")
+    backward = nx.Graph()
+    backward.add_node(
+        10,
+        element="*",
+        wildcard_role=WildcardRole.RADICAL_COMPLETION.value,
+    )
+
+    interface = FusionInterface.from_mapping(forward, backward, {1: 10})
+    result = construct_pushout(forward, backward, interface)
+
+    assert result.graph.nodes[1]["element"] == "C"
+    assert result.graph.nodes[1]["side"] == "concrete"
+    assert "wildcard_role" not in result.graph.nodes[1]
 
 
 def test_direct_constructor_rechecks_interface_target_graphs() -> None:

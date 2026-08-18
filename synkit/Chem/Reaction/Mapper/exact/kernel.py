@@ -37,26 +37,24 @@ _MAX_CLOSED_ELEMENT_BLOCK = 4
 class Kernel:
     """The uncertain sub-problem extracted from a reaction.
 
-    Attributes
-    ----------
-    r_idx, p_idx : list[int]
-        Original reactant/product atom indices that remain uncertain.
-    r_colors, p_colors : list[int]
-        Atom type (atomic number) of each kernel atom; reactant atom
-        ``r_idx[a]`` may map to product atom ``p_idx[b]`` only if
-        ``r_colors[a] == p_colors[b]``.
-    fixed_mapping : dict[int, int]
-        Certain atoms: original reactant index -> original product index.
-    candidate_images : list[list[int]]
-        For each uncertain reactant atom in ``r_idx``, product atom indices
-        observed for that atom across the SLAP optima. The exact kernel solver
-        must stay inside these candidate sets; otherwise an omitted byproduct
-        padded with disconnected dummy atoms can create a huge artificial
-        same-element search space.
-    lgp : list
-        The original reactant/product graph pair (for adjacency look-ups).
-    binary : bool
-        Whether bond orders are binarised.
+    :ivar r_idx, p_idx: Original reactant/product atom indices that remain uncertain.
+    :vartype r_idx, p_idx: list[int]
+    :ivar r_colors, p_colors: Atom type (atomic number) of each kernel atom; reactant atom
+                              ``r_idx[a]`` may map to product atom ``p_idx[b]`` only if
+                              ``r_colors[a] == p_colors[b]``.
+    :vartype r_colors, p_colors: list[int]
+    :ivar fixed_mapping: Certain atoms: original reactant index -> original product index.
+    :vartype fixed_mapping: dict[int, int]
+    :ivar candidate_images: For each uncertain reactant atom in ``r_idx``, product atom indices
+                            observed for that atom across the SLAP optima. The exact kernel solver
+                            must stay inside these candidate sets; otherwise an omitted byproduct
+                            padded with disconnected dummy atoms can create a huge artificial
+                            same-element search space.
+    :vartype candidate_images: list[list[int]]
+    :ivar lgp: The original reactant/product graph pair (for adjacency look-ups).
+    :vartype lgp: list
+    :ivar binary: Whether bond orders are binarised.
+    :vartype binary: bool
     """
 
     r_idx: List[int]
@@ -89,19 +87,15 @@ def _atomic_numbers(lg):
 def extract_kernel(results, lgp, binary=False):
     """Extract the uncertainty-region kernel from SLAP's optimal mappings.
 
-    Parameters
-    ----------
-    results : list[dict]
-        Optimal results from :meth:`GraphMatcher.get_maps`; each must carry a
-        fully resolved ``"lgp"`` graph pair.
-    lgp : list[LabeledGraph]
-        The original reactant/product graph pair (equal atom counts).
-    binary : bool, optional
-        Whether bond orders are binarised (recorded on the kernel).
+    :param results: Optimal results from :meth:`GraphMatcher.get_maps`; each must carry a
+                    fully resolved ``"lgp"`` graph pair.
+    :type results: list[dict]
+    :param lgp: The original reactant/product graph pair (equal atom counts).
+    :type lgp: list[LabeledGraph]
+    :param binary: Whether bond orders are binarised (recorded on the kernel).
+    :type binary: bool, optional
 
-    Returns
-    -------
-    Kernel
+    :rtype: Kernel
     """
     n = len(lgp[0].labels)
     mappings = [recover_mapping(r["lgp"]) for r in results]
@@ -243,17 +237,14 @@ def _close_small_element_blocks(r_idx, p_idx, candidate_images, elements_r, elem
 def apply_kernel_solution(kernel, sub_mapping):
     """Combine a kernel sub-mapping with the certain mapping into a full mapping.
 
-    Parameters
-    ----------
-    kernel : Kernel
-    sub_mapping : dict[int, int] or sequence[int]
-        Mapping over kernel positions: either a dict ``a -> b`` (positions into
-        ``kernel.r_idx`` / ``kernel.p_idx``) or a sequence ``sub_mapping[a] = b``.
+    :param kernel:
+    :type kernel: Kernel
+    :param sub_mapping: Mapping over kernel positions: either a dict ``a -> b`` (positions into
+                        ``kernel.r_idx`` / ``kernel.p_idx``) or a sequence ``sub_mapping[a] = b``.
+    :type sub_mapping: dict[int, int] or sequence[int]
 
-    Returns
-    -------
-    list[int]
-        ``mapping[i] = p`` over original atom indices.
+    :return: ``mapping[i] = p`` over original atom indices.
+    :rtype: list[int]
     """
     n = len(kernel.lgp[0].labels)
     mapping = [-1] * n

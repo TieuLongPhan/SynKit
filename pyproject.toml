@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.6.1"
+version = "1.6.2"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,7 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
+  "numpy>=2.2.0",
   "scikit-learn>=1.4.0",
   "pandas>=1.5.3",
   "rdkit>=2025.3.1",
@@ -39,7 +40,7 @@ docs = [
   "pydata-sphinx-theme",
   "sphinx-rtd-theme",
 
-  # Your enabled extensions
+  # Sphinx extensions
   "sphinxcontrib-bibtex",
   "sphinx-design",
   "sphinx-copybutton",
@@ -49,8 +50,7 @@ docs = [
   # (still requires the system `dot` binary to render diagrams)
   "graphviz",
 
-  # Nice-to-have for markdown in docs if you ever add .md pages
-  # (safe even if unused)
+  # Markdown source support
   "myst-parser",
 ]
 
@@ -63,12 +63,15 @@ documentation = "https://tieulongphan.github.io/SynKit/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["synkit"]
+core-metadata-version = "2.4"
 
 [tool.hatch.build.targets.wheel.force-include]
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
+"synkit/CRN/Benchmark/data/kegg_modules.json" = "synkit/CRN/Benchmark/data/kegg_modules.json"
 
 [tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
 include = [
   "/synkit",
   "/LICENSE",
@@ -80,3 +83,12 @@ include = [
 [tool.hatch.build.targets.sdist.force-include]
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
+"synkit/CRN/Benchmark/data/kegg_modules.json" = "synkit/CRN/Benchmark/data/kegg_modules.json"
+
+[tool.coverage.run]
+source = ["synkit"]
+
+[tool.coverage.report]
+fail_under = 70
+precision = 1
+show_missing = true

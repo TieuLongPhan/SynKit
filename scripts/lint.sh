@@ -1,19 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 PYTHON_BIN="${PYTHON:-python}"
 cd "${ROOT_DIR}"
-
 if [[ "$#" -gt 0 ]]; then
   paths=("$@")
 else
   paths=(synkit Test)
 fi
-
 "${PYTHON_BIN}" scripts/check_python_file_size.py
-
+"${PYTHON_BIN}" scripts/check_docstring_style.py
 flake8 "${paths[@]}" \
   --count \
   --max-complexity=13 \
@@ -21,7 +18,6 @@ flake8 "${paths[@]}" \
   --extend-ignore=E203 \
   --per-file-ignores="\
 __init__.py:F401,F403,\
-synkit/CRN/Visualize/crn_vis.py:F401,F821,\
 synkit/Chem/Reaction/explicit_h_audit.py:C901,\
 synkit/Chem/Reaction/Mapper/wl_mapper.py:C901,\
 synkit/Graph/FG/detector.py:C901,\
@@ -47,15 +43,12 @@ synkit/Rule/Apply/retro_reactor.py:C901,\
 synkit/Rule/Apply/syn_reactor.py:C901,\
 synkit/Rule/Apply/rule_apply.py:C901,\
 synkit/Synthesis/MSR/path_finder.py:C901,\
-synkit/Synthesis/Reactor/retro_reactor.py:C901,\
-synkit/Synthesis/Reactor/rbl_engine.py:C901,\
-synkit/Synthesis/Reactor/graph_rewrite.py:C901,\
-synkit/Synthesis/Reactor/reactor_matching.py:C901,\
-synkit/Synthesis/Reactor/reactor_stereo.py:C901,\
-synkit/Synthesis/Reactor/serialization.py:C901,\
-synkit/Synthesis/Reactor/syn_reactor.py:C901,\
-synkit/Synthesis/Reactor/reactor_engine.py:C901,\
-synkit/Vis/crn/visualizer.py:C901,\
+synkit/Synthesis/RBL/engine.py:C901,\
+synkit/Synthesis/Reactor/core/rewrite.py:C901,\
+synkit/Synthesis/Reactor/core/engine.py:C901,\
+synkit/Synthesis/Reactor/matching/mixin.py:C901,\
+synkit/Synthesis/Reactor/output/serialization.py:C901,\
+synkit/Synthesis/Reactor/stereo/mixin.py:C901,\
 synkit/Vis/reaction/rule.py:C901" \
   --exclude="\
 venv,\
@@ -68,6 +61,5 @@ debug/data,\
 dev,\
 docs,\
 doc,\
-synkit/CRN/dev_crn,\
 synkit/Graph/dev" \
   --statistics

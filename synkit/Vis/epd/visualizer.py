@@ -209,10 +209,7 @@ def _arrange_panels(
 class MechanismVisualizer:
     """Render chemist-oriented electron-pushing mechanism figures.
 
-    Parameters
-    ----------
-    atom_map_key:
-        Node attribute used to map atoms across reactant, ITS, and product.
+    :param atom_map_key: Node attribute used to map atoms across reactant, ITS, and product.
     """
 
     def __init__(self, atom_map_key: str = "atom_map") -> None:
@@ -301,63 +298,37 @@ class MechanismVisualizer:
     ):
         """Create a Reactant/Product/ITS trajectory figure.
 
-        Parameters
-        ----------
-        reactant_graph:
-            Reactant molecular graph.
-        transitions:
-            Transition sequence that defines electron flow.
-        its_graph:
-            ITS graph used as the right-hand panel and, by default, the master
-            reference layout.
-        product_graph:
-            Optional product graph used to infer ``(before, after)`` ITS labels
-            when ITS edge tuples are not directly stored.
-        title:
-            Figure title.
-        figsize:
-            Matplotlib figure size.
-        show_its:
-            Must be ``True`` for this visualizer.
-        reference_layout:
-            Either ``'its'`` or ``'reactant'``.
-        show_atom_map:
-            Whether to display compact atom-map badges.
-        step_labels:
-            Whether to label arrow steps.
-        gap:
-            Horizontal spacing between the two panels.
-        show_legend:
-            Whether to show the minimal legend below the figure.
-        fade_non_rc:
-            Fade non-reaction-center bonds to emphasize change.
-        use_rc_glow:
-            Add a soft halo around changed bonds.
-        show_all_its_labels:
-            Show pair labels on all ITS edges, not only changed ones.
-        show_its_node_changes:
-            Show compact charge/lone-pair changes next to ITS atoms.
-        show_its_bond_labels:
-            Show ``(before, after)`` labels on changed ITS bonds. Bond color
-            already communicates the change, so this is disabled by default
-            for cleaner report figures.
-        show_product:
-            When ``product_graph`` is provided, include a product panel.
-        show_step_table:
-            Show a compact typed-action key below the mechanism.
-        max_step_table_rows:
-            Maximum number of transition rows shown in the typed-action key.
-        molecule_edge_label_mode:
-            ``'none'`` for bond-order strokes only or ``'single'`` for the
-            old midpoint bond-symbol labels.
-        all_graphs:
-            Full list of graphs from the trajectory (reactant + one graph per
-            transition step).  Required when ``show_elementary_steps=True``.
-        show_elementary_steps:
-            When ``True``, render one panel per group of ``arrows_per_step``
-            transitions instead of the default Reactant + ITS layout.
-        arrows_per_step:
-            Number of elementary transitions to display per panel.
+        :param reactant_graph: Reactant molecular graph.
+        :param transitions: Transition sequence that defines electron flow.
+        :param its_graph: ITS graph used as the right-hand panel and, by default, the master
+                          reference layout.
+        :param product_graph: Optional product graph used to infer ``(before, after)`` ITS labels
+                              when ITS edge tuples are not directly stored.
+        :param title: Figure title.
+        :param figsize: Matplotlib figure size.
+        :param show_its: Must be ``True`` for this visualizer.
+        :param reference_layout: Either ``'its'`` or ``'reactant'``.
+        :param show_atom_map: Whether to display compact atom-map badges.
+        :param step_labels: Whether to label arrow steps.
+        :param gap: Horizontal spacing between the two panels.
+        :param show_legend: Whether to show the minimal legend below the figure.
+        :param fade_non_rc: Fade non-reaction-center bonds to emphasize change.
+        :param use_rc_glow: Add a soft halo around changed bonds.
+        :param show_all_its_labels: Show pair labels on all ITS edges, not only changed ones.
+        :param show_its_node_changes: Show compact charge/lone-pair changes next to ITS atoms.
+        :param show_its_bond_labels: Show ``(before, after)`` labels on changed ITS bonds. Bond color
+                                     already communicates the change, so this is disabled by default
+                                     for cleaner report figures.
+        :param show_product: When ``product_graph`` is provided, include a product panel.
+        :param show_step_table: Show a compact typed-action key below the mechanism.
+        :param max_step_table_rows: Maximum number of transition rows shown in the typed-action key.
+        :param molecule_edge_label_mode: ``'none'`` for bond-order strokes only or ``'single'`` for the
+                                         old midpoint bond-symbol labels.
+        :param all_graphs: Full list of graphs from the trajectory (reactant + one graph per
+                           transition step).  Required when ``show_elementary_steps=True``.
+        :param show_elementary_steps: When ``True``, render one panel per group of ``arrows_per_step``
+                                      transitions instead of the default Reactant + ITS layout.
+        :param arrows_per_step: Number of elementary transitions to display per panel.
         """
         transitions = transitions_from_epd(transitions)
 

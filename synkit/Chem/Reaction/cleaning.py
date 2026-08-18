@@ -4,15 +4,7 @@ from synkit.Chem.Reaction.balance_check import BalanceReactionCheck
 
 
 class Cleaning:
-    """Utilities for cleaning and filtering reaction SMILES lists.
-
-    Methods
-    -------
-    remove_duplicates(smiles_list)
-        Remove duplicate SMILES while preserving input order.
-    clean_smiles(smiles_list)
-        Standardize, balance‑check, and deduplicate a list of reaction SMILES.
-    """
+    """Utilities for cleaning and filtering reaction SMILES lists."""
 
     def __init__(self) -> None:
         """Initialize the Cleaning helper.
@@ -27,7 +19,7 @@ class Cleaning:
 
         :param smiles_list: List of reaction SMILES strings.
         :type smiles_list: List[str]
-        :returns: List of unique SMILES in original order.
+        :return: List of unique SMILES in original order.
         :rtype: List[str]
         """
         seen = set()
@@ -44,7 +36,7 @@ class Cleaning:
 
         :param smiles_list: List of reaction SMILES strings to clean.
         :type smiles_list: List[str]
-        :returns: Cleaned list of standardized, balanced, unique SMILES.
+        :return: Cleaned list of standardized, balanced, unique SMILES.
         :rtype: List[str]
         """
         standardizer = Standardize()

@@ -4,14 +4,13 @@ from typing import List, Dict, Tuple, Iterator, Union
 
 
 class SMARTSExpander:
-    """
-    Efficiently enumerate all valid reaction SMARTS by expanding atom-list
+    """Efficiently enumerate all valid reaction SMARTS by expanding atom-list
     placeholders like [C,N,O,P,S:9], ensuring that each atom-map uses the same
     element everywhere it appears (on both sides of a reaction).
 
     :param smarts: SMARTS string, possibly containing one or more atom-list placeholders.
     :type smarts: str
-    :returns: Expanded SMARTS strings without atom-list placeholders.
+    :return: Expanded SMARTS strings without atom-list placeholders.
     :rtype: List[str]
     :raises ValueError: If no valid expansions exist due to incompatible element lists.
 
@@ -39,12 +38,11 @@ class SMARTSExpander:
 
     @staticmethod
     def _extract_map_to_elements(matches: List[re.Match]) -> Dict[str, List[str]]:
-        """
-        Build a mapping from atom-map to the intersection of allowed elements.
+        """Build a mapping from atom-map to the intersection of allowed elements.
 
         :param matches: List of regex match objects for placeholders.
         :type matches: List[re.Match]
-        :returns: Dictionary mapping ":map" to sorted list of shared elements.
+        :return: Dictionary mapping ":map" to sorted list of shared elements.
         :rtype: Dict[str, List[str]]
         """
         amap2set: Dict[str, set] = {}
@@ -64,14 +62,13 @@ class SMARTSExpander:
     def _build_template(
         smarts: str, matches: List[re.Match]
     ) -> Tuple[List[Union[str, str]], List[str]]:
-        """
-        Build a list of string segments and placeholders for reconstruction.
+        """Build a list of string segments and placeholders for reconstruction.
 
         :param smarts: Original SMARTS string.
         :type smarts: str
         :param matches: Regex matches for placeholders.
         :type matches: List[re.Match]
-        :returns: Tuple of list of segments and placeholder order.
+        :return: Tuple of list of segments and placeholder order.
         :rtype: Tuple[List[Union[str, str]], List[str]]
         """
         segments: List[Union[str, str]] = []
@@ -90,12 +87,11 @@ class SMARTSExpander:
 
     @classmethod
     def expand_iter(cls, smarts: str) -> Iterator[str]:
-        """
-        Yield expanded SMARTS strings lazily.
+        """Yield expanded SMARTS strings lazily.
 
         :param smarts: SMARTS string with placeholders.
         :type smarts: str
-        :yields: One expanded SMARTS string at a time.
+        :yield: One expanded SMARTS string at a time.
         :rtype: Iterator[str]
 
         :raises ValueError: If no valid expansions due to incompatible lists.
@@ -122,12 +118,11 @@ class SMARTSExpander:
 
     @classmethod
     def expand(cls, smarts: str) -> List[str]:
-        """
-        Return a list of all expanded SMARTS.
+        """Return a list of all expanded SMARTS.
 
         :param smarts: SMARTS string with placeholders.
         :type smarts: str
-        :returns: List of expanded SMARTS strings.
+        :return: List of expanded SMARTS strings.
         :rtype: List[str]
 
         :raises ValueError: If no valid expansions exist.

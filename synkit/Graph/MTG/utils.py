@@ -35,8 +35,7 @@ def _extract_leaf_candidates(orig_th: Tuple[Any, ...]) -> Tuple[TypesGHTuple, ..
 
 
 def normalize_hcount_and_typesGH(G: GraphType) -> GraphType:
-    """
-    Return a fresh copy of G where:
+    """Return a fresh copy of G where:
       * each node's `hcount` attribute is set to 0
       * each node's `typesGH` is processed as follows:
           1. Flatten one level so that nested tuples-of-tuples are expanded.
@@ -47,9 +46,9 @@ def normalize_hcount_and_typesGH(G: GraphType) -> GraphType:
 
     :param G: input NetworkX graph
     :type G: nx.Graph or nx.DiGraph or nx.MultiGraph or nx.MultiDiGraph
-    :returns: a new graph with normalized hcount and typesGH
+    :return: a new graph with normalized hcount and typesGH
     :rtype: same type as G
-    :raises: TypeError if G is not a supported NetworkX graph or if typesGH is malformed.
+    :raises TypeError: If G is not a supported NetworkX graph or if typesGH is malformed.
     """
     if not isinstance(G, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)):
         raise TypeError(f"Expected a NetworkX graph, got {type(G)!r}")
@@ -114,21 +113,21 @@ def normalize_hcount_and_typesGH(G: GraphType) -> GraphType:
 def extract_order_norm(
     order_sequence: Sequence[Union[OrderPair, MissingOrder]],
 ) -> Optional[OrderPair]:
-    """
-    Given a sequence of order tuples and/or placeholders (MissingOrder),
-    return the normalized bond order as a 2-tuple:
-      - left: the first tuple element 'a' in the sequence where not both parts are sets
-      - right: the second tuple element 'b' in the sequence where not both parts are sets, scanning from the end
+    """Extract a normalized bond-order pair from orders and placeholders.
+
+    The left value is taken from the first non-placeholder pair. The right value
+    is taken from the last non-placeholder pair.
 
     The input sequence must have length >= 2.
 
-    :param order_sequence: A sequence of order tuples or placeholders
+    :param order_sequence: Sequence of order tuples or placeholders.
     :type order_sequence: Sequence[tuple[float, float]] or Sequence[MissingOrder]
-    :returns: A 2-tuple (left, right) if found; otherwise None
+    :return: Pair ``(left, right)`` if found; otherwise ``None``.
     :rtype: tuple[float, float] or None
-    :raises ValueError: If sequence length is less than 2
+    :raises ValueError: If the sequence contains fewer than two items.
 
-    :example:
+    .. rubric:: Examples
+
     >>> seq = [({1}, {2}), (3.0, 4.0), ({5}, {6}), (7.0, 8.0)]
     >>> extract_order_norm(seq)
     (3.0, 8.0)
@@ -156,19 +155,19 @@ def extract_order_norm(
 
 
 def normalize_order(G: nx.Graph) -> nx.Graph:
-    """
-    Return a copy of the graph with each edge's 'order' attribute normalized.
+    """Return a copy of the graph with each edge's 'order' attribute normalized.
     If an edge has an 'order' attribute that is a sequence of length >= 2,
     it is replaced by the 2-tuple returned by :func:`extract_order_norm`,
     if that function returns a non-None result.
 
     :param G: Input NetworkX graph
     :type G: nx.Graph, nx.DiGraph, nx.MultiGraph, or nx.MultiDiGraph
-    :returns: A new graph of the same type with normalized edge 'order'
+    :return: A new graph of the same type with normalized edge 'order'
     :rtype: same as G
     :raises TypeError: If G is not a NetworkX graph
 
-    :example:
+    .. rubric:: Examples
+
     >>> import networkx as nx
     >>> G = nx.Graph()
     >>> G.add_edge(1, 2, order=[(1,2), ({3},{4}), (5,6)])
@@ -258,8 +257,7 @@ def normalize_order(G: nx.Graph) -> nx.Graph:
 
 
 def label_mtg_edges(G: nx.Graph, inplace: bool = False) -> nx.Graph:
-    """
-    Label each edge in the MTG graph with a boolean 'is_mtg' attribute based on two criteria:
+    """Label each edge in the MTG graph with a boolean 'is_mtg' attribute based on two criteria:
     1. There are at least two steps where the standard order (order[0] - order[1]) is non-zero.
     2. The sum of all non-None standard orders is zero.
 
@@ -267,11 +265,12 @@ def label_mtg_edges(G: nx.Graph, inplace: bool = False) -> nx.Graph:
     :type G: nx.Graph or nx.DiGraph
     :param inplace: If True, modify G in place; otherwise work on a copy
     :type inplace: bool
-    :returns: Graph with 'is_mtg' boolean attribute on each edge
+    :return: Graph with 'is_mtg' boolean attribute on each edge
     :rtype: same type as G
     :raises TypeError: If G is not a NetworkX Graph
 
-    :example:
+    .. rubric:: Examples
+
     >>> import networkx as nx
     >>> G = nx.Graph()
     >>> # Single change only -> less than 2 non-zero steps => False
@@ -309,8 +308,7 @@ def label_mtg_edges(G: nx.Graph, inplace: bool = False) -> nx.Graph:
 
 
 def compute_standard_order(G: nx.Graph, inplace: bool = False) -> nx.Graph:
-    """
-    Compute and assign the 'standard_order' attribute for each edge in the graph.
+    """Compute and assign the 'standard_order' attribute for each edge in the graph.
     'standard_order' is defined as the difference order[0] - order[1]
     for edges whose 'order' attribute is a 2-tuple of numeric values.
 
@@ -318,11 +316,12 @@ def compute_standard_order(G: nx.Graph, inplace: bool = False) -> nx.Graph:
     :type G: nx.Graph, nx.DiGraph, nx.MultiGraph, or nx.MultiDiGraph
     :param inplace: If True, modify G in-place; otherwise operate on a copy
     :type inplace: bool
-    :returns: Graph with 'standard_order' attributes set
+    :return: Graph with 'standard_order' attributes set
     :rtype: same type as G
     :raises TypeError: If G is not a NetworkX graph
 
-    :example:
+    .. rubric:: Examples
+
     >>> import networkx as nx
     >>> G = nx.Graph()
     >>> G.add_edge(7, 3, order=(1.0, 0))

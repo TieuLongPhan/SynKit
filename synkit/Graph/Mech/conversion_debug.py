@@ -33,7 +33,7 @@ def debug_arrow_bond_orders(
     :type remove_non_arrow_maps: bool
     :param strict_bond_lookup: Whether missing typed bond lookups should raise.
     :type strict_bond_lookup: bool
-    :returns: ``None``.
+    :return: ``None``.
     :rtype: None
     """
     its, expanded_rsmi, rsmi_for_its, diagnostics = build_its_from_rsmi(
@@ -118,7 +118,7 @@ def debug_record(
     :type arrow_key: str
     :param orbital_key: Key containing optional orbital classification metadata.
     :type orbital_key: str
-    :returns: Converted record.
+    :return: Converted record.
     :rtype: dict[str, Any]
     """
     from pprint import pprint
@@ -193,7 +193,7 @@ def check_typed_conversion_quality(results: list[dict[str, Any]]) -> dict[str, A
 
     :param results: Conversion results to inspect.
     :type results: list[dict[str, Any]]
-    :returns: Error and untyped-step diagnostics.
+    :return: Error and untyped-step diagnostics.
     :rtype: dict[str, Any]
     """
     errors = []

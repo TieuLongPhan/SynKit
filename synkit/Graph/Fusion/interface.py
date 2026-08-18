@@ -16,13 +16,16 @@ from synkit.Graph.Morphism import (
 )
 from synkit.Graph.Morphism import StereoEffect
 
-from .identity import FUSION_WL_ITERATIONS
+from .identity import FUSION_NODE_IDENTITY_KEYS, FUSION_WL_ITERATIONS
 
-DEFAULT_INTERFACE_NODE_KEYS = (
-    "element",
-    "aromatic",
-    "charge",
-    "radical",
+# A proof-bearing interface must compare the same chemical/Lewis state used by
+# exact candidate identity.  Matcher attributes remain independently
+# configurable and may be deliberately coarser for candidate discovery.
+# ``hcount`` is excluded at the interface because an overlap may resolve an
+# implicit hydrogen against an explicit completion port.  The completed graph
+# identity still checks the effective hydrogen inventory after substitution.
+DEFAULT_INTERFACE_NODE_KEYS = tuple(
+    key for key in FUSION_NODE_IDENTITY_KEYS if key != "hcount"
 )
 DEFAULT_INTERFACE_EDGE_KEYS = ("order",)
 
@@ -171,6 +174,7 @@ def _compatible_node_label(
     wildcard_values: tuple[Any, ...],
     forward_node: Hashable,
     backward_node: Hashable,
+    allow_hcount_resolution: bool,
 ) -> tuple[Any, ...]:
     forward_wildcard = forward_attrs.get(element_key) in wildcard_values
     backward_wildcard = backward_attrs.get(element_key) in wildcard_values
@@ -179,7 +183,15 @@ def _compatible_node_label(
         return _attribute_signature(concrete, node_keys)
     left_label = _attribute_signature(forward_attrs, node_keys)
     right_label = _attribute_signature(backward_attrs, node_keys)
-    if left_label != right_label:
+    forward_hcount = _effective_hcount(forward_attrs)
+    backward_hcount = _effective_hcount(backward_attrs)
+    hcount_conflict = (
+        not allow_hcount_resolution
+        and forward_hcount is not None
+        and backward_hcount is not None
+        and forward_hcount != backward_hcount
+    )
+    if left_label != right_label or hcount_conflict:
         raise FusionInterfaceError(
             FusionInterfaceIssue(
                 FusionInterfaceIssueCode.NODE_CONFLICT,
@@ -187,6 +199,8 @@ def _compatible_node_label(
                 {
                     "forward_node": repr(forward_node),
                     "backward_node": repr(backward_node),
+                    "forward_hcount": forward_hcount,
+                    "backward_hcount": backward_hcount,
                 },
             )
         )
@@ -199,28 +213,76 @@ def _endpoint_scalar(value: Any) -> Any:
     return value
 
 
+def _effective_hcount(attributes: Mapping[str, Any]) -> Any:
+    """Normalize implicit H and explicit-H neighbor bookkeeping."""
+    hcount = attributes.get("hcount")
+    neighbours = attributes.get("neighbors")
+    if isinstance(hcount, (tuple, list)) and len(hcount) == 2:
+        if isinstance(neighbours, (tuple, list)) and len(neighbours) == 2:
+            return tuple(
+                hcount[index]
+                + sum(item == "H" for item in (neighbours[index] or ()))
+                for index in range(2)
+            )
+        return tuple(hcount)
+    if isinstance(hcount, int) and isinstance(neighbours, (tuple, list)):
+        return hcount + sum(item == "H" for item in neighbours)
+    return hcount
+
+
+def _owns_completion_port(
+    graph: nx.Graph,
+    node: Hashable,
+    *,
+    element_key: str,
+    role_key: str,
+    wildcard_values: tuple[Any, ...],
+) -> bool:
+    completion_roles = {
+        "attachment_port",
+        "radical_completion",
+        "hydrogen_completion",
+    }
+    return any(
+        graph.nodes[neighbour].get(element_key) in wildcard_values
+        and graph.nodes[neighbour].get(role_key) in completion_roles
+        and graph.nodes[neighbour].get("owner") == node
+        for neighbour in graph.neighbors(node)
+    )
+
+
 def _constraint_accepts_concrete(
     constraint: WildcardConstraint,
     attributes: Mapping[str, Any],
+    *,
+    graph: nx.Graph,
+    node: Hashable,
+    arm: Mapping[Hashable, Hashable],
+    element_key: str,
 ) -> bool:
-    concrete = {
-        "element": _endpoint_scalar(attributes.get("element")),
+    """Evaluate a concrete resolution through the canonical constraint API."""
+    concrete: dict[str, Any] = {
+        "element": _endpoint_scalar(attributes.get(element_key)),
         "charge": _endpoint_scalar(attributes.get("charge", 0)),
         "radical": _endpoint_scalar(attributes.get("radical", 0)),
+        "side": _endpoint_scalar(attributes.get("side")),
+        "stereo_slot": _endpoint_scalar(attributes.get("stereo_slot")),
+        "virtual_kind": _endpoint_scalar(attributes.get("virtual_kind")),
+        "mapped_identity": _endpoint_scalar(attributes.get("mapped_identity")),
+        "materialization": _endpoint_scalar(attributes.get("materialization")),
+        # Resolving one wildcard consumes one unit of its capacity/resource.
+        "capacity": 1,
+        "resource_usage": 1,
     }
-    if (
-        constraint.elements is not None
-        and concrete["element"] not in constraint.elements
-    ):
-        return False
-    if constraint.charges is not None and concrete["charge"] not in constraint.charges:
-        return False
-    if (
-        constraint.radicals is not None
-        and concrete["radical"] not in constraint.radicals
-    ):
-        return False
-    return constraint.virtual_kind is None
+    if constraint.owner is not None:
+        concrete_owner = arm.get(constraint.owner)
+        if concrete_owner is not None and graph.has_edge(node, concrete_owner):
+            concrete["owner"] = constraint.owner
+            edge = graph.edges[node, concrete_owner]
+            concrete["bond_order"] = _endpoint_scalar(edge.get("order"))
+        else:
+            concrete["owner"] = None
+    return constraint.satisfies(concrete)
 
 
 def _common_interface_edges(
@@ -524,6 +586,22 @@ class FusionInterface:
                         wildcard_values=wildcard_values,
                         forward_node=forward_node,
                         backward_node=backward_node,
+                        allow_hcount_resolution=(
+                            _owns_completion_port(
+                                forward_graph,
+                                forward_node,
+                                element_key=element_key,
+                                role_key=role_key,
+                                wildcard_values=wildcard_values,
+                            )
+                            or _owns_completion_port(
+                                backward_graph,
+                                backward_node,
+                                element_key=element_key,
+                                role_key=role_key,
+                                wildcard_values=wildcard_values,
+                            )
+                        ),
                     ),
                 )
             )
@@ -553,7 +631,12 @@ class FusionInterface:
             if forward_wildcard and not backward_wildcard:
                 constraint = forward_theta.get(interface_node)
                 if constraint is not None and not _constraint_accepts_concrete(
-                    constraint, backward_attrs
+                    constraint,
+                    backward_attrs,
+                    graph=backward_graph,
+                    node=backward_node,
+                    arm=backward_arm,
+                    element_key=element_key,
                 ):
                     raise FusionInterfaceError(
                         FusionInterfaceIssue(
@@ -565,7 +648,12 @@ class FusionInterface:
             if backward_wildcard and not forward_wildcard:
                 constraint = backward_theta.get(interface_node)
                 if constraint is not None and not _constraint_accepts_concrete(
-                    constraint, forward_attrs
+                    constraint,
+                    forward_attrs,
+                    graph=forward_graph,
+                    node=forward_node,
+                    arm=forward_arm,
+                    element_key=element_key,
                 ):
                     raise FusionInterfaceError(
                         FusionInterfaceIssue(

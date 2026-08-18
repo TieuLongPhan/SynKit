@@ -2,8 +2,8 @@
 
 This namespace groups mechanism transition graph renderers.
 
-Example
--------
+.. rubric:: Example
+
 .. code-block:: python
 
     from synkit.Vis.mtg import draw_mtg_graph, draw_mtg_steps

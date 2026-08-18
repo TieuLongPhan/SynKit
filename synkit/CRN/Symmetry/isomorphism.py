@@ -17,8 +17,7 @@ from .wl_canon import WLCanonicalizer
 
 
 class CRNIsomorphism:
-    """
-    Pairwise graph isomorphism and subgraph isomorphism for CRN graphs.
+    """Pairwise graph isomorphism and subgraph isomorphism for CRN graphs.
 
     This class wraps a CRN graph representation together with the node and edge
     matchers required for exact VF2-style isomorphism checks. It also provides a
@@ -53,8 +52,8 @@ class CRNIsomorphism:
         If ``None``, :meth:`SymmetryConfig.semantic` is used.
     :type config: Optional[SymmetryConfig]
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         from synkit.CRN.Sym.iso import CRNIsomorphism
@@ -129,8 +128,7 @@ class CRNIsomorphism:
         wl_digest_size: int,
         config: SymmetryConfig,
     ) -> WLCanonicalizer:
-        """
-        Construct the internal WL canonicalizer.
+        """Construct the internal WL canonicalizer.
 
         :param source:
             Input CRN-like object or graph.
@@ -156,7 +154,7 @@ class CRNIsomorphism:
             Symmetry configuration.
         :type config: SymmetryConfig
 
-        :returns:
+        :return:
             Initialized WL canonicalizer.
         :rtype: WLCanonicalizer
         """
@@ -171,10 +169,9 @@ class CRNIsomorphism:
 
     @property
     def G(self) -> nx.DiGraph:
-        """
-        Return the internal directed graph.
+        """Return the internal directed graph.
 
-        :returns:
+        :return:
             Internal directed graph used for isomorphism analysis.
         :rtype: nx.DiGraph
         """
@@ -182,20 +179,18 @@ class CRNIsomorphism:
 
     @property
     def graph_type(self) -> str:
-        """
-        Return the graph type label.
+        """Return the graph type label.
 
-        :returns:
+        :return:
             Graph type string.
         :rtype: str
         """
         return self.wl.graph_type
 
     def _signature(self) -> Tuple[Any, ...]:
-        """
-        Build a fast invariant signature for cheap rejection.
+        """Build a fast invariant signature for cheap rejection.
 
-        :returns:
+        :return:
             Signature tuple combining graph size, token histograms, degree
             histograms, and WL color histograms.
         :rtype: Tuple[Any, ...]
@@ -210,8 +205,7 @@ class CRNIsomorphism:
     def _make_matcher(
         self, other_graph: nx.DiGraph, this_graph: nx.DiGraph
     ) -> DiGraphMatcher:
-        """
-        Build a directed graph matcher for exact isomorphism checks.
+        """Build a directed graph matcher for exact isomorphism checks.
 
         :param other_graph:
             First graph supplied to :class:`DiGraphMatcher`.
@@ -221,7 +215,7 @@ class CRNIsomorphism:
             Second graph supplied to :class:`DiGraphMatcher`.
         :type this_graph: nx.DiGraph
 
-        :returns:
+        :return:
             Configured directed graph matcher.
         :rtype: DiGraphMatcher
         """
@@ -240,8 +234,7 @@ class CRNIsomorphism:
         rejected_by_invariants: bool,
         mode: str,
     ) -> IsomorphismResult:
-        """
-        Build an :class:`IsomorphismResult`.
+        """Build an :class:`IsomorphismResult`.
 
         :param isomorphic:
             Whether the compared graphs are isomorphic.
@@ -263,7 +256,7 @@ class CRNIsomorphism:
             Matching mode label.
         :type mode: str
 
-        :returns:
+        :return:
             Isomorphism result object.
         :rtype: IsomorphismResult
         """
@@ -276,8 +269,7 @@ class CRNIsomorphism:
         )
 
     def isomorphic_to(self, other: "CRNIsomorphism") -> IsomorphismResult:
-        """
-        Test graph isomorphism against another CRN isomorphism wrapper.
+        """Test graph isomorphism against another CRN isomorphism wrapper.
 
         A fast signature check is applied first. If signatures disagree, the
         graphs are rejected immediately without invoking the exact VF2 matcher.
@@ -286,12 +278,12 @@ class CRNIsomorphism:
             Other graph wrapper to compare against.
         :type other: CRNIsomorphism
 
-        :returns:
+        :return:
             Exact isomorphism result.
         :rtype: IsomorphismResult
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             iso_a = CRNIsomorphism(crn_a)
@@ -317,8 +309,7 @@ class CRNIsomorphism:
         )
 
     def subgraph_isomorphic_to(self, host: "CRNIsomorphism") -> IsomorphismResult:
-        """
-        Test whether this graph is subgraph-isomorphic to a host graph.
+        """Test whether this graph is subgraph-isomorphic to a host graph.
 
         This method checks whether ``self`` can be embedded into ``host`` using
         directed VF2 subgraph matching.
@@ -327,12 +318,12 @@ class CRNIsomorphism:
             Host graph wrapper.
         :type host: CRNIsomorphism
 
-        :returns:
+        :return:
             Subgraph isomorphism result.
         :rtype: IsomorphismResult
 
-        Examples
-        --------
+        .. rubric:: Examples
+
         .. code-block:: python
 
             pattern = CRNIsomorphism(pattern_crn)
@@ -356,8 +347,7 @@ class CRNIsomorphism:
 
 
 def are_isomorphic(a: Any, b: Any, **kwargs: Any) -> bool:
-    """
-    Convenience wrapper for pairwise graph isomorphism.
+    """Convenience wrapper for pairwise graph isomorphism.
 
     :param a:
         First graph-like source.
@@ -371,12 +361,12 @@ def are_isomorphic(a: Any, b: Any, **kwargs: Any) -> bool:
         Additional keyword arguments forwarded to :class:`CRNIsomorphism`.
     :type kwargs: Any
 
-    :returns:
+    :return:
         ``True`` if the two inputs are isomorphic.
     :rtype: bool
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         ok = are_isomorphic(crn_a, crn_b, include_rule=True)
@@ -390,8 +380,7 @@ def are_isomorphic(a: Any, b: Any, **kwargs: Any) -> bool:
 
 
 def are_subhypergraph_isomorphic(pattern: Any, host: Any, **kwargs: Any) -> bool:
-    """
-    Convenience wrapper for subgraph isomorphism.
+    """Convenience wrapper for subgraph isomorphism.
 
     :param pattern:
         Pattern graph-like source.
@@ -405,12 +394,12 @@ def are_subhypergraph_isomorphic(pattern: Any, host: Any, **kwargs: Any) -> bool
         Additional keyword arguments forwarded to :class:`CRNIsomorphism`.
     :type kwargs: Any
 
-    :returns:
+    :return:
         ``True`` if ``pattern`` is subgraph-isomorphic to ``host``.
     :rtype: bool
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         ok = are_subhypergraph_isomorphic(pattern_crn, host_crn)

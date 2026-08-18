@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import networkx as nx
 from networkx.algorithms.isomorphism import GraphMatcher
+
+from synkit.Graph.Matcher.turbo_iso import _freeze_label_value, _MISSING_LABEL
 
 
 class SING:
@@ -17,8 +19,8 @@ class SING:
     The index is built once over a single *data graph* and can then be
     queried with multiple *pattern graphs* via :meth:`search`.
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     - This implementation focuses on the **path-feature** variant of SING,
       where features are simple paths (with optional node/edge labels)
       up to a maximum length.
@@ -26,8 +28,8 @@ class SING:
     - If the underlying data graph is modified after construction, call
       :meth:`reindex` to rebuild the feature index.
 
-    Example
-    -------
+    .. rubric:: Example
+
     A minimal example on an undirected, unlabeled graph:
 
     .. code-block:: python
@@ -82,6 +84,10 @@ class SING:
             matching common chemical-graph conventions.
         :type edge_att: str | list[str] | None, optional
         """
+        if graph.is_multigraph():
+            raise ValueError("SING does not support multigraphs")
+        if max_path_length < 0:
+            raise ValueError("max_path_length must be non-negative")
         self.graph: nx.Graph = graph
         self.max_path_length: int = int(max_path_length)
 
@@ -98,13 +104,13 @@ class SING:
             self.edge_att = [edge_att] if isinstance(edge_att, str) else list(edge_att)
 
         # Inverted index: feature signature -> set[data-node]
-        self.feature_index: Dict[str, Set[Any]] = {}
+        self.feature_index: Dict[Tuple[Any, ...], Set[Any]] = {}
         # Per-vertex feature sets
-        self.vertex_features: Dict[Any, Set[str]] = {}
+        self.vertex_features: Dict[Any, Set[Tuple[Any, ...]]] = {}
 
         # Cached signatures for the data graph (for efficiency)
-        self._node_sig_data: Dict[Any, str] = {}
-        self._edge_sig_data: Dict[tuple[Any, Any], str] = {}
+        self._node_sig_data: Dict[Any, Tuple[Any, ...]] = {}
+        self._edge_sig_data: Dict[tuple[Any, Any], Tuple[Any, ...]] = {}
 
         # Build caches + index once up-front
         self._init_data_signatures()
@@ -114,27 +120,27 @@ class SING:
     # Internal helpers: signatures & indexing
     # ------------------------------------------------------------------
 
-    def _node_signature(self, v: Any, G: nx.Graph) -> str:
-        """
-        Return a string signature for node ``v`` in graph ``G`` based on
+    def _node_signature(self, v: Any, G: nx.Graph) -> Tuple[Any, ...]:
+        """Return a string signature for node ``v`` in graph ``G`` based on
         :attr:`node_att`.
 
         :param v: Node identifier.
         :type v: Any
         :param G: Graph containing the node.
         :type G: nx.Graph
-        :returns: Concatenated attribute values (``"|"``-separated) or
+        :return: Concatenated attribute values (``"|"``-separated) or
             an empty string if :attr:`node_att` is empty.
         :rtype: str
         """
         if not self.node_att:
-            return ""
-        vals = [str(G.nodes[v].get(a, "#")) for a in self.node_att]
-        return "|".join(vals)
+            return ()
+        return tuple(
+            _freeze_label_value(G.nodes[v].get(attr, _MISSING_LABEL))
+            for attr in self.node_att
+        )
 
-    def _edge_signature(self, u: Any, v: Any, G: nx.Graph) -> str:
-        """
-        Return a string signature for edge ``(u, v)`` in graph ``G`` based on
+    def _edge_signature(self, u: Any, v: Any, G: nx.Graph) -> Tuple[Any, ...]:
+        """Return a string signature for edge ``(u, v)`` in graph ``G`` based on
         :attr:`edge_att`.
 
         If no edge attributes were requested, returns an empty string.
@@ -145,14 +151,16 @@ class SING:
         :type v: Any
         :param G: Graph containing the edge.
         :type G: nx.Graph
-        :returns: Concatenated attribute values (``"|"``-separated),
+        :return: Concatenated attribute values (``"|"``-separated),
             or an empty string when :attr:`edge_att` is empty.
         :rtype: str
         """
         if not self.edge_att:
-            return ""
-        vals = [str(G[u][v].get(a, "#")) for a in self.edge_att]
-        return "|".join(vals)
+            return ()
+        return tuple(
+            _freeze_label_value(G[u][v].get(attr, _MISSING_LABEL))
+            for attr in self.edge_att
+        )
 
     def _init_data_signatures(self) -> None:
         """
@@ -182,9 +190,8 @@ class SING:
 
     def _extract_path_features(
         self, node: Any, G: nx.Graph, is_query: bool = False
-    ) -> Set[str]:
-        """
-        Enumerate all simple paths starting at ``node`` up to
+    ) -> Set[Tuple[Any, ...]]:
+        """Enumerate all simple paths starting at ``node`` up to
         :attr:`max_path_length` edges (inclusive), represented as label
         sequences.
 
@@ -198,10 +205,10 @@ class SING:
             Currently unused but kept for future extensions (e.g.,
             query-specific feature tweaks).
         :type is_query: bool, optional
-        :returns: Set of string-encoded path features.
+        :return: Set of string-encoded path features.
         :rtype: set[str]
         """
-        features: Set[str] = set()
+        features: Set[Tuple[Any, ...]] = set()
         max_len = self.max_path_length
 
         # Use cached signatures when possible (data graph)
@@ -209,23 +216,28 @@ class SING:
             node_sig_cache = self._node_sig_data
             edge_sig_cache = self._edge_sig_data
 
-            def get_node_sig(x: Any) -> str:
+            def get_node_sig(x: Any) -> Tuple[Any, ...]:
                 return node_sig_cache[x]
 
-            def get_edge_sig(a: Any, b: Any) -> str:
-                return edge_sig_cache.get((a, b), "")
+            def get_edge_sig(a: Any, b: Any) -> Tuple[Any, ...]:
+                return edge_sig_cache.get((a, b), ())
 
         else:
 
-            def get_node_sig(x: Any) -> str:
+            def get_node_sig(x: Any) -> Tuple[Any, ...]:
                 return self._node_signature(x, G)
 
-            def get_edge_sig(a: Any, b: Any) -> str:
+            def get_edge_sig(a: Any, b: Any) -> Tuple[Any, ...]:
                 return self._edge_signature(a, b, G)
 
-        def dfs(current: Any, depth: int, visited: Set[Any], path_parts: List[str]):
+        def dfs(
+            current: Any,
+            depth: int,
+            visited: Set[Any],
+            path_parts: List[Tuple[Any, ...]],
+        ):
             # Record current path (including the starting node at depth 0)
-            features.add("-".join(path_parts))
+            features.add(tuple(path_parts))
             if depth == max_len:
                 return
 
@@ -284,18 +296,19 @@ class SING:
         :type graph: nx.Graph | None, optional
         """
         if graph is not None:
+            if graph.is_multigraph():
+                raise ValueError("SING does not support multigraphs")
             self.graph = graph
         self._init_data_signatures()
         self._build_index()
 
     def _candidate_vertices(self, query_graph: nx.Graph) -> Dict[Any, Set[Any]]:
-        """
-        Return per-query-vertex candidate sets using posting-list
+        """Return per-query-vertex candidate sets using posting-list
         intersections.
 
         :param query_graph: Query (pattern) graph.
         :type query_graph: nx.Graph
-        :returns: Mapping from query-node -> set of candidate data-nodes.
+        :return: Mapping from query-node -> set of candidate data-nodes.
         :rtype: dict[Any, set[Any]]
         """
         cand: Dict[Any, Set[Any]] = {}
@@ -324,8 +337,7 @@ class SING:
     def _deduplicate_by_query_automorphisms(
         self, mappings: List[Dict[Any, Any]], query_graph: nx.Graph
     ) -> List[Dict[Any, Any]]:
-        """
-        Deduplicate embeddings up to automorphisms of the query graph.
+        """Deduplicate embeddings up to automorphisms of the query graph.
 
         Two mappings ``M`` and ``M'`` are considered equivalent if there exists
         an automorphism :math:`\\sigma` of the query such that:
@@ -341,13 +353,18 @@ class SING:
         :param query_graph: The query graph whose automorphisms are used for
             deduplication.
         :type query_graph: nx.Graph
-        :returns: Reduced list with one representative per equivalence class.
+        :return: Reduced list with one representative per equivalence class.
         :rtype: list[dict[Any, Any]]
         """
         if not mappings:
             return []
 
-        gm = GraphMatcher(query_graph, query_graph)
+        matcher_cls = (
+            nx.algorithms.isomorphism.DiGraphMatcher
+            if query_graph.is_directed()
+            else GraphMatcher
+        )
+        gm = matcher_cls(query_graph, query_graph)
         autos = list(gm.isomorphisms_iter())
         # If only identity, nothing to dedup
         if len(autos) <= 1:
@@ -392,8 +409,7 @@ class SING:
         prune: bool = False,
         dedup_autos: bool = False,
     ) -> Union[List[Dict[Any, Any]], bool]:
-        """
-        Find subgraph isomorphisms from ``query_graph`` into the data graph.
+        """Find subgraph isomorphisms from ``query_graph`` into the data graph.
 
         This method performs a path-feature-based **filter** to obtain
         candidate vertices, followed by a VF2-style **refinement** via
@@ -411,12 +427,12 @@ class SING:
             representative per equivalence class. Has no effect when
             ``prune=True``.
         :type dedup_autos: bool, optional
-        :returns: Either ``True``/``False`` (when ``prune=True``) or a list
+        :return: Either ``True``/``False`` (when ``prune=True``) or a list
             of injective node mappings ``[{q_node: data_node, ...}, ...]``.
         :rtype: list[dict[Any, Any]] | bool
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             import networkx as nx
@@ -429,6 +445,8 @@ class SING:
             all_mappings = index.search(Q)                   # all embeddings
             unique_mappings = index.search(Q, dedup_autos=True)  # collapse symmetries
         """
+        if query_graph.is_multigraph():
+            raise ValueError("SING does not support multigraph queries")
         cand = self._candidate_vertices(query_graph)
         mapping: Dict[Any, Any] = {}
         used: Set[Any] = set()
@@ -449,18 +467,30 @@ class SING:
 
                 # Neighbourhood + edge-label consistency
                 valid = True
-                for nbr in query_graph.neighbors(qv):
-                    if nbr in mapping:
-                        dn = mapping[nbr]
-                        if not self.graph.has_edge(dv, dn):
+                if query_graph.has_edge(qv, qv):
+                    if not self.graph.has_edge(dv, dv) or (
+                        self.edge_att
+                        and self._edge_signature(qv, qv, query_graph)
+                        != self._edge_signature(dv, dv, self.graph)
+                    ):
+                        valid = False
+                for nbr, dn in mapping.items():
+                    if query_graph.has_edge(qv, nbr):
+                        if not self.graph.has_edge(dv, dn) or (
+                            self.edge_att
+                            and self._edge_signature(qv, nbr, query_graph)
+                            != self._edge_signature(dv, dn, self.graph)
+                        ):
                             valid = False
                             break
-                        if self.edge_att:
-                            if self._edge_signature(
-                                qv, nbr, query_graph
-                            ) != self._edge_signature(dv, dn, self.graph):
-                                valid = False
-                                break
+                    if query_graph.is_directed() and query_graph.has_edge(nbr, qv):
+                        if not self.graph.has_edge(dn, dv) or (
+                            self.edge_att
+                            and self._edge_signature(nbr, qv, query_graph)
+                            != self._edge_signature(dn, dv, self.graph)
+                        ):
+                            valid = False
+                            break
                 if not valid:
                     continue
 
@@ -493,19 +523,17 @@ class SING:
     # ------------------------------------------------------------------
 
     def __len__(self) -> int:
-        """
-        Return the number of vertices in the data graph.
+        """Return the number of vertices in the data graph.
 
-        :returns: Number of data vertices.
+        :return: Number of data vertices.
         :rtype: int
         """
         return self.graph.number_of_nodes()
 
     def __repr__(self) -> str:
-        """
-        Return a concise string representation of the index.
+        """Return a concise string representation of the index.
 
-        :returns: Summary string including graph size and configuration.
+        :return: Summary string including graph size and configuration.
         :rtype: str
         """
         return (

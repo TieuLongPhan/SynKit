@@ -14,7 +14,7 @@ from synkit.Mechanism import (
     StereoDescriptor,
     StereoEffect,
 )
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 ROOT = Path(__file__).parents[2]
 STEREO_MANIFEST = json.loads(

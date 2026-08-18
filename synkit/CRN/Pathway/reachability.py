@@ -12,8 +12,7 @@ Multiset = Dict[str, int]
 
 @dataclass
 class ReachabilityConfig:
-    """
-    Configuration for forward reachability traversal.
+    """Configuration for forward reachability traversal.
 
     This configuration controls how many propagation layers are explored and
     whether the traversal should terminate as soon as no newly reachable
@@ -27,8 +26,8 @@ class ReachabilityConfig:
         even if reactions are still enabled.
     :type stop_when_no_new_species: bool
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         cfg = ReachabilityConfig(
@@ -43,8 +42,7 @@ class ReachabilityConfig:
 
 @dataclass
 class ReachabilityLayer:
-    """
-    One forward reachability layer.
+    """One forward reachability layer.
 
     A layer summarizes what became newly active at a given traversal depth.
     In set semantics, a reaction is considered enabled when all of its
@@ -65,8 +63,8 @@ class ReachabilityLayer:
         Complete set of reachable species after this layer is applied.
     :type all_reachable_species: List[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         layer = ReachabilityLayer(
@@ -85,8 +83,7 @@ class ReachabilityLayer:
 
 @dataclass
 class ReachabilityResult:
-    """
-    Container for forward reachability results.
+    """Container for forward reachability results.
 
     This object stores the initial support, the layered traversal trace, and
     the first depth at which each species or reaction became reachable or
@@ -107,8 +104,8 @@ class ReachabilityResult:
         reaction became enabled.
     :type reaction_first_depth: Dict[str, int]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         result = ReachabilityResult(
@@ -126,8 +123,7 @@ class ReachabilityResult:
 
 
 class PathwayReachability:
-    """
-    Forward reachability utilities for SynCRN pathway analysis.
+    """Forward reachability utilities for SynCRN pathway analysis.
 
     This class provides layered forward propagation over a reaction hypergraph.
     It supports two related semantics:
@@ -154,8 +150,8 @@ class PathwayReachability:
         :class:`ReachabilityConfig` is used.
     :type config: Optional[ReachabilityConfig]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         rr = PathwayReachability()
@@ -197,8 +193,7 @@ class PathwayReachability:
         vertices: Iterable[str],
         edges: Mapping[str, Tuple[Mapping[str, int], Mapping[str, int]]],
     ) -> "PathwayReachability":
-        """
-        Load a tokenized reaction hypergraph directly.
+        """Load a tokenized reaction hypergraph directly.
 
         Each edge must map a reaction identifier to a pair
         ``(tail_multiset, head_multiset)``, where both multisets map species
@@ -213,12 +208,12 @@ class PathwayReachability:
             Mapping from reaction identifier to
             ``(reactant_multiset, product_multiset)``.
         :type edges: Mapping[str, Tuple[Mapping[str, int], Mapping[str, int]]]
-        :returns:
+        :return:
             The current instance, to allow fluent chaining.
         :rtype: PathwayReachability
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             rr = PathwayReachability().load_hypergraph(
@@ -250,8 +245,7 @@ class PathwayReachability:
         species: str = "label",
         reaction: str = "id",
     ) -> "PathwayReachability":
-        """
-        Load reachability data from a SynCRN-like object.
+        """Load reachability data from a SynCRN-like object.
 
         This method delegates tokenization to
         :func:`tokenize_syncrn_incidence`, then stores both the tokenized
@@ -267,12 +261,12 @@ class PathwayReachability:
         :param reaction:
             Reaction attribute used during tokenization, such as ``"id"``.
         :type reaction: str
-        :returns:
+        :return:
             The current instance, to allow fluent chaining.
         :rtype: PathwayReachability
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             rr = PathwayReachability().load_syncrn(
@@ -305,15 +299,14 @@ class PathwayReachability:
 
     @staticmethod
     def _normalize_marking(marking: Mapping[str, int]) -> Dict[str, int]:
-        """
-        Normalize a marking into a clean positive multiset.
+        """Normalize a marking into a clean positive multiset.
 
         Species with non-positive counts are removed.
 
         :param marking:
             Input species-count mapping.
         :type marking: Mapping[str, int]
-        :returns:
+        :return:
             Normalized marking containing only strictly positive counts.
         :rtype: Dict[str, int]
         """
@@ -321,23 +314,21 @@ class PathwayReachability:
 
     @staticmethod
     def _support(marking: Mapping[str, int]) -> Set[str]:
-        """
-        Return the support of a marking.
+        """Return the support of a marking.
 
         The support is the set of species whose count is strictly positive.
 
         :param marking:
             Input species-count mapping.
         :type marking: Mapping[str, int]
-        :returns:
+        :return:
             Set of species present with positive multiplicity.
         :rtype: Set[str]
         """
         return {s for s, v in marking.items() if int(v) > 0}
 
     def _enabled_reactions_for_set(self, reachable: Set[str]) -> List[str]:
-        """
-        Return reactions enabled under set semantics.
+        """Return reactions enabled under set semantics.
 
         A reaction is enabled if all reactant species are already members of
         the reachable set. Stoichiometric coefficients are ignored for the
@@ -346,7 +337,7 @@ class PathwayReachability:
         :param reachable:
             Current reachable species set.
         :type reachable: Set[str]
-        :returns:
+        :return:
             List of enabled reaction identifiers.
         :rtype: List[str]
         """
@@ -357,8 +348,7 @@ class PathwayReachability:
         return enabled
 
     def _enabled_reactions_for_marking(self, marking: Mapping[str, int]) -> List[str]:
-        """
-        Return reactions enabled under multiset semantics.
+        """Return reactions enabled under multiset semantics.
 
         A reaction is enabled if the marking contains at least the required
         stoichiometric coefficient for every reactant species.
@@ -366,7 +356,7 @@ class PathwayReachability:
         :param marking:
             Current species marking.
         :type marking: Mapping[str, int]
-        :returns:
+        :return:
             List of enabled reaction identifiers.
         :rtype: List[str]
         """
@@ -381,8 +371,7 @@ class PathwayReachability:
         marking: Mapping[str, int],
         reaction_ids: Iterable[str],
     ) -> Dict[str, int]:
-        """
-        Fire a batch of reactions once each from the given marking.
+        """Fire a batch of reactions once each from the given marking.
 
         Reactants are consumed and products are produced exactly once for each
         reaction in ``reaction_ids``. The resulting marking is normalized so
@@ -394,7 +383,7 @@ class PathwayReachability:
         :param reaction_ids:
             Iterable of reaction identifiers to fire once.
         :type reaction_ids: Iterable[str]
-        :returns:
+        :return:
             Updated normalized marking after the batch firing.
         :rtype: Dict[str, int]
         """
@@ -459,8 +448,7 @@ class PathwayReachability:
         initial_species: Iterable[str],
         max_layers: Optional[int] = None,
     ) -> ReachabilityResult:
-        """
-        Compute layered forward reachability in set semantics.
+        """Compute layered forward reachability in set semantics.
 
         In this mode, only species presence matters. Stoichiometric
         multiplicities are ignored when deciding whether a reaction is enabled.
@@ -477,12 +465,12 @@ class PathwayReachability:
         :param max_layers:
             Optional layer cap overriding the instance configuration.
         :type max_layers: Optional[int]
-        :returns:
+        :return:
             Reachability result containing the full layered traversal trace.
         :rtype: ReachabilityResult
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             rr = PathwayReachability().load_hypergraph(
@@ -558,8 +546,7 @@ class PathwayReachability:
         initial_marking: Mapping[str, int],
         max_layers: Optional[int] = None,
     ) -> ReachabilityResult:
-        """
-        Compute layered forward reachability in multiset semantics.
+        """Compute layered forward reachability in multiset semantics.
 
         In this mode, species counts matter. A reaction is enabled only if the
         current marking contains enough multiplicity for every reactant. At
@@ -575,12 +562,12 @@ class PathwayReachability:
         :param max_layers:
             Optional layer cap overriding the instance configuration.
         :type max_layers: Optional[int]
-        :returns:
+        :return:
             Reachability result containing the full layered traversal trace.
         :rtype: ReachabilityResult
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             rr = PathwayReachability().load_hypergraph(
@@ -654,8 +641,7 @@ class PathwayReachability:
     def export_layers_json(
         self, result: ReachabilityResult, fn: str
     ) -> "PathwayReachability":
-        """
-        Export a reachability result to a JSON file.
+        """Export a reachability result to a JSON file.
 
         The output contains the initial species set, first-depth maps, and the
         full list of layered traversal records.
@@ -666,14 +652,14 @@ class PathwayReachability:
         :param fn:
             Output JSON filename.
         :type fn: str
-        :returns:
+        :return:
             The current instance, to allow fluent chaining.
         :rtype: PathwayReachability
         :raises OSError:
             Raised if the target file cannot be written.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             rr.export_layers_json(result, "reachability_layers.json")
@@ -697,10 +683,9 @@ class PathwayReachability:
         return self
 
     def __repr__(self) -> str:  # pragma: no cover - simple repr
-        """
-        Return a compact developer-friendly representation.
+        """Return a compact developer-friendly representation.
 
-        :returns:
+        :return:
             String representation including the number of vertices and edges.
         :rtype: str
         """
@@ -713,8 +698,7 @@ def syncrn_to_reachability_inputs(
     species: str = "label",
     reaction: str = "id",
 ) -> Tuple[List[str], Dict[str, Tuple[Dict[str, int], Dict[str, int]]]]:
-    """
-    Convert a SynCRN-like object into tokenized reachability inputs.
+    """Convert a SynCRN-like object into tokenized reachability inputs.
 
     This is a lightweight adapter returning only the tokenized species list and
     reaction hyperedges needed by :class:`PathwayReachability`.
@@ -728,13 +712,13 @@ def syncrn_to_reachability_inputs(
     :param reaction:
         Reaction attribute used during tokenization.
     :type reaction: str
-    :returns:
+    :return:
         Pair ``(vertices, edges)`` where ``vertices`` is the species token list
         and ``edges`` maps reaction token to ``(tail_multiset, head_multiset)``.
     :rtype: Tuple[List[str], Dict[str, Tuple[Dict[str, int], Dict[str, int]]]]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         vertices, edges = syncrn_to_reachability_inputs(
@@ -757,8 +741,7 @@ def run_reachability_from_syncrn(
     reaction: str = "id",
     verbose: bool = True,
 ) -> Tuple[PathwayReachability, ReachabilityResult]:
-    """
-    Run layered qualitative reachability directly from a SynCRN-like object.
+    """Run layered qualitative reachability directly from a SynCRN-like object.
 
     This convenience function constructs a :class:`PathwayReachability`
     instance, loads the tokenized SynCRN representation, computes set-based
@@ -780,12 +763,12 @@ def run_reachability_from_syncrn(
     :param verbose:
         If ``True``, print the tokenized edges and each traversal layer.
     :type verbose: bool
-    :returns:
+    :return:
         Pair ``(reachability_engine, result)``.
     :rtype: Tuple[PathwayReachability, ReachabilityResult]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         rr, result = run_reachability_from_syncrn(

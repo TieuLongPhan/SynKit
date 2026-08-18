@@ -568,7 +568,7 @@ def graph_to_rsmi(
         hydrogens that must remain explicit. When omitted, derive them from
         ``its`` for backward compatibility.
     :type preserve_hydrogen_maps: Optional[Sequence[int]]
-    :returns: Reaction SMILES string in 'reactants>>products' format or
+    :return: Reaction SMILES string in 'reactants>>products' format or
         None on failure.
     :rtype: str or None
     """
@@ -978,15 +978,13 @@ def rsmarts_to_rsmi(rsmarts: str) -> str:
 
 
 def dfs_to_smiles(dfs: str, keep_map: bool = True) -> str:
-    """
-    Convert DFS-style annotated SMILES to normal SMILES form.
+    """Convert DFS-style annotated SMILES to normal SMILES form.
 
-    Rules:
-    - Replace ``[]`` with ``[*]``.
-    - Convert bracketed tokens followed by digits, such as ``[H]12``,
-      into atom-mapped tokens ``[H:12]`` when ``keep_map=True``.
-    - If ``keep_map=False``, remove trailing digits instead.
-    - Tokens already containing ``:`` inside brackets are preserved.
+    The conversion replaces ``[]`` with ``[*]`` and converts bracketed tokens
+    followed by digits, such as ``[H]12``, into atom-mapped tokens
+    ``[H:12]`` when ``keep_map=True``.
+    When ``keep_map=False``, it removes the trailing digits instead. Tokens
+    already containing ``:`` inside brackets are preserved.
 
     :param dfs: DFS-style SMILES or reaction SMILES.
     :type dfs: str

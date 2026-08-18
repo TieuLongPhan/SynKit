@@ -87,6 +87,11 @@ class PathwayFinder:
     Species are not consumed during the qualitative search. Exact
     stoichiometric and token-based validation can be applied afterwards using
     :meth:`validate_candidates`.
+
+    This is the *network* path finder and the one to use for CRN work. The
+    unrelated :class:`synkit.Synthesis.MSR.path_finder.PathFinder` searches
+    synthesis routes through rounds of reaction SMILES and knows nothing about
+    stoichiometry or markings.
     """
 
     def __init__(self, config: Optional[PathFinderConfig] = None) -> None:
@@ -115,8 +120,7 @@ class PathwayFinder:
         vertices: Iterable[str],
         edges: Mapping[str, Tuple[Mapping[str, int], Mapping[str, int]]],
     ) -> "PathwayFinder":
-        """
-        Load a qualitative reaction hypergraph directly.
+        """Load a qualitative reaction hypergraph directly.
 
         The hypergraph is represented by a set of species vertices and a mapping
         from reaction ids to ``(tail, head)`` multisets, where ``tail`` is the
@@ -128,7 +132,7 @@ class PathwayFinder:
             Mapping from reaction id to a pair ``(tail, head)`` of multisets.
             Coefficients less than or equal to zero are ignored.
         :type edges: Mapping[str, Tuple[Mapping[str, int], Mapping[str, int]]]
-        :returns: The current finder instance.
+        :return: The current finder instance.
         :rtype: PathwayFinder
         """
         self.vertices = {str(v) for v in vertices}
@@ -152,8 +156,7 @@ class PathwayFinder:
         species: str = "label",
         reaction: str = "id",
     ) -> "PathwayFinder":
-        """
-        Load a SynCRN-like object through its incidence representation.
+        """Load a SynCRN-like object through its incidence representation.
 
         The CRN is tokenized into species and reaction identifiers suitable for
         qualitative search.
@@ -168,7 +171,7 @@ class PathwayFinder:
             Reaction naming mode passed to the tokenizer, for example
             ``"id"`` or another supported tokenization key.
         :type reaction: str
-        :returns: The current finder instance.
+        :return: The current finder instance.
         :rtype: PathwayFinder
         """
         vertices, edges, species_token_to_id, reaction_token_to_id, _ = (
@@ -195,26 +198,24 @@ class PathwayFinder:
 
     @staticmethod
     def _clean_species(items: Iterable[str]) -> Set[str]:
-        """
-        Normalize a species iterable into a set of string identifiers.
+        """Normalize a species iterable into a set of string identifiers.
 
         :param items: Input species collection.
         :type items: Iterable[str]
-        :returns: Normalized species-id set.
+        :return: Normalized species-id set.
         :rtype: Set[str]
         """
         return {str(x) for x in items}
 
     def _enabled_reactions(self, available: Set[str]) -> List[str]:
-        """
-        Return reactions enabled under qualitative set semantics.
+        """Return reactions enabled under qualitative set semantics.
 
         A reaction is enabled when all species appearing on its reactant side
         are already present in ``available``.
 
         :param available: Currently available species set.
         :type available: Set[str]
-        :returns: Sorted list of enabled reaction ids.
+        :return: Sorted list of enabled reaction ids.
         :rtype: List[str]
         """
         enabled: List[str] = []
@@ -225,12 +226,11 @@ class PathwayFinder:
 
     @staticmethod
     def _flow_from_sequence(seq: List[str]) -> Dict[str, int]:
-        """
-        Convert a reaction sequence into an aggregated flow vector.
+        """Convert a reaction sequence into an aggregated flow vector.
 
         :param seq: Ordered reaction sequence.
         :type seq: List[str]
-        :returns: Mapping from reaction id to firing count.
+        :return: Mapping from reaction id to firing count.
         :rtype: Dict[str, int]
         """
         flow: Dict[str, int] = {}
@@ -252,8 +252,7 @@ class PathwayFinder:
         stop_after_first: Optional[bool] = None,
         deduplicate_by_flow: Optional[bool] = None,
     ) -> List[PathwayCandidate]:
-        """
-        Find qualitative source-to-target pathways using set semantics.
+        """Find qualitative source-to-target pathways using set semantics.
 
         The search is performed by breadth-first expansion over reachable
         species sets. At each step, enabled reactions add their product species
@@ -281,7 +280,7 @@ class PathwayFinder:
             Optional override controlling whether candidates are deduplicated by
             aggregate flow.
         :type deduplicate_by_flow: Optional[bool]
-        :returns:
+        :return:
             List of qualitative pathway candidates satisfying the target
             condition.
         :rtype: List[PathwayCandidate]
@@ -368,8 +367,7 @@ class PathwayFinder:
         species: str = "label",
         reaction: str = "id",
     ) -> List[PathwayCandidate]:
-        """
-        Validate qualitative candidates by exact Petri-net realizability.
+        """Validate qualitative candidates by exact Petri-net realizability.
 
         For each candidate, the aggregated reaction-count flow is checked using
         :class:`PathwayRealizability`. The returned candidates preserve the
@@ -390,7 +388,7 @@ class PathwayFinder:
             Reaction naming mode passed through to
             :meth:`PathwayRealizability.load_syncrn_and_flow`.
         :type reaction: str
-        :returns:
+        :return:
             New list of candidates augmented with realizability verdicts and
             certificates.
         :rtype: List[PathwayCandidate]
@@ -432,8 +430,7 @@ def run_pathfinder_from_syncrn(
     validate: bool = False,
     verbose: bool = True,
 ) -> List[PathwayCandidate]:
-    """
-    Convenience harness for qualitative pathway search on a SynCRN object.
+    """Convenience harness for qualitative pathway search on a SynCRN object.
 
     This helper constructs a :class:`PathwayFinder`, loads the CRN, runs
     qualitative search, and optionally validates the returned candidates by
@@ -466,7 +463,7 @@ def run_pathfinder_from_syncrn(
     :param verbose:
         Whether to print a simple textual summary of the returned candidates.
     :type verbose: bool
-    :returns:
+    :return:
         List of qualitative pathway candidates, optionally enriched with exact
         realizability results.
     :rtype: List[PathwayCandidate]

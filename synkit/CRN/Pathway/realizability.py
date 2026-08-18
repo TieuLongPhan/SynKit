@@ -15,8 +15,7 @@ from ._adapter import tokenize_syncrn_incidence
 
 @dataclass
 class RealizabilityConfig:
-    """
-    Configuration for bounded realizability search.
+    """Configuration for bounded realizability search.
 
     :param max_states:
         Maximum number of BFS states explored during exact realizability
@@ -27,8 +26,8 @@ class RealizabilityConfig:
         search.
     :type max_depth: int
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         cfg = RealizabilityConfig(
@@ -43,8 +42,7 @@ class RealizabilityConfig:
 
 @dataclass
 class RealizabilitySummary:
-    """
-    Small serializable summary of the active realizability instance.
+    """Small serializable summary of the active realizability instance.
 
     :param n_species:
         Number of species currently loaded in the instance.
@@ -68,8 +66,8 @@ class RealizabilitySummary:
         auxiliary Petri-net places.
     :type goal_atleast: Dict[str, int]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         summary = pr.summary()
@@ -86,8 +84,7 @@ class RealizabilitySummary:
 
 
 class PathwayRealizability:
-    """
-    Exact flow-realizability utilities for SynCRN-like inputs.
+    """Exact flow-realizability utilities for SynCRN-like inputs.
 
     A pathway flow is realizable if there exists an ordering of reaction
     firings such that:
@@ -112,8 +109,8 @@ class PathwayRealizability:
         a default :class:`RealizabilityConfig` is used.
     :type config: Optional[RealizabilityConfig]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         pr = PathwayRealizability().load_syncrn_and_flow(
@@ -128,13 +125,12 @@ class PathwayRealizability:
     """
 
     def __init__(self, config: Optional[RealizabilityConfig] = None) -> None:
-        """
-        Initialize an empty pathway realizability instance.
+        """Initialize an empty pathway realizability instance.
 
         :param config:
             Optional configuration for bounded realizability search.
         :type config: Optional[RealizabilityConfig]
-        :returns:
+        :return:
             None.
         :rtype: None
         """
@@ -159,15 +155,14 @@ class PathwayRealizability:
 
     @staticmethod
     def _clean_multiset(data: Optional[Mapping[str, int]]) -> Dict[str, int]:
-        """
-        Normalize a multiset mapping by dropping zero entries.
+        """Normalize a multiset mapping by dropping zero entries.
 
         Negative multiplicities are rejected.
 
         :param data:
             Input multiset or ``None``.
         :type data: Optional[Mapping[str, int]]
-        :returns:
+        :return:
             Cleaned multiset containing only strictly positive entries.
         :rtype: Dict[str, int]
         :raises ValueError:
@@ -192,8 +187,7 @@ class PathwayRealizability:
         *,
         initial_marking: Optional[Mapping[str, int]] = None,
     ) -> "PathwayRealizability":
-        """
-        Load tokenized hypergraph data and a requested pathway flow.
+        """Load tokenized hypergraph data and a requested pathway flow.
 
         The ``edges`` mapping is interpreted as
         ``reaction_id -> (tail_multiset, head_multiset)``. Reactions not
@@ -212,12 +206,12 @@ class PathwayRealizability:
         :param initial_marking:
             Optional initial species marking.
         :type initial_marking: Optional[Mapping[str, int]]
-        :returns:
+        :return:
             The current instance.
         :rtype: PathwayRealizability
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             pr = PathwayRealizability().load_hypergraph_and_flow(
@@ -263,11 +257,13 @@ class PathwayRealizability:
         reaction_source_node_ids: Mapping[str, object],
         provided: Mapping[str, int],
     ) -> Dict[str, int]:
-        """
-        Resolve user-supplied flow keys onto reaction tokens.
+        """Resolve user-supplied flow keys onto reaction tokens.
 
-        Keys may match reaction token, internal id, label, or source node id.
-        Missing reactions default to 0.
+        Keys may match reaction token, internal id, label, or source node id,
+        tried in that order; the first match wins. Missing reactions default
+        to 0. The order matters only when a network mixes naming conventions —
+        with the default prefixed id policy (``r_1``, ``s_1``) reaction ids
+        cannot collide with species ids.
 
         :param incidence_reaction_order:
             Canonical reaction-id order from the incidence view.
@@ -284,7 +280,7 @@ class PathwayRealizability:
         :param provided:
             User-provided flow mapping.
         :type provided: Mapping[str, int]
-        :returns:
+        :return:
             Flow map keyed by reaction token.
         :rtype: Dict[str, int]
         """
@@ -314,8 +310,7 @@ class PathwayRealizability:
         species_source_node_ids: Mapping[str, object],
         provided: Mapping[str, int],
     ) -> Dict[str, int]:
-        """
-        Resolve user-supplied initial marking keys onto species tokens.
+        """Resolve user-supplied initial marking keys onto species tokens.
 
         Keys may match species token, internal id, label, or source node id.
         Missing species default to 0 and are dropped from the returned mapping.
@@ -335,7 +330,7 @@ class PathwayRealizability:
         :param provided:
             User-provided initial marking.
         :type provided: Mapping[str, int]
-        :returns:
+        :return:
             Initial marking keyed by species token.
         :rtype: Dict[str, int]
         """
@@ -366,8 +361,7 @@ class PathwayRealizability:
         species: str = "label",
         reaction: str = "id",
     ) -> "PathwayRealizability":
-        """
-        Load a SynCRN-like object together with a requested pathway flow.
+        """Load a SynCRN-like object together with a requested pathway flow.
 
         The SynCRN object is tokenized via :func:`tokenize_syncrn_incidence`.
         User-supplied flow and marking keys are resolved flexibly against token,
@@ -388,12 +382,12 @@ class PathwayRealizability:
         :param reaction:
             Reaction tokenization mode.
         :type reaction: str
-        :returns:
+        :return:
             The current instance.
         :rtype: PathwayRealizability
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             pr = PathwayRealizability().load_syncrn_and_flow(
@@ -453,8 +447,7 @@ class PathwayRealizability:
     # ------------------------------------------------------------------
 
     def set_initial_marking(self, marking: Mapping[str, int]) -> "PathwayRealizability":
-        """
-        Replace the user-provided initial marking.
+        """Replace the user-provided initial marking.
 
         This resets any previously built Petri-net instance, goals, and cached
         firing certificate.
@@ -462,7 +455,7 @@ class PathwayRealizability:
         :param marking:
             New initial marking.
         :type marking: Mapping[str, int]
-        :returns:
+        :return:
             The current instance.
         :rtype: PathwayRealizability
         """
@@ -475,8 +468,7 @@ class PathwayRealizability:
         return self
 
     def build_petri_net_from_flow(self) -> "PathwayRealizability":
-        """
-        Build an augmented Petri net encoding the requested pathway flow.
+        """Build an augmented Petri net encoding the requested pathway flow.
 
         For every active reaction ``eid`` with requested flow ``f > 0``, two
         auxiliary places are created:
@@ -488,7 +480,7 @@ class PathwayRealizability:
         firing and produces one token in the target place on each firing. This
         enforces exact realization of the requested number of firings.
 
-        :returns:
+        :return:
             The current instance.
         :rtype: PathwayRealizability
         :raises RuntimeError:
@@ -496,8 +488,8 @@ class PathwayRealizability:
         :raises ValueError:
             If a negative flow value is encountered.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             pr = PathwayRealizability().load_syncrn_and_flow(
@@ -568,10 +560,9 @@ class PathwayRealizability:
 
     @property
     def petri(self) -> PetriNet:
-        """
-        Return the active Petri net.
+        """Return the active Petri net.
 
-        :returns:
+        :return:
             Augmented Petri net for realizability checking.
         :rtype: PetriNet
         :raises RuntimeError:
@@ -583,10 +574,9 @@ class PathwayRealizability:
 
     @property
     def initial_marking(self) -> Dict[Place, int]:
-        """
-        Return the active initial marking of the augmented Petri net.
+        """Return the active initial marking of the augmented Petri net.
 
-        :returns:
+        :return:
             Initial marking.
         :rtype: Dict[Place, int]
         :raises RuntimeError:
@@ -598,10 +588,9 @@ class PathwayRealizability:
 
     @property
     def goal_exact(self) -> Dict[Place, int]:
-        """
-        Return exact target marking constraints.
+        """Return exact target marking constraints.
 
-        :returns:
+        :return:
             Exact goal marking constraints.
         :rtype: Dict[Place, int]
         """
@@ -609,10 +598,9 @@ class PathwayRealizability:
 
     @property
     def goal_atleast(self) -> Dict[Place, int]:
-        """
-        Return lower-bound target marking constraints.
+        """Return lower-bound target marking constraints.
 
-        :returns:
+        :return:
             Lower-bound goal marking constraints.
         :rtype: Dict[Place, int]
         """
@@ -620,25 +608,23 @@ class PathwayRealizability:
 
     @property
     def certificate(self) -> Optional[List[TransitionId]]:
-        """
-        Return the most recently found firing certificate.
+        """Return the most recently found firing certificate.
 
-        :returns:
+        :return:
             Realizing firing sequence, or ``None`` if none is cached.
         :rtype: Optional[List[TransitionId]]
         """
         return self._certificate
 
     def summary(self) -> RealizabilitySummary:
-        """
-        Return a compact summary of the current realizability instance.
+        """Return a compact summary of the current realizability instance.
 
-        :returns:
+        :return:
             Serializable instance summary.
         :rtype: RealizabilitySummary
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             info = pr.summary()
@@ -658,8 +644,7 @@ class PathwayRealizability:
     # ------------------------------------------------------------------
 
     def _goal_reached(self, marking: Mapping[str, int]) -> bool:
-        """
-        Test whether a marking satisfies the active goal constraints.
+        """Test whether a marking satisfies the active goal constraints.
 
         Exact constraints in ``_goal_exact`` must match exactly, while lower
         bounds in ``_goal_atleast`` must be met or exceeded.
@@ -667,7 +652,7 @@ class PathwayRealizability:
         :param marking:
             Candidate marking.
         :type marking: Mapping[str, int]
-        :returns:
+        :return:
             ``True`` if the marking satisfies all active goals.
         :rtype: bool
         """
@@ -688,8 +673,7 @@ class PathwayRealizability:
         max_states: Optional[int] = None,
         max_depth: Optional[int] = None,
     ) -> Tuple[bool, Optional[List[TransitionId]]]:
-        """
-        Test exact realizability by bounded breadth-first search.
+        """Test exact realizability by bounded breadth-first search.
 
         The search explores reachable Petri-net markings while recording firing
         sequences. A certificate is returned when a goal-satisfying marking is
@@ -701,13 +685,13 @@ class PathwayRealizability:
         :param max_depth:
             Optional override for the maximum explored firing depth.
         :type max_depth: Optional[int]
-        :returns:
+        :return:
             Pair ``(is_realizable, certificate)`` where ``certificate`` is a
             realizing transition sequence if one is found.
         :rtype: Tuple[bool, Optional[List[TransitionId]]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             ok, cert = pr.is_realizable(max_states=50000, max_depth=2000)
@@ -759,8 +743,7 @@ class PathwayRealizability:
     # ------------------------------------------------------------------
 
     def is_realizable_via_konig(self) -> bool:
-        """
-        Apply a König-style sufficient acyclicity test.
+        """Apply a König-style sufficient acyclicity test.
 
         A directed bipartite dependency graph is built using:
 
@@ -775,13 +758,13 @@ class PathwayRealizability:
         If this dependency graph is acyclic, the active flow is certified
         realizable by this sufficient test.
 
-        :returns:
+        :return:
             ``True`` if the sufficient acyclicity condition holds, else
             ``False``.
         :rtype: bool
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             if pr.is_realizable_via_konig():
@@ -812,8 +795,7 @@ class PathwayRealizability:
     # ------------------------------------------------------------------
 
     def is_scaled_realizable(self, k_max: int = 4) -> Tuple[bool, Optional[int]]:
-        """
-        Test whether a scaled version of the requested flow is realizable.
+        """Test whether a scaled version of the requested flow is realizable.
 
         For each integer ``k`` from 1 to ``k_max``, the requested flow is scaled
         to ``k * flow`` and tested for exact realizability.
@@ -821,13 +803,13 @@ class PathwayRealizability:
         :param k_max:
             Maximum scale factor to try.
         :type k_max: int
-        :returns:
+        :return:
             Pair ``(success, k)`` where ``k`` is the first successful scale
             factor, or ``None`` if no tested scale succeeds.
         :rtype: Tuple[bool, Optional[int]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             ok, k = pr.is_scaled_realizable(k_max=5)
@@ -850,8 +832,7 @@ class PathwayRealizability:
         self,
         max_borrow_each: int = 2,
     ) -> Tuple[bool, Optional[Mapping[str, int]]]:
-        """
-        Test realizability when temporary borrowed initial tokens are allowed.
+        """Test realizability when temporary borrowed initial tokens are allowed.
 
         Every combination of per-species borrowed tokens from 0 up to
         ``max_borrow_each`` is tried. For a candidate borrow multiset, the
@@ -862,13 +843,13 @@ class PathwayRealizability:
         :param max_borrow_each:
             Maximum borrowed amount tested independently for each species.
         :type max_borrow_each: int
-        :returns:
+        :return:
             Pair ``(success, borrow)`` where ``borrow`` is the first successful
             borrow multiset, or ``None`` if no tested borrow succeeds.
         :rtype: Tuple[bool, Optional[Mapping[str, int]]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             ok, borrow = pr.is_borrow_realizable(max_borrow_each=1)
@@ -901,8 +882,7 @@ class PathwayRealizability:
     # ------------------------------------------------------------------
 
     def export_pnml(self, fn: str) -> "PathwayRealizability":
-        """
-        Export the current augmented Petri net to a JSON-based PNML-like file.
+        """Export the current augmented Petri net to a JSON-based PNML-like file.
 
         The exported structure contains places, transitions, initial marking,
         and active goal constraints. Despite the method name, the file written
@@ -911,12 +891,12 @@ class PathwayRealizability:
         :param fn:
             Output filename.
         :type fn: str
-        :returns:
+        :return:
             The current instance.
         :rtype: PathwayRealizability
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             pr.export_pnml("pathway_realizability.json")
@@ -938,10 +918,9 @@ class PathwayRealizability:
         return self
 
     def __repr__(self) -> str:  # pragma: no cover - simple repr
-        """
-        Return a compact representation.
+        """Return a compact representation.
 
-        :returns:
+        :return:
             Readable summary string.
         :rtype: str
         """
@@ -964,43 +943,27 @@ def syncrn_to_pr_inputs(
     Dict[str, int],
     Dict[str, int],
 ]:
-    """
-    Convert a SynCRN-like object into tokenized pathway-realizability inputs.
+    """Convert a SynCRN-like object into tokenized pathway-realizability inputs.
 
-    The returned tuple contains:
+    The result contains species tokens, reaction-tokenized hyperedges, a flow
+    map keyed by reaction token, and an initial marking keyed by species token.
 
-    - species tokens,
-    - reaction-tokenized hyperedges,
-    - resolved flow map keyed by reaction token,
-    - resolved initial marking keyed by species token.
-
-    :param crn:
-        SynCRN-like object.
+    :param crn: SynCRN-like object.
     :type crn: object
-    :param flow:
-        Optional requested reaction firing counts.
+    :param flow: Optional requested reaction firing counts.
     :type flow: Optional[Mapping[str, int]]
-    :param initial_marking:
-        Optional initial marking.
+    :param initial_marking: Optional initial marking.
     :type initial_marking: Optional[Mapping[str, int]]
-    :param species:
-        Species tokenization mode.
+    :param species: Species tokenization mode.
     :type species: str
-    :param reaction:
-        Reaction tokenization mode.
+    :param reaction: Reaction tokenization mode.
     :type reaction: str
-    :returns:
-        Tuple ``(vertices, edges, flow_map, marking_map)``.
-    :rtype:
-        Tuple[
-            List[str],
-            Dict[str, Tuple[Dict[str, int], Dict[str, int]]],
-            Dict[str, int],
-            Dict[str, int],
-        ]
+    :return: Tuple ``(vertices, edges, flow_map, marking_map)``.
+    :rtype: Tuple[List[str], Dict[str, Tuple[Dict[str, int], Dict[str, int]]],
+        Dict[str, int], Dict[str, int]]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         vertices, edges, flow_map, marking_map = syncrn_to_pr_inputs(
@@ -1052,8 +1015,7 @@ def run_realizability_from_syncrn(
     reaction: str = "id",
     verbose: bool = True,
 ) -> Tuple[PathwayRealizability, Dict[str, object]]:
-    """
-    Run König-style and exact BFS realizability tests on a SynCRN-like object.
+    """Run König-style and exact BFS realizability tests on a SynCRN-like object.
 
     This convenience wrapper:
 
@@ -1081,12 +1043,12 @@ def run_realizability_from_syncrn(
     :param verbose:
         Whether to print a textual summary.
     :type verbose: bool
-    :returns:
+    :return:
         Pair ``(pathway_realizability_instance, info_dict)``.
     :rtype: Tuple[PathwayRealizability, Dict[str, object]]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         pr, info = run_realizability_from_syncrn(

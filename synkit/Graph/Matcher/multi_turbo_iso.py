@@ -26,7 +26,7 @@ class MultiTurboISO:
     :param distance_threshold: Skip distance filtering if candidate pool
         is smaller.
     :type distance_threshold: int
-    :returns: An instance of MultiTurboISO with global index built.
+    :return: An instance of MultiTurboISO with global index built.
     :rtype: MultiTurboISO
     """
 
@@ -63,7 +63,7 @@ class MultiTurboISO:
         ]
 
         # global bucket: signature → {(host_idx, node)} ---------------------
-        self._bucket: Dict[str, Set[Tuple[int, Any]]] = defaultdict(set)
+        self._bucket: Dict[Tuple[Any, ...], Set[Tuple[int, Any]]] = defaultdict(set)
         for idx, m in enumerate(self._matchers):
             for node, sig in m._sig.items():
                 self._bucket[sig].add((idx, node))
@@ -107,8 +107,10 @@ class MultiTurboISO:
         return list(self._edge_attr)
 
     # -------------------------------------------------------------- helpers
-    def _node_sig(self, v: Any, G: nx.Graph) -> str:
-        return "|".join(str(G.nodes[v].get(a, "#")) for a in self._node_attr)
+    def _node_sig(self, v: Any, G: nx.Graph) -> Tuple[Any, ...]:
+        if self._matchers:
+            return self._matchers[0]._node_signature(v, G)
+        return TurboISO(G, node_label=self._node_attr)._node_signature(v, G)
 
     def _init_candidates(self, Q: nx.Graph) -> Dict[int, Dict[Any, Set[Any]]]:
         """Return per‑host candidate sets after signature + degree filter."""
@@ -143,20 +145,20 @@ class MultiTurboISO:
     ) -> Dict[int, Union[bool, List[Dict[Any, Any]]]]:
         """Match a single pattern graph *Q* against every host.
 
-        Parameters
-        ----------
-        Q : nx.Graph
-            Query / pattern graph.
-        prune : bool, default False
-            Forwarded to TurboISO.  If *True*, return just a boolean per
-            host (‘found?’), otherwise return the full list of mappings.
+        :param Q: Query / pattern graph.
+        :type Q: nx.Graph
+        :param prune: Forwarded to TurboISO.  If *True*, return just a boolean per
+                      host (‘found?’), otherwise return the full list of mappings.
+        :type prune: bool, default False
 
-        Returns
-        -------
-        dict
-            ``{host_idx: result}`` where *result* is *bool* if *prune* is
-            *True* else a list of node‑mapping dicts.
+        :return: ``{host_idx: result}`` where *result* is *bool* if *prune* is
+                  *True* else a list of node‑mapping dicts.
+        :rtype: dict
         """
+
+        if not Q:
+            empty_result: Union[bool, List[Dict[Any, Any]]] = True if prune else [{}]
+            return {index: empty_result for index in range(len(self._hosts))}
 
         host_cands = self._init_candidates(Q)
         out: Dict[int, Union[bool, List[Dict[Any, Any]]]] = {}
@@ -164,8 +166,10 @@ class MultiTurboISO:
             m: TurboISO = self._matchers[hidx]
             original = m._init_candidates
             m._init_candidates = lambda _Q: C  # type: ignore
-            out[hidx] = m.search(Q, prune=prune)
-            m._init_candidates = original
+            try:
+                out[hidx] = m.search(Q, prune=prune)
+            finally:
+                m._init_candidates = original
         return out
 
     def search_many(

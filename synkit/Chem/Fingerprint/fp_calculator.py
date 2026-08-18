@@ -87,7 +87,7 @@ class FPCalculator:
         :type fp_type: str
         :param absolute: Whether to take absolute values of the fingerprint difference.
         :type absolute: bool
-        :returns: The input dictionary with a new key `fp_{fp_type}` holding the fingerprint vector.
+        :return: The input dictionary with a new key `fp_{fp_type}` holding the fingerprint vector.
         :rtype: dict
         :raises ValueError: If `rsmi_key` is missing in `data_dict`.
         """
@@ -121,7 +121,7 @@ class FPCalculator:
         :type fp_type: str
         :param absolute: Whether to take absolute values of the fingerprint difference.
         :type absolute: bool
-        :returns: A list of dictionaries augmented with `fp_{fp_type}` entries.
+        :return: A list of dictionaries augmented with `fp_{fp_type}` entries.
         :rtype: list of dict
         :raises ValueError: If `fp_type` is unsupported or any dict is missing `rsmi_key`.
         """
@@ -138,7 +138,7 @@ class FPCalculator:
     def __str__(self) -> str:
         """Short string summarizing the calculator configuration.
 
-        :returns: A summary of n_jobs and verbosity.
+        :return: A summary of n_jobs and verbosity.
         :rtype: str
         """
         return f"<FPCalculator n_jobs={self.n_jobs} verbose={self.verbose}>"
@@ -146,7 +146,7 @@ class FPCalculator:
     def help(self) -> None:
         """Print details about supported fingerprint types and usage.
 
-        :returns: None
+        :return: None
         :rtype: NoneType
         """
         print("FPCalculator supports the following fingerprint types:")

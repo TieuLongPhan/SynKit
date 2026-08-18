@@ -6,38 +6,35 @@ from rdkit import Chem
 
 
 class SMARTSToGraph:
-    """
-    Convert SMARTS or reaction SMARTS strings into NetworkX graphs with full atom and constraint data.
+    """Convert SMARTS or reaction SMARTS strings into NetworkX graphs with full atom and constraint data.
 
     :param placeholder_labels: Optional set of labels to treat as placeholders (e.g., wildcard atoms).
     :type placeholder_labels: Optional[Set[str]]
-    :raises: None
     """
 
     def __init__(self, placeholder_labels: Optional[Set[str]] = None) -> None:
-        """
-        Initialize a SMARTSToGraph converter.
+        """Initialize a SMARTSToGraph converter.
 
         :param placeholder_labels: Set of placeholder labels used in SMARTS to identify wildcard positions.
                                    Defaults to {'_R', 'X', 'Y', 'Z'} if None.
         :type placeholder_labels: Optional[Set[str]]
-        :returns: None
+        :return: None
         :rtype: None
         """
         self.placeholder_labels: Set[str] = placeholder_labels or {"_R", "X", "Y", "Z"}
 
     @staticmethod
     def _safe_total_hs(atom: "Chem.Atom") -> int:
-        """
-        Compute the total number of hydrogens (explicit + implicit) for an RDKit Atom safely.
+        """Compute the total number of hydrogens (explicit + implicit) for an RDKit Atom safely.
 
         :param atom: RDKit Atom instance whose hydrogen count is desired.
         :type atom: Chem.Atom
-        :returns: Total hydrogen count for the atom.
+        :return: Total hydrogen count for the atom.
         :rtype: int
-        :raises: Exception if RDKit property cache update fails.
+        :raises Exception: If RDKit property cache update fails.
 
-        :Example:
+        .. rubric:: Examples
+
         >>> from rdkit import Chem
         >>> atom = Chem.MolFromSmiles('C').GetAtomWithIdx(0)
         >>> SMARTSToGraph._safe_total_hs(atom)
@@ -50,12 +47,11 @@ class SMARTSToGraph:
             return 0
 
     def smarts_to_graph(self, smarts: str) -> nx.Graph:
-        """
-        Parse a SMARTS string into a NetworkX graph representation, extracting wildcard constraints.
+        """Parse a SMARTS string into a NetworkX graph representation, extracting wildcard constraints.
 
         :param smarts: SMARTS pattern to convert (e.g., '[C:1]C[O:2]').
         :type smarts: str
-        :returns: NetworkX Graph with:
+        :return: NetworkX Graph with:
                   - node attributes: element (str), charge (int), hcount (int),
                     label (str), constraint (Optional[List[str]]), atom_map (int)
                   - edge attributes: order (float), standard_order (float)
@@ -63,7 +59,8 @@ class SMARTSToGraph:
         :raises ImportError: If RDKit is not available.
         :raises ValueError: If the SMARTS string is invalid or atoms lack mapping numbers.
 
-        :Example:
+        .. rubric:: Examples
+
         >>> stg = SMARTSToGraph()
         >>> graph = stg.smarts_to_graph('[CH3:1]-[OH:2]')
         >>> graph.nodes[1]['element']
@@ -132,16 +129,16 @@ class SMARTSToGraph:
         return G
 
     def rxn_smarts_to_graphs(self, rxn: str) -> Tuple[nx.Graph, nx.Graph]:
-        """
-        Split a reaction SMARTS into separate reactant and product graphs.
+        """Split a reaction SMARTS into separate reactant and product graphs.
 
         :param rxn: Reaction SMARTS in the format 'reactants>>products'.
         :type rxn: str
-        :returns: Tuple of (reactant_graph, product_graph).
+        :return: Tuple of (reactant_graph, product_graph).
         :rtype: Tuple[nx.Graph, nx.Graph]
         :raises ValueError: If the reaction SMARTS string does not contain '>>'.
 
-        :Example:
+        .. rubric:: Examples
+
         >>> stg = SMARTSToGraph()
         >>> react, prod = stg.rxn_smarts_to_graphs('[CH3:1]-[OH:2]>>[CH2:1]=[O:2]')
         >>> react.nodes
@@ -155,22 +152,21 @@ class SMARTSToGraph:
         return self.smarts_to_graph(lhs), self.smarts_to_graph(rhs)
 
     def __repr__(self) -> str:
-        """
-        Return an unambiguous string representation of this converter.
+        """Return an unambiguous string representation of this converter.
 
-        :returns: Representation of the instance showing placeholder labels.
+        :return: Representation of the instance showing placeholder labels.
         :rtype: str
         """
         return f"<SMARTSToGraph placeholders={self.placeholder_labels}>"
 
     def describe(self) -> str:
-        """
-        Provide a usage summary for SMARTSToGraph.
+        """Provide a usage summary for SMARTSToGraph.
 
-        :returns: Multi-line string explaining available methods and usage.
+        :return: Multi-line string explaining available methods and usage.
         :rtype: str
 
-        :Example:
+        .. rubric:: Examples
+
         >>> print(SMARTSToGraph().describe())
         SMARTSToGraph(placeholder_labels=None)
          smarts_to_graph(smarts_str) -> Graph

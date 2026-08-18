@@ -137,16 +137,11 @@ def _parse_side(smiles: str) -> _ReactionSide | None:
 def audit_explicit_h_reaction(text: str) -> ExplicitHydrogenReactionAudit:
     """Audit a mapped reaction for strict explicit-H-center suitability.
 
-    Parameters
-    ----------
-    text:
-        A mapped reaction SMILES, optionally followed by SynKit's legacy
-        whitespace-separated electron-flow annotation.
+    :param text: A mapped reaction SMILES, optionally followed by SynKit's legacy
+                 whitespace-separated electron-flow annotation.
 
-    Returns
-    -------
-    ExplicitHydrogenReactionAudit
-        A report with stable error codes and the detected mapped bond changes.
+    :return: A report with stable error codes and the detected mapped bond changes.
+    :rtype: ExplicitHydrogenReactionAudit
     """
 
     reaction = reaction_smiles_from_annotated_text(text)

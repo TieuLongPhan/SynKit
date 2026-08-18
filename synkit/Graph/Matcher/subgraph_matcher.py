@@ -1,80 +1,6 @@
+"""Connected-component-aware subgraph matching utilities."""
+
 from __future__ import annotations
-
-"""
-subgraph_matcher.py
-================================
-A **lean**, **typed**, and **high-performance** successor to the original
-sub-graph matching utilities in SynKit.
-
-Key Features
-------------
-• **Speed**
-  • Element-multiset, node-attribute, degree-histogram, and WL-1 hashing
-    pre-filters remove up to 95 % of impossible host-CCs before VF2.
-  • Heuristic CC ordering and optional result limits prune the search tree.
-
-• **Flexibility**
-  • Three matching strategies:
-    – ALL: classic VF2 over the entire host
-    – COMPONENT: CC-aware, distinct-CC enforcement
-    – BACKTRACK: component-aware with classic-fallback
-  • Fallback to brute-force VF2 when host has fewer CCs than pattern
-  • Optional `strict_cc_count` to enforce exact CC counts
-
-• **Safety & Cleanliness**
-  • Never mutates your input graphs
-  • Validates inputs and raises clear errors on misuse
-  • Full type annotations throughout
-  • Single public entry point:
-      `SubgraphSearchEngine.find_subgraph_mappings(...)`
-
-Public API
-----------
-SubgraphSearchEngine.find_subgraph_mappings(
-    host: nx.Graph,
-    pattern: nx.Graph,
-    node_attrs: List[str],
-    edge_attrs: List[str],
-    strategy: Strategy = Strategy.COMPONENT,
-    *,
-    max_results: Optional[int] = None,
-    strict_cc_count: bool = False,
-    wl1_filter: bool = True,
-) -> List[MappingDict]
-
-    Dispatches to one of:
-      - `_all_monomorphisms` (classic VF2)
-      - `_component_aware_mappings` (fast, CC-aware)
-      - `_bt_subgraph_mappings` (with fallback)
-
-Helper Functions
-----------------
-- `wl1_hash(graph, node_attrs)`
-  Computes a single-pass Weisfeiler–Lehman coloring signature.
-- `_all_monomorphisms(host, pattern, node_attrs, edge_attrs)`
-  Fast wrapper around NetworkX’s VF2 that returns every subgraph monomorphism.
-- `_component_aware_mappings(...)`
-  Splits graphs into connected components (CCs), applies multi-level filters
-  (element, attribute, degree, WL-1), then assembles only those mappings
-  placing each pattern-CC into a distinct host-CC.
-- `_bt_subgraph_mappings(...)`
-  Same CC-aware logic but falls back to classic VF2 if any CC can’t embed.
-
-Usage Example
--------------
-```python
-from subgraph_matcher import SubgraphSearchEngine, Strategy
-
-mappings = SubgraphSearchEngine.find_subgraph_mappings(
-    host_graph,
-    pattern_graph,
-    node_attrs=["element", "aromatic"],
-    edge_attrs=["order"],
-    strategy=Strategy.COMPONENT,
-    max_results=50,
-    strict_cc_count=False,
-)
-"""
 
 from typing import Any, Dict, List, Set, Optional, Sequence, Tuple, Callable, Union
 from operator import eq
@@ -83,7 +9,7 @@ import networkx as nx
 from networkx.algorithms.isomorphism import GraphMatcher
 from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
 
-from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor import Strategy
 
 # ---------------------------------------------------------------------------
 # Type aliases
@@ -273,13 +199,17 @@ class SubgraphMatch:
             ):
                 return False
 
+            node_comparator = node_comparator or eq
+            edge_comparator = edge_comparator or eq
+
             for _, child_data in child_graph.nodes(data=True):
                 found_match = False
                 for _, parent_data in parent_graph.nodes(data=True):
                     match = True
                     for label, default in zip(node_label_names, node_label_default):
-                        if child_data.get(label, default) != parent_data.get(
-                            label, default
+                        if not node_comparator(
+                            parent_data.get(label, default),
+                            child_data.get(label, default),
                         ):
                             match = False
                             break
@@ -290,18 +220,16 @@ class SubgraphMatch:
                     return False
 
             if edge_attribute:
-                for u, v, child_data in child_graph.edges(data=True):
-                    if not parent_graph.has_edge(u, v):
-                        return False
-                    parent_data = parent_graph[u][v]
-                    child_order = child_data.get(edge_attribute)
-                    parent_order = parent_data.get(edge_attribute)
-                    if isinstance(child_order, tuple) and isinstance(
-                        parent_order, tuple
+                parent_edge_values = [
+                    data.get(edge_attribute)
+                    for _, _, data in parent_graph.edges(data=True)
+                ]
+                for _, _, child_data in child_graph.edges(data=True):
+                    child_value = child_data.get(edge_attribute)
+                    if not any(
+                        edge_comparator(parent_value, child_value)
+                        for parent_value in parent_edge_values
                     ):
-                        if child_order != parent_order:
-                            return False
-                    elif child_order != parent_order:
                         return False
 
         node_comparator = node_comparator or eq
@@ -314,7 +242,16 @@ class SubgraphMatch:
         )
         edge_match = generic_edge_match(edge_attribute, None, edge_comparator)
 
-        matcher = GraphMatcher(
+        if child_graph.is_directed() != parent_graph.is_directed():
+            return False
+        if child_graph.is_multigraph() or parent_graph.is_multigraph():
+            raise NotImplementedError("SubgraphMatch does not support multigraphs")
+        matcher_cls = (
+            nx.algorithms.isomorphism.DiGraphMatcher
+            if parent_graph.is_directed()
+            else GraphMatcher
+        )
+        matcher = matcher_cls(
             parent_graph, child_graph, node_match=node_match, edge_match=edge_match
         )
 
@@ -362,6 +299,7 @@ class SubgraphSearchEngine:
     """
 
     DEFAULT_THRESHOLD: int = 5_000
+    _COMPILED_MATCH_CAP: int = 1_000_000
 
     @staticmethod
     def _quick_pre_filter(
@@ -394,6 +332,134 @@ class SubgraphSearchEngine:
         return False
 
     @staticmethod
+    def _find_compiled_domain_mappings(
+        host: nx.Graph,
+        pattern: nx.Graph,
+        node_attrs: List[str],
+        edge_attrs: List[str],
+    ) -> Optional[List[MappingDict]]:
+        """Enumerate an exact node-domain query with RDKit's compiled matcher.
+
+        Each host atom receives an isotope identifying the complete set of
+        pattern nodes accepted by ``electron_aware_node_match``. A pattern
+        query atom is the OR of precisely those isotope domains that contain
+        it. Thus the compiled query preserves the authoritative node predicate
+        exactly; edge attributes are checked by the established predicate on
+        every returned topological embedding.
+
+        ``None`` requests the NetworkX fallback for unsupported graph kinds or
+        if the defensive raw-match cap is reached. Consequently the cap can
+        never truncate a returned mapping population.
+        """
+        if (
+            host.is_directed()
+            or pattern.is_directed()
+            or host.is_multigraph()
+            or pattern.is_multigraph()
+            or nx.number_of_selfloops(host)
+            or nx.number_of_selfloops(pattern)
+        ):
+            return None
+        if not pattern:
+            return [{}]
+
+        from rdkit import Chem
+        from rdkit.Chem import rdqueries
+
+        pattern_nodes = tuple(pattern)
+        domain_ids: Dict[Tuple[Any, ...], int] = {}
+        host_domains: Dict[Any, int] = {}
+        for host_node, host_attrs in host.nodes(data=True):
+            domain = tuple(
+                pattern_node
+                for pattern_node in pattern_nodes
+                if electron_aware_node_match(
+                    host_attrs,
+                    pattern.nodes[pattern_node],
+                    node_attrs,
+                )
+            )
+            if not domain:
+                host_domains[host_node] = 0
+                continue
+            domain_id = domain_ids.get(domain)
+            if domain_id is None:
+                domain_id = len(domain_ids) + 1
+                if domain_id > 65535:
+                    return None
+                domain_ids[domain] = domain_id
+            host_domains[host_node] = domain_id
+
+        allowed_domains = {
+            pattern_node: tuple(
+                domain_id
+                for domain, domain_id in domain_ids.items()
+                if pattern_node in domain
+            )
+            for pattern_node in pattern_nodes
+        }
+        if any(not domains for domains in allowed_domains.values()):
+            return []
+
+        host_builder = Chem.RWMol()
+        host_nodes = tuple(host)
+        host_index = {}
+        for node in host_nodes:
+            atom = Chem.Atom(0)
+            atom.SetIsotope(host_domains[node])
+            host_index[node] = host_builder.AddAtom(atom)
+        for left, right in host.edges():
+            host_builder.AddBond(
+                host_index[left],
+                host_index[right],
+                Chem.BondType.SINGLE,
+            )
+
+        query_builder = Chem.RWMol()
+        query_index = {}
+        for node in pattern_nodes:
+            domains = allowed_domains[node]
+            query = rdqueries.IsotopeEqualsQueryAtom(domains[0])
+            for domain_id in domains[1:]:
+                query.ExpandQuery(
+                    rdqueries.IsotopeEqualsQueryAtom(domain_id),
+                    Chem.CompositeQueryType.COMPOSITE_OR,
+                )
+            query_index[node] = query_builder.AddAtom(query)
+        for left, right in pattern.edges():
+            query_builder.AddBond(
+                query_index[left],
+                query_index[right],
+                Chem.BondType.SINGLE,
+            )
+
+        matches = host_builder.GetMol().GetSubstructMatches(
+            query_builder.GetMol(),
+            uniquify=False,
+            useChirality=False,
+            maxMatches=SubgraphSearchEngine._COMPILED_MATCH_CAP,
+        )
+        if len(matches) == SubgraphSearchEngine._COMPILED_MATCH_CAP:
+            return None
+
+        results = []
+        for match in matches:
+            mapping = {
+                pattern_nodes[index]: host_nodes[host_atom_index]
+                for index, host_atom_index in enumerate(match)
+            }
+            if all(
+                electron_aware_edge_match(
+                    host.edges[mapping[left], mapping[right]],
+                    attrs,
+                    edge_attrs,
+                )
+                for left, right, attrs in pattern.edges(data=True)
+            ):
+                results.append(mapping)
+        return results
+
+    @staticmethod
     def find_subgraph_mappings(
         host: nx.Graph,
         pattern: nx.Graph,
@@ -408,39 +474,61 @@ class SubgraphSearchEngine:
     ) -> List[MappingDict]:
         """Dispatch to a subgraph-matching strategy with optional guards.
 
-        Parameters
-        ----------
-        host, pattern
-            NetworkX graphs (host ≥ pattern).
-        node_attrs, edge_attrs
-            Keys of attributes to match; ``hcount`` and ``lone_pairs`` use
-            host-greater-or-equal semantics, while the rest are exact.
-        strategy
-            Matching strategy code or enum ("all", "comp", "bt").
-        max_results
-            Stop after this many embeddings (None = no limit).
-        strict_cc_count
-            If True, host CC count must ≤ pattern CC count for COMPONENT/BACKTRACK.
-        threshold
-            Embedding cap. Passing ``None`` disables the cap; omitting the
-            argument uses ``DEFAULT_THRESHOLD``.
-        pre_filter
-            If True, reject patterns having an empty candidate-node domain.
+        :param host: NetworkX graphs (host ≥ pattern).
+        :param pattern: NetworkX graphs (host ≥ pattern).
+        :param node_attrs: Keys of attributes to match; ``hcount`` and ``lone_pairs`` use
+                           host-greater-or-equal semantics, while the rest are exact.
+        :param edge_attrs: Keys of attributes to match; ``hcount`` and ``lone_pairs`` use
+                           host-greater-or-equal semantics, while the rest are exact.
+        :param strategy: Matching strategy code or enum ("all", "comp", "bt").
+        :param max_results: Stop after this many embeddings (None = no limit).
+        :param strict_cc_count: If True, host CC count must ≤ pattern CC count for COMPONENT/BACKTRACK.
+        :param threshold: Embedding cap. Passing ``None`` disables the cap; omitting the
+                          argument uses ``DEFAULT_THRESHOLD``.
+        :param pre_filter: If True, reject patterns having an empty candidate-node domain.
 
-        Returns
-        -------
-        List of dictionaries mapping pattern node→host node. Empty if none or
-        if any guard (pre-filter or enumeration) exceeds the threshold.
+        :return: * *List of dictionaries mapping pattern node→host node. Empty if none or*
+                  * *if any guard (pre-filter or enumeration) exceeds the threshold.*
         """
         strat = Strategy.from_string(strategy)
         if strat is Strategy.PARTIAL:
             raise NotImplementedError("PARTIAL strategy not implemented yet.")
+        if host.is_directed() != pattern.is_directed():
+            return []
+        if host.is_multigraph() or pattern.is_multigraph():
+            raise NotImplementedError(
+                "SubgraphSearchEngine does not support multigraphs"
+            )
+        if max_results is not None and max_results < 0:
+            raise ValueError("max_results must be non-negative or None")
+        if threshold is not None and threshold < 0:
+            raise ValueError("threshold must be non-negative or None")
+        if max_results == 0:
+            return []
 
         thresh = threshold
 
-        # defensive copies
-        host = host.copy()
-        pattern = pattern.copy()
+        # All matching strategies below treat the host and pattern as
+        # read-only.  Avoid copying both complete graphs for every search;
+        # component-specific working graphs are still materialized where a
+        # strategy needs them.
+
+        # The compiled matcher constructs the complete candidate-node domains
+        # itself. Running the Python pre-filter first would evaluate the same
+        # authoritative predicate twice. If compilation is unsupported or
+        # reaches its defensive cap, retain the established guarded fallback.
+        compiled_results = (
+            SubgraphSearchEngine._find_compiled_domain_mappings(
+                host,
+                pattern,
+                node_attrs,
+                edge_attrs,
+            )
+            if strat is Strategy.ALL and max_results is None and thresh is None
+            else None
+        )
+        if compiled_results is not None:
+            return compiled_results
 
         # quick pre-filter
         if pre_filter and SubgraphSearchEngine._quick_pre_filter(
@@ -510,11 +598,16 @@ class SubgraphSearchEngine:
         def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
             return electron_aware_edge_match(eh, ep, edge_attrs)
 
-        gm = GraphMatcher(host, pattern, node_match=node_match, edge_match=edge_match)
+        matcher_cls = (
+            nx.algorithms.isomorphism.DiGraphMatcher
+            if host.is_directed()
+            else GraphMatcher
+        )
+        gm = matcher_cls(host, pattern, node_match=node_match, edge_match=edge_match)
         results: List[MappingDict] = []
         for iso in gm.subgraph_monomorphisms_iter():
             results.append({p: h for h, p in iso.items()})
-            if max_results and len(results) >= max_results:
+            if max_results is not None and len(results) >= max_results:
                 break
             if threshold is not None and len(results) > threshold:
                 return []
@@ -590,8 +683,20 @@ class SubgraphSearchEngine:
         threshold: Optional[int],
     ) -> List[MappingDict]:
         """Component-aware VF2 split by connected components."""
-        host_ccs = [host.subgraph(c).copy() for c in nx.connected_components(host)]
-        pat_ccs = [pattern.subgraph(c).copy() for c in nx.connected_components(pattern)]
+        host_components = (
+            nx.weakly_connected_components(host)
+            if host.is_directed()
+            else nx.connected_components(host)
+        )
+        pattern_components = (
+            nx.weakly_connected_components(pattern)
+            if pattern.is_directed()
+            else nx.connected_components(pattern)
+        )
+        host_ccs = [host.subgraph(component).copy() for component in host_components]
+        pat_ccs = [
+            pattern.subgraph(component).copy() for component in pattern_components
+        ]
         hcc, pcc = len(host_ccs), len(pat_ccs)
         if pcc == 0:
             return [{}]
@@ -616,17 +721,26 @@ class SubgraphSearchEngine:
                 return []
             maps: List[Tuple[int, MappingDict]] = []
             for i in cand:
-                gm = GraphMatcher(
+                matcher_cls = (
+                    nx.algorithms.isomorphism.DiGraphMatcher
+                    if host.is_directed()
+                    else GraphMatcher
+                )
+                gm = matcher_cls(
                     host_ccs[i], pc, node_match=node_match, edge_match=edge_match
                 )
+                # ``max_results`` bounds complete joined embeddings, not the
+                # number of candidate host components considered here.  Keep
+                # up to that many local embeddings *per component pair* so a
+                # later injective assignment can still choose another host CC.
+                host_maps = 0
                 for iso in gm.subgraph_monomorphisms_iter():
                     maps.append((i, {p: h for h, p in iso.items()}))
-                    if max_results and len(maps) >= max_results:
+                    host_maps += 1
+                    if max_results is not None and host_maps >= max_results:
                         break
                     if threshold is not None and len(maps) > threshold:
                         return []
-                if max_results and len(maps) >= max_results:
-                    break
             if not maps:
                 return []
             per_cc.append(maps)
@@ -637,7 +751,7 @@ class SubgraphSearchEngine:
         used: Set[int] = set()
 
         def backtrack(level: int, acc: MappingDict):
-            if max_results and len(results) >= max_results:
+            if max_results is not None and len(results) >= max_results:
                 return
             if threshold is not None and len(results) > threshold:
                 return
@@ -653,7 +767,7 @@ class SubgraphSearchEngine:
                 for p in m:
                     acc.pop(p)
                 used.remove(hi)
-                if max_results and len(results) >= max_results:
+                if max_results is not None and len(results) >= max_results:
                     return
                 if threshold is not None and len(results) > threshold:
                     return
@@ -691,7 +805,6 @@ class SubgraphSearchEngine:
 
     __str__ = __repr__
 
-    # helpful alias for interactive users --------------------------------
     @property
     def help(self) -> str:  # noqa: D401 – property for convenience
         """Return the full module docstring."""

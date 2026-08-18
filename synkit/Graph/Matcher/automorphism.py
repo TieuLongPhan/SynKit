@@ -43,6 +43,7 @@ import networkx as nx
 from networkx.algorithms.isomorphism import (
     GraphMatcher,
     categorical_edge_match,
+    categorical_multiedge_match,
     categorical_node_match,
 )
 
@@ -56,28 +57,25 @@ __all__ = ["Automorphism", "NodeId", "MappingDict"]
 
 
 class Automorphism:
-    """
-    Analyze the automorphism group of a graph and prune sub-graph mappings
+    """Analyze the automorphism group of a graph and prune sub-graph mappings
     that are equivalent under those symmetries.
 
     Two nodes are in the same orbit if there exists an automorphism
     :math:`\\sigma` such that :math:`\\sigma(u) = v`.
 
-    Parameters
-    ----------
-    graph : nx.Graph
-        The host graph for which to compute automorphisms.
-    node_attr_keys : Sequence[str] | None, optional
-        Sequence of node attribute keys to respect in the automorphism
-        computation (i.e., nodes must match on these attributes). Defaults to
-        ``("element", "charge")``.
-    edge_attr_keys : Sequence[str] | None, optional
-        Sequence of edge attribute keys to respect in the automorphism
-        computation. Defaults to ``("order",)``.
-    anchor_largest_component : bool, optional
-        If ``True`` and the graph is disconnected, chooses the largest connected
-        component as an "anchor" to suppress automorphisms that swap isomorphic
-        components. Defaults to ``True``.
+    :param graph: The host graph for which to compute automorphisms.
+    :type graph: nx.Graph
+    :param node_attr_keys: Sequence of node attribute keys to respect in the automorphism
+                           computation (i.e., nodes must match on these attributes). Defaults to
+                           ``("element", "charge")``.
+    :type node_attr_keys: Sequence[str] | None, optional
+    :param edge_attr_keys: Sequence of edge attribute keys to respect in the automorphism
+                           computation. Defaults to ``("order",)``.
+    :type edge_attr_keys: Sequence[str] | None, optional
+    :param anchor_largest_component: If ``True`` and the graph is disconnected, chooses the largest connected
+                                     component as an "anchor" to suppress automorphisms that swap isomorphic
+                                     components. Defaults to ``True``.
+    :type anchor_largest_component: bool, optional
     """
 
     _DEF_NODE_ATTRS: Tuple[str, ...] = ("element", "charge")
@@ -93,10 +91,14 @@ class Automorphism:
     ) -> None:
         self._graph: nx.Graph = graph
         self._nkeys: Tuple[str, ...] = (
-            tuple(node_attr_keys) if node_attr_keys else self._DEF_NODE_ATTRS
+            tuple(node_attr_keys)
+            if node_attr_keys is not None
+            else self._DEF_NODE_ATTRS
         )
         self._ekeys: Tuple[str, ...] = (
-            tuple(edge_attr_keys) if edge_attr_keys else self._DEF_EDGE_ATTRS
+            tuple(edge_attr_keys)
+            if edge_attr_keys is not None
+            else self._DEF_EDGE_ATTRS
         )
         self._anchor_largest: bool = bool(anchor_largest_component)
 
@@ -111,13 +113,10 @@ class Automorphism:
     # ------------------------------------------------------------------
     @property
     def orbits(self) -> List[frozenset[NodeId]]:
-        """
-        Node-orbits of the graph under its automorphism group.
+        """Node-orbits of the graph under its automorphism group.
 
-        Returns
-        -------
-        list[frozenset[NodeId]]
-            Orbits, computed lazily and cached.
+        :return: Orbits, computed lazily and cached.
+        :rtype: list[frozenset[NodeId]]
         """
         if self._orbits is None:
             self._analyze()
@@ -125,13 +124,10 @@ class Automorphism:
 
     @property
     def n_automorphisms(self) -> int:
-        """
-        Number of automorphisms of the host graph.
+        """Number of automorphisms of the host graph.
 
-        Returns
-        -------
-        int
-            Group order (at least 1).
+        :return: Group order (at least 1).
+        :rtype: int
         """
         if self._n_automorphisms is None:
             self._analyze()
@@ -142,13 +138,10 @@ class Automorphism:
     # ------------------------------------------------------------------
     @property
     def is_connected(self) -> bool:
-        """
-        Whether the host graph is connected (weakly for directed graphs).
+        """Whether the host graph is connected (weakly for directed graphs).
 
-        Returns
-        -------
-        bool
-            ``True`` if connected or has 0/1 nodes, else ``False``.
+        :return: ``True`` if connected or has 0/1 nodes, else ``False``.
+        :rtype: bool
         """
         n = self._graph.number_of_nodes()
         if n <= 1:
@@ -157,13 +150,10 @@ class Automorphism:
 
     @property
     def components(self) -> List[frozenset[NodeId]]:
-        """
-        Connected components (weakly for directed graphs).
+        """Connected components (weakly for directed graphs).
 
-        Returns
-        -------
-        list[frozenset[NodeId]]
-            Components as frozensets of node IDs.
+        :return: Components as frozensets of node IDs.
+        :rtype: list[frozenset[NodeId]]
         """
         if self._components is None:
             self._components = self._compute_components()
@@ -171,13 +161,10 @@ class Automorphism:
 
     @property
     def anchor_component(self) -> Optional[frozenset[NodeId]]:
-        """
-        Anchor component used for disconnected graphs.
+        """Anchor component used for disconnected graphs.
 
-        Returns
-        -------
-        frozenset[NodeId] | None
-            Anchor component node-set, or ``None`` if graph is connected.
+        :return: Anchor component node-set, or ``None`` if graph is connected.
+        :rtype: frozenset[NodeId] | None
         """
         if self._orbits is None:
             self._analyze()
@@ -205,11 +192,31 @@ class Automorphism:
         return [1.0 for _ in self._ekeys]
 
     def _make_matcher(self, g: nx.Graph) -> GraphMatcher:
-        return GraphMatcher(
+        if g.is_multigraph():
+            matcher_cls = (
+                nx.algorithms.isomorphism.MultiDiGraphMatcher
+                if g.is_directed()
+                else nx.algorithms.isomorphism.MultiGraphMatcher
+            )
+            edge_match = categorical_multiedge_match(
+                self._ekeys,
+                self._edge_defaults(),
+            )
+        else:
+            matcher_cls = (
+                nx.algorithms.isomorphism.DiGraphMatcher
+                if g.is_directed()
+                else GraphMatcher
+            )
+            edge_match = categorical_edge_match(
+                self._ekeys,
+                self._edge_defaults(),
+            )
+        return matcher_cls(
             g,
             g,
             node_match=categorical_node_match(self._nkeys, self._node_defaults()),
-            edge_match=categorical_edge_match(self._ekeys, self._edge_defaults()),
+            edge_match=edge_match,
         )
 
     def _analyze_component(self, g: nx.Graph) -> Tuple[List[frozenset[NodeId]], int]:

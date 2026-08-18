@@ -676,7 +676,7 @@ class GenericStereoRuleExtractor:
         rule: SynRule,
         concrete_its: nx.Graph,
     ) -> tuple[int, int, bool]:
-        from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+        from synkit.Synthesis.Reactor import SynReactor
 
         reverter = ITSReverter(concrete_its)
         reactant = reverter.to_reactant_graph()
@@ -701,7 +701,7 @@ class GenericStereoRuleExtractor:
         rule: SynRule,
         concrete_its: nx.Graph,
     ) -> tuple[str, int, bool]:
-        from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+        from synkit.Synthesis.Reactor import SynReactor
 
         try:
             reverse = rule.reversed()

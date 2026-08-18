@@ -20,6 +20,8 @@ import hashlib
 
 import networkx as nx
 
+from ..kinds import REACTION_KINDS
+
 __all__ = [
     "SymmetryConfig",
     "WLResult",
@@ -44,8 +46,7 @@ __all__ = [
 
 @dataclass(frozen=True)
 class SymmetryConfig:
-    """
-    Configuration controlling semantic versus topological symmetry matching.
+    """Configuration controlling semantic versus topological symmetry matching.
 
     The configuration determines which node and edge attributes participate in
     token construction, canonicalization, isomorphism tests, and automorphism
@@ -112,8 +113,8 @@ class SymmetryConfig:
         ``None`` in node tokens.
     :type include_missing_keys: bool
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         from synkit.CRN.Sym._common import SymmetryConfig
@@ -151,10 +152,9 @@ class SymmetryConfig:
 
     @classmethod
     def semantic(cls) -> "SymmetryConfig":
-        """
-        Build a semantic symmetry configuration.
+        """Build a semantic symmetry configuration.
 
-        :returns:
+        :return:
             Configuration that preserves node identities and stoichiometric edge
             semantics.
         :rtype: SymmetryConfig
@@ -169,13 +169,12 @@ class SymmetryConfig:
 
     @classmethod
     def topological(cls) -> "SymmetryConfig":
-        """
-        Build a topology-focused symmetry configuration.
+        """Build a topology-focused symmetry configuration.
 
         This mode ignores species and rule identities while still respecting
         node kinds and selected edge annotations.
 
-        :returns:
+        :return:
             Configuration emphasizing graph topology over node identity.
         :rtype: SymmetryConfig
         """
@@ -337,19 +336,18 @@ class CanonicalResult:
 
 
 def freeze(x: Any) -> Hashable:
-    """
-    Convert common container types into a stable hashable representation.
+    """Convert common container types into a stable hashable representation.
 
     :param x:
         Object to freeze.
     :type x: Any
 
-    :returns:
+    :return:
         Hashable recursively frozen representation.
     :rtype: Hashable
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         freeze({"b": [2, 1], "a": {"x", "y"}})
@@ -366,8 +364,7 @@ def freeze(x: Any) -> Hashable:
 
 
 def hash_text(text: str, *, digest_size: int = 16) -> str:
-    """
-    Hash text with BLAKE2b.
+    """Hash text with BLAKE2b.
 
     :param text:
         Input text.
@@ -377,7 +374,7 @@ def hash_text(text: str, *, digest_size: int = 16) -> str:
         Output digest size in bytes.
     :type digest_size: int
 
-    :returns:
+    :return:
         Hex digest string.
     :rtype: str
     """
@@ -393,8 +390,7 @@ def should_stop(
     count: Optional[int] = None,
     max_count: Optional[int] = None,
 ) -> bool:
-    """
-    Decide whether a search should stop.
+    """Decide whether a search should stop.
 
     :param start:
         Start time from :func:`perf_counter`.
@@ -412,7 +408,7 @@ def should_stop(
         Optional maximum number of solutions to collect.
     :type max_count: Optional[int]
 
-    :returns:
+    :return:
         ``True`` if the search should stop.
     :rtype: bool
     """
@@ -424,8 +420,7 @@ def should_stop(
 
 
 def _factorial_capped(n: int, cap: int) -> int:
-    """
-    Compute ``n!`` with an upper cap.
+    """Compute ``n!`` with an upper cap.
 
     :param n:
         Nonnegative integer.
@@ -435,7 +430,7 @@ def _factorial_capped(n: int, cap: int) -> int:
         Upper cap for early stopping.
     :type cap: int
 
-    :returns:
+    :return:
         ``min(n!, cap)``.
     :rtype: int
     """
@@ -448,8 +443,7 @@ def _factorial_capped(n: int, cap: int) -> int:
 
 
 def _product_factorials_capped(values: Iterable[int], cap: int) -> int:
-    """
-    Compute a capped product of factorials.
+    """Compute a capped product of factorials.
 
     :param values:
         Iterable of cell sizes.
@@ -459,7 +453,7 @@ def _product_factorials_capped(values: Iterable[int], cap: int) -> int:
         Upper cap for early stopping.
     :type cap: int
 
-    :returns:
+    :return:
         Product of factorials, capped at ``cap``.
     :rtype: int
     """
@@ -474,8 +468,7 @@ def _product_factorials_capped(values: Iterable[int], cap: int) -> int:
 def approx_automorphism_count_from_cells(
     cells: Iterable[Sequence[Any]], *, cap: int = 10**18
 ) -> int:
-    """
-    Approximate automorphism count from unresolved cell sizes.
+    """Approximate automorphism count from unresolved cell sizes.
 
     This estimate assumes each cell can be permuted independently.
 
@@ -487,7 +480,7 @@ def approx_automorphism_count_from_cells(
         Upper cap on the returned count.
     :type cap: int
 
-    :returns:
+    :return:
         Approximate capped automorphism count.
     :rtype: int
     """
@@ -495,8 +488,7 @@ def approx_automorphism_count_from_cells(
 
 
 def _copy_as_digraph(G: nx.Graph) -> nx.DiGraph:
-    """
-    Copy a NetworkX graph into a simple directed graph.
+    """Copy a NetworkX graph into a simple directed graph.
 
     Undirected edges are duplicated in both directions. Multi-edges are merged
     into a simple :class:`nx.DiGraph`.
@@ -505,7 +497,7 @@ def _copy_as_digraph(G: nx.Graph) -> nx.DiGraph:
         Input graph.
     :type G: nx.Graph
 
-    :returns:
+    :return:
         Directed graph copy.
     :rtype: nx.DiGraph
     """
@@ -544,8 +536,7 @@ def prepare_graph(
     include_rule: bool = True,
     include_stoich: bool = True,
 ) -> Tuple[nx.DiGraph, str]:
-    """
-    Convert a supported source object into a directed graph.
+    """Convert a supported source object into a directed graph.
 
     Supported inputs are:
     - a NetworkX graph
@@ -564,7 +555,7 @@ def prepare_graph(
         Reserved compatibility flag.
     :type include_stoich: bool
 
-    :returns:
+    :return:
         Pair ``(graph, graph_type)``.
     :rtype: Tuple[nx.DiGraph, str]
 
@@ -583,8 +574,7 @@ def prepare_graph(
 
 
 def _first_present(attrs: Mapping[str, Any], keys: Sequence[str]) -> Any:
-    """
-    Return the first non-``None`` attribute value among preferred keys.
+    """Return the first non-``None`` attribute value among preferred keys.
 
     :param attrs:
         Attribute mapping.
@@ -594,7 +584,7 @@ def _first_present(attrs: Mapping[str, Any], keys: Sequence[str]) -> Any:
         Candidate attribute keys in priority order.
     :type keys: Sequence[str]
 
-    :returns:
+    :return:
         First present non-``None`` value, or ``None``.
     :rtype: Any
     """
@@ -606,8 +596,7 @@ def _first_present(attrs: Mapping[str, Any], keys: Sequence[str]) -> Any:
 
 
 def node_kind(attrs: Mapping[str, Any], config: SymmetryConfig) -> Any:
-    """
-    Extract node kind from an attribute mapping.
+    """Extract node kind from an attribute mapping.
 
     :param attrs:
         Node attribute mapping.
@@ -617,11 +606,21 @@ def node_kind(attrs: Mapping[str, Any], config: SymmetryConfig) -> Any:
         Symmetry configuration.
     :type config: SymmetryConfig
 
-    :returns:
+    :return:
         Node kind value or ``None``.
     :rtype: Any
+
+    .. note::
+       The legacy reaction spelling ``"rule"`` is normalized to
+       ``config.rule_kind_value`` so that two otherwise identical networks do
+       not canonicalize differently merely because one spells reaction nodes
+       ``kind="reaction"`` and the other ``kind="rule"``. See
+       :mod:`synkit.CRN.kinds`.
     """
-    return attrs.get(config.kind_attr_key, None)
+    kind = attrs.get(config.kind_attr_key, None)
+    if isinstance(kind, str) and kind.strip().lower() in REACTION_KINDS:
+        return config.rule_kind_value
+    return kind
 
 
 def _append_identity_token(
@@ -630,8 +629,7 @@ def _append_identity_token(
     identity_keys: Sequence[str],
     config: SymmetryConfig,
 ) -> None:
-    """
-    Append an identity token to a node token list when available.
+    """Append an identity token to a node token list when available.
 
     :param out:
         Output token list to mutate.
@@ -649,7 +647,7 @@ def _append_identity_token(
         Symmetry configuration.
     :type config: SymmetryConfig
 
-    :returns:
+    :return:
         ``None``.
     :rtype: None
     """
@@ -666,8 +664,7 @@ def _append_selected_attrs(
     keys: Sequence[str],
     ignored_keys: Sequence[str],
 ) -> None:
-    """
-    Append selected attributes to a token list.
+    """Append selected attributes to a token list.
 
     :param out:
         Output token list to mutate.
@@ -685,7 +682,7 @@ def _append_selected_attrs(
         Attribute keys to skip.
     :type ignored_keys: Sequence[str]
 
-    :returns:
+    :return:
         ``None``.
     :rtype: None
     """
@@ -697,8 +694,7 @@ def _append_selected_attrs(
 def _species_node_token(
     attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
 ) -> None:
-    """
-    Append species-specific token components.
+    """Append species-specific token components.
 
     :param attrs:
         Node attributes.
@@ -712,7 +708,7 @@ def _species_node_token(
         Output token list to mutate.
     :type out: List[Any]
 
-    :returns:
+    :return:
         ``None``.
     :rtype: None
     """
@@ -728,8 +724,7 @@ def _species_node_token(
 def _rule_node_token(
     attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
 ) -> None:
-    """
-    Append rule-specific token components.
+    """Append rule-specific token components.
 
     :param attrs:
         Node attributes.
@@ -743,7 +738,7 @@ def _rule_node_token(
         Output token list to mutate.
     :type out: List[Any]
 
-    :returns:
+    :return:
         ``None``.
     :rtype: None
     """
@@ -759,8 +754,7 @@ def _rule_node_token(
 def _other_node_token(
     attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
 ) -> None:
-    """
-    Append generic token components for non-species, non-rule nodes.
+    """Append generic token components for non-species, non-rule nodes.
 
     :param attrs:
         Node attributes.
@@ -774,7 +768,7 @@ def _other_node_token(
         Output token list to mutate.
     :type out: List[Any]
 
-    :returns:
+    :return:
         ``None``.
     :rtype: None
     """
@@ -789,8 +783,7 @@ def _other_node_token(
 def _append_generic_node_attrs(
     attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
 ) -> None:
-    """
-    Append generic node attributes shared across all node kinds.
+    """Append generic node attributes shared across all node kinds.
 
     :param attrs:
         Node attributes.
@@ -804,7 +797,7 @@ def _append_generic_node_attrs(
         Output token list to mutate.
     :type out: List[Any]
 
-    :returns:
+    :return:
         ``None``.
     :rtype: None
     """
@@ -815,8 +808,7 @@ def _append_generic_node_attrs(
 
 
 def node_token(attrs: Mapping[str, Any], config: SymmetryConfig) -> Tuple[Any, ...]:
-    """
-    Build a canonical token for a node.
+    """Build a canonical token for a node.
 
     The token depends on node kind, configured identity keys, optional extra
     attributes, and generic attributes shared by all node kinds.
@@ -829,12 +821,12 @@ def node_token(attrs: Mapping[str, Any], config: SymmetryConfig) -> Tuple[Any, .
         Symmetry configuration controlling token content.
     :type config: SymmetryConfig
 
-    :returns:
+    :return:
         Immutable node token.
     :rtype: Tuple[Any, ...]
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         cfg = SymmetryConfig.semantic()
@@ -859,8 +851,7 @@ def node_token(attrs: Mapping[str, Any], config: SymmetryConfig) -> Tuple[Any, .
 
 
 def edge_token(attrs: Mapping[str, Any], config: SymmetryConfig) -> Tuple[Any, ...]:
-    """
-    Build a canonical token for an edge.
+    """Build a canonical token for an edge.
 
     :param attrs:
         Edge attribute mapping.
@@ -870,12 +861,12 @@ def edge_token(attrs: Mapping[str, Any], config: SymmetryConfig) -> Tuple[Any, .
         Symmetry configuration.
     :type config: SymmetryConfig
 
-    :returns:
+    :return:
         Immutable edge token.
     :rtype: Tuple[Any, ...]
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         cfg = SymmetryConfig.semantic()
@@ -892,14 +883,13 @@ def edge_token(attrs: Mapping[str, Any], config: SymmetryConfig) -> Tuple[Any, .
 def node_matcher(
     config: SymmetryConfig,
 ) -> Callable[[Dict[str, Any], Dict[str, Any]], bool]:
-    """
-    Build a node matcher function based on :func:`node_token`.
+    """Build a node matcher function based on :func:`node_token`.
 
     :param config:
         Symmetry configuration.
     :type config: SymmetryConfig
 
-    :returns:
+    :return:
         Predicate comparing two node attribute dictionaries.
     :rtype: Callable[[Dict[str, Any], Dict[str, Any]], bool]
     """
@@ -913,14 +903,13 @@ def node_matcher(
 def edge_matcher(
     config: SymmetryConfig,
 ) -> Callable[[Dict[str, Any], Dict[str, Any]], bool]:
-    """
-    Build an edge matcher function based on :func:`edge_token`.
+    """Build an edge matcher function based on :func:`edge_token`.
 
     :param config:
         Symmetry configuration.
     :type config: SymmetryConfig
 
-    :returns:
+    :return:
         Predicate comparing two edge attribute dictionaries.
     :rtype: Callable[[Dict[str, Any], Dict[str, Any]], bool]
     """
@@ -938,8 +927,7 @@ def build_fast_signature(
     *,
     wl_color_hist: Optional[Mapping[str, int]] = None,
 ) -> Tuple[Any, ...]:
-    """
-    Build a fast graph signature for cheap rejection tests.
+    """Build a fast graph signature for cheap rejection tests.
 
     The signature includes graph size, node-token histogram, edge-token
     histogram, in/out-degree histogram, and optional WL color histogram.
@@ -960,7 +948,7 @@ def build_fast_signature(
         Optional WL color histogram.
     :type wl_color_hist: Optional[Mapping[str, int]]
 
-    :returns:
+    :return:
         Fast signature tuple.
     :rtype: Tuple[Any, ...]
     """
@@ -981,8 +969,7 @@ def build_fast_signature(
 def graph_key_from_order(
     G: nx.DiGraph, order: Sequence[Any], config: SymmetryConfig
 ) -> Tuple[Any, ...]:
-    """
-    Build a canonical graph key from a node order.
+    """Build a canonical graph key from a node order.
 
     :param G:
         Directed graph.
@@ -996,7 +983,7 @@ def graph_key_from_order(
         Symmetry configuration.
     :type config: SymmetryConfig
 
-    :returns:
+    :return:
         Canonical graph key.
     :rtype: Tuple[Any, ...]
     """
@@ -1010,14 +997,13 @@ def graph_key_from_order(
 
 
 def invert_mapping(mapping: Dict[Any, Any]) -> Dict[Any, Any]:
-    """
-    Invert a one-to-one mapping.
+    """Invert a one-to-one mapping.
 
     :param mapping:
         Mapping to invert.
     :type mapping: Dict[Any, Any]
 
-    :returns:
+    :return:
         Inverted mapping.
     :rtype: Dict[Any, Any]
     """
@@ -1027,8 +1013,7 @@ def invert_mapping(mapping: Dict[Any, Any]) -> Dict[Any, Any]:
 def orbits_from_mappings(
     nodes: Sequence[Any], mappings: Iterable[Dict[Any, Any]]
 ) -> List[Set[Any]]:
-    """
-    Build orbit classes from a collection of automorphism mappings.
+    """Build orbit classes from a collection of automorphism mappings.
 
     :param nodes:
         Nodes whose orbit partition should be computed.
@@ -1038,12 +1023,12 @@ def orbits_from_mappings(
         Automorphism mappings.
     :type mappings: Iterable[Dict[Any, Any]]
 
-    :returns:
+    :return:
         List of orbit sets.
     :rtype: List[Set[Any]]
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         nodes = ["A", "B", "C"]

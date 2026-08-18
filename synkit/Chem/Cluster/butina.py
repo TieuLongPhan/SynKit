@@ -36,7 +36,7 @@ class ButinaCluster:
         :param cutoff: Distance cutoff (1 – similarity) to form
             clusters. Defaults to 0.2.
         :type cutoff: float
-        :returns: List of clusters, each a list of sample indices.
+        :return: List of clusters, each a list of sample indices.
         :rtype: list of list of int
         """
         # Convert rows to RDKit ExplicitBitVect
@@ -78,10 +78,11 @@ class ButinaCluster:
         :type perplexity: float
         :param random_state: Random seed for reproducibility. Defaults to 42.
         :type random_state: int
-        :returns: None
+        :return: None
         :rtype: NoneType
 
-        :example:
+        .. rubric:: Examples
+
         >>> clusters = ButinaCluster.cluster(arr, cutoff=0.3)
         >>> ButinaCluster.visualize(arr, clusters, k=5)
         """
@@ -124,7 +125,7 @@ class ButinaCluster:
     def __str__(self) -> str:
         """Short description of the clusterer.
 
-        :returns: Class name.
+        :return: Class name.
         :rtype: str
         """
         return "<ButinaCluster>"
@@ -132,7 +133,7 @@ class ButinaCluster:
     def help(self) -> None:
         """Print usage summary for clustering and visualization.
 
-        :returns: None
+        :return: None
         :rtype: NoneType
         """
         print("ButinaCluster.cluster(arr, cutoff=0.2)")

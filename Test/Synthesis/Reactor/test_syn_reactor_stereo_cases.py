@@ -10,7 +10,7 @@ from synkit.IO.chem_converter import rsmi_to_its
 from synkit.IO.graph_to_mol import GraphToMol
 from synkit.IO.mol_to_graph import MolToGraph
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 SN2_RULE = (
     "[CH3:1][C@H:2]([F:3])[Cl:4].[OH-:5]>>" "[CH3:1][C@@H:2]([F:3])[OH:5].[Cl-:4]"

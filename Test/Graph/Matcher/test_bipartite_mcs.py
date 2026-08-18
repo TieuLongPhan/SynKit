@@ -338,7 +338,7 @@ class TestBipartiteViaRBLEngine(unittest.TestCase):
     """
 
     def test_transesterification_still_works(self):
-        from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+        from synkit.Synthesis.RBL import RBLEngine
 
         engine = RBLEngine(mode="full")
         engine.process(
@@ -350,7 +350,7 @@ class TestBipartiteViaRBLEngine(unittest.TestCase):
             self.assertIn(">>", rsmi)
 
     def test_ester_formation_still_works(self):
-        from synkit.Synthesis.Reactor.rbl_engine import RBLEngine
+        from synkit.Synthesis.RBL import RBLEngine
         from synkit.IO import its_to_rsmi, rsmi_to_its
 
         raw_template = (

@@ -29,8 +29,7 @@ __all__ = [
 
 
 def _require_sympy() -> None:
-    """
-    Ensure that SymPy is available before using symbolic CRN dynamics helpers.
+    """Ensure that SymPy is available before using symbolic CRN dynamics helpers.
 
     This helper centralizes the optional dependency check used by symbolic
     routines such as symbolic Jacobian construction and exact determinant
@@ -39,8 +38,8 @@ def _require_sympy() -> None:
     :raises ImportError:
         If :mod:`sympy` is not installed or could not be imported.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         try:
@@ -56,11 +55,10 @@ def _require_sympy() -> None:
 
 
 def _safe_symbol_token(value: Any) -> str:
-    """
-    Convert an arbitrary object into a SymPy-safe symbol token.
+    """Convert an arbitrary object into a SymPy-safe symbol token.
 
     Non-alphanumeric characters are replaced by underscores. If the resulting
-    token is empty, ``\"x\"`` is used. If the token starts with a digit, a
+    token is empty, ``"x"`` is used. If the token starts with a digit, a
     leading underscore is prepended.
 
     :param value:
@@ -68,13 +66,13 @@ def _safe_symbol_token(value: Any) -> str:
     :type value:
         Any
 
-    :returns:
+    :return:
         Sanitized token suitable for building SymPy symbol names.
     :rtype:
         str
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         _safe_symbol_token("A")
@@ -96,8 +94,7 @@ def _safe_symbol_token(value: Any) -> str:
 
 
 def _sympy_matrix_from_numpy(A: np.ndarray) -> "sp.Matrix":
-    """
-    Convert a numeric NumPy array into a SymPy matrix.
+    """Convert a numeric NumPy array into a SymPy matrix.
 
     Each entry is passed through :func:`sympy.nsimplify` so that integer and
     rational values are preserved when possible.
@@ -107,7 +104,7 @@ def _sympy_matrix_from_numpy(A: np.ndarray) -> "sp.Matrix":
     :type A:
         numpy.ndarray
 
-    :returns:
+    :return:
         SymPy matrix with simplified symbolic entries.
     :rtype:
         sp.Matrix
@@ -115,8 +112,8 @@ def _sympy_matrix_from_numpy(A: np.ndarray) -> "sp.Matrix":
     :raises ImportError:
         If :mod:`sympy` is not available.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         import numpy as np
@@ -135,8 +132,7 @@ def _structural_sign_pattern(
     *,
     tol: float = 1e-12,
 ) -> np.ndarray:
-    """
-    Compute the structural sign pattern of the symbolic Jacobian.
+    """Compute the structural sign pattern of the symbolic Jacobian.
 
     For a symbolic Jacobian of the form ``G = S R``, the sign of entry
     ``G[i, k]`` depends on the stoichiometric effects in row ``i`` and on
@@ -164,13 +160,13 @@ def _structural_sign_pattern(
     :type tol:
         float
 
-    :returns:
+    :return:
         Matrix of sign labels with shape ``(n_species, n_species)``.
     :rtype:
         numpy.ndarray
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         import numpy as np
@@ -223,8 +219,7 @@ def _structural_sign_pattern(
 
 
 def _jacobian_pattern_bipartite(A: np.ndarray) -> Tuple[nx.Graph, List[str], List[str]]:
-    """
-    Build the row/column bipartite graph for a Jacobian sparsity pattern.
+    """Build the row/column bipartite graph for a Jacobian sparsity pattern.
 
     The bipartite graph is used for structural-rank diagnostics via maximum
     matching. Row nodes correspond to Jacobian rows and column nodes correspond
@@ -236,7 +231,7 @@ def _jacobian_pattern_bipartite(A: np.ndarray) -> Tuple[nx.Graph, List[str], Lis
     :type A:
         numpy.ndarray
 
-    :returns:
+    :return:
         Tuple containing:
 
         - bipartite graph,
@@ -245,8 +240,8 @@ def _jacobian_pattern_bipartite(A: np.ndarray) -> Tuple[nx.Graph, List[str], Lis
     :rtype:
         Tuple[nx.Graph, List[str], List[str]]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         import numpy as np
@@ -280,8 +275,7 @@ def _jacobian_pattern_bipartite(A: np.ndarray) -> Tuple[nx.Graph, List[str], Lis
 
 @dataclass
 class StructuralSingularitySummary:
-    """
-    Summary of structural singularity diagnostics for a symbolic Jacobian.
+    """Summary of structural singularity diagnostics for a symbolic Jacobian.
 
     The diagnostics are species-level because the Jacobian is a
     species-by-species object, even though the underlying SynCRN graph is
@@ -316,8 +310,8 @@ class StructuralSingularitySummary:
     :type determinant_is_zero:
         Optional[bool]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         summary = StructuralSingularitySummary(
@@ -342,20 +336,19 @@ class StructuralSingularitySummary:
 
     @property
     def classification(self) -> str:
-        """
-        Return a concise structural-singularity classification label.
+        """Return a concise structural-singularity classification label.
 
         Possible values include pattern-level singularity, exact symbolic
         singularity, exact symbolic nonsingularity, or the case where only
         the sparsity-pattern analysis was performed.
 
-        :returns:
+        :return:
             Classification string summarizing the diagnostic outcome.
         :rtype:
             str
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             summary = StructuralSingularitySummary(
@@ -378,19 +371,18 @@ class StructuralSingularitySummary:
         return "pattern_nonsingular_exact_unchecked"
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert the summary to a plain dictionary.
+        """Convert the summary to a plain dictionary.
 
         Symbolic determinant expressions are stringified so the result is easier
         to serialize or log.
 
-        :returns:
+        :return:
             Plain dictionary representation of the summary.
         :rtype:
             Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             d = summary.to_dict()
@@ -410,16 +402,15 @@ class StructuralSingularitySummary:
         }
 
     def __str__(self) -> str:
-        """
-        Return a readable multiline summary.
+        """Return a readable multiline summary.
 
-        :returns:
+        :return:
             Human-readable diagnostic summary.
         :rtype:
             str
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             print(summary)
@@ -444,8 +435,7 @@ def symbolic_reactivity_matrix(
     symbol_prefix: str = "rprime",
     tol: float = 1e-12,
 ) -> Tuple[List[Any], List[Any], "sp.Matrix"]:
-    """
-    Build the symbolic reactivity matrix ``R``.
+    """Build the symbolic reactivity matrix ``R``.
 
     For a SynCRN with ``n_species`` species nodes and ``n_rules`` rule nodes,
     the matrix ``R`` has shape ``(n_rules, n_species)``. Entry ``R[j, i]`` is
@@ -470,7 +460,7 @@ def symbolic_reactivity_matrix(
     :type tol:
         float
 
-    :returns:
+    :return:
         Tuple containing:
 
         - species node order,
@@ -482,8 +472,8 @@ def symbolic_reactivity_matrix(
     :raises ImportError:
         If :mod:`sympy` is not available.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         species_order, rule_order, R = symbolic_reactivity_matrix(crn)
@@ -519,8 +509,7 @@ def symbolic_jacobian(
     symbol_prefix: str = "rprime",
     tol: float = 1e-12,
 ) -> Tuple[List[Any], List[Any], "sp.Matrix"]:
-    """
-    Build the symbolic Jacobian ``G = S R``.
+    """Build the symbolic Jacobian ``G = S R``.
 
     Here ``S`` is the species-by-rule stoichiometric matrix and ``R`` is the
     rule-by-species symbolic reactivity matrix induced by reactant incidence.
@@ -540,7 +529,7 @@ def symbolic_jacobian(
     :type tol:
         float
 
-    :returns:
+    :return:
         Tuple containing:
 
         - species node order,
@@ -552,8 +541,8 @@ def symbolic_jacobian(
     :raises ImportError:
         If :mod:`sympy` is not available.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         species_order, rule_order, G = symbolic_jacobian(crn)
@@ -579,8 +568,7 @@ def jacobian_sparsity(
     *,
     tol: float = 1e-12,
 ) -> Tuple[List[Any], np.ndarray]:
-    """
-    Return the boolean sparsity pattern of the symbolic Jacobian.
+    """Return the boolean sparsity pattern of the symbolic Jacobian.
 
     Entry ``A[i, k]`` is ``True`` if species ``k`` can structurally influence
     species ``i`` through at least one rule under the local linearized
@@ -595,7 +583,7 @@ def jacobian_sparsity(
     :type tol:
         float
 
-    :returns:
+    :return:
         Tuple containing:
 
         - species node order,
@@ -603,8 +591,8 @@ def jacobian_sparsity(
     :rtype:
         Tuple[List[Any], numpy.ndarray]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         species_order, A = jacobian_sparsity(crn)
@@ -623,8 +611,7 @@ def jacobian_sign_pattern(
     *,
     tol: float = 1e-12,
 ) -> Tuple[List[Any], np.ndarray]:
-    """
-    Compute the structural sign pattern of the symbolic Jacobian.
+    """Compute the structural sign pattern of the symbolic Jacobian.
 
     Returned entries are one of:
 
@@ -645,7 +632,7 @@ def jacobian_sign_pattern(
     :type tol:
         float
 
-    :returns:
+    :return:
         Tuple containing:
 
         - species node order,
@@ -653,8 +640,8 @@ def jacobian_sign_pattern(
     :rtype:
         Tuple[List[Any], numpy.ndarray]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         species_order, P = jacobian_sign_pattern(crn)
@@ -673,8 +660,7 @@ def species_influence_graph(
     tol: float = 1e-12,
     use_labels: bool = False,
 ) -> nx.DiGraph:
-    """
-    Build the species influence graph induced by the symbolic Jacobian.
+    """Build the species influence graph induced by the symbolic Jacobian.
 
     Nodes represent species. A directed edge ``u -> v`` is added when species
     ``u`` can structurally influence species ``v`` in the local linearized
@@ -703,13 +689,13 @@ def species_influence_graph(
     :type use_labels:
         bool
 
-    :returns:
+    :return:
         Directed species influence graph.
     :rtype:
         nx.DiGraph
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         G_inf = species_influence_graph(crn, use_labels=True)
@@ -756,8 +742,7 @@ def structural_singularity_summary(
     max_exact_size: int = 7,
     symbol_prefix: str = "rprime",
 ) -> StructuralSingularitySummary:
-    """
-    Diagnose structural singularity of the symbolic Jacobian.
+    """Diagnose structural singularity of the symbolic Jacobian.
 
     This routine performs two levels of analysis:
 
@@ -789,7 +774,7 @@ def structural_singularity_summary(
     :type symbol_prefix:
         str
 
-    :returns:
+    :return:
         Structured summary of Jacobian structural-singularity diagnostics.
     :rtype:
         StructuralSingularitySummary
@@ -798,8 +783,8 @@ def structural_singularity_summary(
         If exact symbolic determinant evaluation is requested but
         :mod:`sympy` is not available.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         summary = structural_singularity_summary(

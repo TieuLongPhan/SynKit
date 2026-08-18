@@ -11,8 +11,7 @@ __all__ = ["ITSMerge", "fuse_its_graphs"]
 
 
 class ITSMerge:
-    """
-    Merge two ITS graphs given a node mapping between them.
+    """Merge two ITS graphs given a node mapping between them.
 
     This class encapsulates the logic of fusing two ITS graphs (e.g. from
     wildcard pattern matching) in an object-oriented way. The result is a
@@ -39,13 +38,13 @@ class ITSMerge:
         - If ``element == wildcard_element``, they are **ignored**.
         - Otherwise they are added as new nodes with new IDs and edges are
           created according to the pattern topology.
-    * If :paramref:`remove_wildcards` is ``True`` (default), **all wildcard
+    * If ``remove_wildcards`` is ``True`` (default), **all wildcard
       nodes** (``element == wildcard_element``) are removed from the fused
       graph; their incident edges disappear. If ``False``, wildcard nodes are
       kept.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     Simple usage with integer-labeled graphs:
 
     .. code-block:: python
@@ -81,7 +80,7 @@ class ITSMerge:
     :type types_key: str
     :param element_key: Node attribute key for element / atom type.
     :type element_key: str
-    :param wildcard_element: Value of :paramref:`element_key` that denotes
+    :param wildcard_element: Value of ``element_key`` that denotes
         wildcard nodes.
     :type wildcard_element: str
     :param remove_wildcards: If ``True``, remove wildcard nodes in the final
@@ -125,8 +124,7 @@ class ITSMerge:
     # Public API
     # ------------------------------------------------------------------
     def merge(self) -> "ITSMerge":
-        """
-        Execute the ITS fusion process.
+        """Execute the ITS fusion process.
 
         The method:
 
@@ -136,7 +134,7 @@ class ITSMerge:
         4. Adds pattern edges between mapped/added nodes.
         5. Optionally removes wildcard nodes from the fused graph.
 
-        :returns: Self, with :pyattr:`fused_graph` updated.
+        :return: Self, with :attr:`fused_graph` updated.
         :rtype: ITSMerge
         """
         fused = self._host.copy()
@@ -154,14 +152,13 @@ class ITSMerge:
     # ------------------------------------------------------------------
     @property
     def fused_graph(self) -> GraphType:
-        """
-        Fused ITS graph.
+        """Fused ITS graph.
 
         The graph is in the **host's node ID space**, plus any extra IDs
         for leftover pattern nodes. Wildcard nodes may have been removed,
-        depending on :paramref:`remove_wildcards`.
+        depending on ``remove_wildcards``.
 
-        :returns: Fused ITS graph.
+        :return: Fused ITS graph.
         :rtype: GraphType
         :raises RuntimeError: If :meth:`merge` has not been called yet.
         """
@@ -173,41 +170,37 @@ class ITSMerge:
 
     @property
     def host_graph(self) -> GraphType:
-        """
-        Graph that was treated as the **host** for merging.
+        """Graph that was treated as the **host** for merging.
 
-        :returns: Host graph.
+        :return: Host graph.
         :rtype: GraphType
         """
         return self._host
 
     @property
     def pattern_graph(self) -> GraphType:
-        """
-        Graph that was treated as the **pattern** for merging.
+        """Graph that was treated as the **pattern** for merging.
 
-        :returns: Pattern graph.
+        :return: Pattern graph.
         :rtype: GraphType
         """
         return self._pattern
 
     @property
     def pattern_to_host(self) -> Dict[Any, Any]:
-        """
-        Mapping from pattern node IDs to host node IDs.
+        """Mapping from pattern node IDs to host node IDs.
 
         Orientation is resolved automatically during construction.
 
-        :returns: Pattern → host node mapping.
+        :return: Pattern → host node mapping.
         :rtype: dict[Any, Any]
         """
         return dict(self._pat_to_host)
 
     def __repr__(self) -> str:
-        """
-        Short textual representation for debugging.
+        """Short textual representation for debugging.
 
-        :returns: Summary string with node/edge counts when available.
+        :return: Summary string with node/edge counts when available.
         :rtype: str
         """
         fused_info = "unmerged"
@@ -297,8 +290,7 @@ class ITSMerge:
         host_data: Dict[str, Any],
         pat_data: Dict[str, Any],
     ) -> Optional[Tuple[Tuple[Any, ...], Tuple[Any, ...]]]:
-        """
-        Merge host vs pattern ``typesGH``, keeping max hydrogen counts.
+        """Merge host vs pattern ``typesGH``, keeping max hydrogen counts.
 
         Only index 2 (H count) of each side is altered; remaining entries are
         taken from the host when present.
@@ -307,7 +299,7 @@ class ITSMerge:
         :type host_data: dict[str, Any]
         :param pat_data: Pattern node attribute dictionary.
         :type pat_data: dict[str, Any]
-        :returns: Merged ``typesGH`` tuple (left, right) or ``None`` if both
+        :return: Merged ``typesGH`` tuple (left, right) or ``None`` if both
             are missing.
         :rtype: tuple[tuple[Any, ...], tuple[Any, ...]] | None
         """
@@ -351,8 +343,7 @@ class ITSMerge:
         host_data: Dict[str, Any],
         pat_data: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """
-        Merge tuple-format ITS node attributes (``hcount``, ``sigma_order``,
+        """Merge tuple-format ITS node attributes (``hcount``, ``sigma_order``,
         ``pi_order``), each stored as a 2-tuple ``(reactant_side, product_side)``.
 
         ``hcount`` keeps the host value; bond orders keep the host value.
@@ -364,7 +355,7 @@ class ITSMerge:
 
         :param host_data: Host node attribute dictionary.
         :param pat_data: Pattern node attribute dictionary.
-        :returns: Dict of updated attributes (empty if no tuple-format attrs found).
+        :return: Dict of updated attributes (empty if no tuple-format attrs found).
         """
         updates: Dict[str, Any] = {}
         for attr in ("hcount", "sigma_order", "pi_order"):
@@ -424,12 +415,11 @@ class ITSMerge:
     # Internal: leftover nodes & edges
     # ------------------------------------------------------------------
     def _next_int_id(self, fused: GraphType) -> Optional[int]:
-        """
-        Determine starting integer ID for new nodes, if applicable.
+        """Determine starting integer ID for new nodes, if applicable.
 
         :param fused: Graph being constructed.
         :type fused: GraphType
-        :returns: Next integer ID or ``None`` if node IDs are not all ints.
+        :return: Next integer ID or ``None`` if node IDs are not all ints.
         :rtype: int | None
         """
         if not fused.nodes:
@@ -439,8 +429,7 @@ class ITSMerge:
         return None
 
     def _add_leftover_pattern_nodes(self, fused: GraphType) -> Dict[Any, Any]:
-        """
-        Add leftover non-wildcard pattern nodes to the fused graph.
+        """Add leftover non-wildcard pattern nodes to the fused graph.
 
         Pattern nodes whose atom_map already appears in the host are
         treated as implicitly mapped (they are not added as new nodes
@@ -449,7 +438,7 @@ class ITSMerge:
 
         :param fused: Graph being constructed.
         :type fused: GraphType
-        :returns: Mapping from pattern node IDs to new fused node IDs.
+        :return: Mapping from pattern node IDs to new fused node IDs.
         :rtype: dict[Any, Any]
         """
         mapped_p_nodes = set(self._pat_to_host.keys())
@@ -832,8 +821,7 @@ def fuse_its_graphs(
     remove_wildcards: bool = True,
     logger: Optional[logging.Logger] = None,
 ) -> GraphType:
-    """
-    Functional wrapper around :class:`ITSMerge`.
+    """Functional wrapper around :class:`ITSMerge`.
 
     :param G1: First input ITS graph.
     :type G1: GraphType
@@ -845,7 +833,7 @@ def fuse_its_graphs(
     :type types_key: str
     :param element_key: Node attribute key for element / atom type.
     :type element_key: str
-    :param wildcard_element: Value of :paramref:`element_key` that denotes
+    :param wildcard_element: Value of ``element_key`` that denotes
         wildcard nodes.
     :type wildcard_element: str
     :param remove_wildcards: If ``True``, remove wildcard nodes from the
@@ -853,7 +841,7 @@ def fuse_its_graphs(
     :type remove_wildcards: bool
     :param logger: Optional logger for debug output.
     :type logger: logging.Logger | None
-    :returns: Fused ITS graph.
+    :return: Fused ITS graph.
     :rtype: GraphType
     """
     merger = ITSMerge(

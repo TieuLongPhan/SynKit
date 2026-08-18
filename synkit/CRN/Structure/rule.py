@@ -33,19 +33,17 @@ class Rule:
 
     @property
     def signature(self) -> Tuple[Optional[int], Optional[str]]:
-        """
-        Signature used to deduplicate rules across reactions.
+        """Signature used to deduplicate rules across reactions.
 
-        :returns: ``(rule_index, rule_repr)``
+        :return: ``(rule_index, rule_repr)``
         :rtype: Tuple[Optional[int], Optional[str]]
         """
         return (self.rule_index, self.rule_repr)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Return a JSON-like dictionary representation.
+        """Return a JSON-like dictionary representation.
 
-        :returns: Rule as a dictionary.
+        :return: Rule as a dictionary.
         :rtype: Dict[str, Any]
         """
         return {

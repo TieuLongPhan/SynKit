@@ -6,18 +6,18 @@ from typing import List, Optional, Tuple, Union
 
 
 def clean_radical_rsmi(rsmi: str) -> str:
-    """
-    Load each side of a reaction SMILES (rSMI) into RDKit, split into disconnected fragments,
+    """Load each side of a reaction SMILES (rSMI) into RDKit, split into disconnected fragments,
     remove any fragment that contains an atom with nonzero radical electrons,
     then reassemble back into a cleaned reaction SMILES.
 
     :param rsmi: Reaction SMILES string, e.g.
                  'A>>B.C'
     :type rsmi: str
-    :returns: Cleaned reaction SMILES with radical-containing fragments removed.
+    :return: Cleaned reaction SMILES with radical-containing fragments removed.
     :rtype: str
 
-    Example:
+    .. rubric:: Examples
+
     >>> clean_radical_rsmi(
     ...   'COC(=O)C(CCCCNC(=O)OCc1ccccc1)NC(=O)Nc1cc(OC)cc(C(C)(C)C)c1O'
     ...   '>>COC(=O)C(CCCCNC(=O)OCc1ccccc1)NC(N)=O.COc1c[c]c(O)c(C(C)(C)C)c1'
@@ -50,7 +50,7 @@ def enumerate_tautomers(reaction_smiles: str) -> Optional[List[str]]:
     :param reaction_smiles: Reaction SMILES in 'reactants>>products'
         format.
     :type reaction_smiles: str
-    :returns: List of reaction SMILES for each reactant tautomer
+    :return: List of reaction SMILES for each reactant tautomer
         (including the original), or None on error.
     :rtype: Optional[List[str]]
     :raises ValueError: If reactant or product SMILES are invalid.
@@ -78,7 +78,7 @@ def mapping_success_rate(list_mapping_data: List[str]) -> float:
 
     :param list_mapping_data: List of strings to search for mappings.
     :type list_mapping_data: List[str]
-    :returns: Percentage of entries containing `:<digits>` patterns,
+    :return: Percentage of entries containing `:<digits>` patterns,
         rounded to two decimals.
     :rtype: float
     :raises ValueError: If input list is empty.
@@ -95,7 +95,7 @@ def count_carbons(smiles: str) -> int:
 
     :param smiles: SMILES string of the molecule.
     :type smiles: str
-    :returns: Number of carbon atoms, or raises ValueError if SMILES
+    :return: Number of carbon atoms, or raises ValueError if SMILES
         invalid.
     :rtype: int
     :raises ValueError: If the SMILES string is invalid.
@@ -111,7 +111,7 @@ def get_max_fragment(smiles: Union[str, List[str]]) -> str:
 
     :param smiles: SMILES string(s), possibly with '.' separators.
     :type smiles: str or List[str]
-    :returns: SMILES of the fragment with the most atoms, or empty
+    :return: SMILES of the fragment with the most atoms, or empty
         string if none valid.
     :rtype: str
     """
@@ -134,7 +134,7 @@ def filter_smiles(smiles_list: List[str], target_smiles: str) -> List[str]:
     :type smiles_list: List[str]
     :param target_smiles: SMILES string to exclude.
     :type target_smiles: str
-    :returns: Filtered list containing SMILES with at least one carbon atom
+    :return: Filtered list containing SMILES with at least one carbon atom
               and not matching `target_smiles`.
     :rtype: List[str]
     """
@@ -155,7 +155,7 @@ def remove_atom_mappings(mol: Chem.Mol) -> Chem.Mol:
 
     :param mol: RDKit Mol object.
     :type mol: Chem.Mol
-    :returns: The same Mol with all atom‑map numbers set to zero.
+    :return: The same Mol with all atom‑map numbers set to zero.
     :rtype: Chem.Mol
     """
     for atom in mol.GetAtoms():
@@ -168,7 +168,7 @@ def get_sanitized_smiles(smiles_list: List[str]) -> List[str]:
 
     :param smiles_list: List of SMILES strings to sanitize.
     :type smiles_list: List[str]
-    :returns: List of sanitized, isomeric SMILES of the largest
+    :return: List of sanitized, isomeric SMILES of the largest
         fragments only.
     :rtype: List[str]
     """
@@ -197,7 +197,7 @@ def remove_duplicates(smiles_list: List[str]) -> List[str]:
     :param smiles_list: List of strings (e.g., SMILES) possibly with
         duplicates.
     :type smiles_list: List[str]
-    :returns: List with duplicates removed in original order.
+    :return: List with duplicates removed in original order.
     :rtype: List[str]
     """
     seen = set()
@@ -215,7 +215,7 @@ def process_smiles_list(smiles_list: List[str]) -> List[str]:
     :param smiles_list: List of SMILES strings, some containing '.'
         separators.
     :type smiles_list: List[str]
-    :returns: Flattened list of component SMILES strings.
+    :return: Flattened list of component SMILES strings.
     :rtype: List[str]
     """
     new_list: List[str] = []
@@ -232,7 +232,7 @@ def remove_explicit_H_from_rsmi(rsmi: str) -> str:
 
     :param rsmi: Atom‑mapped reaction SMILES with explicit hydrogens.
     :type rsmi: str
-    :returns: Simplified reaction SMILES with implicit hydrogens.
+    :return: Simplified reaction SMILES with implicit hydrogens.
     :rtype: str
     """
     rxn = rdChemReactions.ReactionFromSmarts(rsmi, useSmiles=True)
@@ -252,7 +252,7 @@ def remove_common_reagents(reaction_smiles: str) -> Tuple[Optional[str], Optiona
 
     :param reaction_smiles: Reaction SMILES 'reactants>>products'.
     :type reaction_smiles: str
-    :returns: Tuple(cleaned_reaction, list_of_removed_reagents or None
+    :return: Tuple(cleaned_reaction, list_of_removed_reagents or None
         if none found).
     :rtype: Tuple[str, Optional[List[str]]]
     """
@@ -275,7 +275,7 @@ def reverse_reaction(rsmi: str) -> str:
 
     :param rsmi: Reaction SMILES 'reactants>>products'.
     :type rsmi: str
-    :returns: Reaction SMILES 'products>>reactants'.
+    :return: Reaction SMILES 'products>>reactants'.
     :rtype: str
     """
     parts = rsmi.split(">>")
@@ -289,7 +289,7 @@ def merge_reaction(rsmi_1: str, rsmi_2: str) -> Optional[str]:
     :type rsmi_1: str
     :param rsmi_2: Second reaction SMILES.
     :type rsmi_2: str
-    :returns: Merged reaction SMILES or None if inputs invalid.
+    :return: Merged reaction SMILES or None if inputs invalid.
     :rtype: Optional[str]
     """
     try:
@@ -307,7 +307,7 @@ def find_longest_fragment(input_list: List[str]) -> Optional[str]:
 
     :param input_list: List of strings to search.
     :type input_list: List[str]
-    :returns: Longest string or None if list empty.
+    :return: Longest string or None if list empty.
     :rtype: Optional[str]
     """
     if not input_list:

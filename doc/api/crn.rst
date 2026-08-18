@@ -1,8 +1,17 @@
 CRN
 ===
 
-Chemical reaction network construction, structure handling, querying, symmetry,
-Petri-net analysis, and visualization utilities.
+Chemical reaction network construction, structure handling, querying,
+stoichiometry and Chemical Reaction Network Theory, Petri-net analysis, pathway
+analysis, symmetry, SBML interchange, visualization, and the shipped benchmark
+and case-study material.
+
+Node kinds
+----------
+
+.. automodule:: synkit.CRN.kinds
+   :members:
+   :show-inheritance:
 
 Construct
 ---------
@@ -48,10 +57,6 @@ Construct
    :show-inheritance:
 
 .. automodule:: synkit.CRN.Construct.worker
-   :members:
-   :show-inheritance:
-
-.. automodule:: synkit.CRN.Construct.DAG.syncrn
    :members:
    :show-inheritance:
 
@@ -104,7 +109,15 @@ Petri net
    :members:
    :show-inheritance:
 
+.. automodule:: synkit.CRN.Petrinet.minimal_semiflows
+   :members:
+   :show-inheritance:
+
 .. automodule:: synkit.CRN.Petrinet.semiflows
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.CRN.Petrinet.siphon_search
    :members:
    :show-inheritance:
 
@@ -114,6 +127,10 @@ Petri net
 
 Properties
 ----------
+
+.. automodule:: synkit.CRN.Props.deficiency
+   :members:
+   :show-inheritance:
 
 .. automodule:: synkit.CRN.Props.dynamics
    :members:
@@ -150,6 +167,10 @@ Query
    :members:
    :show-inheritance:
 
+.. automodule:: synkit.CRN.Query.to_syncrn
+   :members:
+   :show-inheritance:
+
 Symmetry
 --------
 
@@ -176,10 +197,6 @@ Symmetry
 Visualization
 -------------
 
-.. automodule:: synkit.CRN.Visualize.crn_vis
-   :members:
-   :show-inheritance:
-
 .. automodule:: synkit.CRN.Visualize.labels
    :members:
    :show-inheritance:
@@ -197,5 +214,35 @@ Visualization
    :show-inheritance:
 
 .. automodule:: synkit.CRN.Visualize.vis
+   :members:
+   :show-inheritance:
+
+Interchange
+-----------
+
+.. automodule:: synkit.CRN.IO.sbml
+   :members:
+   :show-inheritance:
+
+Benchmark and case study
+------------------------
+
+.. automodule:: synkit.CRN.Benchmark.networks
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.CRN.Benchmark.crosschecks
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.CRN.Benchmark.validate
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.CRN.Benchmark.scaling
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.CRN.Benchmark.kegg
    :members:
    :show-inheritance:

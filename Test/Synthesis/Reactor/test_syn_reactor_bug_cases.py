@@ -5,7 +5,7 @@ import networkx as nx
 from synkit.Chem.Reaction.standardize import Standardize
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 AROMATIC_N_OXIDATION = (
     "[CH3:1][c:2]1[n:3][c:4]([Br:5])[cH:6][cH:7][c:8]1[F:9]."

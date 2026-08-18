@@ -5,16 +5,15 @@ from rdkit.Chem import AllChem
 
 
 class GraphToSMARTS:
-    """
-    Convert NetworkX graphs (with placeholder nodes/constraints) into SMARTS or reaction SMARTS strings.
+    """Convert NetworkX graphs (with placeholder nodes/constraints) into SMARTS or reaction SMARTS strings.
 
     :param placeholder_labels: Set of labels recognized as placeholders (e.g., '_R', 'X', 'Y', 'Z').
     :type placeholder_labels: Optional[Set[str]]
     :param validate: If True, validate generated SMARTS or reaction SMARTS using RDKit.
     :type validate: bool
-    :raises: None
 
-    :Example:
+    .. rubric:: Examples
+
     >>> G = nx.Graph()
     >>> G.add_node(1, label='C', constraint=None)
     >>> G.add_node(2, label='O', constraint=None)
@@ -28,14 +27,13 @@ class GraphToSMARTS:
     def __init__(
         self, placeholder_labels: Optional[Set[str]] = None, validate: bool = True
     ) -> None:
-        """
-        Initialize the GraphToSMARTS converter.
+        """Initialize the GraphToSMARTS converter.
 
         :param placeholder_labels: Labels to treat as wildcard placeholders; defaults to {'_R','X','Y','Z'}.
         :type placeholder_labels: Optional[Set[str]]
         :param validate: Whether to validate SMARTS with RDKit if available.
         :type validate: bool
-        :returns: None
+        :return: None
         :rtype: None
         """
         if placeholder_labels is None:
@@ -44,8 +42,7 @@ class GraphToSMARTS:
         self.validate: bool = validate
 
     def graph_to_smarts(self, G: nx.Graph) -> str:
-        """
-        Convert a NetworkX graph into a SMARTS string representation.
+        """Convert a NetworkX graph into a SMARTS string representation.
 
         :param G: NetworkX Graph with node attributes:
                   - 'label': str atomic label or placeholder
@@ -53,11 +50,12 @@ class GraphToSMARTS:
                   and edge attribute:
                   - 'order': float bond order (1,1.5,2,3)
         :type G: nx.Graph
-        :returns: SMARTS string encoding the graph structure.
+        :return: SMARTS string encoding the graph structure.
         :rtype: str
         :raises ValueError: If RDKit fails to parse the generated SMARTS when validate=True.
 
-        :Example:
+        .. rubric:: Examples
+
         >>> G = nx.Graph()
         >>> G.add_node(1, label='C', constraint=None)
         >>> G.add_node(2, label='O', constraint=None)
@@ -115,18 +113,18 @@ class GraphToSMARTS:
         return smarts
 
     def graphs_to_rxn_smarts(self, reactant: nx.Graph, product: nx.Graph) -> str:
-        """
-        Construct a reaction SMARTS string from reactant and product graphs.
+        """Construct a reaction SMARTS string from reactant and product graphs.
 
         :param reactant: Reactant NetworkX graph.
         :type reactant: nx.Graph
         :param product: Product NetworkX graph.
         :type product: nx.Graph
-        :returns: Reaction SMARTS in the form 'reactants>>products'.
+        :return: Reaction SMARTS in the form 'reactants>>products'.
         :rtype: str
         :raises ValueError: If RDKit fails to parse the reaction SMARTS when validate=True.
 
-        :Example:
+        .. rubric:: Examples
+
         >>> G1 = nx.Graph()
         >>> G1.add_node(1, label='C', constraint=None)
         >>> G1.add_node(2, label='O', constraint=None)
@@ -153,10 +151,9 @@ class GraphToSMARTS:
         return rxn
 
     def __repr__(self) -> str:
-        """
-        Return an unambiguous representation of the converter instance.
+        """Return an unambiguous representation of the converter instance.
 
-        :returns: String showing placeholder labels and validation setting.
+        :return: String showing placeholder labels and validation setting.
         :rtype: str
         """
         return (
@@ -165,13 +162,13 @@ class GraphToSMARTS:
         )
 
     def help(self) -> str:
-        """
-        Provide usage information for GraphToSMARTS.
+        """Provide usage information for GraphToSMARTS.
 
-        :returns: Multi-line help string describing available methods.
+        :return: Multi-line help string describing available methods.
         :rtype: str
 
-        :Example:
+        .. rubric:: Examples
+
         >>> print(GraphToSMARTS().help())  # doctest:+NORMALIZE_WHITESPACE
         GraphToSMARTS(placeholder_labels=None, validate=True)
          - Use .graph_to_smarts(G) for a single graph

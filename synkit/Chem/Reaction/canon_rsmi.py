@@ -28,8 +28,8 @@ class CanonRSMI:
     - `CanonRSMI` – Main interface for transforming any `reactants>>products` SMILES
       into a canonicalized form, preserving all node and edge attributes.
 
-    Example
-    -------
+    .. rubric:: Example
+
     >>> from canonical_rsm import CanonRSMI
     >>> canon = CanonRSMI(backend='wl', wl_iterations=5)
     >>> result = canon.canonicalise('[CH3:3][CH2:5][OH:10]>>[CH2:3]=[CH2:5].[OH2:10]')
@@ -127,15 +127,13 @@ class CanonRSMI:
     def remap_graph(
         G: nx.Graph, node_map: Union[List[int], List[Tuple[int, int]]]
     ) -> nx.Graph:
-        """
-        Remap a product graph to match a canonical reactant ordering:
+        """Remap a product graph to match a canonical reactant ordering:
 
         :param G: reactant graph
         :type G: nx.Graph
-        :param mapping:
-            mapping from old product node IDs to new IDs
-        :type mapping: dict[int,int]
-        :returns:
+        :param node_map: Product node ordering or ``(new, old)`` node pairs.
+        :type node_map: list[int] | list[tuple[int, int]]
+        :return:
             remapped product graph
         :rtype: nx.Graph
         """

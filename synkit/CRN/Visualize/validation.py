@@ -6,6 +6,8 @@ import logging
 
 import networkx as nx
 
+from ..kinds import ALL_KINDS, is_reaction_node, is_species_node
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,9 +19,28 @@ class CRNGraphInfo:
 
 
 def node_sort_key(graph: nx.DiGraph, node: Hashable):
+    """Order reaction nodes after species nodes, deterministically.
+
+    Reaction nodes are recognised through :func:`~synkit.CRN.kinds.is_reaction_node`,
+    so ``kind="reaction"`` and the legacy ``kind="rule"`` sort identically. A
+    direct ``kind == "rule"`` comparison here used to file ``kind="reaction"``
+    nodes under the species branch, giving two different drawings of the same
+    network.
+
+    :param graph:
+        Bipartite CRN graph.
+    :type graph: networkx.DiGraph
+
+    :param node:
+        Node to build a sort key for.
+    :type node: Hashable
+
+    :return:
+        Comparable sort key.
+    :rtype: tuple
+    """
     data = graph.nodes[node]
-    kind = data.get("kind")
-    if kind == "rule":
+    if is_reaction_node(data):
         return (
             1,
             data.get("step", 10**9),
@@ -41,25 +62,26 @@ def validate_crn_graph(graph: nx.DiGraph, *, strict: bool = True) -> CRNGraphInf
     if not isinstance(graph, nx.DiGraph):
         raise TypeError("CRNVis expects a networkx.DiGraph.")
 
-    valid_kinds = {"species", "rule"}
     invalid_kind_nodes = [
-        n for n, d in graph.nodes(data=True) if d.get("kind") not in valid_kinds
+        n
+        for n, d in graph.nodes(data=True)
+        if not (is_species_node(d) or is_reaction_node(d))
     ]
     if invalid_kind_nodes:
         msg = (
             "Found nodes with invalid or missing 'kind': "
-            f"{invalid_kind_nodes!r}. Expected only 'species' or 'rule'."
+            f"{invalid_kind_nodes!r}. Expected one of {sorted(ALL_KINDS)!r}."
         )
         if strict:
             raise ValueError(msg)
         logger.warning(msg)
 
     species_nodes = sorted(
-        [n for n, d in graph.nodes(data=True) if d.get("kind") == "species"],
+        [n for n, d in graph.nodes(data=True) if is_species_node(d)],
         key=lambda n: node_sort_key(graph, n),
     )
     rule_nodes = sorted(
-        [n for n, d in graph.nodes(data=True) if d.get("kind") == "rule"],
+        [n for n, d in graph.nodes(data=True) if is_reaction_node(d)],
         key=lambda n: node_sort_key(graph, n),
     )
 
@@ -67,13 +89,13 @@ def validate_crn_graph(graph: nx.DiGraph, *, strict: bool = True) -> CRNGraphInf
     unknown_roles = []
     for u, v, d in graph.edges(data=True):
         role = d.get("role")
-        u_kind = graph.nodes[u].get("kind")
-        v_kind = graph.nodes[v].get("kind")
+        u_data = graph.nodes[u]
+        v_data = graph.nodes[v]
         if role == "reactant":
-            if not (u_kind == "species" and v_kind == "rule"):
+            if not (is_species_node(u_data) and is_reaction_node(v_data)):
                 invalid_edges.append((u, v, role))
         elif role == "product":
-            if not (u_kind == "rule" and v_kind == "species"):
+            if not (is_reaction_node(u_data) and is_species_node(v_data)):
                 invalid_edges.append((u, v, role))
         elif role is not None:
             unknown_roles.append((u, v, role))

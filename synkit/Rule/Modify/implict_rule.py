@@ -12,28 +12,19 @@ def implicit_rule(
     """Construct reaction-center objects from reaction SMILES by applying
     implicit‐H rules and ITS graph construction.
 
-    Parameters
-    ----------
-    rsmi : str or list of str
-        A reaction SMILES string, or a list thereof.
-    disconnected : bool, optional
-        Whether to allow disconnected components in the reaction center (default: True).
-    balance_its : bool, optional
-        Whether to enforce atom‐balance in the ITS graph (default: False).
+    :param rsmi: A reaction SMILES string, or a list thereof.
+    :type rsmi: str or list of str
+    :param disconnected: Whether to allow disconnected components in the reaction center (default: True).
+    :type disconnected: bool, optional
+    :param balance_its: Whether to enforce atom‐balance in the ITS graph (default: False).
+    :type balance_its: bool, optional
 
-    Returns
-    -------
-    RC or list of RC
-        The reaction‐center object(s) extracted from the ITS graph.
+    :return: The reaction‐center object(s) extracted from the ITS graph.
+    :rtype: RC or list of RC
 
-    Raises
-    ------
-    ValueError
-        If an empty SMILES string is provided.
-    TypeError
-        If `rsmi` is not a string or list of strings.
-    RuntimeError
-        If graph conversion or ITS construction fails.
+    :raises ValueError: If an empty SMILES string is provided.
+    :raises TypeError: If `rsmi` is not a string or list of strings.
+    :raises RuntimeError: If graph conversion or ITS construction fails.
     """
 
     def _process(smiles: str) -> Any:

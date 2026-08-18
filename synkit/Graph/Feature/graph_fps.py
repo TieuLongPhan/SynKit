@@ -10,10 +10,12 @@ class GraphFP:
         """Initialize the GraphFP class to create binary fingerprints based on
         various graph characteristics.
 
-        Parameters:
-        - graph (nx.Graph): Graph on which to perform analysis.
-        - nBits (int): Size of the binary fingerprint in bits.
-        - hash_alg (str): Cryptographic hash function used for hashing.
+        :param graph: Graph on which to perform analysis.
+        :type graph: nx.Graph
+        :param nBits: Size of the binary fingerprint in bits.
+        :type nBits: int
+        :param hash_alg: Cryptographic hash function used for hashing.
+        :type hash_alg: str
         """
         self.graph = graph
         self.nBits = nBits
@@ -24,13 +26,12 @@ class GraphFP:
         """Generate a binary string fingerprint of the graph using the
         specified method.
 
-        Parameters:
-        - method (str): The method to use for fingerprinting
-        ('spectrum', 'adjacency', 'degree', 'motif')
+        :param method: The method to use for fingerprinting
+                       ('spectrum', 'adjacency', 'degree', 'motif')
+        :type method: str
 
-        Returns:
-        - str: A binary string of length `nBits` that represents the fingerprint of
-        the graph.
+        :return: A binary string of length `nBits` that represents the fingerprint of the graph.
+        :rtype: str
         """
         if method == "spectrum":
             fp = self._spectrum_fp()
@@ -80,12 +81,12 @@ class GraphFP:
         """Extend the hash length using iterative hashing until the desired bit
         length is achieved.
 
-        Parameters:
-        - remaining_bits (int): Number of bits needed to complete the fingerprint
-        to `nBits`.
+        :param remaining_bits: Number of bits needed to complete the fingerprint
+                               to `nBits`.
+        :type remaining_bits: int
 
-        Returns:
-        - str: Additional binary data to achieve the desired hash length.
+        :return: Additional binary data to achieve the desired hash length.
+        :rtype: str
         """
         additional_data = ""
         hash_obj = self.hash_function()

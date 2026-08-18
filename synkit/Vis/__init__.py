@@ -17,7 +17,7 @@ functions exported below.
 from .graph_visualizer import GraphVisualizer
 from .reaction import RXNVis, RuleVis
 from .space import Embedding, adjust_legend_handles, scatter_plot
-from .crn import CRNVisualizer
+from .crn import CRNStyle, CRNVis, draw_crn
 from .visual_model import (
     VisualEdge,
     VisualGraph,
@@ -52,7 +52,9 @@ __all__ = [
     "RuleVis",
     "RXNVis",
     "Embedding",
-    "CRNVisualizer",
+    "CRNStyle",
+    "CRNVis",
+    "draw_crn",
     "VisualEdge",
     "VisualGraph",
     "VisualKind",

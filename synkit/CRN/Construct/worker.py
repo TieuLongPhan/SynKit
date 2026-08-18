@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, List, Optional, Set, Tuple
 
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 
 def apply_rule_worker(

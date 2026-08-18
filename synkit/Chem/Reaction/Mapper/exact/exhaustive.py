@@ -25,12 +25,10 @@ from ..graph.labeled_graph import LabeledGraph
 class ExactResult:
     """Container for an exact mapping result.
 
-    Attributes
-    ----------
-    mapping : list[int]
-        ``mapping[i]`` gives the product atom index for reactant atom ``i``.
-    cost : float
-        Total absolute difference between adjacency matrices and loop counts.
+    :ivar mapping: ``mapping[i]`` gives the product atom index for reactant atom ``i``.
+    :vartype mapping: list[int]
+    :ivar cost: Total absolute difference between adjacency matrices and loop counts.
+    :vartype cost: float
     """
 
     mapping: List[int]
@@ -165,22 +163,16 @@ class ExactMapper:
     def solve(self, react: LabeledGraph, prod: LabeledGraph) -> ExactResult:
         """Compute the optimal bijective mapping between two labelled graphs.
 
-        Parameters
-        ----------
-        react, prod : LabeledGraph
-            Must have the same number of nodes and the same multiset of labels.
+        :param react: Must have the same number of nodes and the same multiset of labels.
+        :type react: LabeledGraph
+        :param prod: Must have the same number of nodes and the same multiset of labels.
+        :type prod: LabeledGraph
 
-        Returns
-        -------
-        ExactResult
-            Optimal mapping and its cost.
+        :return: Optimal mapping and its cost.
+        :rtype: ExactResult
 
-        Raises
-        ------
-        ValueError
-            If the graphs have incompatible sizes or label multisets.
-        RuntimeError
-            If no valid mapping is found (should never happen for compatible graphs).
+        :raises ValueError: If the graphs have incompatible sizes or label multisets.
+        :raises RuntimeError: If no valid mapping is found (should never happen for compatible graphs).
         """
         n = len(react.labels)
         if len(prod.labels) != n:

@@ -3,8 +3,7 @@ from typing import Tuple, Dict, Any, Optional, List
 
 
 class ITSDestruction:
-    """
-    Object-oriented helper to decompose an ITS graph back into its reactant (G)
+    """Decompose an ITS graph back into its reactant (G)
     and product (H) graphs given the enhanced per-attribute tuple representation.
 
     Node attributes such as 'element', 'charge', 'hcount', 'aromatic', and 'atom_map'
@@ -13,7 +12,10 @@ class ITSDestruction:
     each attribute to such a tuple. Edges carry a tuple under `edge_share` (default "order")
     like `("order": (order_G, order_H))`.
 
-    Example usage:
+    .. rubric:: Example
+
+    .. code-block:: python
+
         destr = ITSDestruction(its_graph, clean_wildcard=True)
         G = destr.G
         H = destr.H
@@ -26,7 +28,7 @@ class ITSDestruction:
     :param edge_share: Edge attribute key storing the (G, H) tuple (typically "order").
     :type edge_share: str
     :param clean_wildcard: If True, automatically remove wildcard nodes (element == "*")
-    from G and H after decomposition.
+        from G and H after decomposition.
     :type clean_wildcard: bool
     """
 
@@ -60,10 +62,9 @@ class ITSDestruction:
         self._H: Optional[nx.Graph] = None
 
     def help(self) -> str:
-        """
-        Return a human-readable summary of this decomposer's purpose and usage.
+        """Return a human-readable summary of this decomposer's purpose and usage.
 
-        :returns: Description of how to use the decomposer.
+        :return: Description of how to use the decomposer.
         :rtype: str
         """
         return (
@@ -191,10 +192,9 @@ class ITSDestruction:
 
     @property
     def G(self) -> nx.Graph:
-        """
-        Reactant-like graph reconstructed from the ITS.
+        """Reactant-like graph reconstructed from the ITS.
 
-        :returns: Graph corresponding to the 'before' side.
+        :return: Graph corresponding to the 'before' side.
         :rtype: nx.Graph
         """
         self._decompose_once()
@@ -203,10 +203,9 @@ class ITSDestruction:
 
     @property
     def H(self) -> nx.Graph:
-        """
-        Product-like graph reconstructed from the ITS.
+        """Product-like graph reconstructed from the ITS.
 
-        :returns: Graph corresponding to the 'after' side.
+        :return: Graph corresponding to the 'after' side.
         :rtype: nx.Graph
         """
         self._decompose_once()
@@ -214,10 +213,9 @@ class ITSDestruction:
         return self._H
 
     def decompose(self) -> Tuple[nx.Graph, nx.Graph]:
-        """
-        Explicitly trigger decomposition and return (G, H).
+        """Explicitly trigger decomposition and return (G, H).
 
-        :returns: Tuple of reconstructed graphs (G, H).
+        :return: Tuple of reconstructed graphs (G, H).
         :rtype: Tuple[nx.Graph, nx.Graph]
         """
         self._decompose_once()
@@ -241,8 +239,7 @@ class ITSDestruction:
         wildcard: Any = "*",
         contract_neighbors: bool = False,
     ) -> nx.Graph:
-        """
-        Remove nodes whose element attribute equals the wildcard. Optionally contract degree-2 wildcard
+        """Remove nodes whose element attribute equals the wildcard. Optionally contract degree-2 wildcard
         nodes by reconnecting their neighbors and combining edge orders.
 
         :param graph: Graph to clean.
@@ -253,7 +250,7 @@ class ITSDestruction:
         :type wildcard: Any
         :param contract_neighbors: Whether to reconnect neighbors of degree-2 wildcard nodes.
         :type contract_neighbors: bool
-        :returns: Cleaned graph with wildcard nodes removed.
+        :return: Cleaned graph with wildcard nodes removed.
         :rtype: nx.Graph
         """
         H = graph.copy()
@@ -293,8 +290,7 @@ class ITSDestruction:
         element_attr: str = "element",
         wildcard: Any = "*",
     ) -> Tuple[nx.Graph, nx.Graph]:
-        """
-        Return cleaned versions of G and H with wildcard nodes removed.
+        """Return cleaned versions of G and H with wildcard nodes removed.
 
         :param contract_neighbors: Whether to reconnect neighbors of degree-2 wildcard nodes.
         :type contract_neighbors: bool
@@ -302,7 +298,7 @@ class ITSDestruction:
         :type element_attr: str
         :param wildcard: Value treated as wildcard and thus removed.
         :type wildcard: Any
-        :returns: Tuple of cleaned (G, H).
+        :return: Tuple of cleaned (G, H).
         :rtype: Tuple[nx.Graph, nx.Graph]
         """
         G_clean = self._remove_wildcards_from_graph(

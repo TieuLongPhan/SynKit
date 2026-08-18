@@ -254,8 +254,7 @@ def plot_significance_heatmap_ttest_annotator(
     labels: list[str] | None = None,
     show_colorbar: bool = True,
 ) -> Axes:
-    """
-    Heatmap of pairwise paired t-tests with Holm correction.
+    """Heatmap of pairwise paired t-tests with Holm correction.
 
     Categories:
       0 = NS        (light gray)
@@ -263,37 +262,33 @@ def plot_significance_heatmap_ttest_annotator(
       2 = p < 0.01  (medium blue)
       3 = p < 0.001 (dark blue)
 
-    Parameters
-    ----------
-    ax : matplotlib.axes.Axes
-        Axes on which to draw the heatmap.
-    df : pandas.DataFrame
-        DataFrame containing the methods as columns.
-    methods : list[str]
-        Column names in df to compare.
-    alpha : float
-        Significance level for Holm correction (default 0.05).
-    adjust_method : str
-        Multiple-testing correction method (default 'holm').
-    to_milliseconds : bool
-        If True, multiply data by 1000 before testing.
-    palette : list[str] | None
-        Four colors for categories 0–3; uses gray→blue palette if None.
-    linewidth : float
-        Width of lines between cells.
-    fontsize : int
-        Base font size for labels and title.
-    title : str | None
-        Title of the heatmap.
-    labels : list[str] | None
-        Custom tick labels; if None, uses method names.
-    show_colorbar : bool
-        Whether to display the colorbar (default True).
+    :param ax: Axes on which to draw the heatmap.
+    :type ax: matplotlib.axes.Axes
+    :param df: DataFrame containing the methods as columns.
+    :type df: pandas.DataFrame
+    :param methods: Column names in df to compare.
+    :type methods: list[str]
+    :param alpha: Significance level for Holm correction (default 0.05).
+    :type alpha: float
+    :param adjust_method: Multiple-testing correction method (default 'holm').
+    :type adjust_method: str
+    :param to_milliseconds: If True, multiply data by 1000 before testing.
+    :type to_milliseconds: bool
+    :param palette: Four colors for categories 0–3; uses gray→blue palette if None.
+    :type palette: list[str] | None
+    :param linewidth: Width of lines between cells.
+    :type linewidth: float
+    :param fontsize: Base font size for labels and title.
+    :type fontsize: int
+    :param title: Title of the heatmap.
+    :type title: str | None
+    :param labels: Custom tick labels; if None, uses method names.
+    :type labels: list[str] | None
+    :param show_colorbar: Whether to display the colorbar (default True).
+    :type show_colorbar: bool
 
-    Returns
-    -------
-    ax : matplotlib.axes.Axes
-        The modified Axes.
+    :return: **ax** -- The modified Axes.
+    :rtype: matplotlib.axes.Axes
     """
     # 1) Scale to ms if requested
     data = df[methods].copy()

@@ -41,14 +41,13 @@ class WLRnxFps:
     )
 
     def fit(self, react: nx.Graph, prod: nx.Graph) -> WLRnxFps:
-        """
-        Compute WL tokens for reactant and product graphs, then build parity sketch on Δ-support.
+        """Compute WL tokens for reactant and product graphs, then build parity sketch on Δ-support.
 
         :param react: reactant graph with node attrs 'element','aromatic','hcount','charge'
         :type react: nx.Graph
         :param prod: product graph with same node/edge attrs
         :type prod: nx.Graph
-        :returns: self
+        :return: self
         :rtype: WLRnxFps
         :raises ValueError: if size is not positive
         """
@@ -116,8 +115,7 @@ class WLRnxFps:
         drop_non_aam: bool = False,
         use_index_as_atom_map: bool = False,
     ) -> WLRnxFps:
-        """
-        Build WLRnxFps directly from a reaction SMILES string.
+        """Build WLRnxFps directly from a reaction SMILES string.
 
         :param rsmi: reaction SMILES string
         :type rsmi: str
@@ -131,7 +129,7 @@ class WLRnxFps:
         :type drop_non_aam: bool
         :param use_index_as_atom_map: interpret node indices as atom map numbers
         :type use_index_as_atom_map: bool
-        :returns: fitted WLRnxFps instance
+        :return: fitted WLRnxFps instance
         :rtype: WLRnxFps
         :raises ValueError: on invalid SMILES parsing
         """
@@ -148,8 +146,7 @@ class WLRnxFps:
 
     @property
     def tokens_R(self) -> Counter:
-        """
-        :returns: WL token counts for reactant
+        """:return: WL token counts for reactant
         :rtype: Counter
         :raises AttributeError: if fit() has not been called
         """
@@ -159,8 +156,7 @@ class WLRnxFps:
 
     @property
     def tokens_P(self) -> Counter:
-        """
-        :returns: WL token counts for product
+        """:return: WL token counts for product
         :rtype: Counter
         :raises AttributeError: if fit() has not been called
         """
@@ -170,8 +166,7 @@ class WLRnxFps:
 
     @property
     def delta(self) -> Counter:
-        """
-        :returns: Signed token difference (product - reactant)
+        """:return: Signed token difference (product - reactant)
         :rtype: Counter
         :raises AttributeError: if fit() has not been called
         """
@@ -181,8 +176,7 @@ class WLRnxFps:
 
     @property
     def support(self) -> List[int]:
-        """
-        :returns: Tokens with non-zero delta
+        """:return: Tokens with non-zero delta
         :rtype: List[int]
         :raises AttributeError: if fit() has not been called
         """
@@ -192,8 +186,7 @@ class WLRnxFps:
 
     @property
     def fingerprint(self) -> Union[List[int], np.ndarray]:
-        """
-        :returns: Parity sketch bit vector (0/1)
+        """:return: Parity sketch bit vector (0/1)
         :rtype: Union[List[int], numpy.ndarray]
         :raises AttributeError: if fit() has not been called
         """
@@ -209,21 +202,19 @@ class WLRnxFps:
         )
 
     def help(self) -> None:
-        """
-        Print usage examples and class docstring.
+        """Print usage examples and class docstring.
 
-        :returns: None
+        :return: None
         """
         print(self.__doc__)
 
 
 def _h64(obj: Any) -> int:
-    """
-    Compute a stable 64-bit hash of an object.
+    """Compute a stable 64-bit hash of an object.
 
     :param obj: any hashable representation
     :type obj: Any
-    :returns: 64-bit integer hash
+    :return: 64-bit integer hash
     :rtype: int
     """
     h = blake2b(digest_size=8)

@@ -44,16 +44,14 @@ _MAX_ENUMERATED_SOLUTIONS = 10000
 class KernelSolution:
     """Exact solution of a kernel sub-problem.
 
-    Attributes
-    ----------
-    cost : float
-        Optimal chemical distance (cd units) of the full mapping.
-    sub_mappings : list[dict[int, int]]
-        Optimal kernel sub-mappings (position ``a`` → position ``b``).
-        Multiple entries when ``enumerate_all=True``.
-    proven_optimal : bool
-        Always ``True``: the orbital-branching search is exhaustive over the
-        kernel (pruning only removes symmetric or dominated branches).
+    :ivar cost: Optimal chemical distance (cd units) of the full mapping.
+    :vartype cost: float
+    :ivar sub_mappings: Optimal kernel sub-mappings (position ``a`` → position ``b``).
+                        Multiple entries when ``enumerate_all=True``.
+    :vartype sub_mappings: list[dict[int, int]]
+    :ivar proven_optimal: Always ``True``: the orbital-branching search is exhaustive over the
+                          kernel (pruning only removes symmetric or dominated branches).
+    :vartype proven_optimal: bool
     """
 
     cost: float
@@ -209,15 +207,12 @@ def solve_kernel(  # noqa: C901
     automorphism orbit take product positions in increasing order) and an
     admissible cost lower bound.
 
-    Parameters
-    ----------
-    kernel : Kernel
-    enumerate_all : bool, optional
-        Collect all symmetry-distinct optimal sub-mappings, not just one.
+    :param kernel:
+    :type kernel: Kernel
+    :param enumerate_all: Collect all symmetry-distinct optimal sub-mappings, not just one.
+    :type enumerate_all: bool, optional
 
-    Returns
-    -------
-    KernelSolution
+    :rtype: KernelSolution
     """
     lgp = kernel.lgp
     binary = kernel.binary
@@ -455,17 +450,14 @@ def solve_kernel_blockwise(
     results are combined—turning one O(k!) search into a sum of smaller ones.
     When no decomposition is possible the call delegates to ``solver``.
 
-    Parameters
-    ----------
-    kernel : Kernel
-    solver : callable, optional
-        Per-group exact solver (defaults to :func:`solve_kernel`).
-    enumerate_all : bool, optional
-        Enumerate all (symmetry-distinct) optima as the product over groups.
+    :param kernel:
+    :type kernel: Kernel
+    :param solver: Per-group exact solver (defaults to :func:`solve_kernel`).
+    :type solver: callable, optional
+    :param enumerate_all: Enumerate all (symmetry-distinct) optima as the product over groups.
+    :type enumerate_all: bool, optional
 
-    Returns
-    -------
-    KernelSolution
+    :rtype: KernelSolution
     """
     if solver is None:
         solver = solve_kernel

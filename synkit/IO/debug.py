@@ -19,7 +19,7 @@ def setup_logging(
                      Defaults to None.
     :type task_type: str or None
 
-    :returns: Configured logger instance.
+    :return: Configured logger instance.
     :rtype: logging.Logger
 
     :raises ValueError: If an invalid log level is provided.
@@ -55,7 +55,7 @@ def configure_warnings_and_logs(
     :param disable_rdkit_logs: Whether to disable RDKit error and
         warning logs. Default is False.
     :type disable_rdkit_logs: bool
-    :returns: None :usage: Use this function to control verbosity (e.g.
+    :return: None :usage: Use this function to control verbosity (e.g.
         in production or testing), but use with caution during
         development to avoid missing critical issues.
     """

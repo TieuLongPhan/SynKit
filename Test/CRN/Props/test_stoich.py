@@ -433,7 +433,7 @@ class TestIntegerHelpers(unittest.TestCase):
         ints = stoich._vector_to_minimal_integer(v)
         self.assertEqual(ints, [-1, 2, -3])
 
-    def test_integer_conservation_laws_chain_example_shape_only(self) -> None:
+    def test_integer_conservation_laws_chain_example(self) -> None:
         G = build_chain_example_graph()
         S = stoich.stoichiometric_matrix(G)
         n_species, _ = S.shape
@@ -448,6 +448,10 @@ class TestIntegerHelpers(unittest.TestCase):
             self.assertEqual(len(law), n_species)
             self.assertTrue(all(isinstance(x, int) for x in law))
             self.assertFalse(all(x == 0 for x in law))
+            # A conservation law must actually be one: y^T S == 0 exactly.
+            self.assertTrue(
+                np.allclose(np.array(law, dtype=float) @ S, 0.0, atol=1e-9)
+            )
 
     def test_integer_conservation_laws_known_cycle(self) -> None:
         G = build_conserved_cycle_graph()

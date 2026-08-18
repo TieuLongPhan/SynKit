@@ -22,7 +22,7 @@ from synkit.Graph.Stereo import (
 from synkit.IO.chem_converter import rsmi_to_its
 from synkit.Mechanism.audit import audit_local_electron_state
 from synkit.Rule import NonInvertibleStereoEffectError, SynRule
-from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+from synkit.Synthesis.Reactor import SynReactor
 
 ROOT = Path(__file__).parents[3]
 PAYLOAD = json.loads(

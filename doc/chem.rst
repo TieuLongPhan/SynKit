@@ -437,8 +437,8 @@ The mapper can represent hydrogens at three levels through ``add_Hs``:
 
 For comparison against a reference mapping, use ``AAMValidator``. Its
 ``smiles_check`` method accepts either ``"RC"`` (reaction centre) or
-``"ITS"`` matching and can be called from an instance when you need to set a
-default policy for unbalanced atom maps.
+``"ITS"`` matching and can be called from an instance to set a default policy
+for unbalanced atom maps.
 
 .. code-block:: python
 

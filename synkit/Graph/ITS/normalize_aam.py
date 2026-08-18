@@ -23,11 +23,11 @@ class NormalizeAAM:
     def fix_rsmi_kekulize(rsmi: str) -> str:
         """Filters the reactants and products of a reaction SMILES string.
 
-        Parameters:
-        - rsmi (str): A string representing the reaction SMILES in the form of "reactants >> products".
+        :param rsmi: A string representing the reaction SMILES in the form of "reactants >> products".
+        :type rsmi: str
 
-        Returns:
-        - str: A filtered reaction SMILES string where invalid reactants/products are removed.
+        :return: A filtered reaction SMILES string where invalid reactants/products are removed.
+        :rtype: str
         """
         # Split the reaction into reactants and products
         reactants, products = rsmi.split(">>")
@@ -47,11 +47,11 @@ class NormalizeAAM:
         This function processes a string of SMILES separated by periods (e.g., "CCO.CC=O"),
         filters out invalid SMILES, and returns a string of valid SMILES joined by periods.
 
-        Parameters:
-        - smiles (str): A string containing SMILES strings separated by periods ('.').
+        :param smiles: A string containing SMILES strings separated by periods ('.').
+        :type smiles: str
 
-        Returns:
-        - str: A string of valid SMILES, joined by periods ('.').
+        :return: A string of valid SMILES, joined by periods ('.').
+        :rtype: str
         """
         smiles_list = smiles.split(".")  # Split SMILES by period
         valid_smiles = []  # List to store valid SMILES strings
@@ -71,12 +71,13 @@ class NormalizeAAM:
         """Extracts a subgraph from a given graph based on a list of node
         indices.
 
-        Parameters:
-        graph (nx.Graph): The original graph from which to extract the subgraph.
-        indices (List[int]): A list of node indices that define the subgraph.
+        :param graph: The original graph from which to extract the subgraph.
+        :type graph: nx.Graph
+        :param indices: A list of node indices that define the subgraph.
+        :type indices: List[int]
 
-        Returns:
-        nx.Graph: The extracted subgraph.
+        :return: The extracted subgraph.
+        :rtype: nx.Graph
         """
         return graph.subgraph(indices).copy()
 
@@ -86,12 +87,13 @@ class NormalizeAAM:
         """Resets the node indices and the atom_map of the subgraph to be
         continuous from 1 onwards.
 
-        Parameters:
-        subgraph (nx.Graph): The subgraph with possibly non-continuous indices.
-        aam_key (str): The attribute key for atom mapping. Defaults to 'atom_map'.
+        :param subgraph: The subgraph with possibly non-continuous indices.
+        :type subgraph: nx.Graph
+        :param aam_key: The attribute key for atom mapping. Defaults to 'atom_map'.
+        :type aam_key: str
 
-        Returns:
-        nx.Graph: A new subgraph with continuous indices and adjusted atom_map.
+        :return: A new subgraph with continuous indices and adjusted atom_map.
+        :rtype: nx.Graph
         """
         new_graph = nx.Graph()
         node_id_mapping = {
@@ -110,13 +112,14 @@ class NormalizeAAM:
         reaction centers, decompose into separate reactant and product graphs,
         and generate the corresponding SMILES.
 
-        Parameters:
-        - rsmi (str): The reaction SMILES string to be processed.
-        - fix_aam_indice (bool): Whether to fix the atom mapping numbers.
-        Defaults to True.
+        :param rsmi: The reaction SMILES string to be processed.
+        :type rsmi: str
+        :param fix_aam_indice: Whether to fix the atom mapping numbers.
+                               Defaults to True.
+        :type fix_aam_indice: bool
 
-        Returns:
-        str: The resulting reaction SMILES string with updated atom mappings.
+        :return: The resulting reaction SMILES string with updated atom mappings.
+        :rtype: str
         """
         rsmi = self.fix_rsmi_kekulize(rsmi)
         if fix_aam_indice:

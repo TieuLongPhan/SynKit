@@ -116,26 +116,23 @@ class GraphCanonicaliser:
     """Factory that turns arbitrary ``networkx.Graph`` objects into their
     *canonical* twin plus a **stable 32‑hex digest**.
 
-    Parameters
-    ----------
-    backend:
-        ``"generic"`` or ``"wl"`` (structure‑aware Weisfeiler–Lehman).
-    wl_iterations:
-        Depth of WL refinement (ignored for ``generic``).  Three iterations
-        distinguish nearly all real‑world chemical graphs; increase for
-        very large or highly regular topologies.
-    node_sort_key, edge_sort_key:
-        Custom deterministic orderings.  They *must* treat their arguments
-        as *read‑only* and return plain tuples for total ordering.
+    :param backend: ``"generic"`` or ``"wl"`` (structure‑aware Weisfeiler–Lehman).
+    :param wl_iterations: Depth of WL refinement (ignored for ``generic``).  Three iterations
+                          distinguish nearly all real‑world chemical graphs; increase for
+                          very large or highly regular topologies.
+    :param node_sort_key: Custom deterministic orderings.  They *must* treat their arguments
+                          as *read‑only* and return plain tuples for total ordering.
+    :param edge_sort_key: Custom deterministic orderings.  They *must* treat their arguments
+                          as *read‑only* and return plain tuples for total ordering.
 
-    Notes
-    -----
+    .. rubric:: Notes
+
     *All* returned graphs are of the *same class* as the input
     (``nx.Graph``, ``nx.DiGraph`` …), so multigraphs and digraphs are
     preserved.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     >>> canon = GraphCanonicaliser(backend="generic")
     >>> sig   = canon.canonical_signature(G)
     >>> cg    = canon.canonicalise_graph(G)
@@ -182,8 +179,8 @@ class GraphCanonicaliser:
 
         The wrapper exposes:
 
-        * :pyattr:`~CanonicalGraph.canonical_graph` – relabelled 1…N
-        * :pyattr:`~CanonicalGraph.canonical_hash`  – 32‑char digest
+        * :attr:`~CanonicalGraph.canonical_graph` – relabelled 1…N
+        * :attr:`~CanonicalGraph.canonical_hash`  – 32‑char digest
         """
         return CanonicalGraph(graph, self)
 
@@ -243,7 +240,7 @@ class GraphCanonicaliser:
         return self.nauty.canonical_form(g)
 
     def _canon_generic(self, g: nx.Graph) -> nx.Graph:
-        """Pure attribute‑sort strategy – O(|V| log |V| + |E| log |E|)."""
+        """Pure attribute-sort strategy with ``O(V log V + E log E)`` cost."""
         nodes_sorted = sorted(g.nodes(data=True), key=lambda x: self._node_key(*x))
         mapping: Dict[NodeId, int] = {
             old: i + 1 for i, (old, _) in enumerate(nodes_sorted)
@@ -366,9 +363,8 @@ class CanonicalGraph:
     Instances compare & hash **by digest only** – perfect for set/dict
     membership while still carrying the underlying graphs.
 
-    Do **not** mutate :pyattr:`original_graph` in place if you need to
-    rely on :pyattr:`canonical_hash`; repeat the canonicalisation after
-    any structural change instead.
+    Mutating :attr:`original_graph` invalidates :attr:`canonical_hash`;
+    repeat canonicalisation after structural changes.
     """
 
     def __init__(self, g: nx.Graph, canon: GraphCanonicaliser) -> None:
@@ -402,12 +398,12 @@ class CanonicalGraph:
     # ------------------------------------------------------------------ #
     @property
     def original_graph(self) -> nx.Graph:
-        """A direct reference to **your** graph – **mutable**."""
+        """Direct mutable reference to the caller-provided graph."""
         return self._original
 
     @property
     def canonical_graph(self) -> nx.Graph:
-        """Immutable relabelled copy, nodes numbered 1 … |V|."""
+        """Immutable relabelled copy with nodes numbered from 1 through V."""
         return self._canonical_graph
 
     @property
@@ -443,18 +439,16 @@ class CanonicalRule:
     Equality and hashing are based solely on the canonical hash, so
     isomorphic rules (under the chosen backend) compare equal.
 
-    Attributes
-    ----------
-    original_rule : str
-        The raw GML string supplied by the user.
-    original_graph : nx.Graph
-        The NetworkX graph parsed from `original_rule`.
-    canonical_graph : nx.Graph
-        The relabelled canonical graph (nodes renumbered 1…N).
-    canonical_rule : str
-        The canonical graph re-serialized to a GML string.
-    canonical_hash : Digest
-        32-hex-character SHA-256 digest of the canonical graph.
+    :ivar original_rule: The raw GML string supplied by the user.
+    :vartype original_rule: str
+    :ivar original_graph: The NetworkX graph parsed from `original_rule`.
+    :vartype original_graph: nx.Graph
+    :ivar canonical_graph: The relabelled canonical graph (nodes renumbered 1…N).
+    :vartype canonical_graph: nx.Graph
+    :ivar canonical_rule: The canonical graph re-serialized to a GML string.
+    :vartype canonical_rule: str
+    :ivar canonical_hash: 32-hex-character SHA-256 digest of the canonical graph.
+    :vartype canonical_hash: Digest
     """
 
     def __init__(
@@ -464,12 +458,10 @@ class CanonicalRule:
     ) -> None:
         """Instantiate a CanonicalRule.
 
-        Parameters
-        ----------
-        rule : str
-            GML string of the transformation rule.
-        canon : GraphCanonicaliser
-            Initialized canonicaliser (generic or WL backend).
+        :param rule: GML string of the transformation rule.
+        :type rule: str
+        :param canon: Initialized canonicaliser (generic or WL backend).
+        :type canon: GraphCanonicaliser
         """
         # Store raw inputs
         self._original_rule: str = rule

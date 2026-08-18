@@ -1,5 +1,5 @@
 import unittest
-from synkit.Synthesis.Reactor.strategy import Strategy
+from synkit.Synthesis.Reactor import Strategy
 
 
 class TestStrategy(unittest.TestCase):

@@ -303,27 +303,20 @@ class GraphVisualizer:
     ) -> tuple[plt.Figure, list[list[plt.Axes]]]:
         """Plot multiple ITS graphs in a grid layout.
 
-        Parameters
-        ----------
-        its_list : list[nx.Graph]
-            List of ITS graphs to visualize.
-        subplot_shape : tuple[int, int] | None, optional
-            Grid shape (rows, cols). If None, determined by list length (supports up to 6).
-        use_edge_color : bool, default True
-            Whether to color edges based on 'standard_order'.
-        og : bool, default False
-            Flag for original graph mode when coloring.
-        figsize : tuple[float, float], default (12,6)
-            Figure size.
-        **kwargs
-            Additional parameters passed to plot_its (e.g. title, show_atom_map).
+        :param its_list: List of ITS graphs to visualize.
+        :type its_list: list[nx.Graph]
+        :param subplot_shape: Grid shape (rows, cols). If None, determined by list length (supports up to 6).
+        :type subplot_shape: tuple[int, int] | None, optional
+        :param use_edge_color: Whether to color edges based on 'standard_order'.
+        :type use_edge_color: bool, default True
+        :param og: Flag for original graph mode when coloring.
+        :type og: bool, default False
+        :param figsize: Figure size.
+        :type figsize: tuple[float, float], default (12,6)
+        :param kwargs: Additional parameters passed to ``plot_its``.
 
-        Returns
-        -------
-        fig : plt.Figure
-            The Matplotlib figure containing the grid.
-        axes : list of list of plt.Axes
-            2D list of Axes objects for each subplot.
+        :return: * **fig** (*plt.Figure*) -- The Matplotlib figure containing the grid.
+                  * **axes** (*list of list of plt.Axes*) -- 2D list of Axes objects for each subplot.
         """
         # Prevent auto-display by disabling interactive mode
         was_interactive = plt.isinteractive()

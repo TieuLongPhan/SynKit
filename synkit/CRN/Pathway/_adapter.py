@@ -6,8 +6,7 @@ from ..Petrinet.net import SynCRNIncidence, extract_syncrn_incidence
 
 
 def _species_token(incidence: SynCRNIncidence, sid: str, mode: str) -> str:
-    """
-    Convert an internal species identifier into an external token.
+    """Convert an internal species identifier into an external token.
 
     Supported tokenization modes are:
 
@@ -27,15 +26,15 @@ def _species_token(incidence: SynCRNIncidence, sid: str, mode: str) -> str:
         Tokenization mode. Must be one of ``"id"``, ``"label"``, or ``"source"``.
     :type mode: str
 
-    :returns:
+    :return:
         Token representing the species.
     :rtype: str
 
     :raises ValueError:
         If ``mode`` is not one of the supported values.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         tok = _species_token(incidence, "s1", mode="label")
@@ -51,8 +50,7 @@ def _species_token(incidence: SynCRNIncidence, sid: str, mode: str) -> str:
 
 
 def _reaction_token(incidence: SynCRNIncidence, rid: str, mode: str) -> str:
-    """
-    Convert an internal reaction identifier into an external token.
+    """Convert an internal reaction identifier into an external token.
 
     Supported tokenization modes are:
 
@@ -72,15 +70,15 @@ def _reaction_token(incidence: SynCRNIncidence, rid: str, mode: str) -> str:
         Tokenization mode. Must be one of ``"id"``, ``"label"``, or ``"source"``.
     :type mode: str
 
-    :returns:
+    :return:
         Token representing the reaction.
     :rtype: str
 
     :raises ValueError:
         If ``mode`` is not one of the supported values.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         tok = _reaction_token(incidence, "r1", mode="id")
@@ -96,8 +94,7 @@ def _reaction_token(incidence: SynCRNIncidence, rid: str, mode: str) -> str:
 
 
 def _assert_unique_tokens(tokens: Mapping[str, str], *, kind: str) -> None:
-    """
-    Validate that exported tokens are unique.
+    """Validate that exported tokens are unique.
 
     This prevents ambiguous reverse mapping from public tokens back to internal
     identifiers.
@@ -111,7 +108,7 @@ def _assert_unique_tokens(tokens: Mapping[str, str], *, kind: str) -> None:
         ``"reaction"``.
     :type kind: str
 
-    :returns:
+    :return:
         ``None``.
     :rtype: None
 
@@ -133,8 +130,7 @@ def _build_species_token_map(
     *,
     species: str,
 ) -> Dict[str, str]:
-    """
-    Build the mapping from internal species ids to exported species tokens.
+    """Build the mapping from internal species ids to exported species tokens.
 
     :param incidence:
         Canonical SynCRN incidence object.
@@ -144,7 +140,7 @@ def _build_species_token_map(
         Species tokenization mode.
     :type species: str
 
-    :returns:
+    :return:
         Mapping ``internal_species_id -> exported_species_token``.
     :rtype: Dict[str, str]
     """
@@ -158,8 +154,7 @@ def _build_reaction_token_map(
     *,
     reaction: str,
 ) -> Dict[str, str]:
-    """
-    Build the mapping from internal reaction ids to exported reaction tokens.
+    """Build the mapping from internal reaction ids to exported reaction tokens.
 
     :param incidence:
         Canonical SynCRN incidence object.
@@ -169,7 +164,7 @@ def _build_reaction_token_map(
         Reaction tokenization mode.
     :type reaction: str
 
-    :returns:
+    :return:
         Mapping ``internal_reaction_id -> exported_reaction_token``.
     :rtype: Dict[str, str]
     """
@@ -183,8 +178,7 @@ def _tokenize_reaction_multiset(
     coeffs: Mapping[str, int],
     species_map: Mapping[str, str],
 ) -> Dict[str, int]:
-    """
-    Convert one incidence-side multiset from internal species ids to tokens.
+    """Convert one incidence-side multiset from internal species ids to tokens.
 
     :param coeffs:
         Mapping ``internal_species_id -> stoichiometric_coefficient``.
@@ -194,7 +188,7 @@ def _tokenize_reaction_multiset(
         Mapping ``internal_species_id -> exported_species_token``.
     :type species_map: Mapping[str, str]
 
-    :returns:
+    :return:
         Mapping ``exported_species_token -> stoichiometric_coefficient``.
     :rtype: Dict[str, int]
     """
@@ -206,8 +200,7 @@ def _build_tokenized_edges(
     species_map: Mapping[str, str],
     reaction_map: Mapping[str, str],
 ) -> Dict[str, Tuple[Dict[str, int], Dict[str, int]]]:
-    """
-    Build tokenized reaction edges.
+    """Build tokenized reaction edges.
 
     Each reaction token maps to a pair ``(tail, head)``, where ``tail`` and
     ``head`` are tokenized stoichiometric multisets for reactants and products.
@@ -224,7 +217,7 @@ def _build_tokenized_edges(
         Mapping ``internal_reaction_id -> exported_reaction_token``.
     :type reaction_map: Mapping[str, str]
 
-    :returns:
+    :return:
         Mapping
         ``reaction_token -> (reactant_multiset, product_multiset)``.
     :rtype: Dict[str, Tuple[Dict[str, int], Dict[str, int]]]
@@ -239,14 +232,13 @@ def _build_tokenized_edges(
 
 
 def _invert_token_map(token_map: Mapping[str, str]) -> Dict[str, str]:
-    """
-    Invert an internal-id to token mapping.
+    """Invert an internal-id to token mapping.
 
     :param token_map:
         Mapping ``internal_id -> token``.
     :type token_map: Mapping[str, str]
 
-    :returns:
+    :return:
         Mapping ``token -> internal_id``.
     :rtype: Dict[str, str]
     """
@@ -265,8 +257,7 @@ def tokenize_syncrn_incidence(
     Dict[str, str],
     SynCRNIncidence,
 ]:
-    """
-    Convert SynCRN incidence into tokenized vertex and edge dictionaries.
+    """Convert SynCRN incidence into tokenized vertex and edge dictionaries.
 
     The returned objects are designed for downstream algorithms that prefer
     stable public-facing tokens over internal SynCRN identifiers.
@@ -285,7 +276,7 @@ def tokenize_syncrn_incidence(
         ``"source"``.
     :type reaction: str
 
-    :returns:
+    :return:
         Tuple containing:
 
         - ``vertices``:
@@ -311,8 +302,8 @@ def tokenize_syncrn_incidence(
     :raises ValueError:
         If species or reaction tokenization produces non-unique exported tokens.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         vertices, edges, s_tok2id, r_tok2id, incidence = tokenize_syncrn_incidence(

@@ -5,7 +5,11 @@ from typing import Callable, Optional, Union, List, Any, Dict
 import networkx as nx
 from networkx.algorithms import isomorphism
 from networkx.algorithms.isomorphism import GraphMatcher
-from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
+from networkx.algorithms.isomorphism import (
+    categorical_multiedge_match,
+    generic_node_match,
+    generic_edge_match,
+)
 
 # Alias for any NetworkX graph type
 graph_types = Union[nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph]
@@ -39,7 +43,7 @@ def find_graph_isomorphism(
     :type fast_invariant_check: bool
     :param logger: Logger for debug messages. Defaults to root logger.
     :type logger: logging.Logger or None
-    :returns: A dict mapping nodes in G1 to nodes in G2 if isomorphic;
+    :return: A dict mapping nodes in G1 to nodes in G2 if isomorphic;
         otherwise None.
     :rtype: dict[Any, Any] or None
     """
@@ -79,19 +83,25 @@ def find_graph_isomorphism(
                 ["element", "atom_map", "hcount"], ["*", 0, 0]
             )
         if edge_match is None:
-            edge_match = isomorphism.categorical_edge_match("order", 1)
+            edge_match = (
+                categorical_multiedge_match("order", 1)
+                if G1.is_multigraph()
+                else isomorphism.categorical_edge_match("order", 1)
+            )
 
     # 4) Select the correct matcher
-    if isinstance(G1, (nx.MultiGraph, nx.MultiDiGraph)):
-        if isinstance(G1, nx.MultiGraph):
-            Matcher = nx.algorithms.isomorphism.MultiGraphMatcher
-        else:
-            Matcher = nx.algorithms.isomorphism.MultiDiGraphMatcher
+    if G1.is_multigraph():
+        Matcher = (
+            nx.algorithms.isomorphism.MultiDiGraphMatcher
+            if G1.is_directed()
+            else nx.algorithms.isomorphism.MultiGraphMatcher
+        )
     else:
-        if isinstance(G1, nx.Graph):
-            Matcher = nx.algorithms.isomorphism.GraphMatcher
-        else:
-            Matcher = nx.algorithms.isomorphism.DiGraphMatcher
+        Matcher = (
+            nx.algorithms.isomorphism.DiGraphMatcher
+            if G1.is_directed()
+            else nx.algorithms.isomorphism.GraphMatcher
+        )
 
     matcher = Matcher(G1, G2, node_match=node_match, edge_match=edge_match)
     if matcher.is_isomorphic():
@@ -113,16 +123,19 @@ def graph_isomorphism(
     edge matching functions. Uses default matching settings if none are
     provided.
 
-    Parameters:
-    - graph_1 (nx.Graph): The first graph to compare.
-    - graph_2 (nx.Graph): The second graph to compare.
-    - node_match (Optional[Callable]): The function used to match nodes.
-    Uses default if None.
-    - edge_match (Optional[Callable]): The function used to match edges.
-    Uses default if None.
+    :param graph_1: The first graph to compare.
+    :type graph_1: nx.Graph
+    :param graph_2: The second graph to compare.
+    :type graph_2: nx.Graph
+    :param node_match: The function used to match nodes.
+                       Uses default if None.
+    :type node_match: Optional[Callable]
+    :param edge_match: The function used to match edges.
+                       Uses default if None.
+    :type edge_match: Optional[Callable]
 
-    Returns:
-    - bool: True if the graphs are isomorphic, False otherwise.
+    :return: True if the graphs are isomorphic, False otherwise.
+    :rtype: bool
     """
     # Define default node and edge attributes and match settings
     if use_defaults:
@@ -158,19 +171,27 @@ def subgraph_isomorphism(
     """Enhanced checks if the child graph is a subgraph isomorphic to the
     parent graph based on customizable node and edge attributes.
 
-    Parameters:
-    - child_graph (nx.Graph): The child graph.
-    - parent_graph (nx.Graph): The parent graph.
-    - node_label_names (List[str]): Labels to compare.
-    - node_label_default (List[Any]): Defaults for missing node labels.
-    - edge_attribute (str): The edge attribute to compare.
-    - use_filter (bool): Whether to use pre-filters based on node and edge count.
-    - check_type (str): "induced" (default) or "monomorphism" for the type of subgraph matching.
-    - node_comparator (Callable[[Any, Any], bool]): Custom comparator for node attributes.
-    - edge_comparator (Callable[[Any, Any], bool]): Custom comparator for edge attributes.
+    :param child_graph: The child graph.
+    :type child_graph: nx.Graph
+    :param parent_graph: The parent graph.
+    :type parent_graph: nx.Graph
+    :param node_label_names: Labels to compare.
+    :type node_label_names: List[str]
+    :param node_label_default: Defaults for missing node labels.
+    :type node_label_default: List[Any]
+    :param edge_attribute: The edge attribute to compare.
+    :type edge_attribute: str
+    :param use_filter: Whether to use pre-filters based on node and edge count.
+    :type use_filter: bool
+    :param check_type: "induced" (default) or "monomorphism" for the type of subgraph matching.
+    :type check_type: str
+    :param node_comparator: Custom comparator for node attributes.
+    :type node_comparator: Callable[[Any, Any], bool]
+    :param edge_comparator: Custom comparator for edge attributes.
+    :type edge_comparator: Callable[[Any, Any], bool]
 
-    Returns:
-    - bool: True if subgraph isomorphism is found, False otherwise.
+    :return: True if subgraph isomorphism is found, False otherwise.
+    :rtype: bool
     """
     if use_filter:
         # Initial quick filters based on node and edge counts
@@ -179,7 +200,10 @@ def subgraph_isomorphism(
         ):
             return False
 
-        # Step 2: Node label filter - Only consider 'element' and 'charge' attributes
+        node_comparator = node_comparator or eq
+        edge_comparator = edge_comparator or eq
+
+        # Step 2: Every child node needs at least one compatible parent candidate.
         for _, child_data in child_graph.nodes(data=True):
             found_match = False
             for _, parent_data in parent_graph.nodes(data=True):
@@ -188,7 +212,7 @@ def subgraph_isomorphism(
                 for label, default in zip(node_label_names, node_label_default):
                     child_value = child_data.get(label, default)
                     parent_value = parent_data.get(label, default)
-                    if child_value != parent_value:
+                    if not node_comparator(parent_value, child_value):
                         match = False
                         break
                 if match:
@@ -197,28 +221,19 @@ def subgraph_isomorphism(
             if not found_match:
                 return False
 
-        # Step 3: Edge label filter - Ensure that the edge attribute 'order' matches if provided
+        # Step 3: Every child edge label needs a compatible parent edge label.
+        # Node identifiers are deliberately irrelevant: the isomorphism has
+        # not been discovered yet.
         if edge_attribute:
-            for child_edge in child_graph.edges(data=True):
-                child_node1, child_node2, child_data = child_edge
-                if child_node1 in parent_graph and child_node2 in parent_graph:
-                    # Ensure the edge exists in the parent graph
-                    if not parent_graph.has_edge(child_node1, child_node2):
-                        return False
-                    # Check if the 'order' attribute matches
-                    parent_edge_data = parent_graph[child_node1][child_node2]
-                    child_order = child_data.get(edge_attribute)
-                    parent_order = parent_edge_data.get(edge_attribute)
-
-                    # Handle comparison of tuple values for 'order' attribute
-                    if isinstance(child_order, tuple) and isinstance(
-                        parent_order, tuple
-                    ):
-                        if child_order != parent_order:
-                            return False
-                    elif child_order != parent_order:
-                        return False
-                else:
+            parent_edge_values = [
+                data.get(edge_attribute) for _, _, data in parent_graph.edges(data=True)
+            ]
+            for _, _, child_data in child_graph.edges(data=True):
+                child_value = child_data.get(edge_attribute)
+                if not any(
+                    edge_comparator(parent_value, child_value)
+                    for parent_value in parent_edge_values
+                ):
                     return False
 
     # Setting up attribute comparison functions
@@ -236,7 +251,16 @@ def subgraph_isomorphism(
     )
 
     # Graph matching setup
-    matcher = GraphMatcher(
+    if child_graph.is_directed() != parent_graph.is_directed():
+        return False
+    if child_graph.is_multigraph() or parent_graph.is_multigraph():
+        raise NotImplementedError("subgraph_isomorphism does not support multigraphs")
+    matcher_cls = (
+        nx.algorithms.isomorphism.DiGraphMatcher
+        if parent_graph.is_directed()
+        else GraphMatcher
+    )
+    matcher = matcher_cls(
         parent_graph, child_graph, node_match=node_match, edge_match=edge_match
     )
 
@@ -261,21 +285,31 @@ def maximum_connected_common_subgraph(
     possible subgraph size down to 1—and returns the first (largest) candidate that is connected
     and is isomorphic to a subgraph of the larger graph.
 
-    Parameters:
-    - graph_1 (nx.Graph): The first graph for comparison.
-    - graph_2 (nx.Graph): The second graph for comparison.
-    - node_label_names (List[str]): List of node attribute names used for matching.
-    - node_label_default (List[Any]): Default values for missing node attributes.
-    - edge_attribute (str): The edge attribute to compare.
+    :param graph_1: The first graph for comparison.
+    :type graph_1: nx.Graph
+    :param graph_2: The second graph for comparison.
+    :type graph_2: nx.Graph
+    :param node_label_names: List of node attribute names used for matching.
+    :type node_label_names: List[str]
+    :param node_label_default: Default values for missing node attributes.
+    :type node_label_default: List[Any]
+    :param edge_attribute: The edge attribute to compare.
+    :type edge_attribute: str
 
-    Returns:
-    - nx.Graph: A graph representing the largest connected common subgraph found; if none exists,
-      returns an empty graph.
+    :return: A graph representing the largest connected common subgraph found; if none exists, returns an empty graph.
+    :rtype: nx.Graph
     """
     node_match = generic_node_match(
         node_label_names, node_label_default, [eq] * len(node_label_names)
     )
     edge_match = generic_edge_match(edge_attribute, 1, eq)
+
+    if graph_1.is_directed() != graph_2.is_directed():
+        return nx.Graph()
+    if graph_1.is_multigraph() or graph_2.is_multigraph():
+        raise NotImplementedError(
+            "maximum_connected_common_subgraph does not support multigraphs"
+        )
 
     # Determine which graph is smaller for efficiency.
     if graph_1.number_of_nodes() <= graph_2.number_of_nodes():
@@ -291,13 +325,22 @@ def maximum_connected_common_subgraph(
         ):
             candidate_subgraph = smaller_graph.subgraph(nodes_subset)
             # If the subgraph has more than one node, check it is connected.
-            if candidate_subgraph.number_of_nodes() > 1 and not nx.is_connected(
-                candidate_subgraph
-            ):
-                continue
+            if candidate_subgraph.number_of_nodes() > 1:
+                connected = (
+                    nx.is_weakly_connected(candidate_subgraph)
+                    if candidate_subgraph.is_directed()
+                    else nx.is_connected(candidate_subgraph)
+                )
+                if not connected:
+                    continue
 
             # Check for subgraph isomorphism in the larger graph.
-            matcher = GraphMatcher(
+            matcher_cls = (
+                nx.algorithms.isomorphism.DiGraphMatcher
+                if larger_graph.is_directed()
+                else GraphMatcher
+            )
+            matcher = matcher_cls(
                 larger_graph,
                 candidate_subgraph,
                 node_match=node_match,
@@ -306,7 +349,7 @@ def maximum_connected_common_subgraph(
             if matcher.subgraph_is_isomorphic():
                 return candidate_subgraph.copy()
 
-    return nx.Graph()
+    return smaller_graph.__class__()
 
 
 def heuristics_MCCS(
@@ -324,18 +367,20 @@ def heuristics_MCCS(
     between the current common subgraph and each subsequent graph. An early exit occurs if the
     intermediate common subgraph becomes empty.
 
-    Parameters:
-    - graphs (List[nx.Graph]): A list of networkx graphs for which the common subgraph is to be computed.
-    - node_label_names (List[str]): List of node attribute names used for matching.
-    - node_label_default (List[Any]): Default values for missing node attributes.
-    - edge_attribute (str): The edge attribute to compare.
+    :param graphs: A list of networkx graphs for which the common subgraph is to be computed.
+    :type graphs: List[nx.Graph]
+    :param node_label_names: List of node attribute names used for matching.
+    :type node_label_names: List[str]
+    :param node_label_default: Default values for missing node attributes.
+    :type node_label_default: List[Any]
+    :param edge_attribute: The edge attribute to compare.
+    :type edge_attribute: str
 
-    Returns:
-    - nx.Graph: The maximum connected common subgraph common to all provided graphs. If no common
-      subgraph exists, an empty graph is returned.
+    :return: Maximum connected common subgraph, or an empty graph when none
+             exists.
+    :rtype: nx.Graph
 
-    Raises:
-    - ValueError: If the input list of graphs is empty.
+    :raises ValueError: If the input list of graphs is empty.
     """
     if not graphs:
         raise ValueError("Input list of graphs is empty.")

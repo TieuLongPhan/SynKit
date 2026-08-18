@@ -28,7 +28,7 @@ class Standardize:
         :param symbol: Separator between reactants and products.
             Defaults to '>>'.
         :type symbol: str
-        :returns: Reaction SMILES without atom‑mapping annotations.
+        :return: Reaction SMILES without atom‑mapping annotations.
         :rtype: str
         :raises ValueError: If the input format is invalid or contains
             invalid SMILES.
@@ -57,7 +57,7 @@ class Standardize:
 
         :param smiles_list: List of SMILES strings to validate.
         :type smiles_list: List[str]
-        :returns: List of sanitized RDKit Mol objects.
+        :return: List of sanitized RDKit Mol objects.
         :rtype: List[rdkit.Chem.Mol]
         """
         valid: List[Chem.Mol] = []
@@ -79,7 +79,7 @@ class Standardize:
 
         :param smiles_list: List of SMILES strings to validate.
         :type smiles_list: List[str]
-        :returns: Tuple of valid molecules and whether any fragment was invalid.
+        :return: Tuple of valid molecules and whether any fragment was invalid.
         :rtype: Tuple[List[rdkit.Chem.Mol], bool]
         """
         valid: List[Chem.Mol] = []
@@ -100,8 +100,7 @@ class Standardize:
     def standardize_rsmi(
         rsmi: str, stereo: bool = False, remove_invalid: bool = True
     ) -> Optional[str]:
-        """
-        Normalize a reaction SMILES: validate molecules, sort fragments, optionally keep stereo.
+        """Normalize a reaction SMILES: validate molecules, sort fragments, optionally keep stereo.
 
         :param rsmi: Reaction SMILES in 'reactants>>products' format.
         :type rsmi: str
@@ -111,7 +110,7 @@ class Standardize:
             remaining molecules. If False, return None when any invalid fragment
             exists. Defaults to True.
         :type remove_invalid: bool
-        :returns: Standardized reaction SMILES or None if no valid molecules remain.
+        :return: Standardized reaction SMILES or None if no valid molecules remain.
         :rtype: Optional[str]
         :raises ValueError: If the input format is invalid.
         """
@@ -151,8 +150,7 @@ class Standardize:
         ignore_stereo: bool = True,
         remove_invalid: bool = True,
     ) -> Optional[str]:
-        """
-        Full standardization pipeline: strip atom‑mapping, normalize SMILES, fix hydrogen notation.
+        """Full standardization pipeline: strip atom‑mapping, normalize SMILES, fix hydrogen notation.
 
         :param rsmi: Reaction SMILES to process.
         :type rsmi: str
@@ -164,7 +162,7 @@ class Standardize:
             remaining molecules. If False, return None when any invalid fragment
             exists. Defaults to True.
         :type remove_invalid: bool
-        :returns: The standardized reaction SMILES, or None if standardization fails.
+        :return: The standardized reaction SMILES, or None if standardization fails.
         :rtype: Optional[str]
         """
         std = self.standardize_rsmi(
@@ -189,7 +187,7 @@ class Standardize:
         :type reactions: List[str]
         :param target_reaction: Benchmark reaction SMILES for comparison.
         :type target_reaction: str
-        :returns: Tuple of (matches, non_matches):
+        :return: Tuple of (matches, non_matches):
                   - matches: reactions equal to standardized target
                   - non_matches: all others
         :rtype: Tuple[List[str], List[str]]

@@ -1,17 +1,4 @@
-"""
-Sphinx configuration for SynKit.
-
-Modern, stable configuration:
-- Uses pydata_sphinx_theme (modern UI + light/dark switcher)
-- Falls back to sphinx_rtd_theme if pydata is not available
-- Avoids fragile template overrides (DO NOT create _templates/sidebar-nav-bs.html)
-- LEFT sidebar shows the toctree (sidebar-nav-bs)
-- RIGHT sidebar shows the on-this-page outline (page-toc)
-
-IMPORTANT
----------
-Your docs folder appears to be `doc/` (not `docs/`), so html_context["doc_path"] is "doc".
-"""
+"""Sphinx configuration for the SynKit documentation."""
 
 from __future__ import annotations
 
@@ -27,16 +14,16 @@ from typing import Optional
 # ---------------------------------------------------------------------
 # Path setup
 # ---------------------------------------------------------------------
-HERE = Path(__file__).resolve().parent  # e.g. <repo>/doc
+HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parent
 
-# Ensure repo root is importable (preferred) and keep your original behaviour
+# Make the source tree importable by autodoc.
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, os.path.abspath(".."))
 
 
 # ---------------------------------------------------------------------
-# Helpers: robust release/version resolution
+# Helpers: release/version resolution
 # ---------------------------------------------------------------------
 def _git_describe(repo_root: Path) -> Optional[str]:
     """
@@ -67,13 +54,11 @@ def _git_describe(repo_root: Path) -> Optional[str]:
 
 
 def _normalize_release(s: str) -> str:
-    """
-    Normalize common tag strings into a PEP 440-ish release string.
+    """Normalize common tag strings into a PEP 440-ish release string.
 
-    Examples:
-      - v1.2.3 -> 1.2.3
-      - 1.2.3-4-g<sha> -> 1.2.3
-      - 1.2.3rc1 -> 1.2.3rc1
+    .. rubric:: Examples
+
+    ``v1.2.3`` becomes ``1.2.3``; ``1.2.3-4-g<sha>`` becomes ``1.2.3``.
 
     :param s: Raw version string from package metadata or git.
     :type s: str
@@ -153,9 +138,12 @@ bibtex_bibfiles = ["refs.bib"]
 templates_path = ["_templates"]
 (HERE / "_templates").mkdir(parents=True, exist_ok=True)
 
-exclude_patterns: list[str] = []
+# Retain the reaction-stereochemistry source while omitting it from the
+# published documentation until that interface is ready for release.
+exclude_patterns: list[str] = ["stereo_reactions.rst"]
 
 autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 2
 autosummary_generate = True
 
 autodoc_default_options = {
@@ -163,25 +151,6 @@ autodoc_default_options = {
     "undoc-members": True,
     "show-inheritance": True,
 }
-
-
-def _strip_legacy_autodoc_bodies(app, what, name, obj, options, lines):
-    """Keep API object inventories buildable while legacy docstrings migrate.
-
-    SynKit's API reference intentionally lists the public modules, classes,
-    methods, and signatures.  A large portion of the older source docstrings
-    is free-form text rather than valid reStructuredText, however; feeding
-    those bodies to Sphinx produces malformed-list, indentation, and unknown
-    role errors.  The hand-written guides in ``doc/`` provide the narrative
-    documentation, while autodoc remains a reliable generated API inventory.
-    """
-    lines.clear()
-
-
-def setup(app):
-    """Register documentation-build hooks."""
-    app.connect("autodoc-process-docstring", _strip_legacy_autodoc_bodies)
-
 
 intersphinx_mapping = (
     {}
@@ -230,10 +199,7 @@ try:
             "image_dark": "_static/logo-dark.svg",
             "alt_text": "SynKit",
         },
-        # Header
         "navbar_start": ["navbar-logo"],
-        # IMPORTANT: keep navbar-nav so the theme can compute the active section
-        # and the left sidebar "sidebar-nav-bs" can show your toctree subtree.
         "navbar_center": [],
         "navbar_end": ["theme-switcher", "navbar-icon-links"],
         "icon_links": [
@@ -258,23 +224,18 @@ try:
                 "icon": "fa-regular fa-circle-question",
             },
         ],
-        # Navigation / TOC behavior
         "show_nav_level": 2,
         "navigation_depth": 4,
         "show_toc_level": 3,
         "search_bar_text": "Search the docs…",
         "use_edit_page_button": True,
-        # RIGHT sidebar
         "secondary_sidebar_items": ["page-toc"],
         "footer_start": ["copyright"],
     }
 
-    # LEFT sidebar: toctree navigation + search field
-    # NOTE: Do NOT create doc/_templates/sidebar-nav-bs.html (would override theme).
     html_sidebars = {
         "**": [
-            # "search-field.html",
-            "sidebar-globaltoc.html",  # <-- our global tree
+            "sidebar-globaltoc.html",
         ]
     }
 

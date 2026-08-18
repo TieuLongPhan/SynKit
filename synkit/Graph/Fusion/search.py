@@ -194,7 +194,7 @@ class VerifiedFusionSearch:
         ranking_start = perf_counter()
         unique.sort(
             key=lambda candidate: (
-                candidate.score,
+                candidate.score.ranking_key if candidate.score is not None else (),
                 candidate.canonical_signature,
                 candidate.proof_digest,
             )

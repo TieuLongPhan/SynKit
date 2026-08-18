@@ -30,7 +30,7 @@ def find_wc_graph_isomorphism(
     :type  edge_match: Callable[[dict, dict], bool] | None
     :param logger: Optional logger for diagnostics.
     :type  logger: logging.Logger | None
-    :returns: Mapping *pattern‑node → host‑node* if a wildcard isomorphism
+    :return: Mapping *pattern‑node → host‑node* if a wildcard isomorphism
               exists; otherwise ``None``.
     :rtype: dict[Any, Any] | None
     """
@@ -100,24 +100,24 @@ def fuse_wc_graphs(
 
     • **all edges present in G2** among the nodes kept above.
 
-    Parameters
-    ----------
-    G1, G2 : GraphType
-        `G1` may contain nodes whose ``element`` is the wildcard marker
-        (default ``"*"``, change via `wildcard`).
-        `G2` is the concrete graph we will graft from.
-    mapping : Dict[Any, Any]
-        The full node–node map returned by `find_wc_graph_isomorphism`
-        (must include *every* node of `G1`).
-    wildcard : str, default "*"
-        The value of the ``"element"`` attribute that marks a wildcard node.
-    logger : logging.Logger or None
-        Optional logger for debug output.
+    :param G1: `G1` may contain nodes whose ``element`` is the wildcard marker
+               (default ``"*"``, change via `wildcard`).
+               `G2` is the concrete graph we will graft from.
+    :type G1: GraphType
+    :param G2: `G1` may contain nodes whose ``element`` is the wildcard marker
+               (default ``"*"``, change via `wildcard`).
+               `G2` is the concrete graph we will graft from.
+    :type G2: GraphType
+    :param mapping: The full node–node map returned by `find_wc_graph_isomorphism`
+                    (must include *every* node of `G1`).
+    :type mapping: Dict[Any, Any]
+    :param wildcard: The value of the ``"element"`` attribute that marks a wildcard node.
+    :type wildcard: str, default "*"
+    :param logger: Optional logger for debug output.
+    :type logger: logging.Logger or None
 
-    Returns
-    -------
-    GraphType
-        A new graph of the same class as G2 containing the fused structure.
+    :return: A new graph of the same class as G2 containing the fused structure.
+    :rtype: GraphType
     """
     log = logger or logging.getLogger(__name__)
 

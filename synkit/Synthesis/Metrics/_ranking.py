@@ -9,14 +9,16 @@ def _coverage(
     predicted reactions exactly match the ground truth reactions given in a
     list of dictionaries.
 
-    Parameters:
-    - reactions_data (List[Dict[str, str]]): List of dictionaries containing
-    reaction SMILES strings.
-    - key_ground_truth (str): Key in the dictionary for the ground truth reaction SMILES.
-    - key_prediction (str): Key in the dictionary for the predicted reaction SMILES.
+    :param reactions_data: List of dictionaries containing
+                           reaction SMILES strings.
+    :type reactions_data: List[Dict[str, str]]
+    :param key_ground_truth: Key in the dictionary for the ground truth reaction SMILES.
+    :type key_ground_truth: str
+    :param key_prediction: Key in the dictionary for the predicted reaction SMILES.
+    :type key_prediction: str
 
-    Returns:
-    - float: The coverage percentage.
+    :return: The coverage percentage.
+    :rtype: float
     """
     correct_matches = sum(
         1
@@ -34,17 +36,17 @@ def _novelty_rate(
     proportion of predictions that do not match the ground truth for each
     individual entry in the dataset.
 
-    Parameters:
-    - reactions_data (List[Dict[str, any]]): List of dictionaries containing
-    the ground truth and predicted reactions, where predictions are given as
-    a list of RSMIs.
-    - key_ground_truth (str): Dictionary key to access the ground truth reaction RSMI.
-    - key_prediction (str): Dictionary key to access the list of predicted reaction RSMIs.
+    :param reactions_data: List of dictionaries containing
+                           the ground truth and predicted reactions, where predictions are given as
+                           a list of RSMIs.
+    :type reactions_data: List[Dict[str, any]]
+    :param key_ground_truth: Dictionary key to access the ground truth reaction RSMI.
+    :type key_ground_truth: str
+    :param key_prediction: Dictionary key to access the list of predicted reaction RSMIs.
+    :type key_prediction: str
 
-    Returns:
-    - float: The average False Positive Rate (FPR) as a percentage,
-    indicating the average ratio of incorrect predictions to
-    total predictions across all observations.
+    :return: Average false-positive rate as a percentage.
+    :rtype: float
     """
     fpr_list = []  # List to store FPR for each observation
 
@@ -72,18 +74,18 @@ def _recognition_rate(
     of the prediction list that matches the single ground truth reaction for
     each entry.
 
-    Parameters:
-    - reactions_data (List[Dict[str, any]]): List of dictionaries containing
-    the ground truth
-      and predicted reactions, where the ground truth is a single RSMI and predictions
-      are lists of RSMIs.
-    - key_ground_truth (str): Dictionary key to access the ground truth reaction RSMIs.
-    - key_prediction (str): Dictionary key to access the list of predicted reaction RSMIs.
+    :param reactions_data: List of dictionaries containing
+                           the ground truth
+                           and predicted reactions, where the ground truth is a single RSMI and predictions
+                           are lists of RSMIs.
+    :type reactions_data: List[Dict[str, any]]
+    :param key_ground_truth: Dictionary key to access the ground truth reaction RSMIs.
+    :type key_ground_truth: str
+    :param key_prediction: Dictionary key to access the list of predicted reaction RSMIs.
+    :type key_prediction: str
 
-    Returns:
-    - float: The average recognition rate as a percentage, indicating the average
-    proportion of correct predictions relative to the total number of predictions
-    across all observations.
+    :return: Average recognition rate as a percentage.
+    :rtype: float
     """
     recognition_rates = []
 
@@ -113,16 +115,19 @@ def _top_k_accuracy(
     K predictions. This measures the probability that the true reaction is
     within the top K predictions.
 
-    Parameters:
-    - reactions_data (List[Dict[str, any]]): List of dictionaries containing
-    RSMI strings.
-    - key_ground_truth (str): Key in the dictionary for the ground truth RSMI.
-    - key_prediction (str): Key in the dictionary for the predicted RSMIs
-    (list of predictions).
-    - k (int): The number of top predictions to consider.
+    :param reactions_data: List of dictionaries containing
+                           RSMI strings.
+    :type reactions_data: List[Dict[str, any]]
+    :param key_ground_truth: Key in the dictionary for the ground truth RSMI.
+    :type key_ground_truth: str
+    :param key_prediction: Key in the dictionary for the predicted RSMIs
+                           (list of predictions).
+    :type key_prediction: str
+    :param k: The number of top predictions to consider.
+    :type k: int
 
-    Returns:
-    - float: The Top-K accuracy percentage.
+    :return: The Top-K accuracy percentage.
+    :rtype: float
     """
     modified_data = [
         {**entry, "Top_K_Predictions": entry[key_prediction][:k]}
@@ -143,16 +148,17 @@ def _calculate_f_beta_score(
     1.0 gives more importance to recall (e.g., F2 Score), and less than 1.0
     prioritizes precision (e.g., F0.5 Score).
 
-    Parameters:
-    - recognition_rate (float): The recognition rate of the predictions,
-    acting as precision, expected to be between 0 and 100.
-    - coverage_rate (float): The coverage rate of the predictions, acting as recall,
-    expected to be between 0 and 100.
-    - beta (float): The weight emphasizing recall over precision. Default is 1.0.
+    :param recognition_rate: The recognition rate of the predictions,
+                             acting as precision, expected to be between 0 and 100.
+    :type recognition_rate: float
+    :param coverage_rate: The coverage rate of the predictions, acting as recall,
+                          expected to be between 0 and 100.
+    :type coverage_rate: float
+    :param beta: The weight emphasizing recall over precision. Default is 1.0.
+    :type beta: float
 
-    Returns:
-    - float: The F-beta Score as a percentage, which balances precision and recall
-    based on the beta factor.
+    :return: The F-beta Score as a percentage, which balances precision and recall based on the beta factor.
+    :rtype: float
     """
     if recognition_rate == 0 or coverage_rate == 0:
         return 0  # If either rate is zero, F-beta is zero to avoid division by zero

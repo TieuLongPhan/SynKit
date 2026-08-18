@@ -10,8 +10,7 @@ from .wl_canon import WLCanonicalizer
 
 
 class CRNCanonicalizer:
-    """
-    Exact canonicalizer and symmetry analyzer backed by one shared IR engine.
+    """Exact canonicalizer and symmetry analyzer backed by one shared IR engine.
 
     This is the preferred high-level entry point when a chemical reaction
     network or related graph-like source needs both:
@@ -49,8 +48,8 @@ class CRNCanonicalizer:
         default configuration is used.
     :type config: Optional[SymmetryConfig]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         canon = CRNCanonicalizer(
@@ -74,8 +73,7 @@ class CRNCanonicalizer:
         wl_digest_size: int = 16,
         config: Optional[SymmetryConfig] = None,
     ) -> None:
-        """
-        Initialize the canonicalizer and its shared exact engine.
+        """Initialize the canonicalizer and its shared exact engine.
 
         :param source:
             Input object to canonicalize.
@@ -95,7 +93,7 @@ class CRNCanonicalizer:
         :param config:
             Optional symmetry configuration.
         :type config: Optional[SymmetryConfig]
-        :returns:
+        :return:
             None
         :rtype: None
         """
@@ -119,10 +117,9 @@ class CRNCanonicalizer:
 
     @property
     def G(self) -> nx.DiGraph:
-        """
-        Return the internal directed graph used by the exact engine.
+        """Return the internal directed graph used by the exact engine.
 
-        :returns:
+        :return:
             Internal graph representation.
         :rtype: nx.DiGraph
         """
@@ -130,10 +127,9 @@ class CRNCanonicalizer:
 
     @property
     def graph_type(self) -> str:
-        """
-        Return a string describing the interpreted graph type.
+        """Return a string describing the interpreted graph type.
 
-        :returns:
+        :return:
             Graph type label reported by the engine.
         :rtype: str
         """
@@ -141,10 +137,9 @@ class CRNCanonicalizer:
 
     @property
     def engine(self) -> IRCanonicalEngine:
-        """
-        Return the shared exact IR canonicalization engine.
+        """Return the shared exact IR canonicalization engine.
 
-        :returns:
+        :return:
             Exact canonicalization / symmetry engine.
         :rtype: IRCanonicalEngine
         """
@@ -153,8 +148,7 @@ class CRNCanonicalizer:
     def canonical_result(
         self, *, timeout_sec: Optional[float] = None
     ) -> CanonicalResult:
-        """
-        Compute or retrieve the exact canonicalization result.
+        """Compute or retrieve the exact canonicalization result.
 
         This method delegates to the shared exact engine and returns the full
         canonicalization result object, which typically includes the canonical
@@ -164,12 +158,12 @@ class CRNCanonicalizer:
             Optional timeout in seconds for the exact canonicalization search.
             If ``None``, the engine default behavior is used.
         :type timeout_sec: Optional[float]
-        :returns:
+        :return:
             Exact canonicalization result.
         :rtype: CanonicalResult
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             res = canon.canonical_result(timeout_sec=5.0)
@@ -179,21 +173,19 @@ class CRNCanonicalizer:
         return self._engine.canonical_result(timeout_sec=timeout_sec)
 
     def canonical_order(self, *, timeout_sec: Optional[float] = None) -> List[Any]:
-        """
-        Return the exact canonical node order.
+        """Return the exact canonical node order.
 
         :param timeout_sec:
             Optional timeout in seconds.
         :type timeout_sec: Optional[float]
-        :returns:
+        :return:
             Canonical ordering of nodes.
         :rtype: List[Any]
         """
         return self.canonical_result(timeout_sec=timeout_sec).canonical_order
 
     def canonical_graph(self, *, timeout_sec: Optional[float] = None) -> nx.DiGraph:
-        """
-        Return a canonically relabeled graph.
+        """Return a canonically relabeled graph.
 
         Nodes are relabeled according to the exact canonical order using
         consecutive integer labels starting from 1.
@@ -201,12 +193,12 @@ class CRNCanonicalizer:
         :param timeout_sec:
             Optional timeout in seconds.
         :type timeout_sec: Optional[float]
-        :returns:
+        :return:
             Canonically relabeled copy of the internal graph.
         :rtype: nx.DiGraph
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             g_canon = canon.canonical_graph()
@@ -217,15 +209,14 @@ class CRNCanonicalizer:
         return nx.relabel_nodes(self.G, relabel, copy=True)
 
     def canonical_key(self, *, timeout_sec: Optional[float] = None):
-        """
-        Return the exact canonical key.
+        """Return the exact canonical key.
 
         The exact type depends on the underlying canonical engine.
 
         :param timeout_sec:
             Optional timeout in seconds.
         :type timeout_sec: Optional[float]
-        :returns:
+        :return:
             Canonical key representing the isomorphism class of the source.
         """
         return self.canonical_result(timeout_sec=timeout_sec).canonical_key
@@ -233,8 +224,7 @@ class CRNCanonicalizer:
     def has_nontrivial_automorphism(
         self, *, timeout_sec: Optional[float] = 5.0
     ) -> bool:
-        """
-        Test whether the source has a nontrivial automorphism.
+        """Test whether the source has a nontrivial automorphism.
 
         A fast WL orbit partition is used as an early filter. If all WL orbits
         are singletons, the method immediately returns ``False``. Otherwise an
@@ -244,12 +234,12 @@ class CRNCanonicalizer:
         :param timeout_sec:
             Timeout in seconds for the exact symmetry check.
         :type timeout_sec: Optional[float]
-        :returns:
+        :return:
             ``True`` if a non-identity automorphism exists, else ``False``.
         :rtype: bool
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             if canon.has_nontrivial_automorphism():
@@ -270,8 +260,7 @@ class CRNCanonicalizer:
         max_count: int = 100,
         timeout_sec: Optional[float] = 5.0,
     ):
-        """
-        Return the exact automorphism analysis result.
+        """Return the exact automorphism analysis result.
 
         The returned object depends on the internal engine and usually contains
         automorphism count, sample permutations, sample mappings, orbit
@@ -283,7 +272,7 @@ class CRNCanonicalizer:
         :param timeout_sec:
             Timeout in seconds for the exact search.
         :type timeout_sec: Optional[float]
-        :returns:
+        :return:
             Exact automorphism analysis result from the engine.
         """
         return self._engine.automorphism_result(
@@ -296,8 +285,7 @@ class CRNCanonicalizer:
         max_count: int = 1000,
         timeout_sec: Optional[float] = 5.0,
     ) -> List[Set[Any]]:
-        """
-        Return exact node orbits under the automorphism group.
+        """Return exact node orbits under the automorphism group.
 
         Nodes are in the same orbit if an automorphism can map one node to the
         other.
@@ -308,12 +296,12 @@ class CRNCanonicalizer:
         :param timeout_sec:
             Timeout in seconds for the exact search.
         :type timeout_sec: Optional[float]
-        :returns:
+        :return:
             List of exact orbit sets.
         :rtype: List[Set[Any]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             for orbit in canon.orbits():
@@ -324,14 +312,13 @@ class CRNCanonicalizer:
         )
 
     def wl_orbits(self) -> List[Set[Any]]:
-        """
-        Return WL-refined approximate orbit classes.
+        """Return WL-refined approximate orbit classes.
 
         These are not guaranteed to equal the exact automorphism orbits, but
         they are often useful as a fast symmetry approximation or as a filter
         before running exact search.
 
-        :returns:
+        :return:
             Approximate orbit partition from WL refinement.
         :rtype: List[Set[Any]]
         """
@@ -344,8 +331,7 @@ class CRNCanonicalizer:
         timeout_sec: Optional[float] = 5.0,
         include_automorphisms: bool = True,
     ) -> Dict[str, Any]:
-        """
-        Return a summary dictionary for canonicalization and symmetry analysis.
+        """Return a summary dictionary for canonicalization and symmetry analysis.
 
         If ``include_automorphisms`` is ``True``, the summary includes exact
         automorphism information, sample permutations, orbit data, and
@@ -360,13 +346,13 @@ class CRNCanonicalizer:
         :param include_automorphisms:
             Whether to include exact automorphism-related information.
         :type include_automorphisms: bool
-        :returns:
+        :return:
             Summary dictionary containing canonical and optionally symmetry
             information.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             info = canon.summary(include_automorphisms=True)
@@ -401,8 +387,7 @@ class CRNCanonicalizer:
 
 
 def canonical(source: Any, **kwargs: Any) -> nx.DiGraph:
-    """
-    Return the canonically relabeled graph for a source object.
+    """Return the canonically relabeled graph for a source object.
 
     This is a convenience wrapper around :class:`CRNCanonicalizer`.
 
@@ -413,12 +398,12 @@ def canonical(source: Any, **kwargs: Any) -> nx.DiGraph:
         Additional keyword arguments forwarded to
         :class:`CRNCanonicalizer`.
     :type kwargs: Any
-    :returns:
+    :return:
         Canonically relabeled directed graph.
     :rtype: nx.DiGraph
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         g_canon = canonical(

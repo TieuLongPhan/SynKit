@@ -1,68 +1,9 @@
-"""mcs_matcher.py — Maximum/Common Subgraph Matcher
-===================================================
+"""Common and maximum-common-subgraph matching for molecular graphs.
 
-A convenience wrapper around :class:`networkx.algorithms.isomorphism.GraphMatcher`
-that finds *all* common-subgraph (or maximum-common-subgraph) node mappings
-between two molecular graphs.
-
-Highlights
-----------
-* **Flexible node matching** via :func:`generic_node_match`.
-* **Multi-attribute edge matching** via a list of ``edge_attrs``.
-* Optional **wildcard pruning**: if ``prune_wc=True``, nodes with
-  ``attrs[element_key] == wildcard_element`` are removed (non-inplace)
-  from both graphs before searching.
-* Optional **automorphism pruning**: if ``prune_automorphisms=True``,
-  mappings that cover the same host-node set are collapsed, greatly
-  reducing equivalent mappings from symmetric subgraphs.
-* Results are **cached** – call :py:meth:`get_mappings` (or use the
-  :pyattr:`mappings` property) to retrieve them.
-* Can report mappings as pattern→host, G1→G2 or G2→G1 via the
-  :py:meth:`get_mappings` helper.
-* Helpful :pyattr:`help` and :py:meth:`__repr__` utilities, in the same
-  OOP style as :class:`PartialMatcher`.
-
-Public API
-~~~~~~~~~~
-``MCSMatcher(node_attrs=None,
-            node_defaults=None,
-            allow_shift=True,
-            edge_attrs=None,
-            prune_wc=False,
-            prune_automorphisms=False,
-            wildcard_element='*',
-            element_key='element')``
-    Construct a matcher instance.
-
-``matcher.find_common_subgraph(G1, G2, mcs=False, mcs_mol=False)``
-    Run the search (stores and returns ``self``). If ``mcs_mol=True``,
-    match by entire connected components (molecule-level matching).
-
-``matcher.get_mappings(direction='pattern_to_host')``
-    Retrieve the stored mapping list. ``direction`` can be one of
-    ``"pattern_to_host"``, ``"G1_to_G2"``, ``"G2_to_G1"``.
-
-``matcher.mappings``
-    Shorthand for ``get_mappings(direction='pattern_to_host')``.
-
-``matcher.mapping_direction``
-    String describing internal orientation: ``"G1_to_G2"``, ``"G2_to_G1"``,
-    or ``"unknown"`` if no search has been run yet.
-
-``matcher.find_rc_mapping(rc1, rc2,
-                         side='op',
-                         mcs=True,
-                         mcs_mol=False,
-                         component=True)``
-    Convenience wrapper for ITS reaction-centre or ITS-like graph
-    objects (via :func:`synkit.Graph.ITS.its_decompose` when applicable).
-    ``side`` chooses which ITS sides to compare:
-
-    * ``'r'``:   compare right sides (``r1`` vs ``r2``)
-    * ``'l'``:   compare left  sides (``l1`` vs ``l2``)
-    * ``'op'``:  compare opposite  (``r1`` vs ``l2``)
-    * ``'its'``: treat ``rc1`` and ``rc2`` directly as graphs (no
-      decomposition).
+The matcher supports configurable node and edge attributes, optional wildcard
+and automorphism pruning, connected-component matching, and reaction-centre
+side selection. Results are cached and can be returned in either graph
+orientation.
 """
 
 from __future__ import annotations
@@ -94,7 +35,7 @@ class MCSMatcher:
     Node matching is controlled via :func:`generic_node_match` using one or
     more attribute names and default values. Edge matching compares one or
     more scalar edge attributes (e.g. bond order) specified in
-    :paramref:`edge_attrs`.
+    ``edge_attrs``.
 
     Mappings and orientation
     ------------------------
@@ -102,18 +43,18 @@ class MCSMatcher:
     the *pattern* is the smaller of the two (after optional wildcard
     pruning). The helper :py:meth:`get_mappings` can convert these to
     ``G1→G2`` or ``G2→G1`` orientation as needed, and the property
-    :pyattr:`mapping_direction` exposes which graph acted as the pattern.
+    :attr:`mapping_direction` exposes which graph acted as the pattern.
 
     Optional wildcard pruning
     -------------------------
-    If :paramref:`prune_wc` is ``True``, nodes with
+    If ``prune_wc`` is ``True``, nodes with
     ``attrs[element_key] == wildcard_element`` are removed from both input
     graphs **non-inplace** before the MCS search. Node labels are preserved,
     so the resulting mappings still reference the original node ids.
 
     Optional automorphism pruning
     -----------------------------
-    If :paramref:`prune_automorphisms` is ``True``, mappings that induce
+    If ``prune_automorphisms`` is ``True``, mappings that induce
     the same **host node set** (i.e. same image in the host graph) are
     collapsed. This is especially useful for highly symmetric hosts (rings,
     repeated subunits, etc.) where many mappings are equivalent at the level
@@ -124,7 +65,7 @@ class MCSMatcher:
     :type node_attrs: list[str] | None
     :param node_defaults: Fallback values for each node attribute
         when missing. If ``None``, defaults to a list of ``"*"``
-        of the same length as :paramref:`node_attrs`.
+        of the same length as ``node_attrs``.
     :type node_defaults: list[Any] | None
     :param allow_shift: Placeholder for future asymmetric rules. Currently
         unused but kept for API compatibility.
@@ -134,17 +75,17 @@ class MCSMatcher:
         ``None``, defaults to ``["order"]``.
     :type edge_attrs: list[str] | None
     :param prune_wc: If ``True``, strip wildcard nodes (see
-        :paramref:`wildcard_element`, :paramref:`element_key`) from both
+        ``wildcard_element``, ``element_key``) from both
         graphs before searching.
     :type prune_wc: bool
     :param prune_automorphisms: If ``True``, collapse mappings that have
         the same host node set (automorphism pruning).
     :type prune_automorphisms: bool
     :param wildcard_element: Attribute value denoting wildcard nodes
-        (typically ``"*"``, used together with :paramref:`element_key`).
+        (typically ``"*"``, used together with ``element_key``).
     :type wildcard_element: Any
     :param element_key: Node attribute key used to detect wildcard nodes
-        when :paramref:`prune_wc` is ``True``.
+        when ``prune_wc`` is ``True``.
     :type element_key: str
     """
 
@@ -174,7 +115,9 @@ class MCSMatcher:
 
         self._node_attrs: List[str] = node_attrs
         self._node_defaults: List[Any] = node_defaults
-        self._edge_attrs: List[str] = edge_attrs or ["order"]
+        self._edge_attrs: List[str] = (
+            ["order"] if edge_attrs is None else list(edge_attrs)
+        )
         self.allow_shift: bool = allow_shift
 
         self.prune_wc: bool = prune_wc
@@ -206,10 +149,9 @@ class MCSMatcher:
         host_attrs: Dict[str, Any],
         pat_attrs: Dict[str, Any],
     ) -> bool:
-        """
-        Compare edge attributes listed in :pyattr:`_edge_attrs`.
+        """Compare edge attributes listed in :attr:`_edge_attrs`.
 
-        For each name in :pyattr:`_edge_attrs`:
+        For each name in :attr:`_edge_attrs`:
 
         * If both values can be cast to ``float``, use numeric equality.
         * Otherwise, fall back to direct ``==`` comparison.
@@ -219,7 +161,7 @@ class MCSMatcher:
         :type host_attrs: dict[str, Any]
         :param pat_attrs: Edge attribute dictionary from pattern graph.
         :type pat_attrs: dict[str, Any]
-        :returns: ``True`` if all configured edge attributes match, otherwise
+        :return: ``True`` if all configured edge attributes match, otherwise
             ``False``.
         :rtype: bool
         """
@@ -237,27 +179,48 @@ class MCSMatcher:
         return True
 
     @staticmethod
+    def _validate_graph_pair(G1: nx.Graph, G2: nx.Graph) -> None:
+        if G1.is_directed() != G2.is_directed():
+            raise ValueError("MCSMatcher requires graphs with the same directedness")
+        if G1.is_multigraph() or G2.is_multigraph():
+            raise NotImplementedError("MCSMatcher does not support multigraphs")
+
+    @staticmethod
+    def _component_nodes(graph: nx.Graph):
+        return (
+            nx.weakly_connected_components(graph)
+            if graph.is_directed()
+            else nx.connected_components(graph)
+        )
+
+    @staticmethod
+    def _matcher_class(graph: nx.Graph):
+        return (
+            nx.algorithms.isomorphism.DiGraphMatcher
+            if graph.is_directed()
+            else GraphMatcher
+        )
+
+    @staticmethod
     def _invert_mapping(gm_mapping: MappingDict) -> MappingDict:
-        """
-        Convert *host→pattern* dict to *pattern→host*.
+        """Convert *host→pattern* dict to *pattern→host*.
 
         :param gm_mapping: Mapping from host nodes to pattern nodes.
         :type gm_mapping: dict[int, int]
-        :returns: Mapping from pattern nodes to host nodes.
+        :return: Mapping from pattern nodes to host nodes.
         :rtype: dict[int, int]
         """
         return {pat: host for host, pat in gm_mapping.items()}
 
     def _prune_graph(self, G: nx.Graph) -> nx.Graph:
-        """
-        Return a version of ``G`` with wildcard nodes removed if needed.
+        """Return a version of ``G`` with wildcard nodes removed if needed.
 
         This method does **not** mutate the input graph. When
-        :pyattr:`prune_wc` is ``False``, it simply returns ``G`` as-is.
+        :attr:`prune_wc` is ``False``, it simply returns ``G`` as-is.
 
         :param G: Input graph.
         :type G: nx.Graph
-        :returns: Possibly pruned graph (wildcard nodes removed).
+        :return: Possibly pruned graph (wildcard nodes removed).
         :rtype: nx.Graph
         """
         if not self.prune_wc:
@@ -275,8 +238,7 @@ class MCSMatcher:
         *,
         mcs: bool,
     ) -> MappingDict:
-        """
-        Perform size-sorted, component-wise MCS between ``G1`` and ``G2``.
+        """Perform size-sorted, component-wise MCS between ``G1`` and ``G2``.
 
         The graphs are decomposed into connected components, which are
         sorted by size (descending). Components are then matched in
@@ -294,12 +256,12 @@ class MCSMatcher:
         :param mcs: If ``True``, restrict each component pair to
             maximum-common-subgraph mappings.
         :type mcs: bool
-        :returns: Combined mapping from nodes of ``G1`` to nodes of
+        :return: Combined mapping from nodes of ``G1`` to nodes of
             ``G2``.
         :rtype: dict[int, int]
         """
-        comps1 = [G1.subgraph(c).copy() for c in nx.connected_components(G1)]
-        comps2 = [G2.subgraph(c).copy() for c in nx.connected_components(G2)]
+        comps1 = [G1.subgraph(c).copy() for c in self._component_nodes(G1)]
+        comps2 = [G2.subgraph(c).copy() for c in self._component_nodes(G2)]
 
         comps1.sort(key=lambda g: g.number_of_nodes(), reverse=True)
         comps2.sort(key=lambda g: g.number_of_nodes(), reverse=True)
@@ -333,8 +295,7 @@ class MCSMatcher:
         *,
         mcs: bool,
     ) -> MappingDict:
-        """
-        Hungarian-optimal component pairing followed by per-pair MCS.
+        """Hungarian-optimal component pairing followed by per-pair MCS.
 
         Builds an n₁×n₂ score matrix (MCS size for each component pair),
         solves the linear assignment problem to maximise total overlap, then
@@ -351,7 +312,7 @@ class MCSMatcher:
         :param mcs: If ``True``, restrict to maximum-common-subgraph
             mappings within each assigned pair.
         :type mcs: bool
-        :returns: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
+        :return: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
         :rtype: dict[int, int]
         """
         try:
@@ -360,8 +321,8 @@ class MCSMatcher:
         except ImportError:  # pragma: no cover
             return self._componentwise_mcs(G1, G2, mcs=mcs)
 
-        comps1 = [G1.subgraph(c).copy() for c in nx.connected_components(G1)]
-        comps2 = [G2.subgraph(c).copy() for c in nx.connected_components(G2)]
+        comps1 = [G1.subgraph(c).copy() for c in self._component_nodes(G1)]
+        comps2 = [G2.subgraph(c).copy() for c in self._component_nodes(G2)]
         n1, n2 = len(comps1), len(comps2)
 
         # Build score matrix and cache maps in one pass to avoid re-running
@@ -401,8 +362,7 @@ class MCSMatcher:
     # Connected-component (molecule) level matching
     # ------------------------------------------------------------------
     def _find_mcs_mol(self, G1: nx.Graph, G2: nx.Graph) -> MappingDict:
-        """
-        Match connected components of ``G1`` to ``G2`` of the same size.
+        """Match connected components of ``G1`` to ``G2`` of the same size.
 
         Components are sorted by size (descending) and matched greedily.
         For each component in ``G1``, the method looks for a component in
@@ -415,11 +375,11 @@ class MCSMatcher:
         :type G1: nx.Graph
         :param G2: Second graph (target for component mapping).
         :type G2: nx.Graph
-        :returns: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
+        :return: Combined mapping from nodes of ``G1`` to nodes of ``G2``.
         :rtype: dict[int, int]
         """
-        comps1 = sorted(nx.connected_components(G1), key=len, reverse=True)
-        comps2 = sorted(nx.connected_components(G2), key=len, reverse=True)
+        comps1 = sorted(self._component_nodes(G1), key=len, reverse=True)
+        comps2 = sorted(self._component_nodes(G2), key=len, reverse=True)
 
         used2: Set[frozenset[int]] = set()
         combined: MappingDict = {}
@@ -436,7 +396,7 @@ class MCSMatcher:
                     continue
 
                 sub2 = G2.subgraph(comp2)
-                gm = GraphMatcher(
+                gm = self._matcher_class(sub1)(
                     sub1,
                     sub2,
                     node_match=self.node_match,
@@ -457,14 +417,13 @@ class MCSMatcher:
         G1: nx.Graph,
         G2: nx.Graph,
     ) -> Tuple[nx.Graph, nx.Graph, bool]:
-        """
-        Ensure the smaller graph is used as pattern for efficiency.
+        """Ensure the smaller graph is used as pattern for efficiency.
 
         :param G1: Original first graph.
         :type G1: nx.Graph
         :param G2: Original second graph.
         :type G2: nx.Graph
-        :returns: Tuple ``(pattern, host, pattern_is_G1)`` where
+        :return: Tuple ``(pattern, host, pattern_is_G1)`` where
             ``pattern_is_G1=True`` indicates that the pattern is ``G1``.
         :rtype: tuple[nx.Graph, nx.Graph, bool]
         """
@@ -479,12 +438,11 @@ class MCSMatcher:
         *,
         mcs: bool,
     ) -> List[MappingDict]:
-        """
-        Enumerate common subgraphs between ``pattern`` and ``host``.
+        """Enumerate common subgraphs between ``pattern`` and ``host``.
 
         The returned mappings always map **pattern nodes → host nodes**.
 
-        If :pyattr:`prune_automorphisms` is ``True``, mappings with the
+        If :attr:`prune_automorphisms` is ``True``, mappings with the
         same host-node set are collapsed.
 
         :param pattern: Graph treated as pattern (smaller or equal).
@@ -493,7 +451,7 @@ class MCSMatcher:
         :type host: nx.Graph
         :param mcs: If ``True``, retain only maximum-size mappings.
         :type mcs: bool
-        :returns: List of mappings from pattern nodes to host nodes.
+        :return: List of mappings from pattern nodes to host nodes.
         :rtype: list[MappingDict]
         """
         max_k = min(pattern.number_of_nodes(), host.number_of_nodes())
@@ -511,7 +469,7 @@ class MCSMatcher:
             level_found = False
             for nodes in itertools.combinations(pattern.nodes(), k):
                 sub_pat = pattern.subgraph(nodes).copy()
-                gm = GraphMatcher(
+                gm = self._matcher_class(host)(
                     host,
                     sub_pat,
                     node_match=self.node_match,
@@ -519,7 +477,7 @@ class MCSMatcher:
                 )
                 for iso in gm.subgraph_isomorphisms_iter():
                     inv = self._invert_mapping(iso)  # pattern -> host
-                    key = tuple(sorted(inv.items()))
+                    key = tuple(sorted(inv.items(), key=repr))
                     if key in seen:
                         continue
                     seen.add(key)
@@ -542,7 +500,12 @@ class MCSMatcher:
         if mcs and best_size:
             mappings = [m for m in mappings if len(m) == best_size]
 
-        mappings.sort(key=lambda d: (-len(d), tuple(sorted(d.items()))))
+        mappings.sort(
+            key=lambda mapping: (
+                -len(mapping),
+                repr(tuple(sorted(mapping.items(), key=repr))),
+            )
+        )
         self._last_size = (
             best_size if best_size else (len(mappings[0]) if mappings else 0)
         )
@@ -559,14 +522,13 @@ class MCSMatcher:
         mcs: bool = False,
         mcs_mol: bool = False,
     ) -> "MCSMatcher":
-        """
-        Search for common subgraphs between two graphs.
+        """Search for common subgraphs between two graphs.
 
-        The results are cached in :pyattr:`mappings` and
-        :pyattr:`last_size`. The method returns ``self`` to enable a
+        The results are cached in :attr:`mappings` and
+        :attr:`last_size`. The method returns ``self`` to enable a
         fluent style.
 
-        If :pyattr:`prune_wc` is ``True``, wildcard nodes are stripped
+        If :attr:`prune_wc` is ``True``, wildcard nodes are stripped
         (non-inplace) from both graphs before the search.
 
         :param G1: First input graph.
@@ -580,12 +542,14 @@ class MCSMatcher:
             (molecule-level) matching using :py:meth:`_find_mcs_mol`.
             In this mode, ``mcs`` is ignored.
         :type mcs_mol: bool
-        :returns: The matcher instance (with internal cache updated).
+        :return: The matcher instance (with internal cache updated).
         :rtype: MCSMatcher
         """
         self._mappings = []
         self._last_size = 0
         self._last_pattern_is_G1 = None
+
+        self._validate_graph_pair(G1, G2)
 
         G1_use = self._prune_graph(G1)
         G2_use = self._prune_graph(G2)
@@ -613,11 +577,10 @@ class MCSMatcher:
         mcs_mol: bool = False,
         component: bool = True,
     ) -> "MCSMatcher":
-        """
-        Convenience wrapper for ITS reaction-centre or ITS-like graph
+        """Convenience wrapper for ITS reaction-centre or ITS-like graph
         objects.
 
-        Depending on :paramref:`side`, this either uses
+        Depending on ``side``, this either uses
         :func:`synkit.Graph.ITS.its_decompose` to obtain left/right
         graphs or treats the inputs directly as graphs.
 
@@ -632,13 +595,13 @@ class MCSMatcher:
 
         Component-wise mode
         -------------------
-        If :paramref:`component` is ``True``, the selected graphs are
+        If ``component`` is ``True``, the selected graphs are
         decomposed into connected components, sorted by size
         (descending), and matched pairwise (largest with largest, etc.)
         using a common-/maximum-common-subgraph search for each pair.
         The resulting mappings are combined into a single **G1 → G2**
         mapping in terms of the original node ids. In this mode,
-        :paramref:`mcs_mol` is ignored.
+        ``mcs_mol`` is ignored.
 
         :param rc1: First reaction-centre or ITS-like graph object.
         :type rc1: Any
@@ -653,13 +616,13 @@ class MCSMatcher:
         :type mcs: bool
         :param mcs_mol: If ``True``, use connected-component matching
             via :py:meth:`_find_mcs_mol`. Ignored if
-            :paramref:`component` is ``True``.
+            ``component`` is ``True``.
         :type mcs_mol: bool
         :param component: If ``True``, perform size-sorted,
             component-wise MCS between the selected sides and combine
             the per-component mappings into a single mapping.
         :type component: bool
-        :returns: The matcher instance (with internal cache updated).
+        :return: The matcher instance (with internal cache updated).
         :rtype: MCSMatcher
         :raises ImportError: If :mod:`synkit` ITS utilities are not
             available for ``side`` in ``{'r', 'l', 'op'}``.
@@ -700,6 +663,7 @@ class MCSMatcher:
                 )
 
         if component:
+            self._validate_graph_pair(G1, G2)
             G1_use = self._prune_graph(G1)
             G2_use = self._prune_graph(G2)
             combined = self._bipartite_assign_components(G1_use, G2_use, mcs=mcs)
@@ -714,8 +678,7 @@ class MCSMatcher:
     # Accessors / properties
     # ------------------------------------------------------------------
     def get_mappings(self, direction: str = "pattern_to_host") -> List[MappingDict]:
-        """
-        Return a copy of the cached mapping list in the requested orientation.
+        """Return a copy of the cached mapping list in the requested orientation.
 
         Internal cache is **pattern → host** (where pattern is the smaller
         graph after pruning). This method can convert to original
@@ -727,7 +690,7 @@ class MCSMatcher:
             - ``"G1_to_G2"``: mapping from first input graph to second.
             - ``"G2_to_G1"``: mapping from second input graph to first.
         :type direction: str
-        :returns: List of node-mapping dictionaries.
+        :return: List of node-mapping dictionaries.
         :rtype: list[dict[int, int]]
         :raises ValueError: If ``direction`` is not supported.
         """
@@ -759,48 +722,44 @@ class MCSMatcher:
 
     @property
     def mappings(self) -> List[MappingDict]:
-        """
-        Cached node mappings from the most recent search (pattern→host).
+        """Cached node mappings from the most recent search (pattern→host).
 
         To obtain G1→G2 or G2→G1 orientation, use
         :py:meth:`get_mappings` with ``direction='G1_to_G2'`` or
         ``direction='G2_to_G1'``.
 
-        :returns: List of node-mapping dictionaries (pattern→host).
+        :return: List of node-mapping dictionaries (pattern→host).
         :rtype: list[dict[int, int]]
         """
         return self.get_mappings(direction="pattern_to_host")
 
     @property
     def last_size(self) -> int:
-        """
-        Number of nodes in the most recent maximum mapping set.
+        """Number of nodes in the most recent maximum mapping set.
 
         This is the size of the largest mapping found in the last call
         to :py:meth:`find_common_subgraph` (or zero if no mappings
         exist).
 
-        :returns: Size of the largest mapping.
+        :return: Size of the largest mapping.
         :rtype: int
         """
         return self._last_size
 
     @property
     def num_mappings(self) -> int:
-        """
-        Number of mappings stored from the most recent search.
+        """Number of mappings stored from the most recent search.
 
-        :returns: Count of cached mappings.
+        :return: Count of cached mappings.
         :rtype: int
         """
         return len(self._mappings)
 
     @property
     def mapping_direction(self) -> str:
-        """
-        Human-readable description of internal mapping orientation.
+        """Human-readable description of internal mapping orientation.
 
-        :returns: ``"G1_to_G2"``, ``"G2_to_G1"``, or ``"unknown"`` if
+        :return: ``"G1_to_G2"``, ``"G2_to_G1"``, or ``"unknown"`` if
             no search has been run yet.
         :rtype: str
         """
@@ -812,19 +771,17 @@ class MCSMatcher:
     # Iteration & niceties
     # ------------------------------------------------------------------
     def __iter__(self) -> Iterable[MappingDict]:
-        """
-        Iterate over cached mappings in pattern→host orientation.
+        """Iterate over cached mappings in pattern→host orientation.
 
-        :returns: Iterator over mapping dictionaries.
+        :return: Iterator over mapping dictionaries.
         :rtype: Iterable[dict[int, int]]
         """
         return iter(self._mappings)
 
     def __repr__(self) -> str:
-        """
-        Short textual representation for debugging.
+        """Short textual representation for debugging.
 
-        :returns: Summary string with key attributes.
+        :return: Summary string with key attributes.
         :rtype: str
         """
         return (
@@ -839,10 +796,9 @@ class MCSMatcher:
 
     @property
     def help(self) -> str:
-        """
-        Return the module-level documentation string.
+        """Return the module-level documentation string.
 
-        :returns: The full module docstring, if available.
+        :return: The full module docstring, if available.
         :rtype: str
         """
         return __doc__ or ""

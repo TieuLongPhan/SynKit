@@ -28,14 +28,12 @@ _TOL = 1e-6
 class Certificate:
     """Optimality certificate for a single mapping.
 
-    Attributes
-    ----------
-    upper_bound : float
-        Cost of the concrete mapping (chemical distance, cd units).
-    lower_bound : float
-        Admissible lower bound on the optimal chemical distance.
-    method : str
-        How ``lower_bound`` was obtained (``"dual-lap"`` or ``"milp-exact"``).
+    :ivar upper_bound: Cost of the concrete mapping (chemical distance, cd units).
+    :vartype upper_bound: float
+    :ivar lower_bound: Admissible lower bound on the optimal chemical distance.
+    :vartype lower_bound: float
+    :ivar method: How ``lower_bound`` was obtained (``"dual-lap"`` or ``"milp-exact"``).
+    :vartype method: str
     """
 
     upper_bound: float
@@ -70,18 +68,14 @@ def certify_result(result, binary, method="dual-lap"):
     recomputed chemical distance) and the dual-LAP lower bound. The certificate
     is stored under ``result["certificate"]`` and returned.
 
-    Parameters
-    ----------
-    result : dict
-        A result entry with ``"lgp"`` and (optionally) ``"cd"``.
-    binary : bool
-        Whether bond orders are binarised (matches the matcher's ``binary``).
-    method : str, optional
-        Lower-bound provenance label.
+    :param result: A result entry with ``"lgp"`` and (optionally) ``"cd"``.
+    :type result: dict
+    :param binary: Whether bond orders are binarised (matches the matcher's ``binary``).
+    :type binary: bool
+    :param method: Lower-bound provenance label.
+    :type method: str, optional
 
-    Returns
-    -------
-    Certificate
+    :rtype: Certificate
     """
     lgp = result["lgp"]
     if "cd" in result:
@@ -105,12 +99,10 @@ def certify_results_exact(results, binary):
     Falls back to the dual-LAP certificate when PuLP is unavailable or the kernel
     is degenerate.
 
-    Parameters
-    ----------
-    results : list[dict]
-        Optimal results sharing a common reaction (each with ``"lgp"``/``"cd"``).
-    binary : bool
-        Whether bond orders are binarised.
+    :param results: Optimal results sharing a common reaction (each with ``"lgp"``/``"cd"``).
+    :type results: list[dict]
+    :param binary: Whether bond orders are binarised.
+    :type binary: bool
     """
     if not results:
         return

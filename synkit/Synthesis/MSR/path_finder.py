@@ -1,3 +1,17 @@
+"""Route search over rounds of reaction SMILES for multi-step retrosynthesis.
+
+This is the *synthesis-planning* path finder: it consumes the round-structured
+reaction SMILES produced by an MSR expansion and searches molecule-to-molecule
+routes under a carbon-count constraint. It has no notion of stoichiometry,
+markings or reaction networks.
+
+For pathway search over a reaction *network* —
+:class:`~synkit.CRN.Structure.syncrn.SynCRN` incidence, reaction flows, and
+Petri-net realizability of a candidate route — use
+:class:`synkit.CRN.Pathway.pathfinder.PathwayFinder` instead. The two solve
+different problems and are not alternative implementations of one algorithm.
+"""
+
 import heapq
 from collections import deque
 from typing import List, Dict, Optional
@@ -5,6 +19,12 @@ from synkit.Chem.utils import count_carbons
 
 
 class PathFinder:
+    """Search synthesis routes through rounds of reaction SMILES.
+
+    See the module docstring for how this relates to
+    :class:`synkit.CRN.Pathway.pathfinder.PathwayFinder`.
+    """
+
     def __init__(
         self,
         reaction_rounds: List[Dict[str, List[str]]],
@@ -13,10 +33,10 @@ class PathFinder:
         round, plus an optional random state for reproducible Monte Carlo
         search.
 
-        Parameters:
-        - reaction_rounds (List[Dict[str, List[str]]]): A list where each dictionary
-          contains the reaction SMILES strings for a given round
-          (e.g. {"Round 1": [...] }).
+        :param reaction_rounds: A list where each dictionary
+                                contains the reaction SMILES strings for a given round
+                                (e.g. {"Round 1": [...] }).
+        :type reaction_rounds: List[Dict[str, List[str]]]
         """
         self.reaction_rounds = reaction_rounds
 
@@ -66,17 +86,20 @@ class PathFinder:
             and A* does *not* prune costlier routes (also returns more solutions).
             (May lead to duplicates or many solutions if cycles exist.)
 
-        Parameters:
-        - input_smiles (str): SMILES of the starting molecule.
-        - target_smiles (str): SMILES of the target molecule.
-        - method (str, optional): 'bfs', 'astar', or 'mc'.
-        - iterations (int, optional): Number of MC iterations (if method='mc').
-        - max_solutions (int, optional): If set, stop after finding this many solutions.
-        - cheapest (bool, optional): Controls pruning.
-          Default True => standard BFS/A*; False => "unrestricted" BFS/A*.
+        :param input_smiles: SMILES of the starting molecule.
+        :type input_smiles: str
+        :param target_smiles: SMILES of the target molecule.
+        :type target_smiles: str
+        :param method: 'bfs', 'astar', or 'mc'.
+        :type method: str, optional
+        :param max_solutions: If set, stop after finding this many solutions.
+        :type max_solutions: int, optional
+        :param cheapest: Controls pruning.
+                         Default True => standard BFS/A*; False => "unrestricted" BFS/A*.
+        :type cheapest: bool, optional
 
-        Returns:
-        - List[List[str]]: Each solution path is a list of reaction SMILES from start to target.
+        :return: Each solution path is a list of reaction SMILES from start to target.
+        :rtype: List[List[str]]
         """
         if method == "bfs":
             return self._bfs(input_smiles, target_smiles, max_solutions, cheapest)

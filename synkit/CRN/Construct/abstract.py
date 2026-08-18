@@ -10,8 +10,7 @@ ReactionSides = Tuple[List[str], List[str]]
 
 
 def _split_reaction_smiles(reaction_smiles: str) -> ReactionSides:
-    """
-    Split a reaction SMILES string into reactant and product molecule lists.
+    """Split a reaction SMILES string into reactant and product molecule lists.
 
     The expected format is ``"A.B>>C.D"``. Empty left or right sides are allowed.
 
@@ -19,15 +18,15 @@ def _split_reaction_smiles(reaction_smiles: str) -> ReactionSides:
         Reaction SMILES string.
     :type reaction_smiles: str
 
-    :returns:
+    :return:
         Tuple of reactant and product molecule lists.
     :rtype: Tuple[List[str], List[str]]
 
     :raises ValueError:
         If the reaction string does not contain ``">>"``.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         reactants, products = _split_reaction_smiles("CCO.O>>CC=O")
@@ -43,8 +42,7 @@ def _split_reaction_smiles(reaction_smiles: str) -> ReactionSides:
 
 
 def _excel_label(index: int) -> str:
-    """
-    Convert a zero-based integer index into an Excel-style alphabetic label.
+    """Convert a zero-based integer index into an Excel-style alphabetic label.
 
     Examples include ``0 -> "A"``, ``25 -> "Z"``, and ``26 -> "AA"``.
 
@@ -52,15 +50,15 @@ def _excel_label(index: int) -> str:
         Zero-based index.
     :type index: int
 
-    :returns:
+    :return:
         Excel-style alphabetic label.
     :rtype: str
 
     :raises ValueError:
         If ``index`` is negative.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         label = _excel_label(27)   # "AB"
@@ -77,19 +75,18 @@ def _excel_label(index: int) -> str:
 
 
 def _normalize_abstract_side(side: str) -> List[str]:
-    """
-    Normalize one abstract reaction side by splitting on ``"+"`` and sorting tokens.
+    """Normalize one abstract reaction side by splitting on ``"+"`` and sorting tokens.
 
     :param side:
         Abstract reaction side.
     :type side: str
 
-    :returns:
+    :return:
         Sorted abstract token list.
     :rtype: List[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         tokens = _normalize_abstract_side("B+A+C")
@@ -101,8 +98,7 @@ def _first_present(
     record: Mapping[str, Any],
     keys: Sequence[str],
 ) -> Optional[Any]:
-    """
-    Return the first non-``None`` value found in a mapping for the given keys.
+    """Return the first non-``None`` value found in a mapping for the given keys.
 
     :param record:
         Input mapping.
@@ -112,12 +108,12 @@ def _first_present(
         Candidate keys to try in order.
     :type keys: Sequence[str]
 
-    :returns:
+    :return:
         First matching value, or ``None`` if none are present.
     :rtype: Optional[Any]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         value = _first_present(record, ["smiles", "reaction", "rxn_smiles"])
@@ -129,8 +125,7 @@ def _first_present(
 
 
 def deduplicate_abstract_reactions(reactions: Sequence[str]) -> List[str]:
-    """
-    Remove identity reactions and duplicate abstract reactions.
+    """Remove identity reactions and duplicate abstract reactions.
 
     Reactant and product order are normalized internally before comparison.
     The original retained representative is the first encountered entry.
@@ -139,12 +134,12 @@ def deduplicate_abstract_reactions(reactions: Sequence[str]) -> List[str]:
         Abstract reactions such as ``"A+B>>C+D"``.
     :type reactions: Sequence[str]
 
-    :returns:
+    :return:
         Filtered abstract reactions.
     :rtype: List[str]
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         filtered = deduplicate_abstract_reactions(
@@ -203,15 +198,14 @@ class AbstractReactionNetwork:
     label_to_molecule: Dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        """
-        Convert the abstract network to a plain dictionary.
+        """Convert the abstract network to a plain dictionary.
 
-        :returns:
+        :return:
             Dictionary representation of the abstract network.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             payload = network.to_dict()
@@ -226,19 +220,18 @@ class AbstractReactionNetwork:
     def to_json_payload(
         self, name: str = "abstract_reaction_network"
     ) -> Dict[str, Any]:
-        """
-        Convert the abstract network into a SynKit-style JSON payload.
+        """Convert the abstract network into a SynKit-style JSON payload.
 
         :param name:
             Name stored in the metadata block.
         :type name: str
 
-        :returns:
+        :return:
             JSON-serializable payload.
         :rtype: Dict[str, Any]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             payload = network.to_json_payload(name="glycolysis_abstract")
@@ -256,8 +249,7 @@ class AbstractReactionNetwork:
         }
 
     def save_json(self, path: PathLike, *, name: Optional[str] = None) -> None:
-        """
-        Save the abstract network as a JSON file.
+        """Save the abstract network as a JSON file.
 
         :param path:
             Output JSON path.
@@ -267,12 +259,12 @@ class AbstractReactionNetwork:
             Optional metadata name. If omitted, the filename stem is used.
         :type name: Optional[str]
 
-        :returns:
+        :return:
             ``None``
         :rtype: None
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             network.save_json("abstract_network.json")
@@ -286,15 +278,14 @@ class AbstractReactionNetwork:
 
 @dataclass
 class AbstractReactionExtractor:
-    """
-    Build abstract symbolic reaction networks from reaction SMILES lists or
+    """Build abstract symbolic reaction networks from reaction SMILES lists or
     SynKit-style module/pathway JSON blocks.
 
     This class supports configurable field names when extracting reactions from
     JSON-like input records.
 
-    Example
-    -------
+    .. rubric:: Example
+
     .. code-block:: python
 
         extractor = KEGGExtractor()
@@ -316,24 +307,23 @@ class AbstractReactionExtractor:
         self,
         data: Mapping[str, Any],
     ) -> Iterable[Tuple[Mapping[str, Any], str]]:
-        """
-        Iterate over reaction records from a module-like or pathway-like JSON block.
+        """Iterate over reaction records from a module-like or pathway-like JSON block.
 
         Supported structures include:
 
-        - module-like: ``{"reactions": [...]}`
+        - module-like: ``{"reactions": [...]}``
         - pathway-like: ``{"by_module": {"M00001": {"reactions": [...]}, ...}}``
 
         :param data:
             Input JSON-like mapping.
         :type data: Mapping[str, Any]
 
-        :yields:
+        :yield:
             Tuples of ``(reaction_record, module_id)``.
         :rtype: Iterable[Tuple[Mapping[str, Any], str]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             abstractor = AbstractReactionExtractor()
@@ -366,8 +356,7 @@ class AbstractReactionExtractor:
         reaction_smiles_keys: Optional[Sequence[str]] = None,
         template_keys: Optional[Sequence[str]] = None,
     ) -> Tuple[List[str], Dict[str, str]]:
-        """
-        Extract reaction SMILES and rule-template mappings from raw inputs.
+        """Extract reaction SMILES and rule-template mappings from raw inputs.
 
         Either a direct list of reaction SMILES or a JSON data block may be
         provided. If both are given, the explicit ``reactions`` list takes
@@ -412,12 +401,12 @@ class AbstractReactionExtractor:
             record. The keys are tried in order.
         :type template_keys: Optional[Sequence[str]]
 
-        :returns:
+        :return:
             Tuple of reaction SMILES list and template mapping.
         :rtype: Tuple[List[str], Dict[str, str]]
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             extractor = KEGGExtractor()
@@ -480,8 +469,7 @@ class AbstractReactionExtractor:
         *,
         order: str = "appearance",
     ) -> List[str]:
-        """
-        Build the unique molecule pool from parsed reactions.
+        """Build the unique molecule pool from parsed reactions.
 
         :param parsed_reactions:
             Parsed reaction sides as ``(reactants, products)`` tuples.
@@ -492,15 +480,15 @@ class AbstractReactionExtractor:
             ``"sorted"``.
         :type order: str
 
-        :returns:
+        :return:
             Ordered unique molecule pool.
         :rtype: List[str]
 
         :raises ValueError:
             If ``order`` is not supported.
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             molecule_pool = abstractor.build_molecule_pool(
@@ -544,8 +532,7 @@ class AbstractReactionExtractor:
         template_keys: Optional[Sequence[str]] = None,
         save_as: Optional[PathLike] = None,
     ) -> AbstractReactionNetwork:
-        """
-        Convert full reaction SMILES into an abstract symbolic reaction network.
+        """Convert full reaction SMILES into an abstract symbolic reaction network.
 
         You may provide either a direct list of reaction SMILES or a module/pathway
         JSON block.
@@ -607,12 +594,12 @@ class AbstractReactionExtractor:
             Optional JSON output path.
         :type save_as: Optional[PathLike]
 
-        :returns:
+        :return:
             Abstract symbolic reaction network.
         :rtype: AbstractReactionNetwork
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             extractor = KEGGExtractor()

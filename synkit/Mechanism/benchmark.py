@@ -216,7 +216,7 @@ def _canonical_unmapped_smiles(text: str) -> str:
 def _audit_rule_reapplication(record: MechanismRecord) -> dict[str, Any]:
     """Extract an RC rule and apply it to the same reactants without atom maps."""
     from synkit.IO.chem_converter import rsmi_to_its
-    from synkit.Synthesis.Reactor.syn_reactor import SynReactor
+    from synkit.Synthesis.Reactor import SynReactor
 
     reactants, products = record.mapped_reaction.split(">>", 1)
     host = _canonical_unmapped_smiles(reactants)

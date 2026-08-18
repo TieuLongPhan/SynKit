@@ -4,52 +4,43 @@ from typing import Dict, FrozenSet, Hashable, Iterable, List, Set
 
 
 class OrbitAccuracy:
-    """
-    Compare two orbit partitions (approximate vs exact) and compute accuracy metrics.
+    """Compare two orbit partitions (approximate vs exact) and compute accuracy metrics.
 
     The class is intentionally small and OOP-styled: most methods are chainable
     (return ``self``) and computed results are exposed via properties.
 
-    Parameters
-    ----------
-    approx_orbits :
-        Iterable of frozenset-like objects (each containing node identifiers).
-        Each element represents one orbit (set of node ids) from the *approximate*
-        partition. The iterable is consumed and a *copy* (list of frozensets) is
-        stored internally.
-    exact_orbits :
-        Iterable of frozenset-like objects (each containing node identifiers).
-        Each element represents one orbit from the *exact* partition.
+    :param approx_orbits: Iterable of frozenset-like objects (each containing node identifiers).
+                          Each element represents one orbit (set of node ids) from the *approximate*
+                          partition. The iterable is consumed and a *copy* (list of frozensets) is
+                          stored internally.
+    :param exact_orbits: Iterable of frozenset-like objects (each containing node identifiers).
+                         Each element represents one orbit from the *exact* partition.
 
-    Raises
-    ------
-    ValueError
-        If the union of nodes covered by the two partitions differs (i.e. they do
+    :raises ValueError: If the union of nodes covered by the two partitions differs (i.e. they do
         not refer to the same node set), a :class:`ValueError` is raised with a
         short diagnostic listing nodes missing in either partition.
 
-    Attributes
-    ----------
-    nodes : set
-        The set of all node identifiers (union of both partitions). Available
-        after initialization.
-    metrics : dict
-        Computed metrics (see :meth:`compute`) exposed as a dictionary via the
-        :pyattr:`metrics` property.
-    confusion_map : dict
-        A mapping ``approx_orbit_index -> { exact_orbit_index: overlap_count }``
-        exposed via the :pyattr:`confusion_map` property.
+    :ivar nodes: The set of all node identifiers (union of both partitions). Available
+                 after initialization.
+    :vartype nodes: set
+    :ivar metrics: Computed metrics (see :meth:`compute`) exposed as a dictionary via the
+                   :attr:`metrics` property.
+    :vartype metrics: dict
+    :ivar confusion_map: A mapping ``approx_orbit_index -> { exact_orbit_index: overlap_count }``
+                         exposed via the :attr:`confusion_map` property.
 
-    Notes
-    -----
+    :vartype confusion_map: dict
+
+    .. rubric:: Notes
+
     - Node identifiers must be hashable (ints, str, ...).
     - The input iterables are not modified; the class stores its own frozenset
       copies.
     - :meth:`compute` is chainable and returns ``self``; read metrics via the
-      :pyattr:`metrics` property.
+      :attr:`metrics` property.
 
-    Examples
-    --------
+    .. rubric:: Examples
+
     .. code-block:: python
 
         approx = [frozenset({1}), frozenset({2, 3})]
@@ -86,13 +77,10 @@ class OrbitAccuracy:
 
     # ---- Convenience / help ----
     def help(self) -> str:
-        """
-        Return a short usage/help string.
+        """Return a short usage/help string.
 
-        Returns
-        -------
-        str
-            Brief one-line instructions on how to use the class.
+        :return: Brief one-line instructions on how to use the class.
+        :rtype: str
         """
         return (
             "Instantiate with approx and exact orbit iterables of frozensets. "
@@ -101,13 +89,9 @@ class OrbitAccuracy:
 
     # ---- Internal validation / mapping builders ----
     def _validate(self) -> None:
-        """
-        Ensure both partitions cover the same node set.
+        """Ensure both partitions cover the same node set.
 
-        Raises
-        ------
-        ValueError
-            If the union of nodes in ``approx_orbits`` differs from that in
+        :raises ValueError: If the union of nodes in ``approx_orbits`` differs from that in
             ``exact_orbits``. The raised message includes nodes missing in
             either partition for quick diagnostics.
         """
@@ -123,10 +107,12 @@ class OrbitAccuracy:
             msg_parts = []
             if missing_in_approx:
                 msg_parts.append(
-                    f"nodes missing in approx: {sorted(missing_in_approx)}"
+                    "nodes missing in approx: " f"{sorted(missing_in_approx, key=repr)}"
                 )
             if missing_in_exact:
-                msg_parts.append(f"nodes missing in exact: {sorted(missing_in_exact)}")
+                msg_parts.append(
+                    f"nodes missing in exact: {sorted(missing_in_exact, key=repr)}"
+                )
             raise ValueError(
                 "Orbit partitions do not cover the same node set. "
                 + " ".join(msg_parts)
@@ -146,24 +132,19 @@ class OrbitAccuracy:
 
     # ---- Core API ----
     def compute(self, brute_force_pairs: bool = True) -> "OrbitAccuracy":
-        """
-        Compute all metrics and build the confusion map.
+        """Compute all metrics and build the confusion map.
 
-        This method is chainable and returns ``self``; call :pyattr:`metrics` or
-        :pyattr:`confusion_map` afterwards to access results.
+        This method is chainable and returns ``self``; call :attr:`metrics` or
+        :attr:`confusion_map` afterwards to access results.
 
-        Parameters
-        ----------
-        brute_force_pairs : bool, optional
-            If True (default) compute pairwise accuracy by checking all unordered
-            node pairs (O(N^2)). For very large node sets a combinatorial
-            method (based on orbit sizes) may be preferred; this implementation
-            defaults to brute-force because typical orbit counts are moderate.
+        :param brute_force_pairs: If True (default) compute pairwise accuracy by checking all unordered
+                                  node pairs (O(N^2)). For very large node sets a combinatorial
+                                  method (based on orbit sizes) may be preferred; this implementation
+                                  defaults to brute-force because typical orbit counts are moderate.
+        :type brute_force_pairs: bool, optional
 
-        Returns
-        -------
-        OrbitAccuracy
-            Returns ``self`` to enable chaining.
+        :return: Returns ``self`` to enable chaining.
+        :rtype: OrbitAccuracy
         """
         self._compute_node_exact_match_fraction()
         self._compute_confusion()
@@ -242,70 +223,53 @@ class OrbitAccuracy:
     # ---- Properties / accessors ----
     @property
     def metrics(self) -> Dict[str, float]:
-        """
-        Return computed metrics.
+        """Return computed metrics.
 
-        Returns
-        -------
-        dict
-            Copy of the metrics dictionary. Call :meth:`compute` first to populate.
+        :return: Copy of the metrics dictionary. Call :meth:`compute` first to populate.
+        :rtype: dict
         """
         return dict(self._metrics)
 
     @property
     def confusion_map(self) -> Dict[int, Dict[int, int]]:
-        """
-        Return the confusion map: approx_orbit_index -> { exact_orbit_index: count }.
+        """Return the confusion map: approx_orbit_index -> { exact_orbit_index: count }.
 
-        Returns
-        -------
-        dict
-            Copy of the internal confusion mapping. Call :meth:`compute` first.
+        :return: Copy of the internal confusion mapping. Call :meth:`compute` first.
+        :rtype: dict
         """
         # return a shallow copy to avoid accidental external mutation
         return {k: dict(v) for k, v in self._confusion.items()}
 
     @property
     def approx_orbits(self) -> List[FrozenSet[Hashable]]:
-        """
-        Return the stored approx-orbits as a list of frozensets.
+        """Return the stored approx-orbits as a list of frozensets.
 
-        Returns
-        -------
-        list
-            Internal copy of the approximate orbit list.
+        :return: Internal copy of the approximate orbit list.
+        :rtype: list
         """
         return list(self._approx_raw)
 
     @property
     def exact_orbits(self) -> List[FrozenSet[Hashable]]:
-        """
-        Return the stored exact-orbits as a list of frozensets.
+        """Return the stored exact-orbits as a list of frozensets.
 
-        Returns
-        -------
-        list
-            Internal copy of the exact orbit list.
+        :return: Internal copy of the exact orbit list.
+        :rtype: list
         """
         return list(self._exact_raw)
 
     # ---- Human-readable report ----
     def report(self, max_rows: int = 10) -> str:
-        """
-        Produce a short human-readable report summarising computed metrics and the
+        """Produce a short human-readable report summarising computed metrics and the
         top confusion rows.
 
-        Parameters
-        ----------
-        max_rows : int, optional
-            Maximum number of confusion rows to include in the textual report.
-            Default is 10.
+        :param max_rows: Maximum number of confusion rows to include in the textual report.
+                         Default is 10.
+        :type max_rows: int, optional
 
-        Returns
-        -------
-        str
-            A multi-line string summarising the results. Call :meth:`compute`
-            before calling this method.
+        :return: A multi-line string summarising the results. Call :meth:`compute`
+                  before calling this method.
+        :rtype: str
         """
         lines: List[str] = []
         m = self.metrics

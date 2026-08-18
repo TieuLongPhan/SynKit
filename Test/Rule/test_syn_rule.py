@@ -11,7 +11,7 @@ class TestSynRuleImplicitAndCanon(unittest.TestCase):
     """Test SynRule with implicit H‐stripping and canonicalisation."""
 
     def setUp(self):
-        # SMARTS and GML from your example
+        # Equivalent SMARTS and GML fixtures.
         self.smart = "[Br:1][CH3:2].[OH:3][H:4]>>[Br:1][H:4].[CH3:2][OH:3]"
         self.gml = (
             "rule [\n"

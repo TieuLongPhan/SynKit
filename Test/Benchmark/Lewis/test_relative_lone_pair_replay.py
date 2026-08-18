@@ -23,7 +23,7 @@ from synkit.Graph.Matcher.subgraph_matcher import (  # noqa: E402
     electron_aware_node_match,
 )
 from synkit.Rule import SynRule  # noqa: E402
-from synkit.Synthesis.Reactor.product_state import (  # noqa: E402
+from synkit.Synthesis.Reactor.core.product import (  # noqa: E402
     _pair_electron_aware_node_attrs,
 )
 

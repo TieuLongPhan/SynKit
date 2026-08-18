@@ -72,7 +72,7 @@ class GraphToMol:
             Set False when aromatic connectivity has been edited and its old
             Kekule phase may be stale. Defaults to True.
         :type prefer_kekule_order: bool
-        :returns: An RDKit molecule constructed from the graph's nodes
+        :return: An RDKit molecule constructed from the graph's nodes
             and edges.
         :rtype: Chem.Mol
         """
@@ -186,7 +186,7 @@ class GraphToMol:
 
         :param order: The numerical bond order (typically 1, 2, or 3).
         :type order: float
-        :returns: The corresponding RDKit bond type (single, double,
+        :return: The corresponding RDKit bond type (single, double,
             triple, or aromatic).
         :rtype: Chem.BondType
         """

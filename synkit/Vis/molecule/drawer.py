@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-"""Chemistry-oriented molecular graph drawing.
+"""Chemistry-oriented drawing for scalar molecular NetworkX graphs.
 
-This module draws scalar molecular ``nx.Graph`` objects as molecule-like
-figures.  It is adapted from the copied ``vis_synedu`` renderer, but uses
-SynKit's own graph-to-mol conversion and avoids relying on broken copied
-relative imports.
+The renderer uses SynKit graph-to-molecule conversion and supports atom-map,
+bond-order, aromatic-system, and reaction-center annotations.
 """
 
 import math
@@ -79,7 +77,7 @@ def draw_molecule_graph(  # noqa: C901
     :type include_rdkit_panel: bool
     :param use_h_count: Pass graph ``hcount`` to ``GraphToMol`` for layout.
     :type use_h_count: bool
-    :returns: Axes, or ``(fig, (rdkit_ax, graph_ax))`` when
+    :return: Axes, or ``(fig, (rdkit_ax, graph_ax))`` when
         ``include_rdkit_panel=True``.
     :rtype: Union[plt.Axes, Tuple[plt.Figure, Tuple[plt.Axes, plt.Axes]]]
     """

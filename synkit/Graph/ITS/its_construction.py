@@ -43,8 +43,7 @@ class ITSConstruction:
     def _resolve_defaults(
         user_defaults: Optional[Dict[str, Any]], core_defaults: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Merge user-provided defaults with built-in defaults.
+        """Merge user-provided defaults with built-in defaults.
 
         :param user_defaults:
             Optional mapping of user overrides.
@@ -53,7 +52,7 @@ class ITSConstruction:
             Built-in defaults. Callable values are treated as factories.
         :type core_defaults: Dict[str, Any]
 
-        :returns:
+        :return:
             Resolved defaults with fresh copies for mutable values.
         :rtype: Dict[str, Any]
         """
@@ -99,8 +98,7 @@ class ITSConstruction:
 
     @staticmethod
     def _select_base_graph(G: nx.Graph, H: nx.Graph, balance_its: bool) -> nx.Graph:
-        """
-        Select the base graph used to initialize the ITS graph.
+        """Select the base graph used to initialize the ITS graph.
 
         :param G:
             First input graph.
@@ -112,7 +110,7 @@ class ITSConstruction:
             If ``True``, prefer the smaller graph; otherwise prefer the larger.
         :type balance_its: bool
 
-        :returns:
+        :return:
             Selected base graph.
         :rtype: nx.Graph
         """
@@ -124,14 +122,13 @@ class ITSConstruction:
 
     @staticmethod
     def _initialize_its(base: nx.Graph) -> nx.Graph:
-        """
-        Copy the base graph and remove all edges.
+        """Copy the base graph and remove all edges.
 
         :param base:
             Graph chosen as ITS initialization template.
         :type base: nx.Graph
 
-        :returns:
+        :return:
             Edge-free copy of the base graph.
         :rtype: nx.Graph
         """
@@ -174,8 +171,7 @@ class ITSConstruction:
         attrs: List[str],
         defaults: Dict[str, Any],
     ) -> Tuple[Any, ...]:
-        """
-        Build one side of a node tuple for ``typesGH``.
+        """Build one side of a node tuple for ``typesGH``.
 
         :param graph:
             Source graph.
@@ -190,7 +186,7 @@ class ITSConstruction:
             Default values for missing attributes.
         :type defaults: Dict[str, Any]
 
-        :returns:
+        :return:
             Attribute tuple for the requested node.
         :rtype: Tuple[Any, ...]
         """
@@ -246,8 +242,7 @@ class ITSConstruction:
 
     @staticmethod
     def _edge_keys(G: nx.Graph, H: nx.Graph) -> List[Tuple[Hashable, Hashable]]:
-        """
-        Compute the union of undirected edges from ``G`` and ``H``.
+        """Compute the union of undirected edges from ``G`` and ``H``.
 
         :param G:
             First input graph.
@@ -256,7 +251,7 @@ class ITSConstruction:
             Second input graph.
         :type H: nx.Graph
 
-        :returns:
+        :return:
             List of unique edge pairs.
         :rtype: List[Tuple[Hashable, Hashable]]
         """
@@ -274,8 +269,7 @@ class ITSConstruction:
         edge_attrs: List[str],
         edge_defaults: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """
-        Build direct paired edge attributes for one ITS edge.
+        """Build direct paired edge attributes for one ITS edge.
 
         Each requested edge attribute is stored as ``(G_value, H_value)``.
         The ``order`` attribute is always guaranteed to exist.
@@ -299,7 +293,7 @@ class ITSConstruction:
             Default values for missing edge attributes.
         :type edge_defaults: Dict[str, Any]
 
-        :returns:
+        :return:
             Edge attribute mapping for ITS storage.
         :rtype: Dict[str, Any]
         """
@@ -373,8 +367,7 @@ class ITSConstruction:
         transition_graph: Optional[nx.Graph] = None,
         stereo_validation: str = "preserve",
     ) -> nx.Graph:
-        """
-        Construct an ITS graph from two input graphs.
+        """Construct an ITS graph from two input graphs.
 
         Nodes store ``typesGH`` as paired tuples over ``node_attrs``.
         Requested edge attributes are stored directly as paired values such as
@@ -421,13 +414,13 @@ class ITSConstruction:
             construction and rejects dangling or stale references.
         :type stereo_validation: str
 
-        :returns:
+        :return:
             ITS graph with merged nodes, paired node/edge annotations, and
             derived ``standard_order``.
         :rtype: nx.Graph
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             node_attrs = [
@@ -537,8 +530,7 @@ class ITSConstruction:
         transition_graph: Optional[nx.Graph] = None,
         stereo_validation: str = "preserve",
     ) -> nx.Graph:
-        """
-        Backward-compatible wrapper around :meth:`construct`.
+        """Backward-compatible wrapper around :meth:`construct`.
 
         :param G:
             First input graph.
@@ -568,7 +560,7 @@ class ITSConstruction:
             ``"preserve"`` or strict support validation.
         :type stereo_validation: str
 
-        :returns:
+        :return:
             Constructed ITS graph using legacy node and edge attribute defaults.
         :rtype: nx.Graph
         """
@@ -590,8 +582,7 @@ class ITSConstruction:
     def typesGH_info(
         node_attrs: Optional[List[str]] = None, edge_attrs: Optional[List[str]] = None
     ) -> Dict[str, Dict[str, Tuple[type, Any]]]:
-        """
-        Provide expected types and defaults for node and edge attributes.
+        """Provide expected types and defaults for node and edge attributes.
 
         :param node_attrs:
             Node attributes expected in node-level ``typesGH``.
@@ -600,7 +591,7 @@ class ITSConstruction:
             Edge attributes expected as direct paired edge tuples.
         :type edge_attrs: Optional[List[str]]
 
-        :returns:
+        :return:
             Nested mapping describing ``(type, default)`` for each selected attribute.
         :rtype: Dict[str, Dict[str, Tuple[type, Any]]]
         """
@@ -653,8 +644,7 @@ class ITSConstruction:
     def get_node_attribute(
         graph: nx.Graph, node: Hashable, attribute: str, default: Any
     ) -> Any:
-        """
-        Retrieve a node attribute or return a default if missing.
+        """Retrieve a node attribute or return a default if missing.
 
         :param graph:
             Input graph.
@@ -669,7 +659,7 @@ class ITSConstruction:
             Fallback value.
         :type default: Any
 
-        :returns:
+        :return:
             Stored node attribute or fallback default.
         :rtype: Any
         """
@@ -682,8 +672,7 @@ class ITSConstruction:
     def get_node_attributes_with_defaults(
         graph: nx.Graph, node: Hashable, attributes_defaults: Dict[str, Any] = None
     ) -> Tuple:
-        """
-        Retrieve multiple node attributes using provided defaults.
+        """Retrieve multiple node attributes using provided defaults.
 
         :param graph:
             Input graph.
@@ -695,12 +684,12 @@ class ITSConstruction:
             Mapping from attribute names to fallback values.
         :type attributes_defaults: Optional[Dict[str, Any]]
 
-        :returns:
+        :return:
             Tuple of node attributes in mapping order.
         :rtype: Tuple
 
-        Example
-        -------
+        .. rubric:: Example
+
         .. code-block:: python
 
             attrs = ITSConstruction.get_node_attributes_with_defaults(

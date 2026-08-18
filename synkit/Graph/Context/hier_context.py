@@ -28,11 +28,14 @@ class HierContext(RadiusExpand):
         """Initializes the HierContext class for hierarchical clustering of
         reaction context graphs.
 
-        Parameters:
-        - node_label_names (List[str]): A list of node attribute names used for matching.
-        - node_label_default (List[Any]): A list of default values for node attributes.
-        - edge_attribute (str): The edge attribute used in matching.
-        - max_radius (int): The maximum hierarchical level (radius) to be considered.
+        :param node_label_names: A list of node attribute names used for matching.
+        :type node_label_names: List[str]
+        :param node_label_default: A list of default values for node attributes.
+        :type node_label_default: List[Any]
+        :param edge_attribute: The edge attribute used in matching.
+        :type edge_attribute: str
+        :param max_radius: The maximum hierarchical level (radius) to be considered.
+        :type max_radius: int
         """
         super().__init__()
         self.radius: List[int] = list(range(max_radius + 1))
@@ -50,13 +53,13 @@ class HierContext(RadiusExpand):
         """Groups a list of dictionaries into subgroups based on the specified
         key.
 
-        Parameters:
-        - data (List[Dict[str, Any]]): A list of dictionaries to be grouped.
-        - key (str): The key used for grouping items.
+        :param data: A list of dictionaries to be grouped.
+        :type data: List[Dict[str, Any]]
+        :param key: The key used for grouping items.
+        :type key: str
 
-        Returns:
-        - Dict[Any, List[Dict[str, Any]]]: A dictionary with keys derived from the given key's value
-          and values as lists of dictionaries that share that key.
+        :return: Dictionary grouping entries by the selected key value.
+        :rtype: Dict[Any, List[Dict[str, Any]]]
         """
         grouped_data: Dict[Any, List[Dict[str, Any]]] = defaultdict(list)
         for item in data:
@@ -70,14 +73,14 @@ class HierContext(RadiusExpand):
         """Updates hierarchical templates by assigning child IDs based on
         parent–cluster relationships.
 
-        Parameters:
-        - data (List[List[Dict[str, Any]]]): A list of layers, where each layer is a list of dictionaries
-          containing node data.
-        - cls_id (str): The key used to identify the node's class or cluster ID (default is "class").
+        :param data: A list of layers, where each layer is a list of dictionaries
+                     containing node data.
+        :type data: List[List[Dict[str, Any]]]
+        :param cls_id: The key used to identify the node's class or cluster ID (default is "class").
+        :type cls_id: str
 
-        Returns:
-        - List[List[Dict[str, Any]]]: The updated hierarchical data with each node containing an updated "Child"
-          field that lists the class IDs of its child nodes.
+        :return: Hierarchical data whose nodes list their child class IDs.
+        :rtype: List[List[Dict[str, Any]]]
         """
         node_dict: Dict[str, Dict[str, Any]] = {}
 
@@ -111,17 +114,21 @@ class HierContext(RadiusExpand):
         subgraphs and computing their hashes, then classifies the data using
         the provided clustering function.
 
-        Parameters:
-        - data (List[Dict[str, Any]]): A list of dictionaries, each representing a graph or data entry.
-        - k (int): The number of nearest neighbors to include during context extraction.
-        - its_key (str): The key corresponding to the ITS graph in each data entry.
-        - context_key (str): The key under which the extracted context subgraph will be stored.
-        - cls_func (Callable): The clustering function instance to be used for clustering.
+        :param data: A list of dictionaries, each representing a graph or data entry.
+        :type data: List[Dict[str, Any]]
+        :param k: The number of nearest neighbors to include during context extraction.
+        :type k: int
+        :param its_key: The key corresponding to the ITS graph in each data entry.
+        :type its_key: str
+        :param context_key: The key under which the extracted context subgraph will be stored.
+        :type context_key: str
+        :param cls_func: The clustering function instance to be used for clustering.
+        :type cls_func: Callable
 
-        Returns:
-        - Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]: A tuple containing:
-              - The list of clustered data entries with updated cluster identifiers.
-              - The list of processed template dictionaries.
+        :return: A tuple containing:
+                  The list of clustered data entries with updated cluster identifiers.
+                  The list of processed template dictionaries.
+        :rtype: Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]
         """
         for item in data:
             context = RadiusExpand.extract_k(item[its_key], n_knn=k)
@@ -152,17 +159,21 @@ class HierContext(RadiusExpand):
         parent cluster IDs, extracting context for child levels, and clustering
         the data.
 
-        Parameters:
-        - data (List[Dict[str, Any]]): A list of dictionaries representing graph data entries.
-        - its_key (str): The key corresponding to the ITS graph in each entry.
-        - context_key (str): The key under which the extracted context subgraph is stored.
-        - cls_func (Callable): The clustering function instance to be used.
-        - radius (int, optional): The current hierarchical level (radius) being processed (default is 1).
+        :param data: A list of dictionaries representing graph data entries.
+        :type data: List[Dict[str, Any]]
+        :param its_key: The key corresponding to the ITS graph in each entry.
+        :type its_key: str
+        :param context_key: The key under which the extracted context subgraph is stored.
+        :type context_key: str
+        :param cls_func: The clustering function instance to be used.
+        :type cls_func: Callable
+        :param radius: The current hierarchical level (radius) being processed (default is 1).
+        :type radius: int, optional
 
-        Returns:
-        - Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]: A tuple containing:
-              - The updated list of data entries with new cluster indices for this level.
-              - The list of newly generated template dictionaries for this level.
+        :return: A tuple containing:
+                  The updated list of data entries with new cluster indices for this level.
+                  The list of newly generated template dictionaries for this level.
+        :rtype: Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]
         """
         grouped_data: Dict[Any, List[Dict[str, Any]]] = self._group_class(
             data, f"R_{radius - 1}"
@@ -201,16 +212,18 @@ class HierContext(RadiusExpand):
         levels. Finally, child node indices are updated based on parent–cluster
         relationships.
 
-        Parameters:
-        - original_data (List[Dict[str, Any]]): A list of dictionaries, each representing a graph data entry
-          with an ITS graph.
-        - its_key (str): The key in each dictionary corresponding to the ITS graph (default is "ITS").
-        - context_key (str): The key under which the extracted context subgraph is stored (default is "K").
+        :param original_data: A list of dictionaries, each representing a graph data entry
+                              with an ITS graph.
+        :type original_data: List[Dict[str, Any]]
+        :param its_key: The key in each dictionary corresponding to the ITS graph (default is "ITS").
+        :type its_key: str
+        :param context_key: The key under which the extracted context subgraph is stored (default is "K").
+        :type context_key: str
 
-        Returns:
-        - Tuple[List[Dict[str, Any]], List[List[Dict[str, Any]]]]: A tuple containing:
-              - The updated list of graph data entries with hierarchical cluster indices.
-              - A list (per hierarchical level) of template dictionaries that have been updated with child indices.
+        :return: A tuple containing:
+                  The updated list of graph data entries with hierarchical cluster indices.
+                  A list (per hierarchical level) of template dictionaries that have been updated with child indices.
+        :rtype: Tuple[List[Dict[str, Any]], List[List[Dict[str, Any]]]]
         """
         data: List[Dict[str, Any]] = copy.deepcopy(original_data)
 
