@@ -1,112 +1,116 @@
-*.pyc
-*cachedir
-*.csv
-!Experiment/Lewis/Data/all.csv
-!Experiment/Lewis/Data/combinatorial_all.csv
-!Experiment/Lewis/mech_path/Data/reconstruction_audit/polar-failures.csv
-!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-failures.csv
-!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-arrow-review.csv
-*/catboost_info/*
-
-
-*.pkl.gz
-*.pdf
-
+# Python bytecode, environments, and tool caches
+**/__pycache__/
+*.py[cod]
 .coverage
-dev/*
-/debug/
-/Test/Conformance/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.tox/
+.venv/
+venv/
+*cachedir
+*/catboost_info/
+
+# Build and generated documentation output
+/build/
+/dist/
+/docs/
+*.egg-info/
+
+# Generated logs, reports, notebooks, and data files
+*.log
+*.pdf
 *.rdf
-test_syn_reactor.py
-
-Data/Benchmark/*
-!Data/Benchmark/partial_expand/
-!Data/Benchmark/partial_expand/**
-Data/Benchmark/partial_expand/results/
-!Data/Benchmark/mech/
-Data/Benchmark/mech/*
-!Data/Benchmark/mech/README.md
-!Data/Benchmark/mech/polar-failures.csv
-!Data/Benchmark/mech/radical-failures.csv
-*.json.gz
-!Experiment/Lewis/Data/benchmark.json.gz
-# *.png
-
-run.sh
-docs/*
-run_rdcanon.py
-Data/Fragment/*
-test_partial.py
-Data/Benchmark/synthesis/*
-Data/USPTO/*
-crn/*
-test_run.py
-Data/Study/CRN/case_formose/*
-
-synkit/Graph/dev/*
 *.ipynb
+*.csv
 *.json
-# Stereo benchmark inputs are versioned for reproducible fresh-clone runs.
-# Generated reports stay Git-visible so completed results can be committed
-# explicitly, including reports created by the long raw stress stages.
-!Experiment/Stereo/Data/**/*.csv
-!Experiment/Stereo/Data/**/*.json
-!Data/Schema/
-!Data/Schema/attribute_propagation_v1_5.json
-!/tools/python_file_size_baseline.json
+*.json.gz
+*.pkl.gz
+*.txt
+
+# Package resources and repository evidence retained despite the broad rules
+!LICENSES/*.txt
+!synkit/CRN/Benchmark/data/kegg_modules.json
+!Data/Conformance/stereomolgraph_graph_conformance.json
 !Data/Mech/polar.json
 !Data/Mech/radical.json
 !Data/Mech/stereo.json
+!Data/Schema/
+!Data/Schema/attribute_propagation_v1_5.json
+!/tools/python_file_size_baseline.json
+!Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
+
+# Lewis benchmark inputs and reviewed evidence
+!Experiment/Lewis/Data/all.csv
+!Experiment/Lewis/Data/benchmark.json.gz
+!Experiment/Lewis/Data/combinatorial_all.csv
 !Experiment/Lewis/Data/hydrogen.pkl.gz
-# Canonical reviewed MechanismBench partitions are executable test data.
+!Experiment/Lewis/mech_path/Data/MechanismBench/electrocyclic_machinery.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/polar.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/radical.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/stereo.json
-!Experiment/Lewis/mech_path/Data/MechanismBench/electrocyclic_machinery.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/stereo_branch_coverage.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/stereo_couplings.json
 !Experiment/Lewis/mech_path/Data/MechanismBench/evidence/mechanismbench_evidence.json
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/polar-failures.csv
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-arrow-review.csv
+!Experiment/Lewis/mech_path/Data/reconstruction_audit/radical-failures.csv
 !Experiment/Lewis/rule_replay/Data/bidirectional-replay/results.json
 !Experiment/Lewis/rule_replay/Data/relative-lone-pair/results.json
+
+# Stereo benchmark inputs and reproducible reports
+!Experiment/Stereo/Data/**/*.csv
+!Experiment/Stereo/Data/**/*.json
 !Experiment/Stereo/Data/manifest.json
-!Experiment/Stereo/Data/Perception/perception_conformance_cases.json
 !Experiment/Stereo/Data/Perception/full_detection_report.json
-!Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
-!Data/Conformance/stereomolgraph_graph_conformance.json
-!Data/Benchmark/Stereo/
-!Data/Benchmark/Stereo/**
-*.txt
-!LICENSES/*.txt
-*.log
-/dist/
-sprint/
-sprint/*
-test_syn.py
-.gitignore
-measure_candidate_stages.py
-run_valid_bug_cases.py
-paper/*
-# Nested standalone Git repository.
-/paper/og_paper/
+!Experiment/Stereo/Data/Perception/perception_conformance_cases.json
 
-# Fresh benchmark runs are reproducible and can be large. Retained reference
-# outputs live inside each experiment's Data directory.
-Experiment/Lewis/Runs/
+# Large or reproducible data products
+/Data/Benchmark/*
+!/Data/Benchmark/mech/
+/Data/Benchmark/mech/*
+!/Data/Benchmark/mech/README.md
+!/Data/Benchmark/mech/polar-failures.csv
+!/Data/Benchmark/mech/radical-failures.csv
+!/Data/Benchmark/partial_expand/
+!/Data/Benchmark/partial_expand/**
+/Data/Benchmark/partial_expand/results/
+!/Data/Benchmark/Stereo/
+!/Data/Benchmark/Stereo/**
+/Data/Fragment/*
+/Data/Study/CRN/case_formose/*
+/Data/USPTO/*
+/Experiment/Lewis/Runs/
 
-# Generated FLOWER intermediates and long-run evidence. The portable
-# full-reaction batch payload is intentionally retained in Git.
-Experiment/Lewis/FLOWER/batches/
-Experiment/Lewis/FLOWER/full_reactions/
-Experiment/Lewis/FLOWER/replay-debug/
-Experiment/Lewis/FLOWER/replay-runs/
-Experiment/Lewis/FLOWER/replay-results*/
+# Generated FLOWER intermediates and long-run evidence
+/Experiment/Lewis/FLOWER/batches/
+/Experiment/Lewis/FLOWER/full_reactions/
+/Experiment/Lewis/FLOWER/replay-debug/
+/Experiment/Lewis/FLOWER/replay-results*/
+/Experiment/Lewis/FLOWER/replay-runs/
 !Experiment/Lewis/FLOWER/full-reaction-batches/manifest.json
 !Experiment/Lewis/FLOWER/full-reaction-replay-summary.json
 
-# Keep generated Python bytecode ignored after directory re-inclusions above.
-**/__pycache__/
-*.py[cod]
+# Resumable local benchmark state
+/Experiment/RBL/*checkpoint*.jsonl
 
-# RBL long-run checkpoints are resumable local state, not retained evidence.
-Experiment/RBL/*checkpoint*.jsonl
+# Development and scratch paths
+/Test/Conformance/
+/crn/
+/debug/
+/dev/
+/paper/*
+/sprint/
+/synkit/Graph/dev/
+
+# Local one-off scripts and prompts
+.gitignore
+measure_candidate_stages.py
 request.md
+run.sh
+run_rdcanon.py
+run_valid_bug_cases.py
+test_partial.py
+test_run.py
+test_syn.py
+test_syn_reactor.py
