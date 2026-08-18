@@ -9,6 +9,12 @@ from synkit.CRN.Petrinet import (
     PetriNet,
     SynCRNIncidence,
     Transition,
+    extract_syncrn_incidence,
+)
+
+# Private helpers are reached through their defining module rather than the
+# package API, which exports only the public surface.
+from synkit.CRN.Petrinet.net import (
     _accumulate_incidence_from_edges,
     _build_pre_post_from_graph,
     _build_reaction_index,
@@ -21,7 +27,6 @@ from synkit.CRN.Petrinet import (
     _naturalish_key,
     _partition_syncrn_nodes,
     _safe_int,
-    extract_syncrn_incidence,
 )
 
 

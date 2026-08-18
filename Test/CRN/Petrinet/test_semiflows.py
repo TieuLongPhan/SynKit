@@ -10,6 +10,8 @@ from synkit.CRN.Petrinet.semiflows import (
     _select_semiflow_basis,
     find_p_semiflows,
     find_t_semiflows,
+    left_kernel_basis,
+    right_kernel_basis,
     semiflow_supports,
     stoichiometric_matrix,
 )
@@ -60,25 +62,66 @@ class TestSemiflows(unittest.TestCase):
         self.assertEqual(len(species_order), s.shape[0])
         self.assertEqual(len(reaction_order), s.shape[1])
 
-    def test_find_p_semiflows_matches_props_left_nullspace(self) -> None:
+    def test_left_kernel_basis_matches_props_left_nullspace(self) -> None:
         """
-        P-semiflows should be exactly the left nullspace basis from Props.stoich.
+        The raw kernel helper should agree with Props.stoich.left_nullspace.
         """
-        basis = find_p_semiflows(self.simple)
+        basis = left_kernel_basis(self.simple)
         basis_props = left_nullspace(self.simple)
 
         self.assertEqual(basis.shape, basis_props.shape)
         self.assertTrue(np.allclose(basis, basis_props))
 
-    def test_find_t_semiflows_matches_props_right_nullspace(self) -> None:
+    def test_right_kernel_basis_matches_props_right_nullspace(self) -> None:
         """
-        T-semiflows should be exactly the right nullspace basis from Props.stoich.
+        The raw kernel helper should agree with Props.stoich.right_nullspace.
         """
-        basis = find_t_semiflows(self.cycle)
+        basis = right_kernel_basis(self.cycle)
         basis_props = right_nullspace(self.cycle)
 
         self.assertEqual(basis.shape, basis_props.shape)
         self.assertTrue(np.allclose(basis, basis_props))
+
+    def test_semiflows_are_non_negative(self) -> None:
+        """
+        Semiflows are non-negative by definition; kernel bases are not.
+
+        Regression test: ``find_p_semiflows`` previously returned an SVD kernel
+        basis, which for this network is the all-negative vector
+        ``[-0.577, -0.577, -0.577]`` and therefore not a semiflow at all.
+        """
+        crn = SynCRN.from_reaction_strings(["A>>B", "B>>A", "A>>C", "C>>A"])
+
+        for basis in (find_p_semiflows(crn), find_t_semiflows(crn)):
+            self.assertTrue(np.all(basis >= 0.0))
+
+    def test_p_semiflow_supports_are_minimal_not_unions(self) -> None:
+        """
+        Disjoint conservation laws must yield disjoint supports.
+
+        Regression test: with a rotated kernel basis both columns came back
+        with the full support ``{1, 2, 3, 4}`` instead of ``{1, 2}`` and
+        ``{3, 4}``.
+        """
+        crn = SynCRN.from_reaction_strings(["A>>B", "C>>D"])
+        supports = {
+            frozenset(supp) for supp in semiflow_supports(crn, kind="p")
+        }
+
+        self.assertEqual(
+            supports,
+            {frozenset({"s_1", "s_2"}), frozenset({"s_3", "s_4"})},
+        )
+
+    def test_semiflow_coefficients_are_integers(self) -> None:
+        """
+        Minimal semiflows carry primitive integer weights, e.g. 2A >> B.
+        """
+        crn = SynCRN.from_reaction_strings(["2A>>B"])
+        basis = find_p_semiflows(crn)
+
+        self.assertEqual(basis.shape, (2, 1))
+        self.assertTrue(np.allclose(basis[:, 0], [1.0, 2.0]))
 
     def test_find_p_semiflows_satisfies_kernel_equation(self) -> None:
         """

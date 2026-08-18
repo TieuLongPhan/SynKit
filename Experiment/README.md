@@ -6,6 +6,8 @@ output contract, and interpretation boundary in its local README.
 
 ## Experiment index
 
+- [CRN](CRN/README.md): chemical reaction network validation, scaling, and the
+  KEGG, formose, and BioModels case studies.
 - [Lewis](Lewis/README.md): Lewis-state conversion and rule-replay studies.
 - [MTG](MTG/README.md): native rule composition and mechanistic transition
   graph validation.

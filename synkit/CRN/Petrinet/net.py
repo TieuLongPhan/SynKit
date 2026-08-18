@@ -17,6 +17,8 @@ from typing import (
 
 import networkx as nx
 
+from ..kinds import REACTION_KINDS, SPECIES_KINDS
+
 Place = str
 TransitionId = str
 Marking = Mapping[Place, int]
@@ -361,9 +363,9 @@ def _partition_syncrn_nodes(
 
     for node, attrs in crn.nodes(data=True):
         kind = _graph_node_kind(attrs)
-        if kind == "species":
+        if kind in SPECIES_KINDS:
             species_nodes.append(node)
-        elif kind in {"reaction", "rule"}:
+        elif kind in REACTION_KINDS:
             reaction_nodes.append(node)
 
     species_nodes.sort(key=lambda n: _naturalish_key(crn.nodes[n].get("syncrn_id", n)))

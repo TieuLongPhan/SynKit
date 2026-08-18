@@ -50,6 +50,10 @@ def siphon_persistence_details(
         return PersistenceCheckResult(True, [], [], [])
 
     species_order, _, _ = stoichiometric_matrix(crn)
+    # Minimal P-semiflows: non-negative and inclusion-minimal, so their
+    # supports are exactly what the Angeli-De Leenheer-Sontag condition needs.
+    # A real kernel basis would not do: its vectors can be mixed-sign and its
+    # supports depend on the arbitrary choice of basis.
     y = find_p_semiflows(crn, rtol=rtol)
     if y.size == 0:
         return PersistenceCheckResult(False, siphons, [], list(siphons))

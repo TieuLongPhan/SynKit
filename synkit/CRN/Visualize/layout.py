@@ -6,6 +6,8 @@ from typing import Callable, Dict, Hashable, Iterable, List, Mapping, Tuple
 
 import networkx as nx
 
+from ..kinds import is_reaction_node
+
 Pos = Dict[Hashable, Tuple[float, float]]
 LayoutFunc = Callable[..., Pos]
 
@@ -138,13 +140,13 @@ def _species_x_from_incidence(graph: nx.DiGraph, node: Hashable) -> float:
     product_steps: List[int] = []
 
     for _, v, d in graph.out_edges(node, data=True):
-        if d.get("role") == "reactant" and graph.nodes[v].get("kind") == "rule":
+        if d.get("role") == "reactant" and is_reaction_node(graph.nodes[v]):
             step = graph.nodes[v].get("step", d.get("step"))
             if step is not None:
                 reactant_steps.append(int(step))
 
     for u, _, d in graph.in_edges(node, data=True):
-        if d.get("role") == "product" and graph.nodes[u].get("kind") == "rule":
+        if d.get("role") == "product" and is_reaction_node(graph.nodes[u]):
             step = graph.nodes[u].get("step", d.get("step"))
             if step is not None:
                 product_steps.append(int(step))
@@ -191,6 +193,7 @@ def step_layout(
     rule_nodes: List[Hashable],
     node_spacing: float = 1.4,
     layer_spacing: float = 2.5,
+    **_: object,
 ) -> Pos:
     """Compute a layered step-wise layout.
 
@@ -249,6 +252,7 @@ def bipartite_layout(
     node_spacing: float = 1.4,
     layer_spacing: float = 3.0,
     orientation: str = "vertical",
+    **_: object,
 ) -> Pos:
     """Compute a two-layer species-rule layout.
 
@@ -307,6 +311,7 @@ def multipartite_step_layout(
     *,
     species_nodes: List[Hashable],
     rule_nodes: List[Hashable],
+    **_: object,
 ) -> Pos:
     """Compute a multipartite layout using inferred step layers.
 
@@ -343,6 +348,7 @@ def radial_step_layout(
     species_nodes: List[Hashable],
     rule_nodes: List[Hashable],
     radius_step: float = 1.8,
+    **_: object,
 ) -> Pos:
     """Compute a radial step layout using concentric circles.
 
@@ -385,6 +391,7 @@ def circular_bipartite_layout(
     rule_nodes: List[Hashable],
     species_radius: float = 2.5,
     rule_radius: float = 4.0,
+    **_: object,
 ) -> Pos:
     """Compute a circular bipartite layout using two concentric circles.
 
@@ -423,6 +430,7 @@ def degree_shell_layout(
     *,
     species_nodes: List[Hashable],
     rule_nodes: List[Hashable],
+    **_: object,
 ) -> Pos:
     """Compute a degree-based shell layout.
 

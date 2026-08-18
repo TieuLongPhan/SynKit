@@ -75,6 +75,12 @@ Documentation quick links
 
       Molecule, reaction, ITS, and diagnostic graph rendering.
 
+   .. grid-item-card:: :octicon:`milestone` Implementation plan
+      :link: implementation-plan
+      :link-type: ref
+
+      Production milestones from molecular stereo through reaction stereo.
+
    .. grid-item-card:: :octicon:`terminal` API Reference
       :link: api/index
       :link-type: doc

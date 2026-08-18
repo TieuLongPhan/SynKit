@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from itertools import combinations
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 from .net import PetriNet
+from .siphon_search import DEFAULT_MAX_NODES, minimal_siphons, minimal_traps
 
 
 def _as_petri(crn: Any) -> PetriNet:
@@ -125,13 +125,16 @@ def _render_place_sets(
 def find_siphons(
     crn: Any,
     *,
-    max_size: int | None = None,
+    max_size: Optional[int] = None,
     names: str = "label",
+    max_nodes: int = DEFAULT_MAX_NODES,
+    strict_limit: bool = False,
 ) -> List[Set[str]]:
     """Enumerate inclusion-minimal siphons of a SynCRN Petri-net view.
 
-    The search is performed by brute-force subset enumeration up to the
-    requested size bound, followed by inclusion-minimal filtering.
+    The search uses the maximal-siphon closure operator with branch-and-bound
+    descent rather than brute-force subset enumeration; see
+    :mod:`synkit.CRN.Petrinet.siphon_search`.
 
     :param crn: SynCRN-like object or :class:`PetriNet`.
     :type crn: Any
@@ -142,33 +145,39 @@ def find_siphons(
         Whether to return internal place ids or species labels.
         Supported values are ``"id"`` and ``"label"``.
     :type names: str
+    :param max_nodes:
+        Exploration budget for the branch-and-bound search.
+    :type max_nodes: int
+    :param strict_limit:
+        Raise :class:`~synkit.CRN.Petrinet.siphon_search.SiphonSearchLimit`
+        instead of returning a partial result when the budget is exhausted.
+    :type strict_limit: bool
     :return: Inclusion-minimal siphons.
     :rtype: List[Set[str]]
     """
     net = _as_petri(crn)
-    places = net.place_order
-    n = len(places)
-    limit = n if max_size is None else min(max_size, n)
-
-    candidates: List[Set[str]] = []
-    for k in range(1, limit + 1):
-        for combo in combinations(places, k):
-            s = set(combo)
-            if _is_siphon(net, s):
-                candidates.append(s)
-    return _render_place_sets(net, _minimal_sets(candidates), names=names)
+    sets_ = minimal_siphons(
+        net,
+        max_size=max_size,
+        max_nodes=max_nodes,
+        strict_limit=strict_limit,
+    )
+    return _render_place_sets(net, sets_, names=names)
 
 
 def find_traps(
     crn: Any,
     *,
-    max_size: int | None = None,
+    max_size: Optional[int] = None,
     names: str = "label",
+    max_nodes: int = DEFAULT_MAX_NODES,
+    strict_limit: bool = False,
 ) -> List[Set[str]]:
     """Enumerate inclusion-minimal traps of a SynCRN Petri-net view.
 
-    The search is performed by brute-force subset enumeration up to the
-    requested size bound, followed by inclusion-minimal filtering.
+    The search uses the maximal-siphon closure operator with branch-and-bound
+    descent rather than brute-force subset enumeration; see
+    :mod:`synkit.CRN.Petrinet.siphon_search`.
 
     :param crn: SynCRN-like object or :class:`PetriNet`.
     :type crn: Any
@@ -179,21 +188,24 @@ def find_traps(
         Whether to return internal place ids or species labels.
         Supported values are ``"id"`` and ``"label"``.
     :type names: str
+    :param max_nodes:
+        Exploration budget for the branch-and-bound search.
+    :type max_nodes: int
+    :param strict_limit:
+        Raise :class:`~synkit.CRN.Petrinet.siphon_search.SiphonSearchLimit`
+        instead of returning a partial result when the budget is exhausted.
+    :type strict_limit: bool
     :return: Inclusion-minimal traps.
     :rtype: List[Set[str]]
     """
     net = _as_petri(crn)
-    places = net.place_order
-    n = len(places)
-    limit = n if max_size is None else min(max_size, n)
-
-    candidates: List[Set[str]] = []
-    for k in range(1, limit + 1):
-        for combo in combinations(places, k):
-            s = set(combo)
-            if _is_trap(net, s):
-                candidates.append(s)
-    return _render_place_sets(net, _minimal_sets(candidates), names=names)
+    sets_ = minimal_traps(
+        net,
+        max_size=max_size,
+        max_nodes=max_nodes,
+        strict_limit=strict_limit,
+    )
+    return _render_place_sets(net, sets_, names=names)
 
 
 def species_transition_neighborhoods(crn: Any) -> Dict[str, Dict[str, List[str]]]:

@@ -87,6 +87,11 @@ class PathwayFinder:
     Species are not consumed during the qualitative search. Exact
     stoichiometric and token-based validation can be applied afterwards using
     :meth:`validate_candidates`.
+
+    This is the *network* path finder and the one to use for CRN work. The
+    unrelated :class:`synkit.Synthesis.MSR.path_finder.PathFinder` searches
+    synthesis routes through rounds of reaction SMILES and knows nothing about
+    stoichiometry or markings.
     """
 
     def __init__(self, config: Optional[PathFinderConfig] = None) -> None:

@@ -105,7 +105,7 @@ examples.
 ## Publications
 
 - [Lewis-labeled graphs: curly arrows and fishhooks as executable electron
-  transfers](https://arxiv.org/abs/2607.26088), arXiv:2607.26088 (2026).
+  transfers](https://arxiv.org/abs/2607.26088), submitted (2026).
 - [SynKit: A Graph-Based Python Framework for Rule-Based Reaction Modeling and
   Analysis](https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02123), *Journal
   of Chemical Information and Modeling* (2025).

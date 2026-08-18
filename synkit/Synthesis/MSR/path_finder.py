@@ -1,3 +1,17 @@
+"""Route search over rounds of reaction SMILES for multi-step retrosynthesis.
+
+This is the *synthesis-planning* path finder: it consumes the round-structured
+reaction SMILES produced by an MSR expansion and searches molecule-to-molecule
+routes under a carbon-count constraint. It has no notion of stoichiometry,
+markings or reaction networks.
+
+For pathway search over a reaction *network* —
+:class:`~synkit.CRN.Structure.syncrn.SynCRN` incidence, reaction flows, and
+Petri-net realizability of a candidate route — use
+:class:`synkit.CRN.Pathway.pathfinder.PathwayFinder` instead. The two solve
+different problems and are not alternative implementations of one algorithm.
+"""
+
 import heapq
 from collections import deque
 from typing import List, Dict, Optional
@@ -5,6 +19,12 @@ from synkit.Chem.utils import count_carbons
 
 
 class PathFinder:
+    """Search synthesis routes through rounds of reaction SMILES.
+
+    See the module docstring for how this relates to
+    :class:`synkit.CRN.Pathway.pathfinder.PathwayFinder`.
+    """
+
     def __init__(
         self,
         reaction_rounds: List[Dict[str, List[str]]],

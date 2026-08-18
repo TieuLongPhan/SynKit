@@ -38,6 +38,14 @@ class CRNExpand:
     skip_no_change: bool = True
     allow_empty_side: bool = False
 
+    # When True, species occurring on both sides of a reaction are removed
+    # before the reaction is written to the graph. This is the pre-1.6.3
+    # behaviour; it deletes catalysts and spectators, making them invisible to
+    # every downstream analysis, and it discards reactions such as
+    # ``2A >> A + B`` whose reactant side then becomes empty. Deduplication
+    # always uses the multiset delta regardless of this flag.
+    strip_spectators: bool = False
+
     dedup_delta: bool = True
     dedup_across_rules: bool = False
 
@@ -157,11 +165,70 @@ class CRNExpand:
         )
         return eid
 
-    def _delta_keep_smiles(
+    def _reaction_delta(
         self,
         reactant_ids: List[int],
         products_std_all: List[str],
-    ) -> Tuple[List[int], List[str], Tuple[str, ...], Tuple[str, ...]]:
+    ) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+        """Return the net change of a reaction as a pair of sorted key tuples.
+
+        The delta is the *multiset* difference between the two sides, so a
+        species appearing on both sides cancels only as many times as it
+        actually occurs. For ``2A >> A + B`` the delta is ``(("A",), ("B",))``,
+        not ``((), ("B",))``.
+
+        The delta identifies the transformation and is what deduplication and
+        :attr:`skip_no_change` operate on. It is deliberately *not* what gets
+        written to the graph: see :meth:`_reaction_sides`.
+
+        :param reactant_ids:
+            Species node ids on the reactant side, with repeats.
+        :type reactant_ids: List[int]
+
+        :param products_std_all:
+            Standardized product SMILES, with repeats.
+        :type products_std_all: List[str]
+
+        :return:
+            Pair ``(reactant_delta_keys, product_delta_keys)``.
+        :rtype: Tuple[Tuple[str, ...], Tuple[str, ...]]
+        """
+        r_counts = Counter(self.graph.nodes[rid]["smiles"] for rid in reactant_ids)
+        p_counts = Counter(products_std_all)
+
+        r_delta = r_counts - p_counts
+        p_delta = p_counts - r_counts
+
+        return tuple(sorted(r_delta.elements())), tuple(sorted(p_delta.elements()))
+
+    def _reaction_sides(
+        self,
+        reactant_ids: List[int],
+        products_std_all: List[str],
+    ) -> Tuple[List[int], List[str]]:
+        """Return the species that should be recorded on each side.
+
+        By default both sides are kept in full, so catalysts and spectators
+        retain their incidence edges and remain visible to downstream
+        stoichiometric, siphon and conservation-law analysis. When
+        :attr:`strip_spectators` is enabled the legacy behaviour is restored
+        and species common to both sides are removed.
+
+        :param reactant_ids:
+            Species node ids on the reactant side, with repeats.
+        :type reactant_ids: List[int]
+
+        :param products_std_all:
+            Standardized product SMILES, with repeats.
+        :type products_std_all: List[str]
+
+        :return:
+            Pair ``(reactant_ids, product_smiles)`` to write to the graph.
+        :rtype: Tuple[List[int], List[str]]
+        """
+        if not self.strip_spectators:
+            return list(reactant_ids), list(products_std_all)
+
         r_smiles_all = [self.graph.nodes[rid]["smiles"] for rid in reactant_ids]
         unchanged = set(r_smiles_all) & set(products_std_all)
 
@@ -170,12 +237,7 @@ class CRNExpand:
         ]
         p_keep_smiles = [ps for ps in products_std_all if ps not in unchanged]
 
-        r_keep_keys = tuple(
-            sorted(self.graph.nodes[rid]["smiles"] for rid in r_keep_ids)
-        )
-        p_keep_keys = tuple(sorted(p_keep_smiles))
-
-        return r_keep_ids, p_keep_smiles, r_keep_keys, p_keep_keys
+        return r_keep_ids, p_keep_smiles
 
     def _iter_mixtures_for_rule(
         self,
@@ -375,12 +437,18 @@ class CRNExpand:
             if not products_std_all:
                 continue
 
-            r_keep, p_keep_smiles, r_keep_keys, p_keep_keys = self._delta_keep_smiles(
+            # The delta identifies the transformation (dedup, no-change test);
+            # the recorded sides are what actually goes into the graph.
+            r_keep_keys, p_keep_keys = self._reaction_delta(
+                reactant_ids_int,
+                products_std_all,
+            )
+            r_keep, p_keep_smiles = self._reaction_sides(
                 reactant_ids_int,
                 products_std_all,
             )
 
-            if self.skip_no_change and (not r_keep and not p_keep_smiles):
+            if self.skip_no_change and not r_keep_keys and not p_keep_keys:
                 continue
             if (not self.allow_empty_side) and (not r_keep or not p_keep_smiles):
                 continue
@@ -516,6 +584,7 @@ def build_crn_from_smarts(
     allow_self_mixtures: bool = False,
     skip_no_change: bool = True,
     allow_empty_side: bool = False,
+    strip_spectators: bool = False,
     dedup_delta: bool = True,
     dedup_across_rules: bool = False,
 ) -> nx.DiGraph:
@@ -533,6 +602,7 @@ def build_crn_from_smarts(
         allow_self_mixtures=allow_self_mixtures,
         skip_no_change=skip_no_change,
         allow_empty_side=allow_empty_side,
+        strip_spectators=strip_spectators,
         dedup_delta=dedup_delta,
         dedup_across_rules=dedup_across_rules,
     )

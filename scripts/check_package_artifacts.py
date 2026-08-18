@@ -15,6 +15,10 @@ import zipfile
 
 DATA_FILES = ("aldol.json.gz", "paracetamol.json.gz")
 
+#: Package data outside ``synkit/Data`` that must ship, as
+#: ``(package path, filename)`` pairs relative to ``synkit``.
+PACKAGE_DATA = (("CRN/Benchmark/data", "kegg_modules.json"),)
+
 
 def _one_artifact(directory: Path, pattern: str) -> Path:
     """Return the only artifact matching a glob.
@@ -44,9 +48,11 @@ def _assert_member_suffixes(members: set[str], artifact: Path) -> None:
     :type artifact: Path
     :raises RuntimeError: If a required member is absent.
     """
-    required = ["synkit/__init__.py"] + [
-        f"synkit/Data/{filename}" for filename in DATA_FILES
-    ]
+    required = (
+        ["synkit/__init__.py"]
+        + [f"synkit/Data/{filename}" for filename in DATA_FILES]
+        + [f"synkit/{package}/{filename}" for package, filename in PACKAGE_DATA]
+    )
     missing = [
         suffix
         for suffix in required
@@ -104,6 +110,10 @@ for filename in {DATA_FILES!r}:
     resource = files("synkit").joinpath("Data", filename)
     if not resource.is_file():
         raise SystemExit("missing installed data file: %s" % filename)
+for package, filename in {PACKAGE_DATA!r}:
+    resource = files("synkit").joinpath(package, filename)
+    if not resource.is_file():
+        raise SystemExit("missing installed package data: %s/%s" % (package, filename))
 print("synkit %s: wheel import and data files verified" % synkit.__version__)
 """
         subprocess.run([str(python), "-c", code], check=True, cwd=root)

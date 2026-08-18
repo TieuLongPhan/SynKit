@@ -259,8 +259,11 @@ class PathwayRealizability:
     ) -> Dict[str, int]:
         """Resolve user-supplied flow keys onto reaction tokens.
 
-        Keys may match reaction token, internal id, label, or source node id.
-        Missing reactions default to 0.
+        Keys may match reaction token, internal id, label, or source node id,
+        tried in that order; the first match wins. Missing reactions default
+        to 0. The order matters only when a network mixes naming conventions —
+        with the default prefixed id policy (``r_1``, ``s_1``) reaction ids
+        cannot collide with species ids.
 
         :param incidence_reaction_order:
             Canonical reaction-id order from the incidence view.

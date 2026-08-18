@@ -4,19 +4,32 @@ CRN
 ===
 
 The ``synkit.CRN`` package provides SynKit’s **chemical reaction network** layer.
-It supports CRN construction from rules or curated pathway data, normalized network
-representation through :py:class:`~synkit.CRN.Structure.syncrn.SynCRN`, symmetry-aware
-comparison, stoichiometric and thermodynamic summaries, and pathway-level analysis such
-as reachability and realizability.
+It covers the whole chain from chemistry or curated pathway data to a structural
+verdict: construction, normalized representation through
+:py:class:`~synkit.CRN.Structure.syncrn.SynCRN`, Chemical Reaction Network Theory
+(complexes, linkage classes, deficiency), the Petri-net layer (minimal semiflows,
+siphons, persistence), pathway reachability and realizability, symmetry-aware
+comparison, and SBML interchange with the wider CRN ecosystem.
 
 Key CRN submodules include:
 
 - **Construct** — expand rule systems into reaction-network digraphs
-- **Query** — retrieve and curate KEGG-derived reaction collections
+- **Query** — retrieve and curate KEGG-derived reaction collections, and build
+  a ``SynCRN`` straight from a KEGG module
 - **Structure** — represent CRNs as normalized ``SynCRN`` objects
-- **Symmetry** — canonicalization and isomorphism for CRN comparison
-- **Props** — stoichiometric, thermodynamic, and dynamical summaries
+- **Props** — stoichiometry, exact conservation laws, conserved moieties, and
+  CRNT (deficiency, linkage classes, weak reversibility, the Deficiency Zero
+  and Deficiency One theorems)
+- **Petrinet** — minimal semiflows, siphons, traps and structural persistence
 - **Pathway** — reachability, path-finding, and realizability analysis
+- **Symmetry** — canonicalization and isomorphism for CRN comparison
+- **IO** — SBML import and export
+- **Benchmark** — the shipped validation set, scaling benchmark and KEGG case
+  study
+
+Everything in the list above is importable from the top level::
+
+    from synkit.CRN import SynCRN, crnt_summary, conserved_moieties, crn_to_sbml
 
 .. raw:: html
 
@@ -353,6 +366,130 @@ Example: realizability
 
       True
 
+Chemical Reaction Network Theory
+--------------------------------
+
+:py:mod:`synkit.CRN.Props.deficiency` supplies the structural quantities CRNT is
+built on, and the two classical theorems that turn them into dynamical verdicts.
+Writing ``n`` for the number of complexes, ``l`` for the number of linkage
+classes and ``s`` for the rank of the stoichiometric matrix, the **deficiency**
+is ``delta = n - l - s``. All ranks are computed exactly over rationals, so an
+integer network never gets a floating-point deficiency.
+
+Example: deficiency and the Deficiency Zero Theorem
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+   :caption: Structural verdicts for a reversible enzyme mechanism
+   :linenos:
+
+   from synkit.CRN import SynCRN, crnt_summary, deficiency_zero_verdict
+
+   syn = SynCRN.from_reaction_strings([
+       "E + S >> ES", "ES >> E + S", "ES >> E + P", "E + P >> ES",
+   ])
+
+   print(crnt_summary(syn))
+   print(deficiency_zero_verdict(syn)["conclusion"])
+
+.. admonition:: Example output
+   :class: note synkit-example-output
+
+   .. code-block:: text
+
+      unique_stable_equilibrium
+
+Example: conservation laws and conserved moieties
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``integer_conservation_laws`` returns an exact integer basis of ``ker(S^T)``;
+``conserved_moieties`` returns the non-negative, inclusion-minimal laws — the
+ones with a chemical reading such as "total enzyme".
+
+.. code-block:: python
+   :caption: Moiety pools of a phosphorylation cycle
+   :linenos:
+
+   from synkit.CRN import SynCRN, conserved_moieties
+
+   syn = SynCRN.from_reaction_strings([
+       "S0 + E >> S0E", "S0E >> S0 + E", "S0E >> S1 + E",
+       "S1 + F >> S1F", "S1F >> S1 + F", "S1F >> S0 + F",
+   ])
+   print(conserved_moieties(syn))
+
+Petri net
+---------
+
+The ``synkit.CRN.Petrinet`` package gives the Petri-net view of a network:
+minimal **non-negative integer** semiflows (Farkas / Colom-Silva), minimal
+siphons and traps found by a closure operator with branch-and-bound rather than
+subset enumeration, and structural persistence via the
+Angeli-De Leenheer-Sontag condition.
+
+.. code-block:: python
+   :caption: Siphons and structural persistence
+   :linenos:
+
+   from synkit.CRN import SynCRN, find_siphons, siphon_persistence_details
+
+   syn = SynCRN.from_reaction_strings(["A >> B", "B >> A", "C >> D", "D >> C"])
+   print(find_siphons(syn))
+   print(siphon_persistence_details(syn).persistence_ok)
+
+.. admonition:: Example output
+   :class: note synkit-example-output
+
+   .. code-block:: text
+
+      True
+
+SBML interchange
+----------------
+
+:py:mod:`synkit.CRN.IO.sbml` reads and writes SBML Level 3 Version 2, so a
+network built here can be analysed by ``crnpy``, CRNT4SBML, CoNtRol or COPASI,
+and a published SBML model can be analysed here. The adapter is self-contained
+and needs no ``libsbml`` installation.
+
+.. code-block:: python
+   :caption: Round-trip a network through SBML
+   :linenos:
+
+   from synkit.CRN import SynCRN, crn_from_sbml, crn_to_sbml
+
+   syn = SynCRN.from_reaction_strings(["2A >> B", "B >> 2A"])
+   back = crn_from_sbml(crn_to_sbml(syn))
+   print(back.to_equations(species="label", include_id=False))
+
+Benchmark, validation and case study
+------------------------------------
+
+``synkit.CRN.Benchmark`` ships the material behind the package's published
+results, all reproducible offline:
+
+- a **validation set** of literature and regression networks, where every
+  quantity is additionally recomputed by an independent route (deficiency via a
+  rank identity that never counts linkage classes, siphons via brute force,
+  semiflows via their defining equations);
+- a **scaling benchmark** over four network families;
+- a **KEGG case study** over four cached metabolic modules.
+
+.. code-block:: python
+   :caption: Reproduce the validation table and the case study
+   :linenos:
+
+   from synkit.CRN.Benchmark import (
+       analyze_kegg_module, run_validation, validation_table,
+   )
+
+   print(validation_table(run_validation()))
+   print(analyze_kegg_module("M00001"))
+
+The same artifacts are produced from the command line by::
+
+    python Experiment/CRN/run_all.py
+
 Recommended workflow
 --------------------
 
@@ -360,9 +497,11 @@ A practical CRN workflow in SynKit is:
 
 1. **Construct** a CRN from rules, or **Query** a curated pathway source such as KEGG
 2. Convert the result into :py:class:`~synkit.CRN.Structure.syncrn.SynCRN`
-3. Use **Props** to inspect stoichiometric, thermodynamic, or dynamical features
-4. Use **Pathway** to analyze reachability and realizability
-5. Use **Symmetry** for canonicalization or structural comparison
+3. Use **Props** to inspect stoichiometry, conservation laws and CRNT verdicts
+4. Use **Petrinet** for semiflows, siphons and structural persistence
+5. Use **Pathway** to analyze reachability and realizability
+6. Use **Symmetry** for canonicalization or structural comparison
+7. Use **IO** to exchange the network with other CRN tools through SBML
 
 See Also
 --------

@@ -56,6 +56,10 @@ SPHINX_FIELD = re.compile(
 def repository_python_files() -> list[Path]:
     """Return tracked and non-ignored untracked Python files.
 
+    ``git ls-files --cached`` still lists files whose deletion is staged but not
+    committed, so paths that no longer exist on disk are filtered out; a deleted
+    file has no docstrings to check.
+
     :return: Deterministically ordered Python paths in the repository.
     :rtype: list[Path]
     """
@@ -73,7 +77,8 @@ def repository_python_files() -> list[Path]:
         capture_output=True,
         text=True,
     )
-    return [ROOT / name for name in result.stdout.splitlines() if name]
+    candidates = (ROOT / name for name in result.stdout.splitlines() if name)
+    return [path for path in candidates if path.is_file()]
 
 
 def python_files(paths: Iterable[Path]) -> list[Path]:

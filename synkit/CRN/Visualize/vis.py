@@ -210,7 +210,7 @@ class CRNVis:
     wrap_label_at: Optional[int] = None
 
     style: CRNStyle = field(default_factory=CRNStyle)
-    palette: ColorPalette | str = "nature_journal"
+    palette: ColorPalette | str = "paper_sage"
     palette_overrides: Optional[dict[str, str]] = None
 
     rule_color_mode: str = "palette"

@@ -46,12 +46,6 @@ Public API
     g1_to_g2 = matcher.get_mappings(direction="G1_to_G2")[0]
     print(g1_to_g2)  # e.g. {0: 10, 1: 11}
 
-Classes
-~~~~~~~
-.. autosummary::
-   :toctree: generated/
-
-   ApproxMCSMatcher
 """
 
 from __future__ import annotations

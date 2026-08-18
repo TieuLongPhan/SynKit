@@ -58,10 +58,15 @@ def test_reaction_namespace_exports_domain_api():
 
 
 def test_crn_namespace_exports_domain_api():
+    from synkit.CRN.Visualize import CRNVis as CanonicalCRNVis
     from synkit.Vis import crn
-    from synkit.Vis.crn import CRNVisualizer
+    from synkit.Vis.crn import CRNStyle, CRNVis, draw_crn
 
-    assert crn.CRNVisualizer is CRNVisualizer
+    assert crn.CRNVis is CRNVis
+    assert crn.CRNStyle is CRNStyle
+    assert crn.draw_crn is draw_crn
+    # One visualizer, re-exported -- not a second implementation.
+    assert CRNVis is CanonicalCRNVis
 
 
 def test_legacy_visualization_modules_delegate_to_domain_modules():

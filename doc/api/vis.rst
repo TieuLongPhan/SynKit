@@ -71,9 +71,8 @@ Reaction, graph, and chemical-space utilities
 CRN visualizer
 --------------
 
-.. automodule:: synkit.Vis.crn.visualizer
-   :members:
-   :show-inheritance:
+The :mod:`synkit.Vis.crn` compatibility namespace re-exports the CRN
+visualization API documented under :doc:`crn`.
 
 .. automodule:: synkit.Vis.pdf_writer
    :members:

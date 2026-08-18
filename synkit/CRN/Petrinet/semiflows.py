@@ -5,12 +5,22 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 
 from .net import PetriNet
+from .minimal_semiflows import minimal_semiflows
 from synkit.CRN.Props.helper import _as_graph, _species_and_rule_order
 from synkit.CRN.Props.stoich import (
     left_nullspace,
     right_nullspace,
     stoichiometric_matrix as props_stoichiometric_matrix,
 )
+
+__all__ = [
+    "stoichiometric_matrix",
+    "find_p_semiflows",
+    "find_t_semiflows",
+    "left_kernel_basis",
+    "right_kernel_basis",
+    "semiflow_supports",
+]
 
 
 def _nullspace(a: np.ndarray, *, rtol: float = 1e-12) -> np.ndarray:
@@ -163,17 +173,17 @@ def stoichiometric_matrix(crn: Any) -> Tuple[List[str], List[str], np.ndarray]:
     return [str(x) for x in species_order], [str(x) for x in reaction_order], S
 
 
-def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
-    """Compute P-semiflows, also called place invariants.
+def left_kernel_basis(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
+    """Compute a real basis of the left kernel ``ker(S^T)``.
 
-    P-semiflows form a basis of the left kernel of the stoichiometric matrix,
-    that is ``ker(S^T)``. The returned matrix has shape ``(n_species, k)``,
-    where each column is one basis vector.
+    The returned matrix has shape ``(n_species, k)``, where each column is one
+    basis vector.
 
-    For SynCRN-like graph inputs, the computation delegates to
-    :func:`synkit.CRN.Props.stoich.left_nullspace`. For native
-    :class:`PetriNet` inputs, the stoichiometric matrix is built locally and
-    the null space is computed numerically.
+    .. warning::
+       These basis vectors are **not** P-semiflows. They may be negative or
+       mixed-sign, and because any rotation of the kernel is an equally valid
+       basis, their supports are not meaningful. Use
+       :func:`find_p_semiflows` for conservation-law analysis.
 
     :param crn:
         Petri net, SynCRN-like object, or supported bipartite graph.
@@ -182,7 +192,107 @@ def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
         Relative tolerance used for null-space detection.
     :type rtol: float
     :return:
-        Matrix whose columns form a basis of the P-semiflow space.
+        Matrix whose columns form a basis of ``ker(S^T)``.
+    :rtype: np.ndarray
+
+    .. rubric:: Example
+
+    .. code-block:: python
+
+        from synkit.CRN.Structure import SynCRN
+        from synkit.CRN.Petrinet.semiflows import left_kernel_basis
+
+        syn = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
+        print(left_kernel_basis(syn).shape)
+    """
+    if isinstance(crn, PetriNet):
+        _, _, s = stoichiometric_matrix(crn)
+        return _nullspace(s.T, rtol=rtol)
+
+    return left_nullspace(crn, rtol=rtol)
+
+
+def right_kernel_basis(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
+    """Compute a real basis of the right kernel ``ker(S)``.
+
+    The returned matrix has shape ``(n_reactions, k)``, where each column is
+    one basis vector.
+
+    .. warning::
+       These basis vectors are **not** T-semiflows; see
+       :func:`left_kernel_basis`. Use :func:`find_t_semiflows` for flux-mode
+       analysis.
+
+    :param crn:
+        Petri net, SynCRN-like object, or supported bipartite graph.
+    :type crn: Any
+    :param rtol:
+        Relative tolerance used for null-space detection.
+    :type rtol: float
+    :return:
+        Matrix whose columns form a basis of ``ker(S)``.
+    :rtype: np.ndarray
+
+    .. rubric:: Example
+
+    .. code-block:: python
+
+        from synkit.CRN.Structure import SynCRN
+        from synkit.CRN.Petrinet.semiflows import right_kernel_basis
+
+        syn = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
+        print(right_kernel_basis(syn).shape)
+    """
+    if isinstance(crn, PetriNet):
+        _, _, s = stoichiometric_matrix(crn)
+        return _nullspace(s, rtol=rtol)
+
+    return right_nullspace(crn, rtol=rtol)
+
+
+def _semiflow_matrix(crn: Any, *, kind: str) -> np.ndarray:
+    """Build the minimal-semiflow matrix for a CRN-like input.
+
+    :param crn:
+        Petri net, SynCRN-like object, or supported bipartite graph.
+    :type crn: Any
+    :param kind:
+        Either ``"p"`` or ``"t"``.
+    :type kind: str
+    :return:
+        Non-negative integer matrix whose columns are minimal semiflows.
+    :rtype: np.ndarray
+    """
+    _, _, s = stoichiometric_matrix(crn)
+    flows = minimal_semiflows(s, kind=kind)
+
+    width = s.shape[0] if kind == "p" else s.shape[1]
+    if not flows:
+        return np.zeros((width, 0), dtype=float)
+    return np.asarray(flows, dtype=float).T
+
+
+def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
+    """Compute minimal P-semiflows, also called place invariants.
+
+    A P-semiflow is a vector ``y >= 0`` with ``y^T S = 0``; its support is a
+    set of species whose weighted total is conserved by every reaction. The
+    returned matrix has shape ``(n_species, k)``, where each column is one
+    minimal semiflow with primitive non-negative integer entries.
+
+    Computation is exact and uses the Farkas / Colom-Silva elimination scheme
+    (see :mod:`synkit.CRN.Petrinet.minimal_semiflows`), so results do not
+    depend on a floating-point tolerance.
+
+    :param crn:
+        Petri net, SynCRN-like object, or supported bipartite graph.
+    :type crn: Any
+    :param rtol:
+        Accepted for backward compatibility and ignored; the computation is
+        exact.
+    :type rtol: float
+    :return:
+        Matrix whose columns are the minimal P-semiflows.
     :rtype: np.ndarray
 
     .. rubric:: Example
@@ -192,37 +302,36 @@ def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
         from synkit.CRN.Structure import SynCRN
         from synkit.CRN.Petrinet.semiflows import find_p_semiflows
 
-        syn = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
-        basis = find_p_semiflows(syn)
-        print(basis.shape)
+        syn = SynCRN.from_reaction_strings(["A>>B", "C>>D"])
+        print(find_p_semiflows(syn))
+        # [[1. 0.]
+        #  [1. 0.]
+        #  [0. 1.]
+        #  [0. 1.]]
     """
-    if isinstance(crn, PetriNet):
-        _, _, s = stoichiometric_matrix(crn)
-        return _nullspace(s.T, rtol=rtol)
-
-    return left_nullspace(crn, rtol=rtol)
+    return _semiflow_matrix(crn, kind="p")
 
 
 def find_t_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
-    """Compute T-semiflows, also called transition invariants.
+    """Compute minimal T-semiflows, also called transition invariants.
 
-    T-semiflows form a basis of the right kernel of the stoichiometric matrix,
-    that is ``ker(S)``. The returned matrix has shape ``(n_reactions, k)``,
-    where each column is one basis vector.
+    A T-semiflow is a vector ``x >= 0`` with ``S x = 0``; its support is a set
+    of reactions that, fired with the given multiplicities, returns the network
+    to its starting marking. The returned matrix has shape
+    ``(n_reactions, k)``, where each column is one minimal semiflow with
+    primitive non-negative integer entries.
 
-    For SynCRN-like graph inputs, the computation delegates to
-    :func:`synkit.CRN.Props.stoich.right_nullspace`. For native
-    :class:`PetriNet` inputs, the stoichiometric matrix is built locally and
-    the null space is computed numerically.
+    Computation is exact; see :func:`find_p_semiflows`.
 
     :param crn:
         Petri net, SynCRN-like object, or supported bipartite graph.
     :type crn: Any
     :param rtol:
-        Relative tolerance used for null-space detection.
+        Accepted for backward compatibility and ignored; the computation is
+        exact.
     :type rtol: float
     :return:
-        Matrix whose columns form a basis of the T-semiflow space.
+        Matrix whose columns are the minimal T-semiflows.
     :rtype: np.ndarray
 
     .. rubric:: Example
@@ -233,14 +342,11 @@ def find_t_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
         from synkit.CRN.Petrinet.semiflows import find_t_semiflows
 
         syn = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
-        basis = find_t_semiflows(syn)
-        print(basis.shape)
+        print(find_t_semiflows(syn))
+        # [[1.]
+        #  [1.]]
     """
-    if isinstance(crn, PetriNet):
-        _, _, s = stoichiometric_matrix(crn)
-        return _nullspace(s, rtol=rtol)
-
-    return right_nullspace(crn, rtol=rtol)
+    return _semiflow_matrix(crn, kind="t")
 
 
 def _select_semiflow_basis(
@@ -249,7 +355,7 @@ def _select_semiflow_basis(
     kind: str,
     rtol: float,
 ) -> Tuple[List[str], np.ndarray]:
-    """Select the appropriate semiflow basis together with its label order.
+    """Select the minimal semiflows together with their label order.
 
     For P-semiflows, the returned order corresponds to species / places. For
     T-semiflows, the returned order corresponds to reactions / transitions.
@@ -261,7 +367,8 @@ def _select_semiflow_basis(
         Either ``"p"`` for P-semiflows or ``"t"`` for T-semiflows.
     :type kind: str
     :param rtol:
-        Relative tolerance used for null-space detection.
+        Accepted for backward compatibility and ignored; the computation is
+        exact.
     :type rtol: float
     :return:
         Tuple ``(order, basis)``, where ``order`` labels the rows of ``basis``.
@@ -281,19 +388,12 @@ def _select_semiflow_basis(
         print(order)
         print(basis.shape)
     """
-    species_order, reaction_order, s = stoichiometric_matrix(crn)
+    if kind not in {"p", "t"}:
+        raise ValueError("kind must be 'p' or 't'")
 
-    if kind == "p":
-        if isinstance(crn, PetriNet):
-            return species_order, _nullspace(s.T, rtol=rtol)
-        return species_order, find_p_semiflows(crn, rtol=rtol)
-
-    if kind == "t":
-        if isinstance(crn, PetriNet):
-            return reaction_order, _nullspace(s, rtol=rtol)
-        return reaction_order, find_t_semiflows(crn, rtol=rtol)
-
-    raise ValueError("kind must be 'p' or 't'")
+    species_order, reaction_order, _ = stoichiometric_matrix(crn)
+    order = species_order if kind == "p" else reaction_order
+    return order, _semiflow_matrix(crn, kind=kind)
 
 
 def _basis_column_support(

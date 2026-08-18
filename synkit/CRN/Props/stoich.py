@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from fractions import Fraction
 from math import gcd
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -33,6 +33,7 @@ __all__ = [
     "right_nullspace",
     "left_right_kernels",
     "integer_conservation_laws",
+    "conserved_moieties",
     "StoichSummary",
     "summary",
 ]
@@ -418,31 +419,172 @@ def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[i
     return ints
 
 
-def integer_conservation_laws(crn: Any, *, rtol: float = 1e-12) -> List[List[int]]:
-    """Return an approximate minimal integer basis for ``ker(S^T)``.
+def _primitive_integer_vector(vec: Sequence[Fraction]) -> List[int]:
+    """Scale an exact rational vector to a primitive integer vector.
 
-    Each returned vector corresponds to an approximate conservation law over
-    species, obtained by converting floating null-space basis vectors into
-    reduced integer vectors.
+    The vector is multiplied by the least common multiple of its denominators,
+    divided by the greatest common divisor of the result, and sign-normalized so
+    that the first nonzero entry is positive.
+
+    :param vec: Exact rational vector.
+    :type vec: Sequence[Fraction]
+    :return: Primitive integer vector.
+    :rtype: List[int]
+    """
+    den_lcm = 1
+    for value in vec:
+        den_lcm = _lcm(den_lcm, value.denominator)
+
+    ints = [int(value * den_lcm) for value in vec]
+
+    divisor = 0
+    for value in ints:
+        divisor = gcd(divisor, abs(value))
+    if divisor > 1:
+        ints = [value // divisor for value in ints]
+
+    for value in ints:
+        if value != 0:
+            if value < 0:
+                ints = [-x for x in ints]
+            break
+
+    return ints
+
+
+def _exact_null_space(rows: Sequence[Sequence[Any]], n_cols: int) -> List[List[int]]:
+    """Compute an exact integer basis of the null space of a rational matrix.
+
+    Row-reduces over :class:`~fractions.Fraction`, so the result is exact: every
+    returned vector ``v`` satisfies ``M v = 0`` identically rather than to
+    within a tolerance.
+
+    :param rows: Matrix rows.
+    :type rows: Sequence[Sequence[Any]]
+    :param n_cols: Number of columns.
+    :type n_cols: int
+    :return: Primitive integer basis vectors of the null space.
+    :rtype: List[List[int]]
+    """
+    if n_cols == 0:
+        return []
+
+    mat: List[List[Fraction]] = [
+        [Fraction(str(value)) if not isinstance(value, int) else Fraction(value)
+         for value in row]
+        for row in rows
+    ]
+
+    pivot_cols: List[int] = []
+    pivot_row = 0
+    for col in range(n_cols):
+        if pivot_row >= len(mat):
+            break
+        candidate = next(
+            (r for r in range(pivot_row, len(mat)) if mat[r][col] != 0), None
+        )
+        if candidate is None:
+            continue
+
+        mat[pivot_row], mat[candidate] = mat[candidate], mat[pivot_row]
+        pivot_value = mat[pivot_row][col]
+        mat[pivot_row] = [value / pivot_value for value in mat[pivot_row]]
+
+        for r in range(len(mat)):
+            if r != pivot_row and mat[r][col] != 0:
+                factor = mat[r][col]
+                mat[r] = [a - factor * b for a, b in zip(mat[r], mat[pivot_row])]
+
+        pivot_cols.append(col)
+        pivot_row += 1
+
+    free_cols = [c for c in range(n_cols) if c not in pivot_cols]
+
+    basis: List[List[int]] = []
+    for free_col in free_cols:
+        vector = [Fraction(0)] * n_cols
+        vector[free_col] = Fraction(1)
+        for row_index, pivot_col in enumerate(pivot_cols):
+            vector[pivot_col] = -mat[row_index][free_col]
+        basis.append(_primitive_integer_vector(vector))
+
+    return basis
+
+
+def integer_conservation_laws(crn: Any, *, rtol: float = 1e-12) -> List[List[int]]:
+    """Return an exact integer basis for ``ker(S^T)``, the conservation laws.
+
+    A conservation law is a vector ``y`` over species with ``y^T S = 0``: the
+    quantity ``y . c`` is constant along every trajectory, whatever the kinetics.
+    Basis vectors are exact primitive integers obtained by rational row
+    reduction, so ``y^T S`` is identically zero rather than zero to within a
+    tolerance.
+
+    Basis vectors may contain negative entries. For the non-negative,
+    inclusion-minimal laws — the *conserved moieties*, which are the ones with a
+    chemical reading such as "total enzyme" or "total phosphate" — use
+    :func:`conserved_moieties`.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
     :type crn: Any
-    :param rtol: Relative tolerance used in null-space computation.
+    :param rtol:
+        Retained for backward compatibility and ignored; the computation is
+        exact and needs no tolerance.
     :type rtol: float
     :return:
-        List of integer vectors approximating a basis of the left kernel.
+        Exact integer basis of the left kernel, one law per row.
     :rtype: List[List[int]]
+
+    .. rubric:: Example
+
+    .. code-block:: python
+
+        crn = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
+        print(integer_conservation_laws(crn))
+        # [[1, 1]]
     """
-    B = left_nullspace(crn, rtol=rtol)
-    if B is None or B.size == 0:
+    S = stoichiometric_matrix(crn)
+    if S.size == 0:
         return []
 
-    out: List[List[int]] = []
-    for k in range(B.shape[1]):
-        col = B[:, k]
-        ints = _vector_to_minimal_integer(col, tol=1e-9)
-        out.append(ints)
-    return out
+    n_species, _ = S.shape
+    rows = [[int(v) if float(v).is_integer() else float(v) for v in S[:, j]]
+            for j in range(S.shape[1])]
+    return _exact_null_space(rows, n_species)
+
+
+def conserved_moieties(crn: Any) -> List[List[int]]:
+    """Return the minimal non-negative integer conservation laws.
+
+    These are the P-semiflows of the network's Petri-net view: vectors ``y >= 0``
+    with ``y^T S = 0`` and inclusion-minimal support. Each one reads as a
+    conserved pool — total enzyme, total phosphate, a carbon backbone — which is
+    what makes them the useful form in a metabolic or signalling context.
+
+    Unlike :func:`integer_conservation_laws`, this is not a basis: a network can
+    have more minimal moieties than the dimension of its left kernel, and a
+    network with only sign-mixed conservation laws has none at all.
+
+    :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
+    :type crn: Any
+    :return:
+        Minimal non-negative integer conservation laws, one per row, in the
+        canonical species order.
+    :rtype: List[List[int]]
+
+    .. rubric:: Example
+
+    .. code-block:: python
+
+        crn = SynCRN.from_reaction_strings(["E+S>>ES", "ES>>E+S", "ES>>E+P"])
+        print(conserved_moieties(crn))
+    """
+    from ..Petrinet.minimal_semiflows import minimal_semiflows
+
+    S = stoichiometric_matrix(crn)
+    if S.size == 0:
+        return []
+    return minimal_semiflows(S, kind="p")
 
 
 # ---------------------------------------------------------------------------
@@ -544,7 +686,9 @@ class StoichSummary:
         """
         S = stoichiometric_matrix(crn)
         n_species, n_reactions = S.shape
-        rank = int(np.linalg.matrix_rank(S))
+        # ``matrix_rank`` raises on a zero-size array, which a network with no
+        # species or no reactions legitimately produces.
+        rank = 0 if S.size == 0 else int(np.linalg.matrix_rank(S))
         return cls(
             n_species=n_species,
             n_reactions=n_reactions,

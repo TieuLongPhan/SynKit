@@ -20,6 +20,8 @@ import hashlib
 
 import networkx as nx
 
+from ..kinds import REACTION_KINDS
+
 __all__ = [
     "SymmetryConfig",
     "WLResult",
@@ -607,8 +609,18 @@ def node_kind(attrs: Mapping[str, Any], config: SymmetryConfig) -> Any:
     :return:
         Node kind value or ``None``.
     :rtype: Any
+
+    .. note::
+       The legacy reaction spelling ``"rule"`` is normalized to
+       ``config.rule_kind_value`` so that two otherwise identical networks do
+       not canonicalize differently merely because one spells reaction nodes
+       ``kind="reaction"`` and the other ``kind="rule"``. See
+       :mod:`synkit.CRN.kinds`.
     """
-    return attrs.get(config.kind_attr_key, None)
+    kind = attrs.get(config.kind_attr_key, None)
+    if isinstance(kind, str) and kind.strip().lower() in REACTION_KINDS:
+        return config.rule_kind_value
+    return kind
 
 
 def _append_identity_token(
