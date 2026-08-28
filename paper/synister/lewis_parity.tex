@@ -1,0 +1,635 @@
+\section{Integral Lewis Distance and Its Parity}
+\label{sec:lewis-parity}
+
+The parity of chemical distance depends on the resources represented by the
+objective.  A bond-only projection need not have even distance, even for a
+balanced closed-shell reaction.  We therefore make the Lewis representation
+and its conservation assumptions explicit.
+
+\begin{definition}[Hydrogen-complete closed-shell LLG]
+For a reaction side \(X\in\{R,P\}\), let
+\(\LLG_X=(V_X,E_X,a_X,b_X)\) be the Lewis-labeled graph of
+\cref{sec:occupancy-metrics}, with \(r_X(v)=0\) and integral
+\(o_X(u,v)=s_X(u,v)+p_X(u,v)\).  Hydrogens may be explicit vertices or
+represented initially by an equivalent hydrogen completion; throughout the
+statements below, that completion is understood to be expanded before the
+vertex bijection is formed.  ``Closed shell'' means that every nonbonding
+electron is included in one of the pairs counted by \(\ell_X\).  Define the
+electron-pair inventory
+\begin{equation}
+  N_{\mathrm{pair}}(\LLG_X)
+  =
+  \sum_{\{u,v\}\in\binom{V_X}{2}}o_X(u,v)
+  +
+  \sum_{v\in V_X}\ell_X(v).
+  \label{eq:pair-inventory}
+\end{equation}
+\end{definition}
+
+Let \(\alpha:V_R\to V_P\) preserve the element label \(el\) and any declared
+auxiliary isotope tag.  On
+closed-shell endpoints, the stored-Kekul\'e electron distance
+\cref{eq:kekule-electron-distance} reduces to
+\begin{align}
+\deK(\alpha)
+={}&
+\sum_{\{u,v\}\in\binom{V_R}{2}}
+\left|
+  o_R(u,v)-o_P\bigl(\alpha(u),\alpha(v)\bigr)
+\right|
+\nonumber\\
+&+
+\sum_{u\in V_R}
+\left|
+  \ell_R(u)-\ell_P\bigl(\alpha(u)\bigr)
+\right|.
+\label{eq:lewis-distance}
+\end{align}
+Thus a broken bond, a formed bond, a lost lone pair, and a gained lone pair
+each contribute one.  Formal charge is not added as a separate term because
+it is derived from the same Lewis resources.
+
+Equivalently, let \(B_X\) be the symmetric bond--electron matrix with
+\(B_X(u,v)=o_X(u,v)\) for \(u\ne v\) and \(B_X(u,u)=\ell_X(u)\).  If
+$\Pi_\alpha$ is the permutation matrix of $\alpha$, then
+\begin{equation}
+  \deK(\alpha)
+  =
+  \frac12\sum_{u\ne v}
+  \left|
+    (B_R)_{uv}
+    -
+    (\Pi_\alpha^{\mathsf T}B_P\Pi_\alpha)_{uv}
+  \right|
+  +
+  \sum_u
+  \left|
+    (B_R)_{uu}
+    -
+    (\Pi_\alpha^{\mathsf T}B_P\Pi_\alpha)_{uu}
+  \right|.
+  \label{eq:be-distance}
+\end{equation}
+The factor $1/2$ removes the duplicate entries of each undirected bond; it
+does not apply to the diagonal lone-pair loci.
+
+\begin{proposition}[Signed resource identity]
+\label{prop:signed-resource}
+For an arbitrary integral closed-shell LLG pair
+\((\LLG_R,\LLG_P)\) and compatible map \(\alpha\),
+let $\delta_k=y_k^\alpha-x_k$ range over all bond and lone-pair loci, and put
+\[
+  F(\alpha)=\sum_{\delta_k>0}\delta_k,
+  \qquad
+  C(\alpha)=\sum_{\delta_k<0}(-\delta_k).
+\]
+Then
+\begin{align}
+  \deK(\alpha)&=F(\alpha)+C(\alpha),\\
+  N_{\mathrm{pair}}(\LLG_P)-N_{\mathrm{pair}}(\LLG_R)
+    &=F(\alpha)-C(\alpha).
+\end{align}
+Consequently,
+\begin{equation}
+  \deK(\alpha)
+  \equiv
+  N_{\mathrm{pair}}(\LLG_R)+N_{\mathrm{pair}}(\LLG_P)
+  \pmod 2.
+  \label{eq:parity-identity}
+\end{equation}
+In particular, the parity is independent of the AAM.
+\end{proposition}
+
+\begin{proof}
+The first identity partitions the absolute differences into their positive
+and negative parts.  The second follows by summing the signed differences;
+transport through $\alpha$ only permutes product resource loci.  Subtraction
+and addition are identical modulo two, which gives
+\cref{eq:parity-identity}.
+\end{proof}
+
+\begin{lemma}[Pair-inventory conservation]
+\label{lem:pair-conservation}
+Suppose \(\LLG_R\) and \(\LLG_P\) are complete closed-shell Lewis structures,
+have the
+same element and isotope inventory, and have the same total formal charge.
+Then
+\(N_{\mathrm{pair}}(\LLG_R)=N_{\mathrm{pair}}(\LLG_P)\).
+\end{lemma}
+
+\begin{proof}
+Let \(z_X(v)\) be the neutral-atom valence-electron count cached from
+\(el_X(v)\), and let \(q_X(v)\) and \(Q_X=\sum_v q_X(v)\) denote local and
+total formal charge.
+For a complete closed-shell Lewis structure, local electron bookkeeping gives
+\[
+  q_X(v)
+  =
+  z_X(v)
+  -2\ell_X(v)
+  -\sum_{u\ne v}o_X(u,v).
+\]
+Summing over vertices counts every bond-pair multiplicity twice.  Hence
+\begin{equation}
+  2N_{\mathrm{pair}}(\LLG_X)
+  =
+  \sum_{v\in V_X}z_X(v)-Q_X.
+  \label{eq:electron-accounting}
+\end{equation}
+The right-hand side is identical for $R$ and $P$ by atom and charge balance,
+and therefore so is \cref{eq:pair-inventory}.
+\end{proof}
+
+\begin{theorem}[Evenness of Lewis chemical distance]
+\label{thm:lewis-even}
+Under the assumptions of \cref{lem:pair-conservation},
+\[
+  \deK(\alpha)\in2\mathbb N_0
+\]
+for every compatible atom--atom map $\alpha$.
+\end{theorem}
+
+\begin{proof}
+Index all bond and lone-pair resource loci in
+$\binom{V_R}{2}\uplus V_R$.  Let $x_k$ be the reactant occupancy and let
+$y_k^\alpha$ be the product occupancy transported through $\alpha$.  Since
+$\alpha$ only permutes product loci,
+\[
+  \sum_k x_k
+  =N_{\mathrm{pair}}(\LLG_R)
+  =N_{\mathrm{pair}}(\LLG_P)
+  =\sum_k y_k^\alpha.
+\]
+Set $\delta_k=y_k^\alpha-x_k$.  Then $\sum_k\delta_k=0$, and consequently
+\[
+  \sum_{\delta_k>0}\delta_k
+  =
+  \sum_{\delta_k<0}(-\delta_k).
+\]
+Using \cref{eq:lewis-distance},
+\[
+  \deK(\alpha)
+  =\sum_k|\delta_k|
+  =2\sum_{\delta_k>0}\delta_k,
+\]
+which is an even nonnegative integer.
+\end{proof}
+
+Polarity is neither necessary nor sufficient as a mathematical hypothesis.
+Every polar reaction represented by hydrogen-complete, balanced, closed-shell
+Lewis endpoints with conserved total charge satisfies the theorem.  A polar
+reaction with omitted proton/electron inventory, a radical channel, or an
+inconsistent endpoint charge does not inherit the claim merely from being
+polar.  This distinction is essential when converting mechanism annotations
+or RSMI records into LLGs.
+
+Pair-inventory equality is a direct map-independent sufficient condition and
+additionally gives $F=C$; closed-shell atom and charge balance in
+\cref{lem:pair-conservation} is a chemically transparent sufficient condition
+for that equality.  The sharp parity criterion is
+\cref{eq:parity-identity}: even unequal endpoint inventories give even
+distance when their sum is even, and odd inventory sum gives odd distance
+under every map.  An observed odd value under purported theorem conditions is
+therefore a diagnostic for an incomplete hydrogen/electron inventory,
+fractional bond representation, a radical channel, or an implementation
+mismatch; it cannot be repaired by choosing a different AAM.
+
+\begin{corollary}[Exact distance lattice]
+\label{cor:distance-lattice}
+All compatible AAMs of a fixed balanced closed-shell reaction lie on the
+lattice $2\mathbb N_0$.  In particular, if
+\(d^\star=\min_\alpha\deK(\alpha)\), then every nonempty distance
+shell has the form \(d^\star+2k\) for some \(k\in\mathbb N_0\).
+\end{corollary}
+
+\begin{proof}
+\Cref{thm:lewis-even} places both \(\deK(\alpha)\) and \(d^\star\) in
+\(2\mathbb N_0\).  Their nonnegative difference is therefore \(2k\) for some
+\(k\in\mathbb N_0\).
+\end{proof}
+
+The conclusion is independent of optimality and symmetry: it holds before
+quotienting maps by ITS isomorphism.  It justifies an exact search through
+\(\deK(\alpha_0)+2q\) without examining intervening odd thresholds.  It does
+not assert that every such shell is nonempty.
+
+\begin{definition}[Bounded ITS neighborhood]
+\label{def:bounded-its-neighborhood}
+Let \(\mathcal A\) be the set of element-compatible AAMs and let
+\(\alpha_0\in\mathcal A\) be the supplied map.  For
+\(q\in\mathbb N_0\), define
+\begin{equation}
+  \mathcal N_q
+  =
+  \left\{
+    [\Upsilon(\LLG_R,\LLG_P,\alpha)]_{\cong}
+    \;\middle|\;
+    \alpha\in\mathcal A,\quad
+    \deK(\alpha)\le
+      \deK(\alpha_0)+2q
+  \right\}
+  \setminus
+  \left\{[\Upsilon(\LLG_R,\LLG_P,\alpha_0)]_{\cong}\right\}.
+  \label{eq:bounded-its-neighborhood}
+\end{equation}
+The elements of $\mathcal N_q$, rather than index-distinct AAMs, are the soft
+negatives produced by Synister.  Thus two AAMs inducing isomorphic ITS graphs
+define the same output.
+\end{definition}
+
+\begin{proposition}[Exact cohort form of the local-profile relaxation]
+\label{prop:grouped-local-profile}
+At a residual state, let $c(r,p)$ be the incident-profile mismatch assigned to
+compatible pair $r\mapsto p$, and let the local-profile relaxation be the
+minimum of $\sum_r c(r,\sigma(r))$ over residual bijections $\sigma$.  Partition
+reactant rows by identical complete domains and incident profiles.  Partition
+product columns by identical incident profiles and identical incidence to
+those row-group domains.  If $x_{ij}$ transports the row multiplicity of group
+$i$ to the column capacity of group $j$, then
+\[
+  \min_\sigma\sum_r c(r,\sigma(r))
+  =
+  \min_x\sum_{i,j}c_{ij}x_{ij}
+\]
+subject to the corresponding integer row and column margins and forbidden
+cells.  Therefore dividing the grouped optimum by two gives exactly the same
+admissible residual-edge bound as the dense assignment.
+\end{proposition}
+
+\begin{proof}
+Every dense assignment induces a feasible transport matrix by counting its
+row-group--column-group pairs, with identical cost because $c$ is constant on
+each allowed cell block.  Conversely, the integral margins of every feasible
+transport matrix permit its $x_{ij}$ units to be matched arbitrarily between
+the corresponding rows and columns; domain-incidence refinement makes every
+such cell allowed.  This expands $x$ to a dense bijection of the same cost.
+The two optima are equal.  Each residual unordered edge contributes to the
+incident profile of both endpoints, so the standard factor one half remains
+admissible and unchanged.
+\end{proof}
+
+\begin{proposition}[Domain-compatible residual edge transport]
+\label{prop:edge-transport}
+At a residual search state, form a bipartite graph whose left vertices are
+unmapped reactant edges and whose right vertices are residual product edges.
+Join $e_R=\{r,s\}$ to $e_P=\{p,q\}$ exactly when the current domains permit
+either orientation of their endpoints, and give the pair weight
+$w_b\min\{o_R(e_R),o_P(e_P)\}$.  If $U$ is the maximum weight of a matching
+in this graph, then
+\[
+  w_b\left(\sum_{e_R}o_R(e_R)+\sum_{e_P}o_P(e_P)\right)-2U
+\]
+is an admissible lower bound on the unmapped bond-distance contribution.
+Grouping identical edge rows and columns and solving the resulting integer
+transportation problem leaves $U$ unchanged.
+\end{proposition}
+
+\begin{proof}
+Any residual atom bijection sends distinct reactant edges to distinct product
+pairs.  Every image pair that is a product edge therefore defines a matching
+between the two residual edge sets, and its preserved bond mass is the sum of
+the corresponding pair weights.  It cannot exceed the unrestricted matching
+optimum $U$.  The bond $\ell_1$ identity is total reactant mass plus total
+product mass minus twice the preserved overlap, which proves the bound.
+Identical compatibility neighborhoods and edge orders define constant-cost
+complete bipartite blocks; the contraction and integral expansion argument of
+\cref{prop:grouped-local-profile} proves equality of the grouped and expanded
+matching optima.  Zero-cost dummy margins represent unmatched edges.
+\end{proof}
+
+\begin{proposition}[Dual-certified vertex--edge relaxation]
+\label{prop:vertex-edge-lp}
+At a partial mapping, let $x_{rp}$ be the fractional assignment of residual
+reactant atom $r$ to an allowed product atom $p$, with unit row and column
+margins.  Let $z$ pair compatible orientations of residual reactant and
+product edges, with edge-capacity constraints and endpoint marginals bounded
+by the corresponding $x_{rp}$ on both endpoint graphs.  Minimize the exact
+linear mapped-boundary cost plus residual endpoint bond mass minus twice the
+paired overlap.  The resulting continuous optimum is a lower bound on the
+remaining electron distance.
+
+Moreover, let $(y,u)$ be any proposed equality and inequality dual vectors,
+with $u\leq0$.  If $v_j$ is the positive violation of dual column $j$, then
+\[
+ b^Ty+d^Tu-\sum_jv_j
+\]
+is a certified lower bound when every primal variable lies in $[0,1]$.
+Thus evaluating this expression in exact rational arithmetic makes the prune
+independent of floating-point solver tolerances.
+\end{proposition}
+
+\begin{proof}
+Every compatible residual bijection gives an integral feasible point: its
+atom variables encode the bijection and its edge variables encode precisely
+the product edges reached by mapped reactant edges.  The overlap identity then
+makes the objective its exact boundary-plus-interior distance.  Relaxing
+integrality can only decrease the minimum.  For the second claim, weak duality
+holds after subtracting $v_jx_j$ from every violated dual column; since
+$0\leq x_j\leq1$, replacing this by $v_j$ can only decrease the bound.  Exact
+evaluation therefore yields a valid repaired-dual certificate.
+\end{proof}
+
+\begin{theorem}[Exactness of uncapped production enumeration]
+\label{thm:production-exact}
+Suppose the branch-and-bound lower bounds are admissible, the hypotheses of
+\cref{prop:leaf-twins,prop:lifted-endpoint-symmetry,prop:leaf-transport,%
+prop:its-leaf-quotient} hold whenever their respective reductions are invoked,
+and no wall-time, node, or class cap is imposed.  Then the production
+enumerator terminates and returns exactly one witness for every element of
+$\mathcal N_q$.
+\end{theorem}
+
+\begin{proof}
+Before quotienting, compatibility-class branching spans every bijection in
+$\mathcal A$.  A partial branch is removed by a distance bound only when every
+completion exceeds the threshold in \cref{eq:bounded-its-neighborhood}.
+\Cref{prop:leaf-twins,prop:lifted-endpoint-symmetry,prop:leaf-transport}
+replace labeled branches or suffixes by exact orbit representatives and
+therefore do not remove an ITS class.
+\Cref{prop:dynamic-residual-orbits} replaces candidate children only when an
+exact automorphism of the fully colored residual state transports one child
+to the other.
+Every feasible leaf is scored independently from the complete map.
+By \cref{prop:its-leaf-quotient}, the final collision-resolved isomorphism test
+merges two leaves if and only if their ITS graphs are isomorphic; the complete
+ground-truth class is removed by the same test.  The search space and every
+transportation suffix are finite, which proves termination and the claimed
+set equality.
+\end{proof}
+
+\begin{proposition}[Exact recursive search sharding]
+\label{prop:exact-search-sharding}
+At any search state, let $r$ be unmapped with complete current product domain
+$D(r)$.  If
+\[
+  D(r)=D_1\mathbin{\dot\cup}\cdots\mathbin{\dot\cup}D_s,
+\]
+then restricting child $j$ to $\alpha(r)\in D_j$ gives pairwise-disjoint
+mapping spaces whose union is the parent mapping space.  Replacing any child
+recursively by another such partition preserves this property.  Consequently,
+merging the exact ITS quotients of the terminal children returns the same
+class set as the unsharded parent if and only if no terminal child is missing
+and every terminal child is exhausted.
+\end{proposition}
+
+\begin{proof}
+Every complete extension assigns $r$ one image $p\in D(r)$.  Disjointness of
+the $D_j$ places $p$ in exactly one child, proving both coverage and
+uniqueness.  Applying the same argument inductively at an interrupted child
+gives a partition tree whose terminal scopes remain disjoint and exhaustive.
+The union of their valid mappings is therefore the parent's valid mapping
+set.  Exact ITS quotienting commutes with taking this union: it merges
+isomorphic witnesses but cannot create or remove a class.  If a terminal
+child is missing or incomplete, its mapping set has not been exhausted and
+the equality is not certified.
+\end{proof}
+
+\begin{proposition}[Exact completed residual-family quotient]
+\label{prop:exact-residual-family}
+Consider two search states for the same reaction and threshold.  Suppose
+(i) their pulled product labels and edges on mapped reactant coordinates are
+identical, and (ii) their residual product graphs are isomorphic under a map
+that preserves each product resource label, its complete allowed-reactant
+domain, every labeled attachment to a mapped reactant coordinate, and every
+residual edge label.  Then their valid residual completions are in bijection
+and yield the same set of labeled ITS-isomorphism classes and distances.
+Consequently, after one such state is exhausted, another state in the same
+family may be skipped without losing a unique ITS class.
+\end{proposition}
+
+\begin{proof}
+Let $\psi$ be the label-preserving residual isomorphism.  If $\beta$ extends
+the first state, define the second residual assignment by replacing each
+product image $p$ with $\psi(p)$.  Preservation of the complete allowed-row
+label makes this assignment feasible and bijective; applying $\psi^{-1}$
+gives the inverse construction.  The mapped core is fixed pointwise in
+reactant coordinates.  Preserved boundary attachments determine every
+mapped--residual pulled edge, and preserved residual labels determine every
+remaining node and edge resource.  Corresponding completions therefore have
+identical pulled product resource graphs up to relabeling of residual product
+identities.  Their signed difference graphs, electron distances, and exact
+ITS classes coincide.
+
+The implementation commits a family only after its subtree returns without
+truncation.  For forest and unicyclic residual components it compares exact
+colored canonical forms obtained from tree centers and dihedral cycle
+minimization; more general components use exact labeled graph isomorphism.
+WL hashes are not equality witnesses in this reduction.
+\end{proof}
+
+\begin{proposition}[Exact dynamic residual candidate orbits]
+\label{prop:dynamic-residual-orbits}
+At a partial map $\alpha_S$, color every residual product vertex $p$ by its
+complete resource label, current allowed-reactant set, and multiset of labeled
+attachments to mapped reactant coordinates; retain every residual product
+edge and its label.  Let $r$ be the next reactant and let $p,q\in D_S(r)$.
+If an automorphism $\psi$ of this colored residual graph satisfies
+$\psi(p)=q$, then the children $\alpha_S\cup\{r\mapsto p\}$ and
+$\alpha_S\cup\{r\mapsto q\}$ have identical exact ITS-class completion sets.
+Thus one candidate per such orbit is sufficient for unique-ITS enumeration.
+\end{proposition}
+
+\begin{proof}
+For every completion through $p$, compose each remaining product image with
+$\psi$.  The allowed-reactant color preserves feasibility and all-different,
+while $\psi^{-1}$ gives the inverse map.  The new pulled resource at $r$ is
+the same because $p$ and $q$ have equal colors.  Their mapped-boundary
+attachments coincide, and $\psi$ transports every edge from the selected
+vertex and every edge wholly inside the residual graph.  The pre-existing
+mapped core is common to both children.  Corresponding full pulled product
+graphs, signed difference graphs, electron distances, and ITS classes are
+therefore isomorphic.
+
+For pseudoforest components, equality of the implementation's rooted colored
+canonical forms is equivalent to the existence of the required rooted
+isomorphism: trees are coded from their centers and unicyclic components are
+minimized over both directions and all cycle rotations.  A relevant component
+with more than one independent cycle causes a no-pruning fallback; no hash is
+accepted as an orbit proof.
+\end{proof}
+
+\subsection{Machine-checkable completeness certificates}
+\label{sec:certificate-contract}
+
+For one reaction, let $C_i$ be true exactly when endpoint validation succeeds,
+the search root is the full element--isotope-compatible bijection domain,
+every admissible-bound and symmetry reduction satisfies its stated
+hypotheses, every leaf-transport or solver subproblem is exhausted, every
+completed residual-family skip satisfies
+\cref{prop:exact-residual-family}, every dynamic candidate skip satisfies
+\cref{prop:dynamic-residual-orbits}, every
+declared shard partition is disjoint and covering, every terminal shard is
+present and exhausted,
+emitted map and retained witness is independently rescored, WL--3 is used
+only as a prefilter before exact labeled isomorphism, and no scope limit
+fires.  The implementation sets
+\[
+  \texttt{class\_complete}_i
+  =
+  \bigwedge C_i
+\]
+and signs the normalized case payload.  A timeout may preserve useful
+witnesses, but it makes this conjunction false.
+
+For recursive searches, an atomic shard checkpoint may preserve only exhausted
+terminal leaves.  Each stored leaf is bound to the reaction, implementation,
+search policy, and exact fixed-map/domain scope by digests.  On resume, the
+auditor requires the complete and frontier leaves to be a prefix-free cover of
+the original root partition before any leaf is reused.  By
+\cref{prop:exact-search-sharding}, merging all exhausted leaves after the
+frontier becomes empty is exactly the uninterrupted parent search.  An
+interrupted frontier leaf contributes neither a completeness claim nor
+provisional classes.
+
+\begin{corollary}[Audited cohort completeness]
+\label{cor:cohort-certificate}
+For a frozen manifest $S$, suppose every stored digest is valid and every
+$i\in S$ satisfies $\texttt{class\_complete}_i$.  Then the stored witness set
+for every $i$ is exactly its declared non-reference ITS quotient, and the
+campaign is class-complete for all $|S|$ scopes.
+\end{corollary}
+
+\begin{proof}
+Each true case conjunction instantiates the hypotheses and conclusion of
+\cref{thm:production-exact} for its declared threshold and label policy.
+Manifest equality prevents result-dependent replacement of difficult cases,
+while digest validation detects payload corruption.  Taking the conjunction
+over $S$ proves the statement case by case.  If even one conjunction is
+false, this corollary provides no full-cohort claim.
+\end{proof}
+
+\begin{figure}[t]
+\centering
+\input{figures/certificate_pipeline.tex}
+\caption{Proof-carrying unique-ITS campaign in the shared LLG figure style.
+Blue arrows are exact transformations; a limit yields a signed, resumable
+nonempty frontier, while the final cohort claim is an explicit conjunction of
+independently audited empty-frontier cases over the frozen manifest.}
+\label{fig:certificate-pipeline}
+\end{figure}
+
+\begin{corollary}[Optimal-shell certificate]
+\label{cor:optimal-shell-certificate}
+Let
+\[
+  \widehat{\mathcal N}_q
+  =
+  \mathcal N_q
+  \cup\{[\Upsilon(\LLG_R,\LLG_P,\alpha_0)]_{\cong}\}.
+\]
+After an uncapped run satisfying \cref{thm:production-exact}, the minimum
+distance represented in \(\widehat{\mathcal N}_q\) is the global optimum
+\(d^\star\).  Moreover, for every
+\(d\le \deK(\alpha_0)+2q\), the represented
+classes at distance $d$ are exactly all compatible ITS-isomorphism classes at
+that distance.
+\end{corollary}
+
+\begin{proof}
+The supplied map is compatible, hence
+\(d^\star\le \deK(\alpha_0)\le \deK(\alpha_0)+2q\).  Thus every global
+minimizer satisfies the enumeration bound.  The set equality in
+\cref{thm:production-exact}, after restoring the deliberately excluded
+ground-truth class, contains every bounded class and no unbounded class.
+Restricting that equality to a fixed distance $d$ proves the shell statement.
+\end{proof}
+
+Consequently, ``optimal'' and ``complete'' have separate meanings in the
+reported data.  The smallest nonempty floor is globally optimal by
+\cref{cor:optimal-shell-certificate}; completeness additionally states that
+all non-isomorphic alternatives on every floor through the declared bound
+have been recovered.  Search limits invalidate the latter certificate and
+are therefore never reported as proof-complete output.
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{\input{figures/lewis_parity_example.tex}}
+\caption{Lewis-resource accounting for
+\ce{NH3 + HCl -> NH4+ + Cl-}.  The H--Cl bond pair is
+removed, the N--H bond pair is formed, the nitrogen lone pair is consumed, and
+a chlorine lone pair is gained.  Negative and positive resource changes both
+sum to two, hence \(\deK=4\).}
+\label{fig:lewis-parity}
+\end{figure}
+
+\paragraph{Relation to alternating electron-pair walks.}
+Flamm, M\"uller, and Stadler model bonding pairs as multigraph edges and
+nonbonding pairs as loops.  For degree-preserving maps, their signed
+difference multigraph decomposes into alternating closed walks
+\citep{flamm2025electronpushing}.  \Cref{thm:lewis-even} is the corresponding
+global resource statement needed here: equality of total pair inventory is
+sufficient for parity, whereas alternating closure additionally balances
+signed incidences locally at every atom.
+
+\paragraph{Boundary of the theorem.}
+Three qualifications are essential.  First, aromatic systems are evaluated
+in an integral Kekul\'e realization; the value $1.5$ is not an electron-pair
+multiplicity.  Second, omitted hydrogens must be restored or their total
+implicit-hydrogen inventory must be balanced.  Third, radical electrons are
+not pairs.  Homolytic cleavage has one lost bond pair and two gained radical
+electrons, giving \(\deK=2\) but \(\Dres=3\).  Radical reactions therefore
+obey a different accounting identity and are excluded from
+\cref{thm:lewis-even}; the two objectives must not be conflated.
+
+\subsection{FlowER parity audit and exhaustive spectrum experiment}
+\label{sec:lewis-parity-experiment}
+
+We first audited the theorem hypotheses independently of enumeration on the
+fixed complexity-stratified FlowER sample.  All 1,000 reactions parsed, and
+all had equal total formal charge and implicit-hydrogen count across the two
+sides.  Of these, 915 had radical-free endpoints.  Every one of the 915
+closed-shell reactions had equal reactant and product pair inventory in
+stored Kekul\'e form, and every ground-truth closed-shell distance \(\deK\)
+was even.  There were no parity violations.  Among the 85 reactions outside
+the theorem because radicals were present, 37 had odd historical
+unit-resource distance \(\Dres\); that statistic is not attributed to
+\(\deK\).
+
+As a finite exhaustive check of the algebra, we additionally enumerated every
+pair of nonnegative integer bond-and-loop resource vectors with equal total
+occupancy, together with every atom permutation, for three atoms through
+inventory four and four atoms through inventory three.  This covers
+1,353,564 distances over 496 resource vectors.  Every distance was even.
+This computation tests the implementation over complete finite resource
+spaces; the theorem, rather than the finite check, supplies the general
+guarantee.
+
+For the enumeration experiment, the production branch-and-bound search uses
+the complete objective in \cref{eq:kekule-electron-distance}: the bond terms are
+quadratic mapping costs, whereas lone-pair and radical terms are unary
+assignment costs.  The frontier linear-assignment bound includes both unary
+terms and interactions with fixed atoms; the two interior bounds cover only
+unfixed bond interactions and therefore remain admissible.  Stored Kekul\'e
+orders determine the objective, while exact ITS isomorphism uses the
+aromatic-order endpoint representation.  One witness is retained per
+non-ground-truth ITS class.
+
+For the exact comparison, we fix the 898 reactions on which the independent
+SLAP graph baseline completed under its prespecified resource limit.  This
+cohort definition is made before inspecting Synister's class counts; the 102
+baseline timeouts are not silently counted as negative results.  Synister
+first enumerated
+\[
+  \deK(\alpha)\le \deK(\alpha_0)+2
+\]
+without a wall-time, visited-node, or class-count limit and checkpointed 647
+completed cases.  A terminal follow-up used a 600-second per-case wall limit
+on the same cohort, reusing 621 prior completions that had already finished
+within that budget and evaluating the other 277 cases.  It recorded all 898
+outcomes.  A case is included in the exact totals only when its search
+exhausted in at least one campaign; bounded truncations and their partial
+classes are excluded.  Such a completed case is a proof-complete
+neighborhood.  The smaller of the supplied-map distance and all
+alternative-witness distances is its certified global minimum: the supplied
+map itself is feasible, so no global minimizer can lie above the enumerated
+threshold.  Exact leaf-twin
+orbit branching and its integer-transport suffix remove factorial
+permutations of explicit hydrogens while retaining distinct hydrogen-transfer
+patterns, as proved in
+\cref{prop:leaf-twins,prop:lifted-endpoint-symmetry,prop:leaf-transport}.
+WL--3 is only an isomorphism
+prefilter.  Every collision receives an exact isomorphism test on the
+equivalence-preserving pendant-twin quotient of
+\cref{prop:its-leaf-quotient}.
+
+\input{lewis_exhaustive_results.tex}

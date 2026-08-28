@@ -304,7 +304,7 @@ to obtain a deterministic ordering that is consistent across isomorphic reaction
 AAM comparison
 --------------
 
-The class :py:class:`~synkit.Chem.Reaction.aam_validator.AAMValidator` verifies atom-map
+The class :py:class:`~synkit.Chem.Mapper.AAMValidator` verifies atom-map
 equivalence by constructing an **Imaginary Transition State (ITS)** graph for each reaction
 and testing graph isomorphism via NetworkX’s VF2 algorithm. This ensures that two mapped
 reactions induce the same ITS topology, i.e., they represent the same transformation under
@@ -314,7 +314,7 @@ different atom-map assignments :cite:`phan2025syntemp`.
    :caption: Checking whether two mapped reactions are atom-map equivalent
    :linenos:
 
-   from synkit.Chem.Reaction import AAMValidator
+   from synkit.Chem.Mapper import AAMValidator
 
    validator = AAMValidator()
    rsmi_1 = (
@@ -399,7 +399,7 @@ general public functional-group label.
 Atom-to-atom mapping
 --------------------
 
-``synkit.Chem.Reaction.Mapper`` provides the current atom-to-atom mapping
+``synkit.Chem.Mapper`` provides the current atom-to-atom mapping
 (AAM) workflow. ``AAMapper`` combines WL label refinement with sequential
 linear-assignment matching (SLAP). It can optionally enumerate
 symmetry-distinct exact optima, attach a certificate, and prefer
@@ -410,7 +410,7 @@ electron-balanced mapped reactions. The mapper replaces the former
    :caption: Map an unmapped reaction SMILES
    :linenos:
 
-   from synkit.Chem.Reaction.Mapper import AAMapper
+   from synkit.Chem.Mapper import AAMapper
 
    mapper = AAMapper(binary=True)
    mapper.map_smiles(
@@ -428,12 +428,174 @@ chemical-distance score ``cd``. Request ``enumerate_exact=True`` when a
 reaction centre is symmetric and all distinct optimal mappings are needed;
 ``certify=True`` attaches corresponding certificate metadata.
 
+For a complete search over every atom-compatible assignment, use
+``enumerate_smiles``. ``CD="minimal"`` returns every globally minimal mapping;
+any finite non-negative numeric value selects that exact distance shell.
+
+.. code-block:: python
+
+   search = mapper.enumerate_smiles(
+       "CCC>>CCC",
+       CD=8,
+       add_Hs=False,
+       time_limit_seconds=30,
+       certify=True,
+   )
+
+   if search.status == "no_solutions":
+       print("the complete exact-CD shell is empty")
+   elif search.status == "timeout":
+       print("partial search; absence of further mappings is not proven")
+
+``search.complete`` is true for both a fully enumerated non-empty shell and a
+proven-empty ``no_solutions`` shell. A deadline instead returns
+``status="timeout"`` and ``complete=False``. ``max_bijections`` is checked
+before search and raises explicitly when the atom-compatible assignment space
+is beyond the requested cap. Empty numeric shells above
+``search.maximum_cost_upper_bound`` are certified immediately by that bound.
+The older ``enumerate_exact=True`` mode remains the faster uncertainty-kernel
+enumeration and has a narrower proof scope.
+
+By default, numeric shells use a memory-constant optimization pass first, so
+``search.minimum_cost`` is the proven global minimum rather than merely the
+lowest mapping encountered below the requested shell. Set
+``compute_minimum_cost=False`` when only the requested numeric shell matters;
+this avoids the separate optimization search and leaves ``minimum_cost`` as
+``None``. The enumeration pass uses element-block assignment bounds on both
+sides of the target: a subtree is rejected when it can neither stay below nor
+rise high enough to reach the requested CD.
+
+When a shell may contain many mappings, stream it without retaining the output
+list. The callback receives only final mappings from the proven shell; minimal
+queries therefore optimize first and never emit provisional incumbents.
+
+.. code-block:: python
+
+   def consume(mapping, distance):
+       print(mapping, distance)
+
+   search = mapper.enumerate_smiles(
+       "CCC>>CCC",
+       CD="minimal",
+       add_Hs=False,
+       collect_mappings=False,
+       mapping_callback=consume,
+   )
+   print("exact mapping count:", search.selected_mapping_count)
+
+In this mode ``search.mappings`` remains empty. The current prefix-certificate
+format requires ``collect_mappings=True`` because its digest binds the complete
+sorted mapping set.
+
+With ``certify=True``, ``search.certificate`` is a JSON-serializable terminal
+prefix cover. Its verifier reconstructs the atom-compatible decision tree,
+checks that the prefixes are disjoint and exhaustive, independently recomputes
+every partial-CD pruning bound, and binds the selected mappings by SHA-256.
+
+.. code-block:: python
+
+   import json
+   from synkit.Chem.Mapper import verify_distance_enumeration_certificate
+   from synkit.Chem.Mapper.chem.smiles import smiles2lgp
+
+   record = json.loads(json.dumps(search.certificate.as_dict()))
+   original_lgp = smiles2lgp("CCC>>CCC", add_Hs=False)
+   verified = verify_distance_enumeration_certificate(
+       original_lgp,
+       record,
+       mappings=search.mappings,
+   )
+
+Timeout results carry an incomplete certificate whose disjoint
+``frontier_prefixes`` cover every unresolved assignment subtree. The same
+verifier checks the union of terminal and frontier prefixes, but the nonempty
+frontier forces ``status="timeout"`` and cannot establish shell completeness.
+
+Set ``symmetry_pruning=True`` to retain certified lex leaders under a bounded
+verified subgroup of product automorphisms. At each prefix, a Schreier
+stabilizer fixes the images already selected and branching visits one candidate
+per resulting orbit. Generator and work limits are memory bounded; exceeding a
+limit disables deeper symmetry reduction instead of making the result
+incomplete. Bounded discovery may still leave multiple representatives from a
+full product-automorphism orbit. SynKit's internal exact canonicalizer supplies
+concrete automorphism witnesses; no external nauty binding is required. Every
+symmetry-pruned prefix is stored with an exact transporter, and the verifier
+checks atom types and the complete directed product matrix before accepting the
+reduction. Remaining-assignment lower and upper bounds are replayed
+independently as well.
+
+For the complete labeled shell with symmetry acceleration, also set
+``expand_symmetry=True``. SynKit then restricts orbital pruning to one fully
+enumerated cyclic subgroup generated by a verified product automorphism and
+streams every group image of each representative. The subgroup action on
+bijections is free, so expansion contains every labeled mapping exactly once
+even when the subgroup is smaller than the full automorphism group. This mode
+is currently incompatible with prefix certificates.
+
+For an auditable automatic choice between exact algorithms, call
+``enumerate_hybrid_distance_mappings``. A numeric binary labeled shell uses
+the edit-support isomorphism backend only when its exact support-pair estimate
+is below the configured limit. Minimal, weighted, fixed-map, certificate, and
+symmetry-quotient requests stay on assignment branch-and-bound. The returned
+``backend`` and ``backend_statistics`` fields record the decision and never
+change the requested output scope.
+
+Exact alternative ITS classes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``enumerate_mapped_reaction_its_alternatives`` turns a completed shell into an
+auditable reference-relative application. It returns one deterministic AAM
+representative for every exact canonical ITS class that differs from the
+supplied reference ITS. The result reports the number of retained
+representative-scope mappings and, when the verified subgroup order is known,
+the corresponding labeled mappings in each class.
+
+.. code-block:: python
+
+   from synkit.Chem.Mapper import (
+       GlobalShellConfig,
+       enumerate_mapped_reaction_its_alternatives,
+   )
+
+   mapped_reaction = "[CH3:1][CH2:2][OH:3]>>[CH3:1][CH2:2][OH:3]"
+   alternatives = enumerate_mapped_reaction_its_alternatives(
+       mapped_reaction,
+       CD="reference",  # also "minimal" or any non-negative numeric CD
+       seed_mode="reference",
+       config=GlobalShellConfig(
+           time_limit_seconds=300,
+           max_bijections=None,
+       ),
+   )
+
+   if alternatives.shell.complete:
+       for candidate in alternatives.as_dict()["shell"]["alternatives"]:
+           print(candidate["its_class_id"], candidate["atom_map_correspondence"])
+
+``CD="reference"`` uses the reference's scalar distance but still searches all
+atom-compatible bijections at that distance. ``seed_mode="reference"`` may use
+the map as an incumbent and ordering hint; it never fixes atoms or removes
+candidates. A supplied seed is not guaranteed to reduce runtime because exact
+shell enumeration remains output-sensitive. ``complete`` is true only when
+both the global shell and every exact ITS classification have completed.
+The exact class identifiers are seed-invariant; a labeled representative may
+differ between seed modes while remaining in the same certified class.
+Alternative classes can be used as controlled contrastive or hard-negative
+examples, but they are not automatically chemically impossible mechanisms.
+
 The mapper can represent hydrogens at three levels through ``add_Hs``:
 
 - ``False`` keeps hydrogens implicit.
 - ``True`` maps fully explicit hydrogens.
 - ``"reaction_center"`` exposes only hydrogens involved in the reaction
   centre, which is generally the clearest output for inspection.
+
+For a fixed heavy-atom mapping, use
+``enumerate_lgp_hydrogen_transfers`` to enumerate every exact minimum
+donor--acceptor hydrogen flow from the per-atom ``hcounts`` metadata. It also
+computes the labeled explicit-hydrogen multiplicity without constructing
+hydrogen nodes. Unequal total hydrogen inventories are rejected, and a plan
+cap returns ``complete=False``.
 
 For comparison against a reference mapping, use ``AAMValidator``. Its
 ``smiles_check`` method accepts either ``"RC"`` (reaction centre) or
@@ -442,10 +604,38 @@ for unbalanced atom maps.
 
 .. code-block:: python
 
-   from synkit.Chem.Reaction.Mapper import AAMValidator
+   from synkit.Chem.Mapper import AAMValidator
 
    validator = AAMValidator(strip_unbalanced_maps=True)
    equivalent = validator.smiles_check(candidate, reference, check_method="ITS")
+
+Reference-blinded Synister campaign
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The resumable Synister runner independently permutes reactant and product atom
+orders, uses a reference-free SLAP candidate only as an incumbent, and queries
+either a supplied reference-distance shell, a globally minimal shell, or both.
+The FlowER cohort is not distributed with SynKit; an explicit CSV with
+``source_line``, ``reaction_id``, and ``mapped_reaction`` columns is required::
+
+   python scripts/run_synister_global_shells.py \
+       --dataset /path/to/flower_test_10000_v252.csv.gz \
+       --output benchmark_results/synister_global_shells_v4 \
+       --mode both --time-limit-per-shell 300 --memory-limit-gib 6
+
+The runner uses one process and one numerical thread. It writes digest-bound
+gzip JSON records atomically and resumes only records matching the dataset,
+implementation, schema, and options. ``reference_cd`` permits the held-out
+reference's scalar CD to define the shell but never supplies the mapping to
+search. ``minimal`` hides both mapping and CD until the global optimum shell
+has been explored. Every timeout, output cap, canonicalization bound, or error
+remains explicitly incomplete.
+
+Complete records include labeled and verified-subgroup mapping multiplicities,
+mapping Hartley entropy, exact canonical ITS/template richness, reaction-centre
+intersection/union/frequencies, and post-search reference-class checks. Verify
+case digests and regenerate censored manuscript statistics with
+``scripts/summarize_synister_evidence.py``.
 
 Reaction utilities
 ------------------

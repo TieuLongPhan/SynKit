@@ -1,0 +1,107 @@
+{
+  "ambiguous_complete_cases": {
+    "minimal": 46,
+    "reference_cd": 52
+  },
+  "campaign_manifest_sha256": "2a10b5d9b46c6d585a319f7940d808ace3338c6ef22137d3fb23bb7615e5bbb7",
+  "case_records": 100,
+  "complete_cases": {
+    "minimal": 46,
+    "reference_cd": 52
+  },
+  "error_records": 0,
+  "incomplete_source_lines": [
+    9,
+    39,
+    62,
+    75,
+    78,
+    84,
+    87,
+    90,
+    94,
+    95,
+    96,
+    101,
+    105,
+    108,
+    112,
+    121,
+    127,
+    139,
+    141,
+    143,
+    153,
+    159,
+    162,
+    166,
+    187,
+    192,
+    200,
+    202,
+    219,
+    228,
+    238,
+    258,
+    266,
+    272,
+    273,
+    276,
+    282,
+    294,
+    299,
+    300,
+    323,
+    327,
+    330,
+    337,
+    340,
+    345,
+    357,
+    362,
+    363,
+    375,
+    377,
+    387,
+    391,
+    392
+  ],
+  "kind": "synister_reference_blinded_global_shell_summary",
+  "multiple_its_classes_structure_complete_cases": {
+    "minimal": 16,
+    "reference_cd": 18
+  },
+  "multiple_template_classes_structure_complete_cases": {
+    "minimal": 16,
+    "reference_cd": 18
+  },
+  "reference_class_observed_complete_cases": {
+    "minimal": 45,
+    "reference_cd": 52
+  },
+  "reference_global_minimum_proven_cases": {
+    "minimal": 45,
+    "reference_cd": 0
+  },
+  "remaining_cases": 9900,
+  "schema_version": 4,
+  "status_counts": {
+    "minimal": {
+      "complete": 46,
+      "timeout": 54
+    },
+    "reference_cd": {
+      "complete": 52,
+      "timeout": 48
+    }
+  },
+  "structure_complete_cases": {
+    "minimal": 46,
+    "reference_cd": 52
+  },
+  "summary_sha256": "e92ff6793111f32c53bcdbe217d3ce03d4709ab32cdfb0845ebd7850e8c63e89",
+  "unstable_reaction_centre_complete_cases": {
+    "minimal": 30,
+    "reference_cd": 35
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "dataset": "/home/lolo/Documents/TACsy/SynEco/Synister/data/flower_test_10000_v252.csv.gz",
+  "dataset_sha256": "e40647847169a7fc98af1aab44fa81c7a64deb70b77085ae3deb3925e39642b0",
+  "implementation_sha256": "7d310149ea290bebeb2c153ebdc3aa5275a52daa99ad5a50d98726dbd2ad8394",
+  "kind": "synister_reference_blinded_global_shell_campaign",
+  "manifest_sha256": "2a10b5d9b46c6d585a319f7940d808ace3338c6ef22137d3fb23bb7615e5bbb7",
+  "options": {
+    "backend": "auto",
+    "binary": false,
+    "blind_seed": "synister-global-v1",
+    "heavy_only": true,
+    "max_bijections": null,
+    "max_edit_support_pairs": 50000,
+    "max_mappings": 10000,
+    "max_symmetry_automorphisms": 256,
+    "maximum_workers": 1,
+    "memory_limit_bytes": 6442450944,
+    "mode": "both",
+    "structure_analysis": true,
+    "structure_max_search_nodes": 100000,
+    "structure_timeout_seconds": 0.1,
+    "symmetry_max_search_nodes": 10000,
+    "symmetry_pruning": true,
+    "symmetry_timeout_seconds": 0.25,
+    "template_radius": 1,
+    "thread_limit_per_worker": 1,
+    "time_limit_per_shell": 1.0,
+    "tolerance": 1e-09,
+    "use_slap_seed": true
+  },
+  "rows": 10000,
+  "schema_version": 4
+}

@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from synkit.Chem.Reaction.aam_validator import AAMValidator
-from synkit.Chem.Reaction.Mapper import aam_validator as validator_module
+from synkit.Chem.Mapper import aam_validator as validator_module
 
 
 class TestAMMValidator(unittest.TestCase):

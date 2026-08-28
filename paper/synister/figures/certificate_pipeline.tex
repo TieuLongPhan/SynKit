@@ -1,0 +1,59 @@
+\begin{tikzpicture}[x=1cm,y=1cm,font=\sffamily]
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center]
+    (manifest) at (0,0)
+    {\textbf{Frozen manifest}\\[-1pt]\scriptsize dataset + scope\\[-2pt]
+     \scriptsize hashes};
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center]
+    (root) at (3.15,0)
+    {\textbf{Full map root}\\[-1pt]\scriptsize element/isotope\\[-2pt]
+     \scriptsize bijections};
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center]
+    (search) at (6.3,0)
+    {\textbf{Exact search}\\[-1pt]\scriptsize shards + lower bounds\\[-2pt]
+     \scriptsize exact family quotients};
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center]
+    (transport) at (9.45,0)
+    {\textbf{Leaf transport}\\[-1pt]\scriptsize DFS or exhaustive\\[-2pt]
+     \scriptsize CP--SAT};
+
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center]
+    (verify) at (9.45,-2.05)
+    {\textbf{Independent check}\\[-1pt]\scriptsize map + $\de$\\[-2pt]
+     \scriptsize witness};
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center]
+    (wl) at (6.3,-2.05)
+    {\textbf{WL--3 bucket}\\[-1pt]\scriptsize necessary invariant\\[-2pt]
+     \scriptsize only};
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center]
+    (iso) at (3.15,-2.05)
+    {\textbf{Exact quotient}\\[-1pt]\scriptsize labeled ITS\\[-2pt]
+     \scriptsize isomorphism};
+  \node[iocard,minimum width=2.35cm,minimum height=1.05cm,align=center,
+    draw=ioGreen!65!black,fill=ioGreen!5]
+    (case) at (0,-2.05)
+    {\textbf{Complete case}\\[-1pt]\scriptsize signed witnesses\\[-2pt]
+     \scriptsize + empty frontier};
+  \node[iocard,minimum width=3.55cm,minimum height=.92cm,align=center,
+    draw=ioVermilion!65!black,fill=ioVermilion!4]
+    (cohort) at (2.15,-3.7)
+    {\textbf{Cohort certificate}\\[-1pt]
+     \scriptsize $\bigwedge_{i\in S}\texttt{class\_complete}_i$};
+  \node[iocard,minimum width=3.75cm,minimum height=.92cm,align=center,
+    draw=ioVermilion!65!black,fill=ioVermilion!4]
+    (frontier) at (8.3,-3.7)
+    {\textbf{Resumable, incomplete}\\[-1pt]
+     \scriptsize signed nonempty frontier};
+
+  \draw[ioflow] (manifest) -- (root);
+  \draw[ioflow] (root) -- (search);
+  \draw[ioflow] (search) -- (transport);
+  \draw[ioflow] (transport) -- (verify);
+  \draw[ioflow] (verify) -- (wl);
+  \draw[ioflow] (wl) -- (iso);
+  \draw[ioflow] (iso) -- (case);
+  \draw[ioflow] (case.south) |- (cohort.west);
+  \draw[ioflow] (transport.south) -- ++(0,-.35) -| (frontier.north);
+  \node[font=\scriptsize,text=black!58,align=center,anchor=south]
+    at (8.45,-2.95)
+    {timeout / solver unknown / cap};
+\end{tikzpicture}

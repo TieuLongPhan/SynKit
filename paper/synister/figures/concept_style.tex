@@ -1,0 +1,158 @@
+% Compact concept-figure vocabulary shared with the local LWG manuscript.
+% Extracted from ../../../lwg_submission/source/fig/concept_style.tex and kept
+% in-repository so the Synister manuscript has no external build dependency.
+% Keep only conventions used by Synister figures.
+% Load after TikZ and the arrows.meta, backgrounds, calc, fit, positioning,
+% and shapes.geometric libraries.
+\providecolor{ioBlue}{HTML}{0072B2}
+\providecolor{ioVermilion}{HTML}{D55E00}
+\providecolor{ioGreen}{HTML}{009E73}
+\providecolor{ioOrange}{HTML}{E69F00}
+\providecolor{ioSky}{HTML}{56B4E9}
+\providecolor{ioPurple}{HTML}{CC79A7}
+\providecolor{ioYellow}{HTML}{F0E442}
+\providecolor{cdkC}{HTML}{1A1A1A}
+\providecolor{cdkH}{HTML}{2B2B2B}
+\providecolor{cdkN}{HTML}{2A4BD7}
+\providecolor{cdkO}{HTML}{CC0000}
+\providecolor{cdkBr}{HTML}{A0522D}
+\providecolor{cdkHal}{HTML}{1F9E4A}
+\providecolor{cdkS}{HTML}{C9A100}
+
+\tikzset{
+  iocbadge/.style={
+    circle,
+    fill=black!80,
+    text=white,
+    font=\bfseries\scriptsize,
+    minimum size=4.6mm,
+    inner sep=0.5pt,
+    anchor=north west
+  },
+  iotitle/.style={
+    font=\bfseries\footnotesize,
+    text=black!85,
+    anchor=west,
+    inner sep=0pt
+  },
+  iosubtitle/.style={
+    font=\scriptsize,
+    text=black!55,
+    anchor=north west,
+    inner sep=0pt
+  },
+  iocell/.style={
+    rounded corners=3pt,
+    draw=black!26,
+    fill=black!1,
+    line width=0.5pt
+  },
+  iopanel/.style={
+    rounded corners=3pt,
+    draw=black!16,
+    fill=black!1,
+    line width=0.4pt
+  },
+  iocard/.style={
+    rounded corners=2.6pt,
+    draw=black!18,
+    fill=black!2,
+    line width=0.4pt,
+    inner sep=5pt
+  },
+  ioflow/.style={
+    -{Latex[length=2.4mm]},
+    line width=1.1pt,
+    draw=ioBlue!85!black
+  },
+  ioarrow/.style={
+    -{Stealth[length=2.2mm]},
+    line width=0.9pt,
+    draw=black!65
+  },
+  iomap/.style={
+    -{Stealth[length=1.8mm,width=1.4mm]},
+    draw=ioVermilion!88!black,
+    line width=0.65pt,
+    shorten >=1pt,
+    shorten <=1pt
+  },
+  ioimg/.style={draw=ioBlue, line width=1.9pt},
+  iohash/.style={
+    line width=0.85pt,
+    draw=black!80,
+    dash pattern=on 1pt off 1.2pt
+  },
+  iofish/.style={
+    -{Latex[harpoon,length=2.0mm]},
+    line width=0.9pt,
+    draw=ioVermilion!85!black
+  },
+  cbond/.style={line width=0.9pt, black!82},
+  cbroken/.style={line width=2pt, ioVermilion!90!black},
+  cformed/.style={line width=2pt, ioGreen!60!black},
+  celp/.style={fill=ioBlue, circle, inner sep=0.72pt},
+  crad/.style={fill=ioVermilion, circle, inner sep=0.95pt},
+  cpair/.style={
+    -{Latex[length=2.2mm]},
+    line width=1.0pt,
+    draw=ioBlue!88!black
+  },
+  cfish/.style={
+    -{Latex[harpoon,length=2.0mm]},
+    line width=0.95pt,
+    draw=ioVermilion!88!black
+  },
+  catom/.style={font=\normalsize, fill=white, inner sep=1pt},
+  resource/.style={
+    rounded corners=2pt,
+    minimum width=2.25cm,
+    minimum height=0.72cm,
+    align=center,
+    font=\scriptsize
+  },
+  iocomplete/.style={
+    rounded corners=2pt,
+    draw=ioGreen!65!black,
+    fill=ioGreen!9,
+    text=ioGreen!45!black,
+    font=\bfseries\scriptsize
+  },
+  ioincomplete/.style={
+    rounded corners=2pt,
+    draw=ioOrange!80!black,
+    fill=ioOrange!10,
+    text=ioOrange!45!black,
+    font=\bfseries\scriptsize
+  },
+  iofail/.style={
+    rounded corners=2pt,
+    draw=ioVermilion!70!black,
+    fill=ioVermilion!8,
+    text=ioVermilion!70!black,
+    font=\bfseries\scriptsize
+  },
+  iotag/.style={
+    font=\itshape\scriptsize,
+    text=black!45
+  }
+}
+
+\newcommand{\aC}{\textcolor{cdkC}{C}}
+\newcommand{\aH}{\textcolor{cdkH}{H}}
+\newcommand{\aN}{\textcolor{cdkN}{N}}
+\newcommand{\aO}{\textcolor{cdkO}{O}}
+\newcommand{\aBr}{\textcolor{cdkBr}{Br}}
+\newcommand{\aCl}{\textcolor{cdkHal}{Cl}}
+\newcommand{\ioY}{\textcolor{ioGreen!50!black}{\ensuremath{\checkmark}}}
+\newcommand{\ioN}{\textcolor{ioVermilion!75!black}{\ensuremath{\times}}}
+
+\newcommand{\iosub}[4][]{%
+  \node[iocbadge] (synisterBadge) at (#2) {#3};%
+  \node[iotitle] (synisterTitle) at
+    ($(synisterBadge.east)+(0.12,0)$) {#4};%
+  \ifx\relax#1\relax\else
+    \node[iosubtitle] at
+      ($(synisterTitle.south west)+(0,-0.02)$) {#1};%
+  \fi
+}

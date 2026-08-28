@@ -1,0 +1,45 @@
+% Publication-figure vocabulary adapted from ../../../Style/style.tex.
+% The palette, serif hierarchy, black badges, hairline panels and restrained
+% semantic fills deliberately match the shared house style.
+\definecolor{npgOrange}{HTML}{E69F00}
+\definecolor{npgSky}{HTML}{56B4E9}
+\definecolor{npgGreen}{HTML}{009E73}
+\definecolor{npgYellow}{HTML}{F0E442}
+\definecolor{npgBlue}{HTML}{0072B2}
+\definecolor{npgVermillion}{HTML}{E64B35}
+\definecolor{npgPurple}{HTML}{CC79A7}
+\definecolor{figInk}{HTML}{1A1A1A}
+\definecolor{figMuted}{HTML}{666666}
+\definecolor{figHair}{HTML}{D9D9D9}
+\definecolor{figWash}{HTML}{F7F7F7}
+
+\tikzset{
+  synpanel/.style={rounded corners=2.5pt, draw=figHair, fill=none,
+    line width=0.45pt},
+  syncard/.style={rounded corners=2.2pt, draw=figHair, fill=figWash,
+    line width=0.45pt, inner sep=3pt},
+  synbadge/.style={circle, fill=figInk, text=white,
+    font=\rmfamily\bfseries\scriptsize, minimum size=4.7mm, inner sep=0pt},
+  syntitle/.style={font=\rmfamily\bfseries\footnotesize,
+    text=figInk, anchor=west},
+  synlabel/.style={font=\rmfamily\scriptsize, text=figInk, align=center},
+  synsmall/.style={font=\rmfamily\tiny, text=figMuted, align=center},
+  synflow/.style={-{Stealth[length=2.2mm]}, draw=black!55,
+    line width=0.8pt},
+  synhint/.style={-{Stealth[length=1.8mm]}, dashed,
+    draw=npgOrange!85!black,
+    line width=0.6pt},
+  synquery/.style={rounded corners=2.2pt, draw=npgBlue!65!black,
+    fill=npgBlue!5, line width=0.55pt},
+  synmethod/.style={rounded corners=2.2pt, draw=npgPurple!72!black,
+    fill=npgPurple!6, line width=0.55pt},
+  synproof/.style={rounded corners=2.2pt, draw=npgGreen!70!black,
+    fill=npgGreen!8, line width=0.55pt},
+  synstop/.style={rounded corners=2.2pt, draw=npgVermillion!72!black,
+    fill=npgVermillion!6, line width=0.55pt},
+}
+
+\newcommand{\synpanelhead}[3]{%
+  \node[synbadge,anchor=north west] (synbadge#2) at (#1) {#2};%
+  \node[syntitle] at ($(synbadge#2.east)+(0.13,0)$) {#3};%
+}

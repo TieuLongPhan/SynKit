@@ -19,7 +19,6 @@ flake8 "${paths[@]}" \
   --per-file-ignores="\
 __init__.py:F401,F403,\
 synkit/Chem/Reaction/explicit_h_audit.py:C901,\
-synkit/Chem/Reaction/Mapper/wl_mapper.py:C901,\
 synkit/Graph/FG/detector.py:C901,\
 synkit/Graph/Feature/Descriptors/topology.py:C901,E501,\
 synkit/Graph/ITS/its_destruction.py:C901,\

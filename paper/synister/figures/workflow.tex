@@ -1,0 +1,105 @@
+% Formal Synister inference contract.  The panel grammar and palette follow
+% ../../../Style: outlined grounds, serif titles, black badges, hairline rules
+% and colour only for mathematical roles.
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \path[use as bounding box] (0,-4.72) rectangle (16.0,0.05);
+
+  \node[synpanel,minimum width=5.00cm,minimum height=4.42cm,
+    anchor=north west] (panelA) at (0.05,0) {};
+  \node[synpanel,minimum width=5.00cm,minimum height=4.42cm,
+    anchor=north west] (panelB) at (5.50,0) {};
+  \node[synpanel,minimum width=5.00cm,minimum height=4.42cm,
+    anchor=north west] (panelC) at (10.95,0) {};
+  \synpanelhead{0.24,-0.18}{A}{Set-valued query}
+  \synpanelhead{5.69,-0.18}{B}{Exact closure}
+  \synpanelhead{11.14,-0.18}{C}{Structural inference}
+
+  % A. Endpoint data determine one immutable global assignment space.
+  \begin{scope}[shift={(1.10,-1.15)},scale=.78]
+    \draw[npgBlue!78!black,line width=.82pt]
+      (-.44,.08)--(-.18,.34)--(.18,.25)--(.43,-.10)--(.05,-.35)
+      --(-.36,-.22)--cycle (-.18,.34)--(.05,-.35);
+    \foreach \p in {(-.44,.08),(-.18,.34),(.18,.25),(.43,-.10),
+      (.05,-.35),(-.36,-.22)}
+      \fill[npgBlue!78!black] \p circle (.045);
+    \node[synsmall,text=npgBlue!72!black] at (0,-.58) {$R$};
+  \end{scope}
+  \begin{scope}[shift={(2.12,-1.15)},scale=.78]
+    \draw[npgBlue!78!black,line width=.82pt]
+      (-.44,.08)--(-.18,.34)--(.18,.25)--(.43,-.10)--(.05,-.35)
+      --(-.36,-.22)--cycle (-.44,.08)--(.43,-.10);
+    \foreach \p in {(-.44,.08),(-.18,.34),(.18,.25),(.43,-.10),
+      (.05,-.35),(-.36,-.22)}
+      \fill[npgBlue!78!black] \p circle (.045);
+    \node[synsmall,text=npgBlue!72!black] at (0,-.58) {$P$};
+  \end{scope}
+  \draw[synflow] (2.65,-1.15)--(2.93,-1.15);
+  \node[synquery,synlabel,text width=1.50cm,minimum height=.78cm]
+    (omega) at (3.85,-1.15)
+    {$\Omega(R,P)$\\[-1pt]\scriptsize compatible maps};
+
+  \node[syncard,synlabel,text width=1.60cm,minimum height=.67cm]
+    (numeric) at (1.55,-2.48) {numeric\\$\mathcal M_C$};
+  \node[syncard,synlabel,text width=1.60cm,minimum height=.67cm]
+    (minimum) at (3.65,-2.48) {minimal\\$\mathcal M_*$};
+  \draw[synflow] (omega.south)--(numeric.north);
+  \draw[synflow] (omega.south)--(minimum.north);
+  \node[synsmall] at (2.60,-3.02)
+    {the query fixes the candidate set};
+
+  \node[syncard,synlabel,draw=npgOrange!68!black,fill=npgOrange!5,
+    text width=2.38cm,minimum height=.55cm] (seed) at (2.60,-3.61)
+    {reference, SLAP or no seed};
+  \node[synsmall,text=npgOrange!78!black] at (2.60,-4.04)
+    {target / incumbent / order only};
+
+  % B. Both routes are exact; their selector changes work, not scope.
+  \node[synmethod,synlabel,minimum width=2.52cm,minimum height=.58cm]
+    (selector) at (8.00,-.94) {auditable selector};
+  \node[syncard,synlabel,text width=1.78cm,minimum height=.67cm]
+    (support) at (6.85,-1.78) {edit supports\\$+$ isomorphism};
+  \node[syncard,synlabel,text width=1.55cm,minimum height=.67cm]
+    (branch) at (9.15,-1.78) {assignment\\tree};
+  \draw[synflow] (selector.south)--(support.north);
+  \draw[synflow] (selector.south)--(branch.north);
+  \node[synproof,synlabel,text width=3.25cm,minimum height=.64cm]
+    (proof) at (8.00,-2.68)
+    {admissible interval $+$\\verified point stabilizers};
+  \node[synstop,synsmall,text width=1.75cm,minimum height=.52cm]
+    (frontier) at (6.92,-3.62) {cap or timeout\\frontier retained};
+  \node[synproof,synsmall,text width=1.75cm,minimum height=.52cm]
+    (closed) at (9.08,-3.62) {closed shell\\empty frontier};
+  \draw[synflow] (support.south)--([xshift=-.78cm]proof.north);
+  \draw[synflow] (branch.south)--([xshift=.78cm]proof.north);
+  \draw[synflow] (proof.south)--(frontier.north);
+  \draw[synflow] (proof.south)--(closed.north);
+
+  % C. Mapping, orbit and structural multiplicities remain distinct objects.
+  \node[synproof,synlabel,minimum width=3.32cm,minimum height=.55cm]
+    (shell) at (13.45,-.94) {proved shell $\mathcal M$};
+  \node[syncard,synlabel,text width=1.03cm,minimum height=.77cm]
+    (labeled) at (11.87,-1.94) {labeled\\$L=|\mathcal M|$};
+  \node[syncard,synlabel,text width=1.03cm,minimum height=.77cm]
+    (quotient) at (13.45,-1.94) {orbits\\$Q=|\mathcal M/H|$};
+  \node[syncard,synlabel,text width=1.03cm,minimum height=.77cm]
+    (classes) at (15.03,-1.94) {ITS codes\\$K=|\kappa(\mathcal M)|$};
+  \draw[synflow] (shell.south)--(labeled.north);
+  \draw[synflow] (labeled.east)--(quotient.west);
+  \draw[synflow] (quotient.east)--(classes.west);
+  \node[synquery,synlabel,text width=3.32cm,minimum height=.61cm]
+    (centre) at (13.45,-2.93)
+    {centre spectrum $I=\bigcap Z(\pi)\subseteq
+      U=\bigcup Z(\pi)$};
+  \draw[synflow] (classes.south)--([xshift=1.05cm]centre.north);
+  \node[synproof,synlabel,text width=3.32cm,minimum height=.58cm]
+    (alternatives) at (13.45,-3.78)
+    {one AAM per non-reference ITS class};
+  \draw[synflow] (centre.south)--(alternatives.north);
+
+  % Solid arrows transmit scope/proof; the dashed seed arrow is advisory.
+  \draw[synflow] (5.00,-2.48)--(5.60,-2.48);
+  \draw[synhint] (seed.east)--(4.77,-3.61)--(4.77,-2.62);
+  \node[synsmall,text=npgOrange!78!black,fill=white,inner sep=1pt]
+    at (4.48,-3.19) {$\Omega$ unchanged};
+  \draw[synflow] (closed.east)--(10.72,-3.62)--(10.72,-.94)--(shell.west);
+\end{tikzpicture}

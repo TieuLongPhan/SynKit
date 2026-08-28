@@ -14,7 +14,7 @@ Reaction
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Reaction.aam_validator
+.. automodule:: synkit.Chem.Mapper.aam_validator
    :members:
    :show-inheritance:
 
@@ -51,24 +51,48 @@ Atom-to-atom mapping
 
 The mapper is split into a public chemistry front end, the WL/SLAP matching
 engine, and optional exact refinement tools. Most applications should start
-with :class:`synkit.Chem.Reaction.Mapper.AAMapper`; the lower-level modules
+with :class:`synkit.Chem.Mapper.AAMapper`; the lower-level modules
 are useful for inspecting mappings, resolving symmetric reaction centres, or
 obtaining an optimality certificate. The exact helpers are available from
-``synkit.Chem.Reaction.Mapper.exact``.
+``synkit.Chem.Mapper.exact``.
 
-.. automodule:: synkit.Chem.Reaction.Mapper.chem.aam
+.. automodule:: synkit.Chem.Mapper.chem.aam
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Reaction.Mapper.chem.its
+.. automodule:: synkit.Chem.Mapper.chem.its
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Reaction.Mapper.chem.smiles
+.. automodule:: synkit.Chem.Mapper.chem.smiles
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Reaction.Mapper.slap.sequential
+.. automodule:: synkit.Chem.Mapper.slap.sequential
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.exact.distance
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.exact.hybrid
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.exact.edit_support
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.analysis
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.spectrum
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.alternatives
    :members:
    :show-inheritance:
 

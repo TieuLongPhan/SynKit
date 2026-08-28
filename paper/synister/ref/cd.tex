@@ -1,0 +1,1047 @@
+% The electron distance on Lewis-labeled graphs.
+% Companion note to paper/lwg/main.tex. Standalone; compiles on its own.
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{geometry}
+\geometry{margin=1.05in}
+\usepackage[version=4]{mhchem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\numberwithin{equation}{section}
+
+\newcommand{\Loc}{\operatorname{Loc}}
+\newcommand{\gout}{\operatorname{out}}
+\newcommand{\gin}{\operatorname{in}}
+\newcommand{\Ie}{I_{\mathrm e}}
+\newcommand{\ValG}{\operatorname{Val}}
+\newcommand{\lp}{\operatorname{lp}}
+\newcommand{\del}{\operatorname{d}}
+\newcommand{\ch}{\operatorname{ch}}
+\newcommand{\dsc}{\operatorname{dsc}}
+\newcommand{\Occ}{\mathfrak{C}}
+\newcommand{\LLG}{\mathfrak{L}}
+\newcommand{\code}[1]{\texttt{#1}}
+\DeclareMathOperator{\supp}{supp}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{observation}{Observation}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+\title{The Electron Distance on Lewis-Labeled Graphs:\\
+Integrality, Parity, and Composition}
+\author{Companion note to\\
+\emph{Lewis-labeled graphs: curly arrows and fishhooks
+as executable electron transfers}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Chemical distance is classically measured by counting the bonds that a
+reaction forms and breaks.  On a Lewis-labeled graph (LLG) the natural
+refinement also counts nonbonding electrons, weighting a lone pair like a
+bond-order unit and an unpaired electron by one half.  We show that the
+resulting quantity $\del$ is the weighted $\ell^1$ metric on the vector of
+locus occupancies, and that it admits a complete arithmetic theory.  It is
+integer-valued on every multiset of electron moves, admissible or not.  It
+equals the number of electrons displaced, hence $2c+f$ for $c$ curly arrows
+and $f$ fishhooks in the absence of cancellation.  On integral move multisets
+its parity is governed by the radical signature: $\del\equiv r^+\equiv
+r^-\pmod2$, where $r^\pm$ count the unpaired electrons created and destroyed.
+Two consequences delimit the polar and the radical case exactly.  Groups of
+two-electron moves are integral automatically and satisfy $\del=2|M|$, so
+polar chemistry is even unconditionally and at every level of description.
+Integral radical groups are even for the signatures $(0,0)$, $(2,0)$, $(0,2)$
+and $(2,2)$---closed shell, initiation, termination---and odd for $(1,1)$,
+chain propagation; $\beta$-scission has $\del=3$.  Parity is not additive
+along a mechanism: the defect is the number of chain-carrier round trips, so
+a radical chain may have odd step sum and even net distance.  The identity
+$\sum_v\Delta r_v\equiv0$ recovers Eq.~(4.3) of Holzschuh \emph{et al.}~[1] as
+the degenerate case.  All statements are verified against the complete set of
+worked examples, grammar classes and reviewed corpus records of the companion
+manuscript.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+\label{sec:intro}
+
+Let a chemical reaction be given together with an atom-to-atom map.  The
+oldest quantitative summary of such a reaction is its \emph{chemical
+distance}, the number of bonds formed plus the number of bonds broken.  On the
+attributed graphs of classical reaction informatics this is the only
+invariant available, because those graphs do not represent nonbonding
+electrons.  On a Lewis-labeled graph, where lone pairs and unpaired electrons
+are stored fields on the same footing as $\sigma$- and $\pi$-bond orders, the
+definition can be refined: one counts a change of one lone pair like a change
+of one bond-order unit, and a change of one unpaired electron by one half.
+The refinement is forced by the arithmetic rather than chosen, since these are
+exactly the weights that make each unit worth two electrons.
+
+The purpose of this note is to develop the resulting quantity as a
+mathematical object and to determine, completely, when it is even.  The
+question is not idle.  A curly arrow moves two electrons and a fishhook moves
+one; if the distance counts electrons, then the parity of the distance records
+whether the mechanism is built from pairs alone.  This is what one expects to
+be the formal residue of the classical distinction between polar and radical
+chemistry, and it is.  We show that groups of two-electron moves are even
+unconditionally, that integral radical groups are even or odd according to a
+signature that separates initiation and termination from propagation, and that
+parity fails to be additive along a radical chain in a way that is itself
+chemically meaningful.
+
+Throughout, the notation of the companion manuscript is used without
+comment, and the half-edge graph formalism of Holzschuh, Flamm, Merkle and
+Stadler~[1] is used for comparison.  Their setting and ours describe the same
+electronic bookkeeping at different levels of resolution, and several of the
+statements below have recognizable antecedents there; these are identified
+where they occur.
+
+\section{Preliminaries}
+\label{sec:prelim}
+
+\subsection{Lewis-labeled graphs and electron loci}
+
+Recall from the companion manuscript that a \emph{Lewis-labeled graph} is an
+attributed undirected graph $G=(V,E,a,b)$ in which each atom carries
+$a(v)=(el_v,\ell_v,r_v)$ and each edge carries $b(e)=(s_e,p_e)$, with
+$o_e=s_e+p_e$ the total Kekul\'e bond order.  Its \emph{electron loci} are
+\begin{equation}
+  \Loc(G)=\{\lp(v),\rho_v: v\in V\}\cup
+          \{\sigma_{uv},\pi_{uv}: \{u,v\}\in\tbinom{V}{2}\},
+  \label{eq:loci}
+\end{equation}
+with occupancies $c_G(\lp(v))=\ell_v$, $c_G(\rho_v)=r_v$,
+$c_G(\sigma_{uv})=s_{uv}$, $c_G(\pi_{uv})=p_{uv}$, extended by zero on
+non-edges.  Each locus has a sort in $\{\lp,\rho,\sigma,\pi\}$ and an
+\emph{electron quotum}
+\begin{equation}
+  w(\lp)=w(\sigma)=w(\pi)=2,\qquad w(\rho)=1 ,
+  \label{eq:quota}
+\end{equation}
+the number of electrons one unit of occupancy represents.  An \emph{electron
+move} is a triple $\mu=(x\xrightarrow{k}y)$ with $x\neq y$ loci and
+$k\in\{1,2\}$; its occupancy delta is $\Delta_\mu=-\tfrac{k}{w(x)}\mathbf1_x
++\tfrac{k}{w(y)}\mathbf1_y$, and for a finite multiset $M$ of moves we write
+$\Delta_M=\sum_{\mu\in M}\Delta_\mu$, together with the gross outflow and
+inflow $\gout_M$, $\gin_M$, so that $\Delta_M=\gin_M-\gout_M$.  A move with $k=2$ is
+a \emph{curly arrow}, one with $k=1$ a \emph{fishhook}.  We write
+\begin{equation}
+  c=\#\{\mu\in M: k_\mu=2\},\qquad f=\#\{\mu\in M: k_\mu=1\}
+  \label{eq:arrow-counts}
+\end{equation}
+for their numbers.  The multiset $M$ is \emph{integral} if
+$\Delta_M\in\mathbb Z^{\Loc(G)}$; the admissibility conditions of the
+companion manuscript---locality, common-prestate availability, integrality and
+$\Pi$-validity of the successor---are recalled only where they are used.
+Fix a finite atom set $V$ and write
+\begin{equation}
+  \Occ(V)=\mathbb N_0^{\Loc(V)}
+  \label{eq:occ-space}
+\end{equation}
+for the set of occupancy vectors on it.  This is the ambient space of all
+statements below; it plays the role of the set $\mathfrak H[H,V]$ of half-edge
+graphs on a fixed electron and atom set in~[1].
+
+\subsection{Electron accounting and its half-edge antecedent}
+
+It is convenient to record the occupancy delta in electron units.
+
+\begin{definition}
+\label{def:electron-delta}
+The \emph{electron delta} of a move multiset $M$ is the function
+$E_M\colon\Loc(G)\to\mathbb Z$,
+\begin{equation}
+  E_M(x)=w(x)\,\Delta_M(x) .
+  \label{eq:electron-delta}
+\end{equation}
+\end{definition}
+
+That $E_M$ takes values in $\mathbb Z$ and not merely in $\tfrac12\mathbb Z$ is
+the content of Lemma~\ref{lem:E-integral} below; it is the first point at
+which the quota~\eqref{eq:quota} does work.
+
+\begin{lemma}
+\label{lem:conservation}
+For every finite multiset $M$ of electron moves,
+\begin{equation}
+  \sum_{x\in\Loc(G)}E_M(x)=0 .
+  \label{eq:conservation}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+A move $x\xrightarrow{k}y$ contributes $w(x)\bigl(-k/w(x)\bigr)
++w(y)\bigl(+k/w(y)\bigr)=-k+k=0$, and~\eqref{eq:conservation} is the sum of
+these contributions.  No hypothesis on $M$ beyond finiteness is used.
+\end{proof}
+
+Equation~\eqref{eq:conservation} is the conservation lemma of the companion
+manuscript.  In the half-edge picture it corresponds to Eq.~(4.2) of~[1],
+$\dsc_\alpha(\varnothing)+\sum_{v}\dsc_\alpha(v)=0$, where
+$\dsc_\alpha(v)=|\psi'(\alpha(v))|-|\psi(v)|$ measures the change in the number
+of half-edges associated with $v$.  The two identities express the same fact,
+that the number of electrons cannot change, but they are indexed differently:
+Eq.~(4.2) of~[1] distributes electrons over \emph{atoms}, whereas
+\eqref{eq:conservation} distributes them over \emph{loci}, so that a bond
+appears once rather than at each of its two ends.  The locus indexing is what
+makes the parity results of Section~\ref{sec:parity} available.
+
+\begin{observation}
+\label{obs:heg-dict}
+Under the correspondence of~[1, Eqs.~(2.2)--(2.3)] one has $L(v)=\ell_v$,
+$R(v)=r_v$ and $B(v)=\sum_{e\sim v}o_e$, so that $\deg(v)=B(v)+2L(v)+R(v)$
+becomes $\deg(v)=n_v+\sum_{e\sim v}o_e$ with $n_v=2\ell_v+r_v$, and the formal
+charge $\ch(v)=-(\deg(v)-\mathrm{val}(a(v)))$ of~[1, Eq.~(2.4)] coincides with
+the derived charge $q_v$ of the companion manuscript.  The dictionary is used
+below only to locate antecedents; no result depends on it.
+\end{observation}
+
+\section{The electron distance}
+\label{sec:distance}
+
+\subsection{Definition}
+
+\begin{definition}
+\label{def:distance}
+The \emph{electron distance} of a finite multiset $M$ of electron moves is
+\begin{equation}
+  \del(M)=\tfrac12\sum_{x\in\Loc(G)}\bigl|E_M(x)\bigr|
+        =\tfrac12\sum_{x\in\Loc(G)}w(x)\bigl|\Delta_M(x)\bigr| .
+  \label{eq:distance}
+\end{equation}
+Written out in the four label fields,
+\begin{equation}
+  \del(M)=\sum_{e}\Bigl(|\Delta s_e|+|\Delta p_e|\Bigr)
+         +\sum_{v}|\Delta\ell_v|
+         +\tfrac12\sum_{v}|\Delta r_v| ,
+  \label{eq:distance-fields}
+\end{equation}
+so that a bond-order unit and a lone pair each count $1$ and an unpaired
+electron counts $\tfrac12$.  The classical, electron-blind quantity is the
+bond term alone, aggregated per edge,
+\begin{equation}
+  \del_{\mathrm b}(M)=\sum_e\bigl|\Delta s_e+\Delta p_e\bigr|=\sum_e|\Delta o_e| .
+  \label{eq:distance-bond}
+\end{equation}
+\end{definition}
+
+\begin{example}
+\label{ex:ammonia-hcl}
+For $\ce{NH3 + HCl -> NH4+ + Cl-}$, the two curly arrows
+$\lp(N)\to\sigma_{NH}$ and $\sigma_{HCl}\to\lp(Cl)$ give $\Delta\ell_N=-1$,
+$\Delta s_{NH}=+1$, $\Delta s_{HCl}=-1$ and $\Delta\ell_{Cl}=+1$.  The
+electron-blind reading records one bond formed and one broken,
+$\del_{\mathrm b}=2$, while $\del=1+1+1+1=4$.  The discrepancy is exactly the
+pair of nonbonding changes that a bond-only account cannot see.
+\end{example}
+
+The two readings of the bond term in~\eqref{eq:distance-fields}
+and~\eqref{eq:distance-bond} agree under the policy of the companion
+manuscript.
+
+\begin{observation}
+\label{obs:sigma-pi}
+If both endpoint states satisfy $\Pi_{\mathrm{exec}}$ then
+$|\Delta s_e|+|\Delta p_e|=|\Delta s_e+\Delta p_e|$ for every edge $e$.
+Indeed $s_e\in\{0,1\}$ forces $\Delta s_e\in\{-1,0,1\}$.  If $\Delta s_e=-1$
+then $s_e$ ends at $0$, and $p_e>0\Rightarrow s_e=1$ forces the final
+$p_e$ to vanish, whence $\Delta p_e\le0$.  If $\Delta s_e=+1$ then $s_e$
+starts at $0$, and the same implication forces the initial $p_e$ to vanish,
+whence $\Delta p_e\ge0$.  The two components never move in opposite
+directions.
+\end{observation}
+
+\subsection{The metric property}
+
+Definition~\ref{def:distance} depends on $M$ only through $\Delta_M$, and is
+therefore a function on differences of occupancy vectors.
+
+\begin{proposition}
+\label{prop:metric}
+The assignment
+\begin{equation}
+  \del(c,c')=\tfrac12\sum_{x\in\Loc(V)}w(x)\,\bigl|c'(x)-c(x)\bigr|
+  \label{eq:metric}
+\end{equation}
+is a metric on $\Occ(V)$.  It is the $\ell^1$ metric for the weight system
+$\tfrac12 w$, which assigns weight $1$ to every pair-valued locus and
+$\tfrac12$ to every radical locus.  If $M$ transforms $c$ into $c'$, then
+$\del(M)=\del(c,c')$.
+\end{proposition}
+
+\begin{proof}
+The weights $\tfrac12 w(x)$ are strictly positive, so~\eqref{eq:metric} is a
+positively weighted $\ell^1$ norm applied to $c'-c$; symmetry, positivity, the
+identity of indiscernibles and the triangle inequality are inherited.  The
+final assertion is Definition~\ref{def:distance} with $\Delta_M=c'-c$.
+\end{proof}
+
+\begin{remark}
+\label{rem:vs-editing-distance}
+Proposition~\ref{prop:metric} should be contrasted with the editing distance
+of~[1, \S3.1], defined as the minimum number of editing operations---bond
+breakings, bond formations and half-edge movements---converting one half-edge
+graph into another, and shown there to be a metric on $\mathfrak H[H,V]$ by
+invertibility of the individual operations (Lemma~3.2 of~[1]) together with
+concatenation.  The two quantities are of different type.  The editing
+distance is a minimum over realizing sequences and counts \emph{operations};
+$\del$ is a closed-form function of the endpoints and counts \emph{electrons}.
+The relation between them is Proposition~\ref{prop:arrow-count} below: $\del$
+is a lower bound for the electron cost of any realizing sequence of pushes,
+attained exactly when the sequence performs no cancellation.  Since [1,
+Prop.~3.3] guarantees that a realizing sequence of electron pushes always
+exists, $\del$ is the minimum electron cost of an explanation, not merely a
+bound.
+\end{remark}
+
+\section{Integrality}
+\label{sec:integrality}
+
+\begin{lemma}
+\label{lem:E-integral}
+$E_M(x)\in\mathbb Z$ for every finite multiset $M$ and every locus $x$, and
+$\sum_x|E_M(x)|$ is even.
+\end{lemma}
+
+\begin{proof}
+A move contributes $\pm k$ to $E_M$ at each of its two loci, since
+$w(x)\cdot k/w(x)=k$, and $k\in\{1,2\}$; thus $E_M$ is a finite sum of
+integers.  By Lemma~\ref{lem:conservation} and $|a|\equiv a\pmod 2$ applied
+termwise, $\sum_x|E_M(x)|\equiv\sum_x E_M(x)=0\pmod2$.
+\end{proof}
+
+\begin{theorem}
+\label{thm:integer}
+$\del(M)\in\mathbb N_0$ for every finite multiset $M$ of electron moves, and
+$\del(M)=0$ if and only if $\Delta_M=0$.  No admissibility hypothesis is
+required.
+\end{theorem}
+
+\begin{proof}
+Immediate from Lemma~\ref{lem:E-integral} and~\eqref{eq:distance}.
+\end{proof}
+
+\begin{remark}
+\label{rem:integrality-weaker}
+Theorem~\ref{thm:integer} is strictly weaker than integrality of $M$ and must
+not be confused with it.  A single fishhook $\sigma_{uv}\to\rho_u$ has
+$\Delta(\sigma_{uv})=-\tfrac12\notin\mathbb Z$ and is rejected by the
+integrality gate, yet $E(\sigma_{uv})=-1$, $E(\rho_u)=+1$ and $\del=1$.  The
+electron distance is defined, and integral, on move multisets that describe no
+transition at all.  Section~\ref{sec:diagnostics} isolates what it does
+detect.
+\end{remark}
+
+\begin{proposition}
+\label{prop:arrow-count}
+Let $M$ be a finite multiset of electron moves with arrow counts~$c$ and~$f$
+as in~\eqref{eq:arrow-counts}.  Then
+\begin{equation}
+  \sum_{\mu\in M}k_\mu-\del(M)
+  =\sum_{x\in\Loc(G)}w(x)\min\bigl(\gin_M(x),\gout_M(x)\bigr)\;\ge\;0 .
+  \label{eq:arrow-count-defect}
+\end{equation}
+In particular, if no locus is both a source and a target of moves in $M$, then
+\begin{equation}
+  \del(M)=\sum_{\mu\in M}k_\mu=2c+f .
+  \label{eq:arrow-count}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Summing $w(x)\gout_M(x)=\sum_{\mu\text{ from }x}k_\mu$ over $x$ gives
+$\sum_x w(x)\gout_M(x)=\sum_\mu k_\mu$, and likewise for $\gin_M$; hence
+$\tfrac12\sum_x w(x)(\gin_M+\gout_M)(x)=\sum_\mu k_\mu$.  Since
+$\Delta_M=\gin_M-\gout_M$,
+\[
+  \sum_\mu k_\mu-\del(M)
+  =\tfrac12\sum_x w(x)\Bigl[(d^++d^-)-|d^+-d^-|\Bigr](x)
+  =\sum_x w(x)\min(d^+,d^-)(x),
+\]
+which is a sum of nonnegative terms, vanishing exactly under the stated
+hypothesis.
+\end{proof}
+
+Equation~\eqref{eq:arrow-count} is the reason for calling $\del$ the electron
+distance: it is the number of electrons the drawn arrows move.  It also
+supplies the comparison promised in Remark~\ref{rem:vs-editing-distance}, since
+the right-hand side of~\eqref{eq:arrow-count-defect} is nonnegative.
+
+\begin{observation}
+\label{obs:cancellation-parity}
+The correction term in~\eqref{eq:arrow-count-defect} is even at every
+pair-valued locus, where $w=2$.  Consequently
+$\del(M)\equiv\sum_\mu k_\mu\pmod 2$ unless some \emph{radical} locus is
+simultaneously a source and a target.
+\end{observation}
+
+\section{Parity}
+\label{sec:parity}
+
+Integrality now enters as a genuine hypothesis rather than a convenience.
+
+\begin{definition}
+\label{def:signature}
+The \emph{radical signature} of an integral multiset $M$ is the pair
+$(r^+,r^-)$ with
+\begin{equation}
+  r^+=\sum_{v}\max\bigl(\Delta_M(\rho_v),0\bigr),\qquad
+  r^-=\sum_{v}\max\bigl(-\Delta_M(\rho_v),0\bigr) ,
+  \label{eq:signature}
+\end{equation}
+the numbers of unpaired electrons created and destroyed.  We write
+$\Delta R=r^+-r^-$ and $R_{\mathrm{abs}}=r^++r^-$.
+\end{definition}
+
+\begin{theorem}
+\label{thm:parity}
+Let $M$ be integral.  Then $\Delta R$ is even, and
+\begin{equation}
+  \del(M)\equiv r^+\equiv r^-\pmod 2 .
+  \label{eq:parity}
+\end{equation}
+The electron distance is odd if and only if an odd number of unpaired
+electrons is created, equivalently destroyed.
+\end{theorem}
+
+\begin{proof}
+Write $L=\sum_v\Delta\ell_v$.  Expanding~\eqref{eq:conservation} in the four
+sorts,
+\begin{equation}
+  2L+\Delta R+2\sum_e\Delta o_e=0 .
+  \label{eq:conservation-expanded}
+\end{equation}
+By integrality $L$ and every $\Delta o_e$ lie in $\mathbb Z$, so reduction
+of~\eqref{eq:conservation-expanded} modulo $2$ yields $\Delta R\equiv0$, that
+is $r^+\equiv r^-$.  Solving~\eqref{eq:conservation-expanded} gives
+$\sum_e\Delta o_e=-L-\Delta R/2$.  Reducing~\eqref{eq:distance-fields} modulo
+$2$, using Observation~\ref{obs:sigma-pi} and $|a|\equiv a$ on the two
+integer-valued sums,
+\[
+  \del\equiv\Bigl(-L-\tfrac{\Delta R}{2}\Bigr)+L+\tfrac{R_{\mathrm{abs}}}{2}
+    \equiv\tfrac12\bigl(R_{\mathrm{abs}}-\Delta R\bigr)=r^-\pmod2 ,
+\]
+where $-x\equiv x\pmod 2$ was used.  With $r^+\equiv r^-$ this
+is~\eqref{eq:parity}.
+\end{proof}
+
+\begin{remark}
+\label{rem:heg-43}
+The first conclusion of Theorem~\ref{thm:parity} recovers Eq.~(4.3) of~[1].
+There, for a reaction whose atomwise discrepancies $\dsc_\alpha(v)$ all
+vanish, one computes
+$\sum_{v}\bigl(R'(\alpha(v))-R(v)\bigr)=2\bigl(|E|-|E'|\bigr)$ by observing
+that every bond is incident with exactly two vertices, and concludes that the
+total unpaired discrepancy is even.  In the locus formulation the same
+statement is the mod-$2$ reduction of~\eqref{eq:conservation-expanded}, where
+the factor $2$ appears not from double incidence but from the quota
+$w(\sigma)=w(\pi)=w(\lp)=2$.  Theorem~\ref{thm:parity} strengthens the
+conclusion from the parity of $\Delta R$, which is the parity of the
+\emph{net} radical change, to the parity of $r^+$ and $r^-$ separately, which
+is what controls $\del$.
+\end{remark}
+
+\begin{remark}
+\label{rem:parity-needs-integrality}
+Integrality cannot be dropped.  The original annotation of record~279 of the
+radical corpus (Table~\ref{tab:s4}) has $\Delta o_{14,15}=-\tfrac32$, hence
+signature $(r^+,r^-)=(2,1)$ with $\Delta R=1$ odd, which
+Theorem~\ref{thm:parity} forbids, and $\del=4$, contradicting~\eqref{eq:parity}
+against $r^-$.  Five of the six non-integral multisets catalogued in
+Section~\ref{sec:audit} violate~\eqref{eq:parity}.
+\end{remark}
+
+\section{The polar and radical cases}
+\label{sec:dichotomy}
+
+Theorem~\ref{thm:parity} answers the parity question in terms of $r^\pm$.  We
+now convert it into the two statements it was intended to supply.
+
+\subsection{Polar groups}
+
+\begin{theorem}
+\label{thm:polar}
+Let $M$ consist of two-electron moves only, so $f=0$.  Then
+\begin{enumerate}
+\item[(i)] $M$ is integral, $\Delta_M\in\mathbb Z^{\Loc(G)}$;
+\item[(ii)] $\del(M)=2|M|$, and in particular $\del(M)$ is even.
+\end{enumerate}
+Neither conclusion requires locality, availability or $\Pi$-validity.
+\end{theorem}
+
+\begin{proof}
+(i) A move $x\xrightarrow{2}y$ changes $c$ by $-2/w(x)$ at $x$ and $+2/w(y)$
+at $y$; since $w\in\{1,2\}$ divides~$2$ in either case, both quantities are
+integers, and $\Delta_M$ is a finite sum of integers.
+
+(ii) Each move contributes $k_\mu=2$, so $\sum_\mu k_\mu=2|M|$.  If no locus
+is both source and target, Proposition~\ref{prop:arrow-count}
+gives $\del(M)=2|M|$ directly.  Otherwise, every $d^\pm_M(x)$ is an integer
+multiple of $2/w(x)$, so $w(x)\min(d^+,d^-)(x)$ is an even integer at every
+locus; by~\eqref{eq:arrow-count-defect}, $\del(M)=2|M|$ less an even number,
+and is even.
+\end{proof}
+
+Assertion (i) is where the two-electron hypothesis is spent, and it is the
+reason the argument does not extend: a fishhook contributes $\pm\tfrac12$ at a
+pair-valued locus, and $1/w(x)$ is not an integer when $w(x)=2$.
+
+\begin{corollary}
+\label{cor:polar-mechanism}
+Let $(M_1,\dots,M_n)$ be a mechanism all of whose moves are two-electron.
+Then each $\del(M_i)$ is even, the step sum $\sum_i\del(M_i)$ is even, and the
+net distance $\del\bigl(\sum_i\Delta_{M_i}\bigr)$ is even.  A polar reaction is
+even at every level of description: per arrow, per step, per mechanism, and
+end to end.
+\end{corollary}
+
+\begin{proof}
+Each step is even by Theorem~\ref{thm:polar}(ii), hence so is the sum.  The
+accumulated delta is integral by Theorem~\ref{thm:polar}(i) and has
+$r^+=r^-=0$, since no move touches a radical locus with an odd quantum;
+Theorem~\ref{thm:parity} gives $\del\equiv0$.
+\end{proof}
+
+\subsection{Radical groups}
+
+\begin{theorem}
+\label{thm:dichotomy}
+Let $M$ be integral.  Then $\del(M)$ is odd if and only if $r^+$ is odd.
+Integrality admits precisely the signatures with $r^+\equiv r^-\pmod2$, and
+these are classified by Table~\ref{tab:signature}.
+\end{theorem}
+
+\begin{proof}
+Both assertions are contained in Theorem~\ref{thm:parity}.
+\end{proof}
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Parity of the electron distance by radical signature, for integral
+move multisets.  Signatures with $r^+\not\equiv r^-$ are excluded by
+Theorem~\ref{thm:parity}.}
+\label{tab:signature}
+\begin{tabular}{@{}c l c l@{}}
+\toprule
+$(r^+,r^-)$ & mechanistic reading & $\del$ & occurrences \\
+\midrule
+$(0,0)$ & closed shell, polar & even & the nine polar classes \\
+$(2,0)$ & initiation, homolysis & even & M1; record 3{,}970 \\
+$(0,2)$ & termination, recombination & even & M2; records 2{,}516, 2{,}300 \\
+$(1,1)$ & propagation & \textbf{odd} & M3--M7; conj.\ abstraction \\
+$(2,2)$ & concerted double propagation & even & --- \\
+$(3,1),(1,3)$ & higher odd transfer & odd & --- \\
+\midrule
+\multicolumn{4}{@{}l}{$(1,0),(0,1),(2,1),\dots$ excluded: $r^+\not\equiv r^-$
+contradicts integrality} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{corollary}
+\label{cor:chain-carrier}
+An integral radical group has odd electron distance precisely when it
+relocates an odd number of unpaired electrons.  A group that creates or
+destroys unpaired electrons in pairs---initiation and termination---is even,
+as is any closed-shell group.  In the taxonomy of the companion manuscript
+this partitions the macros: M1 and M2 are even with $\del=2$; M3, M4, M5, M6
+and M7 are odd with $\del=3$; conjugated hydrogen abstraction is odd with
+$\del=5$.
+\end{corollary}
+
+\begin{example}
+\label{ex:beta-scission}
+The $\beta$-scission of the neopentoxyl radical is the group
+\[
+  \rho_o\xrightarrow{1}\pi_{oc_1},\qquad
+  \sigma_{c_1c_2}\xrightarrow{1}\pi_{oc_1},\qquad
+  \sigma_{c_1c_2}\xrightarrow{1}\rho_{c_2},
+\]
+with $\Delta(\rho_o,\pi_{oc_1},\sigma_{c_1c_2},\rho_{c_2})=(-1,1,-1,1)$ and
+signature $(1,1)$.  Hence $\del=3$, odd, in agreement with
+Corollary~\ref{cor:chain-carrier} and with $2c+f=3$.  The electron-blind
+distance is $\del_{\mathrm b}=2$: one $\pi$ formed and one $\sigma$ broken.
+The discrepancy is precisely the relocation of the unpaired electron from $o$
+to $c_2$, which a bond-only account does not register, and oddness of $\del$ is
+thus the formal signature of a chain-carrying step.
+\end{example}
+
+\subsection{Counting fishhooks}
+
+\begin{corollary}
+\label{cor:fishhook}
+If no radical locus of $M$ is both a source and a target, then
+\begin{equation}
+  \del(M)\equiv f\pmod 2 ,
+  \label{eq:fishhook-parity}
+\end{equation}
+and if moreover $M$ is integral, $f\equiv r^+\equiv r^-\pmod2$.  Curly arrows
+do not affect the parity of $\del$.
+\end{corollary}
+
+\begin{proof}
+By Proposition~\ref{prop:arrow-count}, $\sum_\mu k_\mu=2c+f\equiv f$, and by
+Observation~\ref{obs:cancellation-parity} the correction term is even at every
+pair-valued locus; the excluded hypothesis is the remaining case.  The second
+assertion follows with Theorem~\ref{thm:parity}.
+\end{proof}
+
+\begin{example}
+\label{ex:fishhook-fails}
+The hypothesis of Corollary~\ref{cor:fishhook} is not vacuous.  The integral
+multiset with electron delta
+\[
+  E(\pi_e)=-2,\quad E(\sigma_e)=+6,\quad E(\lp_a)=-2,\quad E(\lp_b)=-2,\quad
+  E(\rho_w)=+1,\quad E(\rho_v)=-1
+\]
+has $f=2$ and $\del=7$, so that~\eqref{eq:fishhook-parity} fails; here $\rho_w$
+both receives and emits an electron.  Its signature is $(1,1)$, and
+Theorem~\ref{thm:parity} holds.  The radical signature is therefore the robust
+invariant and the fishhook count the convenient one.  No group occurring in
+the companion manuscript triggers the exception.
+\end{example}
+
+\section{Composition along a mechanism}
+\label{sec:composition}
+
+By Proposition~\ref{prop:metric} the triangle inequality gives
+$\del\bigl(\sum_i\Delta_{M_i}\bigr)\le\sum_i\del(M_i)$ for any mechanism.  The
+following identifies the parity of the slack.
+
+\begin{proposition}
+\label{prop:composition}
+Let $(M_1,\dots,M_n)$ be a mechanism with net delta
+$\Delta=\sum_i\Delta_{M_i}$, all $M_i$ integral, and put
+\begin{equation}
+  \kappa=\tfrac12\sum_{v\in V}
+    \Bigl[\sum_{i}\bigl|\Delta_{M_i}(\rho_v)\bigr|-\bigl|\Delta(\rho_v)\bigr|\Bigr]
+  \;\in\;\mathbb N_0 ,
+  \label{eq:kappa}
+\end{equation}
+the number of unpaired electrons created at one step and destroyed at another.
+Then
+\begin{equation}
+  \sum_{i=1}^{n}\del(M_i)\equiv\del(\Delta)+\kappa\pmod 2 .
+  \label{eq:composition}
+\end{equation}
+Parity is additive, $\sum_i\del(M_i)\equiv\del(\Delta)$, precisely when
+$\kappa$ is even, and in particular when no radical is both produced and
+consumed within the mechanism.
+\end{proposition}
+
+\begin{proof}
+For integers $a_i$ one has $\sum_i|a_i|\equiv\sum_i a_i\equiv|\sum_i a_i|
+\pmod2$, so each bracket in~\eqref{eq:kappa} is an even integer and $\kappa\in
+\mathbb N_0$.  Apply the same congruence locuswise to
+$\del=\tfrac12\sum_x w(x)|E(x)|$.  At a pair-valued locus $w=2$ and the
+discrepancy $\tfrac12 w(x)\bigl[\sum_i|\Delta_i(x)|-|\Delta(x)|\bigr]$ equals
+$\sum_i|\Delta_i(x)|-|\Delta(x)|$, which is even and vanishes modulo $2$.  At a
+radical locus $w=1$ and the discrepancy is
+$\tfrac12\bigl[\sum_i|\Delta_i(\rho_v)|-|\Delta(\rho_v)|\bigr]$; summing these
+gives $\kappa$.
+\end{proof}
+
+\begin{example}
+\label{ex:chain}
+Consider initiation, hydrogen-atom transfer and termination,
+\[
+  \ce{A-A -> 2A^{.}},\qquad
+  \ce{A^{.} + H-B -> A-H + B^{.}},\qquad
+  \ce{B^{.} + A^{.} -> A-B},
+\]
+with signatures $(2,0)$, $(1,1)$ and $(0,2)$ and step distances $2$, $3$
+and~$2$.  The step sum is $7$, odd.  The net delta has $\Delta r_v=0$ for every
+$v$ and four unit bond changes, so $\del(\Delta)=4$, even.  Each of
+$\rho_{A_1}$, $\rho_{A_2}$ and $\rho_B$ is produced once and destroyed once,
+whence $\kappa=3$ and $7\equiv4+3\pmod2$ as
+Proposition~\ref{prop:composition} requires.
+\end{example}
+
+Example~\ref{ex:chain} shows that for a radical mechanism the two distances
+must be distinguished.  The step sum counts every electron the arrows move,
+including the round trips of the chain carriers; the net distance sees only
+the overall transformation, which is closed-shell and therefore even by
+Theorem~\ref{thm:parity}.  For polar mechanisms
+Corollary~\ref{cor:polar-mechanism} makes the distinction immaterial.
+
+\section{Diagnostic value and its limits}
+\label{sec:diagnostics}
+
+Theorem~\ref{thm:parity} and Observation~\ref{obs:sigma-pi} supply two
+arithmetic tests for non-integrality.  Both are one-directional, and neither
+replaces the integrality gate.
+
+\begin{corollary}
+\label{cor:diag-fractional}
+If $\del_{\mathrm b}(M)\notin\mathbb Z$ then $M$ is not integral.
+\end{corollary}
+
+\begin{corollary}
+\label{cor:diag-parity}
+If $\del(M)\not\equiv r^+\pmod2$, or if $r^+\not\equiv r^-\pmod 2$, then $M$
+is not integral.
+\end{corollary}
+
+\begin{remark}
+\label{rem:diag-limits}
+Neither converse holds.  The original annotation of record~404
+(Table~\ref{tab:s4}) has $\Delta o_{5,21}=\Delta o_{5,22}=+\tfrac12$, two
+half-units carried by \emph{distinct} edges, so $\del_{\mathrm b}=2\in\mathbb Z$
+and the signature is $(1,1)$ with $\del=3$ odd; the record satisfies both
+tests and is not integral.
+\end{remark}
+
+More fundamentally, $\del$ is a function of $\Delta_M$ alone, and is therefore
+blind to every admissibility condition that is not.
+
+\begin{observation}
+\label{obs:blind}
+The electron distance cannot detect a failure of common-prestate availability,
+since two multisets with equal $\Delta_M$ have equal $\del$ by definition;
+nor a failure of locality, since retargeting a move to a local partner leaves
+the multiset of locus sorts and hence, generically, $\del$ unchanged; nor
+disagreement with a declared endpoint, by Example~\ref{ex:2207} below.
+\end{observation}
+
+\begin{example}
+\label{ex:2207}
+Record 2{,}207 of the radical corpus, the single case left unresolved in the
+companion manuscript, has annotation
+$9\rightharpoonup(9,13)$, $(12,13)\rightharpoonup(9,13)$,
+$(12,13)\rightharpoonup12$, with
+\[
+  \Delta o_{9,13}=+1,\quad\Delta o_{12,13}=-1,\quad
+  \Delta r_9=-1,\quad\Delta r_{12}=+1,\qquad \del=3 ,
+\]
+whereas its declared endpoint breaks $(14,15)$, forms $(9,15)$, consumes the
+radical at map~$9$ and declares the product radical at map~$12$:
+\[
+  \Delta o_{14,15}=-1,\quad\Delta o_{9,15}=+1,\quad
+  \Delta r_9=-1,\quad\Delta r_{12}=+1,\qquad \del=3 .
+\]
+The two agree in $\del$, in $\del_{\mathrm b}$, in signature and in parity, and
+disagree at every bond locus.  Equality of electron distance is thus necessary
+for an annotation to realize an endpoint, and not sufficient.
+\end{example}
+
+\section{Audit of the companion manuscript}
+\label{sec:audit}
+
+The tables below evaluate Definition~\ref{def:distance} on every case
+occurring in the companion manuscript.  The column $\sum k$ reports the
+pushed-electron count of Proposition~\ref{prop:arrow-count}, written $c$ for
+curly arrows and $f$ for fishhooks; it agrees with $\del$ throughout, no group
+having a locus that is both source and target.  An asterisk marks a
+non-integral multiset.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Molecular examples.}
+\label{tab:molecular}
+\begin{tabular}{@{}l l c c c c@{}}
+\toprule
+Case & nonzero $\Delta_M$ & $\del_{\mathrm b}$ & $\del$ & $r^+$ & $\sum k$ \\
+\midrule
+\ce{NH3 + H+ -> NH4+}
+  & $\ell_N{-}1,\ s_{NH}{+}1$ & $1$ & $2$ & $0$ & $1c=2$ \\
+\ce{H2N- + H+ -> NH3}
+  & $\ell_N{-}1,\ s_{NH}{+}1$ & $1$ & $2$ & $0$ & $1c=2$ \\
+\ce{NH3 + HCl}
+  & $\ell_N{-}1,\ s_{NH}{+}1,\ s_{HCl}{-}1,\ \ell_{Cl}{+}1$ & $2$ & $4$ & $0$ & $2c=4$ \\
+$S_N2$, \ce{NH3 + CH3Cl}
+  & $\ell_N{-}1,\ s_{NC}{+}1,\ s_{CCl}{-}1,\ \ell_{Cl}{+}1$ & $2$ & $4$ & $0$ & $2c=4$ \\
+$\beta$-scission
+  & $r_o{-}1,\ p_{oc_1}{+}1,\ s_{c_1c_2}{-}1,\ r_{c_2}{+}1$ & $2$ & $3$ & $1$ & $3f=3$ \\
+peroxide homolysis
+  & $s_{OO}{-}1,\ r_{O_1}{+}1,\ r_{O_2}{+}1$ & $1$ & $2$ & $2$ & $2f=2$ \\
+formaldehyde $\pi\!\to\!\lp$
+  & $p_{CO}{-}1,\ \ell_O{+}1$ & $1$ & $2$ & $0$ & $1c=2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\caption{The nine polar classes.  Uniformity of $\del$ is
+Theorem~\ref{thm:polar}(ii) with $|M|=1$; the classes are distinguished by
+where the pair goes, not by how far.}
+\label{tab:polar}
+\begin{tabular}{@{}l l c c@{}}
+\toprule
+class & typical context & $\del_{\mathrm b}$ & $\del$ \\
+\midrule
+$\lp\to\lp$       & adjacent nonbonding-pair relocation & $0$ & $2$ \\
+$\lp\to\pi$       & nucleophilic addition               & $1$ & $2$ \\
+$\lp\to\sigma$    & $S_N2$, proton transfer             & $1$ & $2$ \\
+$\pi\to\lp$       & ionization, retro-addition          & $1$ & $2$ \\
+$\pi\to\pi$       & conjugated or pericyclic shift      & $2$ & $2$ \\
+$\pi\to\sigma$    & electrophilic addition              & $2$ & $2$ \\
+$\sigma\to\lp$    & heterolysis, E1                     & $1$ & $2$ \\
+$\sigma\to\pi$    & elimination, retro-cycloaddition    & $2$ & $2$ \\
+$\sigma\to\sigma$ & 1,2-migration, hydride transfer     & $2$ & $2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{The seven radical macros and the conjugated variant, illustrating
+Corollary~\ref{cor:chain-carrier}.}
+\label{tab:macros}
+\begin{tabular}{@{}l l c c c c@{}}
+\toprule
+macro & nonzero $\Delta_M$ & $\del_{\mathrm b}$ & $\del$ & $(r^+,r^-)$ & parity \\
+\midrule
+M1 homolysis
+  & $s{-}1,\ r_u{+}1,\ r_v{+}1$ & $1$ & $2$ & $(2,0)$ & even \\
+M2 recombination
+  & $r_u{-}1,\ r_v{-}1,\ s{+}1$ & $1$ & $2$ & $(0,2)$ & even \\
+M3 radical addition
+  & $r_R{-}1,\ s_{RC_1}{+}1,\ p_{C_1C_2}{-}1,\ r_{C_2}{+}1$ & $2$ & $3$ & $(1,1)$ & odd \\
+M4 $\beta$-scission
+  & $r_O{-}1,\ p_{OC_1}{+}1,\ s_{C_1C_2}{-}1,\ r_{C_2}{+}1$ & $2$ & $3$ & $(1,1)$ & odd \\
+M5 radical resonance
+  & $r_{C_1}{-}1,\ p_{C_1C_2}{+}1,\ p_{C_2C_3}{-}1,\ r_{C_3}{+}1$ & $2$ & $3$ & $(1,1)$ & odd \\
+M6 H abstraction
+  & $r_R{-}1,\ s_{RH}{+}1,\ s_{HC}{-}1,\ r_C{+}1$ & $2$ & $3$ & $(1,1)$ & odd \\
+M7 alpha resonance
+  & $\ell_d{-}1,\ r_d{+}1,\ r_a{-}1,\ \ell_a{+}1$ & $0$ & $3$ & $(1,1)$ & odd \\
+\addlinespace[2pt]
+conj.\ H abstraction
+  & $r_R{-}1,\ s_{RH}{+}1,\ s_{HC_1}{-}1,$ & $4$ & $5$ & $(1,1)$ & odd \\
+  & $p_{C_1C_2}{+}1,\ p_{C_2C_3}{-}1,\ r_{C_3}{+}1$ & & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Macro M7 is the sharpest illustration of the refinement.  It edits no bond, so
+$\del_{\mathrm b}=0$ and the step is invisible to a classical account, while
+$\del=3$ records the three electrons relocated between a lone pair and a
+radical.  The value is computed from the declared expansion, not from the
+surface arrow; read literally as a single one-electron $\lp\to\lp$ move, the
+surface notation would give $\del=1$ with half-integral delta.
+
+\begin{remark}
+\label{rem:conj-footnote}
+The conjugated abstraction row is computed from its endpoint delta, which is
+unambiguous, rather than from an arrow list.  The footnote to the macro table
+of the companion manuscript states that the simple group ``expands with
+$\sigma\to\pi$ and $\boldsymbol\cdot\to\pi$'', but the group realizing
+$\ce{R^{.} + H-C_1-C_2=C_3 -> R-H + C_1=C_2-C_3^{.}}$ is
+$\rho_R\to\sigma_{RH}$, $\sigma_{HC_1}\to\sigma_{RH}$,
+$\sigma_{HC_1}\to\pi_{C_1C_2}$, $\pi_{C_2C_3}\to\pi_{C_1C_2}$,
+$\pi_{C_2C_3}\to\rho_{C_3}$, whose added patterns relative to M6 are
+$\sigma\to\pi$, $\pi\to\pi$ and $\pi\to\boldsymbol\cdot$, replacing
+$\sigma\to\boldsymbol\cdot$.  The enumeration in that footnote appears to be
+short one pattern and to name $\boldsymbol\cdot\to\pi$, which does not occur.
+By Proposition~\ref{prop:metric} the value $\del=5$ is unaffected, since it
+depends only on $\Delta_M$; the wording should nonetheless be checked.
+\end{remark}
+
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{@{}l >{\raggedright\arraybackslash}p{6.3cm} c c c c@{}}
+\caption{Reviewed radical annotations, original and revised.  Bond loci are
+written $(a,b)$; the source table does not resolve $\sigma$ from $\pi$, which
+does not affect $\del$ since only $|\Delta o_e|$ enters.  An asterisk marks a
+non-integral multiset.}
+\label{tab:s4}\\
+\toprule
+record & nonzero $\Delta_M$ & $\del_{\mathrm b}$ & $\del$ & $(r^+,r^-)$ & $\sum k$ \\
+\midrule
+\endfirsthead
+\toprule
+record & nonzero $\Delta_M$ & $\del_{\mathrm b}$ & $\del$ & $(r^+,r^-)$ & $\sum k$ \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r@{}}{\small continued on next page}
+\endfoot
+\bottomrule
+\endlastfoot
+279 orig.$^\ast$
+  & $r_2{-}1,\ o_{2,14}{+}1,\ o_{14,15}{-}\tfrac32,\ r_{15}{+}2$
+  & $\tfrac52$ & $4$ & $(2,1)$ & $4f=4$ \\
+279 rev.
+  & $r_2{-}1,\ o_{2,14}{+}1,\ o_{14,15}{-}1,\ r_{15}{+}1$
+  & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+\addlinespace[2pt]
+404 orig.$^\ast$
+  & $r_5{-}1,\ o_{5,21}{+}\tfrac12,\ o_{21,22}{-}1,\ o_{5,22}{+}\tfrac12,\ r_{21}{+}1$
+  & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+404 rev.
+  & $r_5{-}1,\ o_{5,22}{+}1,\ o_{21,22}{-}1,\ r_{21}{+}1$
+  & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+\addlinespace[2pt]
+540 orig.$^\ast$
+  & $r_1{-}1,\ o_{1,2}{+}\tfrac12$ & $\tfrac12$ & $1$ & $(0,1)$ & $1f=1$ \\
+540 rev.
+  & $\ell_1{-}1,\ o_{1,2}{+}1$ & $1$ & $2$ & $(0,0)$ & $1c=2$ \\
+\addlinespace[2pt]
+1{,}310
+  & $r_{13}{-}1,\ o_{6,13}{+}1,\ o_{5,6}{-}1,\ r_5{+}1$ & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+1{,}317
+  & $r_{19}{-}1,\ o_{1,19}{+}1,\ o_{1,2}{-}1,\ r_2{+}1$ & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+\addlinespace[2pt]
+2{,}046 orig.
+  & $r_{21}{-}1,\ r_{10}{+}1$ & $0$ & $1$ & $(1,1)$ & $1f=1$ \\
+2{,}046 rev.
+  & $r_{10}{-}1,\ r_{21}{+}1$ & $0$ & $1$ & $(1,1)$ & $1f=1$ \\
+2{,}046 rev., M7 reading
+  & $\ell_{10}{-}1,\ r_{10}{+}1,\ r_{21}{-}1,\ \ell_{21}{+}1$ & $0$ & $3$ & $(1,1)$ & $3f=3$ \\
+\addlinespace[2pt]
+2{,}207 annotation
+  & $r_9{-}1,\ o_{9,13}{+}1,\ o_{12,13}{-}1,\ r_{12}{+}1$ & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+2{,}207 endpoint
+  & $o_{14,15}{-}1,\ o_{9,15}{+}1,\ r_9{-}1,\ r_{12}{+}1$ & $2$ & $3$ & $(1,1)$ & --- \\
+\addlinespace[2pt]
+2{,}300 orig.
+  & $r_1{-}1,\ o_{1,2}{+}1,\ o_{2,3}{-}1,\ o_{3,4}{+}1,\ r_4{-}1$ & $3$ & $4$ & $(0,2)$ & $4f=4$ \\
+2{,}300 rev.
+  & $r_1{-}1,\ r_5{-}1,\ o_{1,5}{+}2,\ o_{1,2}{-}1,\ o_{2,4}{+}1,\ o_{4,5}{-}1$
+  & $5$ & $6$ & $(0,2)$ & $2f{+}2c=6$ \\
+\addlinespace[2pt]
+2{,}516 orig.
+  & $r_4{-}1,\ r_9{-}1,\ o_{4,8}{+}1$ & $1$ & $2$ & $(0,2)$ & $2f=2$ \\
+2{,}516 rev.
+  & $r_4{-}1,\ r_8{-}1,\ o_{4,8}{+}1$ & $1$ & $2$ & $(0,2)$ & $2f=2$ \\
+\addlinespace[2pt]
+3{,}970 orig.
+  & $o_{20,21}{-}1,\ r_{20}{+}1,\ r_2{+}1$ & $1$ & $2$ & $(2,0)$ & $2f=2$ \\
+3{,}970 rev.
+  & $o_{20,21}{-}1,\ r_{20}{+}1,\ r_{21}{+}1$ & $1$ & $2$ & $(2,0)$ & $2f=2$ \\
+\addlinespace[2pt]
+4{,}852 orig.
+  & $r_{10}{-}1,\ o_{10,20}{+}1,\ o_{20,21}{-}1,\ r_2{+}1$ & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+4{,}852 rev.
+  & $r_{10}{-}1,\ o_{10,20}{+}1,\ o_{20,21}{-}1,\ r_{21}{+}1$ & $2$ & $3$ & $(1,1)$ & $3f=3$ \\
+\end{longtable}
+\normalsize
+\setlength{\tabcolsep}{6pt}
+
+Three features of Table~\ref{tab:s4} deserve comment.  Every revision that
+merely \emph{retargets} an arrow---records 404, 2{,}046, 2{,}516, 3{,}970 and
+4{,}852---leaves $\del$ unchanged, confirming
+Observation~\ref{obs:blind}: locality failures and missing atom maps are
+invisible to the electron distance.  The two revisions that alter the electron
+count of an arrow do change it, namely record 540, where a fishhook is replaced
+by a paired move and $\del$ rises from $1$ to $2$, and record 279, where a
+duplicated fishhook is removed and $\del$ falls from $4$ to $3$.  Finally,
+record 2{,}046 is the one entry the source table leaves ambiguous: read as a
+bare one-electron atom-to-atom arrow it gives $\del=1$, and read as the alpha
+resonance shorthand of macro M7 it gives $\del=3$.  Both are odd, consistent
+with Theorem~\ref{thm:parity}, but the committed deltas differ and the record
+should be disambiguated.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\caption{Rejected controls.  All have integral $\del$ while being non-integral
+multisets, illustrating Remark~\ref{rem:integrality-weaker}.}
+\label{tab:controls}
+\begin{tabular}{@{}l l c c l@{}}
+\toprule
+control & nonzero $\Delta_M$ & $\del_{\mathrm b}$ & $\del$ & rejected by \\
+\midrule
+$\lp\to\sigma$ made one-electron
+  & $\ell_N{-}\tfrac12,\ s_{NH}{+}\tfrac12$ & $\tfrac12$ & $1$ & integrality \\
+homolysis, one fishhook removed
+  & $s_{OO}{-}\tfrac12,\ r_O{+}1$ & $\tfrac12$ & $1$ & integrality \\
+single fishhook
+  & $s_{uv}{-}\tfrac12,\ r_u{+}1$ & $\tfrac12$ & $1$ & integrality \\
+equal net deltas, unequal prestate
+  & identical & equal & equal & availability \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The last row of Table~\ref{tab:controls} is the essential one.  The
+corresponding figure of the companion manuscript is constructed precisely so
+that two groups share a net delta and differ in admissibility; they therefore
+share $\del$ exactly, and no function of $\Delta_M$ can separate them.
+
+\begin{remark}[Computational verification]
+\label{rem:verification}
+All entries of Tables~\ref{tab:molecular}--\ref{tab:controls} were recomputed
+from~\eqref{eq:distance} by the script \code{cd\_check.py} accompanying this
+note, which tested~\eqref{eq:conservation}, Theorem~\ref{thm:integer},
+Proposition~\ref{prop:arrow-count} and Theorem~\ref{thm:parity} on each case.
+Equation~\eqref{eq:conservation} and Theorem~\ref{thm:integer} hold in all $49$
+cases, including the six non-integral ones, as their hypothesis-free
+statements require; \eqref{eq:arrow-count} holds in all $48$ cases possessing
+an arrow list; and~\eqref{eq:parity} holds in all $43$ integral cases and fails
+in five of the six non-integral ones, the exception being record~404 discussed
+in Remark~\ref{rem:diag-limits}.  Theorems~\ref{thm:polar}
+and~\ref{thm:dichotomy} and Proposition~\ref{prop:composition} were in
+addition tested on $20\,000$ to $40\,000$ pseudorandom multisets each.
+\end{remark}
+
+\section{Concluding remarks}
+\label{sec:conclusion}
+
+The electron distance is the weighted $\ell^1$ metric on locus occupancies,
+and its arithmetic is completely determined.  It is integer-valued without
+hypothesis, which makes it useless as a test for integrality of a move
+multiset and useful as a summary of one.  It counts electrons rather than
+operations, which separates it from the editing distance of~[1] and makes it a
+closed-form quantity rather than a minimum over realizing sequences.  Its
+parity is controlled by the radical signature alone, from which the polar and
+radical cases follow: two-electron chemistry is even unconditionally and at
+every level of description, while radical chemistry is even for initiation,
+termination and closed-shell steps and odd for propagation.
+
+Three limitations should be recorded.  First, all parity statements presuppose
+integrality; below that threshold only Lemma~\ref{lem:conservation} and
+Theorem~\ref{thm:integer} survive, and Remark~\ref{rem:parity-needs-integrality}
+exhibits a corpus record where the failure is real rather than hypothetical.
+Second, $\del$ is a function of the net delta, hence blind to common-prestate
+availability, to locality, and to agreement with a declared endpoint; the
+conformance layer of the companion manuscript is not replaceable by an
+arithmetic invariant, and Example~\ref{ex:2207} exhibits an annotation and an
+endpoint that agree in $\del$ and disagree everywhere else.  Third, the results
+are stated for the two-centre Lewis model with the quota system
+of~\eqref{eq:quota}; multicentre bonding or fractional occupation would
+require different weights, and with them a different parity theory.
+
+A question left open is whether the parity classification of
+Table~\ref{tab:signature} admits a converse: whether every signature permitted
+by Theorem~\ref{thm:parity} is realized by an admissible event group over
+$\Pi_{\mathrm{exec}}$.  The signatures $(2,2)$, $(3,1)$ and $(1,3)$ are not
+attested in either corpus examined here.
+
+\begin{thebibliography}{9}
+\bibitem{heg} R.~Holzschuh, C.~Flamm, D.~Merkle and P.~F.~Stadler,
+  \emph{Half-edge graphs, Lewis formulas, and electron pushing}.
+  ChemRxiv preprint, 13 July 2026.
+  \href{https://doi.org/10.26434/chemrxiv.15006001/v1}{doi:10.26434/chemrxiv.15006001/v1}.
+\bibitem{aam} M.~E.~Gonz\'alez Laffitte, T.-L.~Phan and P.~F.~Stadler,
+  \emph{Extension of partial atom-to-atom maps: uniqueness and algorithms}.
+  Algorithms for Molecular Biology \textbf{21} (2026).
+\end{thebibliography}
+
+\end{document}
