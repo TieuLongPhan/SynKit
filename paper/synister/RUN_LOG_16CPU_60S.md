@@ -25,13 +25,25 @@ processes, bounds the in-flight queue to twice the worker count, and leaves all
 case and summary writes to the parent process. Numerical libraries remain at
 one thread per worker.
 
-Activate the intended Python environment, switch to this branch, and launch a
-fresh output directory:
+The frozen dataset is tracked in the companion Synister repository on its
+`dev` branch at commit `900d40e`. On a host that does not have that repository,
+place it beside SynKit and verify the archive:
+
+```bash
+git clone --branch dev --single-branch \
+  git@github.com:TieuLongPhan/Synister.git ../Synister
+
+sha256sum ../Synister/data/flower_test_10000_v252.csv.gz
+# e40647847169a7fc98af1aab44fa81c7a64deb70b77085ae3deb3925e39642b0
+```
+
+Activate the intended Python environment, switch SynKit to this branch, and
+launch a fresh output directory:
 
 ```bash
 git switch synister-16cpu-60s
 scripts/start_synister_global_shells_16cpu.sh \
-  /path/to/flower_test_10000_v252.csv.gz \
+  ../Synister/data/flower_test_10000_v252.csv.gz \
   benchmark_results/synister_global_shells_v4_60s_w16
 ```
 
