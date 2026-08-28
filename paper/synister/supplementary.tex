@@ -24,7 +24,7 @@
 \newcommand{\N}{\mathbb{N}}
 
 \title{\textbf{Supplementary Information for\\
-Synister: exact atom-map spectra expose ambiguity in reaction centres}}
+Exact heavy-atom mapping reveals ambiguity in reaction centres}}
 \author{Tieu-Long Phan}
 \date{28 August 2026}
 
@@ -38,17 +38,16 @@ numeric-shell, globally minimal-shell and explicitly conditioned queries;
 classifies exact-shell feasibility; proves the binary edit-support
 decomposition, assignment bounds, verified-subgroup orbital branching,
 certificate replay and implicit-hydrogen lifting; and records the validation
-and evidence contracts.  The purpose is to retain mathematical detail without
-expanding the journal-facing Article into the earlier 38-page development
-manuscript.  Every production claim below corresponds to the final SynKit
-source and its resource-bounded tests.  Historical Lewis-resource derivations
-are retained separately and are not silently substituted for the heavy-atom
-bond-order objective used in the reported FlowER pilot.
+and evidence contracts.  It also distinguishes conditional hydrogen lifting
+from global full-atom optimization and gives a closed labeled-multiplicity
+formula.  Production claims are tied to the stated implementation revision,
+tests and historical frozen evidence rather than to an evolving source digest.
+The reported FlowER pilot uses a heavy-atom bond-order objective.
 \end{abstract}
 
 \tableofcontents
 
-\section{Objects, objectives and query scopes}
+\section{Supplementary Note 1: Objects, objectives and query scopes}
 
 \subsection{Endpoint graphs and compatible maps}
 
@@ -88,8 +87,9 @@ For \(\pi\in\Omega\), let
  \label{eq:si-cd}
 \end{equation}
 The factor one half counts each molecular bond once when the matrices are
-symmetric.  It retains the exact matrix objective for general public graph
-inputs.
+symmetric.  The mathematical results below treat the weights as exact
+rationals.  Public software inputs are finite-precision numbers and therefore
+have the tolerance semantics defined below.
 \end{definition}
 
 Binary mode replaces every non-zero edge weight by one before evaluating
@@ -107,13 +107,29 @@ A complete result contains every selected mapping in its declared output
 scope, or proves that this set is empty.
 \end{definition}
 
+\begin{definition}[Tolerance shell]
+For declared absolute tolerance $\varepsilon\geq0$, let
+\[
+ \mathcal M_{C,\varepsilon}
+ =\{\pi\in\Omega:|\CD(\pi)-C|\leq\varepsilon\},\qquad
+ \mathcal M_{*,\varepsilon}
+ =\{\pi\in\Omega:\CD(\pi)\leq C^*+\varepsilon\}.
+\]
+These are the numeric and minimal sets returned for arbitrary floating-point
+inputs.  If all attainable costs lie on a lattice of spacing $\delta$, the
+target lies on that lattice and $2\varepsilon<\delta$, then the tolerance
+numeric shell equals $\mathcal M_C$; the analogous minimum shell equals
+$\mathcal M_*$.
+\end{definition}
+
 \begin{definition}[Global minimal shell]
 Let \(C^*=\min_{\pi\in\Omega}\CD(\pi)\).  The minimal shell is
 \(
  \mathcal M_*=\mathcal M_{C^*}
 \).
 Its exact computation has two logical obligations: prove \(C^*\), then close
-the shell at that fixed value.
+the shell at that fixed value (or its declared tolerance neighbourhood in the
+finite-precision interface).
 \end{definition}
 
 \begin{definition}[Conditioned shell]
@@ -127,8 +143,12 @@ a global shell unless an independent proof establishes
 \(\mathcal M_C\subseteq\Omega_F\).
 \end{definition}
 
-The final blinded FlowER experiment uses the first two global scopes.  A
-reference-free SLAP result may provide a feasible incumbent and deterministic
+The blinded FlowER experiment uses the first two global scopes.  Its observed
+bond orders are \(1,1.5,2,3\), so attainable CDs lie on an exactly
+representable half-integer lattice.  The recorded
+\(\varepsilon=10^{-9}\) is below half the lattice spacing; its tolerance and
+algebraic shells therefore coincide.  A reference-free SLAP result may provide
+a feasible incumbent and deterministic
 branch order, but it does not remove a compatible assignment.  Reference-CD
 mode reveals only the scalar \(C\); minimal mode reveals neither the reference
 map nor its score until after search.
@@ -141,22 +161,25 @@ the traversal and therefore carries no unconditional runtime guarantee.
 
 \subsection{Result-state contract}
 
-The three terminal states have mathematical meaning.
+Mapping search has three terminal states with mathematical meaning.
 
 \begin{itemize}
 \item \texttt{complete}: at least one mapping was selected and the declared
   shell and scope are closed;
 \item \texttt{no\_solutions}: the declared shell and scope are closed and
   empty;
-\item \texttt{timeout}: a time, node, output or subordinate canonicalization
-  bound left an unresolved frontier.
+\item \texttt{timeout}: a search-time, node, output or callback bound left an
+  unresolved mapping frontier.
 \end{itemize}
 
-Only the first two states imply completeness.  A pre-search assignment-space
-cap raises explicitly.  A mapping cap or callback interruption returns an
-incomplete result rather than changing the requested mathematical set.
+Only the first two states imply mapping-shell completeness.  Quotient-chain
+and ITS/template classification completeness are recorded separately.  A
+canonicalization cap can leave the mapping shell closed while making the
+structural spectrum incomplete.  A pre-search assignment-space cap raises
+explicitly.  A mapping cap or callback interruption returns an incomplete
+result rather than changing the requested mathematical set.
 
-\section{Complexity boundary}
+\section{Supplementary Note 2: Complexity boundary}
 
 \subsection{Exact-shell and threshold feasibility}
 
@@ -230,7 +253,7 @@ Compact subgroup representatives, counts and streamed digests avoid retaining
 the output in memory, but they do not turn explicit enumeration into a
 polynomial-output task.
 
-\section{Exact binary edit-support decomposition}
+\section{Supplementary Note 3: Exact binary edit-support decomposition}
 
 Assume simple undirected binary graphs.  Let \(m_R=|E_R|\) and
 \(m_P=|E_P|\).  For map \(\pi\), define
@@ -293,7 +316,7 @@ certificate generation or quotient output.  Otherwise it selects assignment
 branch-and-bound.  The selector therefore changes computation, not scientific
 scope.
 
-\section{Assignment branch-and-bound}
+\section{Supplementary Note 4: Assignment branch-and-bound}
 
 \subsection{Prefix decomposition}
 
@@ -416,24 +439,29 @@ inside a molecular orbit.
 \begin{theorem}[Assignment enumerator correctness]
 Suppose arithmetic comparisons use the declared tolerance, every compatible
 child not excluded by a proved bound is visited, and no resource cap fires.
-Then numeric mode returns exactly \(\mathcal M_C\).  Minimal two-pass mode
-returns exactly \(\mathcal M_*\) and its reported minimum is global.
+Then numeric mode returns exactly \(\mathcal M_{C,\varepsilon}\).  Minimal
+mode reports the global lowest evaluated cost and returns exactly
+\(\mathcal M_{*,\varepsilon}\).  Under the lattice condition above, these are
+the algebraic shells \(\mathcal M_C\) and \(\mathcal M_*\).
 \label{thm:si-bnb}
 \end{theorem}
 
 \begin{proof}
 Without pruning, depth-first traversal visits every compatible bijection once.
 Committed-cost, profile and interval pruning remove only subtrees whose every
-completion lies outside the target or above the incumbent, by the preceding
-lemmas.  Numeric leaves are independently evaluated and retained exactly when
-their cost equals \(C\).
+completion lies outside the tolerance target or above the incumbent plus its
+tolerance, by the preceding lemmas.  Numeric leaves are independently
+evaluated and retained exactly when their cost is within \(\varepsilon\) of
+\(C\).
 
 For minimal mode, the first pass begins from any verified feasible incumbent
 and can replace it only by a strictly lower complete-map cost.  Lower-bound
 pruning cannot remove a completion below the incumbent.  Exhaustion therefore
-proves \(C^*\).  The second pass is the already-correct numeric traversal at
-\(C^*\).  Callbacks are invoked only in this second pass, so a provisional
-optimizer is never streamed as final output.
+proves the lowest represented cost \(C^*\).  A streamed query uses a second
+pass at \(C^*\), retaining its tolerance neighbourhood; a collected query may
+retain and filter that set in one pass.  Callbacks are invoked only after the
+optimization pass, so a provisional optimizer is never streamed as final
+output.
 \end{proof}
 
 The seed affects only candidate and reactant ordering.  Erasing it yields the
@@ -441,7 +469,7 @@ same set with a different traversal.  A zero-time deadline, mapping cap or
 interrupted callback leaves a non-empty logical frontier and cannot satisfy
 the theorem's no-cap hypothesis.
 
-\section{Verified symmetry and stabilizer branching}
+\section{Supplementary Note 5: Verified symmetry and stabilizer branching}
 
 \subsection{Exact witness requirement}
 
@@ -455,12 +483,22 @@ Let \(h\) be a product permutation.  Synister accepts it as a witness only if
 This is checked against the exact directed objective matrix, not an
 undirected visualization and not with the user-supplied CD tolerance.  A cache
 entry is bound to a digest of the same graph data.  Hence every retained
-generator lies in a concrete subgroup \(H\leq\Aut(P)\).  Incomplete discovery
-may make \(H\) smaller than \(\Aut(P)\), but cannot introduce an invalid
-generator.
+generator lies in a concrete subgroup
+\(H_{\rm obj}\leq\Aut(P;B,\chi_P)\).  When reaction-centre, hydrogen or ITS
+analysis uses unary product attributes \(u_P\), the analysis interface performs
+a separate property-refined search and obtains a verified subgroup
+\[
+ H_{\rm str}\leq\Aut(P;B,\chi_P,u_P),
+\]
+where \(u_P\) contains the union of all declared downstream properties.
+Because the two bounded searches may traverse differently, neither discovered
+subgroup is asserted to contain the other.  Incomplete discovery may make
+either smaller than its full automorphism group, but cannot introduce an
+invalid generator.  Pure objective-shell quotienting may use \(H_{\rm obj}\);
+structural conclusions below use \(H_{\rm str}\).
 
 \begin{lemma}[Cost invariance]
-For \(h\in H\) and \(\pi\in\Omega\),
+For \(h\in H_{\rm obj}\) and \(\pi\in\Omega\),
 \(\CD(h\circ\pi)=\CD(\pi)\).
 \end{lemma}
 
@@ -473,7 +511,8 @@ summand of \cref{eq:si-cd} is unchanged.  Colour preservation keeps
 
 \subsection{Point stabilizers}
 
-For selected prefix images \(y_1,\ldots,y_{d-1}\), define
+For either verified subgroup, write it as \(H\).  For selected prefix images
+\(y_1,\ldots,y_{d-1}\), define
 \[
  H_{d-1}=\Stab_H(y_1,\ldots,y_{d-1})
  =\{h\in H:h(y_j)=y_j\text{ for }j<d\}.
@@ -531,7 +570,7 @@ alternative expansion mode deliberately restricts to a fully enumerated
 verified cyclic subgroup, making duplicate-free expansion auditable without
 materializing an unknown full group.
 
-\section{Replayable prefix-cover certificates}
+\section{Supplementary Note 6: Replayable prefix-cover certificates}
 
 \subsection{Tree-cover representation}
 
@@ -587,7 +626,7 @@ queries remain exact computations but do not claim this particular
 certificate type.  This separation avoids calling a partial or memory-bounded
 transcript a proof it does not encode.
 
-\section{Exact reaction-centre and structural spectra}
+\section{Supplementary Note 7: Exact reaction-centre and structural spectra}
 
 \subsection{Mapping-dependent changes}
 
@@ -595,17 +634,26 @@ For mapping \(\pi\), define the ordered bond change
 \[
  \Delta^\pi_{ij}=B_{\pi(i),\pi(j)}-A_{ij}.
 \]
-Changed bonds have non-zero \(\Delta^\pi_{ij}\); changed atoms include their
-endpoints and atoms whose declared transported unary properties differ.
-For a complete selected shell \(\mathcal M\), define
+At declared absolute tolerance \(\varepsilon\), let
+\(E_\varepsilon(\pi)=\{\{i,j\}:i<j,|\Delta^\pi_{ij}|>\varepsilon\}\) be its
+changed-bond set and let \(A_u(\pi)\) contain atoms whose declared transported
+unary properties differ.  For a complete selected shell \(\mathcal M\),
+Synister reports the four coordinate-level sets
 \[
- I=\bigcap_{\pi\in\mathcal M}\supp(\Delta^\pi),\qquad
- U=\bigcup_{\pi\in\mathcal M}\supp(\Delta^\pi).
+ I_{E,\varepsilon}=\bigcap_{\pi\in\mathcal M}E_\varepsilon(\pi),\quad
+ U_{E,\varepsilon}=\bigcup_{\pi\in\mathcal M}E_\varepsilon(\pi),\qquad
+ I_u=\bigcap_{\pi\in\mathcal M}A_u(\pi),\quad
+ U_u=\bigcup_{\pi\in\mathcal M}A_u(\pi).
 \]
-The intersection \(I\) is the invariant centre, while \(U\setminus I\) is the
-mapping-dependent region.  Exact counters give each atom or bond's change
-frequency.  A deterministic stream digest binds the observed representative
-sequence.
+Changed-bond endpoints can be derived from \(E_\varepsilon(\pi)\), but the schema's
+\texttt{atom\_*} fields count unary changes only.  The unions minus
+intersections are mapping-dependent regions in a fixed reactant indexing;
+they are not quotiented by reactant automorphisms.  Exact counters give every
+bond and unary atom's frequency, and a deterministic stream digest binds the
+observed representative sequence.  If the smallest non-zero bond change on a
+lattice exceeds \(\varepsilon\), \(E_\varepsilon\) is its algebraic non-zero
+support.  Non-isomorphic ITS multiplicity is the separate
+structural-ambiguity criterion.
 
 \subsection{ITS and boundary-aware template identity}
 
@@ -623,15 +671,16 @@ orders.  This prevents removal of external context from merging templates
 whose chemical resource boundary differs.
 
 \begin{proposition}[Structural invariance on product orbits]
-If \(\rho=h\circ\pi\) for \(h\in H\leq\Aut(P)\), the ITS graphs induced by
+If \(\rho=h\circ\pi\) for \(h\in H_{\rm str}\), the ITS graphs induced by
 \(\pi\) and \(\rho\) are colour-preserving isomorphic.  The same holds for
 their boundary-aware templates.
 \end{proposition}
 
 \begin{proof}
 Use the product automorphism \(h\) to relabel the transported product side.
-It preserves product colours and every matrix entry.  Reactant attributes are
-unchanged, so all paired before/after vertex and edge colours correspond.  The
+It preserves product colours, every declared unary attribute and every matrix
+entry.  Reactant attributes are unchanged, so all paired before/after vertex
+and edge colours correspond.  The
 union graph, graph distance from the changed set and every crossing-boundary
 descriptor are consequently preserved.
 \end{proof}
@@ -640,8 +689,9 @@ Thus one complete representative per verified subgroup orbit preserves the
 set of exact ITS and template classes.  Because the product action is free and
 all mapping orbits have the common size \(|H|\), normalized class frequencies
 also agree between subgroup representatives and full labeled expansion.  The
-reported mapping Hartley entropy is \(\log Q\) for \(Q\) selected verified-
-subgroup representatives; structural Hartley entropy is \(\log K\) for
+reported verified-subgroup log multiplicity is \(\log Q\) for \(Q\) selected
+representatives; it is subgroup-dependent unless full-group completeness is
+proved.  Structural Hartley entropy is \(\log K\) for
 \(K\) exact ITS classes.  These are different objects and are stored in
 different schema fields.
 
@@ -689,51 +739,99 @@ does not establish energetic infeasibility, mechanistic impossibility or an
 annotation error; it establishes an exact structural alternative under the
 declared endpoint and CD policy.
 
-\section{Exact implicit-hydrogen lifting}
+\section{Supplementary Note 8: Exact implicit-hydrogen lifting}
 
-Fix a heavy-atom map and transport product hydrogen counts into reactant
-order.  Let \(r_i,p_i\in\N\) be the implicit hydrogen counts on heavy parent
-\(i\) before and after transport.  The implementation requires
-\(\sum_i r_i=\sum_i p_i\); unequal inventories are rejected.
+Let \(R_Q,P_Q\) be the heavy-atom induced endpoint graphs.  This section
+assumes that both full endpoints contain the same number \(H\) of hydrogens;
+every hydrogen is a degree-one leaf joined by one unit-weight bond to exactly
+one heavy atom; hydrogen maps only to hydrogen; and there are no H--H,
+bridging, multicentre or isotope-specific objective terms.  An unequal
+inventory is rejected rather than silently padded.  These assumptions define
+the boundary of the reduction.
+
+Fix a compatible heavy map \(\pi\).  Let \(r_i\in\N\) count reactant hydrogens
+at heavy parent \(i\), let \(p_j\) count product hydrogens at product parent
+\(j\), and put \(q_i=p_{\pi(i)}\).  Thus \(q\) is the product count vector
+transported into reactant order.
 
 \begin{definition}[Hydrogen flow]
 A non-negative integer matrix \(X=(x_{ij})\) is feasible when
 \[
- \sum_jx_{ij}=r_i,\qquad \sum_ix_{ij}=p_j.
+ \sum_jx_{ij}=r_i,\qquad \sum_ix_{ij}=q_j.
 \]
-Cell \(x_{ij}\) counts hydrogens whose reactant parent is \(i\) and product
-parent is \(j\).  The diagonal is preserved parentage and off-diagonal cells
-are transfers.
+Cell \(x_{ij}\) counts hydrogens whose reactant parent is \(i\) and whose
+product parent is \(\pi(j)\).  The diagonal is preserved parentage under
+\(\pi\); off-diagonal cells are transfers.  Each labeled hydrogen bijection
+induces exactly one such flow.
 \end{definition}
 
-\begin{theorem}[Minimum transfer plans]
-The minimum number of broken hydrogen--parent bonds, equivalently formed
-bonds, is
-\[
- T=\sum_i(r_i-p_i)_+=\sum_i(p_i-r_i)_+.
-\]
-Every minimum plan has
-\(x_{ii}=\min(r_i,p_i)\) and an arbitrary non-negative donor--acceptor flow
-with the residual row and column sums.  Enumerating all such flows enumerates
-all chemically distinct minimum parent-transfer plans.
+\begin{theorem}[Pendant-hydrogen decomposition]
+For a hydrogen bijection \(\sigma\) inducing flow \(X\),
+\begin{equation}
+ \CD_{\rm full}(\pi,\sigma)
+ =\CD_Q(\pi)+2\bigl(H-\operatorname{tr}X\bigr).
+ \label{eq:si-h-decomposition}
+\end{equation}
+Consequently,
+\begin{equation}
+ \min_{\sigma}\CD_{\rm full}(\pi,\sigma)
+ =F(\pi):=\CD_Q(\pi)+\sum_i|r_i-q_i|.
+ \label{eq:si-h-combined}
+\end{equation}
 \end{theorem}
 
 \begin{proof}
-At most \(\min(r_i,p_i)\) hydrogens can keep parent \(i\), giving an upper
-bound \(\sum_i\min(r_i,p_i)\) on preserved bonds.  Taking every diagonal cell
-at this value leaves surplus only at donors and deficit only at acceptors.
-Balanced totals guarantee a feasible transportation flow.  It preserves the
-upper-bound number of bonds and therefore is minimum.  Conversely, any plan
-with a smaller diagonal entry at one parent sacrifices a preservable bond and
-cannot be minimum.  Residual flows are in one-to-one correspondence with the
-remaining minimum plans.
+Heavy--heavy and heavy--hydrogen matrix entries are disjoint, and hydrogen--
+hydrogen entries vanish.  A hydrogen that retains its transported parent
+contributes zero; a transfer deletes one parent bond and creates another, so
+it contributes two.  This proves \cref{eq:si-h-decomposition}.  Since
+\(x_{ii}\leq\min(r_i,q_i)\), no flow preserves more than
+\(\sum_i\min(r_i,q_i)\) parent bonds.  Setting every diagonal cell to this
+maximum leaves balanced donor and acceptor totals, so a residual transportation
+flow achieves all maxima simultaneously.  With
+\[
+ T=\sum_i(r_i-q_i)_+=\sum_i(q_i-r_i)_+
+   =\frac12\sum_i|r_i-q_i|,
+\]
+the minimum hydrogen contribution is \(2T=\sum_i|r_i-q_i|\), proving
+\cref{eq:si-h-combined}.
 \end{proof}
+
+\begin{corollary}[Global full-atom optimum]
+Under the stated assumptions,
+\[
+ \min_{\pi,\sigma}\CD_{\rm full}(\pi,\sigma)=\min_\pi F(\pi).
+\]
+The full optimizer set is the disjoint union of the minimum hydrogen lifts of
+all heavy maps in \(\arg\min_\pi F(\pi)\).
+\end{corollary}
+
+The corollary eliminates the explicit \(H!\) hydrogen-bijection dimension for
+optimization, but it does not justify filtering to heavy-CD minimizers.  For a
+sharp counterexample, let both heavy graphs be the same three-vertex path
+\(0\text{--}1\text{--}2\), with one vertex colour, and take
+\(r=(3,0,0)\), \(p=(0,3,0)\).  The identity and path reversal have
+\(\CD_Q=0\) and hydrogen penalty 6.  The map
+\(\pi=(1,0,2)\) has \(\CD_Q=2\) but transports \(p\) to \(r\), so its
+hydrogen penalty is zero and \(F(\pi)=2<6\).  Heavy-first minimization followed
+by lifting would discard every global full-CD optimizer.
+
+An exact integrated search can add the non-negative unary assignment cost
+\(c^H_{ip}=|r_i-p_p|\) to committed costs and to the residual blocked linear-
+assignment lower bound.  Alternatively, heavy-CD shells can be processed in
+increasing order while tracking the best combined value \(B\); enumeration of
+all full optimizers may stop once the next heavy-CD lower bound is strictly
+greater than \(B\).  Either route leaves an NP-hard heavy-map problem (set all
+hydrogen counts to zero) and cannot remove the cost of explicitly outputting
+all labeled optimizers.  The current release implements the conditional
+closed-form summary and flow expansion, not this integrated combined-objective
+branch-and-bound.  The FlowER experiment therefore claims heavy-atom CD only.
 
 \begin{proposition}[Labeled hydrogen multiplicity]
 For feasible cell counts \(X\), the number of explicit labeled-hydrogen
 bijections realizing the flow is
 \begin{equation}
- N(X)=\frac{\prod_i r_i!\prod_jp_j!}{\prod_{i,j}x_{ij}!}.
+ N(X)=\frac{\prod_i r_i!\prod_jq_j!}{\prod_{i,j}x_{ij}!}.
  \label{eq:si-hcount}
 \end{equation}
 \end{proposition}
@@ -742,18 +840,40 @@ bijections realizing the flow is
 For each reactant parent \(i\), partition its \(r_i\) labeled hydrogens among
 destination cells in
 \(r_i!/\prod_jx_{ij}!\) ways.  At each product parent \(j\), biject the
-selected incoming hydrogens with its \(p_j\) labeled product hydrogens in
-\(p_j!\) ways.  Multiplication over all rows and columns yields
+selected incoming hydrogens with its \(q_j\) labeled product hydrogens in
+\(q_j!\) ways.  Multiplication over all rows and columns yields
 \cref{eq:si-hcount}.
 \end{proof}
 
-The algorithm sums \(N(X)\) without constructing explicit hydrogen vertices.
-Exhaustive controls through four labeled hydrogens on three parents compare
-this value and every plan against literal hydrogen-bijection enumeration.  A
-plan cap returns \texttt{complete=False}; it does not reinterpret the partial
-sum as the total multiplicity.
+\begin{corollary}[Closed total labeled multiplicity]
+The number of labeled hydrogen bijections attaining the fixed-map minimum is
+\begin{equation}
+ L_H(\pi)=T!\prod_i
+ \frac{\max(r_i,q_i)!}{|r_i-q_i|!}.
+ \label{eq:si-h-total}
+\end{equation}
+\end{corollary}
 
-\section{Reference blinding and evidence integrity}
+\begin{proof}
+At parent \(i\), choose and biject the
+\(\min(r_i,q_i)\) labels that retain their parent.  This gives
+\(\max(r_i,q_i)!/|r_i-q_i|!\) local injections.  Exactly \(T\) displaced
+reactant labels and \(T\) unfilled product labels remain; an arbitrary
+bijection between them gives the factor \(T!\).
+\end{proof}
+
+The closed form is evaluated in linear time in the number of parents, apart
+from big-integer arithmetic, and without constructing flow matrices or
+explicit hydrogen vertices.  It counts labeled bijections, not flow plans,
+symmetry or ITS classes.  When individual parent-indexed plans are requested,
+the implementation enumerates every residual donor--acceptor matrix and uses
+\cref{eq:si-hcount}; a plan cap returns \texttt{complete=False}.  Exhaustive
+controls through four labeled hydrogens on three parents compare the closed
+form, every flow and literal hydrogen-bijection enumeration.  Nonminimum
+numeric full-CD shells require higher-cost hydrogen lifts and are not covered
+by the minimum-lift routine.
+
+\section{Supplementary Note 9: Reference blinding and evidence integrity}
 
 \subsection{Independent endpoint blinding}
 
@@ -777,22 +897,34 @@ The serial runner uses one process and one numerical thread.  Before work it
 sets a hard address-space limit and records every search and structure bound.
 Each gzip JSON case contains the dataset row identity, blinded-order digests,
 options, result scopes, completion flags and a canonical payload digest.  The
-manifest binds dataset, source implementation, schema and options.  Resume
+manifest binds the dataset, a selected campaign-critical source-file digest,
+schema and options.  It is not a whole-repository or environment digest.  Resume
 accepts a case only if its payload, reaction and manifest bindings all match.
 Writes use a temporary file followed by atomic replacement.
 
-The manuscript summarizer rechecks every case digest and the manifest digest
-before deriving statistics.  A case contributes only when enumeration and the
-specific downstream computation are complete.  The one-second pilot is
-therefore a resource-censored validation cohort, not a random or representative
-estimate of the FlowER population.
+The manuscript summarizer recomputes the canonical manifest digest, every case
+payload digest and every case-to-manifest binding before deriving statistics.
+The historical manifest did not encode the per-invocation
+\texttt{max\_cases} option; the intended 100-row selection is instead fixed by
+the 100 immutable case identities stored with the manuscript.  A case
+contributes only when enumeration and the specific downstream computation are
+complete.  Pilot searches used cooperative per-shell-call budgets and are a
+resource-censored validation cohort, not a random or representative estimate
+of the FlowER population.  The pilot was run with \texttt{certify=False}; its
+closure records are implementation outputs supported by the independent test
+suite, not per-case prefix-cover certificates.
 
-\section{Independent validation matrix}
+\section{Supplementary Note 10: Independent validation matrix}
 
 Correctness tests compare complete mapping sets rather than only optimum
-values.  The final acceptance suite contains 92 passing Mapper/validator tests
-and deselects one optional PuLP/CBC integration test because that external
-solver is not part of the in-process exact environment.
+values.  In the recorded SynKit environment, the acceptance command
+\begin{quote}\small
+\texttt{python -m pytest -q Test/Chem/Mapper/module\\
+Test/Chem/Reaction/test\_aam\_validator.py}
+\end{quote}
+completed 102 tests, including the available PuLP/CBC integration control.
+The command, counts, timing and resource fields are frozen in
+\texttt{paper/synister/evidence/validation\_round7.json}.
 
 \begin{table}[ht]
 \centering
@@ -815,12 +947,14 @@ Certificates & JSON round trip, tampered digest, tampered transporter,
 incomplete frontier and zero-time interruption all fail closed \\
 Streaming and caps & Collected and callback streams have identical counts and
 digests; caps never set completeness true \\
-Hydrogen lifting & All labeled bijections through four hydrogens and three
-parents agree with flow plans and factorial multiplicities \\
+Hydrogen lifting & Closed distance and multiplicity agree with every flow and
+all labeled bijections through four hydrogens on three parents; the heavy/full
+optimizer counterexample is retained as a regression \\
 Blinding & Independent endpoint permutations leave the held-out reference
 outside seed and search construction \\
 Structural spectrum & Relabel invariance, multiple ITS classes,
-boundary-aware templates and canonicalization timeout semantics \\
+boundary-aware templates, canonicalization timeout semantics and forced unary-
+property refinement of symmetry \\
 Alternative ITS panels & Reference, SLAP and no-seed modes have identical
 class sets; arbitrary numeric and minimal targets include completed empty
 shells; symmetry respects every unary ITS attribute \\
@@ -829,18 +963,23 @@ shells; symmetry respects every unary ITS attribute \\
 \end{table}
 
 The suite ran under a hard 6 GiB address-space cap and one numerical thread.
-Peak resident memory was 206,248 KiB with zero swap.  SynKit's source-size,
+Peak resident memory was 205,508 KiB with zero swap.  SynKit's source-size,
 docstring, complexity and flake8 gates passed; all changed Mapper/application
 Python files passed Black.  The strict offline Sphinx build and both LaTeX
 manuscripts are part of the acceptance procedure.
 
-\section{Frozen pilot results and censoring}
+\section{Supplementary Note 11: Frozen pilot results and censoring}
 
-The frozen schema-v4 pilot contains the first 100 processed FlowER records.
-It used one second per shell, at most 10,000 selected mappings, 0.25 seconds
-for bounded product-symmetry discovery and 0.1 seconds per representative for
-exact structure canonicalization.  The complete-record results are reproduced
-in \cref{tab:si-pilot}.
+The frozen schema-v4 pilot contains the first 100 rows processed in file order
+from the result-independent 10,000-row FlowER cohort.  Each shell call had a
+one-second cooperative budget.  Streamed minimal mode first used a prerequisite
+optimization pass and then an enumeration pass with only the time remaining in
+that same outer budget.  Because deadline checks are cooperative, indivisible
+operations could overrun the nominal second.  The run allowed at most 10,000
+selected mappings, 0.25
+seconds for bounded product-symmetry discovery and 0.1 seconds per
+representative for exact structure canonicalization.  The complete-record
+results are reproduced in \cref{tab:si-pilot}.
 
 \begin{table}[ht]
 \centering
@@ -856,7 +995,7 @@ Median heavy atoms (range) & 32 (13--48) & 32.5 (13--52) \\
 Median labeled maps (maximum) & 16 (192) & 16 (192) \\
 Multiple exact ITS classes & 16 / 46 & 18 / 52 \\
 Alternative ITS classes relative to reference & 39 & 54 \\
-Mapping-dependent reaction centre & 30 / 46 & 35 / 52 \\
+Coordinate-level centre union exceeds intersection & 30 / 46 & 35 / 52 \\
 Held-out reference ITS class observed & 45 / 46 & 52 / 52 \\
 \bottomrule
 \end{tabular}
@@ -900,7 +1039,7 @@ and alternative identifiers agreed in all 18 queries.  A labeled
 representative could differ between seed modes while retaining the same exact
 class identifier.  Search nodes did not:
 at CD 12 the three runs visited 916, 916 and 400 nodes, respectively, while at
-CD 4 they visited 15, 10 and 15.  Thus a ground-truth map can provide the
+CD 4 they visited 15, 10 and 15.  Thus a held-out dataset reference map can provide the
 reference-CD scalar and a valid incumbent, but it is not uniformly an
 algorithmic advantage.  The serial application peaked at 217,404 KiB under a
 6 GiB cap.
@@ -911,7 +1050,7 @@ reaction population rate.  The exactness statements concern each closed
 record.  Population, mechanism and predictive-model claims require a larger
 preregistered resource-stratified experiment.
 
-\section{Implementation invariants and resource bounds}
+\section{Supplementary Note 12: Implementation invariants and resource bounds}
 
 \subsection{Output, working memory and certificate memory}
 
@@ -931,9 +1070,12 @@ This is an API guarantee rather than a hidden optimization: users choose
 bounded collection, uncollected streaming, or a collected replay certificate.
 No mode claims all three at arbitrary output size.
 
-The edit-support backend stores only the support pair currently being tested,
-residual graphs and its bounded selected output.  Its combinatorial work
-estimate is
+The edit-support backend materializes the
+\(\binom{m_P}{d_P}\) product deletion-support tuples in invariant buckets,
+requiring \(O(\binom{m_P}{d_P}d_P)\) tuple entries in addition to graph and
+dictionary overhead.  It then streams reactant supports and constructs the
+current residual graphs.  Collected selected output adds its usual
+\(\Theta(Ln)\) term.  Its combinatorial work estimate is
 \[
  \binom{m_R}{d_R}\binom{m_P}{d_P}.
 \]
@@ -958,8 +1100,9 @@ rather than returning a partial shell \\
 prefixes make status \texttt{timeout} and completeness false \\
 \texttt{max\_mappings} & Selected-output cap; reaching it is an interruption,
 not a smaller scientific shell \\
-\texttt{collect\_mappings=False} & Retains exact count/digest metadata and may
-invoke a callback, while the returned mapping list stays empty \\
+\texttt{collect\_mappings=False} & Retains the exact selected count and may
+invoke a callback; a caller can compute a stream digest, while the returned
+mapping list stays empty \\
 Symmetry time/node/work limits & May reduce the verified subgroup or disable
 deeper quotient pruning; never licenses an unverified automorphism \\
 Structure time/node limits & Mark ITS/template analysis incomplete without
@@ -982,56 +1125,13 @@ interpreting a timeout with a found reference as a complete reference shell.
 
 For a numeric query, users may disable the separate optimization pass.  The
 requested shell can still be complete, but \texttt{minimum\_cost} is then
-unset rather than filled by the lowest selected or visited mapping.  For a
-minimal query, two-pass optimization and enumeration remain inseparable.
-Backend metadata records whether assignment or edit support was used and why;
+unset rather than filled by the lowest selected or visited mapping.  A
+collected minimal query can retain and filter optimizers in one traversal;
+callback or uncollected streaming uses a separate proof pass before emitting
+the fixed minimum shell.  Backend metadata records whether assignment or edit support was used and why;
 the output schema and scope are otherwise identical.
 
-\section{Relation to the earlier formal manuscript}
-
-The standalone Synister manuscript had 38 pages, 13,631 prose words, 15
-floats and 40 displayed equations.  It mixed four layers: the implemented
-heavy-atom exact mapper, reference-conditioned development kernels, proposed
-catalog/resume designs, and a richer Lewis electron-resource theory.  Keeping
-all four in the main Article obscured which claims were globally exact and
-which were prospective.
-
-The final publication package therefore separates them as follows.
-
-\begin{table}[ht]
-\centering
-\caption{Disposition of formal material from the development manuscript.}
-\begin{tabular}{>{\raggedright\arraybackslash}p{0.30\linewidth}
-                >{\raggedright\arraybackslash}p{0.60\linewidth}}
-\toprule
-Material & Final disposition \\
-\midrule
-Exact-shell complexity, binary edit support, branch-and-bound bounds,
-stabilizers and output lower bounds & Corrected against final code; concise
-statements in the Article and full proofs in this Supplement \\
-Reference-ITS component reduction & Retained in SynKit as explicitly
-seed-conditioned audit functionality; not used for global pilot claims \\
-Endpoint catalogs, materialized variants, double-coset and DAG proposals &
-Retained as archival development figures/text; excluded from production
-claims until implemented and independently validated \\
-Lewis electron-resource integrality, parity and radical/polar theory &
-Preserved verbatim in \texttt{lewis\_parity.tex} and
-\texttt{ref/cd.tex}; treated as a separate richer objective, not as evidence
-for the heavy-atom bond-order pilot \\
-Development-era FlowER campaigns & Superseded by the independently blinded,
-digest-bound schema-v4 pilot with explicit censoring \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-This disposition preserves the mathematical work while preventing an
-unimplemented optimization proposal or a different electron objective from
-being mistaken for the method evaluated in the Article.  It also makes the
-review boundary reproducible: production theorems are exactly those in the
-Article and this Supplement; archival sources remain available for a future
-Lewis-distance or algorithm-engineering study.
-
-\section{Reproducibility paths}
+\section{Supplementary Note 13: Reproducibility paths}
 
 The implementation resides in
 \texttt{synkit/Chem/Mapper}.  Exact assignment, bounds, records, independent
@@ -1044,29 +1144,42 @@ Tests reside in
 deep submodules have identity with the canonical package.
 
 Frozen evidence is under
-\texttt{paper/synister/evidence/pilot100\_v4}.  Its manifest digest is
-\texttt{2a10b5d9b46c6d585a319f7940d808ace3338c6ef22137d3fb23bb7615e5bbb7},
-and the implementation digest in that manifest matches the final SynKit
-source.  Raw reference mappings and reaction SMILES are not redistributed in
-the frozen case records.
+\texttt{paper/synister/evidence/pilot100\_v4}.  Its manifest digest is:
+\begin{center}\small
+\texttt{2a10b5d9b46c6d585a319f7940d808ace3338c6ef22137d3fb23bb7615e5bbb7}
+\end{center}
+Its historical selected-file digest is:
+\begin{center}\small
+\texttt{7d310149ea290bebeb2c153ebdc3aa5275a52daa99ad5a50d98726dbd2ad8394}
+\end{center}
+The latter intentionally identifies the campaign-era listed files; it is not a
+Git revision, does not cover every imported module and does not match current
+HEAD.  Raw reference mappings and reaction SMILES are absent from the frozen
+case records.  The analyzed 10,000-row input cohort is separately identified
+by SHA-256 and the companion Synister commit \texttt{900d40e}.
 
 The application record is under
 \texttt{paper/synister/evidence/alternative\_its\_case\_v1}.  Its payload digest
-is
-\texttt{6706dbe4ff97e786cbe2436661219241b41277b0849611307be40ed80754c130};
-its implementation digest is independently replayed by the test suite.  It
-stores representative AAM correspondences and stable class identifiers but no
-raw reaction SMILES.
+is:
+\begin{center}\small
+\texttt{6706dbe4ff97e786cbe2436661219241b41277b0849611307be40ed80754c130}
+\end{center}
+The test suite recomputes this payload digest and its cross-seed class-set
+invariants; its historical selected-file digest is not equated with current
+source.  It stores representative AAM correspondences and stable class
+identifiers but no raw reaction SMILES.
 
-\section{Conclusion}
+\section{Supplementary conclusion}
 
 The formal result is deliberately set-valued.  For a declared global shell,
 Synister either returns every mapping in the declared labeled or verified-
 subgroup scope, proves the shell empty, or exposes unresolved work.  Binary
 edit support and assignment branch-and-bound are independent exact routes;
 verified stabilizers compress only proved symmetries; certificates replay a
-complete decision-tree cover; and hydrogen flow restores implicit-H
-multiplicity after heavy-atom search.  NP-completeness and factorial output
+complete decision-tree cover; and pendant hydrogens admit an exact conditional
+score and multiplicity reduction.  Global full-atom optimization requires the
+combined heavy-plus-hydrogen objective and is not claimed by the present
+pilot.  NP-completeness and factorial output
 preclude a universal fast algorithm, but they do not preclude rigorous,
 resource-aware closure on chemically relevant instances.  The frozen pilot
 uses that distinction to show that endpoint-optimal atom mapping can be

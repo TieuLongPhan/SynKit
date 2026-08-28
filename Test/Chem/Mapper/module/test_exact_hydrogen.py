@@ -4,6 +4,7 @@ import pytest
 
 from synkit.Chem.Mapper.exact.hydrogen import (
     enumerate_minimal_hydrogen_transfers,
+    summarize_minimal_hydrogen_lifts,
 )
 
 
@@ -45,6 +46,58 @@ def test_hydrogen_flow_counts_match_all_small_labeled_bijections():
             assert result.labeled_mapping_count == sum(
                 distance == minimum for distance in distances
             )
+
+
+def test_closed_form_summary_matches_all_small_flow_enumerations():
+    for total in range(5):
+        compositions = tuple(_weak_compositions(total, 3))
+        for reactant, product in itertools.product(compositions, repeat=2):
+            enumerated = enumerate_minimal_hydrogen_transfers(
+                reactant,
+                product,
+                [0, 1, 2],
+                collect_plans=False,
+            )
+            summary = summarize_minimal_hydrogen_lifts(
+                reactant,
+                product,
+                [0, 1, 2],
+            )
+            assert summary.minimum_distance == enumerated.minimum_distance
+            assert summary.transferred_hydrogen_count * 2 == summary.minimum_distance
+            assert summary.labeled_mapping_count == enumerated.labeled_mapping_count
+
+
+def test_heavy_only_optimum_need_not_minimize_full_distance_after_h_lifting():
+    # Identical heavy paths have zero-CD identity and reversal maps.  With
+    # r=(3,0,0) and p=(0,3,0), each has hydrogen distance 6.  The non-isomorphic
+    # heavy permutation below costs 2 but preserves every H parent, so its full
+    # additive distance is 2 rather than 6.
+    edges = {(0, 1), (1, 2)}
+
+    def heavy_distance(mapping):
+        transported = {
+            tuple(sorted((mapping[left], mapping[right]))) for left, right in edges
+        }
+        return len(edges.symmetric_difference(transported))
+
+    scores = {}
+    heavy_scores = {}
+    for mapping in itertools.permutations(range(3)):
+        heavy_scores[mapping] = heavy_distance(mapping)
+        hydrogen = summarize_minimal_hydrogen_lifts(
+            [3, 0, 0],
+            [0, 3, 0],
+            mapping,
+        )
+        scores[mapping] = heavy_scores[mapping] + hydrogen.minimum_distance
+
+    assert min(heavy_scores.values()) == 0
+    assert {
+        scores[mapping] for mapping, score in heavy_scores.items() if score == 0
+    } == {6}
+    assert heavy_scores[(1, 0, 2)] == 2
+    assert scores[(1, 0, 2)] == min(scores.values()) == 2
 
 
 def test_single_minimal_hydrogen_transfer_and_labeled_count():

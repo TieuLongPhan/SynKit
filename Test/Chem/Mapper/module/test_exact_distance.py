@@ -485,6 +485,20 @@ def test_weighted_bounds_match_brute_force_for_every_shell():
         assert verify_distance_enumeration_certificate(
             lgp, result.certificate, mappings=result.mappings
         )
+        unbounded = enumerate_distance_mappings(
+            lgp,
+            CD=shell,
+            binary=False,
+            max_bijections=None,
+            tolerance=0,
+            compute_minimum_cost=False,
+            assignment_lower_bound=False,
+            assignment_upper_bound=False,
+            atom_profile_pruning=False,
+        )
+        assert {tuple(mapping) for mapping in unbounded.mappings} == {
+            permutation for permutation, cost in brute.items() if cost == shell
+        }
         profile_pruned = enumerate_distance_mappings(
             lgp,
             CD=shell,

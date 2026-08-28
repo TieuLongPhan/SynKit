@@ -1,5 +1,7 @@
 import itertools
 from collections import Counter
+import gzip
+import json
 
 from scripts import run_synister_global_shells as campaign
 from synkit.Chem.Mapper import (
@@ -59,6 +61,29 @@ def test_reference_cd_search_is_invariant_to_equal_cost_reference_choice():
     assert identity.reaction_center == reversal.reaction_center
     assert identity.representative_solution_count == 1
     assert identity.labeled_solution_count == 2
+
+
+def test_reaction_center_properties_always_refine_symmetry_pruning():
+    reactant = _graph(3, ((0, 1), (1, 2)))
+    product = reactant.copy()
+    reactant.set_prop("hcounts", [1, 0, 0])
+    product.set_prop("hcounts", [1, 0, 0])
+
+    result = analyze_reference_blinded_global_shell(
+        [reactant, product],
+        [0, 1, 2],
+        target_mode="minimal",
+        config=_config(
+            reaction_center_properties=("hcounts",),
+            symmetry_node_properties=(),
+        ),
+    )
+
+    # Reversing the path preserves the bond objective but swaps unequal H
+    # counts.  It must remain a separate representative for ITS analysis.
+    assert result.complete is True
+    assert result.representative_solution_count == 2
+    assert result.labeled_solution_count == 2
 
 
 def test_minimal_search_reveals_suboptimal_reference_after_completion():
@@ -200,7 +225,60 @@ def test_campaign_parallel_workers_return_complete_unique_records():
     assert {record["source_line"] for record in records} == {1, 2}
     assert all(record["record_sha256"] for record in records)
     assert all(
-        shell["complete"]
-        for record in records
-        for shell in record["shells"].values()
+        shell["complete"] for record in records for shell in record["shells"].values()
     )
+
+
+def test_campaign_main_writes_progress_and_digest_checked_summary(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    dataset = tmp_path / "one_case.csv.gz"
+    output = tmp_path / "campaign"
+    with gzip.open(dataset, "wt", encoding="utf-8", newline="") as stream:
+        stream.write("source_line,reaction_id,mapped_reaction\n")
+        stream.write(
+            "1,example:1," "[CH3:1][CH2:2][OH:3]>>[CH3:1][CH2:2][OH:3]|example:1\n"
+        )
+    monkeypatch.setattr(campaign, "_configure_memory_limit", lambda value: 0)
+
+    assert (
+        campaign.main(
+            [
+                "--dataset",
+                str(dataset),
+                "--output",
+                str(output),
+                "--max-cases",
+                "1",
+                "--workers",
+                "1",
+                "--time-limit-per-shell",
+                "5",
+                "--max-mappings",
+                "100",
+                "--binary",
+            ]
+        )
+        == 0
+    )
+
+    events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert events[1]["completed_this_run"] == 1
+    assert events[1]["remaining_this_run"] == 0
+    summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+    assert summary["case_records"] == 1
+    assert summary["error_records"] == 0
+
+    case_path = output / "cases" / "line_1.json.gz"
+    with gzip.open(case_path, "rt", encoding="ascii") as stream:
+        tampered = json.load(stream)
+    tampered["reaction_id"] = "tampered"
+    with gzip.open(case_path, "wt", encoding="ascii") as stream:
+        json.dump(tampered, stream)
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    campaign._write_summary(output, manifest)
+    rejected = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+    assert rejected["case_records"] == 0
+    assert rejected["error_records"] == 1

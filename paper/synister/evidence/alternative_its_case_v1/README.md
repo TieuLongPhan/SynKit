@@ -13,6 +13,11 @@ the bound implementation digest is
 `d48db5c30262d1c1a327002e7f89c32ac76b54ede52f0bba19c11b6ab3389856`.
 Peak resident memory was 217,404 KiB.
 
+That implementation value is the historical digest of the exporter-defined
+source-file set. It is not a whole-repository Git revision and is not expected
+to equal the digest of evolving current source. The test suite instead
+recomputes the immutable record payload and its semantic cross-seed invariants.
+
 Each target was repeated with the held-out reference, reference-free SLAP and
 no seed. All three modes returned the same status, labeled shell count, exact
 ITS-class count and alternative-class count. The seed changed only search

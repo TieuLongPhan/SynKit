@@ -25,19 +25,40 @@ def _payload_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value)).hexdigest()
 
 
+def _verify_embedded_digest(
+    payload: dict[str, object],
+    digest_field: str,
+    *,
+    context: str,
+) -> str:
+    """Verify a digest computed before its own field was inserted."""
+    claimed = payload.get(digest_field)
+    unsigned = dict(payload)
+    unsigned.pop(digest_field, None)
+    actual = _payload_sha256(unsigned)
+    if claimed != actual:
+        raise ValueError(f"{context} digest mismatch")
+    return actual
+
+
 def _verified_records(campaign: Path):
     manifest = json.loads((campaign / "manifest.json").read_text(encoding="utf-8"))
-    manifest_sha256 = manifest["manifest_sha256"]
+    manifest_sha256 = _verify_embedded_digest(
+        manifest,
+        "manifest_sha256",
+        context="campaign manifest",
+    )
     records = []
     for path in sorted((campaign / "cases").glob("line_*.json.gz")):
         with gzip.open(path, "rt", encoding="ascii") as stream:
             record = json.load(stream)
-        claimed = record.pop("record_sha256", None)
-        if claimed != _payload_sha256(record):
-            raise ValueError(f"case digest mismatch: {path}")
+        _verify_embedded_digest(
+            record,
+            "record_sha256",
+            context=f"case payload {path}",
+        )
         if record.get("campaign_manifest_sha256") != manifest_sha256:
-            raise ValueError(f"case manifest mismatch: {path}")
-        record["record_sha256"] = claimed
+            raise ValueError(f"case manifest binding mismatch: {path}")
         records.append(record)
     return manifest, records
 

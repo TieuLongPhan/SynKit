@@ -453,12 +453,21 @@ def analyze_reference_blinded_global_shell(
 
     reference_cd = chemical_distance(lgp, reference, binary=config.binary)
     target = reference_cd if target_mode == "reference_cd" else "minimal"
-    properties = _property_vectors(lgp, config.reaction_center_properties)
-    symmetry_properties = tuple(
-        name
-        for name in config.symmetry_node_properties
-        if name in _property_vectors(lgp, (name,))
+    property_names = tuple(
+        dict.fromkeys(
+            (*config.reaction_center_properties, *config.symmetry_node_properties)
+        )
     )
+    available_properties = _property_vectors(lgp, property_names)
+    properties = {
+        name: available_properties[name]
+        for name in config.reaction_center_properties
+        if name in available_properties
+    }
+    # Every unary attribute used by reaction-centre or structural analysis must
+    # also refine product automorphisms.  A bond-graph automorphism that changes
+    # such an attribute preserves CD but need not preserve the downstream ITS.
+    symmetry_properties = tuple(available_properties)
     observer = _BlindShellObserver(
         reactant,
         product,

@@ -45,9 +45,11 @@ from .distance import (
 from .core import ITSComponentReduction, reduce_to_reference_its_components
 from .hydrogen import (
     HydrogenEnumerationResult,
+    HydrogenLiftSummary,
     HydrogenTransferPlan,
     enumerate_lgp_hydrogen_transfers,
     enumerate_minimal_hydrogen_transfers,
+    summarize_minimal_hydrogen_lifts,
 )
 from .edit_support import (
     BinaryEditBudget,
@@ -95,9 +97,11 @@ __all__ = [
     "ITSComponentReduction",
     "reduce_to_reference_its_components",
     "HydrogenEnumerationResult",
+    "HydrogenLiftSummary",
     "HydrogenTransferPlan",
     "enumerate_lgp_hydrogen_transfers",
     "enumerate_minimal_hydrogen_transfers",
+    "summarize_minimal_hydrogen_lifts",
     "BinaryEditBudget",
     "BinaryEditSupportResult",
     "binary_edit_budget",

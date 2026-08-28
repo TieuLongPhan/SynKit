@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "kind": "synister_mapper_validator_acceptance",
+  "date": "2026-08-28",
+  "command": "/home/lolo/.conda/envs/synkit/bin/python -m pytest -q Test/Chem/Mapper/module Test/Chem/Reaction/test_aam_validator.py",
+  "python_version": "3.11.0",
+  "address_space_limit_bytes": 6442450944,
+  "numerical_threads": 1,
+  "passed": 102,
+  "failed": 0,
+  "skipped": 0,
+  "pulp_cbc_control_included": true,
+  "pytest_elapsed_seconds": 2.75,
+  "process_wall_seconds": 3.23,
+  "maximum_resident_set_kib": 205508,
+  "swaps": 0,
+  "exit_status": 0
+}

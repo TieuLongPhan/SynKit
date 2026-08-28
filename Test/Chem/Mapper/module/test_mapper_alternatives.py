@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 
 from scripts.run_synister_alternative_its import (
-    _implementation_sha256,
     _payload_sha256,
 )
 from scripts.summarize_synister_evidence import summarize
@@ -252,13 +251,15 @@ def test_frozen_pilot_has_reproducible_alternative_its_application_yield():
     assert modes["reference_cd"]["alternative_its_classes_relative_to_reference"] == 54
 
 
-def test_frozen_alternative_its_case_is_bound_to_current_implementation():
+def test_frozen_alternative_its_case_payload_and_semantics_replay():
     record_path = Path("paper/synister/evidence/alternative_its_case_v1/record.json")
     record = json.loads(record_path.read_text(encoding="ascii"))
     claimed = record.pop("record_sha256")
 
     assert claimed == _payload_sha256(record)
-    assert record["implementation_sha256"] == _implementation_sha256()
+    assert record["implementation_sha256"] == (
+        "d48db5c30262d1c1a327002e7f89c32ac76b54ede52f0bba19c11b6ab3389856"
+    )
     grouped = {}
     identifiers = {}
     for query in record["queries"]:

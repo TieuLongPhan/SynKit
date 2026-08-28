@@ -125,6 +125,16 @@ def _read_gzip_json(path: Path) -> dict[str, object]:
         return json.load(stream)
 
 
+def _record_payload_is_valid(record, manifest_sha256) -> bool:
+    """Verify one immutable case payload and its campaign binding."""
+    payload = dict(record)
+    claimed = payload.pop("record_sha256", None)
+    return bool(
+        claimed == _payload_sha256(payload)
+        and payload.get("campaign_manifest_sha256") == manifest_sha256
+    )
+
+
 def _load_rows(dataset: Path) -> list[dict[str, str]]:
     opener = gzip.open if dataset.suffix == ".gz" else open
     with opener(dataset, "rt", encoding="utf-8", newline="") as stream:
@@ -261,13 +271,10 @@ def _case_is_current(path, row, manifest_sha256) -> bool:
         record = _read_gzip_json(path)
     except Exception:
         return False
-    claimed = record.pop("record_sha256", None)
-    valid = claimed == _payload_sha256(record)
     reaction = _reaction_from_row(row)
     return bool(
-        valid
+        _record_payload_is_valid(record, manifest_sha256)
         and record.get("schema_version") == SCHEMA_VERSION
-        and record.get("campaign_manifest_sha256") == manifest_sha256
         and record.get("reaction_id") == row["reaction_id"]
         and record.get("reaction_sha256")
         == hashlib.sha256(reaction.encode("utf-8")).hexdigest()
@@ -343,7 +350,8 @@ def _write_summary(output: Path, manifest) -> None:
         except Exception:
             errors += 1
             continue
-        if record.get("campaign_manifest_sha256") != manifest["manifest_sha256"]:
+        if not _record_payload_is_valid(record, manifest["manifest_sha256"]):
+            errors += 1
             continue
         records += 1
         if record.get("status") == "error":
@@ -555,8 +563,8 @@ def main(argv=None) -> int:  # noqa: C901
         print(
             json.dumps(
                 {
-                    "completed_this_run": completed,
-                    "remaining_this_run": len(pending) - completed,
+                    "completed_this_run": completed_this_run,
+                    "remaining_this_run": len(pending) - completed_this_run,
                     "source_line": record["source_line"],
                     "reaction_id": record["reaction_id"],
                     "statuses": (

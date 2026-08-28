@@ -4,9 +4,12 @@ This directory freezes the first 100 records processed by the schema-v4
 Synister global-shell runner. The input dataset itself is not redistributed;
 its SHA-256 identifier is recorded in `manifest.json`.
 
-The run used one Python process and one numerical thread, a hard 6 GiB address
-space limit, one second per shell, at most 10,000 selected mappings, and exact
-ITS/template canonicalization bounded at 0.1 seconds per representative. Both
+The run used one Python process and one numerical thread and a hard 6 GiB
+address-space limit. Each shell call had a one-second cooperative budget;
+streamed minimal mode could use a prerequisite optimization pass followed by
+an enumeration pass with only the time remaining in that same outer budget.
+At most 10,000 mappings could be selected, and exact
+ITS/template canonicalization was bounded at 0.1 seconds per representative. Both
 the reference-distance and globally minimal heavy-atom shells were queried.
 Endpoint atom orders were independently blinded. A reference-free SLAP map was
 permitted only as a feasible incumbent and branch-ordering seed.
@@ -25,3 +28,10 @@ The same verified records also derive the candidate-complete application yield:
 
 This is a deliberately small, resource-bounded pilot, not an estimate for all
 10,000 FlowER reactions. The manuscript labels it accordingly.
+
+The historical manifest records the 10,000-row dataset and search options but
+does not include the per-invocation `--max-cases` batch limit. The intended
+pilot cohort is therefore bound by the 100 immutable case identities in this
+directory. Its `implementation_sha256` is a digest of the campaign-era listed
+source files, not a whole-repository Git revision or a claim about current
+HEAD.

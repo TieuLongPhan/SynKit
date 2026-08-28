@@ -1,7 +1,11 @@
 # Synister internal review log
 
-All three rounds were performed against the implementation and frozen
+The review rounds were performed against the implementation and frozen
 schema-v4 evidence, not only against manuscript prose.
+
+This is a chronological log. Round 7 supersedes earlier statements about
+per-shell timing, validation counts and campaign digests; those older entries
+are retained only to document what was believed and later corrected.
 
 ## Round 1 — theory and exact-method review
 
@@ -201,3 +205,51 @@ on consecutive renders. The 11-page, 4,088-word Article and unchanged 17-page,
 4,986-word Supplement build without LaTeX, citation, reference, overfull or
 underfull warnings. Page-scale inspection covered the revised Introduction,
 workflow, evidence plot and formal Methods equations.
+
+## Round 7 — mathematical-scope and NCS reporting audit
+
+Findings:
+
+- Fixed-heavy hydrogen lifting had been described too broadly. Minimizing
+  heavy CD before lifting can discard the globally best additive full-atom
+  map.
+- Arbitrary floating-point inputs have tolerance-shell, not algebraic-equality,
+  semantics. The pilot's half-integer bond lattice is a verified special case
+  where the two coincide.
+- Structural symmetry must preserve every unary property used by reaction-
+  centre and ITS identity; coordinate-level centre instability is distinct
+  from non-isomorphic ITS multiplicity.
+- The historical campaign digest covers a listed source-file set and no
+  longer matches current source. Pilot deadline semantics, frozen selection and
+  certificate scope also required narrower wording.
+- The parallel runner had a progress-logging `NameError`, and the manuscript
+  summarizer and campaign summary writer needed actual payload verification.
+
+Actions:
+
+- Proved
+  `min_H CD_full(pi) = CD_heavy(pi) + sum_i |r_i-p_{pi(i)}|`, added the
+  three-path counterexample, and derived the closed labeled multiplicity
+  `T! prod_i max(r_i,q_i)!/|r_i-q_i|!`.
+- Added an O(n)-parent closed-form hydrogen summary, exhaustive equality tests,
+  and an explicit regression showing that heavy-only and full-CD optimizers
+  can differ. The integrated combined-objective branch-and-bound remains
+  clearly out of scope.
+- Forced all downstream unary properties into structural symmetry refinement,
+  added the corresponding regression, and made shell, quotient and structure
+  completion separate in the prose.
+- Recomputed manifest, case payload and manifest-binding digests before
+  manuscript statistics; made the campaign summary writer reject invalid
+  payloads; fixed and smoke-tested the parallel progress path.
+- Added Statistics and reproducibility, AI-assistance, Funding, data/code
+  archive requirements and explicit remaining submission metadata.
+
+Revalidation: the Mapper/validator acceptance command completed **102 tests**,
+including the available PuLP/CBC control, under a 6 GiB address-space cap and
+one numerical thread. Peak RSS was **205,508 KiB** with zero swap. Further
+format and evidence checks passed. The final 13-page Article and 18-page
+Supplement build with resolved citations and references and no LaTeX,
+overfull or underfull warnings. An independent final audit confirmed the
+hydrogen factorization, global combined objective, aggregate labeled-count
+formula and path counterexample, and prompted exact wording for shared deadline
+budgets, tolerance shells and tolerance-defined reaction centres.

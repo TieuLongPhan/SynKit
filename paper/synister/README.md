@@ -14,7 +14,7 @@ The initial manuscript snapshot was migrated from standalone Synister commit
 `900d40e` on 28 August 2026. Subsequent manuscript and method development is
 tracked here so that claims, code, tests, and frozen evidence remain together.
 
-`main.tex` is the concise 11-page journal Article. `supplementary.tex`
+`main.tex` is the concise 13-page journal Article. `supplementary.tex`
 contains the complete production-level formal specification and proofs. The
 older 38-page development manuscript is not used as the journal main text;
 its Lewis-resource derivations remain preserved verbatim in
@@ -32,6 +32,14 @@ questions:
 The third mode must never be reported as an unrestricted global shell. LaTeX
 build artifacts, including the PDF, are reproducible and ignored by the
 repository.
+
+The reported FlowER experiment optimizes heavy-atom bond-order CD. Pendant
+hydrogens have an exact conditional elimination for a fixed heavy map, with a
+closed score and labeled-multiplicity formula. This does **not** make “minimize
+heavy CD, then lift” a global full-atom optimizer: additive full CD requires
+optimizing heavy CD plus the transported hydrogen-count discrepancy. The
+current release exposes the conditional summary and flow expansion; the
+combined-objective branch-and-bound is a documented future implementation.
 
 Publication figures use the colour-blind-safe visual vocabulary adapted from
 `../Style`. The workflow is native TikZ in `figures/workflow.tex`; the vector

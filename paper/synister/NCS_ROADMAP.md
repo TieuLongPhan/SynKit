@@ -39,9 +39,13 @@ References may seed or order either global search but cannot restrict them.
 
 - Exact edit-support backend for small numeric CD.
 - Incremental element-blocked assignment branch-and-bound fallback.
-- Two-pass minimal-CD proof followed by shell enumeration.
+- For streamed minimal-CD output, a prerequisite proof pass followed by shell
+  enumeration within the declared outer budget; collected mode may filter a
+  one-pass search after the optimum is proved.
 - Verified automorphism generators and point stabilizers.
-- Heavy-first enumeration followed by exact hydrogen-flow lifting.
+- Exact fixed-heavy hydrogen elimination with a closed labeled-multiplicity
+  formula. Global full-atom optimization must minimize heavy CD plus the
+  hydrogen unary cost; post hoc lifting of heavy-CD minimizers is not enough.
 - Count, compact-orbit, and streaming outputs with explicit incomplete status.
 - An auditable selector that changes backend, never scientific scope.
 
@@ -51,7 +55,8 @@ For each globally minimal shell, report:
 
 - labeled mapping multiplicity;
 - symmetry-quotiented multiplicity;
-- mapping entropy (`log` quotient multiplicity);
+- verified-subgroup log multiplicity (subgroup-dependent unless the full
+  automorphism group is proved);
 - invariant reaction-centre intersection;
 - possible reaction-centre union; and
 - per-bond exact change frequency across the shell.
@@ -93,19 +98,33 @@ The journal-facing claim is not ready until:
 5. ambiguity produces a reproducible downstream scientific finding; and
 6. the main text contains final evidence rather than development chronology.
 
-## Status after four internal review rounds (28 August 2026)
+## Status after seven internal review rounds (28 August 2026)
 
 Gates 1--3 and 6 are satisfied by exhaustive controls and the rewritten
 Article. Gate 4 is satisfied at pilot scale by a frozen 100-case blinded
 campaign with explicit censoring and resource records; a larger preregistered
 cohort remains necessary before population-level claims. Gate 5 is satisfied
-for two direct downstream objects: exact reaction-centre/template labels change
-across maps, and each closed shell now yields a candidate-complete panel with
-one AAM per non-reference exact ITS class. The frozen pilot yields 39 such
-classes across 16 closed minimal-shell cases and 54 across 18 reference-CD
-cases. Predictive-model impact remains future work and is not claimed.
+only at the direct structural-label level: exact reaction-centre/template
+labels change across maps, and each closed shell yields a candidate-complete
+panel with one AAM per non-reference exact ITS class. The frozen pilot yields
+39 such classes across 16 closed minimal-shell cases and 54 across 18
+reference-CD cases. A measured predictive or scientific downstream outcome
+remains necessary for a strong Nature Computational Science submission and is
+not claimed here.
 
-The journal main text remains 11 pages. A separate Supplementary Information
+The journal main text is 13 pages, with approximately 2,100 words outside the
+abstract, Methods, availability statements and end matter, and four display
+items. A separate Supplementary Information
 manuscript restores the rigorous production-level definitions and proofs from
 the longer development draft while excluding unimplemented proposals from the
 validated method claim.
+
+## Author-supplied items required before submission
+
+- affiliation, corresponding-author email and ORCID;
+- final Funding statement;
+- tagged SynKit release, immutable Git commit and archival software DOI;
+- archival DOI for generated evidence and figure source data; and
+- results of the larger preregistered campaign plus matched-objective runtime,
+  bound, symmetry and hydrogen ablations if targeting Nature Computational
+  Science rather than a narrower methods venue.
