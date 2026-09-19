@@ -555,8 +555,8 @@ def main(argv=None) -> int:  # noqa: C901
         print(
             json.dumps(
                 {
-                    "completed_this_run": completed,
-                    "remaining_this_run": len(pending) - completed,
+                    "completed_this_run": completed_this_run,
+                    "remaining_this_run": len(pending) - completed_this_run,
                     "source_line": record["source_line"],
                     "reaction_id": record["reaction_id"],
                     "statuses": (

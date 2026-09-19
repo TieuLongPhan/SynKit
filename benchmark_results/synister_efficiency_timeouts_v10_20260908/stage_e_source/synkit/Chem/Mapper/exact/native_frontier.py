@@ -1,0 +1,377 @@
+"""Schedule disjoint resumable native subtrees and merge exact records online."""
+
+import ctypes
+import math
+import multiprocessing as mp
+import os
+import resource
+import time
+from collections import deque
+from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+from pathlib import Path
+
+from .native_candidates import (
+    NativeEnumerationStop,
+    enumerate_native_candidates,
+    prepare_native_candidates,
+)
+from .native_canonical import compact_code_identifier
+from .orbit_aggregation import OrbitAccumulator
+
+_STATE = None
+
+
+def _init(
+    lgp, target, config, seed, library, counter, deadline, barrier, cpu_index, cpus
+):
+    global _STATE
+    from ..analysis import _BlindShellObserver, _property_vectors
+    from ..graph.automorphism import bounded_automorphism_permutations
+    from ..slap.lap import _adjacency_and_elements
+    from .symmetry import permutation_group_order
+
+    resource.setrlimit(resource.RLIMIT_AS, (4 * 1024**3, 4 * 1024**3))
+    with cpu_index.get_lock():
+        index = cpu_index.value
+        cpu_index.value += 1
+    if hasattr(os, "sched_setaffinity"):
+        os.sched_setaffinity(0, {cpus[index % len(cpus)]})
+    a, labels = _adjacency_and_elements(lgp[0], False)
+    b, _ = _adjacency_and_elements(lgp[1], False)
+    observer = _BlindShellObserver(
+        a, b, labels, _property_vectors(lgp, config.reaction_center_properties), config
+    )
+    rg, rc = bounded_automorphism_permutations(
+        lgp[0], binary=False, node_properties=config.symmetry_node_properties
+    )
+    pg, pc = bounded_automorphism_permutations(
+        lgp[1], binary=False, node_properties=config.symmetry_node_properties
+    )
+    if not rc or not pc:
+        raise ValueError("frontier search requires complete side-group proofs")
+    accumulator = OrbitAccumulator(
+        observer,
+        rg[1:],
+        permutation_group_order(rg[1:]),
+        permutation_group_order(pg[1:]),
+        library_path=library,
+        record_only=True,
+    )
+    prepared = prepare_native_candidates(
+        lgp,
+        target,
+        library_path=library,
+        initial_mapping=seed,
+        node_properties=config.symmetry_node_properties,
+    )
+    _STATE = (
+        lgp,
+        target,
+        config,
+        seed,
+        library,
+        counter,
+        deadline,
+        barrier,
+        accumulator,
+        prepared,
+    )
+
+
+def _ready():
+    barrier = _STATE[7]
+    barrier.wait(timeout=30)
+    barrier.wait(timeout=30)
+
+
+def _slice(prefixes, slice_nodes):
+    from ..analysis import _mapping_sha256
+
+    lgp, target, config, _seed, library, counter, deadline, _, accumulator, prepared = (
+        _STATE
+    )
+    records, hashes = {}, set()
+    profile = bool(os.environ.get("SYNKIT_NATIVE_PROFILE"))
+    before_timings = dict(accumulator.its_canonicalizer.timings) if profile else {}
+    callback_seconds = identifier_seconds = 0.0
+
+    def receive_impl(mapping, cost):
+        nonlocal identifier_seconds
+        if time.perf_counter() >= deadline.value:
+            raise NativeEnumerationStop("time_limit")
+        hashes.add(_mapping_sha256(mapping))
+        before = len(accumulator.seen)
+        accumulator.observe(mapping, cost)
+        if len(accumulator.seen) == before:
+            return
+        key = next(reversed(accumulator.seen))
+        with counter.get_lock():
+            if config.max_mappings is not None and counter.value >= config.max_mappings:
+                accumulator.seen.pop(key)
+                raise NativeEnumerationStop("mapping_limit")
+            counter.value += 1
+        # IDs depend only on exact certificates, so formatting can run while
+        # other workers enumerate. Cached fields never participate in equality.
+        identifier_started = time.perf_counter() if profile else 0
+        object.__setattr__(key, "identifier", compact_code_identifier(key))
+        template_key = accumulator.seen[key][3]
+        if template_key is not None:
+            object.__setattr__(
+                template_key, "identifier", compact_code_identifier(template_key)
+            )
+        if profile:
+            identifier_seconds += time.perf_counter() - identifier_started
+        records[key] = accumulator.seen[key]
+        # Membership alone is sufficient to deduplicate subsequent slices.
+        accumulator.seen[key] = None
+
+    def profiled_receive(mapping, cost):
+        nonlocal callback_seconds
+        started = time.perf_counter()
+        try:
+            return receive_impl(mapping, cost)
+        finally:
+            callback_seconds += time.perf_counter() - started
+
+    receive = profiled_receive if profile else receive_impl
+    remaining = deque(prefixes)
+    frontier = []
+    totals = {
+        "candidate_count": 0,
+        "visited_nodes": 0,
+        "visited_leaves": 0,
+        "pruned": 0,
+        "prefix_replay_nodes": 0,
+        "new_search_nodes": 0,
+    }
+    batch_started = time.perf_counter()
+    reason = None
+    while remaining:
+        batched = hasattr(prepared[-1], "synkit_distance_frontier_batch")
+        options = {}
+        node_budget = slice_nodes
+        if batched:
+            options["prefixes"] = tuple(remaining)
+            node_budget *= min(4, len(remaining))
+            remaining.clear()
+            prefix = ()
+        else:
+            prefix = remaining.popleft()
+        result = enumerate_native_candidates(
+            lgp,
+            target,
+            library_path=library,
+            time_limit_seconds=max(0, deadline.value - time.perf_counter()),
+            max_mappings=None,
+            callback=receive,
+            prefix=prefix,
+            slice_nodes=node_budget,
+            _prepared=prepared,
+            **options,
+        )
+        for name in totals:
+            totals[name] += result[name] or 0
+        frontier.extend(result["frontier"])
+        if result["reason"] not in (None, "work_slice"):
+            reason = result["reason"]
+            break
+        if time.perf_counter() - batch_started >= 0.25:
+            break
+    frontier.extend(remaining)
+    if reason is None and frontier:
+        reason = "work_slice"
+    totals.update(
+        complete=reason is None,
+        reason=reason,
+        frontier=frontier,
+        retained_classes=len(records),
+        elapsed_seconds=time.perf_counter() - batch_started,
+    )
+    if profile:
+        totals["profile"] = {
+            key: value - before_timings.get(key, 0)
+            for key, value in accumulator.its_canonicalizer.timings.items()
+        }
+        totals["profile"].update(
+            callback_seconds=callback_seconds,
+            identifier_seconds=identifier_seconds,
+            other_batch_seconds=totals["elapsed_seconds"] - callback_seconds,
+        )
+    return totals, records, hashes
+
+
+def frontier_orbit_search(
+    lgp,
+    target,
+    config,
+    seed,
+    observer,
+    *,
+    library_path,
+    workers=8,
+    slice_nodes=8192,
+    absolute_deadline=None,
+):
+    """Consume every emitted subtree before claiming complete coverage.
+
+    The shared cap counts unique records retained within each worker, including
+    duplicate classes held by different workers. Prefix replay is deterministic
+    and preserves the original two-sided pruning state.
+    """
+    from ..graph.automorphism import bounded_automorphism_permutations
+    from .symmetry import permutation_group_order
+
+    if (
+        isinstance(workers, bool)
+        or not isinstance(workers, int)
+        or workers < 1
+        or isinstance(slice_nodes, bool)
+        or not isinstance(slice_nodes, int)
+        or not 0 < slice_nodes < (1 << 63)
+    ):
+        raise ValueError("workers and slice_nodes must be positive integers")
+    if (
+        config.binary
+        or set(config.symmetry_node_properties)
+        != set(config.reaction_center_properties)
+        or config.time_limit_seconds is None
+        or not math.isfinite(config.time_limit_seconds)
+    ):
+        raise ValueError(
+            "frontier search requires weighted aligned properties and a finite deadline"
+        )
+    if not hasattr(
+        ctypes.CDLL(str(Path(library_path).resolve())), "synkit_distance_frontier"
+    ):
+        raise ValueError(
+            "native library lacks frontier support; rebuild it or use the static scheduler"
+        )
+    rg, rc = bounded_automorphism_permutations(
+        lgp[0], binary=False, node_properties=config.symmetry_node_properties
+    )
+    pg, pc = bounded_automorphism_permutations(
+        lgp[1], binary=False, node_properties=config.symmetry_node_properties
+    )
+    if not rc or not pc:
+        raise ValueError("frontier search requires complete side-group proofs")
+    merged = OrbitAccumulator(
+        observer,
+        rg[1:],
+        permutation_group_order(rg[1:]),
+        permutation_group_order(pg[1:]),
+        library_path=library_path,
+    )
+    context = mp.get_context("spawn")
+    counter, deadline = context.Value("q", 0), context.Value("d", 0)
+    cpu_index = context.Value("i", 0)
+    barrier = context.Barrier(workers + 1)
+    cpus = (
+        sorted(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else list(range(workers))
+    )
+    cpus = cpus[:workers]
+    started = time.perf_counter()
+    coordinator_cpu_started = time.process_time()
+    merge_seconds = wait_seconds = 0.0
+    pending, running = deque([()]), set()
+    records, results, reasons = {}, [], set()
+    peak_pending = 1
+    profile_totals = {}
+    with ProcessPoolExecutor(
+        max_workers=workers,
+        mp_context=context,
+        initializer=_init,
+        initargs=(
+            lgp,
+            target,
+            config,
+            seed,
+            str(library_path),
+            counter,
+            deadline,
+            barrier,
+            cpu_index,
+            cpus,
+        ),
+    ) as pool:
+        ready = [pool.submit(_ready) for _ in range(workers)]
+        barrier.wait(timeout=30)
+        search_started = time.perf_counter()
+        deadline.value = search_started + config.time_limit_seconds
+        if absolute_deadline is not None:
+            deadline.value = min(deadline.value, absolute_deadline)
+        barrier.wait(timeout=30)
+        for future in ready:
+            future.result()
+        while pending or running:
+            if time.perf_counter() >= deadline.value:
+                reasons.add("time_limit")
+            while pending and len(running) < workers and not reasons:
+                # Share sparse frontiers across idle workers before batching.
+                # Fixed groups of 16 can put all remaining work in one process.
+                idle = workers - len(running)
+                batch_size = min(16, max(1, len(pending) // idle))
+                prefixes = [pending.popleft() for _ in range(batch_size)]
+                running.add(pool.submit(_slice, prefixes, slice_nodes))
+            if not running:
+                break
+            wait_started = time.perf_counter()
+            finished, running = wait(running, timeout=0.25, return_when=FIRST_COMPLETED)
+            merge_started = time.perf_counter()
+            wait_seconds += merge_started - wait_started
+            for future in finished:
+                result, found, hashes = future.result()
+                observer.mapping_hashes.update(hashes)
+                new_tasks = result.pop("frontier")
+                if result["reason"] not in (None, "work_slice"):
+                    reasons.add(result["reason"])
+                else:
+                    pending.extend(new_tasks)
+                    peak_pending = max(peak_pending, len(pending))
+                for key, value in result.pop("profile", {}).items():
+                    profile_totals[key] = profile_totals.get(key, 0) + value
+                results.append(result)
+                for key, value in found.items():
+                    old = records.get(key)
+                    if old is not None and (
+                        old[:2] != value[:2] or old[3:] != value[3:]
+                    ):
+                        raise RuntimeError(
+                            "inconsistent exact records across frontier workers"
+                        )
+                    if old is None:
+                        records[key] = value
+                        merged.merge_record(key, value)
+            merge_seconds += time.perf_counter() - merge_started
+        merged.finish()
+        shutdown_started = time.perf_counter()
+    if time.perf_counter() > deadline.value:
+        reasons.add("time_limit")
+    return {
+        "complete": not reasons and not pending,
+        "profile_totals": profile_totals,
+        "coordinator_cpu_seconds": time.process_time() - coordinator_cpu_started,
+        "coordinator_merge_seconds": merge_seconds,
+        "coordinator_wait_seconds": wait_seconds,
+        "worker_shutdown_seconds": time.perf_counter() - shutdown_started,
+        "worker_startup_seconds": search_started - started,
+        "reasons": sorted(reasons),
+        "timed_phase_seconds": time.perf_counter() - search_started,
+        "retained_worker_records": counter.value,
+        "candidate_count": sum(item["candidate_count"] for item in results),
+        "mapping_limit_scope": "retained_worker_double_orbit_representatives",
+        "workers": workers,
+        "scheduler": "resumable_subtree_queue",
+        "slice_nodes": slice_nodes,
+        "completed_batches": len(results),
+        "prefix_replay_nodes": sum(item["prefix_replay_nodes"] for item in results),
+        "new_search_nodes": sum(item["new_search_nodes"] for item in results),
+        "pending_subtrees": len(pending),
+        "peak_pending_subtrees": peak_pending,
+        "shards": results,
+        "unique_classes": len(records),
+        "weighted_product_representatives": observer.count,
+        "labeled_mappings": observer.count * merged.product_order,
+        "elapsed_seconds": time.perf_counter() - started,
+    }, merged

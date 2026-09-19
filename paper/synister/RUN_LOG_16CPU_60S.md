@@ -52,14 +52,15 @@ The launcher requests 16 CPU cores and configures:
 - 16 worker processes;
 - 60 seconds per shell (`both` can therefore take about 120 seconds per case);
 - 4 GiB address-space limit per worker;
-- 8 GiB aggregate memory soft limit;
-- 10 GiB aggregate memory hard limit;
+- no aggregate memory soft limit;
+- 64 GiB aggregate memory hard limit;
 - no swap allocation by the service;
 - stop-on-OOM behavior, preserving all atomic records already written.
 
-The per-worker address-space limit is intentionally larger than 10 GiB / 16:
-shared libraries and mapped virtual address space count toward `RLIMIT_AS`.
-The systemd cgroup is the authoritative aggregate resident-memory boundary.
+The per-worker address-space limit remains 4 GiB to contain a single runaway
+worker. Shared libraries and mapped virtual address space count toward `RLIMIT_AS`.
+The systemd cgroup is the authoritative 64 GiB aggregate resident-memory
+boundary and does not apply soft memory throttling.
 
 ## Monitor, stop, and resume
 

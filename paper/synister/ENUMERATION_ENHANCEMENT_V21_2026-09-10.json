@@ -1,0 +1,22 @@
+{
+  "fixed_line": 21609,
+  "minimum_cost": 10,
+  "repeat_full_output_seconds": [
+    9.450985358998878,
+    10.274593679991085,
+    9.035705121001229
+  ],
+  "regressions_exactly_matched": 32,
+  "regressions_max_wall_seconds": 8.61060225800611,
+  "tests_passed": 124,
+  "remaining_line": 40548,
+  "remaining_mode": "reference_cd",
+  "distinct_classes_already_observed": 6098851,
+  "original_retained_record_cap": 1000000,
+  "expanded_180s_diagnostic_status": "time_limit",
+  "expanded_900s_diagnostic_error": {
+    "type": "MemoryError",
+    "message": ""
+  },
+  "full_10k_rerun_performed": false
+}

@@ -1,9 +1,25 @@
+from synkit.Chem.Mapper.exact import symmetry as symmetry_module
 from synkit.Chem.Mapper.exact.symmetry import (
     orbital_candidate_witnesses,
     permutation_group_order,
     point_stabilizer_generators,
     point_stabilizer_generators_checked,
 )
+
+
+def test_fixed_point_stabilizer_needs_no_permutation_composition(monkeypatch):
+    generators = ((0, 2, 1, 3), (0, 1, 3, 2))
+
+    def unexpected_composition(*args):
+        raise AssertionError("a fixed point needs no Schreier composition")
+
+    monkeypatch.setattr(symmetry_module, "_compose", unexpected_composition)
+    assert point_stabilizer_generators_checked(generators, 0) == (generators, True)
+    assert point_stabilizer_generators_checked(generators, 0, max_work=1) == ((), False)
+    assert point_stabilizer_generators_checked(generators, 0, max_generators=1) == (
+        (),
+        False,
+    )
 
 
 def test_schreier_stabilizer_and_orbital_witnesses():
