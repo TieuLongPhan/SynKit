@@ -1,18 +1,19 @@
-from dataclasses import replace
 import itertools
 import json
+import random
+from dataclasses import replace
 
 import pytest
 
 from synkit.Chem.Mapper import AAMapper
 from synkit.Chem.Mapper.exact import distance as distance_module
+from synkit.Chem.Mapper.exact.branching import solve_kernel
 from synkit.Chem.Mapper.exact.distance import (
     CertificateVerificationError,
     ExactEnumerationLimitError,
     enumerate_distance_mappings,
     verify_distance_enumeration_certificate,
 )
-from synkit.Chem.Mapper.exact.branching import solve_kernel
 from synkit.Chem.Mapper.exact.exhaustive import ExactMapper
 from synkit.Chem.Mapper.exact.kernel import Kernel
 from synkit.Chem.Mapper.graph.labeled_graph import LabeledGraph
@@ -29,6 +30,180 @@ def _cycle_graph(size, permutation=None):
         graph[left][right] = 1
         graph[right][left] = 1
     return LabeledGraph(graph, [6] * size)
+
+
+def test_timeout_does_not_prepare_remaining_siblings(monkeypatch):
+    lgp = [_cycle_graph(5), _cycle_graph(5)]
+    removed = []
+    original_remove = distance_module._ResidualBondMass.remove
+
+    def expire_on_first_branch(self, product_atom):
+        removed.append(product_atom)
+        return original_remove(self, product_atom)
+
+    monkeypatch.setattr(
+        distance_module._ResidualBondMass, "remove", expire_on_first_branch
+    )
+    monkeypatch.setattr(
+        distance_module.time, "perf_counter", lambda: 2.0 if removed else 0.0
+    )
+    result = enumerate_distance_mappings(
+        lgp,
+        CD=0,
+        compute_minimum_cost=False,
+        time_limit_seconds=1,
+        assignment_lower_bound=False,
+        atom_profile_pruning=False,
+    )
+    assert result.status == "timeout"
+    assert result.truncation_reason == "time_limit"
+    assert result.complete is False
+    assert result.selected_mapping_count == 0
+    assert len(removed) == 1
+
+
+def test_minimum_proof_prunes_ties_but_stream_keeps_all_minimizers():
+    lgp = [_cycle_graph(5), _cycle_graph(5)]
+    proof = enumerate_distance_mappings(lgp, _optimization_only=True)
+    assert proof.complete
+    assert proof.minimum_cost == 0
+    assert proof.visited_nodes == 1
+    assert proof.visited_leaves == 0
+    assert proof.mappings == [list(range(5))]
+    streamed = []
+    shell = enumerate_distance_mappings(
+        lgp,
+        collect_mappings=False,
+        mapping_callback=lambda mapping, cost: streamed.append(tuple(mapping)),
+    )
+    expected = {
+        mapping
+        for mapping in itertools.permutations(range(5))
+        if chemical_distance(lgp, mapping, binary=True) == 0
+    }
+    assert shell.complete
+    assert set(streamed) == expected
+    assert shell.selected_mapping_count == len(expected) == 10
+
+
+def test_nonlattice_minimum_proof_retains_subtolerance_improvements():
+    reactant = LabeledGraph({0: {1: 1e-10}, 1: {0: 1e-10}, 2: {}}, [6] * 3)
+    product = LabeledGraph({0: {}, 1: {2: 1e-10}, 2: {1: 1e-10}}, [6] * 3)
+    lgp = [reactant, product]
+    proof = enumerate_distance_mappings(
+        lgp,
+        binary=False,
+        _optimization_only=True,
+        tolerance=1e-9,
+    )
+    assert proof.complete
+    assert (
+        proof.minimum_cost
+        == min(
+            chemical_distance(lgp, mapping, binary=False)
+            for mapping in itertools.permutations(range(3))
+        )
+        == 0
+    )
+    assert not proof.backend_statistics["search"]["strict_improvement"]
+
+
+@pytest.mark.parametrize("directed", [False, True])
+@pytest.mark.parametrize("seed", range(4))
+def test_half_weight_proof_and_stream_match_exhaustive_oracle(directed, seed):
+    rng = random.Random(seed)
+
+    def graph():
+        adjacency = {atom: {} for atom in range(4)}
+        for left in range(4):
+            for right in range(4) if directed else range(left + 1, 4):
+                if left == right:
+                    continue
+                weight = rng.choice((0, 0.5, 1, 1.5))
+                if weight:
+                    adjacency[left][right] = weight
+                    if not directed:
+                        adjacency[right][left] = weight
+        return LabeledGraph(adjacency, [6] * 4)
+
+    lgp = [graph(), graph()]
+    costs = {
+        mapping: chemical_distance(lgp, mapping, binary=False)
+        for mapping in itertools.permutations(range(4))
+    }
+    minimum = min(costs.values())
+    proof = enumerate_distance_mappings(lgp, binary=False, _optimization_only=True)
+    assert proof.complete
+    assert proof.minimum_cost == minimum
+    assert costs[tuple(proof.mappings[0])] == minimum
+    streamed = []
+    result = enumerate_distance_mappings(
+        lgp,
+        binary=False,
+        collect_mappings=False,
+        mapping_callback=lambda mapping, cost: streamed.append(tuple(mapping)),
+    )
+    assert result.complete
+    assert result.minimum_cost == minimum
+    assert set(streamed) == {
+        mapping for mapping, cost in costs.items() if cost == minimum
+    }
+    assert len(streamed) == result.selected_mapping_count
+
+
+@pytest.mark.parametrize("cache_bytes", [0, 200, 4096])
+def test_delta_cache_budget_preserves_exact_shell_and_certificate(
+    monkeypatch, cache_bytes
+):
+    monkeypatch.setattr(distance_module, "_MAX_CROSS_COST_CACHE_BYTES", cache_bytes)
+    lgp = [_cycle_graph(4), _cycle_graph(4)]
+    result = enumerate_distance_mappings(lgp, CD=0, certify=True, symmetry_pruning=True)
+    assert result.complete
+    assert result.selected_labeled_mapping_count == 8
+    assert result.backend_statistics["search"]["peak_cached_delta_bytes"] <= cache_bytes
+    assert verify_distance_enumeration_certificate(
+        lgp, result.certificate, mappings=result.mappings
+    )
+
+
+def test_rejected_children_do_not_construct_stabilizers(monkeypatch):
+    lgp = [_cycle_graph(4), _cycle_graph(4)]
+    original = distance_module.point_stabilizer_generators_checked
+    calls = []
+
+    def recording_stabilizer(generators, point, **kwargs):
+        calls.append(point)
+        return original(generators, point, **kwargs)
+
+    monkeypatch.setattr(
+        distance_module, "point_stabilizer_generators_checked", recording_stabilizer
+    )
+    result = enumerate_distance_mappings(
+        lgp, CD=0, compute_minimum_cost=False, symmetry_pruning=True
+    )
+    assert result.complete
+    assert result.selected_labeled_mapping_count == 8
+    assert len(calls) == result.backend_statistics["search"]["stabilizer_calls"]
+    assert len(calls) < result.visited_nodes - 1
+
+
+def test_profile_assignment_bound_proves_a_positive_minimum_at_root():
+    triangle = LabeledGraph(
+        {0: {1: 1, 2: 1}, 1: {0: 1, 2: 1}, 2: {0: 1, 1: 1}, 3: {}}, [6] * 4
+    )
+    star = LabeledGraph(
+        {0: {1: 1, 2: 1, 3: 1}, 1: {0: 1}, 2: {0: 1}, 3: {0: 1}}, [6] * 4
+    )
+    lgp = [triangle, star]
+    proof = enumerate_distance_mappings(lgp, _optimization_only=True)
+    assert proof.complete and proof.minimum_cost == 2
+    assert proof.visited_nodes == 1
+    assert proof.backend_statistics["search"]["profile_bound_pruned"] == 1
+    brute = min(
+        chemical_distance(lgp, mapping, binary=True)
+        for mapping in itertools.permutations(range(4))
+    )
+    assert proof.minimum_cost == brute
 
 
 def test_enumerate_smiles_global_minimum_and_exact_shell():
@@ -210,7 +385,7 @@ def test_fixed_context_uses_product_point_stabilizer_for_symmetry():
     assert quotient.symmetry_quotient_complete is True
     assert quotient.selected_labeled_mapping_count == len(labeled.mappings)
     assert quotient.scope == (
-        "verified_product_automorphism_lex_leaders_within_" "fixed_assignment_subspace"
+        "verified_product_automorphism_lex_leaders_within_fixed_assignment_subspace"
     )
 
 

@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import time
+import zlib
 from collections import Counter
 from dataclasses import dataclass
 from numbers import Integral, Real
@@ -64,6 +65,7 @@ class GlobalShellConfig:
     template_radius: int = 1
     structure_timeout_seconds: float = 0.25
     structure_max_search_nodes: int = 100_000
+    structure_native_library_path: str | None = None
 
     def __post_init__(self):
         if not isinstance(self.binary, bool):
@@ -195,7 +197,7 @@ class GlobalShellAnalysisResult:
     schema_version: int = 4
     kind: str = "synister_reference_blinded_global_shell"
 
-    def as_dict(self) -> dict[str, object]:
+    def as_dict(self, *, copy_sequences=True) -> dict[str, object]:
         payload = {
             field: getattr(self, field)
             for field in self.__dataclass_fields__
@@ -213,7 +215,7 @@ class GlobalShellAnalysisResult:
             else str(self.symmetry_group_order)
         )
         payload["reaction_center"] = self.reaction_center.as_dict()
-        payload["structure"] = self.structure.as_dict()
+        payload["structure"] = self.structure.as_dict(copy_sequences=copy_sequences)
         return payload
 
 
@@ -237,17 +239,45 @@ def _mapping_sha256(mapping) -> bytes:
     return hashlib.sha256(_canonical_json([int(value) for value in mapping])).digest()
 
 
+def _mapping_key(mapping) -> bytes:
+    """Injective packed witness; no digest assumption enters membership."""
+    if len(mapping) <= 256:
+        return b"\x00" + bytes(mapping)
+    return b"\x01" + np.asarray(mapping, dtype="<u8").tobytes()
+
+
+def _transport_key(product, properties, mapping) -> bytes:
+    images = np.asarray(mapping, dtype=int)
+    payload = (
+        len(images).to_bytes(8, "little")
+        + np.asarray(product[images[:, None], images[None, :]], dtype="<f8").tobytes()
+        + _canonical_json({
+            name: [values[image] for image in mapping]
+            for name, (_, values) in properties.items()
+        })
+    )
+    # Lossless compression bounds dense zero-heavy witnesses without replacing
+    # equality with a fingerprint. The same compressor is used on both sides.
+    return zlib.compress(payload)
+
+
 def _transport_sha256(product, properties, mapping) -> bytes:
     images = np.asarray(mapping, dtype=int)
     transported = product[images[:, None], images[None, :]]
-    payload = {
-        "adjacency": transported.tolist(),
-        "properties": {
-            name: [product_values[image] for image in mapping]
-            for name, (_, product_values) in properties.items()
-        },
-    }
-    return hashlib.sha256(_canonical_json(payload)).digest()
+    # This fingerprint is internal to reference-class membership. Preserve
+    # floating-point values directly instead of serializing a dense JSON matrix.
+    digest = hashlib.sha256(b"synister-transport-f64-v1")
+    digest.update(len(images).to_bytes(8, "little"))
+    digest.update(np.asarray(transported, dtype="<f8").tobytes(order="C"))
+    digest.update(
+        _canonical_json(
+            {
+                name: [product_values[image] for image in mapping]
+                for name, (_, product_values) in properties.items()
+            }
+        )
+    )
+    return digest.digest()
 
 
 class _BlindShellObserver:
@@ -279,14 +309,15 @@ class _BlindShellObserver:
             tolerance=config.tolerance,
             timeout_seconds=config.structure_timeout_seconds,
             max_search_nodes=config.structure_max_search_nodes,
+            native_library_path=config.structure_native_library_path,
         )
 
     def observe(self, mapping, cost):
         normalized = tuple(int(image) for image in mapping)
         self.count += 1
-        self.mapping_hashes.add(_mapping_sha256(normalized))
+        self.mapping_hashes.add(_mapping_key(normalized))
         self.transport_hashes.add(
-            _transport_sha256(self.product, self.properties, normalized)
+            _transport_key(self.product, self.properties, normalized)
         )
         payload = _canonical_json([list(normalized), float(cost)])
         self.stream_digest.update(len(payload).to_bytes(8, "little"))
@@ -301,14 +332,11 @@ class _BlindShellObserver:
             )
             if atom_changed:
                 self.atom_counts[left] += 1
-            for right in range(left + 1, self.reactant.shape[0]):
-                if not math.isclose(
-                    float(self.reactant[left, right]),
-                    float(transported[left, right]),
-                    abs_tol=self.tolerance,
-                    rel_tol=0.0,
-                ):
-                    self.bond_counts[(left, right)] += 1
+        changed = np.triu(
+            ~np.isclose(self.reactant, transported, atol=self.tolerance, rtol=0), 1
+        )
+        for left, right in zip(*np.nonzero(changed)):
+            self.bond_counts[(int(left), int(right))] += 1
 
     def spectrum(self, frequency_scope):
         bonds = tuple(sorted(self.bond_counts))
@@ -334,7 +362,7 @@ class _BlindShellObserver:
         )
 
 
-def _reference_free_slap_seed(lgp, binary):
+def _reference_free_slap_seed(lgp, binary, *, repair=False):
     started = time.perf_counter()
     try:
         matcher = GraphMatcher(
@@ -355,11 +383,105 @@ def _reference_free_slap_seed(lgp, binary):
         )
         if sorted(mapping) != list(range(len(mapping))):
             raise RuntimeError("SLAP candidate is not a complete permutation")
+        initial_cost = chemical_distance(lgp, mapping, binary=binary)
+        cost = initial_cost
+        repair_statistics = {
+            "attempted": False,
+            "improved": False,
+            "elapsed_seconds": 0.0,
+        }
+        if repair and cost > 0:
+            repair_started = time.perf_counter()
+            repair_statistics["attempted"] = True
+            try:
+                from .exact.enumerate import (
+                    _greedy_local_swap_descent,
+                    _local_swap_pool,
+                    _mismatch_scores,
+                )
+
+                pool, reactant, product = _local_swap_pool(lgp, mapping, binary, 48, 14)
+                if len(pool) > 48:
+                    scores = _mismatch_scores(reactant, product, mapping)
+                    pool = set(
+                        sorted(pool, key=lambda atom: (-scores[atom], atom))[:48]
+                    )
+                candidates = _greedy_local_swap_descent(
+                    lgp, mapping, pool, reactant, product, binary, 8
+                )
+                candidate = [int(image) for image in candidates[-1][0]]
+                # Recompute the full objective; a heuristic delta is not proof.
+                candidate_cost = chemical_distance(lgp, candidate, binary=binary)
+                if candidate_cost < cost:
+                    mapping, cost = candidate, candidate_cost
+                    repair_statistics["improved"] = True
+                from .exact.seed import improve_seed_mapping
+                from .slap.lap import _adjacency_and_elements
+
+                _, elements = _adjacency_and_elements(lgp[0], binary)
+                _, product_elements = _adjacency_and_elements(lgp[1], binary)
+                candidate, broad_statistics = improve_seed_mapping(
+                    reactant, product, elements, product_elements, mapping
+                )
+                candidate_cost = chemical_distance(lgp, candidate, binary=binary)
+                if candidate_cost < cost:
+                    mapping, cost = candidate, candidate_cost
+                    repair_statistics["improved"] = True
+                repair_statistics["broad_descent"] = broad_statistics
+                from .exact.seed_relaxation import refine_seed_mapping
+
+                candidate, relaxed_statistics = refine_seed_mapping(
+                    reactant, product, elements, product_elements, mapping
+                )
+                candidate_cost = chemical_distance(lgp, candidate, binary=binary)
+                if candidate_cost < cost:
+                    candidate, _ = improve_seed_mapping(
+                        reactant, product, elements, product_elements, candidate
+                    )
+                    candidate_cost = chemical_distance(lgp, candidate, binary=binary)
+                    if candidate_cost < cost:
+                        mapping, cost = candidate, candidate_cost
+                        repair_statistics["improved"] = True
+                repair_statistics["relaxation"] = relaxed_statistics
+                if cost > relaxed_statistics.get("profile_lower_bound", cost) + 1e-9:
+                    from .exact.seed_fragments import improve_fragment_seed
+
+                    candidate, fragment_statistics = improve_fragment_seed(
+                        reactant, product, elements, product_elements, mapping
+                    )
+                    candidate_cost = chemical_distance(lgp, candidate, binary=binary)
+                    if candidate_cost < cost:
+                        mapping, cost = candidate, candidate_cost
+                        repair_statistics["improved"] = True
+                    repair_statistics["fragments"] = fragment_statistics
+                    if cost > relaxed_statistics.get("profile_lower_bound", cost) + 1e-9:
+                        # A second, deterministic atom order explores different
+                        # fragment embeddings. Transport the feasible seed back
+                        # and verify its full objective before accepting it.
+                        reverse = np.arange(len(elements) - 1, -1, -1)
+                        alternative, alternate_statistics = improve_fragment_seed(
+                            reactant[np.ix_(reverse, reverse)], product,
+                            [elements[i] for i in reverse], product_elements,
+                            [mapping[i] for i in reverse],
+                        )
+                        candidate = list(reversed(alternative))
+                        candidate_cost = chemical_distance(lgp, candidate, binary=binary)
+                        if candidate_cost < cost:
+                            mapping, cost = candidate, candidate_cost
+                            repair_statistics["improved"] = True
+                        repair_statistics["fragment_reverse_retry"] = alternate_statistics
+            except Exception as error:
+                # Optional repair cannot invalidate an already feasible seed.
+                repair_statistics["error_type"] = type(error).__name__
+                repair_statistics["error"] = str(error)
+            repair_statistics["elapsed_seconds"] = time.perf_counter() - repair_started
         return mapping, {
             "method": "reference_free_slap",
             "available": True,
             "elapsed_seconds": time.perf_counter() - started,
-            "cost": chemical_distance(lgp, mapping, binary=binary),
+            "cost": cost,
+            "initial_cost": initial_cost,
+            "repair": repair_statistics,
         }
     except Exception as error:
         return None, {
@@ -377,6 +499,7 @@ def _run_blind_search(lgp, target, config, observer, symmetry_properties):
         initial_mapping, seed_statistics = _reference_free_slap_seed(
             lgp,
             config.binary,
+            repair=True,
         )
     else:
         initial_mapping = None
@@ -414,6 +537,7 @@ def _run_blind_search(lgp, target, config, observer, symmetry_properties):
     )
     statistics = dict(result.backend_statistics or {})
     statistics["seed"] = seed_statistics
+    statistics["structure_cache"] = observer.structure._code_cache.statistics()
     result.backend_statistics = statistics
     return result
 
@@ -479,9 +603,9 @@ def analyze_reference_blinded_global_shell(
     if observer.count != result.selected_mapping_count:
         raise RuntimeError("streamed mapping count disagrees with search result")
 
-    mapping_observed = _mapping_sha256(reference) in observer.mapping_hashes
+    mapping_observed = _mapping_key(reference) in observer.mapping_hashes
     class_observed = (
-        _transport_sha256(product, properties, reference) in observer.transport_hashes
+        _transport_key(product, properties, reference) in observer.transport_hashes
     )
     minimum = result.minimum_cost
     gap = None if minimum is None else reference_cd - float(minimum)

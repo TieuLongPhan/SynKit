@@ -32,8 +32,8 @@ systemd-run --user --collect \
     --working-directory="${repo_root}" \
     --property=CPUQuota=1600% \
     --property=CPUWeight=200 \
-    --property=MemoryHigh=8G \
-    --property=MemoryMax=10G \
+    --property=MemoryHigh=infinity \
+    --property=MemoryMax=64G \
     --property=MemorySwapMax=0 \
     --property=OOMPolicy=stop \
     --property="StandardOutput=append:${log_path}" \

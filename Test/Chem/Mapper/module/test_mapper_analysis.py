@@ -38,6 +38,38 @@ def _config(**kwargs):
     )
 
 
+def test_seed_repair_lowers_a_verified_feasible_cost_without_a_reference(monkeypatch):
+    from synkit.Chem.Mapper import analysis
+
+    lgp = [_graph(3, ((0, 1),)), _graph(3, ((1, 2),))]
+    monkeypatch.setattr(analysis, "recover_mapping", lambda graphs: [0, 1, 2])
+    original, old = analysis._reference_free_slap_seed(lgp, False)
+    repaired, new = analysis._reference_free_slap_seed(lgp, False, repair=True)
+    assert old["cost"] == 2
+    assert new["initial_cost"] == old["cost"]
+    assert new["cost"] == chemical_distance(lgp, repaired, binary=False) == 0
+    assert sorted(repaired) == sorted(original) == [0, 1, 2]
+    assert new["repair"]["improved"]
+
+
+def test_seed_repair_failure_retains_the_original_feasible_mapping(monkeypatch):
+    from synkit.Chem.Mapper import analysis
+    from synkit.Chem.Mapper.exact import enumerate as enumeration
+
+    lgp = [_graph(3, ((0, 1),)), _graph(3, ((1, 2),))]
+    monkeypatch.setattr(analysis, "recover_mapping", lambda graphs: [0, 1, 2])
+
+    def failed_repair(*args):
+        raise RuntimeError("repair unavailable")
+
+    monkeypatch.setattr(enumeration, "_greedy_local_swap_descent", failed_repair)
+    mapping, statistics = analysis._reference_free_slap_seed(lgp, False, repair=True)
+    assert mapping == [0, 1, 2]
+    assert statistics["available"]
+    assert statistics["cost"] == 2
+    assert statistics["repair"]["error_type"] == "RuntimeError"
+
+
 def test_reference_cd_search_is_invariant_to_equal_cost_reference_choice():
     graph = _graph(3, ((0, 1), (1, 2)))
     lgp = [graph, graph.copy()]
@@ -282,3 +314,59 @@ def test_campaign_main_writes_progress_and_digest_checked_summary(
     rejected = json.loads((output / "summary.json").read_text(encoding="utf-8"))
     assert rejected["case_records"] == 0
     assert rejected["error_records"] == 1
+
+
+def test_internal_transport_fingerprint_preserves_relabeling_and_unary_properties():
+    import numpy as np
+    from synkit.Chem.Mapper.analysis import _transport_sha256
+
+    product = np.array([[0, 1, 0], [1, 0, 2], [0, 2, 0]], dtype=float)
+    props = {"charges": ([0, 0, 0], [0, 1, 2])}
+    mapping = [2, 0, 1]
+    permutation = [1, 2, 0]
+    inverse = np.argsort(permutation)
+    relabeled_props = {
+        "charges": ([0, 0, 0], [props["charges"][1][i] for i in permutation])
+    }
+    original = _transport_sha256(product, props, mapping)
+    assert original == _transport_sha256(
+        product[np.ix_(permutation, permutation)], relabeled_props, inverse[mapping]
+    )
+    assert original != _transport_sha256(
+        product, {"charges": ([0, 0, 0], [0, 1, 3])}, mapping
+    )
+
+
+def test_vectorized_reaction_center_counts_match_scalar_tolerance_checks():
+    import math
+    import numpy as np
+    from synkit.Chem.Mapper.analysis import _BlindShellObserver
+
+    a = np.array([[0, 0.1, 0, 1], [0.1, 0, 0.5, 0], [0, 0.5, 0, 1.5], [1, 0, 1.5, 0]])
+    b = a.copy()
+    b[0, 1] = b[1, 0] = 0.1 + 5e-10
+    props = {"charges": ([0, 0, 0, 0], [0, 1, 0, 0])}
+    for tolerance in (0, 1e-9, 0.5):
+        observer = _BlindShellObserver(
+            a,
+            b,
+            [6] * 4,
+            props,
+            GlobalShellConfig(tolerance=tolerance, structure_analysis=False),
+        )
+        bonds, atoms = Counter(), Counter()
+        for mapping in itertools.permutations(range(4)):
+            observer.observe(mapping, 0)
+            for i in range(4):
+                if props["charges"][0][i] != props["charges"][1][mapping[i]]:
+                    atoms[i] += 1
+                for j in range(i + 1, 4):
+                    if not math.isclose(
+                        float(a[i, j]),
+                        float(b[mapping[i], mapping[j]]),
+                        abs_tol=tolerance,
+                        rel_tol=0,
+                    ):
+                        bonds[(i, j)] += 1
+        assert observer.bond_counts == bonds
+        assert observer.atom_counts == atoms

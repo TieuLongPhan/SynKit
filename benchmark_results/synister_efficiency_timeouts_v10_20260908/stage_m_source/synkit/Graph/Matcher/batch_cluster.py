@@ -1,0 +1,224 @@
+from operator import eq
+from typing import List, Dict, Any, Tuple, Optional, Callable
+from networkx.algorithms.isomorphism import generic_node_match, generic_edge_match
+from synkit.Utils.utils import stratified_random_sample
+from synkit.Rule.Modify.rule_utils import strip_context
+from synkit.Graph.Matcher.graph_cluster import GraphCluster, _as_native_graph
+from synkit.Graph.Matcher.graph_morphism import graph_isomorphism
+
+
+class BatchCluster:
+    def __init__(
+        self,
+        node_label_names: List[str] = ["element", "charge"],
+        node_label_default: List[Any] = ["*", 0],
+        edge_attribute: str = "order",
+        backend: str = "nx",
+    ):
+        """Initializes an AutoCat instance which uses isomorphism checks for
+        categorizing new graphs or rules.
+
+        :param node_label_names: Names of the node attributes to use in
+                                 isomorphism checks.
+        :type node_label_names: List[str]
+        :param node_label_default: Default values for node attributes if they are
+                                   missing in the graph data.
+        :type node_label_default: List[Any]
+        :param edge_attribute: The edge attribute to consider when checking isomorphism
+                               between graphs.
+        :type edge_attribute: str
+
+        :raises ValueError: If the lengths of `node_label_names` and `node_label_default` do not match.
+        """
+        self.backend = backend.lower()
+        if self.backend != "nx":
+            raise ValueError(f"Unsupported backend: {backend!r}")
+        if len(node_label_names) != len(node_label_default):
+            raise ValueError(
+                "The lengths of `node_label_names` and `node_label_default` must match."
+            )
+        if backend == "nx":
+            self.nodeLabelNames = node_label_names
+            self.nodeLabelDefault = node_label_default
+            self.edgeAttribute = edge_attribute
+            self.nodeMatch = generic_node_match(
+                self.nodeLabelNames, self.nodeLabelDefault, [eq] * len(node_label_names)
+            )
+            self.edgeMatch = generic_edge_match(edge_attribute, 1, eq)
+
+    def available_backends(self) -> List[str]:
+        """Return the native matching backend."""
+        return ["nx"]
+
+    def lib_check(
+        self,
+        data: Dict,
+        templates: List[Dict],
+        rule_key: str = "gml",
+        attribute_key: str = "signature",
+        nodeMatch: Optional[Callable] = None,
+        edgeMatch: Optional[Callable] = None,
+    ) -> Dict:
+        """Checks and classifies a graph or rule based on existing templates
+        using either graph or rule isomorphism.
+
+        :param data: A dictionary representing a graph or rule with its attributes and
+                     classification.
+        :type data: Dict
+        :param templates: Dynamic templates used for categorization. If None, initializes to an empty list.
+        :type templates: List[Dict]
+        :param rule_key: Key to access the graph or rule data within the dictionary.
+        :type rule_key: str
+        :param attribute_key: An attribute used to filter templates before isomorphism check.
+        :type attribute_key: str
+        :param nodeMatch: A function to match nodes, defaults to a predefined generic_node_match.
+        :type nodeMatch: Optional[Callable]
+        :param edgeMatch: A function to match edges, defaults to a predefined generic_edge_match.
+        :type edgeMatch: Optional[Callable]
+
+        :return: The updated dictionary with its classification.
+        :rtype: Dict
+        """
+        # Ensure that templates are not None
+        if templates is None:
+            templates = []
+
+        att = data.get(attribute_key)
+        sub_temp = [temp for temp in templates if temp.get(attribute_key) == att]
+
+        for template in sub_temp:
+            template_data = (
+                strip_context(template[rule_key])
+                if isinstance(template[rule_key], str)
+                else template[rule_key]
+            )
+            data_rule = (
+                strip_context(data[rule_key])
+                if isinstance(data[rule_key], str)
+                else data[rule_key]
+            )
+
+            if graph_isomorphism(
+                _as_native_graph(template_data),
+                _as_native_graph(data_rule),
+                nodeMatch or self.nodeMatch,
+                edgeMatch or self.edgeMatch,
+            ):
+                data["class"] = template["class"]
+                break
+        else:
+            new_class = max((temp["class"] for temp in templates), default=-1) + 1
+            data["class"] = new_class
+            templates.append(data.copy())  # Append a copy to avoid reference issues
+
+        return data, templates
+
+    @staticmethod
+    def batch_dicts(input_list, batch_size):
+        """Splits a list of dictionaries into batches of a specified size.
+
+        :param input_list: The list of dictionaries to be batched.
+        :type input_list: list of dict
+        :param batch_size: The size of each batch.
+        :type batch_size: int
+
+        :return: A list where each element is a batch (sublist) of dictionaries.
+        :rtype: list of list of dict
+
+        :raises ValueError: If batch_size is less than 1.
+        """
+
+        # Validate batch_size to ensure it's a positive integer
+        if batch_size < 1:
+            raise ValueError("batch_size must be at least 1")
+
+        # Initialize an empty list to hold the batches
+        batches = []
+
+        # Iterate over the input list in steps of batch_size
+        for i in range(0, len(input_list), batch_size):
+            # Append a batch slice to the batches list
+            # fmt: off
+            batches.append(input_list[i: i + batch_size])
+            # fmt: on
+
+        return batches
+
+    def cluster(
+        self,
+        data: List[Dict],
+        templates: List[Dict],
+        rule_key: str = "gml",
+        attribute_key: str = "WLHash",
+    ) -> Tuple[List[Dict], List[Dict]]:
+        """Processes a list of graph data entries, classifying each based on
+        existing templates.
+
+        :param data: A list of dictionaries, each representing a graph or rule
+                     to be classified.
+        :type data: List[Dict]
+        :param templates: Dynamic templates used for categorization.
+        :type templates: List[Dict]
+
+        :return: A tuple containing the list of classified data and the updated templates.
+        :rtype: Tuple[List[Dict], List[Dict]]
+        """
+        for entry in data:
+            _, templates = self.lib_check(entry, templates, rule_key, attribute_key)
+        return data, templates
+
+    def fit(
+        self,
+        data: List[Dict],
+        templates: List[Dict],
+        rule_key: str = "gml",
+        attribute_key: str = "WLHash",
+        batch_size: Optional[int] = None,
+    ) -> Tuple[List[Dict], List[Dict]]:
+        """Processes and classifies data in batches. Uses GraphCluster for
+        initial processing and a stratified sampling technique to update
+        templates if there is only one batch and no initial templates are
+        provided.
+
+        :param data: Data to process.
+        :type data: List[Dict]
+        :param templates: Templates for categorization.
+        :type templates: List[Dict]
+        :param rule_key: Key to access rule or graph data.
+        :type rule_key: str
+        :param attribute_key: Key to access attributes used for filtering.
+        :type attribute_key: str
+        :param batch_size: Size of batches for processing, if not provided, processes all data at once.
+        :type batch_size: Optional[int]
+
+        :return: The processed data and the potentially updated templates.
+        :rtype: Tuple[List[Dict], List[Dict]]
+        """
+        if batch_size is not None:
+            batches = self.batch_dicts(data, batch_size)
+        else:
+            batches = [data]  # Process all at once if no batch size provided
+
+        output_data, output_templates = [], templates if templates is not None else []
+        graph_cluster = GraphCluster()
+
+        if len(batches) == 1:
+            batch = batches[0]
+            if not templates:
+                output_data = graph_cluster.fit(batch, rule_key, attribute_key)
+                output_templates = stratified_random_sample(
+                    output_data, property_key="class", samples_per_class=1, seed=1
+                )
+            else:
+                output_data, output_templates = self.cluster(
+                    batch, output_templates, rule_key, attribute_key
+                )
+        else:
+            for batch in batches:
+                processed_data, new_templates = self.cluster(
+                    batch, output_templates, rule_key, attribute_key
+                )
+                output_data.extend(processed_data)
+                output_templates = new_templates
+
+        return output_data, output_templates
