@@ -266,7 +266,7 @@ def test_frozen_pilot_has_reproducible_alternative_its_application_yield():
 
 
 def test_historical_30_second_campaign_is_recomputed_from_verified_records():
-    campaign = Path("benchmark_results/synister_global_shells_flower10k_v4_30s")
+    campaign = Path("Experiment/Synister/benchmark_results/synister_global_shells_flower10k_v4_30s")
     modes = summarize(campaign)["modes"]
 
     minimum = modes["minimal"]

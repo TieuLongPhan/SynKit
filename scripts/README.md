@@ -17,7 +17,7 @@ reference-blinded global experiment with an explicit frozen dataset:
 ```bash
 python scripts/run_synister_global_shells.py \
   --dataset /path/to/flower_test_10000.csv.gz \
-  --output benchmark_results/synister_global_shells_v4 \
+  --output Experiment/Synister/benchmark_results/synister_global_shells_v4 \
   --mode both \
   --workers 1 \
   --time-limit-per-shell 300 \
@@ -40,7 +40,7 @@ from consuming swap:
 ```bash
 scripts/start_synister_global_shells_16cpu.sh \
   /path/to/flower_test_10000.csv.gz \
-  benchmark_results/synister_global_shells_v4_60s_w16
+  Experiment/Synister/benchmark_results/synister_global_shells_v4_60s_w16
 ```
 
 The launcher uses 16 workers, 60 seconds per shell, a 4 GiB per-worker
@@ -54,7 +54,7 @@ manuscript-facing statistics with:
 
 ```bash
 python scripts/summarize_synister_evidence.py \
-  benchmark_results/synister_global_shells_v4 \
+  Experiment/Synister/benchmark_results/synister_global_shells_v4 \
   --output derived_findings.json
 ```
 
@@ -67,7 +67,7 @@ differs from a supplied mapped reference:
 python scripts/run_synister_alternative_its.py \
   --dataset /path/to/flower_test_10000.csv.gz \
   --source-line 109 \
-  --output benchmark_results/alternative_its_line_109.json \
+  --output Experiment/Synister/benchmark_results/alternative_its_line_109.json \
   --target minimal \
   --target reference \
   --target 10 \

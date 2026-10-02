@@ -702,7 +702,7 @@ The FlowER cohort is not distributed with SynKit; an explicit CSV with
 
    python scripts/run_synister_global_shells.py \
        --dataset /path/to/flower_test_10000_v252.csv.gz \
-       --output benchmark_results/synister_global_shells_v4 \
+       --output Experiment/Synister/benchmark_results/synister_global_shells_v4 \
        --mode both --time-limit-per-shell 300 --memory-limit-gib 6
 
 The runner uses one process and one numerical thread. It writes digest-bound

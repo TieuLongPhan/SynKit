@@ -76,7 +76,7 @@ core-metadata-version = "2.4"
 include = [
   "/synkit",
   "/LICENSE",
-  "/LICENSES",
+  "/Experiment/CRN/LICENSES",
   "/README.md",
   "/pyproject.toml",
 ]

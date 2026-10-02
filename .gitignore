@@ -33,7 +33,7 @@ libsynkit_distance_*.json
 *.txt
 
 # Package resources and repository evidence retained despite the broad rules
-!LICENSES/*.txt
+!Experiment/CRN/LICENSES/*.txt
 !synkit/CRN/Benchmark/data/kegg_modules.json
 !Data/Conformance/stereomolgraph_graph_conformance.json
 !Data/Mech/polar.json

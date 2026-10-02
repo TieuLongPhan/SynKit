@@ -61,12 +61,12 @@ runtime environment changes.
   at `synkit/CRN/Benchmark/data/kegg_modules.json`. Refresh deliberately with
   `refresh_kegg_cache.py`, then re-run the test suite --- several tests assert
   specific metabolites and conservation laws, so a KEGG update can legitimately
-  change the manuscript's numbers.
+  change the manuscript's numbers. See [the KEGG notice](LICENSES/KEGG.txt).
 - **BioModels files** are cached under `data/biomodels/` on first run and are
   excluded from SynKit distributions to keep them small. BioModels publishes
   its dataset under CC0 1.0. Each evidence row records the file checksum,
   download URL, size stratum, and selection rationale. Use `--offline` to
-  require the cache.
+  require the cache. See [the BioModels notice](LICENSES/BIOMODELS.txt).
 
 ## What the evidence does and does not support
 

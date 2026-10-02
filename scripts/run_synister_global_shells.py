@@ -46,7 +46,7 @@ from synkit.Chem.Mapper import (  # noqa: E402
 )
 
 SCHEMA_VERSION = 4
-DEFAULT_OUTPUT = ROOT / "benchmark_results" / "synister_global_shells_v4"
+DEFAULT_OUTPUT = ROOT / "Experiment" / "Synister" / "benchmark_results" / "synister_global_shells_v4"
 _WORKER_OPTIONS = None
 
 

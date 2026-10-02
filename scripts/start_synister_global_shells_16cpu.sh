@@ -13,7 +13,7 @@ if [[ ! -f "$1" ]]; then
     exit 2
 fi
 dataset="$(realpath -- "$1")"
-output_input="${2:-benchmark_results/synister_global_shells_v4_60s_w16}"
+output_input="${2:-Experiment/Synister/benchmark_results/synister_global_shells_v4_60s_w16}"
 if [[ "${output_input}" = /* ]]; then
     output_candidate="${output_input}"
 else

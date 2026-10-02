@@ -43,7 +43,7 @@ FROZEN_CAMPAIGNS = (
     },
     {
         "name": "flower10k_v4_30s",
-        "path": ROOT / "benchmark_results/synister_global_shells_flower10k_v4_30s",
+        "path": ROOT / "Experiment/Synister/benchmark_results/synister_global_shells_flower10k_v4_30s",
         "manifest_sha256": "be0e4968af7ddfc6c6f6d90aff5de441de99cc95cd1aec7ccbf9800e58f0969e",
         "case_records": 392,
         "modes": {
