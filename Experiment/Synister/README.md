@@ -29,9 +29,10 @@ checked worked-example record, without importing application or plotting code.
 
 ## Output and reproducibility
 
-Historical tracked campaigns and frozen source snapshots live under
-`benchmark_results/`, relocated from the repository root. Paths recorded inside
-historical evidence describe the original execution environment.
+Historical campaigns and frozen source snapshots may be retained locally under
+`benchmark_results/`, relocated from the repository root. This directory is
+ignored by Git. Paths recorded inside historical evidence describe the original
+execution environment.
 
 Use new output directories under `runs/`. Preserve existing run records and
 frozen source snapshots. Local environments and `runs/` are ignored by Git.

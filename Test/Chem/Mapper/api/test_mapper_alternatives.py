@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from scripts.run_synister_alternative_its import (
     _payload_sha256,
@@ -267,6 +268,8 @@ def test_frozen_pilot_has_reproducible_alternative_its_application_yield():
 
 def test_historical_30_second_campaign_is_recomputed_from_verified_records():
     campaign = Path("Experiment/Synister/benchmark_results/synister_global_shells_flower10k_v4_30s")
+    if not campaign.is_dir():
+        pytest.skip("historical campaign evidence is retained locally, outside Git")
     modes = summarize(campaign)["modes"]
 
     minimum = modes["minimal"]

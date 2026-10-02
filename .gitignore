@@ -119,3 +119,7 @@ test_partial.py
 test_run.py
 test_syn.py
 test_syn_reactor.py
+
+# Historical Synister benchmark outputs and frozen source copies stay local.
+/Experiment/Synister/benchmark_results/
+/benchmark_results/
