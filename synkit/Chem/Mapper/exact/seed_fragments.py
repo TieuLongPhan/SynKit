@@ -49,7 +49,7 @@ def _molecule(matrix, elements):
     return result
 
 
-def improve_fragment_seed(
+def improve_fragment_seed(  # noqa: C901
     a, b, er, ep, mapping, *, max_fragments=16, budget_seconds=0.5
 ):
     """Anchor a greedy common-fragment cover, then polish a feasible bijection.

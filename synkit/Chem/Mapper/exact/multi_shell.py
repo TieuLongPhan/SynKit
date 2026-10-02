@@ -63,7 +63,7 @@ def _timeout_result(target, total, maximum, elapsed, fixed):
     )
 
 
-def enumerate_pabs_shells(
+def enumerate_pabs_shells(  # noqa: C901
     lgp,
     CDs,
     *,

@@ -17,7 +17,7 @@ from .native_candidates import enumerate_native_candidates, prepare_native_candi
 from .cost_lattice import CostLattice
 
 
-def enumerate_cpp_mappings(
+def enumerate_cpp_mappings(  # noqa: C901
     lgp,
     *,
     library_path,

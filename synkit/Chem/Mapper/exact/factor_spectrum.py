@@ -7,7 +7,7 @@ import numpy as np
 from .propagation_limits import check_deadline
 
 
-def factor_cost_support_intersects(
+def factor_cost_support_intersects(  # noqa: C901
     a,
     b,
     rows,

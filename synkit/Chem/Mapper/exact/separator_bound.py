@@ -76,7 +76,7 @@ def _find_separator(rows, adjacency, max_separator_size, alpha):
     return None
 
 
-def minimum_separator_residual_cost(
+def minimum_separator_residual_cost(  # noqa: C901
     a,
     b,
     rows,

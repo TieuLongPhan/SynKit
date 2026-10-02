@@ -130,7 +130,7 @@ def prepare_native_candidates(
     return n, len(types), levels, arrays, rg, pg, ro, po, library
 
 
-def enumerate_native_candidates(
+def enumerate_native_candidates(  # noqa: C901
     lgp,
     target,
     *,

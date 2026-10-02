@@ -155,24 +155,31 @@ class _CacheLookupBudget(Exception):
     pass
 
 
-
 def _cache_refinement(graph, rounds=3):
     """Isomorphism-invariant candidate labels; never a proof of equality."""
     colors = {node: hash(repr(data["color"])) for node, data in graph.nodes(data=True)}
     edges = {
-        node: [(neighbor, hash(repr(data["color"])))
-               for neighbor, data in graph[node].items()]
+        node: [
+            (neighbor, hash(repr(data["color"])))
+            for neighbor, data in graph[node].items()
+        ]
         for node in graph
     }
     for _ in range(rounds):
         colors = {
-            node: hash((colors[node], tuple(sorted(
-                (weight, colors[neighbor]) for neighbor, weight in neighbors
-            ))))
+            node: hash(
+                (
+                    colors[node],
+                    tuple(
+                        sorted(
+                            (weight, colors[neighbor]) for neighbor, weight in neighbors
+                        )
+                    ),
+                )
+            )
             for node, neighbors in edges.items()
         }
     return colors
-
 
 
 def _quick_color_isomorphism(first, second):
@@ -194,8 +201,9 @@ def _quick_color_isomorphism(first, second):
         mapping.update(zip(nodes, other))
     if first.number_of_edges() != second.number_of_edges():
         return False
-    if any(first.nodes[n]["color"] != second.nodes[m]["color"]
-           for n, m in mapping.items()):
+    if any(
+        first.nodes[n]["color"] != second.nodes[m]["color"] for n, m in mapping.items()
+    ):
         return False
     return all(
         second.has_edge(mapping[u], mapping[v])
@@ -274,7 +282,9 @@ class _ExactCodeCache:
             # Refinement repeatedly traverses adjacency. Materialize a
             # disconnected component once instead of paying subgraph-view
             # filtering costs on every cache comparison.
-            component = graph if len(nodes) == len(graph) else graph.subgraph(nodes).copy()
+            component = (
+                graph if len(nodes) == len(graph) else graph.subgraph(nodes).copy()
+            )
             records.append(
                 (
                     cls._key(component),
@@ -453,10 +463,16 @@ class ExactStructureSpectrum:
             "observed_its_class_count": self.observed_its_class_count,
             "observed_template_class_count": (self.observed_template_class_count),
             "its_hartley_entropy_nats": self.its_hartley_entropy_nats,
-            "its_class_counts": ([list(item) for item in self.its_class_counts]
-                                 if copy_sequences else self.its_class_counts),
-            "template_class_counts": ([list(item) for item in self.template_class_counts]
-                                      if copy_sequences else self.template_class_counts),
+            "its_class_counts": (
+                [list(item) for item in self.its_class_counts]
+                if copy_sequences
+                else self.its_class_counts
+            ),
+            "template_class_counts": (
+                [list(item) for item in self.template_class_counts]
+                if copy_sequences
+                else self.template_class_counts
+            ),
             "reference_its_class_observed": self.reference_its_class_observed,
             "reference_template_class_observed": (
                 self.reference_template_class_observed
@@ -466,6 +482,7 @@ class ExactStructureSpectrum:
 
 class _NativeExactCodeBackend:
     """Explicit certificate computation; no saved graph/class answers."""
+
     def __init__(self, library_path):
         self.library_path = library_path
         self.calls = 0
@@ -476,8 +493,11 @@ class _NativeExactCodeBackend:
         self.calls += 1
         try:
             code, _ = native_canonical_code(
-                graph, library_path=self.library_path, require_group=False,
-                timeout_seconds=timeout_seconds, max_search_nodes=max_search_nodes,
+                graph,
+                library_path=self.library_path,
+                require_group=False,
+                timeout_seconds=timeout_seconds,
+                max_search_nodes=max_search_nodes,
             )
             return code, None
         except (RuntimeError, ValueError) as error:
@@ -485,7 +505,6 @@ class _NativeExactCodeBackend:
 
     def statistics(self):
         return {"backend": "native_certificate", "calls": self.calls, "hits": 0}
-
 
 
 class ExactStructureSpectrumAccumulator:
@@ -517,8 +536,11 @@ class ExactStructureSpectrumAccumulator:
         self.its_counts = Counter()
         self.template_counts = Counter()
         self.incomplete_reason = None
-        self._code_cache = (_ExactCodeCache() if native_library_path is None
-                            else _NativeExactCodeBackend(native_library_path))
+        self._code_cache = (
+            _ExactCodeCache()
+            if native_library_path is None
+            else _NativeExactCodeBackend(native_library_path)
+        )
 
     def observe(self, mapping):
         if not self.enabled or self.incomplete_reason is not None:

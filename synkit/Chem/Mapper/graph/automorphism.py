@@ -201,7 +201,7 @@ def _verified_twin_permutations(matrix, elements, limit):
     return tuple(sorted(permutations))
 
 
-def _component_automorphism_permutations(
+def _component_automorphism_permutations(  # noqa: C901
     graph, matrix, elements, limit, timeout_seconds, max_search_nodes
 ):
     """Find component generators and equal-component swaps under shared budgets.
@@ -276,7 +276,7 @@ def _component_automorphism_permutations(
     return tuple(sorted(permutations)), complete
 
 
-def bounded_automorphism_permutations(
+def bounded_automorphism_permutations(  # noqa: C901
     lg,
     binary=False,
     *,

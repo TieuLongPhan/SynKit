@@ -362,7 +362,7 @@ class _BlindShellObserver:
         )
 
 
-def _reference_free_slap_seed(lgp, binary, *, repair=False):
+def _reference_free_slap_seed(lgp, binary, *, repair=False):  # noqa: C901
     started = time.perf_counter()
     try:
         matcher = GraphMatcher(

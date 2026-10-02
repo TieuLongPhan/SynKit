@@ -118,7 +118,7 @@ class SeparatorCostSpectrum:
             branches.append(("leaf", value, tuple(columns[p] for p in permutation)))
         return frozenset(spectrum), branches
 
-    def _state(self, rows, columns, unary, allowed, max_cost):
+    def _state(self, rows, columns, unary, allowed, max_cost):  # noqa: C901
         self._tick()
         key = self._key(rows, columns, unary, allowed, max_cost)
         cached = self.memo.get(key)

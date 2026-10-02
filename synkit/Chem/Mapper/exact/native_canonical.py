@@ -149,7 +149,7 @@ def _canonical_function(path, require_group=True):
     return library, function
 
 
-def native_canonical_code(
+def native_canonical_code(  # noqa: C901
     graph,
     *,
     library_path,

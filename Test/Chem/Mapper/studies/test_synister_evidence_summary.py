@@ -70,6 +70,7 @@ def _complete_shell(*, structure_complete=True, reference_observed=True):
         },
     }
 
+
 def test_summary_accepts_valid_manifest_payload_and_binding_digests(tmp_path):
     campaign, _, _, _ = _campaign(tmp_path)
 

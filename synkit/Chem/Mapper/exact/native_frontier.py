@@ -81,7 +81,7 @@ def _ready():
     barrier.wait(timeout=30)
 
 
-def _slice(prefixes, slice_nodes):
+def _slice(prefixes, slice_nodes):  # noqa: C901
     from ..analysis import _mapping_key
 
     lgp, target, config, _seed, library, counter, deadline, _, accumulator, prepared = (
@@ -211,7 +211,7 @@ def _slice(prefixes, slice_nodes):
     return totals, records, hashes
 
 
-def frontier_orbit_search(
+def frontier_orbit_search(  # noqa: C901
     lgp,
     target,
     config,

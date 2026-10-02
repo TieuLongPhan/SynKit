@@ -5,7 +5,7 @@ from scipy.optimize import linear_sum_assignment
 from scipy.sparse import csr_matrix
 
 
-def improve_relaxed_seed_mapping(
+def improve_relaxed_seed_mapping(  # noqa: C901
     a, b, er, ep, mapping, *, iterations=40, fixed_mapping=None
 ):
     """Find a better typed bijection using four bounded relaxed starts.

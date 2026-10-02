@@ -25,20 +25,39 @@ from .slap.lap import _adjacency_and_elements, chemical_distance
 
 
 def _attain_native_profile_bound(
-    lgp, reactant, product, elements, product_elements, *,
-    library_path, node_properties, deadline,
+    lgp,
+    reactant,
+    product,
+    elements,
+    product_elements,
+    *,
+    library_path,
+    node_properties,
+    deadline,
 ):
     """Try one exact lower-bound witness; absence is not a minimum proof."""
     from .exact.distance_bounds import atom_profile_costs, blocked_assignment_extreme
-    from .exact.native_candidates import enumerate_native_candidates, NativeEnumerationStop
+    from .exact.native_candidates import (
+        enumerate_native_candidates,
+        NativeEnumerationStop,
+    )
 
     started = time.perf_counter()
-    probe_deadline = min(started + 1.0, deadline) if deadline is not None else started + 1.0
+    probe_deadline = (
+        min(started + 1.0, deadline) if deadline is not None else started + 1.0
+    )
     if probe_deadline <= started:
-        return None, {"method": "profile_bound_probe", "attained": False, "reason": "deadline"}
+        return None, {
+            "method": "profile_bound_probe",
+            "attained": False,
+            "reason": "deadline",
+        }
     lower = blocked_assignment_extreme(
         atom_profile_costs(reactant, product, elements, product_elements),
-        range(len(elements)), range(len(product_elements)), elements, product_elements,
+        range(len(elements)),
+        range(len(product_elements)),
+        elements,
+        product_elements,
     )
     witness = None
 
@@ -48,7 +67,9 @@ def _attain_native_profile_bound(
         if sorted(candidate) != list(range(len(elements))) or any(
             elements[i] != product_elements[j] for i, j in enumerate(candidate)
         ):
-            raise RuntimeError("native lower-bound witness is not a compatible permutation")
+            raise RuntimeError(
+                "native lower-bound witness is not a compatible permutation"
+            )
         # Native validation requires symmetric half-integer matrices; these
         # objective and profile values are exactly representable dyadics.
         if chemical_distance(lgp, candidate, binary=False) != lower:
@@ -57,22 +78,38 @@ def _attain_native_profile_bound(
         raise NativeEnumerationStop("profile_bound_attained")
 
     result = enumerate_native_candidates(
-        lgp, lower, library_path=library_path,
+        lgp,
+        lower,
+        library_path=library_path,
         time_limit_seconds=max(0, probe_deadline - time.perf_counter()),
-        max_mappings=None, callback=receive, node_properties=node_properties,
+        max_mappings=None,
+        callback=receive,
+        node_properties=node_properties,
     )
     return witness, {
-        "method": "profile_bound_probe", "attained": witness is not None,
-        "lower_bound": lower, "elapsed_seconds": time.perf_counter() - started,
-        "visited_nodes": result["visited_nodes"], "reason": result["reason"],
+        "method": "profile_bound_probe",
+        "attained": witness is not None,
+        "lower_bound": lower,
+        "elapsed_seconds": time.perf_counter() - started,
+        "visited_nodes": result["visited_nodes"],
+        "reason": result["reason"],
         "probe_enumeration_complete": result["complete"],
         "witness": None if witness is None else list(witness),
     }
 
 
 def _prove_native_seed_minimum(
-    lgp, reactant, product, elements, product_elements, seed, probe, *,
-    library_path, node_properties, deadline,
+    lgp,
+    reactant,
+    product,
+    elements,
+    product_elements,
+    seed,
+    probe,
+    *,
+    library_path,
+    node_properties,
+    deadline,
 ):
     """Exclude every attainable lower shell before accepting a blind witness.
 
@@ -82,17 +119,28 @@ def _prove_native_seed_minimum(
     an interrupted shell proves nothing about that shell or higher ones.
     """
     from functools import reduce
-    from .exact.native_candidates import enumerate_native_candidates, NativeEnumerationStop
+    from .exact.native_candidates import (
+        enumerate_native_candidates,
+        NativeEnumerationStop,
+    )
 
-    if seed is None or not probe or probe.get("attained") or not probe.get("probe_enumeration_complete"):
+    if (
+        seed is None
+        or not probe
+        or probe.get("attained")
+        or not probe.get("probe_enumeration_complete")
+    ):
         return None, None
     started = time.perf_counter()
     budget_deadline = started + 15.0
     if deadline is not None:
         budget_deadline = min(budget_deadline, started + max(0, deadline - started) / 2)
-    values = [int(matrix[i, j] * 2)
-              for matrix in (reactant, product)
-              for i in range(len(elements)) for j in range(i + 1, len(elements))]
+    values = [
+        int(matrix[i, j] * 2)
+        for matrix in (reactant, product)
+        for i in range(len(elements))
+        for j in range(i + 1, len(elements))
+    ]
     # Native preparation already validated the half-integer matrices.
     g = reduce(math.gcd, values, 0)
     if not g:
@@ -107,7 +155,9 @@ def _prove_native_seed_minimum(
     while target < upper:
         if target == lower:
             # The first probe exhausted this exact shell without a witness.
-            shells.append({"target": target, "complete": True, "reused_profile_probe": True})
+            shells.append(
+                {"target": target, "complete": True, "reused_profile_probe": True}
+            )
             target += g
             continue
         remaining = budget_deadline - time.perf_counter()
@@ -118,21 +168,38 @@ def _prove_native_seed_minimum(
         def receive(mapping, cost):
             nonlocal found
             candidate = tuple(int(image) for image in mapping)
-            if sorted(candidate) != list(range(len(elements))) or any(
-                elements[i] != product_elements[j] for i, j in enumerate(candidate)
-            ) or chemical_distance(lgp, candidate, binary=False) != target:
-                raise RuntimeError("native minimum witness failed independent validation")
+            if (
+                sorted(candidate) != list(range(len(elements)))
+                or any(
+                    elements[i] != product_elements[j] for i, j in enumerate(candidate)
+                )
+                or chemical_distance(lgp, candidate, binary=False) != target
+            ):
+                raise RuntimeError(
+                    "native minimum witness failed independent validation"
+                )
             found = candidate
             raise NativeEnumerationStop("minimum_witness")
 
         result = enumerate_native_candidates(
-            lgp, target, library_path=library_path, initial_mapping=seed,
-            time_limit_seconds=remaining, max_mappings=None, callback=receive,
+            lgp,
+            target,
+            library_path=library_path,
+            initial_mapping=seed,
+            time_limit_seconds=remaining,
+            max_mappings=None,
+            callback=receive,
             node_properties=node_properties,
         )
         nodes += result["visited_nodes"]
-        shells.append({"target": target, "complete": result["complete"],
-                       "reason": result["reason"], "visited_nodes": result["visited_nodes"]})
+        shells.append(
+            {
+                "target": target,
+                "complete": result["complete"],
+                "reason": result["reason"],
+                "visited_nodes": result["visited_nodes"],
+            }
+        )
         if found is not None:
             witness, upper = found, target
             break
@@ -140,14 +207,18 @@ def _prove_native_seed_minimum(
             return None, {"complete": False, "shells": shells}
         target += g
     return witness, {
-        "method": "native_exhausted_lower_shells", "complete": True,
-        "minimum_cost": upper, "lattice_spacing": g, "lattice_residue": residue / 2,
-        "shells": shells, "visited_nodes": nodes,
+        "method": "native_exhausted_lower_shells",
+        "complete": True,
+        "minimum_cost": upper,
+        "lattice_spacing": g,
+        "lattice_residue": residue / 2,
+        "shells": shells,
+        "visited_nodes": nodes,
         "elapsed_seconds": time.perf_counter() - started,
     }
 
 
-def analyze_reference_blinded_native_shell(
+def analyze_reference_blinded_native_shell(  # noqa: C901
     lgp,
     reference_mapping,
     *,
@@ -217,10 +288,18 @@ def analyze_reference_blinded_native_shell(
     observer = _BlindShellObserver(reactant, product, elements, properties, effective)
     reference_cd = chemical_distance(lgp, reference, binary=False)
     target = reference_cd
-    if deadline is None and scheduler == "frontier" and config.time_limit_seconds is not None:
+    if (
+        deadline is None
+        and scheduler == "frontier"
+        and config.time_limit_seconds is not None
+    ):
         deadline = analysis_started + config.time_limit_seconds
-    if deadline is not None and (scheduler != "frontier" or not math.isfinite(deadline)):
-        raise ValueError("absolute deadlines require frontier and finite monotonic time")
+    if deadline is not None and (
+        scheduler != "frontier" or not math.isfinite(deadline)
+    ):
+        raise ValueError(
+            "absolute deadlines require frontier and finite monotonic time"
+        )
     minimum = None
     proof_stats = None
     probe_stats = None
@@ -229,27 +308,48 @@ def analyze_reference_blinded_native_shell(
         if scheduler != "frontier":
             raise ValueError("minimum mode requires the shared frontier deadline")
         seed, probe_stats = _attain_native_profile_bound(
-            lgp, reactant, product, elements, product_elements,
-            library_path=path, node_properties=symmetry_properties, deadline=deadline,
+            lgp,
+            reactant,
+            product,
+            elements,
+            product_elements,
+            library_path=path,
+            node_properties=symmetry_properties,
+            deadline=deadline,
         )
         if seed is not None:
             minimum = target = probe_stats["lower_bound"]
             proof_stats = {
-                "method": "attained_profile_assignment_bound", "complete": True,
-                "minimum_cost": minimum, "elapsed_seconds": probe_stats["elapsed_seconds"],
+                "method": "attained_profile_assignment_bound",
+                "complete": True,
+                "minimum_cost": minimum,
+                "elapsed_seconds": probe_stats["elapsed_seconds"],
                 "visited_nodes": probe_stats["visited_nodes"],
             }
     if seed is not None:
-        seed_stats = {"method": "exact_lower_bound_witness", "available": True, "cost": minimum}
+        seed_stats = {
+            "method": "exact_lower_bound_witness",
+            "available": True,
+            "cost": minimum,
+        }
     else:
         seed, seed_stats = (
             _reference_free_slap_seed(lgp, False, repair=True)
-            if config.use_slap_seed else (None, {"method": "disabled"})
+            if config.use_slap_seed
+            else (None, {"method": "disabled"})
         )
     if target_mode == "minimal" and minimum is None:
         native_seed, native_proof = _prove_native_seed_minimum(
-            lgp, reactant, product, elements, product_elements, seed, probe_stats,
-            library_path=path, node_properties=symmetry_properties, deadline=deadline,
+            lgp,
+            reactant,
+            product,
+            elements,
+            product_elements,
+            seed,
+            probe_stats,
+            library_path=path,
+            node_properties=symmetry_properties,
+            deadline=deadline,
         )
         if native_seed is not None:
             seed, proof_stats = native_seed, native_proof
@@ -258,25 +358,40 @@ def analyze_reference_blinded_native_shell(
         from .exact.distance import enumerate_distance_mappings
 
         proof = enumerate_distance_mappings(
-            lgp, CD="minimal", binary=False, max_bijections=None,
+            lgp,
+            CD="minimal",
+            binary=False,
+            max_bijections=None,
             tolerance=config.tolerance,
-            time_limit_seconds=None if deadline is None else max(0, deadline - time.perf_counter()),
-            symmetry_pruning=True, symmetry_node_properties=symmetry_properties,
-            initial_mapping=seed, max_mappings=None,
-            collect_mappings=True, _optimization_only=True,
+            time_limit_seconds=(
+                None if deadline is None else max(0, deadline - time.perf_counter())
+            ),
+            symmetry_pruning=True,
+            symmetry_node_properties=symmetry_properties,
+            initial_mapping=seed,
+            max_mappings=None,
+            collect_mappings=True,
+            _optimization_only=True,
         )
         if not proof.complete or proof.minimum_cost is None:
-            error = TimeoutError("minimum proof incomplete; no provisional shell enumerated")
-            error.diagnostics = {"probe": probe_stats, "seed": seed_stats,
-                                 "optimization_seconds": proof.elapsed_seconds,
-                                 "optimization_nodes": proof.visited_nodes}
+            error = TimeoutError(
+                "minimum proof incomplete; no provisional shell enumerated"
+            )
+            error.diagnostics = {
+                "probe": probe_stats,
+                "seed": seed_stats,
+                "optimization_seconds": proof.elapsed_seconds,
+                "optimization_nodes": proof.visited_nodes,
+            }
             raise error
         minimum = target = proof.minimum_cost
         if proof.mappings:
             seed = proof.mappings[0]
         proof_stats = {
-            "method": "assignment_optimization", "complete": True,
-            "minimum_cost": minimum, "elapsed_seconds": proof.elapsed_seconds,
+            "method": "assignment_optimization",
+            "complete": True,
+            "minimum_cost": minimum,
+            "elapsed_seconds": proof.elapsed_seconds,
             "visited_nodes": proof.visited_nodes,
         }
     # The reference itself is first queried after the complete/partial search.
@@ -326,7 +441,10 @@ def analyze_reference_blinded_native_shell(
         "minimum_proof": proof_stats,
         "minimum_probe": probe_stats,
         "stream_digest_scope": "merged double-orbit records: length-prefixed weight and representative mapping hash",
-        "counter_scope": "native combined distance/assignment pruning reported as lower_bound; upper_bound and symmetry counters not separately tracked",
+        "counter_scope": (
+            "native combined distance/assignment pruning reported as lower_bound; "
+            "upper_bound and symmetry counters not separately tracked"
+        ),
         "mapping_limit_scope": "retained_worker_double_orbit_representatives",
     }
     return GlobalShellAnalysisResult(
@@ -340,11 +458,11 @@ def analyze_reference_blinded_native_shell(
         minimum_cost=minimum,
         reference_cd=reference_cd,
         reference_gap_from_minimum=None if minimum is None else reference_cd - minimum,
-        reference_mapping_observed=_mapping_key(reference)
-        in observer.mapping_hashes,
+        reference_mapping_observed=_mapping_key(reference) in observer.mapping_hashes,
         reference_class_observed=reference_observed,
         shell_complete_and_reference_class_observed=complete and reference_observed,
-        reference_is_global_minimum_proven=minimum is not None and abs(reference_cd - minimum) <= config.tolerance,
+        reference_is_global_minimum_proven=minimum is not None
+        and abs(reference_cd - minimum) <= config.tolerance,
         total_bijections=math.prod(
             math.factorial(n) for n in Counter(elements).values()
         ),

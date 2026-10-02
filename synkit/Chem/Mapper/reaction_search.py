@@ -216,7 +216,7 @@ def _lift_mapping(mols, heavy_mapping, plan):
     return explicit, tuple(mapping)
 
 
-def map_reaction(
+def map_reaction(  # noqa: C901
     reaction,
     *,
     backend="python",
