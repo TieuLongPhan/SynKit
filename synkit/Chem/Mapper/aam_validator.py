@@ -147,10 +147,8 @@ class AAMValidator:
             - The total count of such isomorphic pairs.
         :rtype: tuple (list of tuple of int, int, int)
         """
-        node_labels = ["typesGH"]
-        default = ["*", False, 0, 0, ()]
-        ops = [eq, eq, eq, eq, eq]
-        node_match = generic_node_match(node_labels, default, ops)
+        # typesGH is one paired state attribute; compare its complete value.
+        node_match = generic_node_match("typesGH", "*", eq)
         edge_match = generic_edge_match("order", 1, eq)
 
         classified = []
