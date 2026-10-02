@@ -56,6 +56,15 @@ are useful for inspecting mappings, resolving symmetric reaction centres, or
 obtaining an optimality certificate. The exact helpers are available from
 ``synkit.Chem.Mapper.exact``.
 
+.. automodule:: synkit.Chem.Mapper.exact.search
+   :members:
+
+.. automodule:: synkit.Chem.Mapper.exact.native_search
+   :members:
+
+.. automodule:: synkit.Chem.Mapper.reaction_search
+   :members:
+
 .. automodule:: synkit.Chem.Mapper.chem.aam
    :members:
    :show-inheritance:
@@ -76,6 +85,10 @@ obtaining an optimality certificate. The exact helpers are available from
    :members:
    :show-inheritance:
 
+.. automodule:: synkit.Chem.Mapper.exact.propagation
+   :members:
+   :undoc-members:
+
 .. automodule:: synkit.Chem.Mapper.exact.hybrid
    :members:
    :show-inheritance:
@@ -95,6 +108,24 @@ obtaining an optimality certificate. The exact helpers are available from
 .. automodule:: synkit.Chem.Mapper.alternatives
    :members:
    :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.prediction_adapter
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.template_adapter
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.native_analysis
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Chem.Mapper.exact.native_build
+   :members: build_native
+
+.. automodule:: synkit.Chem.Mapper.exact.native_candidates
+   :members: enumerate_native_candidates
 
 Molecule
 --------

@@ -282,7 +282,7 @@ def _build_species_table_from_graph(
         sid = species_node_to_id[node]
         species[sid] = Species(
             id=sid,
-            source_node_id=node,
+            source_node_id=attrs.get("source_node_id", node),
             label=str(attrs.get("label", sid)),
             smiles=attrs.get("smiles"),
             source_attrs=dict(attrs),
@@ -531,8 +531,10 @@ def _build_reaction_from_graph_node(
 
     return Reaction(
         id=rid,
-        source_node_id=rnode,
-        source_kind=str(rattrs.get("kind", "reaction")),
+        source_node_id=rattrs.get("source_node_id", rnode),
+        source_kind=str(
+            rattrs.get("source_kind", rattrs.get("kind", "reaction"))
+        ),
         lhs=lhs,
         rhs=rhs,
         label=rattrs.get("label", rid),

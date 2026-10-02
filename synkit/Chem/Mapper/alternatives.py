@@ -31,7 +31,7 @@ def _code_identifier(code) -> str:
 
 @dataclass(frozen=True)
 class ExactITSAlternative:
-    """One deterministic AAM representative of a non-reference ITS class."""
+    """One deterministic AAM representative of an exact ITS class."""
 
     its_class_id: str
     template_class_id: str
@@ -68,7 +68,12 @@ class ExactITSAlternative:
 
 @dataclass(frozen=True)
 class ExactITSAlternativeResult:
-    """Complete or explicitly incomplete alternative-ITS shell analysis."""
+    """Complete or explicitly incomplete ITS-class shell analysis.
+
+    ``classes`` contains one representative for every observed exact ITS class
+    in the requested global shell. ``alternatives`` is its backward-compatible
+    non-reference subset when the reference ITS can be constructed.
+    """
 
     target: DistanceTarget
     reference_cd: float
@@ -87,6 +92,7 @@ class ExactITSAlternativeResult:
     reference_its_class_id: str | None
     reference_its_class_observed: bool | None
     alternative_its_class_count: int | None
+    classes: tuple[ExactITSAlternative, ...]
     alternatives: tuple[ExactITSAlternative, ...]
     minimum_cost: float | None
     elapsed_seconds: float
@@ -116,6 +122,7 @@ class ExactITSAlternativeResult:
             "reference_its_class_id": self.reference_its_class_id,
             "reference_its_class_observed": self.reference_its_class_observed,
             "alternative_its_class_count": self.alternative_its_class_count,
+            "classes": [item.as_dict() for item in self.classes],
             "alternatives": [item.as_dict() for item in self.alternatives],
             "minimum_cost": self.minimum_cost,
             "elapsed_seconds": self.elapsed_seconds,
@@ -139,20 +146,30 @@ class MappedReactionITSAlternativeResult:
     def as_dict(self) -> dict[str, object]:
         """Return a JSON-compatible record with AAM correspondences."""
         payload = self.shell.as_dict()
-        for record, alternative in zip(
-            payload["alternatives"], self.shell.alternatives
+        # A positional representative mapping is meaningful only with the two
+        # blinded endpoint inventories. Export both inventories and decorate
+        # every class, including the reference class, so a downstream consumer
+        # can reconstruct a mapped ITS from the complete shell.
+        for key, alternatives in (
+            ("classes", self.shell.classes),
+            ("alternatives", self.shell.alternatives),
         ):
-            record["atom_map_correspondence"] = [
-                list(pair)
-                for pair in alternative.atom_map_correspondence(
-                    self.reactant_atom_maps,
-                    self.product_atom_maps,
-                )
-            ]
+            for record, alternative in zip(payload[key], alternatives):
+                record["atom_map_correspondence"] = [
+                    list(pair)
+                    for pair in alternative.atom_map_correspondence(
+                        self.reactant_atom_maps,
+                        self.product_atom_maps,
+                    )
+                ]
         return {
+            "schema_version": 1,
+            "kind": "synister_mapped_reaction_its_alternatives",
             "reaction_sha256": self.reaction_sha256,
             "heavy_only": self.heavy_only,
             "blind_seed": self.blind_seed,
+            "reactant_atom_maps": list(self.reactant_atom_maps),
+            "product_atom_maps": list(self.product_atom_maps),
             "shell": payload,
         }
 
@@ -249,14 +266,16 @@ def enumerate_exact_its_alternatives(
     seed_mode: SeedMode = "reference",
     config: GlobalShellConfig | None = None,
 ) -> ExactITSAlternativeResult:
-    """Enumerate one AAM per exact non-reference ITS class in a global shell.
+    """Enumerate one AAM per exact ITS class in a global shell.
 
     ``CD='reference'`` enumerates the shell at the reference map's distance;
     a numeric value may be lower or higher, and ``CD='minimal'`` first proves
     the global minimum.  ``seed_mode='reference'`` may improve the incumbent
     and traversal order but never fixes atoms or prunes by reference identity.
-    Consequently every complete result has the same alternative classes as a
-    seed-free run under the same declared CD and atom-compatibility policy.
+    Consequently every complete result has the same class set as a seed-free
+    run under the same declared CD and atom-compatibility policy. The returned
+    ``alternatives`` field excludes the reference ITS class, whereas ``classes``
+    retains it whenever it belongs to the requested shell.
     """
     if seed_mode not in {"reference", "slap", "none"}:
         raise ValueError("seed_mode must be 'reference', 'slap', or 'none'")
@@ -341,27 +360,25 @@ def enumerate_exact_its_alternatives(
     group_order = (
         result.symmetry_group_order if result.symmetry_quotient_complete else None
     )
-    alternatives = []
-    if reference_its is not None:
-        for its_code, values in collector.classes.items():
-            if its_code == reference_its:
-                continue
-            quotient_count, mapping, distance, template_code = values
-            alternatives.append(
-                ExactITSAlternative(
-                    its_class_id=_code_identifier(its_code),
-                    template_class_id=_code_identifier(template_code),
-                    representative_mapping=mapping,
-                    distance=distance,
-                    representative_mapping_count=quotient_count,
-                    labeled_mapping_count=(
-                        None
-                        if group_order is None
-                        else int(quotient_count) * int(group_order)
-                    ),
-                )
+    classes = []
+    for its_code, values in collector.classes.items():
+        quotient_count, mapping, distance, template_code = values
+        classes.append(
+            ExactITSAlternative(
+                its_class_id=_code_identifier(its_code),
+                template_class_id=_code_identifier(template_code),
+                representative_mapping=mapping,
+                distance=distance,
+                representative_mapping_count=quotient_count,
+                labeled_mapping_count=(
+                    None
+                    if group_order is None
+                    else int(quotient_count) * int(group_order)
+                ),
             )
-    alternatives.sort(key=lambda item: item.its_class_id)
+        )
+    classes.sort(key=lambda item: item.its_class_id)
+    alternatives = [item for item in classes if item.its_class_id != reference_id]
     statistics = dict(result.backend_statistics or {})
     statistics["seed"] = seed_statistics
     return ExactITSAlternativeResult(
@@ -386,6 +403,7 @@ def enumerate_exact_its_alternatives(
         alternative_its_class_count=(
             len(alternatives) if classification_complete else None
         ),
+        classes=tuple(classes),
         alternatives=tuple(alternatives),
         minimum_cost=result.minimum_cost,
         elapsed_seconds=result.elapsed_seconds,

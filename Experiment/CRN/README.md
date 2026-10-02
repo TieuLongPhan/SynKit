@@ -14,6 +14,7 @@ so the whole set is usable as a gate.
 | KEGG metabolic modules | `kegg_case_study.py` | `synkit.crn-kegg/1` | none (cached) |
 | Rule-generated formose network | `formose_case_study.py` | `synkit.crn-formose/1` | none |
 | BioModels interoperability and scale | `biomodels.py` | `synkit.crn-biomodels/1` | first run only |
+| External CRNT4SBML agreement | `external_crnt4sbml.py` | `synkit.crn-external-crnt4sbml/1` | none; isolated legacy environment |
 
 ## Run everything
 
@@ -24,7 +25,8 @@ python Experiment/CRN/run_all.py --output-dir results/ --summary results/summary
 ```
 
 Add `--with-biomodels` to include the BioModels probe (downloads on first run),
-or `--quick` to shrink the scaling sweep to a few seconds.
+`--crnt4sbml-python /path/to/python` to include the optional external-tool
+cross-check, or `--quick` to shrink the scaling sweep to a few seconds.
 
 Individual studies take their own options:
 
@@ -34,6 +36,9 @@ python Experiment/CRN/scaling.py --sizes 50 100 200 400 --output results/crn-sca
 python Experiment/CRN/kegg_case_study.py --output results/crn-kegg.json
 python Experiment/CRN/formose_case_study.py --output results/crn-formose.json
 python Experiment/CRN/biomodels.py --offline --output results/crn-biomodels.json
+python Experiment/CRN/external_crnt4sbml.py \
+  --crnt4sbml-python /path/to/crnt4sbml/python \
+  --output results/crn-external-crnt4sbml.json
 ```
 
 ## Render manuscript tables
@@ -58,18 +63,22 @@ runtime environment changes.
   specific metabolites and conservation laws, so a KEGG update can legitimately
   change the manuscript's numbers.
 - **BioModels files** are cached under `data/biomodels/` on first run and are
-  *not* redistributed with SynKit; BioModels content carries its own terms of
-  use. Use `--offline` to require the cache.
+  excluded from SynKit distributions to keep them small. BioModels publishes
+  its dataset under CC0 1.0. Each evidence row records the file checksum,
+  download URL, size stratum, and selection rationale. Use `--offline` to
+  require the cache.
 
 ## What the evidence does and does not support
 
-Every verdict produced here is **structural**: it holds for all positive rate
-constants and says nothing about behaviour at any particular parametrization.
-Timings are operational measurements on the recorded machine and locate practical
-ceilings rather than asymptotic complexity. The Angeli–De Leenheer–Sontag
-persistence test is sufficient but not necessary, so a negative verdict does not
-prove that a species can be driven to extinction. The BioModels sweep is a
-hand-picked sample and supports no claim about coverage of the repository.
+The reported quantities are structural, but their logical scopes differ.
+Deficiency-theorem conclusions concern positive mass-action rate constants under
+the theorem's stated hypotheses; the persistence test is sufficient but not
+necessary; and discrete reachability or realizability does not predict kinetic
+behaviour. A negative persistence test therefore does not prove extinction, and
+a bounded realizability search is reported as inconclusive if its budget is
+reached. Timings locate practical ceilings rather than asymptotic complexity.
+The BioModels sweep is a hand-picked sample and supports no repository-wide
+coverage claim.
 
 ## Tests
 

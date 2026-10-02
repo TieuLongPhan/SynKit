@@ -82,6 +82,36 @@ bond as `(0.0, 1.0)`. Continue with the
 [rule](https://tieulongphan.github.io/SynKit/rule.html), and
 [synthesis](https://tieulongphan.github.io/SynKit/synthesis.html) guides.
 
+### CRN quick start
+
+This offline example loads the cached KEGG glycolysis module, computes CRNT and
+Petri-net structure, obtains a replayable pathway certificate, and exports the
+network through SBML:
+
+```python
+from pathlib import Path
+
+from synkit.CRN import crnt_summary, conserved_moieties, find_siphons, write_sbml
+from synkit.CRN.Benchmark import build_kegg_crn, check_glycolysis_flux
+
+crn = build_kegg_crn("M00001")
+summary = crnt_summary(crn)
+assert (summary.n_species, summary.n_reactions, summary.deficiency) == (14, 15, 1)
+assert len(conserved_moieties(crn)) == 3
+assert len(find_siphons(crn)) == 3
+
+outcome = check_glycolysis_flux()
+assert outcome["status"] == "realizable"
+assert outcome["explored_states"] == 30
+assert len(outcome["certificate"]) == 15
+
+write_sbml(crn, Path("glycolysis.xml"))
+```
+
+The [executable glycolysis notebook](notebooks/crn_glycolysis_case_study.ipynb)
+explains and independently replays the certificate. The complete manuscript
+workflow is documented in [Experiment/CRN/README.md](Experiment/CRN/README.md).
+
 ## Supplied-mechanism verification
 
 SynKit can parse typed electron-flow annotations, replay their elementary

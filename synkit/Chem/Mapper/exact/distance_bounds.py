@@ -7,6 +7,23 @@ import math
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
+from .assignment_certificate import certified_lattice_assignment, scaled_lattice_costs
+
+
+def _assignment_with_lattice_check(costs):
+    """Certify LAP optimality on the supported lattice; preserve generic API.
+
+    A certificate failure is never converted to the generic floating-point
+    route. Only a matrix outside the declared lattice domain uses that route,
+    whose historical numerical qualifications remain unchanged.
+    """
+    try:
+        scaled_lattice_costs(costs)
+    except ValueError:
+        return linear_sum_assignment(costs)
+    certificate = certified_lattice_assignment(costs)
+    return np.arange(len(costs)), np.asarray(certificate.permutation, dtype=int)
+
 
 class ResidualBondMass:
     """Maintain exact residual matrix sum/absolute-sum bounds under DFS."""
@@ -102,7 +119,7 @@ def blocked_assignment_extreme(
         block = costs[np.ix_(row_atoms, column_atoms)]
         if not np.isfinite(block).all():
             return -math.inf if maximize else math.inf
-        rows, columns = linear_sum_assignment(-block if maximize else block)
+        rows, columns = _assignment_with_lattice_check(-block if maximize else block)
         total += float(block[rows, columns].sum())
     return total
 
@@ -186,7 +203,7 @@ def assignment_edge_lower_bounds(costs, reactant_elements, product_elements):
     for element, rows in row_blocks.items():
         columns = column_blocks[element]
         block = costs[np.ix_(rows, columns)]
-        row_indices, permutation = linear_sum_assignment(block)
+        row_indices, permutation = _assignment_with_lattice_check(block)
         matched_columns = [columns[index] for index in permutation]
         matched_costs = block[row_indices, permutation]
         total += float(matched_costs.sum())

@@ -158,6 +158,14 @@ class TestSbmlRoundTrip(unittest.TestCase):
         back = crn_from_sbml(crn_to_sbml(crn))
         self.assertEqual(back.species["s_1"].smiles, "CCO")
 
+    def test_source_node_ids_survive(self):
+        crn = SynCRN.from_reaction_strings(self.RXNS)
+        crn.species["s_1"].source_node_id = "source-species"
+        crn.reactions["r_1"].source_node_id = "source-reaction"
+        back = crn_from_sbml(crn_to_sbml(crn))
+        self.assertEqual(back.species["s_1"].source_node_id, "source-species")
+        self.assertEqual(back.reactions["r_1"].source_node_id, "source-reaction")
+
     def test_deficiency_is_preserved(self):
         from synkit.CRN.Props import deficiency
 

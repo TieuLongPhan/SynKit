@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 """Import curated BioModels SBML files and analyse them structurally.
 
-Answers two questions the manuscript needs: does the SBML adapter cope with
-files the package did not write, and where does the analysis stack's practical
-ceiling sit on *real* models rather than synthetic families.
+Exercises the SBML adapter on third-party files and measures selected analyses
+on curated models rather than synthetic network families.
 
 Models are fetched from the EBI BioModels REST API and cached under
-``Experiment/CRN/data/biomodels/``. The cached files are not redistributed with
-SynKit --- BioModels content carries its own terms --- so the first run needs
-network access and subsequent runs do not. Pass ``--offline`` to fail rather
-than fetch.
+``Experiment/CRN/data/biomodels/``. BioModels distributes its dataset under
+CC0; the local cache is nevertheless excluded from SynKit distributions to
+keep package artifacts small. The first run needs network access and subsequent
+runs do not. Pass ``--offline`` to fail rather than fetch.
 
 For each model the study records the parsed size, the CRNT quantities, conserved
 moieties, minimal siphons, structural persistence and an SBML round trip, each
@@ -28,6 +27,7 @@ Emits schema ``synkit.crn-biomodels/1``.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sys
 import urllib.request
 import warnings
@@ -38,7 +38,12 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from Experiment.CRN.common import DATA_DIR, environment, timed, write_report  # noqa: E402
+from Experiment.CRN.common import (  # noqa: E402
+    DATA_DIR,
+    environment,
+    timed,
+    write_report,
+)
 from synkit.CRN import (  # noqa: E402
     conserved_moieties,
     crn_from_sbml,
@@ -72,6 +77,52 @@ DEFAULT_MODELS: Sequence[str] = (
     "BIOMD0000000255",
     "BIOMD0000000562",
 )
+
+#: Predeclared selection rationale. The identifiers span increasing parsed
+#: sizes; the last is a reaction-free SBML-qual negative control.
+MODEL_SELECTION: Dict[str, Dict[str, str]] = {
+    "BIOMD0000000001": {"stratum": "small", "reason": "canonical curated model"},
+    "BIOMD0000000010": {"stratum": "small", "reason": "small Core reaction model"},
+    "BIOMD0000000051": {"stratum": "small", "reason": "additional small topology"},
+    "BIOMD0000000064": {"stratum": "small", "reason": "additional small topology"},
+    "BIOMD0000000108": {"stratum": "small", "reason": "small sparse model"},
+    "BIOMD0000000404": {"stratum": "medium", "reason": "mid-sized Core model"},
+    "BIOMD0000000637": {"stratum": "medium", "reason": "mid-sized Core model"},
+    "BIOMD0000000019": {"stratum": "large", "reason": "large curated model"},
+    "BIOMD0000000175": {"stratum": "large", "reason": "large curated model"},
+    "BIOMD0000000255": {"stratum": "largest", "reason": "analysis ceiling probe"},
+    "BIOMD0000000562": {
+        "stratum": "negative-control",
+        "reason": "SBML-qual model with no Core reactions",
+    },
+}
+
+
+def _structural_signature(crn: Any) -> Dict[str, Any]:
+    """Return supported SBML structure for an exact round-trip comparison.
+
+    :param crn: A :class:`~synkit.CRN.SynCRN` instance.
+    :return: Species metadata and directed reaction multisets keyed by ids.
+    """
+    return {
+        "species": {
+            sid: {
+                "label": species.label,
+                "smiles": species.smiles,
+                "source_node_id": species.source_node_id,
+            }
+            for sid, species in crn.species.items()
+        },
+        "reactions": {
+            rid: {
+                "label": reaction.label,
+                "lhs": dict(reaction.lhs),
+                "rhs": dict(reaction.rhs),
+                "source_node_id": reaction.source_node_id,
+            }
+            for rid, reaction in crn.reactions.items()
+        },
+    }
 
 
 def fetch(model_id: str, *, offline: bool, timeout: float = 60.0) -> Path:
@@ -113,7 +164,13 @@ def analyse(path: Path, *, budget: float) -> Dict[str, Any]:
     :return: Per-model record.
     :rtype: Dict[str, Any]
     """
-    record: Dict[str, Any] = {"model_id": path.stem, "bytes": path.stat().st_size}
+    record: Dict[str, Any] = {
+        "model_id": path.stem,
+        "bytes": path.stat().st_size,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "download_url": _DOWNLOAD_URL.format(mid=path.stem),
+        "selection": MODEL_SELECTION.get(path.stem, {"stratum": "user-supplied"}),
+    }
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
@@ -173,9 +230,13 @@ def analyse(path: Path, *, budget: float) -> Dict[str, Any]:
         lambda: crn_from_sbml(crn_to_sbml(crn)), budget=budget
     )
     record["roundtrip_seconds"] = seconds
+    record["roundtrip_scope"] = (
+        "species ids/labels/SMILES/source ids and directed reaction ids/labels/"
+        "stoichiometric multisets/source ids; excludes kinetic laws, events, rules, "
+        "and package-specific semantics"
+    )
     record["roundtrip_ok"] = roundtrip is not None and (
-        (roundtrip.n_species, roundtrip.n_reactions)
-        == (crn.n_species, crn.n_reactions)
+        _structural_signature(roundtrip) == _structural_signature(crn)
     )
     if roundtrip is None:
         record["roundtrip_error"] = error
@@ -253,11 +314,18 @@ def biomodels_report(
             "url": "https://www.ebi.ac.uk/biomodels/",
             "cache": str(CACHE_DIR.relative_to(REPOSITORY_ROOT)),
             "note": (
-                "Cached locally and not redistributed with SynKit; BioModels "
-                "content carries its own terms of use."
+                "BioModels data are CC0. Files are cached locally but excluded "
+                "from SynKit distributions to keep package artifacts small."
             ),
+            "license": "CC0 1.0 Public Domain Dedication",
+            "terms": "https://www.ebi.ac.uk/biomodels/termsofuse",
         },
         "parameters": {"budget_seconds": budget, "offline": offline},
+        "selection_protocol": {
+            "kind": "predeclared size-varied interoperability probe",
+            "strata": sorted({item["stratum"] for item in MODEL_SELECTION.values()}),
+            "manifest": MODEL_SELECTION,
+        },
         "checks": checks,
         "largest_model_completing_siphons": _largest("n_minimal_siphons"),
         "models": records,

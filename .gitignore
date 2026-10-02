@@ -16,12 +16,16 @@ venv/
 /dist/
 /docs/
 *.egg-info/
+# Optional Mapper kernel artifacts are rebuilt from the shipped C++ source.
+libsynkit_distance_*.so
+libsynkit_distance_*.json
 
 # Generated logs, reports, notebooks, and data files
 *.log
 *.pdf
 *.rdf
 *.ipynb
+!notebooks/crn_glycolysis_case_study.ipynb
 *.csv
 *.json
 *.json.gz
@@ -99,26 +103,8 @@ venv/
 /crn/
 /debug/
 /dev/
-/paper/*
-!/paper/synister/
-!/paper/synister/**
-/paper/synister/main.aux
-/paper/synister/main.bbl
-/paper/synister/main.blg
-/paper/synister/main.fdb_latexmk
-/paper/synister/main.fls
-/paper/synister/main.log
-/paper/synister/main.out
-/paper/synister/main.pdf
-/paper/synister/main.synctex.gz
-/paper/synister/supplementary.aux
-/paper/synister/supplementary.fdb_latexmk
-/paper/synister/supplementary.fls
-/paper/synister/supplementary.log
-/paper/synister/supplementary.out
-/paper/synister/supplementary.pdf
-/paper/synister/supplementary.synctex.gz
-/paper/synister/supplementary.toc
+# Manuscripts, evidence, figures, and local cleanup archives
+/paper/
 /sprint/
 /synkit/Graph/dev/
 

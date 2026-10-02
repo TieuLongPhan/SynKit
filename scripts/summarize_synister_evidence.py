@@ -72,11 +72,10 @@ def _mode_summary(records, mode):
     shells = [record["shells"][mode] for record in selected]
     if not shells:
         return {"cases": 0}
+    structure_shells = [shell for shell in shells if shell["structure"]["complete"]]
     alternative_counts = []
-    for shell in shells:
+    for shell in structure_shells:
         structure = shell["structure"]
-        if not structure["complete"]:
-            continue
         reference_observed = bool(structure["reference_its_class_observed"])
         alternative_counts.append(
             int(structure["observed_its_class_count"]) - int(reference_observed)
@@ -118,10 +117,12 @@ def _mode_summary(records, mode):
             int(shell["labeled_solution_count"]) for shell in shells
         ),
         "multiple_exact_its_classes": sum(
-            shell["structure"]["observed_its_class_count"] > 1 for shell in shells
+            shell["structure"]["observed_its_class_count"] > 1
+            for shell in structure_shells
         ),
         "multiple_exact_template_classes": sum(
-            shell["structure"]["observed_template_class_count"] > 1 for shell in shells
+            shell["structure"]["observed_template_class_count"] > 1
+            for shell in structure_shells
         ),
         "alternative_its_application_complete_cases": len(alternative_counts),
         "cases_with_alternative_its": sum(value > 0 for value in alternative_counts),
@@ -131,10 +132,11 @@ def _mode_summary(records, mode):
             for value in sorted(alternative_histogram)
         },
         "reference_its_class_observed": sum(
-            shell["structure"]["reference_its_class_observed"] for shell in shells
+            bool(shell["structure"]["reference_its_class_observed"])
+            for shell in structure_shells
         ),
         "reference_not_global_minimum": nonminimal_references,
-        "structure_complete": sum(shell["structure"]["complete"] for shell in shells),
+        "structure_complete": len(structure_shells),
         "symmetry_quotient_complete": sum(
             shell["symmetry_quotient_complete"] for shell in shells
         ),

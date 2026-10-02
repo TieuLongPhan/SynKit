@@ -808,7 +808,7 @@ def enumerate_distance_mappings(  # noqa: C901
                     if expand_symmetry
                     else (list(mapping) for _ in range(1))
                 )
-                for selected_mapping in expanded:
+                for expansion_index, selected_mapping in enumerate(expanded):
                     selected_mapping_count += 1
                     if collect_mappings:
                         mappings.append(selected_mapping)
@@ -821,6 +821,11 @@ def enumerate_distance_mappings(  # noqa: C901
                     ):
                         timed_out = True
                         truncation_reason = "mapping_limit"
+                        if (
+                            expand_symmetry
+                            and expansion_index + 1 < len(symmetry_permutations)
+                        ):
+                            stopped_with_unexplored_work = True
                         break
             return
 

@@ -48,9 +48,11 @@ def prepare_native_candidates(
     library_path,
     initial_mapping=None,
     node_properties=("hcounts", "charges"),
+    binary=False,
+    symmetry=True,
 ):
-    a, at = _adjacency_and_elements(lgp[0], False)
-    b, bt = _adjacency_and_elements(lgp[1], False)
+    a, at = _adjacency_and_elements(lgp[0], binary)
+    b, bt = _adjacency_and_elements(lgp[1], binary)
     n = len(at)
     if not 1 <= n <= 256 or a.shape != b.shape or Counter(at) != Counter(bt):
         raise ValueError(
@@ -80,25 +82,29 @@ def prepare_native_candidates(
         or any(at[i] != bt[j] for i, j in enumerate(initial_mapping))
     ):
         raise ValueError("seed must be an atom-compatible permutation")
-    rg, rc = bounded_automorphism_permutations(
-        lgp[0],
-        binary=False,
-        node_properties=node_properties,
-        limit=256,
-        timeout_seconds=0.25,
-        max_search_nodes=10000,
-    )
-    pg, pc = bounded_automorphism_permutations(
-        lgp[1],
-        binary=False,
-        node_properties=node_properties,
-        limit=256,
-        timeout_seconds=0.25,
-        max_search_nodes=10000,
-    )
-    ro, po = permutation_group_order(rg[1:]), permutation_group_order(pg[1:])
-    if not rc or not pc or ro is None or po is None:
-        raise ValueError("native weighted candidates require complete side groups")
+    if symmetry:
+        rg, rc = bounded_automorphism_permutations(
+            lgp[0],
+            binary=binary,
+            node_properties=node_properties,
+            limit=256,
+            timeout_seconds=0.25,
+            max_search_nodes=10000,
+        )
+        pg, pc = bounded_automorphism_permutations(
+            lgp[1],
+            binary=binary,
+            node_properties=node_properties,
+            limit=256,
+            timeout_seconds=0.25,
+            max_search_nodes=10000,
+        )
+        ro, po = permutation_group_order(rg[1:]), permutation_group_order(pg[1:])
+        if not rc or not pc or ro is None or po is None:
+            raise ValueError("native weighted candidates require complete side groups")
+    else:
+        rg = pg = [tuple(range(n))]
+        ro = po = 1
     order = reaction_center_order(a, b, at, dict(Counter(at)), initial_mapping)
     pred = np.zeros((n, n), dtype=np.int32)
     types = {value: i for i, value in enumerate(dict.fromkeys(at))}
@@ -216,7 +222,9 @@ def enumerate_native_candidates(
             else:
                 callback(value, float(target))
             return 0
-        except BaseException as error:  # noqa: BLE001 -- exceptions cannot cross the C callback ABI
+        except (
+            BaseException
+        ) as error:  # noqa: BLE001 -- exceptions cannot cross the C callback ABI
             errors.append(error)
             return 1
 
@@ -317,14 +325,16 @@ def enumerate_native_candidates(
     return {
         "complete": status == 0 and not pending,
         "frontier": pending,
-        "reason": str(errors[0])
-        if errors
-        else {
-            0: "work_slice" if pending else None,
-            1: "time_limit",
-            2: "mapping_limit",
-            3: "callback_abort",
-        }[status],
+        "reason": (
+            str(errors[0])
+            if errors
+            else {
+                0: "work_slice" if pending else None,
+                1: "time_limit",
+                2: "mapping_limit",
+                3: "callback_abort",
+            }[status]
+        ),
         "candidate_count": stats[2],
         "visited_nodes": stats[0],
         "visited_leaves": stats[1],

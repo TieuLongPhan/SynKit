@@ -12,6 +12,7 @@ from typing import Any
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from summarize_synister_evidence import summarize, _verify_embedded_digest
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 DEFAULT_PILOT = (
@@ -32,15 +33,37 @@ DEFAULT_CASE = (
 )
 DEFAULT_OUTPUT = REPOSITORY / "paper" / "synister" / "figures" / "pilot_spectrum.pdf"
 
-# Canonical palette from ../Style/style.tex.
-BLUE = "#0072B2"
-GREEN = "#009E73"
-ORANGE = "#E69F00"
-VERMILLION = "#E64B35"
-INK = "#1A1A1A"
-MUTED = "#666666"
-HAIR = "#D9D9D9"
-WASH = "#F7F7F7"
+# Local, portable adaptation of the thesis style; TeX reads generated aliases.
+TOKENS_PATH = REPOSITORY / "paper/synister/figures/style_tokens.json"
+TOKENS = json.loads(TOKENS_PATH.read_text())
+COLORS = TOKENS["colors"]
+BLUE, GREEN, ORANGE = (COLORS[key] for key in ("blue", "teal", "gold"))
+VERMILLION, INK, MUTED = (COLORS[key] for key in ("vermilion", "text", "muted"))
+HAIR, WASH, NAVY = (COLORS[key] for key in ("rule", "panel", "navy"))
+
+
+def write_palette() -> None:
+    """Generate the TeX palette from the same tokens as the Python figures."""
+    aliases = dict(
+        npgBlue="blue",
+        npgGreen="teal",
+        npgOrange="gold",
+        npgVermillion="vermilion",
+        npgPurple="purple",
+        npgSky="sky",
+        figInk="text",
+        figMuted="muted",
+        figHair="rule",
+        figWash="panel",
+        figNavy="navy",
+        figBroken="broken",
+    )
+    lines = ["% Generated from style_tokens.json; do not edit."]
+    lines.extend(
+        rf"\definecolor{{{name}}}{{HTML}}{{{COLORS[key][1:]}}}"
+        for name, key in aliases.items()
+    )
+    TOKENS_PATH.with_name("palette.tex").write_text("\n".join(lines) + "\n")
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -60,7 +83,7 @@ def _panel_badge(axis: mpl.axes.Axes, letter: str, title: str) -> None:
         fontsize=7,
         fontweight="bold",
         fontfamily="DejaVu Serif",
-        bbox={"boxstyle": "circle,pad=0.22", "fc": INK, "ec": "none"},
+        bbox={"boxstyle": "circle,pad=0.22", "fc": NAVY, "ec": "none"},
         clip_on=False,
     )
     axis.text(
@@ -79,119 +102,46 @@ def _panel_badge(axis: mpl.axes.Axes, letter: str, title: str) -> None:
 
 
 def _cohort_panel(axis: mpl.axes.Axes, pilot: dict[str, Any]) -> None:
+    """Paired bars expose the numerator and keep each denominator explicit."""
     modes = pilot["modes"]
-    total = int(pilot["case_records"])
-    minimal = modes["minimal"]
-    reference = modes["reference_cd"]
+    minimum, reference = modes["minimal"], modes["reference_cd"]
     rows = [
-        (
-            "Shell closed",
-            minimal["cases"],
-            total,
-            reference["cases"],
-            total,
-        ),
-        (
-            ">1 exact ITS class",
-            minimal["multiple_exact_its_classes"],
-            minimal["cases"],
-            reference["multiple_exact_its_classes"],
-            reference["cases"],
-        ),
-        (
-            "Map-dependent centre",
-            minimal["unstable_reaction_centres"],
-            minimal["cases"],
-            reference["unstable_reaction_centres"],
-            reference["cases"],
-        ),
-        (
-            "Reference ITS observed",
-            minimal["reference_its_class_observed"],
-            minimal["cases"],
-            reference["reference_its_class_observed"],
-            reference["cases"],
-        ),
+        ("Closed shell", "cases", 100),
+        ("Multiple ITS", "multiple_exact_its_classes", None),
+        ("Varying center", "unstable_reaction_centres", None),
     ]
-    y = np.arange(len(rows), dtype=float)[::-1]
-    offset = 0.115
-    for position, (_, min_n, min_d, ref_n, ref_d) in zip(y, rows):
-        min_rate = 100.0 * min_n / min_d
-        ref_rate = 100.0 * ref_n / ref_d
-        axis.plot(
-            [min_rate, ref_rate],
-            [position + offset, position - offset],
-            color=HAIR,
-            linewidth=1.1,
-            zorder=1,
-        )
-        axis.scatter(
-            min_rate,
-            position + offset,
-            s=24,
-            color=BLUE,
-            edgecolor="white",
-            linewidth=0.45,
-            zorder=3,
-        )
-        axis.scatter(
-            ref_rate,
-            position - offset,
-            s=27,
-            marker="s",
-            color=ORANGE,
-            edgecolor="white",
-            linewidth=0.45,
-            zorder=3,
-        )
-        axis.annotate(
-            f"{min_n}/{min_d}",
-            (min_rate, position + offset),
-            xytext=(5, 0),
-            textcoords="offset points",
-            va="center",
-            fontsize=6.5,
-            color=BLUE,
-        )
-        axis.annotate(
-            f"{ref_n}/{ref_d}",
-            (ref_rate, position - offset),
-            xytext=(5, 0),
-            textcoords="offset points",
-            va="center",
-            fontsize=6.5,
-            color=ORANGE,
-        )
-
-    axis.set_yticks(y, [row[0] for row in rows])
-    axis.set_xlim(0, 112)
-    axis.set_ylim(-0.55, 3.55)
-    axis.set_xticks([0, 25, 50, 75, 100])
-    axis.set_xlabel("fraction of the stated denominator (%)")
-    axis.grid(axis="x", color=HAIR, linewidth=0.55, zorder=0)
-    axis.tick_params(axis="y", length=0, pad=5)
-    min_classes = minimal["alternative_its_classes_relative_to_reference"]
-    ref_classes = reference["alternative_its_classes_relative_to_reference"]
-    axis.scatter(
-        [], [], s=24, color=BLUE, label=f"Minimal CD · {min_classes} alternatives"
+    for i, (label, field, denominator) in enumerate(rows):
+        y = 6.6 - 2.7 * i
+        axis.text(0, y + 0.48, label, fontsize=8.2, color=INK)
+        for j, (mode, color) in enumerate(((minimum, BLUE), (reference, ORANGE))):
+            d = denominator or mode["cases"]
+            n = mode[field]
+            yy = y - 0.40 * j
+            axis.barh(yy, 100, height=0.25, color=WASH, edgecolor="none")
+            axis.barh(yy, 100 * n / d, height=0.25, color=color, edgecolor="none")
+            axis.text(103, yy, f"{n}/{d}", fontsize=7.6, va="center", color=color)
+    axis.set(
+        xlim=(0, 128),
+        ylim=(0.1, 8.3),
+        yticks=[],
+        xticks=[0, 50, 100],
+        xlabel="Reactions (%)",
     )
-    axis.scatter(
-        [],
-        [],
-        s=27,
-        marker="s",
-        color=ORANGE,
-        label=f"Reference CD · {ref_classes} alternatives",
-    )
+    axis.spines["left"].set_visible(False)
+    axis.spines["bottom"].set_bounds(0, 100)
+    axis.tick_params(axis="y", length=0)
+    for color, label in ((BLUE, "Minimum"), (ORANGE, "Reference CD")):
+        axis.plot([], [], color=color, lw=4, label=label)
     axis.legend(
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.32),
+        loc="upper left",
+        bbox_to_anchor=(-0.02, 1.04),
         ncol=2,
         frameon=False,
-        handletextpad=0.45,
-        columnspacing=1.25,
+        fontsize=7.6,
+        handlelength=1.0,
+        columnspacing=1.4,
     )
-    _panel_badge(axis, "A", "Closed-shell pilot outcomes")
+    _panel_badge(axis, "A", "100-reaction pilot")
 
 
 def _exact_ladder(case: dict[str, Any]) -> tuple[list[float], list[int], list[int]]:
@@ -222,94 +172,51 @@ def _exact_ladder(case: dict[str, Any]) -> tuple[list[float], list[int], list[in
 
 
 def _ladder_panel(axis: mpl.axes.Axes, case: dict[str, Any]) -> None:
+    """Separate numeric shells, with no interpolation between queried targets."""
     distance, mappings, classes = _exact_ladder(case)
-    axis.axvspan(5.78, 6.22, color=GREEN, alpha=0.075, linewidth=0)
-    axis.axvspan(7.78, 8.22, color=VERMILLION, alpha=0.07, linewidth=0)
-    axis.plot(
-        distance,
-        mappings,
-        color=BLUE,
-        marker="o",
-        markersize=4.2,
-        linewidth=1.45,
-        label="Labeled maps",
-        zorder=3,
+    axis.axvspan(5.55, 6.45, color=GREEN, alpha=0.07, lw=0)
+    axis.axvspan(7.55, 8.45, color=VERMILLION, alpha=0.05, lw=0)
+    for dx, values, color, label in (
+        (-0.22, mappings, BLUE, "Maps"),
+        (0.22, classes, GREEN, "ITS"),
+    ):
+        xs = np.asarray(distance) + dx
+        axis.vlines(xs, 0, values, color=color, lw=2.5, zorder=3)
+        axis.scatter(xs, values, color=color, s=18, zorder=4, label=label)
+        for x, value in zip(xs, values):
+            if value:
+                axis.annotate(
+                    str(value),
+                    (x, value),
+                    xytext=(0, 6),
+                    textcoords="offset points",
+                    ha="center",
+                    fontsize=7.5,
+                    color=color,
+                )
+    axis.text(4, 0.12, "0", ha="center", fontsize=8, color=MUTED)
+    axis.set_yscale("symlog", linthresh=1, linscale=0.5)
+    axis.set(
+        xlim=(3.4, 12.7),
+        ylim=(-0.13, 650),
+        xticks=distance,
+        xlabel="Chemical distance",
+        ylabel="Count (symlog)",
     )
-    axis.plot(
-        distance,
-        classes,
-        color=GREEN,
-        marker="s",
-        markersize=4.0,
-        linewidth=1.45,
-        label="Exact ITS classes",
-        zorder=3,
-    )
-    for x_value, map_count, class_count in zip(distance, mappings, classes):
-        if map_count == 0:
-            axis.annotate(
-                "0",
-                (x_value, 0),
-                xytext=(0, 5),
-                textcoords="offset points",
-                ha="center",
-                fontsize=6.3,
-                color=MUTED,
-            )
-            continue
-        axis.annotate(
-            str(map_count),
-            (x_value, map_count),
-            xytext=(0, 5),
-            textcoords="offset points",
-            ha="center",
-            fontsize=6.3,
-            color=BLUE,
-        )
-        axis.annotate(
-            str(class_count),
-            (x_value, class_count),
-            xytext=(0, -10),
-            textcoords="offset points",
-            ha="center",
-            fontsize=6.3,
-            color=GREEN,
-        )
-
-    axis.set_yscale("symlog", linthresh=1, linscale=0.35, base=10)
-    axis.set_xlim(3.55, 12.45)
-    axis.set_ylim(-0.18, 290)
-    axis.set_xticks(distance, [str(int(value)) for value in distance])
     axis.set_yticks([0, 1, 10, 100], ["0", "1", "10", "100"])
-    axis.set_xlabel("chemical distance, CD")
-    axis.set_ylabel("exact count (symmetric log scale)")
-    axis.grid(axis="y", color=HAIR, linewidth=0.55, zorder=0)
+    axis.grid(axis="y", color=HAIR, lw=0.5)
     axis.legend(
         loc="upper left",
-        bbox_to_anchor=(-0.01, 0.94),
+        bbox_to_anchor=(-0.02, 1.04),
+        ncol=2,
         frameon=False,
-        handlelength=1.6,
-        labelspacing=0.35,
+        fontsize=7.6,
+        handletextpad=0.2,
+        columnspacing=1.0,
     )
-    axis.text(
-        5.92,
-        230,
-        "global minimum",
-        ha="right",
-        va="bottom",
-        fontsize=6.2,
-        color=GREEN,
-    )
-    axis.text(
-        8.08,
-        230,
-        "reference CD",
-        ha="left",
-        va="bottom",
-        fontsize=6.2,
-        color=VERMILLION,
-    )
-    _panel_badge(axis, "B", "Record 84:1 exact spectrum")
+    axis.text(6, 300, "min", ha="center", fontsize=7.5, color=GREEN)
+    axis.text(8, 300, "ref", ha="center", fontsize=7.5, color=VERMILLION)
+    _panel_badge(axis, "B", "FlowER 84:1")
 
 
 def _configure_style() -> None:
@@ -317,11 +224,12 @@ def _configure_style() -> None:
         {
             "font.family": "serif",
             "font.serif": ["DejaVu Serif"],
-            "font.size": 7.0,
-            "axes.labelsize": 7.0,
-            "axes.titlesize": 8.5,
+            "font.size": TOKENS["metrics"]["font"],
+            "mathtext.fontset": "cm",
+            "axes.labelsize": 8.0,
+            "axes.titlesize": TOKENS["metrics"]["title"],
             "axes.edgecolor": MUTED,
-            "axes.linewidth": 0.55,
+            "axes.linewidth": TOKENS["metrics"]["axis"],
             "axes.facecolor": "white",
             "axes.axisbelow": True,
             "axes.spines.top": False,
@@ -329,8 +237,8 @@ def _configure_style() -> None:
             "lines.solid_capstyle": "round",
             "xtick.color": MUTED,
             "ytick.color": MUTED,
-            "xtick.labelsize": 6.5,
-            "ytick.labelsize": 6.5,
+            "xtick.labelsize": 7.5,
+            "ytick.labelsize": 7.5,
             "legend.fontsize": 6.5,
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
@@ -340,28 +248,31 @@ def _configure_style() -> None:
 
 def render(pilot_path: Path, case_path: Path, output: Path) -> None:
     """Render the two-panel pilot figure after validating frozen evidence."""
-    pilot = _load(pilot_path)
+    # Recompute statistics from digest-checked cases, not a cached report.
+    pilot = summarize(pilot_path.parent)
     case = _load(case_path)
+    _verify_embedded_digest(case, "record_sha256", context="alternative ITS case")
     if pilot.get("case_records") != 100:
         raise ValueError("the publication figure requires the frozen 100-case pilot")
     if case.get("reaction_id") != "84:1" or case.get("source_line") != 109:
         raise ValueError("the publication figure requires frozen FlowER record 84:1")
     _configure_style()
+    write_palette()
     figure, axes = plt.subplots(
         1,
         2,
-        figsize=(7.2, 3.05),
-        gridspec_kw={"width_ratios": [1.13, 1.0], "wspace": 0.40},
+        figsize=(TOKENS["metrics"]["width_inches"], 3.65),
+        gridspec_kw={"width_ratios": [1.25, 1.0], "wspace": 0.43},
     )
     _cohort_panel(axes[0], pilot)
     _ladder_panel(axes[1], case)
-    figure.subplots_adjust(left=0.16, right=0.985, top=0.83, bottom=0.27)
+    figure.subplots_adjust(left=0.065, right=0.975, top=0.79, bottom=0.15)
     output.parent.mkdir(parents=True, exist_ok=True)
     fixed_date = datetime(2026, 8, 28, tzinfo=timezone.utc)
     figure.savefig(
         output,
         format="pdf",
-        bbox_inches="tight",
+        bbox_inches=None,
         metadata={
             "Title": "Synister exact-shell evidence",
             "Author": "Tieu-Long Phan",

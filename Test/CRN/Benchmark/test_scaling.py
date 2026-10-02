@@ -1,4 +1,5 @@
 import unittest
+import time
 
 from synkit.CRN.Benchmark.scaling import (
     NETWORK_FAMILIES,
@@ -92,6 +93,31 @@ class TestRunScalingBenchmark(unittest.TestCase):
             time_budget=0.0,
         )
         self.assertEqual(len(records), 1)
+        self.assertTrue(records[0].timed_out)
+
+    def test_time_budget_terminates_current_measurement(self):
+        original = TASKS["rank"]
+
+        def slow_rank(crn):
+            time.sleep(1.0)
+            return crn.n_species
+
+        TASKS["rank"] = slow_rank
+        started = time.perf_counter()
+        try:
+            records = run_scaling_benchmark(
+                sizes=(4,),
+                families=("chain",),
+                tasks=("rank",),
+                time_budget=0.05,
+            )
+        finally:
+            TASKS["rank"] = original
+
+        self.assertLess(time.perf_counter() - started, 0.5)
+        self.assertTrue(records[0].timed_out)
+        self.assertIsNone(records[0].seconds)
+        self.assertIsNone(records[0].error)
 
     def test_records_serialize(self):
         record = run_scaling_benchmark(
@@ -100,6 +126,7 @@ class TestRunScalingBenchmark(unittest.TestCase):
         payload = record.to_dict()
         self.assertEqual(payload["family"], "chain")
         self.assertEqual(payload["task"], "rank")
+        self.assertFalse(payload["timed_out"])
 
 
 class TestScalingTable(unittest.TestCase):

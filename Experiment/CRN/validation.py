@@ -5,8 +5,8 @@ Runs the shipped validation set. Each network's structural verdicts are compared
 against the values the benchmark asserts, and every quantity is additionally
 recomputed by a second algorithm sharing no code path with the production one:
 deficiency through the rank identity ``rank(Ia) - rank(Y Ia)`` which never counts
-linkage classes, siphons by exhaustive subset enumeration, semiflows by checking
-their defining equations. Agreement is evidence; disagreement is a defect.
+linkage classes, siphons by exhaustive subset enumeration, and semiflows by
+checking their defining equations. Any disagreement fails the report.
 
 Emits schema ``synkit.crn-validation/1``. The command exits non-zero if any
 network fails, so it is usable as a gate.
@@ -89,10 +89,11 @@ def validation_report() -> Dict[str, Any]:
         "schema": SCHEMA,
         "status": "PASS" if all(checks.values()) else "FAIL",
         "claim_boundary": (
-            "Structural verdicts hold for every choice of positive rate "
-            "constants and assert nothing about behaviour at any particular "
-            "parametrization. The Angeli-De Leenheer-Sontag persistence test is "
-            "sufficient, not necessary, so a negative verdict does not prove "
+            "These are structural, operation-specific verdicts rather than "
+            "predictions at a fitted parametrization. Deficiency-theorem "
+            "conclusions apply to mass-action systems under their reported "
+            "hypotheses. The Angeli-De Leenheer-Sontag persistence test is "
+            "sufficient, not necessary, so a failing condition does not prove "
             "that a species can be driven to extinction."
         ),
         "environment": environment(),

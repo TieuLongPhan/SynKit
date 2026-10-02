@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+import time
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class HydrogenEnumerationResult:
     labeled_mapping_count: int
     complete: bool
     observed_plan_count: int
+    truncation_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +110,7 @@ def enumerate_minimal_hydrogen_transfers(  # noqa: C901
     *,
     max_plans=None,
     collect_plans=True,
+    time_limit_seconds=None,
 ) -> HydrogenEnumerationResult:
     """Enumerate minimum-edit implicit-H lifts of a heavy-atom mapping.
 
@@ -119,6 +122,16 @@ def enumerate_minimal_hydrogen_transfers(  # noqa: C901
 
     ``prod(row_count!) * prod(column_count!) / prod(cell_count!)``.
     """
+    started = time.perf_counter()
+    if time_limit_seconds is not None and (
+        isinstance(time_limit_seconds, bool)
+        or not isinstance(time_limit_seconds, (int, float))
+        or not math.isfinite(time_limit_seconds)
+        or time_limit_seconds < 0
+    ):
+        raise ValueError("time_limit_seconds must be finite and non-negative")
+    deadline = None if time_limit_seconds is None else started + time_limit_seconds
+    reason = None
     reactant, mapped_product = _transport_hydrogen_counts(
         reactant_hcounts,
         product_hcounts,
@@ -143,10 +156,20 @@ def enumerate_minimal_hydrogen_transfers(  # noqa: C901
     complete = True
     flows = {}
 
+    def stopped():
+        nonlocal complete, reason
+        if deadline is not None and time.perf_counter() >= deadline:
+            complete = False
+            reason = "time_limit"
+        return not complete
+
     def emit():
-        nonlocal observed, labeled_total, complete
+        nonlocal observed, labeled_total, complete, reason
+        if stopped():
+            return False
         if max_plans is not None and observed >= max_plans:
             complete = False
+            reason = "plan_limit"
             return False
         transfers = tuple(
             (source, target, count)
@@ -169,6 +192,8 @@ def enumerate_minimal_hydrogen_transfers(  # noqa: C901
         return True
 
     def assign_acceptors(row, column, remaining):
+        if stopped():
+            return
         if column == len(acceptor_atoms):
             if remaining == 0:
                 yield None
@@ -183,7 +208,7 @@ def enumerate_minimal_hydrogen_transfers(  # noqa: C901
         flows.pop((donor_atoms[row], target), None)
 
     def assign_donors(row):
-        if not complete:
+        if stopped():
             return
         if row == len(donor_atoms):
             if not any(acceptors):
@@ -205,6 +230,7 @@ def enumerate_minimal_hydrogen_transfers(  # noqa: C901
         labeled_mapping_count=labeled_total,
         complete=complete,
         observed_plan_count=observed,
+        truncation_reason=reason,
     )
 
 

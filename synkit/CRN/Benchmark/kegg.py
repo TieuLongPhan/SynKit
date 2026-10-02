@@ -504,11 +504,10 @@ def check_glycolysis_flux(
         reaction="label",
     )
     checker.build_petri_net_from_flow()
-    realizable, certificate = checker.is_realizable(max_states=max_states)
+    outcome = checker.realizability_result(max_states=max_states)
 
     return {
-        "realizable": bool(realizable),
-        "certificate": certificate,
+        **outcome.to_dict(),
         "flux": requested,
         "initial_marking": {"alpha-D-Glucose": initial_glucose},
     }

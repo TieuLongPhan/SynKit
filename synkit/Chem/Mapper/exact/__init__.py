@@ -19,6 +19,17 @@ certificate
     Optimality certificates (:class:`Certificate`, :func:`certify_result`).
 distance
     Complete atom-compatible enumeration at a global minimum or exact CD.
+search
+    PABS public interface with explicit Python or C++ backend selection.
+propagation, propagation_search
+    Python reversible-domain search and adaptive assignment bounds.
+native_search
+    Labeled C++ shells and minimum proof under one shared deadline.
+native_build
+    Explicit C++17 compilation of the adjacent ``native_distance.cpp`` source.
+native_candidates, native_frontier, native_parallel
+    Python bindings for native candidate enumeration, resumable subtrees,
+    and parallel orbit search. Native execution requires a library path.
 """
 
 from .kernel import Kernel, extract_kernel, apply_kernel_solution
@@ -62,6 +73,9 @@ from .hybrid import (
     HybridBackendDecision,
     enumerate_hybrid_distance_mappings,
 )
+from .propagation import PropagationConfig, enumerate_synister_cp_mappings
+from .search import enumerate_pabs_mappings
+from .multi_shell import enumerate_pabs_shells
 
 __all__ = [
     # kernel
@@ -109,4 +123,8 @@ __all__ = [
     "HybridBackend",
     "HybridBackendDecision",
     "enumerate_hybrid_distance_mappings",
+    "PropagationConfig",
+    "enumerate_synister_cp_mappings",
+    "enumerate_pabs_mappings",
+    "enumerate_pabs_shells",
 ]

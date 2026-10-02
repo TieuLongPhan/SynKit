@@ -4,6 +4,8 @@ import unittest
 
 from synkit.CRN.Pathway.realizability import (
     PathwayRealizability,
+    RealizabilitySearchLimit,
+    RealizabilityStatus,
     run_realizability_from_syncrn,
     syncrn_to_pr_inputs,
 )
@@ -276,6 +278,60 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIsNone(cert)
         self.assertIsNone(pr.certificate)
+        self.assertEqual(pr.last_result.status, RealizabilityStatus.UNREALIZABLE)
+        self.assertTrue(pr.last_result.exhaustive)
+        self.assertEqual(pr.last_result.termination_reason, "exhausted")
+
+    def test_state_limit_is_inconclusive_not_unrealizable(self) -> None:
+        """A state budget must not be converted into a negative verdict."""
+        rxn = self._reaction_tokens()
+        flow = {
+            rxn["r1"]: 1,
+            rxn["r8"]: 1,
+            rxn["r9"]: 1,
+        }
+        pr = self._build_pr(flow=flow, initial_marking={"A": 2})
+        pr.build_petri_net_from_flow()
+
+        result = pr.realizability_result(max_states=1)
+
+        self.assertEqual(result.status, RealizabilityStatus.INCONCLUSIVE)
+        self.assertIsNone(result.realizable)
+        self.assertFalse(result.exhaustive)
+        self.assertEqual(result.termination_reason, "state_limit")
+        self.assertEqual(result.explored_states, 1)
+
+        with self.assertRaises(RealizabilitySearchLimit):
+            pr.is_realizable(max_states=1)
+
+    def test_depth_limit_is_inconclusive_not_unrealizable(self) -> None:
+        """A depth budget must preserve an inconclusive search outcome."""
+        rxn = self._reaction_tokens()
+        flow = {
+            rxn["r1"]: 1,
+            rxn["r8"]: 1,
+            rxn["r9"]: 1,
+        }
+        pr = self._build_pr(flow=flow, initial_marking={"A": 2})
+        pr.build_petri_net_from_flow()
+
+        result = pr.realizability_result(max_depth=1)
+
+        self.assertEqual(result.status, RealizabilityStatus.INCONCLUSIVE)
+        self.assertIsNone(result.realizable)
+        self.assertFalse(result.exhaustive)
+        self.assertEqual(result.termination_reason, "depth_limit")
+        self.assertEqual(result.max_depth_reached, 1)
+
+    def test_search_budget_validation(self) -> None:
+        """Invalid search budgets should raise before traversal."""
+        pr = self._build_pr()
+        pr.build_petri_net_from_flow()
+
+        with self.assertRaises(ValueError):
+            pr.realizability_result(max_states=0)
+        with self.assertRaises(ValueError):
+            pr.realizability_result(max_depth=-1)
 
     def test_scaled_realizable_returns_false_for_infeasible_flow(self) -> None:
         """
@@ -363,6 +419,9 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
 
         self.assertTrue(info["konig"])
         self.assertTrue(info["bfs"])
+        self.assertEqual(info["bfs_status"], "realizable")
+        self.assertFalse(info["bfs_exhaustive"])
+        self.assertGreater(info["bfs_explored_states"], 0)
         self.assertEqual(info["certificate"], [rxn["r1"], rxn["r8"], rxn["r9"]])
 
         summary = info["summary"]

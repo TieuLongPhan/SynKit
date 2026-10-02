@@ -1,0 +1,13 @@
+BioModels input notice
+======================
+
+The optional interoperability study downloads models from BioModels. The
+BioModels dataset, including encoded models and annotations, is made available
+under the Creative Commons CC0 1.0 Public Domain Dedication:
+
+https://www.ebi.ac.uk/biomodels/termsofuse
+
+Downloaded model files are cached locally under
+``Experiment/CRN/data/biomodels`` but are excluded from SynKit distribution
+artifacts. Evidence reports retain identifiers, source URLs, file sizes and
+SHA-256 checksums.

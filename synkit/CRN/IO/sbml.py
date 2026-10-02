@@ -12,7 +12,7 @@ stoichiometry). No kinetic law is written, because a ``SynCRN`` carries none;
 structural analysis does not need one. Files that *do* carry kinetic laws are
 read fine — the laws are simply ignored.
 
-Two conversion choices are worth knowing:
+Conversion policies:
 
 - **Reversible reactions.** SBML marks a reaction ``reversible="true"``; a
   ``SynCRN`` reaction is always directed. On import, a reversible reaction is
@@ -564,6 +564,7 @@ def _read_species(
             "label": element.get("name") or sid,
             "smiles": annotation.get("smiles"),
             "sbml_id": sid,
+            "source_node_id": annotation.get("sourceNodeId", sid),
         }
 
     return species, dropped
@@ -799,7 +800,12 @@ def crn_from_sbml(
         reversible = _is_true(element.get("reversible"))
         annotation = _annotation_values(element, "reactionInfo")
 
-        extra: Dict[str, Any] = {"sbml_id": rid}
+        extra: Dict[str, Any] = {
+            "sbml_id": rid,
+            "source_node_id": annotation.get("sourceNodeId", rid),
+        }
+        if annotation.get("sourceKind"):
+            extra["source_kind"] = annotation["sourceKind"]
         if annotation.get("ruleRepr"):
             extra["rule_repr"] = annotation["ruleRepr"]
 

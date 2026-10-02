@@ -1,8 +1,10 @@
-"""Export exact non-reference ITS representatives for mapped reactions.
+"""Export exact ITS-class representatives for mapped reactions.
 
-The input dataset is explicit and is never copied into the output.  Each query
-enumerates a global exact-CD or globally minimal shell.  A reference seed can
-change the incumbent and traversal order, but never the candidate space.
+The input dataset is explicit and is never copied into the output. Each query
+enumerates a global exact-CD or globally minimal shell. A reference seed can
+change the incumbent and traversal order, but never the candidate space. The
+result exports every observed ITS class plus its non-reference subset, allowing
+downstream consumers to retain the reference class when it belongs to a shell.
 """
 
 from __future__ import annotations
@@ -34,7 +36,7 @@ from synkit.Chem.Mapper import (  # noqa: E402
     enumerate_mapped_reaction_its_alternatives,
 )
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def _canonical_json(value: object) -> bytes:

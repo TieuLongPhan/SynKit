@@ -119,7 +119,7 @@ def _species_and_rule_order(
     :raises ValueError:
         If the graph contains nodes whose ``kind`` is not recognised while no
         reaction node was found at all. That combination almost always means an
-        unsupported node-kind vocabulary rather than a genuinely reaction-free
+        unsupported node-kind vocabulary rather than a reaction-free
         network, and silently returning an empty matrix would corrupt every
         downstream result.
     """

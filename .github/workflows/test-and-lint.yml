@@ -31,6 +31,21 @@ jobs:
           channels: conda-forge
           use-mamba: true
 
+      - name: Locate pip cache
+        id: pip-cache
+        shell: bash -l {0}
+        run: |
+          conda activate synkit-ci
+          echo "dir=$(python -m pip cache dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Python packages
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: pip-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
+          restore-keys: |
+            pip-${{ runner.os }}-${{ matrix.python-version }}-
+
       - name: Install project and test tools
         shell: bash -l {0}
         run: |
@@ -51,6 +66,55 @@ jobs:
         run: |
           conda activate synkit-ci
           bash scripts/pytest.sh
+
+  synister-contracts:
+    name: Synister enumeration and evaluation contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install SynKit and test tools
+        run: python -m pip install -e . pytest
+      - name: Run deterministic contracts without research datasets
+        run: |
+          python -m pytest -q \
+            Experiment/Synister/tests/test_identifiability.py \
+            Experiment/Synister/tests/test_annotation_evaluation.py \
+            Experiment/Synister/tests/test_cohort_bounds.py \
+            Experiment/Synister/tests/test_numerical_scope.py \
+            Experiment/Synister/tests/test_support_orbits.py \
+            Experiment/Synister/tests/test_prediction_adapter.py \
+            Experiment/Synister/tests/test_callback_failure_contract.py \
+            Experiment/Synister/tests/test_symmetry_output_cap.py \
+            Experiment/Synister/tests/test_random_oracles.py \
+            Experiment/Synister/tests/test_seed_output_recovery.py
+
+  synister-native:
+    name: Synister optional C++ kernel and installed wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install build tools and declared dependencies
+        run: |
+          g++ --version
+          python -m pip install . build pytest
+      - name: Build distributions and verify the installed kernel builder
+        run: |
+          python -m build --sdist --wheel
+          python scripts/check_package_artifacts.py dist --mapper-smoke
+          python -m synkit.Chem.Mapper.exact.native_build --output-dir /tmp/synister-native
+      - name: Run bounded native exactness and disk controls
+        run: |
+          python -m pytest -q \
+            Test/Chem/Mapper/exact/test_native_minimum_shells.py \
+            Test/Chem/Mapper/exact/test_disk_frontier.py
 
   coverage:
     name: Coverage
@@ -94,3 +158,31 @@ jobs:
         run: |
           python -m twine check dist/*
           python scripts/check_package_artifacts.py dist
+
+  crn-reproducibility:
+    name: CRN evidence and notebook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install project and notebook runner
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install --no-deps -e .
+          python -m pip install jupyter nbconvert
+      - name: Run offline CRN evidence contracts
+        run: |
+          python Experiment/CRN/validation.py --output /tmp/crn-validation.json
+          python Experiment/CRN/kegg_case_study.py --output /tmp/crn-kegg.json
+          python Experiment/CRN/paper_assets.py /tmp --output-dir /tmp/crn-tables --allow-missing
+          python Experiment/CRN/paper_assets.py /tmp --output-dir /tmp/crn-tables --allow-missing --check
+      - name: Execute the CRN quick-start notebook
+        run: |
+          jupyter nbconvert --to notebook --execute \
+            notebooks/crn_glycolysis_case_study.ipynb \
+            --output /tmp/crn-glycolysis-executed.ipynb \
+            --ExecutePreprocessor.timeout=180
