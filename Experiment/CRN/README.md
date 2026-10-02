@@ -84,3 +84,6 @@ coverage claim.
 
 The underlying library contracts are covered by `Test/CRN/Benchmark/`, which runs
 the validation set, the scaling harness and the KEGG case study as unit tests.
+
+The executable [glycolysis notebook](notebooks/crn_glycolysis_case_study.ipynb)
+replays the cached KEGG case study and its firing certificate.

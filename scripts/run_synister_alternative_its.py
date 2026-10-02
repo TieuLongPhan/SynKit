@@ -15,10 +15,14 @@ import gzip
 import hashlib
 import json
 import os
-import resource
 import sys
 import tempfile
 from pathlib import Path
+
+try:
+    import resource
+except ImportError:  # Windows has no Unix resource module.
+    resource = None
 
 for _variable in (
     "OMP_NUM_THREADS",
@@ -122,6 +126,8 @@ def _reaction_from_row(row):
 
 
 def _configure_memory_limit(memory_limit_gib):
+    if resource is None or not hasattr(resource, "RLIMIT_AS"):
+        raise RuntimeError("This campaign requires Unix address-space resource limits")
     limit = int(memory_limit_gib * 1024**3)
     _, hard = resource.getrlimit(resource.RLIMIT_AS)
     if hard != resource.RLIM_INFINITY:

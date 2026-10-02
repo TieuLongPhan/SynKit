@@ -2,6 +2,8 @@
 
 This directory retains search benchmarks, independent correctness oracles,
 ablations, input selection, reproducibility tools, and method evaluation.
+Paper-dependent checks live in `tests/test_historical_evidence.py` and are run
+explicitly with local evidence; they are excluded from library CI.
 Library implementation belongs under `synkit/Chem/Mapper/`; library regression
 tests live in `Test/Chem/Mapper/{api,chem,exact,graph,io,slap,studies}`.
 

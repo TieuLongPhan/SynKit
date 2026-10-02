@@ -25,7 +25,7 @@ libsynkit_distance_*.json
 *.pdf
 *.rdf
 *.ipynb
-!notebooks/crn_glycolysis_case_study.ipynb
+!Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb
 *.csv
 *.json
 *.json.gz

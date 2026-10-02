@@ -108,7 +108,7 @@ assert len(outcome["certificate"]) == 15
 write_sbml(crn, Path("glycolysis.xml"))
 ```
 
-The [executable glycolysis notebook](notebooks/crn_glycolysis_case_study.ipynb)
+The [executable glycolysis notebook](Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb)
 explains and independently replays the certificate. The complete manuscript
 workflow is documented in [Experiment/CRN/README.md](Experiment/CRN/README.md).
 

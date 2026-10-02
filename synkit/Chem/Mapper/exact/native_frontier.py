@@ -4,7 +4,6 @@ import ctypes
 import math
 import multiprocessing as mp
 import os
-import resource
 import time
 from collections import deque
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
@@ -17,6 +16,11 @@ from .native_candidates import (
 )
 from .native_canonical import compact_code_identifier, transport_canonical_key
 from .orbit_aggregation import OrbitAccumulator
+
+try:
+    import resource
+except ImportError:  # Windows has no Unix resource module.
+    resource = None
 
 _STATE = None
 
@@ -38,7 +42,8 @@ def _init(
     from ..analysis import _BlindShellObserver, _property_vectors
     from ..slap.lap import _adjacency_and_elements
 
-    resource.setrlimit(resource.RLIMIT_AS, (4 * 1024**3, 4 * 1024**3))
+    if resource is not None and hasattr(resource, "RLIMIT_AS"):
+        resource.setrlimit(resource.RLIMIT_AS, (4 * 1024**3, 4 * 1024**3))
     with cpu_index.get_lock():
         index = cpu_index.value
         cpu_index.value += 1

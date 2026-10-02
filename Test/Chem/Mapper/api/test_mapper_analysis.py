@@ -3,6 +3,8 @@ from collections import Counter
 import gzip
 import json
 
+import pytest
+
 from scripts import run_synister_global_shells as campaign
 from synkit.Chem.Mapper import (
     GlobalShellConfig,
@@ -244,6 +246,10 @@ def _campaign_row(source_line):
     }
 
 
+@pytest.mark.skipif(
+    campaign.resource is None or not hasattr(campaign.resource, "RLIMIT_AS"),
+    reason="campaign workers require Unix address-space limits",
+)
 def test_campaign_parallel_workers_return_complete_unique_records():
     records = list(
         campaign._parallel_case_records(
@@ -274,6 +280,7 @@ def test_campaign_main_writes_progress_and_digest_checked_summary(
             "1,example:1," "[CH3:1][CH2:2][OH:3]>>[CH3:1][CH2:2][OH:3]|example:1\n"
         )
     monkeypatch.setattr(campaign, "_configure_memory_limit", lambda value: 0)
+    monkeypatch.setattr(campaign, "_memory_limit_bytes", lambda value: 0)
 
     assert (
         campaign.main(

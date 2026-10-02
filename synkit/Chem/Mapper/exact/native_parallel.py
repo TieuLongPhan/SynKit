@@ -3,12 +3,16 @@
 import math
 import multiprocessing as mp
 import os
-import resource
 import time
 from concurrent.futures import ProcessPoolExecutor
 
 from .native_candidates import NativeEnumerationStop, enumerate_native_candidates
 from .orbit_aggregation import OrbitAccumulator
+
+try:
+    import resource
+except ImportError:  # Windows has no Unix resource module.
+    resource = None
 
 _STATE = None
 _READY = False
@@ -22,7 +26,8 @@ def _init_worker(counter, deadline, barrier, cap):
     global _STATE, _READY
     _READY = False
     _STATE = counter, deadline, barrier, cap
-    resource.setrlimit(resource.RLIMIT_AS, (4 * 1024**3, 4 * 1024**3))
+    if resource is not None and hasattr(resource, "RLIMIT_AS"):
+        resource.setrlimit(resource.RLIMIT_AS, (4 * 1024**3, 4 * 1024**3))
 
 
 def _worker(lgp, target, config, seed, library_path, index, workers, cpu):

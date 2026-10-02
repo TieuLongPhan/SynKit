@@ -183,6 +183,6 @@ jobs:
       - name: Execute the CRN quick-start notebook
         run: |
           jupyter nbconvert --to notebook --execute \
-            notebooks/crn_glycolysis_case_study.ipynb \
+            Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb \
             --output /tmp/crn-glycolysis-executed.ipynb \
             --ExecutePreprocessor.timeout=180

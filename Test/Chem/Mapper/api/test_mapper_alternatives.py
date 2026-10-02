@@ -1,15 +1,8 @@
 import hashlib
 import itertools
-import json
-from pathlib import Path
 
 import numpy as np
-import pytest
 
-from scripts.run_synister_alternative_its import (
-    _payload_sha256,
-)
-from scripts.summarize_synister_evidence import summarize
 from synkit.Chem.Mapper import (
     GlobalShellConfig,
     enumerate_exact_its_alternatives,
@@ -252,66 +245,3 @@ def test_mapped_reaction_output_exposes_original_atom_map_correspondence():
     assert len(payload["shell"]["classes"]) == 1
     correspondence = payload["shell"]["classes"][0]["atom_map_correspondence"]
     assert sorted(tuple(pair) for pair in correspondence) == [(1, 1), (2, 2), (3, 3)]
-
-
-def test_frozen_pilot_has_reproducible_alternative_its_application_yield():
-    campaign = Path("paper/synister/evidence/pilot100_v4")
-    modes = summarize(campaign)["modes"]
-
-    assert modes["minimal"]["alternative_its_application_complete_cases"] == 46
-    assert modes["minimal"]["cases_with_alternative_its"] == 16
-    assert modes["minimal"]["alternative_its_classes_relative_to_reference"] == 39
-    assert modes["reference_cd"]["alternative_its_application_complete_cases"] == 52
-    assert modes["reference_cd"]["cases_with_alternative_its"] == 18
-    assert modes["reference_cd"]["alternative_its_classes_relative_to_reference"] == 54
-
-
-def test_historical_30_second_campaign_is_recomputed_from_verified_records():
-    campaign = Path("Experiment/Synister/benchmark_results/synister_global_shells_flower10k_v4_30s")
-    if not campaign.is_dir():
-        pytest.skip("historical campaign evidence is retained locally, outside Git")
-    modes = summarize(campaign)["modes"]
-
-    minimum = modes["minimal"]
-    reference = modes["reference_cd"]
-    assert minimum["cases"] == minimum["structure_complete"] == 244
-    assert minimum["multiple_exact_its_classes"] == 81
-    assert minimum["reference_its_class_observed"] == 231
-    assert reference["cases"] == 280
-    assert reference["structure_complete"] == 279
-    assert reference["multiple_exact_its_classes"] == 103
-    assert reference["reference_its_class_observed"] == 279
-
-
-def test_frozen_alternative_its_case_payload_and_semantics_replay():
-    record_path = Path("paper/synister/evidence/alternative_its_case_v1/record.json")
-    record = json.loads(record_path.read_text(encoding="ascii"))
-    claimed = record.pop("record_sha256")
-
-    assert claimed == _payload_sha256(record)
-    assert record["implementation_sha256"] == (
-        "d48db5c30262d1c1a327002e7f89c32ac76b54ede52f0bba19c11b6ab3389856"
-    )
-    grouped = {}
-    identifiers = {}
-    for query in record["queries"]:
-        shell = query["result"]["shell"]
-        target = str(query["requested_target"])
-        grouped.setdefault(target, set()).add(
-            (
-                shell["status"],
-                shell["shell_labeled_mapping_count"],
-                shell["shell_its_class_count"],
-                shell["reference_its_class_observed"],
-                shell["alternative_its_class_count"],
-            )
-        )
-        identifiers.setdefault(target, set()).add(
-            tuple(sorted(item["its_class_id"] for item in shell["alternatives"]))
-        )
-    assert all(len(values) == 1 for values in identifiers.values())
-    assert grouped["minimal"] == {("complete", 8, 2, False, 2)}
-    assert grouped["reference"] == {("complete", 16, 4, True, 3)}
-    assert grouped["4.0"] == {("no_solutions", 0, 0, False, 0)}
-    assert grouped["10.0"] == {("complete", 52, 13, False, 13)}
-    assert grouped["12.0"] == {("complete", 180, 45, False, 45)}

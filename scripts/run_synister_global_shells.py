@@ -20,13 +20,17 @@ import hashlib
 import json
 import multiprocessing
 import os
-import resource
 import sys
 import tempfile
 from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
+
+try:
+    import resource
+except ImportError:  # Windows has no Unix resource module.
+    resource = None
 
 for _variable in (
     "OMP_NUM_THREADS",
@@ -161,6 +165,8 @@ def _case_path(output: Path, source_line: int) -> Path:
 
 
 def _memory_limit_bytes(memory_limit_gib: float) -> int:
+    if resource is None or not hasattr(resource, "RLIMIT_AS"):
+        raise RuntimeError("This campaign requires Unix address-space resource limits")
     limit = int(memory_limit_gib * 1024**3)
     _, hard = resource.getrlimit(resource.RLIMIT_AS)
     if hard != resource.RLIM_INFINITY:
