@@ -28,9 +28,24 @@ surface, but its former retained reports are superseded by the stricter
 configuration-free local matrix. `rota_local.py` is likewise superseded by the
 RotA task in `configuration_free_local.py`.
 
-Run the complete maintained matrix with
-`Experiment/Stereo/benchmark.sh`. It includes raw A, formal A/B/C, full raw B,
-and raw C/VS146 as the final long-running stress stages.
+The local runner defaults to `direct_single_carrier_transport`: it exhausts
+the independently derived proper local frames and asks exact rooted
+constitutional isomorphism queries. Every accepted merge has a replayable map;
+negative decisions exhaust the admissible bindings. Original typed node and
+edge colors decide map validity. It does not enumerate or report the order
+of the whole constitutional symmetry group. Ten-second, 1 GiB and 50,000-count
+limits produce explicit oracle refusals. The count limit applies separately
+to frame bindings, rooted queries and proposed maps. Select the earlier
+complete-group method with
+`--reference-method exhaustive_constitutional_automorphisms`; no automatic
+fallback hides a cap refusal. Joint-carrier validation still uses the
+separately bounded complete-group oracle.
+
+Use `python -m Experiment.Stereo.reproduce --output-dir /tmp/stereo-bounded`
+for the bounded maintained checks. The `--tier full` sequence requires pinned
+CIP SMILES and coordinates and includes formal A/B/C without implicit raw
+stress. `Experiment/Stereo/benchmark.sh` is the historical expensive sequence;
+its full raw B and raw C/VS146 tail is not the bounded default.
 
 Full protocol details and retained reports are in
 `Experiment/Stereo/Data/Canonicalization/`.

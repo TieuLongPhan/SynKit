@@ -20,9 +20,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Experiment.Stereo.datasets import (  # noqa: E402
-    CIP_3D_SHA256,
     CIP_SHA256,
     load_cip,
+)
+from Experiment.Stereo.cip_sources import (  # noqa: E402
+    ACCEPTED_3D_SHA256, ORIGINAL_3D_SHA256, provenance_inputs, source_metadata,
 )
 
 SCHEMA = "synkit.cip-input-contract-audit/2"
@@ -98,7 +100,7 @@ def _audit_coordinate_extension(
     expected_ids: set[str],
 ) -> dict[str, Any]:
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    if digest != CIP_3D_SHA256:
+    if digest not in ACCEPTED_3D_SHA256:
         raise ValueError(f"Unexpected CIP 3D Validation Suite SHA-256: {digest}")
     supplier = Chem.SDMolSupplier(
         str(path),
@@ -130,13 +132,13 @@ def _audit_coordinate_extension(
         "provided": True,
         "audited_sha256": digest,
         "records": len(molecules),
-        "structures_vendored": False,
+        **source_metadata(path, coordinates=True),
         "conflict_orientation_witnesses": witnesses,
         "all_smiles_conflicts_distinguished": all(
             witness["distinguished"] for witness in witnesses
         ),
         "claim_boundary": (
-            "Signed coordinate volumes prove that the external 3D input "
+            "Signed coordinate volumes prove that the supplied 3D input "
             "distinguishes the conflicting configured structures. They do not "
             "perform helical perception or CIP ranking."
         ),
@@ -192,8 +194,9 @@ def audit_cip_input_contract(
     coordinate_extension = (
         {
             "provided": False,
-            "required_sha256": CIP_3D_SHA256,
-            "structures_vendored": False,
+            "required_sha256": ORIGINAL_3D_SHA256,
+            "accepted_sha256": sorted(ACCEPTED_3D_SHA256),
+            **source_metadata(None, coordinates=True),
         }
         if coordinate_path is None
         else _audit_coordinate_extension(
@@ -207,7 +210,7 @@ def audit_cip_input_contract(
         "dataset": {
             "records": len(rows),
             "audited_sha256": CIP_SHA256,
-            "structures_vendored": False,
+            **source_metadata(path),
         },
         "deterministic_input_contract": "supplied_smiles_only",
         "unique_input_strings": len(groups),
@@ -237,15 +240,22 @@ def audit_cip_input_contract(
 
 
 def main() -> int:
+    from Experiment.Stereo.provenance import capture_source, finish_source
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cip-path", required=True, type=Path)
     parser.add_argument("--cip-3d-path", type=Path)
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
+    paths = [arguments.cip_path]
+    if arguments.cip_3d_path is not None:
+        paths.append(arguments.cip_3d_path)
+    source = capture_source(provenance_inputs(*paths))
     report = audit_cip_input_contract(
         arguments.cip_path,
         coordinate_path=arguments.cip_3d_path,
     )
+    report["provenance"] = finish_source(source)
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if arguments.output is not None:
         arguments.output.parent.mkdir(parents=True, exist_ok=True)

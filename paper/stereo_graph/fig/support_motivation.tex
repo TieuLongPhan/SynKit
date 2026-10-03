@@ -1,0 +1,312 @@
+% Motivation: the carrier of a stereo element is not always an atom or a bond.
+% Style: shared concept_style.tex (Okabe--Ito).
+%   vermilion = the carrier (what the stereo element is attached to)
+%   blue      = the orientation datum + the descriptor it produces
+%   green     = the second, orthogonal reference plane (panel C only)
+% Reading order A -> F: six support families, from a single vertex to a component.
+% Stereo bonds are real filled wedges / graded hashes -- never arrow tips.
+% Requires: shapes.geometric, arrows.meta, calc, backgrounds.
+\begin{tikzpicture}[
+  font=\small,
+  iosubtitle/.append style={text width=3.70cm, align=left},
+  el/.style={inner sep=1pt, font=\scriptsize},
+  elt/.style={inner sep=0.6pt, font=\tiny},
+  bnd/.style={line width=0.8pt, black!82},
+  tbnd/.style={line width=0.6pt, black!70},
+  carrier/.style={draw=ioVermilion!88!black, line width=2.2pt, opacity=0.55,
+                  line cap=round},
+  halo/.style={draw=white, line width=3.0pt, line cap=butt},
+  scaff/.style={line width=0.4pt, black!14},
+  % --- orientation datum (blue) ---------------------------------------
+  oline/.style={ioBlue!85!black, line width=0.7pt},
+  odash/.style={ioBlue!85!black, line width=0.7pt,
+                dash pattern=on 1.6pt off 1.4pt},
+  dlab/.style={font=\tiny, text=ioBlue!85!black},
+  % --- reference planes ------------------------------------------------
+  planeA/.style={draw=ioBlue!45, line width=0.4pt, fill=ioBlue!7,
+                 dash pattern=on 1.2pt off 1.2pt},
+  planeB/.style={draw=ioGreen!45, line width=0.4pt, fill=ioGreen!8,
+                 dash pattern=on 1.2pt off 1.2pt},
+  % --- carrier annotation ----------------------------------------------
+  clab/.style={font=\tiny, text=ioVermilion!88!black},
+  vlab/.style={font=\tiny, text=black!55},
+  hexring/.style={regular polygon, regular polygon sides=6, draw=black!82,
+                  line width=0.7pt, minimum size=8mm, inner sep=0pt, fill=white},
+  gv/.style={circle, fill=black!40, inner sep=0pt, minimum size=2.4pt},
+  cv/.style={circle, fill=ioVermilion!88!black, inner sep=0pt, minimum size=3.0pt},
+  ge/.style={line width=0.5pt, black!40},
+  ce/.style={line width=1.5pt, ioVermilion!88!black, opacity=0.55, line cap=round},
+  fbadge/.style={circle, fill=black!78, text=white, font=\tiny\bfseries,
+                 inner sep=0pt, minimum size=3.6mm},
+]
+
+% --- proper stereo bonds: a filled wedge and a graded hash -------------
+% (local to this picture; no arrow tips are used for stereochemistry)
+\newcommand{\iowedge}[3][black!82]{%
+  \path (#2)--(#3) coordinate[pos=0.24] (@wa) coordinate[pos=0.78] (@wb);
+  \fill[#1] (@wa) -- ($(@wb)!0.95mm!90:(@wa)$) -- ($(@wb)!0.95mm!-90:(@wa)$)
+            -- cycle;}
+\newcommand{\iohash}[3][black!82]{%
+  \foreach \k in {0,...,5}{%
+    \pgfmathsetmacro{\hpos}{0.26+0.10*\k}%
+    \pgfmathsetmacro{\hwid}{0.26+0.14*\k}%
+    \path (#2)--(#3) coordinate[pos=\hpos] (@hp);
+    \draw[#1, line width=0.5pt]
+      ($(@hp)!\hwid mm!90:(#2)$)--($(@hp)!\hwid mm!-90:(#2)$);}}
+
+% =====================================================================
+% Row 1 --- A: vertex, B: edge, C: 3-vertex path
+% =====================================================================
+
+% ---------------- A: bromochlorofluoromethane, both enantiomers ------
+\iosub[{$k{=}4$, $\Gamma{=}A_4$, $[\Sigma{:}\Gamma]{=}2$}]{-7.05,5.00}{A}{Atom \;\;$s=v\in V$}
+\begin{scope}[shift={(0,-0.70)}]
+  % (R)
+  \node[el] (Ca)  at (-6.10,3.60) {C};
+  \node[el] (Bra) at (-6.10,4.32) {\aBr};
+  \node[el] (Fa)  at (-6.82,3.18) {\aF};
+  \node[el] (Cla) at (-5.38,3.18) {\aCl};
+  \node[el] (Ha)  at (-6.10,2.90) {H};
+  \draw[scaff] (Bra)--(Fa)--(Ha)--(Cla)--cycle;   % projected tetrahedron
+  \draw[carrier] (Ca) circle (0.30);
+  \draw[bnd] (Ca)--(Bra);  \draw[bnd] (Ca)--(Fa);
+  \iowedge{Ca}{Cla}  \iohash{Ca}{Ha}
+  \node[dlab] at (-6.10,2.56) {($R$)};
+  % (S): reflection through a vertical plane
+  \node[el] (Cb)  at (-3.70,3.60) {C};
+  \node[el] (Brb) at (-3.70,4.32) {\aBr};
+  \node[el] (Clb) at (-4.42,3.18) {\aCl};
+  \node[el] (Fb)  at (-2.98,3.18) {\aF};
+  \node[el] (Hb)  at (-3.70,2.90) {H};
+  \draw[scaff] (Brb)--(Clb)--(Hb)--(Fb)--cycle;
+  \draw[carrier] (Cb) circle (0.30);
+  \draw[bnd] (Cb)--(Brb);  \draw[bnd] (Cb)--(Fb);
+  \iowedge{Cb}{Clb}  \iohash{Cb}{Hb}
+  \node[dlab] at (-3.70,2.56) {($S$)};
+  % internal mirror = the orientation datum
+  \draw[odash] (-4.90,2.72)--(-4.90,4.56);
+  \node[dlab, fill=white, inner sep=1pt] at (-4.90,3.60) {$\sigma$};
+\end{scope}
+% ---------------- B: but-2-ene (bond-supported) ----------------------
+\iosub[{$k{=}2{+}2$, $\Gamma{=}V_4$, $[\Sigma{:}\Gamma]{=}2$}]{-2.25,5.00}{B}{Bond \;\;$s=e\in E$}
+\begin{scope}[shift={(0,-0.70)}]
+  % (E): methyls on opposite sides
+  \draw[planeA] (-0.15,4.20) ellipse [x radius=1.28, y radius=0.50];
+  \coordinate (e1) at (-0.45,4.20); \coordinate (e2) at (0.15,4.20);
+  \draw[carrier] (e1)--(e2);
+  \draw[bnd] ($(e1)+(0,0.055)$)--($(e2)+(0,0.055)$);
+  \draw[bnd] ($(e1)-(0,0.055)$)--($(e2)-(0,0.055)$);
+  \node[elt] (em1) at (-1.02,3.93) {$\mathrm{H_3C}$};
+  \node[elt] (eh1) at (-1.02,4.47) {H};
+  \node[elt] (em2) at (0.72,4.47)  {$\mathrm{CH_3}$};
+  \node[elt] (eh2) at (0.72,3.93)  {H};
+  \draw[bnd] (e1)--(em1); \draw[bnd] (e1)--(eh1);
+  \draw[bnd] (e2)--(em2); \draw[bnd] (e2)--(eh2);
+  \node[dlab] at (1.52,4.20) {($E$)};
+  % (Z): methyls on the same side
+  \draw[planeA] (-0.15,2.95) ellipse [x radius=1.28, y radius=0.50];
+  \coordinate (z1) at (-0.45,2.95); \coordinate (z2) at (0.15,2.95);
+  \draw[carrier] (z1)--(z2);
+  \draw[bnd] ($(z1)+(0,0.055)$)--($(z2)+(0,0.055)$);
+  \draw[bnd] ($(z1)-(0,0.055)$)--($(z2)-(0,0.055)$);
+  \node[elt] (zm1) at (-1.02,2.68) {$\mathrm{H_3C}$};
+  \node[elt] (zh1) at (-1.02,3.22) {H};
+  \node[elt] (zm2) at (0.72,2.68)  {$\mathrm{CH_3}$};
+  \node[elt] (zh2) at (0.72,3.22)  {H};
+  \draw[bnd] (z1)--(zm1); \draw[bnd] (z1)--(zh1);
+  \draw[bnd] (z2)--(zm2); \draw[bnd] (z2)--(zh2);
+  \node[dlab] at (1.52,2.95) {($Z$)};
+\end{scope}
+% ---------------- C: penta-2,3-diene (axis-supported) ----------------
+\iosub[{$k{=}2{+}2$, orthogonal ends}]{2.55,5.00}{C}{Axis \;\;$s=$ path}
+\begin{scope}[shift={(0,-0.70)}]
+  \coordinate (a1) at (4.15,4.45);
+  \coordinate (a2) at (4.80,4.45);
+  \coordinate (a3) at (5.45,4.45);
+  % the two terminal planes, colour-keyed to the Newman view below
+  \draw[planeB] (4.15,4.45) ellipse [x radius=0.62, y radius=0.34];
+  \draw[planeA, rotate around={90:(5.45,4.45)}]
+        (5.45,4.45) ellipse [x radius=0.40, y radius=0.28];
+  \draw[carrier] (a1)--(a3);
+  \foreach \s in {0.055,-0.055}{
+    \draw[bnd] ($(a1)+(0,\s)$)--($(a2)+(0,\s)$);
+    \draw[bnd] ($(a2)+(0,\s)$)--($(a3)+(0,\s)$);
+  }
+  % left terminus: substituents in the plane of the page
+  \node[elt, text=ioGreen!55!black] (c1) at (3.55,4.76) {$\mathrm{CH_3}$};
+  \node[elt, text=ioGreen!55!black] (h1) at (3.60,4.14) {H};
+  \draw[bnd] (a1)--(c1); \draw[bnd] (a1)--(h1);
+  % right terminus: substituents in the orthogonal plane
+  \node[elt, text=ioBlue!75!black] (c2) at (6.05,4.76) {$\mathrm{CH_3}$};
+  \node[elt, text=ioBlue!75!black] (h2) at (6.00,4.14) {H};
+  \iowedge{a3}{c2}  \iohash{a3}{h2}
+  % --- Newman-type view along the axis -------------------------------
+  \draw[carrier] (4.80,3.16) circle (0.34);
+  \draw[tbnd]    (4.80,3.16) circle (0.34);
+  \draw[ioBlue!75!black, line width=0.8pt] (4.80,3.16)--(4.80,3.62); % near
+  \draw[ioBlue!75!black, line width=0.8pt] (4.80,3.16)--(4.80,2.70);
+  \draw[ioGreen!55!black, line width=0.7pt] (4.46,3.16)--(4.00,3.16); % far
+  \draw[ioGreen!55!black, line width=0.7pt] (5.14,3.16)--(5.60,3.16);
+  \node[elt, text=ioBlue!75!black]   at (4.80,3.74) {$\mathrm{CH_3}$};
+  \node[elt, text=ioBlue!75!black]   at (4.80,2.58) {H};
+  \node[elt, text=ioGreen!55!black]  at (3.80,3.16) {$\mathrm{CH_3}$};
+  \node[elt, text=ioGreen!55!black]  at (5.76,3.16) {H};
+  \draw[oline] (4.80,3.16) ++(90:0.21) arc (90:180:0.21);
+  \node[dlab] at (4.46,3.42) {$90^\circ$};
+\end{scope}
+% =====================================================================
+% Row 2 --- D: ordered path, E: oriented face, F: whole component
+% =====================================================================
+
+\begin{scope}[yshift=1.5cm]
+% ---------------- D: hexahelicene (path-supported) -------------------
+\iosub[{variable arity; reversal}]{-7.05,-0.80}{D}{Path \;\;$s=(v_1,\ldots,v_m)$}
+\begin{scope}
+  % Six ortho-fused rings on a 66-degree turn: after one loop the terminal
+  % rings overlap, so ring 5 must ride over ring 0 -- the helical rise.
+  \foreach \x/\y/\r/\i in {%
+      -5.20/-3.26/2/0, -4.51/-3.20/8/1, -4.28/-2.55/14/2,
+      -4.79/-2.07/20/3, -5.43/-2.34/26/4, -5.44/-3.04/32/5}{
+    \node[hexring, rotate=\r] (ring\i) at (\x,\y) {};
+  }
+  \draw[carrier] plot[smooth] coordinates
+    {(ring0.center) (ring1.center) (ring2.center)
+     (ring3.center) (ring4.center) (ring5.center)};
+  \node[hexring, rotate=32] at (-5.44,-3.04) {};   % terminal ring rides over
+  \draw[{Latex[length=1.5mm]}-{Latex[length=1.5mm]}, oline]
+        (-5.48,-3.58)--(-5.72,-3.36);
+  \node[dlab, anchor=east] at (-5.78,-3.50) {$h$};
+  \draw[-{Latex[length=2.0mm]}, oline]
+        (-4.90,-2.70) ++(150:0.34) arc (150:-120:0.34);
+  \node[dlab] at (-4.68,-3.80) {$P/M$};
+\end{scope}
+% ---------------- E: 1,2-disubstituted ferrocene (plane-supported) ---
+\iosub[{off-plane pilot}]{-2.25,-0.80}{E}{Plane \;\;$s=$ face}
+\begin{scope}[shift={(0,-0.28)}]
+  % ring-carbon vertices (pentagon projected onto a shallow ellipse)
+  \coordinate (t0) at (-0.10,-1.72);   % top ring, back
+  \coordinate (t1) at ( 0.68,-1.914);
+  \coordinate (t2) at ( 0.382,-2.227); % front-right (bears R')
+  \coordinate (t3) at (-0.582,-2.227); % front-left  (bears R)
+  \coordinate (t4) at (-0.88,-1.914);
+  \coordinate (b0) at (-0.10,-3.02);   % bottom ring
+  \coordinate (b1) at ( 0.68,-3.214);
+  \coordinate (b2) at ( 0.382,-3.527);
+  \coordinate (b3) at (-0.582,-3.527);
+  \coordinate (b4) at (-0.88,-3.214);
+  \node[el] (fe) at (-0.10,-2.65) {\aFe};
+  % sandwich: light haptic spokes (bottom solid-ish, top faint)
+  \foreach \v in {b0,b1,b2,b3,b4}{\draw[tbnd, black!45] (fe)--(\v);}
+  \foreach \v in {t1,t2,t3,t4}{\draw[tbnd, black!22] (fe)--(\v);}
+  \draw[tbnd, black!55] (b0)--(b1)--(b2)--(b3)--(b4)--cycle;   % bottom Cp
+  % pilot: the iron, off the plane, fixes the sense of the ring face
+  \draw[odash] (fe)--(-0.10,-2.00);
+  \draw[ioBlue!85!black, line width=0.4pt] (-0.34,-2.68)--(-0.74,-2.86);
+  \node[dlab, anchor=east] at (-0.76,-2.88) {$p$};
+  % top Cp ring == the oriented stereogenic face (the carrier)
+  \fill[ioVermilion!88!black, opacity=0.13] (t0)--(t1)--(t2)--(t3)--(t4)--cycle;
+  \draw[carrier] (t0)--(t1)--(t2)--(t3)--(t4)--cycle;
+  \draw[bnd]     (t0)--(t1)--(t2)--(t3)--(t4)--cycle;
+  % two different in-plane substituents make the ring stereogenic
+  \draw[bnd] (t3)--(-0.86,-2.44);  \node[elt] at (-1.00,-2.52) {R};
+  \draw[bnd] (t2)--( 0.66,-2.44);  \node[elt] at ( 0.82,-2.52) {R$'$};
+  % oriented normal of the plane
+  \draw[-{Latex[length=1.9mm]}, oline] (-0.10,-2.00)--(-0.10,-1.34);
+  \node[dlab, anchor=west] at (0.02,-1.46) {$\hat n$};
+  \node[dlab] at (1.06,-2.02) {$pR/pS$};
+\end{scope}
+% ---------------- F: [2]catenane (whole-component support) -----------
+\iosub[{joint configuration}]{2.55,-0.80}{F}{Global \;\;$s=$ component}
+\begin{scope}
+  % the carrier is the entire component, not either ring
+  \fill[ioVermilion!88!black, opacity=0.07, rounded corners=9pt]
+        (3.00,-3.42) rectangle (6.60,-1.88);
+  % LEFT ring full; RIGHT ring gapped at the top crossing and haloed so it
+  % passes over at the bottom: a true mechanical link, not a stack.
+  \draw[carrier] (4.15,-2.65) ellipse [x radius=1.00, y radius=0.62];
+  \draw[bnd]     (4.15,-2.65) ellipse [x radius=1.00, y radius=0.62];
+  \draw[halo]    (4.707,-2.235)
+        arc[start angle=138, end angle=483, x radius=1.00, y radius=0.62];
+  \draw[carrier] (4.707,-2.235)
+        arc[start angle=138, end angle=483, x radius=1.00, y radius=0.62];
+  \draw[bnd]     (4.707,-2.235)
+        arc[start angle=138, end angle=483, x radius=1.00, y radius=0.62];
+  % oriented rings: an oriented [2]catenane is topologically chiral
+  \draw[-{Latex[length=1.6mm]}, oline]
+        (3.55,-2.65) ++(40:0.28) arc[start angle=40, end angle=320, radius=0.28];
+  \draw[-{Latex[length=1.6mm]}, oline]
+        (6.05,-2.65) ++(140:0.28) arc[start angle=140, end angle=-140, radius=0.28];
+\end{scope}
+\end{scope}
+% =====================================================================
+% Footer --- the abstraction ramp: the carrier grows A -> F
+% =====================================================================
+\draw[-{Latex[length=2.6mm]}, ioVermilion!88!black, line width=1.4pt,
+      opacity=0.55] (-6.60,-3.72)--(6.60,-3.72);
+
+% A: a single vertex
+\begin{scope}[shift={(-6.00,-3.14)}]
+  \draw[ge] (0,0)--(0,0.20); \draw[ge] (0,0)--(0,-0.20);
+  \draw[ge] (0,0)--(-0.20,0); \draw[ge] (0,0)--(0.20,0);
+  \foreach \p in {(0,0.20),(0,-0.20),(-0.20,0),(0.20,0)}{\node[gv] at \p {};}
+  \node[cv] at (0,0) {};
+\end{scope}
+% B: a single edge
+\begin{scope}[shift={(-3.60,-3.14)}]
+  \draw[ge] (-0.12,0)--(-0.32,0.16); \draw[ge] (-0.12,0)--(-0.32,-0.16);
+  \draw[ge] (0.12,0)--(0.32,0.16);   \draw[ge] (0.12,0)--(0.32,-0.16);
+  \draw[ce] (-0.12,0)--(0.12,0);
+  \foreach \p in {(-0.32,0.16),(-0.32,-0.16),(0.32,0.16),(0.32,-0.16)}%
+    {\node[gv] at \p {};}
+  \node[cv] at (-0.12,0) {}; \node[cv] at (0.12,0) {};
+\end{scope}
+% C: a 3-vertex path
+\begin{scope}[shift={(-1.20,-3.14)}]
+  \draw[ge] (-0.24,0)--(-0.44,0.16); \draw[ge] (-0.24,0)--(-0.44,-0.16);
+  \draw[ge] (0.24,0)--(0.44,0.16);   \draw[ge] (0.24,0)--(0.44,-0.16);
+  \draw[ce] (-0.24,0)--(0.24,0);
+  \foreach \p in {(-0.44,0.16),(-0.44,-0.16),(0.44,0.16),(0.44,-0.16)}%
+    {\node[gv] at \p {};}
+  \foreach \x in {-0.24,0,0.24}{\node[cv] at (\x,0) {};}
+\end{scope}
+% D: an ordered path of length k
+\begin{scope}[shift={(1.20,-3.14)}]
+  \draw[ce] plot[smooth] coordinates
+    {(-0.48,-0.12) (-0.30,0.06) (-0.06,0.16) (0.18,0.10) (0.36,-0.06)
+     (0.46,-0.24)};
+  \foreach \p in {(-0.48,-0.12),(-0.30,0.06),(-0.06,0.16),(0.18,0.10),
+                  (0.36,-0.06),(0.46,-0.24)}{\node[cv] at \p {};}
+  \draw[-{Latex[length=1.4mm]}, ioBlue!85!black, line width=0.5pt]
+        (-0.48,-0.30)--(0.30,-0.30);
+\end{scope}
+% E: an oriented face
+\begin{scope}[shift={(3.60,-3.14)}]
+  \fill[ioVermilion!88!black, opacity=0.15]
+        (90:0.30)--(162:0.30)--(234:0.30)--(306:0.30)--(18:0.30)--cycle;
+  \draw[ce]  (90:0.30)--(162:0.30)--(234:0.30)--(306:0.30)--(18:0.30)--cycle;
+  \foreach \a in {90,162,234,306,18}{\node[cv] at (\a:0.30) {};}
+  \draw[-{Latex[length=1.4mm]}, ioBlue!85!black, line width=0.5pt] (0,0)--(0,0.34);
+  \draw[odash, line width=0.5pt] (0,0)--(0,-0.26);
+  \node[gv] at (0,-0.26) {};
+\end{scope}
+% F: a whole component
+\begin{scope}[shift={(6.00,-3.14)}]
+  \draw[ce] (-0.16,0) circle (0.24);
+  \draw[white, line width=2.4pt] (0.16,0) ++(150:0.24) arc (150:480:0.24);
+  \draw[ce] (0.16,0) ++(150:0.24) arc (150:480:0.24);
+\end{scope}
+
+\foreach \x/\L in {-6.00/A, -3.60/B, -1.20/C, 1.20/D, 3.60/E, 6.00/F}{
+  \node[fbadge] at (\x,-3.72) {\L};
+}
+
+% =====================================================================
+\begin{pgfonlayer}{background}
+  \foreach \xa/\xb in {-7.25/-2.55, -2.45/2.25, 2.35/7.25}{
+    \filldraw[rounded corners=3pt, fill=black!1, draw=black!18]
+      (\xa,1.35) rectangle (\xb,5.40);
+    \filldraw[rounded corners=3pt, fill=black!1, draw=black!18]
+      (\xa,-2.55) rectangle (\xb,1.10);
+  }
+\end{pgfonlayer}
+\end{tikzpicture}

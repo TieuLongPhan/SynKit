@@ -192,6 +192,10 @@ class HelicalStereo(PathStereo):
             raise ValueError("Helical stereo requires at least four path atoms.")
         if self.parity not in (-1, 1, None):
             raise ValueError("Helical parity must be -1, 1, or None.")
+        if self.parity is not None:
+            # All accepted numeric encodings denote the same signed state;
+            # the auxiliary locus color must not introduce additional states.
+            object.__setattr__(self, "parity", int(self.parity))
         if len(set(self.reported_positions)) != len(self.reported_positions):
             raise ValueError("Helical reported positions must be distinct.")
         if not set(self.reported_positions) <= set(self.path):

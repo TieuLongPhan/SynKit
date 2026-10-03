@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 import hashlib
-from typing import Any, Hashable, Literal
+from typing import Any, Hashable
 
 import networkx as nx
 
@@ -32,7 +32,6 @@ from .canonical import (
     _expand_base_graph,
     _material_port_resource,
     _project_witnesses,
-    _rdkit_graph,
     _rdkit_graph_and_registry,
 )
 from .descriptors import (
@@ -52,6 +51,11 @@ from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
 from .global_configured import add_framework as _add_framework
 from .global_stereo import FrameworkStereo
 from .orbits import StereoSpecification
+from .rdkit_resonance import (
+    MirrorIdentityProfile,
+    _is_terminal_phosphate_resonance_locus,
+    _resonance_graphs,
+)
 
 # Compatibility alias for callers that adopted the former configured-prefixed
 # API.  SynKit now exposes one canonical stereograph model.
@@ -79,9 +83,7 @@ CONFIGURED_DESCRIPTOR_TYPES = (
     FrameworkStereo,
 )
 
-MirrorIdentityProfile = Literal["chemical", "lewis_state", "acs_topology"]
 _ACS_TOPOLOGY_ATOM_COLOR = ("element", "isotope", "hcount")
-_MAX_RESONANCE_FORMS = 4096
 
 
 def _connectivity_bond_color(_attributes: Mapping[str, Any]) -> str:
@@ -109,9 +111,19 @@ def _record_mirror_profile(
     result: StereographMirrorResult,
     identity_profile: MirrorIdentityProfile,
 ) -> StereographMirrorResult:
+    if identity_profile != "chemical" and result.original is not None:
+        from .rdkit_identity import profile_certificate
+
+        original = profile_certificate(result.original, identity_profile)
+        mirror = profile_certificate(result.mirror, identity_profile)
+        result = replace(
+            result, original=original, mirror=mirror,
+            original_identity=original, mirror_identity=mirror,
+        )
     return replace(
         result,
         method=f"{result.method}:{identity_profile}",
+        identity_profile=identity_profile,
     )
 
 
@@ -729,31 +741,6 @@ def classify_configured_stereograph_mirror(
     )
 
 
-def _resonance_graphs(molecule: Any) -> tuple[nx.Graph, ...]:
-    """Return every RDKit resonance form as an attributed molecular graph."""
-    from rdkit import Chem
-
-    supplier = Chem.ResonanceMolSupplier(
-        molecule,
-        flags=Chem.ResonanceFlags.ALLOW_CHARGE_SEPARATION,
-        maxStructs=_MAX_RESONANCE_FORMS,
-    )
-    forms = tuple(supplier)
-    if len(forms) >= _MAX_RESONANCE_FORMS:
-        raise RuntimeError(
-            "Exact resonance-family enumeration reached the "
-            f"{_MAX_RESONANCE_FORMS}-form safety limit."
-        )
-    if not forms:
-        forms = (Chem.Mol(molecule),)
-    graphs = []
-    for form in forms:
-        normalized = Chem.Mol(form)
-        Chem.SetAromaticity(normalized)
-        graphs.append(_rdkit_graph(normalized))
-    return tuple(graphs)
-
-
 def _classify_resonance_family_mirror(
     molecule: Any,
     registry: Mapping[str, StereoValue],
@@ -779,6 +766,20 @@ def _classify_resonance_family_mirror(
     for graph in _resonance_graphs(molecule):
         originals.append(canonicalize_configured_registry(graph, registry))
         mirrors.append(canonicalize_configured_registry(graph, mirrored))
+    from .rdkit_identity import ResonanceFamilyCanonicalResult, profile_certificate
+
+    original_members = {
+        result.canonical_code: profile_certificate(result, "lewis_state") for result in originals
+    }
+    mirror_members = {
+        result.canonical_code: profile_certificate(result, "lewis_state") for result in mirrors
+    }
+    original_family = ResonanceFamilyCanonicalResult(
+        tuple(original_members[key] for key in sorted(original_members))
+    )
+    mirror_family = ResonanceFamilyCanonicalResult(
+        tuple(mirror_members[key] for key in sorted(mirror_members))
+    )
     originals.sort(key=lambda result: result.canonical_code)
     mirrors.sort(key=lambda result: result.canonical_code)
     mirror_by_code = {result.canonical_code: result for result in mirrors}
@@ -790,8 +791,8 @@ def _classify_resonance_family_mirror(
         ),
         None,
     )
-    achiral = matched is not None
-    original, mirror = matched or (originals[0], mirrors[0])
+    achiral = original_family.same_stereograph(mirror_family)
+    original, mirror = matched if achiral else (originals[0], mirrors[0])
     return StereographMirrorResult(
         (
             StereographMirrorStatus.ACHIRAL
@@ -804,47 +805,25 @@ def _classify_resonance_family_mirror(
         tuple(mirrored.values()),
         (tuple(zip(original.atom_order, mirror.atom_order)) if achiral else None),
         method="exact_resonance_family_stereograph_mirror_comparison",
+        original_identity=original_family,
+        mirror_identity=mirror_family,
     )
 
 
 def canonicalize_rdkit_configured_stereograph(
     molecule: Any,
-) -> CanonicalStereographResult:
-    graph, registry = _rdkit_graph_and_registry(molecule)
-    return canonicalize_configured_registry(graph, registry)
+    *,
+    identity_profile: MirrorIdentityProfile = "lewis_state",
+):
+    """Canonicalize source-declared stereo with a persisted identity profile.
 
-
-def _is_terminal_phosphate_resonance_locus(molecule: Any, element: Any) -> bool:
-    """Return whether an apparent P center differs only by localized resonance.
-
-    A neutral tetra-coordinate phosphorus with terminal ``P=O`` and
-    ``P-[O-]`` ligands contains two drawings of the same delocalized phosphate
-    oxygen environment.  Treating bond order and formal charge as ligand
-    identity makes this look tetrahedral even though exchanging those terminal
-    oxygens is resonance-equivalent in the molecular-identity task.
+    The existing default retains the supplied Lewis drawing.  The chemical
+    profile instead returns a resonance-family result with member-specific
+    witnesses.  Unspecified descriptors are not completed by this operation.
     """
-    from rdkit import Chem
+    from .rdkit_identity import canonicalize_rdkit_identity
 
-    support = element.support
-    if not hasattr(support, "center"):
-        return False
-    atom = molecule.GetAtomWithIdx(support.center)
-    if atom.GetAtomicNum() != 15 or atom.GetFormalCharge() != 0:
-        return False
-    terminal_oxygen_bonds = [
-        (neighbor, molecule.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx()))
-        for neighbor in atom.GetNeighbors()
-        if neighbor.GetAtomicNum() == 8 and neighbor.GetDegree() == 1
-    ]
-    has_neutral_double = any(
-        oxygen.GetFormalCharge() == 0 and bond.GetBondType() is Chem.BondType.DOUBLE
-        for oxygen, bond in terminal_oxygen_bonds
-    )
-    has_anionic_single = any(
-        oxygen.GetFormalCharge() == -1 and bond.GetBondType() is Chem.BondType.SINGLE
-        for oxygen, bond in terminal_oxygen_bonds
-    )
-    return has_neutral_double and has_anionic_single
+    return canonicalize_rdkit_identity(molecule, identity_profile=identity_profile)
 
 
 def _classify_rdkit_identity_profile(
@@ -895,9 +874,9 @@ def classify_rdkit_configured_stereograph_mirror(
     Set ``require_complete=False`` to classify exactly the source-declared
     configured stereograph while leaving every undeclared locus unconstrained.
     Enhanced stereo groups remain outside the single-stereoisomer contract.
-    A chiral verdict on the supplied descriptors remains exact when additional
-    loci are unresolved: adding stereo constraints can only remove candidate
-    mirror isomorphisms, never create one.
+    A binary verdict requires every required locus to be resolved.  Mirror
+    inequality of a partial registry is not a proof about its completions:
+    adding a carrier can restore a symmetry exchanging equivalent carriers.
     """
     from rdkit import Chem
 
@@ -937,25 +916,11 @@ def classify_rdkit_configured_stereograph_mirror(
         )
         if (
             element.configuration_state is StereoConfigurationState.UNSPECIFIED
-            and not _is_terminal_phosphate_resonance_locus(molecule, element)
+            and not _is_terminal_phosphate_resonance_locus(
+                molecule, element, identity_profile=identity_profile
+            )
         )
     )
-    if incomplete and not enhanced_groups:
-        relaxed = _classify_rdkit_identity_profile(
-            molecule,
-            graph,
-            registry,
-            identity_profile,
-        )
-        if relaxed.status is StereographMirrorStatus.CHIRAL:
-            return replace(
-                relaxed,
-                incomplete_loci=tuple(sorted(set(incomplete))),
-                method=(
-                    "exact_stereograph_monotone_chiral_mirror_proof:"
-                    f"{identity_profile}"
-                ),
-            )
     return _classify_rdkit_identity_profile(
         molecule,
         graph,

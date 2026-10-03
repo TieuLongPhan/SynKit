@@ -1,0 +1,785 @@
+{
+  "schema": "synkit.pubchem-negative-source-retrieval/1",
+  "selection_manifest_sha256": "ba64992bdba0de686b771fc0ff35cadeb953b989c00f05acbdc959287f0b96d1",
+  "retrieved_utc": "2026-10-03T08:07:42.902064+00:00",
+  "production_evaluated": false,
+  "records": [
+    {
+      "query": "2-fluorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-fluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "c8fd92afcac75c50a23f4cebf6fe32e9e9ada9effc56ccdc01d6bf554d51825e",
+      "properties": [
+        {
+          "CID": 67579,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2F",
+          "InChIKey": "KLECYOQFQXJYBC-UHFFFAOYSA-N",
+          "IUPACName": "1-fluoro-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-fluorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-fluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "52449bde9d828b5b45cc0af03a03676b25355b697426c8bec586e106d0c24a2c",
+      "properties": [
+        {
+          "CID": 145663,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)F",
+          "InChIKey": "MRCAAFFMZODJBP-UHFFFAOYSA-N",
+          "IUPACName": "1-fluoro-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-fluorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-fluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "3495dc1c4d7a26cccaeefb6ed01b27cd416b91a7f7c1d848d88d2d1765b0644d",
+      "properties": [
+        {
+          "CID": 9461,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)F",
+          "InChIKey": "RUYZJEIKQYLEGZ-UHFFFAOYSA-N",
+          "IUPACName": "1-fluoro-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-chlorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-chlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "431292b03ac5c0eccd1dee5e3b60282c30dfc44049684ef0a1f38767b8db7db2",
+      "properties": [
+        {
+          "CID": 249266,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2Cl",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2Cl",
+          "InChIKey": "LAXBNTIAOJWAOP-UHFFFAOYSA-N",
+          "IUPACName": "1-chloro-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-chlorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-chlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "8c6ec994dbacfda95d9d3cd31d189f1bd2e7073088fa9e405e4386a4b87b4232",
+      "properties": [
+        {
+          "CID": 16322,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)Cl",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)Cl",
+          "InChIKey": "NMWSKOLWZZWHPL-UHFFFAOYSA-N",
+          "IUPACName": "1-chloro-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-chlorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-chlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "89402b1e5f571fdc0ffa9067890b110e39d7e43129e807449ff208c6a6f98cfb",
+      "properties": [
+        {
+          "CID": 16323,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)Cl",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)Cl",
+          "InChIKey": "FPWNLURCHDRMHC-UHFFFAOYSA-N",
+          "IUPACName": "1-chloro-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-bromobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-bromobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "e59eceb6fd02a2a39b4deac39b3fd8f2f351b42a8adeaa92957515a593bb62c5",
+      "properties": [
+        {
+          "CID": 16329,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2Br",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2Br",
+          "InChIKey": "KTADSLDAUJLZGL-UHFFFAOYSA-N",
+          "IUPACName": "1-bromo-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-bromobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-bromobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "73a1c2a1e9abbf8c12a3a51ab0c60259b6a1d46f220676a7896860a4950c9b3f",
+      "properties": [
+        {
+          "CID": 16449,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)Br",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)Br",
+          "InChIKey": "USYQKCQEVBFJRP-UHFFFAOYSA-N",
+          "IUPACName": "1-bromo-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-bromobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-bromobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "ac53f69f4adc75565422f33defcbfb037c02818c0273fc23e6c7ddbd0261a25a",
+      "properties": [
+        {
+          "CID": 7101,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)Br",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)Br",
+          "InChIKey": "PKJBWOWQJHHAHG-UHFFFAOYSA-N",
+          "IUPACName": "1-bromo-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-iodobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-iodobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "599ec3ce1d4cac4f7e65572cf23f341b4bd16f519d19103d1bb009b73eb40934",
+      "properties": [
+        {
+          "CID": 75025,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2I",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2I",
+          "InChIKey": "QFUYDAGNUJWBSM-UHFFFAOYSA-N",
+          "IUPACName": "1-iodo-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-iodobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-iodobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "096fc6cacac4489c4c9db428e517c9b8d604a0c8d440e92cee9620fde9fbe08d",
+      "properties": [
+        {
+          "CID": 88542,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)I",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)I",
+          "InChIKey": "KAQUBIATNWQNRE-UHFFFAOYSA-N",
+          "IUPACName": "1-iodo-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-iodobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-iodobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "a30e78ceb1fbbc9add8d59698c3d02959eb08ea4657cfe40c87ed8523fc01af5",
+      "properties": [
+        {
+          "CID": 15322,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)I",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)I",
+          "InChIKey": "NXYICUMSYKIABQ-UHFFFAOYSA-N",
+          "IUPACName": "1-iodo-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-methylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-methylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "0c8c3e8b2875b1d0753d60ac82187413ba3d1e551a5457d6ffa61388a0bb227b",
+      "properties": [
+        {
+          "CID": 12563,
+          "SMILES": "CC1=CC=CC=C1C2=CC=CC=C2",
+          "ConnectivitySMILES": "CC1=CC=CC=C1C2=CC=CC=C2",
+          "InChIKey": "ALLIZEAXNXSFGD-UHFFFAOYSA-N",
+          "IUPACName": "1-methyl-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-methylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-methylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "8cf2f607fa1e922a327470ef4e1c4c0bcc992c932fbb8ad8403aed7640cdd895",
+      "properties": [
+        {
+          "CID": 12564,
+          "SMILES": "CC1=CC(=CC=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CC1=CC(=CC=C1)C2=CC=CC=C2",
+          "InChIKey": "NPDIDUXTRAITDE-UHFFFAOYSA-N",
+          "IUPACName": "1-methyl-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-methylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-methylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "74eb938eb17bf10f0ff470d787d73401042fe7dc1710664f722bff61d98b4b6c",
+      "properties": [
+        {
+          "CID": 12566,
+          "SMILES": "CC1=CC=C(C=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CC1=CC=C(C=C1)C2=CC=CC=C2",
+          "InChIKey": "ZZLCFHIKESPLTH-UHFFFAOYSA-N",
+          "IUPACName": "1-methyl-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-ethylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-ethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "2ec8325f1e640b77db51ebcd8551cf899801f7bb6bb98880e0ab53f2eaab0ca9",
+      "properties": [
+        {
+          "CID": 15742,
+          "SMILES": "CCC1=CC=CC=C1C2=CC=CC=C2",
+          "ConnectivitySMILES": "CCC1=CC=CC=C1C2=CC=CC=C2",
+          "InChIKey": "DLMYHUARHITGIJ-UHFFFAOYSA-N",
+          "IUPACName": "1-ethyl-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-ethylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-ethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "e8eedd16b43222c17e3b429f26361613ea89db46be1b89b5a9d77231685c47f0",
+      "properties": [
+        {
+          "CID": 79752,
+          "SMILES": "CCC1=CC(=CC=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CCC1=CC(=CC=C1)C2=CC=CC=C2",
+          "InChIKey": "HUXKTWJQSHBZIV-UHFFFAOYSA-N",
+          "IUPACName": "1-ethyl-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-ethylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-ethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "cc73e572a346467ea12c95377e2613dbfb120eba94bc633cc7794e4331a48403",
+      "properties": [
+        {
+          "CID": 79786,
+          "SMILES": "CCC1=CC=C(C=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CCC1=CC=C(C=C1)C2=CC=CC=C2",
+          "InChIKey": "SRQOBNUBCLPPPH-UHFFFAOYSA-N",
+          "IUPACName": "1-ethyl-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-methoxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-methoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "ab15bec857bec89ad168027d02b89455da5db575623a1c2b2bce590ce0ef953c",
+      "properties": [
+        {
+          "CID": 6835,
+          "SMILES": "COC1=CC=CC=C1C2=CC=CC=C2",
+          "ConnectivitySMILES": "COC1=CC=CC=C1C2=CC=CC=C2",
+          "InChIKey": "NLWCWEGVNJVLAX-UHFFFAOYSA-N",
+          "IUPACName": "1-methoxy-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-methoxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-methoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "7b8feac7a5c6cc203639acc84e3895f9e9d7c8a7ffbef173a6dd4e01c311315e",
+      "properties": [
+        {
+          "CID": 257971,
+          "SMILES": "COC1=CC=CC(=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "COC1=CC=CC(=C1)C2=CC=CC=C2",
+          "InChIKey": "KQMIWCAOEFUBQK-UHFFFAOYSA-N",
+          "IUPACName": "1-methoxy-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-methoxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-methoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "35eaf95b07d9637d330ba12aa9b3c06e12a9fe240b982278d50007c4a39e9b55",
+      "properties": [
+        {
+          "CID": 11943,
+          "SMILES": "COC1=CC=C(C=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "COC1=CC=C(C=C1)C2=CC=CC=C2",
+          "InChIKey": "RHDYQUZYHZWTCI-UHFFFAOYSA-N",
+          "IUPACName": "1-methoxy-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-ethoxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-ethoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "f8edfa6ef57d048335e7139aac93505b27bb82e2cce7256493eb2b08e37ec4ac",
+      "properties": [
+        {
+          "CID": 251164,
+          "SMILES": "CCOC1=CC=CC=C1C2=CC=CC=C2",
+          "ConnectivitySMILES": "CCOC1=CC=CC=C1C2=CC=CC=C2",
+          "InChIKey": "PESKMXYELUEORL-UHFFFAOYSA-N",
+          "IUPACName": "1-ethoxy-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-ethoxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-ethoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "source_refusal",
+      "error_type": "HTTPError",
+      "reason": "HTTP Error 404: PUGREST.NotFound"
+    },
+    {
+      "query": "4-ethoxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-ethoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "86a132553ae0c15eaf205f6ab0ab2a90a3e2b68453555364b2e6acc41153bc49",
+      "properties": [
+        {
+          "CID": 222517,
+          "SMILES": "CCOC1=CC=C(C=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CCOC1=CC=C(C=C1)C2=CC=CC=C2",
+          "InChIKey": "QRYTXFUBAZNNBP-UHFFFAOYSA-N",
+          "IUPACName": "1-ethoxy-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-aminobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-aminobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "363529bb490df07f9ddb16674f51abd82a18726c755e820a330561d562446313",
+      "properties": [
+        {
+          "CID": 7015,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2N",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2N",
+          "InChIKey": "TWBPWBPGNQWFSJ-UHFFFAOYSA-N",
+          "IUPACName": "2-phenylaniline"
+        }
+      ]
+    },
+    {
+      "query": "3-aminobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-aminobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "3d48d3266af467dd6afee5979d42be78f62d835f69ac39a1d41defc3dc44c3a4",
+      "properties": [
+        {
+          "CID": 16717,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)N",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)N",
+          "InChIKey": "MUNOBADFTHUUFG-UHFFFAOYSA-N",
+          "IUPACName": "3-phenylaniline"
+        }
+      ]
+    },
+    {
+      "query": "4-aminobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-aminobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "aeb0f259d80b2439d44585fa3a8fa3fedefb073287200894550dc50cfd68d5dc",
+      "properties": [
+        {
+          "CID": 7102,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)N",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)N",
+          "InChIKey": "DMVOXQPQNTYEKQ-UHFFFAOYSA-N",
+          "IUPACName": "4-phenylaniline"
+        }
+      ]
+    },
+    {
+      "query": "2-hydroxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-hydroxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "bb3ac4fecbf175fc9f2c1cb4ef15ea1ffe954690ea48268cbbfe0feaf6bcef59",
+      "properties": [
+        {
+          "CID": 7017,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2O",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2O",
+          "InChIKey": "LLEMOWNGBBNAJR-UHFFFAOYSA-N",
+          "IUPACName": "2-phenylphenol"
+        }
+      ]
+    },
+    {
+      "query": "3-hydroxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-hydroxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "49a266a4a72cc1d39be115b57c59ad363872e56f7829bb4262f753471cccce00",
+      "properties": [
+        {
+          "CID": 11381,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)O",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)O",
+          "InChIKey": "UBXYXCRCOKCZIT-UHFFFAOYSA-N",
+          "IUPACName": "3-phenylphenol"
+        }
+      ]
+    },
+    {
+      "query": "4-hydroxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-hydroxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "82e34383f0969d980990882cb2e1aa5a3616630a1d2c5300c60a4dd16d697d52",
+      "properties": [
+        {
+          "CID": 7103,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)O",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)O",
+          "InChIKey": "YXVFYQXJAXKLAK-UHFFFAOYSA-N",
+          "IUPACName": "4-phenylphenol"
+        }
+      ]
+    },
+    {
+      "query": "2-cyanobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-cyanobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "ecf1311019cef8f1755c52e8f4dcbaeb3025a566ea8f945ee5daaa33ac7c6d35",
+      "properties": [
+        {
+          "CID": 141162,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2C#N",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2C#N",
+          "InChIKey": "WLPATYNQCGVFFH-UHFFFAOYSA-N",
+          "IUPACName": "2-phenylbenzonitrile"
+        }
+      ]
+    },
+    {
+      "query": "3-cyanobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-cyanobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "8d472ee4fe69057783a044568806343bc97bb57f2a020f72925c0df564676c81",
+      "properties": [
+        {
+          "CID": 34340,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC(=C2)C#N",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC(=C2)C#N",
+          "InChIKey": "SYHJILPZUNKNHQ-UHFFFAOYSA-N",
+          "IUPACName": "3-phenylbenzonitrile"
+        }
+      ]
+    },
+    {
+      "query": "4-cyanobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-cyanobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "629038a003963b33c092342c4ae684e510fdf87919a5a751f48298522cf88b35",
+      "properties": [
+        {
+          "CID": 18021,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)C#N",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)C#N",
+          "InChIKey": "BPMBNLJJRKCCRT-UHFFFAOYSA-N",
+          "IUPACName": "4-phenylbenzonitrile"
+        }
+      ]
+    },
+    {
+      "query": "2-nitrobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-nitrobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "6447613cee9e70374dfc4ef54f662a46982ff35fd3cf5e342a0e4e98578dd42c",
+      "properties": [
+        {
+          "CID": 6829,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2[N+](=O)[O-]",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2[N+](=O)[O-]",
+          "InChIKey": "YOJKKXRJMXIKSR-UHFFFAOYSA-N",
+          "IUPACName": "1-nitro-2-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3-nitrobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-nitrobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "2b71c50d907743416de8b4106b5b0371228dd512e4856fac50933f6b2254e4d4",
+      "properties": [
+        {
+          "CID": 16450,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)[N+](=O)[O-]",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)[N+](=O)[O-]",
+          "InChIKey": "FYRPEHRWMVMHQM-UHFFFAOYSA-N",
+          "IUPACName": "1-nitro-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "4-nitrobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-nitrobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "f200ccb552433afb8b5effff31e247202f151f1b2bebd62e8c2c7b9629873216",
+      "properties": [
+        {
+          "CID": 7114,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)[N+](=O)[O-]",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)[N+](=O)[O-]",
+          "InChIKey": "BAJQRLZAPXASRD-UHFFFAOYSA-N",
+          "IUPACName": "1-nitro-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2-trifluoromethylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-trifluoromethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "source_refusal",
+      "error_type": "HTTPError",
+      "reason": "HTTP Error 404: PUGREST.NotFound"
+    },
+    {
+      "query": "3-trifluoromethylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-trifluoromethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "3d2b86589c03f1ccd0b5a5609d96e2bcafb4309cb6421b3fee8ba4f4c100cffe",
+      "properties": [
+        {
+          "CID": 3801100,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)C(F)(F)F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=CC=C2)C(F)(F)F",
+          "InChIKey": "IEEZJIBNKVIUBD-UHFFFAOYSA-N",
+          "IUPACName": "1-phenyl-3-(trifluoromethyl)benzene"
+        }
+      ]
+    },
+    {
+      "query": "4-trifluoromethylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-trifluoromethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "b176d8178249433029a04606a8ce9e0ae04d73321aeb8b55e95405be57afe9a1",
+      "properties": [
+        {
+          "CID": 9877863,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)C(F)(F)F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)C(F)(F)F",
+          "InChIKey": "OUMKBAHMPRLISR-UHFFFAOYSA-N",
+          "IUPACName": "1-phenyl-4-(trifluoromethyl)benzene"
+        }
+      ]
+    },
+    {
+      "query": "2-acetylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-acetylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "2969fd6057171bba1299e75f3d13561d36fc439ef8e8a37299609e0280684393",
+      "properties": [
+        {
+          "CID": 11159903,
+          "SMILES": "CC(=O)C1=CC=CC=C1C2=CC=CC=C2",
+          "ConnectivitySMILES": "CC(=O)C1=CC=CC=C1C2=CC=CC=C2",
+          "InChIKey": "XZWYAMYRMMMHKM-UHFFFAOYSA-N",
+          "IUPACName": "1-(2-phenylphenyl)ethanone"
+        }
+      ]
+    },
+    {
+      "query": "3-acetylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-acetylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "3ddc73882c013bb1fe803045de11887d3891979a975df455f736f0723c0370a4",
+      "properties": [
+        {
+          "CID": 258568,
+          "SMILES": "CC(=O)C1=CC=CC(=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CC(=O)C1=CC=CC(=C1)C2=CC=CC=C2",
+          "InChIKey": "HUHQPWCDGRZWMH-UHFFFAOYSA-N",
+          "IUPACName": "1-(3-phenylphenyl)ethanone"
+        }
+      ]
+    },
+    {
+      "query": "4-acetylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-acetylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "325f911f390095e62c1a048dd399a528f8bdb9c552fbea93faba8aeb9b33f84c",
+      "properties": [
+        {
+          "CID": 7113,
+          "SMILES": "CC(=O)C1=CC=C(C=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CC(=O)C1=CC=C(C=C1)C2=CC=CC=C2",
+          "InChIKey": "QCZZSANNLWPGEA-UHFFFAOYSA-N",
+          "IUPACName": "1-(4-phenylphenyl)ethanone"
+        }
+      ]
+    },
+    {
+      "query": "2-carboxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-carboxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "source_refusal",
+      "error_type": "HTTPError",
+      "reason": "HTTP Error 404: PUGREST.NotFound"
+    },
+    {
+      "query": "3-carboxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-carboxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "source_refusal",
+      "error_type": "HTTPError",
+      "reason": "HTTP Error 404: PUGREST.NotFound"
+    },
+    {
+      "query": "4-carboxybiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-carboxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "25219b155d8ecd36e55fa8276442200f580a4011523cc051e2fb84cd1118ba48",
+      "properties": [
+        {
+          "CID": 66724,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)C(=O)O",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=C(C=C2)C(=O)O",
+          "InChIKey": "NNJMFJSKMRYHSR-UHFFFAOYSA-N",
+          "IUPACName": "4-phenylbenzoic acid"
+        }
+      ]
+    },
+    {
+      "query": "2-tert-butylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-tert-butylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "source_refusal",
+      "error_type": "HTTPError",
+      "reason": "HTTP Error 404: PUGREST.NotFound"
+    },
+    {
+      "query": "3-tert-butylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-tert-butylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "source_refusal",
+      "error_type": "HTTPError",
+      "reason": "HTTP Error 404: PUGREST.NotFound"
+    },
+    {
+      "query": "4-tert-butylbiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-tert-butylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "43b868cf9042bb9957924f3351794fb33144fe59382a45f144019aaa45f8bb3a",
+      "properties": [
+        {
+          "CID": 137120,
+          "SMILES": "CC(C)(C)C1=CC=C(C=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "CC(C)(C)C1=CC=C(C=C1)C2=CC=CC=C2",
+          "InChIKey": "CDOYZTOFTGTGBC-UHFFFAOYSA-N",
+          "IUPACName": "1-tert-butyl-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "biphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/biphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "c76087a0354e658b4b1bacdea0d83b1e9845671f2ef82baa871872a5fc1a1e5b",
+      "properties": [
+        {
+          "CID": 7095,
+          "SMILES": "C1=CC=C(C=C1)C2=CC=CC=C2",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC=CC=C2",
+          "InChIKey": "ZUOUZKKEUPVFJK-UHFFFAOYSA-N",
+          "IUPACName": "1,1'-biphenyl"
+        }
+      ]
+    },
+    {
+      "query": "2,3-difluorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C3-difluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "3c382d3ad38bfb7664d26bbb76d4b334ebe19816cbf2762f1c9ac454be527faf",
+      "properties": [
+        {
+          "CID": 13022387,
+          "SMILES": "C1=CC=C(C=C1)C2=C(C(=CC=C2)F)F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=C(C(=CC=C2)F)F",
+          "InChIKey": "YHAYNOYJLJHNSE-UHFFFAOYSA-N",
+          "IUPACName": "1,2-difluoro-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2,4-difluorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C4-difluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "82633b69b7e5c25ad11d3adfcecf957df3244fc5042dd932b657049482a3a2ee",
+      "properties": [
+        {
+          "CID": 169974,
+          "SMILES": "C1=CC=C(C=C1)C2=C(C=C(C=C2)F)F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=C(C=C(C=C2)F)F",
+          "InChIKey": "JVHAJKHGPDDEEU-UHFFFAOYSA-N",
+          "IUPACName": "2,4-difluoro-1-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3,4-difluorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3%2C4-difluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "5625c7e99677bfdcffd126aae3fec5504a1bb28858304455c160a4a324e2a31e",
+      "properties": [
+        {
+          "CID": 13022390,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=C(C=C2)F)F",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=C(C=C2)F)F",
+          "InChIKey": "PJJANBBRYLUXRA-UHFFFAOYSA-N",
+          "IUPACName": "1,2-difluoro-4-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2,3-dichlorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C3-dichlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "a638156f40ce11a0ba9d1328bd02e3c918bc1d218406c730405d4b4dc9bb1c68",
+      "properties": [
+        {
+          "CID": 27959,
+          "SMILES": "C1=CC=C(C=C1)C2=C(C(=CC=C2)Cl)Cl",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=C(C(=CC=C2)Cl)Cl",
+          "InChIKey": "XOMKZKJEJBZBJJ-UHFFFAOYSA-N",
+          "IUPACName": "1,2-dichloro-3-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "2,4-dichlorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C4-dichlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "c3dbbeed5ea7b182e2e8d4d964ae4005616d383fa985883f15c5ad2010e9099a",
+      "properties": [
+        {
+          "CID": 36399,
+          "SMILES": "C1=CC=C(C=C1)C2=C(C=C(C=C2)Cl)Cl",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=C(C=C(C=C2)Cl)Cl",
+          "InChIKey": "WEJZHZJJXPXXMU-UHFFFAOYSA-N",
+          "IUPACName": "2,4-dichloro-1-phenylbenzene"
+        }
+      ]
+    },
+    {
+      "query": "3,4-dichlorobiphenyl",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3%2C4-dichlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "status": "retrieved",
+      "response_sha256": "9172ddb43d91affeb5b61ce4b474f6fefae25941d6a6f932a823fa2ad3456643",
+      "properties": [
+        {
+          "CID": 18102,
+          "SMILES": "C1=CC=C(C=C1)C2=CC(=C(C=C2)Cl)Cl",
+          "ConnectivitySMILES": "C1=CC=C(C=C1)C2=CC(=C(C=C2)Cl)Cl",
+          "InChIKey": "ZGHQUYZPMWMLBM-UHFFFAOYSA-N",
+          "IUPACName": "1,2-dichloro-4-phenylbenzene"
+        }
+      ]
+    }
+  ]
+}

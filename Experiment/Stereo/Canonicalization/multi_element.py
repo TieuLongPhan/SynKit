@@ -50,6 +50,7 @@ from Experiment.Stereo.Chirality.published import (  # noqa: E402
     EXPECTED_SHA256,
     load_dataset,
 )
+from Experiment.Stereo.cip_sources import source_metadata  # noqa: E402
 from synkit.Graph.Stereo import (  # noqa: E402
     canonicalize_configured_registry,
     canonicalize_rdkit_configured_stereograph,
@@ -905,7 +906,7 @@ def _cip_extraction(
         "dataset": {
             "records": 300,
             "audited_sha256": CIP_SHA256,
-            "structures_vendored": False,
+            **source_metadata(cip_path),
         },
         "reference_rs_position_distribution": {
             str(count): frequency

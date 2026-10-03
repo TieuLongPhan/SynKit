@@ -1,0 +1,61 @@
+\begin{tikzpicture}[font=\small,
+  blkc/.style={rounded corners=4pt, draw=black!18, fill=black!2, line width=0.4pt}]
+\draw[blkc] (-1.70,1.45) rectangle (8.75,-3.80);
+\draw[blkc] (-1.70,-4.05) rectangle (8.75,-9.30);
+\draw[blkc] (-1.70,-9.55) rectangle (8.75,-14.80);
+\node[iocbadge] at (-1.45,1.02){A};
+\node[slab,anchor=west,font=\footnotesize,text=black!75] at (-1.05,1.02){configuration 1 ($8$ equivalent orderings)};
+\sqF{0.00}{0.00}{pballA}{pballB}{pballC}{pballD}
+\node[slab] at (0.00,-0.98){$\mathrm{id}$};
+\sqF{2.40}{0.00}{pballA}{pballD}{pballC}{pballB}
+\node[slab] at (2.40,-0.98){$(2\,4)$};
+\sqF{4.80}{0.00}{pballB}{pballA}{pballD}{pballC}
+\node[slab] at (4.80,-0.98){$(1\,2)(3\,4)$};
+\sqF{7.20}{0.00}{pballB}{pballC}{pballD}{pballA}
+\node[slab] at (7.20,-0.98){$(1\,2\,3\,4)$};
+\sqF{0.00}{-2.35}{pballC}{pballB}{pballA}{pballD}
+\node[slab] at (0.00,-3.33){$(1\,3)$};
+\sqF{2.40}{-2.35}{pballC}{pballD}{pballA}{pballB}
+\node[slab] at (2.40,-3.33){$(1\,3)(2\,4)$};
+\sqF{4.80}{-2.35}{pballD}{pballA}{pballB}{pballC}
+\node[slab] at (4.80,-3.33){$(1\,4\,3\,2)$};
+\sqF{7.20}{-2.35}{pballD}{pballC}{pballB}{pballA}
+\node[slab] at (7.20,-3.33){$(1\,4)(2\,3)$};
+\node[iocbadge] at (-1.45,-4.48){B};
+\node[slab,anchor=west,font=\footnotesize,text=black!75] at (-1.05,-4.48){configuration 2 ($8$ equivalent orderings)};
+\sqF{0.00}{-5.50}{pballA}{pballB}{pballD}{pballC}
+\node[slab] at (0.00,-6.48){$(3\,4)$};
+\sqF{2.40}{-5.50}{pballA}{pballC}{pballD}{pballB}
+\node[slab] at (2.40,-6.48){$(2\,3\,4)$};
+\sqF{4.80}{-5.50}{pballB}{pballA}{pballC}{pballD}
+\node[slab] at (4.80,-6.48){$(1\,2)$};
+\sqF{7.20}{-5.50}{pballB}{pballD}{pballC}{pballA}
+\node[slab] at (7.20,-6.48){$(1\,2\,4)$};
+\sqF{0.00}{-7.85}{pballC}{pballA}{pballB}{pballD}
+\node[slab] at (0.00,-8.83){$(1\,3\,2)$};
+\sqF{2.40}{-7.85}{pballC}{pballD}{pballB}{pballA}
+\node[slab] at (2.40,-8.83){$(1\,3\,2\,4)$};
+\sqF{4.80}{-7.85}{pballD}{pballB}{pballA}{pballC}
+\node[slab] at (4.80,-8.83){$(1\,4\,3)$};
+\sqF{7.20}{-7.85}{pballD}{pballC}{pballA}{pballB}
+\node[slab] at (7.20,-8.83){$(1\,4\,2\,3)$};
+\node[iocbadge] at (-1.45,-9.98){C};
+\node[slab,anchor=west,font=\footnotesize,text=black!75] at (-1.05,-9.98){configuration 3 ($8$ equivalent orderings)};
+\sqF{0.00}{-11.00}{pballA}{pballC}{pballB}{pballD}
+\node[slab] at (0.00,-11.98){$(2\,3)$};
+\sqF{2.40}{-11.00}{pballA}{pballD}{pballB}{pballC}
+\node[slab] at (2.40,-11.98){$(2\,4\,3)$};
+\sqF{4.80}{-11.00}{pballB}{pballC}{pballA}{pballD}
+\node[slab] at (4.80,-11.98){$(1\,2\,3)$};
+\sqF{7.20}{-11.00}{pballB}{pballD}{pballA}{pballC}
+\node[slab] at (7.20,-11.98){$(1\,2\,4\,3)$};
+\sqF{0.00}{-13.35}{pballC}{pballA}{pballD}{pballB}
+\node[slab] at (0.00,-14.33){$(1\,3\,4\,2)$};
+\sqF{2.40}{-13.35}{pballC}{pballB}{pballD}{pballA}
+\node[slab] at (2.40,-14.33){$(1\,3\,4)$};
+\sqF{4.80}{-13.35}{pballD}{pballA}{pballC}{pballB}
+\node[slab] at (4.80,-14.33){$(1\,4\,2)$};
+\sqF{7.20}{-13.35}{pballD}{pballB}{pballC}{pballA}
+\node[slab] at (7.20,-14.33){$(1\,4)$};
+\node[slotk,anchor=west] at (-1.55,-15.15){slots: $1$ N, $2$ E, $3$ S, $4$ W};
+\end{tikzpicture}

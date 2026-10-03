@@ -1,0 +1,74 @@
+{
+  "campaign_manifest_sha256": "2a10b5d9b46c6d585a319f7940d808ace3338c6ef22137d3fb23bb7615e5bbb7",
+  "case_records": 100,
+  "modes": {
+    "minimal": {
+      "alternative_its_application_complete_cases": 46,
+      "alternative_its_classes_per_case_histogram": {
+        "0": 30,
+        "1": 10,
+        "15": 1,
+        "2": 1,
+        "3": 4
+      },
+      "alternative_its_classes_relative_to_reference": 39,
+      "atom_count_median": 32.0,
+      "atom_count_range": [
+        13,
+        48
+      ],
+      "cases": 46,
+      "cases_with_alternative_its": 16,
+      "elapsed_seconds_maximum": 0.9206427879980765,
+      "elapsed_seconds_median": 0.18519939502584748,
+      "labeled_mapping_count_maximum": 192,
+      "labeled_mapping_count_median": 16.0,
+      "multiple_exact_its_classes": 16,
+      "multiple_exact_template_classes": 16,
+      "reference_its_class_observed": 45,
+      "reference_not_global_minimum": [
+        {
+          "atom_count": 13,
+          "minimum_cd": 6.0,
+          "reaction_id": "84:1",
+          "reference_cd": 8.0,
+          "source_line": 109
+        }
+      ],
+      "structure_complete": 46,
+      "symmetry_quotient_complete": 46,
+      "unstable_reaction_centres": 30
+    },
+    "reference_cd": {
+      "alternative_its_application_complete_cases": 52,
+      "alternative_its_classes_per_case_histogram": {
+        "0": 34,
+        "1": 10,
+        "11": 1,
+        "15": 1,
+        "3": 6
+      },
+      "alternative_its_classes_relative_to_reference": 54,
+      "atom_count_median": 32.5,
+      "atom_count_range": [
+        13,
+        52
+      ],
+      "cases": 52,
+      "cases_with_alternative_its": 18,
+      "elapsed_seconds_maximum": 0.9397389360237867,
+      "elapsed_seconds_median": 0.13903794100042433,
+      "labeled_mapping_count_maximum": 192,
+      "labeled_mapping_count_median": 16.0,
+      "multiple_exact_its_classes": 18,
+      "multiple_exact_template_classes": 18,
+      "reference_its_class_observed": 52,
+      "reference_not_global_minimum": [],
+      "structure_complete": 52,
+      "symmetry_quotient_complete": 52,
+      "unstable_reaction_centres": 35
+    }
+  },
+  "schema_version": 1,
+  "selection_warning": "All fractions use complete-shell denominators only; this censored campaign is not a population estimate."
+}

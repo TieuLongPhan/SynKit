@@ -1,0 +1,87 @@
+{
+  "schema": "synkit.stereo-author-thesis-source-audit/1",
+  "source_authors": {
+    "path": "/home/lolo/Documents/TACsy/paper/SYNDOKU/syndoku.tex",
+    "sha256": "2c3b93de51dfdfcf4f657eaf093f6345fdbdc8d3985bbebc7e3579a41a4256c2",
+    "author_order": [
+      "Tieu-Long Phan",
+      "Peter F. Stadler",
+      "Daniel Merkle"
+    ],
+    "corresponding_author": "Tieu-Long Phan",
+    "affiliations_copied_from_user_named_source": true,
+    "approval_inferred": false
+  },
+  "thesis_sources": [
+    {
+      "path": "/home/lolo/Documents/TACsy/PhD_thesis/chapters/shared/style/tokens.tex",
+      "sha256": "f3ab179986e9008f5cb3ea563d8aec672b98a671e2487cfc11c22b3bf756d8e4"
+    },
+    {
+      "path": "/home/lolo/Documents/TACsy/PhD_thesis/chapters/shared/style/figure_style.tex",
+      "sha256": "4558cc117852ad09fdd188e933ee48faf89895b8842466c63958ee63da7f3020"
+    },
+    {
+      "path": "/home/lolo/Documents/TACsy/PhD_thesis/chapters/shared/style/chemical_style.tex",
+      "sha256": "52a91d72ee3d433d6f820950314083a9b8633385c153e125efaf65bfe95f6003"
+    }
+  ],
+  "rendered_thesis_pages_inspected": [
+    20,
+    71
+  ],
+  "notation_sources": [
+    "chapters/02/chapter.tex",
+    "chapters/03/chapter.tex",
+    "chapters/06/chapter.tex",
+    "misc/custom_defs.tex"
+  ],
+  "boundary": "Authorship, source affiliations, thesis conventions and now the full Syndoku funding statement are applied under explicit user instructions. Peter/Daniel roles are user-supplied. Competing interests, author approval and publication/release facts remain unconfirmed.",
+  "notation_source_inventory": [
+    {
+      "path": "/home/lolo/Documents/TACsy/PhD_thesis/chapters/02/chapter.tex",
+      "sha256": "a5ce09c531829e76a092a3c9441afb3653000822ff6fdece815b9306ac91e08e"
+    },
+    {
+      "path": "/home/lolo/Documents/TACsy/PhD_thesis/chapters/03/chapter.tex",
+      "sha256": "a8f3c71d7fa5c4fb9fcfcacf1e79a82d8d8f559220b4fb95256a3dda8b4d6e81"
+    },
+    {
+      "path": "/home/lolo/Documents/TACsy/PhD_thesis/chapters/06/chapter.tex",
+      "sha256": "73917e22e6b24ba0b1668f9eebc663d9730356a0fc0756166fdca027402e4d72"
+    },
+    {
+      "path": "/home/lolo/Documents/TACsy/PhD_thesis/misc/custom_defs.tex",
+      "sha256": "7ec01ed6c90a9e012f4d0b66c485f7eb1701213daff4eac002e9e11240f7e143"
+    }
+  ],
+  "author_tex_sha256": "0d226259c7a4d87cb52a5c64c1ec6d328261ef33af681396136e4013f9004154",
+  "declarations_user_instruction": {
+    "date": "2026-10-03",
+    "instruction": "copy all funding from syndoku paper, and just keep P and D revising and supervising, funding secure",
+    "funding_copied_verbatim": true,
+    "funding_source_section_sha256": "c16d65dda415c2669613504ede2736d1626d2ac90292b58e9a50c8554975895c",
+    "confirmed_roles": {
+      "Peter F. Stadler": [
+        "review and editing",
+        "supervision",
+        "funding acquisition"
+      ],
+      "Daniel Merkle": [
+        "review and editing",
+        "supervision",
+        "funding acquisition"
+      ]
+    },
+    "remaining": [
+      "competing interests and author-approval/publication facts are deferred until any future submission; no public release requested"
+    ]
+  },
+  "active_user_scope": {
+    "instruction": "Finish the review package; no publication or submission",
+    "date": "2026-10-03",
+    "external_publication_requested": false,
+    "journal_submission_requested": false,
+    "approval_statement_inferred": false
+  }
+}

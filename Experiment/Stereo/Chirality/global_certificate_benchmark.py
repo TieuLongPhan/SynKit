@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 from pathlib import Path
 import sys
@@ -17,12 +18,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Experiment.Stereo.Chirality.exact_mirror import (  # noqa: E402
+    _case_time_limit,
     _parse_supplied_configured_smiles,
 )
 from Experiment.Stereo.Chirality.published import (  # noqa: E402
     EXPECTED_SHA256,
     load_dataset,
 )
+from Experiment.Stereo.provenance import capture_source, finish_source  # noqa: E402
 from synkit.Chem.Molecule.global_stereo import (  # noqa: E402
     analyze_global_stereo_support,
 )
@@ -31,10 +34,10 @@ from synkit.Graph.Stereo import (  # noqa: E402
     classify_rdkit_stereograph_mirror,
 )
 
-SCHEMA = "synkit.exact-plus-global-certificate-acs/1"
+SCHEMA = "synkit.exact-plus-global-certificate-acs/2"
 
 
-def classify_record(row: dict[str, str]) -> dict[str, Any]:
+def _classify_record(row: dict[str, str]) -> dict[str, Any]:
     """Classify one record without consulting its expected label."""
     started = time.perf_counter()
     sanitized = Chem.MolFromSmiles(row["Input SMILES"])
@@ -78,10 +81,26 @@ def classify_record(row: dict[str, str]) -> dict[str, Any]:
     }
 
 
-def run_benchmark() -> dict[str, Any]:
-    """Return the complete deterministic scientific result."""
+def classify_record(row: dict[str, str], case_timeout_seconds: float = 30) -> dict[str, Any]:
+    """Bound both evidence computations and retain every refused input record."""
     started = time.perf_counter()
-    records = [classify_record(row) for row in load_dataset()]
+    try:
+        with _case_time_limit(case_timeout_seconds):
+            return _classify_record(row)
+    except Exception as error:
+        return {
+            "id": row["ID"], "manual": row["manual"].lower(), "correct": False,
+            "status": "case_timeout" if isinstance(error, TimeoutError) else "error",
+            "reason": type(error).__name__, "detail": str(error),
+            "duration_ms": (time.perf_counter() - started) * 1000,
+        }
+
+
+def run_benchmark(case_timeout_seconds: float = 30) -> dict[str, Any]:
+    """Return the complete deterministic scientific result."""
+    source = capture_source()
+    started = time.perf_counter()
+    records = [classify_record(row, case_timeout_seconds) for row in load_dataset()]
     definitive = [
         record for record in records if record["status"] in {"achiral", "chiral"}
     ]
@@ -89,6 +108,20 @@ def run_benchmark() -> dict[str, Any]:
     disagreements = [record["id"] for record in records if not bool(record["correct"])]
     return {
         "schema": SCHEMA,
+        "provenance": finish_source(source),
+        "case_timeout_seconds": case_timeout_seconds,
+        "identity_profile": "chemical source identity; separately declared global topology evidence",
+        "input_contract": {
+            "structural_input": (
+                "same pinned SMILES; restored source tags for identity; normally sanitized input for global support"
+            ),
+            "external_orientation": False, "topology_completion": False,
+            "global_necessary_chirality_evidence": True,
+            "manual_labels_used_for_prediction": False,
+            "interpretation": (
+                "necessary global chirality may be proved while the absolute configured orientation remains unspecified"
+            ),
+        },
         "task": (
             "source-declared exact chemical stereograph augmented by an "
             "orientation-unspecified necessary-global-chirality certificate"
@@ -102,6 +135,9 @@ def run_benchmark() -> dict[str, Any]:
         "correct_over_all_records": correct,
         "accuracy_over_all_records": correct / len(records),
         "disagreement_ids": disagreements,
+        "nondefinitive_ids": [record["id"] for record in records if record not in definitive],
+        "definitive_disagreement_ids": [record["id"] for record in definitive if not record["correct"]],
+        "outcomes": dict(sorted(Counter(record["status"] for record in records).items())),
         "timing": {
             "wall_seconds": round(time.perf_counter() - started, 6),
         },
@@ -116,12 +152,15 @@ def run_benchmark() -> dict[str, Any]:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--case-timeout", type=float, default=30)
     return parser
 
 
 def main() -> int:
     arguments = _parser().parse_args()
-    report = run_benchmark()
+    if arguments.case_timeout <= 0:
+        raise ValueError("Case timeout must be positive.")
+    report = run_benchmark(arguments.case_timeout)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n",

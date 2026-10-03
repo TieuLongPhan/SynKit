@@ -1,0 +1,26 @@
+\begin{tikzpicture}[font=\small,
+  blkc/.style={rounded corners=4pt, draw=black!18, fill=black!2, line width=0.4pt}]
+\draw[blkc] (-1.90,1.35) rectangle (10.00,-1.85);
+\draw[blkc] (-1.90,-1.85) rectangle (10.00,-5.05);
+\node[iocbadge] at (-1.65,0.95){A};
+\node[slab,anchor=west,font=\footnotesize,text=black!75] at (-1.25,0.95){configuration 1 ($E$)};
+\bondF{0.00}{-0.65}{pballA}{pballB}{pballC}{pballD}{1}
+\node[slab] at (0.00,-1.63){$\mathrm{id}$};
+\bondF{2.65}{-0.65}{pballB}{pballA}{pballD}{pballC}{1}
+\node[slab] at (2.65,-1.63){$(1\,2)(5\,6)$};
+\bondF{5.30}{-0.65}{pballC}{pballD}{pballA}{pballB}{1}
+\node[slab] at (5.30,-1.63){$(1\,5)(2\,6)(3\,4)$};
+\bondF{7.95}{-0.65}{pballD}{pballC}{pballB}{pballA}{1}
+\node[slab] at (7.95,-1.63){$(1\,6)(2\,5)(3\,4)$};
+\node[iocbadge] at (-1.65,-2.25){B};
+\node[slab,anchor=west,font=\footnotesize,text=black!75] at (-1.25,-2.25){configuration 2 ($Z$)};
+\bondF{0.00}{-3.85}{pballB}{pballA}{pballC}{pballD}{1}
+\node[slab] at (0.00,-4.83){$\mathrm{id}$};
+\bondF{2.65}{-3.85}{pballA}{pballB}{pballD}{pballC}{1}
+\node[slab] at (2.65,-4.83){$(1\,2)(5\,6)$};
+\bondF{5.30}{-3.85}{pballC}{pballD}{pballB}{pballA}{1}
+\node[slab] at (5.30,-4.83){$(1\,5)(2\,6)(3\,4)$};
+\bondF{7.95}{-3.85}{pballD}{pballC}{pballA}{pballB}{1}
+\node[slab] at (7.95,-4.83){$(1\,6)(2\,5)(3\,4)$};
+\node[slotk,anchor=west] at (-1.75,-5.40){slots $1,2$ left end; $5,6$ right end};
+\end{tikzpicture}

@@ -1,0 +1,17 @@
+{
+  "cpu": {
+    "logical_cpus": 22,
+    "model": "Intel(R) Core(TM) Ultra 7 155H",
+    "physical_cores_reported": 16,
+    "sockets": 1,
+    "threads_per_core": 2
+  },
+  "networkx": "3.6.1",
+  "numpy": "2.4.4",
+  "operating_system": "Linux 6.19.14-108.fc42.x86_64, glibc 2.41",
+  "python": "3.12.12",
+  "rdkit": "2026.03.1",
+  "schema_version": 1,
+  "scipy": "1.17.0",
+  "synkit": "1.6.2"
+}

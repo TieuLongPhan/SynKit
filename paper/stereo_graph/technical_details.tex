@@ -1,0 +1,1066 @@
+% Detailed algebra and boundary contracts moved from the main narrative.
+% Labels are retained so all proof dependencies remain explicit.
+\section{Detailed local algebra and information boundaries}
+\label{sec:detailed-algebra}
+
+\subsection{Frame action and unique alignments}
+\begin{lemma}[Frame action]
+\label{lem:frame-action}
+Let \(u\) be a frame of length \(k\), let \(p,q\in S_k\), and let \(r\) be an
+injective relabeling of references.  Then
+\[
+  \operatorname{id}\cdot u=u,
+  \qquad
+  p\cdot(q\cdot u)=(q\circ p)\cdot u
+  =(q\mathbin{\mathrm{then}}p)\cdot u,
+  \qquad
+  r(p\cdot u)=p\cdot(ru).
+\]
+Hence Eq.~\eqref{eq:action} is a right action of \(S_k\) on frames, the orbit
+\([u]_\Gamma=\{\gamma\cdot u:\gamma\in\Gamma\}\) is well defined for every
+subgroup \(\Gamma\leq S_k\), and two witnesses are sequenced by
+\(p\mathbin{\mathrm{then}}q\):
+\((p\mathbin{\mathrm{then}}q)\cdot u=q\cdot(p\cdot u)\).
+\end{lemma}
+
+\begin{proof}
+Coordinatewise,
+\((p\cdot(q\cdot u))_i=(q\cdot u)_{p(i)}=u_{q(p(i))}=((q\circ p)\cdot u)_i\),
+which is the stated anti-homomorphism law and is exactly the convention
+\(p\mathbin{\mathrm{then}}q=p\circ q\) of the slot images.  Thus the
+\code{then} API sequences tuple reorderings, although slot-map composition
+has the reverse order from composition of those reorderings.  A relabeling acts on the values held by
+the slots and the group acts on the slots themselves, so
+\((r(p\cdot u))_i=r(u_{p(i)})=(ru)_{p(i)}=(p\cdot(ru))_i\).  Injectivity of
+\(p\cdot u\) and of \(ru\) is inherited from \(u\) and \(r\).
+\end{proof}
+
+\begin{lemma}[Unique alignment]
+\label{lem:unique-alignment}
+Let \(u\) and \(v\) be frames of length \(k\) with
+\(\operatorname{im}u=\operatorname{im}v\).  Then there is exactly one
+\(\rho\in S_k\) with \(v=\rho\cdot u\), namely \(\rho=u^{-1}\circ v\).  In
+particular every subgroup \(\Gamma\leq S_k\) acts freely on frames, so all
+orbits have cardinality \(|\Gamma|\).
+\end{lemma}
+
+\begin{proof}
+Both tuples are bijections onto the same image, so \(\rho=u^{-1}\circ v\) is a
+permutation of slots and \((\rho\cdot u)_i=u_{\rho(i)}=v_i\).  If
+\(v=\rho'\cdot u\) as well, then \(u_{\rho(i)}=u_{\rho'(i)}\) for every \(i\),
+and injectivity of \(u\) forces \(\rho=\rho'\).  Freeness is the case
+\(v=u\), which yields \(\rho=\operatorname{id}\), and the orbit--stabilizer
+theorem then gives \(|[u]_\Gamma|=|\Gamma|\).
+\end{proof}
+
+The tetrahedral case is the smallest instance of this local state model.  Four
+distinct ligand references admit \(4!=24\) frames, on which \(S_4\) acts freely
+and transitively; the subgroup \(A_4\) has index two, so the frames split into
+two orbits of twelve.  Even permutations are rigid rotations of one local
+configuration and odd permutations reach the mirror orbit.
+
+\begin{proposition}[Local parity criterion]
+\label{prop:local-parity}
+Let \(u\) and \(v\) be tetrahedral frames with
+\(\operatorname{im}u=\operatorname{im}v\), and let \(\rho\in S_4\) be the unique
+alignment of Lemma~\ref{lem:unique-alignment}, \(v=\rho\cdot u\).  Then
+\[
+ [u]_{A_4}=[v]_{A_4}
+ \quad\Longleftrightarrow\quad
+ \operatorname{sgn}(\rho)=+1 .
+\]
+If \(\operatorname{sgn}(\rho)=-1\), the two frames lie in the two distinct
+cosets of \(A_4\) in \(S_4\).
+\end{proposition}
+
+\begin{proof}
+By Lemma~\ref{lem:unique-alignment} the alignment \(\rho\) exists and is unique,
+so \([u]_{A_4}=[v]_{A_4}\) holds precisely when \(\rho\in A_4\).  The sign
+homomorphism \(\operatorname{sgn}:S_4\to\{\pm1\}\) has kernel \(A_4\), whence
+\(\rho\in A_4\) is equivalent to \(\operatorname{sgn}(\rho)=+1\).  Since
+\([S_4:A_4]=2\), every odd alignment lies in the unique remaining coset and
+therefore reaches the opposite orbit.
+\end{proof}
+
+
+\subsection{Focal-configuration-neutral carrier perception}
+\label{sec:perception-algorithm}
+
+Perception produces typed \emph{potential} elements, not configured
+descriptors.  Let \(\mathcal F\) be an optional set of supplied oriented frames
+at other loci.  The focal frame is removed before its carrier is assessed, and
+all CIP properties, coordinates, canonical local descriptors, and atom indices
+are excluded.  Algorithm~\ref{alg:perception} makes this boundary explicit.
+
+\begin{definition}[Potential-carrier predicate]
+\label{def:potential-carrier}
+For a family policy \(P\), identity profile \(\chi\), type \(\tau\), and
+candidate support \(s\), let
+\[
+  \operatorname{Pot}_{\tau,P}(G_\chi,s;\mathcal F_{-s})
+\]
+mean that \(s\) is a structurally valid support of type \(\tau\) and passes
+the registered configuration-neutral feasibility test.  The returned evidence
+record is
+\[
+  e_s=(s,\tau,A_s,q_s,r_s,\bot,\textsc{unassessed}),
+\]
+where \(A_s\) is the action induced by the support stabilizer
+\(\operatorname{Aut}_\chi(G,\mathcal F_{-s})_s\), \(q_s\) is the potential-carrier status,
+\(r_s\) is its reason, \(\bot\) denotes absent configuration, and the final
+field records that configurational persistence has not been assessed.
+\end{definition}
+
+The predicate is deliberately an over-approximation of experimentally
+persistent stereochemistry.  It asserts neither a handedness nor a molecular
+chirality verdict.  Its mathematical requirement is equivariance: if
+\(f\in\operatorname{Iso}_\chi(G,H)\), then
+\begin{equation}
+  \operatorname{Pot}_{\tau,P}(G_\chi,s;\mathcal F_{-s})
+  \Longleftrightarrow
+  \operatorname{Pot}_{\tau,P}(H_\chi,f(s);f\mathcal F_{-s}),
+  \qquad
+  f_*A_sf_*^{-1}=A_{f(s)} .
+  \label{eq:perception-equivariance}
+\end{equation}
+
+\begin{algorithm}[htbp]
+\caption{Focal-configuration-neutral stereo-carrier perception}
+\label{alg:perception}
+\begin{algorithmic}[1]
+\Require LLG \(G\), identity profile \(\chi\), optional neighboring frames \(\mathcal F\), family policy \(P\)
+\Ensure Equivariant potential-element evidence with no focal configuration; serialization order is not identity
+\State \(G_0 \gets \Call{EraseDerivedAndConfiguredState}{G_\chi}\)
+\State \(\mathcal C \gets \Call{EnumerateTypedSupports}{G_0,P}\)
+\State \(\mathcal E \gets [\,]\)
+\ForAll{\(s\in\Call{CanonicalSupportOrder}{\mathcal C}\)}
+  \If{\(\neg\Call{ValidateSupport}{G_0,s}\)}
+    \State \(\mathcal E\gets\mathcal E\mathbin{\|}(s,\textsc{rejected},\textsc{invalid support})\)
+    \State \textbf{continue}
+  \EndIf
+  \State \(\mathcal F_{-s}\gets\Call{RemoveFocalFrame}{\mathcal F,s}\)
+  \State \(G_s\gets\Call{AddNeighborFrameConstraints}{G_0,\mathcal F_{-s}}\)
+  \State \(A_s\gets\Call{InducedStabilizerAction}{\operatorname{Aut}(G_s)_s}\)
+  \State \((q,r)\gets\Call{ConfirmCarrier}{\operatorname{type}(s),G_s,s,A_s}\)
+  \State \(\mathcal E\gets\mathcal E\mathbin{\|}(s,q,r,\bot,\textsc{unassessed})\)
+\EndFor
+\State \Return \(\mathcal E\)
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proposition}[Perception soundness]
+\label{prop:perception-soundness}
+Assume every registered support enumerator, validator, and family confirmation
+test is invariant under \(\chi\)-isomorphism transporting the supplied
+neighboring frame constraints. Algorithm~\ref{alg:perception}
+is then equivariant in the sense of Eq.~\eqref{eq:perception-equivariance}.
+Its output contains no configuration that could depend on atom numbering,
+CIP priority, or the focal input orientation.
+\end{proposition}
+
+\begin{proof}
+Support enumeration and validation commute with \(f\) by assumption.
+Conjugation by \(f\) maps
+\(\operatorname{Aut}_\chi(G_s)_s\) onto
+\(\operatorname{Aut}_\chi(H_{f(s)})_{f(s)}\), hence maps the induced slot
+action and every invariant confirmation result onto its counterpart.
+Canonical support ordering changes only output order.  The focal orientation
+and all derived naming data were erased, and the algorithm writes \(\bot\) in
+every configuration field.
+\end{proof}
+
+\(\Call{ConfirmCarrier}{}\) is geometry specific.  A tetrahedral support is
+confirmed exactly when its center-stabilizer action contains no odd
+permutation of the four coordination slots.  Planar-bond and axis candidates
+require non-exchangeable terminal reference pairs under the support
+stabilizer.  Coordination carriers require a declared shape with valid arity.
+Path and plane carriers require their respective topology or authorized
+sidecar contract.  Failed criteria retain the broad candidate with a structured
+reason such as \code{symmetry\_related}.  They do not imply a molecular
+achirality verdict.  The output configuration is always \(\bot\), and stability
+is always unassessed.
+
+Terminal-reference equivalence must also remain separate from the orbit of a
+whole configured axis. A constitutional map can exchange both terminal pairs
+simultaneously, preserving axial orientation. Such a map supplies terminal
+equivalence witnesses without identifying a configured state with its mirror.
+The independent coupled-terminal regression checks this distinction. Exact
+configured-graph comparison retains the full joint frame action; a
+\code{symmetry\_related} carrier reason alone cannot replace that comparison.
+
+\subsection{Authorized attachment and completeness boundaries}
+\label{sec:attachment}
+
+Perception and configuration attachment are separate typed operations.
+Let \(\mathcal D\) be a finite collection of evidence records, let
+\(\operatorname{src}(d)\) identify their provenance, and let
+\(\operatorname{Auth}\subseteq\mathcal D\) be the records whose source is an
+explicit stereo encoding, a validated geometry, or a declared sidecar.
+Authorization is transported with the evidence record: for an isomorphism
+\(f\), the target evidence collection and authorized subset are
+\(f\mathcal D\) and \(f\operatorname{Auth}\). Authorization and typing
+are not recomputed from atom indices. Every support validator invoked below
+must satisfy the same profile-relative invariance contract as perception.
+
+\begin{definition}[Authorized attachment]
+\label{def:attachment}
+Attachment is the partial map
+\[
+  \operatorname{att}\colon(\mathcal X,d)\longmapsto
+  \bigl(G,\ \mathcal R\cup\{s_d\}\bigr),
+\]
+defined exactly when the typing predicate \(\operatorname{Typed}(d,\mathcal
+X)\) holds, that is, when
+\(d\in\operatorname{Auth}\); the support of \(d\) is a perceived or declared
+locus of the type \(\tau\) that \(d\) declares; the ports of \(d\) coincide with
+\(P_s\) including owner scope for virtual references; the arity agrees with
+\(k_\tau\); the supplied state is a \(\Gamma_\tau\)-orbit of an admissible frame
+in the sense of Definition~\ref{def:admissible-frames}; and \(\mathcal R\)
+carries no conflicting configuration at that locus.  If any conjunct fails,
+\(\operatorname{att}\) is undefined and \(\mathcal X\) is returned unchanged
+together with a structured refusal.
+\end{definition}
+
+\begin{lemma}[Attachment is equivariant and fail-closed]
+\label{lem:attachment}
+For every \(f\in\operatorname{Iso}_\chi(G,H)\),
+\(\operatorname{Typed}(d,\mathcal X)\) holds if and only if
+\(\operatorname{Typed}(f d,f\mathcal X)\) holds, and in that case
+\(\operatorname{att}(f\mathcal X,f d)=f\operatorname{att}(\mathcal X,d)\).
+Attaching the same configuration twice is idempotent, no undefined case
+modifies \(\mathcal R\), and connectivity-only evidence, having
+\(d\notin\operatorname{Auth}\), can never select a configuration orbit.
+\end{lemma}
+
+\begin{proof}
+Every conjunct of \(\operatorname{Typed}\) is stated in terms of type, support,
+ports, arity, and orbit membership, all of which are transported by \(f\); the
+orbit condition is preserved because \(f\) acts on references and commutes with
+the slot action by Lemma~\ref{lem:frame-action}.  The image locus is therefore
+defined precisely when the source locus is, and the two constructions agree.
+Idempotence holds because \(\mathcal R\cup\{s_d\}\) is a set union and the
+conflict conjunct rejects any second, different state at the same locus.  The
+remaining claims are immediate from the definition, which modifies
+\(\mathcal R\) only on the defined branch.
+\end{proof}
+
+\begin{definition}[Support boundary and audit]
+\label{def:support-boundary}
+A \emph{support boundary} \(B\) is an invariant rule specifying which
+configured loci must be represented for the requested claim.  Important
+instances are \(B_{\mathrm{decl}}\), which contains exactly the source-declared
+configured loci, and \(B_{\mathrm{strict}}\), which contains all supported
+potential loci required by the active family policy.  The third instance is
+\(B_{\mathrm{comp}}\), the population of supported configurations considered
+by topology completion.  The audit
+\[
+  \operatorname{Audit}_{B}(G_\chi,\mathcal E,\mathcal R)
+  \in\{\textsc{complete},\textsc{incomplete},\textsc{unsupported}\}
+\]
+returns \textsc{complete} exactly when every locus required by \(B\) has one
+well-typed supported configuration and no required locus has unresolved or
+unsupported semantics.
+\end{definition}
+
+Thus a binary verdict under \(B_{\mathrm{decl}}\) is a claim about the
+represented source-declared stereograph.  It becomes a claim about every
+supported stereogenic locus of the molecular input only under
+\(B_{\mathrm{strict}}\).  Stating \(B\) prevents those two scientifically
+different conclusions from being conflated.
+
+
+\subsection{Finite-frame configuration orbits}
+\label{sec:local-orbits}
+
+For a finite geometry \(t\), a local frame \(u\) is an ordered tuple of anchors
+and ligand references in the sense of Section~\ref{sec:representation}, and its
+fixed configuration is the orbit
+\[
+  [u]_{\Gamma_t}=\{\gamma\cdot u:\gamma\in\Gamma_t\}.
+\]
+The stored local state is the orbit, not a preferred tuple.  An unspecified
+orientation uses a larger information group
+\(\Gamma_t^\uparrow\), but this does not enlarge equality of a specified
+configuration.
+
+Two groups act on the slots of a locus and must be distinguished.  The larger
+one records which slot rearrangements are admissible at all; the smaller one
+records which of them leave the configuration fixed.
+
+\begin{definition}[Frame symmetry, admissible frames, geometry group]
+\label{def:admissible-frames}
+Let \(t\) be a finite geometry of arity \(k_t\).  The \emph{frame symmetry
+group} \(\Sigma_t\leq S_{k_t}\) is the group of slot permutations compatible
+with the port structure of \(t\).  For an atom-supported geometry every ligand
+may occupy every coordination slot, so \(\Sigma_t=S_{k_t}\).  For the bond- and
+axis-supported families the slots consist of two terminal pairs together with
+their anchors, and \(\Sigma_t\) is the order-eight group generated by the two
+within-end exchanges and the end exchange that carries the anchors with it.
+The \emph{admissible frames} of a locus with frame \(u\) are
+\(\operatorname{Fr}_t(u)=\Sigma_t\cdot u\), and the geometry-preserving group is
+a subgroup \(\Gamma_t\leq\Sigma_t\).
+\end{definition}
+
+\begin{proposition}[Configuration count]
+\label{prop:config-count}
+Let \(u\) be an admissible frame of a geometry \(t\).  The assignment
+\[
+  \sigma\Gamma_t\;\longmapsto\;[\sigma\cdot u]_{\Gamma_t}
+\]
+is a bijection from the left-coset space \(\Sigma_t/\Gamma_t\) onto the set of
+configurations of the locus.  The number of configurations is therefore the
+index \([\Sigma_t:\Gamma_t]=|\Sigma_t|/|\Gamma_t|\), independently of the
+representative \(u\).
+\end{proposition}
+
+\begin{proof}
+By construction \(\Sigma_t\) acts transitively on \(\operatorname{Fr}_t(u)\),
+and by Lemma~\ref{lem:unique-alignment} it acts freely, so
+\(\sigma\mapsto\sigma\cdot u\) is a bijection
+\(\Sigma_t\to\operatorname{Fr}_t(u)\).  Lemma~\ref{lem:frame-action} gives
+\[
+  \Gamma_t\cdot(\sigma\cdot u)
+  =\{(\sigma\circ\gamma)\cdot u:\gamma\in\Gamma_t\}
+  =(\sigma\Gamma_t)\cdot u ,
+\]
+so this bijection carries left cosets of \(\Gamma_t\) exactly onto
+\(\Gamma_t\)-orbits.  Counting cosets gives the index, and a different
+representative \(u'=\sigma_0\cdot u\) only translates the coset labels.
+\end{proof}
+
+Proposition~\ref{prop:config-count} reproduces the state counts of
+Table~\ref{tab:center-types} without case analysis:
+\(24/12=2\) tetrahedral, \(24/8=3\) square planar, \(120/6=20\) trigonal
+bipyramidal, \(720/24=30\) octahedral, and \(8/4=2\) for the planar bond, the
+atrop axis, and the cumulene axis. It distinguishes a unique binary opposite
+from a mirror operation that requires additional registered geometric structure.
+
+\begin{corollary}[Binary opposite]
+\label{cor:binary-opposite}
+If \([\Sigma_t:\Gamma_t]=2\), then \(\Gamma_t\trianglelefteq\Sigma_t\),
+\(\Sigma_t/\Gamma_t\cong\mathbb Z/2\), and
+\[
+  \operatorname{opp}([u]_{\Gamma_t})=[\mu\cdot u]_{\Gamma_t},
+  \qquad \mu\in\Sigma_t\setminus\Gamma_t ,
+\]
+is independent of the choice of \(\mu\) and satisfies
+\(\operatorname{opp}\circ\operatorname{opp}=\operatorname{id}\).  If
+\([\Sigma_t:\Gamma_t]>2\), the index alone selects no unique other state;
+an additional normalizer or improper geometric action can still define a
+mirror involution.
+\end{corollary}
+
+\begin{proof}
+A subgroup of index two is normal and its quotient is the two-element group.
+All elements of \(\Sigma_t\setminus\Gamma_t\) form the single nontrivial coset,
+so \([\mu\cdot u]\) does not depend on \(\mu\), and applying the nontrivial
+coset twice returns the trivial one.  When the index exceeds two, the quotient
+set has more than one other state, so the index-two uniqueness argument no
+longer applies. This does not exclude additional invariant structure: an
+element \(\mu\in N_{\Sigma_t}(\Gamma_t)\) with
+\(\mu^2\in\Gamma_t\) induces a well-defined involution
+\([u]\mapsto[\mu\cdot u]\). The registered TBP and octahedral improper
+actions are examples despite their indices 20 and 30.
+\end{proof}
+
+For tetrahedral geometry \(\Sigma_t/\Gamma_t\) is the sign quotient
+\(S_4/A_4\), so Corollary~\ref{cor:binary-opposite} specializes to
+Proposition~\ref{prop:local-parity}.  The same index-two argument applies to the
+planar bond and to both axis families.  A configuration-changing permutation at
+a square-planar, trigonal-bipyramidal, or octahedral center is by contrast a
+general reconfiguration in the local relation API. Its separately registered
+geometric mirror may nevertheless supply an involution.  Figure~\ref{fig:orbit-examples} gives
+one representative move per atom- or bond-supported geometry; full orbit
+enumerations are given in Appendix~\ref{sec:si-orbits}.
+
+\begin{figure*}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{\input{fig/orbit_examples_six.tex}}
+  \caption{One representative permutation \(\pi\) per atom- or bond-supported
+  geometry.  Balls are ligand references and the small digits are frame slots,
+  so only the assignment of references to slots changes across each arrow.  Each
+  header lists the frame symmetry group \(\Sigma_\tau\), the geometry group
+  \(\Gamma_\tau\), and their index, which by
+  Proposition~\ref{prop:config-count} is the number of configurations.  Blue
+  marks \code{OPPOSITE} and orange marks \code{RECONFIGURED} in the sense of
+  Definition~\ref{def:relation-kinds}.  By
+  Corollary~\ref{cor:binary-opposite}, a canonical binary opposite exists
+  from the index alone for the index-two families (A, E, F); for (B), (C), and
+  (D) the displayed move is a general reconfiguration. This does not exclude
+  the separately registered geometric mirror on TBP or octahedral states.}
+  \label{fig:orbit-examples}
+\end{figure*}
+
+For planar bonds, a whole-bond reversal and simultaneous exchange of both
+terminal pairs preserve configuration.  A one-end exchange does not.
+Figure~\ref{fig:planar-alignment} keeps this second fundamental permutation
+example in the supplementary algebra.
+
+\begin{figure*}[htbp]
+  \centering
+  \resizebox{0.98\textwidth}{!}{\input{fig/planar_alignment.tex}}
+  \caption{Planar-bond frame algebra on but-2-ene (A, B) and benzaldoxime
+  (C, D).  Each panel aligns the ordered frame \(u\) of the left structure with
+  the frame \(u'\) of the right structure slot by slot; slots 1, 2 and 5, 6 are
+  the two terminal ligand pairs and slots 3, 4 are the bond anchors.
+  (A) Reading the same \(E\) state from the opposite bond end is the whole-frame
+  reversal \((1\,6)(2\,5)(3\,4)\in\Gamma_{\mathrm{pb}}\), so the configuration
+  is preserved.  (B) The bare one-end swap \((5\,6)\) lies in
+  \(\Sigma_{\mathrm{pb}}\setminus\Gamma_{\mathrm{pb}}\) and therefore reaches
+  the opposite orbit, \(E\leftrightarrow Z\).  (C) The simultaneous two-end
+  exchange \((1\,2)(5\,6)\) is again in \(\Gamma_{\mathrm{pb}}\), here with the
+  owner-scoped virtual references \code{@H:1} and \code{@LP:2} occupying ligand
+  slots.  (D) The same one-end swap is rejected when the moved slot carries the
+  nitrogen lone pair.  Green marks admitted alignments and vermilion rejected
+  ones; the index \([\Sigma_{\mathrm{pb}}:\Gamma_{\mathrm{pb}}]=2\) is what
+  makes the rejected cases a binary opposite rather than an unrelated
+  reconfiguration.}
+  \label{fig:planar-alignment}
+\end{figure*}
+
+
+\subsection{Configuration relations and witnesses}
+\label{sec:local-relations}
+
+Let \(A=[u]_{\Gamma_t}\) and \(B=[v]_{\Gamma_t}\) be configurations of the same
+geometry on a common reference set, and let \(\pi\) be the unique alignment
+\(v=\pi\cdot u\) of Lemma~\ref{lem:unique-alignment}.  A concrete transport
+depends on which representatives were selected; its double coset does not.
+
+\begin{lemma}[Representative independence of the relation]
+\label{lem:double-coset}
+For \(\alpha,\beta\in\Gamma_t\) put \(u'=\alpha\cdot u\in A\) and
+\(v'=\beta\cdot v\in B\).  The unique alignment \(\pi'\) with
+\(v'=\pi'\cdot u'\) is
+\[
+  \pi'=\alpha^{-1}\circ\pi\circ\beta .
+\]
+As \(\alpha\) and \(\beta\) range over \(\Gamma_t\), the alignments between
+representatives of \(A\) and of \(B\) are exactly the elements of the double
+coset \(\Gamma_t\pi\Gamma_t\), which is therefore an invariant of the ordered
+pair \((A,B)\).
+\end{lemma}
+
+\begin{proof}
+Using Lemma~\ref{lem:frame-action} twice,
+\(v'=\beta\cdot(\pi\cdot u)=(\pi\circ\beta)\cdot u\) and
+\(u=\alpha^{-1}\cdot u'\), hence
+\(v'=(\pi\circ\beta)\cdot(\alpha^{-1}\cdot u')
+=(\alpha^{-1}\circ\pi\circ\beta)\cdot u'\).
+Uniqueness of the alignment identifies \(\pi'\) with this element.  Since
+\(\alpha\mapsto\alpha^{-1}\) is a bijection of \(\Gamma_t\), the set of such
+\(\pi'\) is \(\Gamma_t\pi\Gamma_t\); replacing \(u,v\) by other representatives
+replaces \(\pi\) by an element of the same double coset and leaves the set
+unchanged.
+\end{proof}
+
+\begin{definition}[Relation kinds]
+\label{def:relation-kinds}
+For same-geometry configurations on a common reference set, the stored relation
+kind is determined by \(\Gamma_t\pi\Gamma_t\):
+\code{EQUIVALENT} when \(\pi\in\Gamma_t\), equivalently \(A=B\);
+\code{OPPOSITE} when \(\pi\notin\Gamma_t\) and \([\Sigma_t:\Gamma_t]=2\), so
+that \(B=\operatorname{opp}(A)\) in the sense of
+Corollary~\ref{cor:binary-opposite}; and \code{RECONFIGURED} when
+\(\pi\notin\Gamma_t\) and \([\Sigma_t:\Gamma_t]>2\).  The kind is
+\code{UNRELATED} when the geometries or reference sets differ, so that no
+alignment exists, and \code{UNSPECIFIED} when either endpoint carries no
+configuration.
+\end{definition}
+
+By Lemma~\ref{lem:double-coset} the kind and the double-coset identifier are
+representative independent, while the stored witness is a concrete permutation
+that replays one actual alignment.  Witnesses compose by
+\(\mathbin{\mathrm{then}}\) as in Lemma~\ref{lem:frame-action}: if \(p\) replays
+\(A\to B\) and \(q\) replays \(B\to C\), then \(p\mathbin{\mathrm{then}}q\)
+replays \(A\to C\).  Double cosets classify endpoint pairs and are not composed,
+because \(\Gamma_t\pi\Gamma_t\cdot\Gamma_t\pi'\Gamma_t\) need not be a single
+double coset.
+
+Stored specification is four-valued: specified, unknown, unspecified, and
+absent.  Equality keeps these states distinct.  Wildcard behavior belongs to
+an explicit query policy, never to stored molecular identity.  Proofs of
+double-coset representative independence, witness composition, typed virtual
+reference ownership, and stereo-morphism policy laws are provided in
+Appendix~\ref{sec:si-orbits} through Appendix~\ref{sec:si-entities}.
+
+
+\subsection{From local parity to a global invariant}
+\label{sec:local-to-global}
+
+For one tetrahedral locus, Proposition~\ref{prop:local-parity} decides a
+candidate alignment by one group-membership test:
+\[
+ \rho\text{ even}
+ \ \Longleftrightarrow\
+ \rho\in A_4
+ \ \Longleftrightarrow\
+ \rho\text{ preserves the local configuration}.
+\]
+For a molecule, however, one atom bijection induces \emph{all} local alignments
+simultaneously, and those choices are coupled whenever the constitution has
+automorphisms that exchange ligands or entire loci.  The following lemma makes
+the induced family precise and records the law by which it composes.
+
+\begin{lemma}[Induced local alignments]
+\label{lem:induced-alignment}
+Let \(f\in\operatorname{Iso}_\chi(G,H)\) carry the typed carrier inventory of
+\(\mathcal X\) onto that of \(\mathcal Y\), let \(s\) be a finite-frame locus of
+\(\mathcal X\) with frame \(u_s\), and let \(v_{f(s)}\) be a frame of the image
+locus.  Applying \(f\) entrywise, \(f(u_s)\) is an admissible frame of
+\(f(s)\), so by Lemma~\ref{lem:unique-alignment} there is a unique
+\[
+  \rho_s(f)\in\Sigma_{\tau_s}
+  \qquad\text{with}\qquad
+  f(u_s)=\rho_s(f)\cdot v_{f(s)} .
+\]
+Then
+\begin{enumerate}
+  \item \(f\) carries the configuration at \(s\) to the configuration at
+        \(f(s)\) if and only if \(\rho_s(f)\in\Gamma_{\tau_s}\), and this
+        membership does not depend on the chosen representatives;
+  \item \(\rho_s(\operatorname{id})=\operatorname{id}\) and, for a second
+        isomorphism \(g\),
+        \begin{equation}
+          \rho_s(g\circ f)
+          =\rho_{f(s)}(g)\mathbin{\mathrm{then}}\rho_s(f),
+          \label{eq:alignment-cocycle}
+        \end{equation}
+        so \(\rho_{f(s)}(f^{-1})=\rho_s(f)^{-1}\).
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Entrywise application of a bijection preserves injectivity and the port
+structure, so \(f(u_s)\) is admissible and the alignment exists uniquely.  For
+(i), replacing \(u_s\) by \(\alpha\cdot u_s\) and \(v_{f(s)}\) by
+\(\beta\cdot v_{f(s)}\) with \(\alpha,\beta\in\Gamma_{\tau_s}\) replaces
+\(\rho_s(f)\) by an element of \(\Gamma_{\tau_s}\rho_s(f)\Gamma_{\tau_s}\) by
+Lemma~\ref{lem:double-coset}, and that double coset meets \(\Gamma_{\tau_s}\)
+if and only if it equals \(\Gamma_{\tau_s}\).  For (ii), relabeling commutes
+with the slot action by Lemma~\ref{lem:frame-action}, hence
+\[
+  (g\circ f)(u_s)
+  =g\!\left(\rho_s(f)\cdot v_{f(s)}\right)
+  =\rho_s(f)\cdot g(v_{f(s)})
+  =\rho_s(f)\cdot\left(\rho_{f(s)}(g)\cdot w_{g(f(s))}\right),
+\]
+and the action law \(p\cdot(q\cdot w)=(q\circ p)\cdot w\) identifies the last
+expression with \(\left(\rho_{f(s)}(g)\circ\rho_s(f)\right)\cdot
+w_{g(f(s))}\), which is Eq.~\eqref{eq:alignment-cocycle}.  Taking
+\(g=f^{-1}\) gives the inverse law.
+\end{proof}
+
+Lemma~\ref{lem:induced-alignment} reduces the global question to a
+\emph{simultaneous} membership condition: a constitutional isomorphism is
+stereochemically admissible exactly when \(\rho_s(f)\in\Gamma_{\tau_s}\) holds
+at every locus at once.  Because Eq.~\eqref{eq:alignment-cocycle} is a cocycle
+law and each \(\Gamma_{\tau_s}\) is a subgroup, this condition is closed under
+composition and inversion, which is what makes the relation of
+Definition~\ref{def:stereo-isomorphism} an equivalence.  The orbit gadget of
+Section~\ref{sec:expansion} converts each membership condition into an ordinary
+graph-automorphism constraint; joining all gadgets to the same constitutional
+graph forces one global atom map to satisfy every constraint at once, and exact
+canonical labeling then quotients over all such maps instead of selecting local
+representatives in advance.
+
+
+\subsection{End-to-end decision from an LLG}
+\label{sec:end-to-end}
+
+Algorithm~\ref{alg:end-to-end-chirality} makes the full contract explicit.
+Potential-carrier discovery precedes attachment; only typed authorized evidence
+may attach configuration; and no binary result is emitted until the declared
+boundary is complete.  The exact mirror comparison in
+Algorithm~\ref{alg:chirality} is then the final decision kernel.
+
+\begin{algorithm}[H]
+\caption{Fail-closed molecular chirality from Lewis-labeled input}
+\label{alg:end-to-end-chirality}
+\begin{algorithmic}[1]
+\Require LLG \(G\); evidence \(\mathcal D\); profile \(\chi\); family policy \(P\); boundary \(B\)
+\Ensure \textsc{achiral}, \textsc{chiral}, \textsc{incomplete}, or \textsc{unsupported}, with evidence
+\State \(G_\chi\gets\Call{NormalizeLLG}{G,\chi}\)
+\If{\(\Call{IsRefusal}{G_\chi}\)}
+  \State \Return \(\Call{Unsupported}{\textsc{invalid constitution}}\)
+\EndIf
+\State \(\mathcal E\gets\Call{PerceivePotentialCarriers}{G_\chi,P}\)
+\State \(\mathcal R\gets[\,]\)
+\ForAll{\(d\in\Call{CanonicalEvidenceOrder}{\mathcal D}\)}
+  \If{\(\neg\Call{AuthorizedSource}{\operatorname{src}(d)}\)}
+    \State \Return \(\Call{Unsupported}{d,\textsc{unauthorized configuration source}}\)
+  \EndIf
+  \State \(r\gets\Call{ValidateAndAttach}{G_\chi,\mathcal E,d}\)
+  \If{\(\Call{IsRefusal}{r}\)} \State \Return \(r\) \EndIf
+  \State \(\mathcal R\gets\mathcal R\mathbin{\|}r\)
+\EndFor
+\State \(q\gets\Call{AuditBoundary}{B,G_\chi,\mathcal E,\mathcal R}\)
+\If{\(q\neq\textsc{complete}\)} \State \Return \(q\) with audit evidence \EndIf
+\State \(\mathcal X_B\gets(G_\chi,\mathcal R,B)\)
+\State \Return \(\Call{ExactMirrorChirality}{\mathcal X_B}\)
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Soundness and completeness of the binary verdict]
+\label{thm:chirality-pipeline}
+Fix an identity profile \(\chi\), family policy \(P\), and invariant boundary
+\(B\).  Assume that normalization under \(\chi\) commutes with material
+relabeling and transports every retained carrier and authorized evidence record
+consistently. Assume also that (i) perception satisfies
+Proposition~\ref{prop:perception-soundness}; (ii) attachment accepts only
+well-typed authorized configuration evidence and commutes with
+\(\chi\)-isomorphisms; (iii) the boundary audit reports \textsc{complete}
+exactly for complete supported registries over \(B\); (iv) the mirror action
+satisfies Eq.~\eqref{eq:mirror-laws}; and (v) the expansion and canonizer
+satisfy Theorems~\ref{thm:faithful-expansion}
+and~\ref{thm:canonical-stereograph}.  Then Algorithm~
+\ref{alg:end-to-end-chirality} is numbering invariant. On complete supported
+inputs for which both exact canonical searches finish, its binary result obeys:
+\begin{align*}
+  \textsc{achiral}
+  &\Longleftrightarrow
+  \mathcal X_B\cong_{\mathrm{st}}\mu_B\mathcal X_B,\\
+  \textsc{chiral}
+  &\Longleftrightarrow
+  \mathcal X_B\not\cong_{\mathrm{st}}\mu_B\mathcal X_B .
+\end{align*}
+Every missing, ill-typed, unsupported, unauthorized, or search-bounded case
+returns a refusal rather than either binary value.
+\end{theorem}
+
+\begin{proof}
+Equivariance of normalization, perception, attachment, and the boundary audit
+makes the constructed \(\mathcal X_B\) independent of atom numbering.
+On a complete registry, mirror naturality makes \(\mu_B\mathcal X_B\) another
+well-defined configured stereograph over the same constitutional profile.
+Theorem~\ref{thm:canonical-stereograph} states that the two full certificates
+are equal exactly when these objects are stereo-isomorphic, which is the
+definition of achirality.  Certificate inequality therefore proves chirality
+because the canonizer is complete.  All earlier failed preconditions and any
+interrupted exact search are explicit non-binary exits.
+\end{proof}
+
+\begin{remark}[Scope of the theorem]
+The theorem is relative to \((\chi,P,B)\).  It proves chirality of the
+represented configured stereograph, not experimental configurational
+persistence, conformational population, or completeness of chemistry outside
+the registered family policy.  Under \(B_{\mathrm{decl}}\), undeclared
+potential loci are intentionally outside the claim; under
+\(B_{\mathrm{strict}}\), they must be configured or the algorithm refuses.
+\end{remark}
+
+\subsection{Incomplete input and topology completion}
+
+A binary mirror verdict requires a complete, supported configured
+representation.  A perceived carrier with no supplied orientation returns
+\code{INCOMPLETE}; unsupported enhanced-stereo population semantics return
+\code{UNSUPPORTED}.  Connectivity alone never acquires a handedness.
+
+A separate topology-completion assessor addresses a different question:
+across supported assignments of an underspecified constitution, is every
+completion achiral, every completion chiral, or is the outcome
+configuration-dependent?  Its four outcomes are necessarily achiral,
+necessarily chiral, configuration dependent, and unsupported/incomplete.
+Let
+\[
+  \operatorname{Comp}_{B}(G_\chi,\mathcal E,\mathcal D)/
+  {\cong_{\mathrm{st}}}
+\]
+be the finite set of symmetry-unique, supported configured completions
+consistent with the supplied evidence.  Algorithm~
+\ref{alg:four-state-completion} classifies that population.  Its one-sided
+outcomes require exhaustive enumeration or an exact proof that excludes the
+opposite class; reaching an enumeration cap is not such a proof.
+
+\begin{algorithm}[H]
+\caption{Four-state classification of an underspecified constitution}
+\label{alg:four-state-completion}
+\begin{algorithmic}[1]
+\Require \(G,\mathcal D,\chi,P,B_{\mathrm{comp}}\); exact completion policy \(Q\)
+\Ensure One four-state result with proof evidence
+\State \((\mathcal C,\eta)\gets
+  \Call{SymmetryUniqueCompletions}{G,\mathcal D,\chi,P,B_{\mathrm{comp}},Q}\)
+\If{\(\eta.\textsc{unsupported}\)}
+  \State \Return \textsc{unsupported/incomplete} with \(\eta\)
+\EndIf
+\State \(h_A\gets\bot;\ h_C\gets\bot\)
+\ForAll{\(\mathcal X\in\mathcal C\)}
+  \State \(r\gets\Call{ExactMirrorChirality}{\mathcal X}\)
+  \If{\(\Call{IsRefusal}{r}\)}
+    \State \Return \textsc{unsupported/incomplete} with \(r\)
+  \ElsIf{\(r=\textsc{achiral}\)}
+    \State \(h_A\gets r.\mathrm{witness}\)
+  \Else
+    \State \(h_C\gets(r.C,r.\overline C)\)
+  \EndIf
+  \If{\(h_A\neq\bot\land h_C\neq\bot\)}
+    \State \Return \textsc{configuration-dependent} with \((h_A,h_C)\)
+  \EndIf
+\EndFor
+\If{\(\neg\eta.\textsc{exhausted}\land
+       \neg\Call{ExactOneSidedProof}{\eta,h_A,h_C}\)}
+  \State \Return \textsc{unsupported/incomplete} with \(\eta\)
+\EndIf
+\If{\(h_A\neq\bot\)}
+  \State \Return \textsc{necessarily-achiral} with \((h_A,\eta)\)
+\ElsIf{\(h_C\neq\bot\)}
+  \State \Return \textsc{necessarily-chiral} with \((h_C,\eta)\)
+\Else
+  \State \Return \textsc{unsupported/incomplete} with \textsc{empty population}
+\EndIf
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proposition}[Soundness of four-state completion]
+\label{prop:four-state}
+For a nonempty supported completion population, assume that all required
+validations and mirror comparisons complete. If completion generation is
+exhaustive modulo stereo-isomorphism, or its one-sided shortcut supplies the
+required exact existence/non-existence proof, then Algorithm~
+\ref{alg:four-state-completion} returns \textsc{necessarily-achiral} exactly
+when every completion is achiral, \textsc{necessarily-chiral} exactly when
+every completion is chiral, and \textsc{configuration-dependent} exactly when
+both kinds exist. Two valid opposite-class witnesses suffice for the mixed
+result even without exhaustion. An empty population, unresolved validation,
+interrupted comparison, or uncertified one-sided population returns a refusal.
+\end{proposition}
+
+\begin{proof}
+Theorem~\ref{thm:chirality-pipeline} decides each complete representative
+exactly, and chirality is constant on stereo-isomorphism classes.  Exhaustion
+therefore quantifies over the entire completion population.  Witnesses of both
+classes prove the mixed result immediately; a one-sided result is emitted only
+after the opposite class has been excluded.  Every remaining state takes the
+explicit refusal branch.
+\end{proof}
+
+The current assessor uses provisional topology probes to reach globally
+stereogenic ACS cases not localized by the configured registry.  Its result is
+reported separately from the exact source-declared certificate because the two
+procedures do not have the same representation boundary.
+
+We additionally encode those probes as one coupled
+\code{GlobalStereoSupport} certificate.  Topology may thereby prove a
+necessarily-chiral molecular outcome, while the associated
+\code{FrameworkStereo} orientation remains unspecified.  Only explicit
+authorized sidecar or future validated coordinate evidence may select the
+positive or negative configured framework.  This exact-plus-global protocol
+is versioned separately from both the source-declared audit and the
+ACS-specialized classifier.
+
+
+\section{Additional mathematical and historical details}
+\label{sec:additional-details}
+
+\subsection{Lewis electron resource bookkeeping}
+\label{sec:llg-bookkeeping}
+
+Writing \(o_e=s_e+p_e\), the valence-electron degree and formal charge are
+\begin{equation}
+  n_v=2\ell_v+r_v,\qquad
+  d_v=n_v+\sum_{e\sim v}o_e,\qquad
+  q_v=z_v-d_v ,
+  \label{eq:llg-derived}
+\end{equation}
+with \(z_v\) the element-specific valence-electron count.  Equivalently, the
+electron loci
+\[
+  \operatorname{Loc}(G)=
+  \{\operatorname{lp}(v),\rho_v:v\in V\}
+  \cup
+  \{\sigma_{uv},\pi_{uv}:\{u,v\}\in\tbinom V2\}
+\]
+have occupancies \(c_G(\operatorname{lp}(v))=\ell_v\),
+\(c_G(\rho_v)=r_v\), \(c_G(\sigma_{uv})=s_{uv}\), and
+\(c_G(\pi_{uv})=p_{uv}\).  Separating \(\sigma\) and \(\pi\) resources is
+essential, for example, to distinguish a cumulated double-bond path from a
+single-bond chain.
+
+
+
+\subsection{Raw formal and global assignment quotients}
+\label{sec:quotient-details}
+
+The benchmark terminology follows two different equivalence relations and is
+therefore not interchangeable.  Fix a colored constitution \(G_\chi\), a
+finite typed carrier set \(S\), and for every \(s\in S\) a set
+\(\mathcal R_s\) of admissible ordered raw frames.  The registered preserving
+group \(\Gamma_{\tau_s}\) acts on \(\mathcal R_s\).  Define
+\[
+  \mathcal F_s=\mathcal R_s/\Gamma_{\tau_s},\qquad
+  \mathcal R=\prod_{s\in S}\mathcal R_s,\qquad
+  \mathcal F=\prod_{s\in S}\mathcal F_s,
+\]
+and let \(q=\prod_s q_s:\mathcal R\to\mathcal F\) be the componentwise local
+quotient.  Thus an element of \(\mathcal R\) chooses one ordered frame at each
+carrier, whereas an element of \(\mathcal F\) chooses one formal local
+configuration orbit at each carrier.  By Proposition~\ref{prop:config-count}
+each factor has \(|\mathcal F_s|=[\Sigma_{\tau_s}:\Gamma_{\tau_s}]\) elements
+and each fiber of \(q_s\) has exactly \(|\Gamma_{\tau_s}|\) elements, so
+\(|\mathcal R|=|\mathcal F|\cdot\prod_{s\in S}|\Gamma_{\tau_s}|\).
+
+Let \(A=\operatorname{Aut}_\chi(G,S,\tau)\) be the automorphism group of the
+colored constitution that preserves the typed carrier inventory.  Every
+\(\alpha\in A\) transports the ports of \(s\) to those of \(\alpha(s)\) and
+therefore induces a map \(T_{\alpha,s}\) on local states.
+
+\begin{lemma}[Transport is a group action]
+\label{lem:transport-action}
+For \(\alpha\in A\) and \(s\in S\) put
+\(T_{\alpha,s}\!\left([u]_{\Gamma_{\tau_s}}\right)
+=[\alpha(u)]_{\Gamma_{\tau_{\alpha(s)}}}\).  Then \(T_{\alpha,s}\) is well
+defined, \(T_{\operatorname{id},s}=\operatorname{id}\), and
+\(T_{\alpha\circ\beta,s}=T_{\alpha,\beta(s)}\circ T_{\beta,s}\).  Consequently
+\[
+  (\alpha\cdot a)_{\alpha(s)}=T_{\alpha,s}(a_s)
+\]
+defines an action of \(A\) on \(\mathcal F\), and the whole-molecule
+configuration classes for this fixed substrate are the orbit set
+\(\mathcal C=\mathcal F/A\).
+\end{lemma}
+
+\begin{proof}
+Well-definedness is the commutation law of Lemma~\ref{lem:frame-action}: for
+\(\gamma\in\Gamma_{\tau_s}\) we have
+\(\alpha(\gamma\cdot u)=\gamma\cdot\alpha(u)\), so an entire orbit maps into a
+single orbit, and \(\alpha\) preserves the type \(\tau_s=\tau_{\alpha(s)}\)
+because it preserves the typed carrier inventory.  Functoriality and the
+identity law hold because \(\alpha\) acts entrywise on references.  These two
+laws are exactly the conditions for the displayed formula to be a group action
+on the product \(\mathcal F\).
+\end{proof}
+
+Because \(A\) and \(\mathcal F\) are finite, the number of global classes is
+given by the orbit-counting (Cauchy--Frobenius) lemma,
+\[
+  \lvert\mathcal C\rvert
+  =\frac{1}{\lvert A\rvert}
+   \sum_{\alpha\in A}\lvert\operatorname{Fix}_{\mathcal F}(\alpha)\rvert .
+\]
+The first quotient removes only redundant descriptions of each local state; the
+second resolves exchange of ligands and of complete carriers by one global
+constitutional automorphism.  Unlike the local quotient, the second is in
+general not free, so \(\lvert\mathcal C\rvert\) is not \(\lvert\mathcal
+F\rvert/\lvert A\rvert\); fixed points are exactly the internally compensated
+assignments, of which \emph{meso} forms are the familiar case.  In particular
+\(\lvert\mathcal F\rvert\) is not generally the number of stereoisomers, and
+raw multiplicity is not a new chemical degree of freedom.
+
+
+
+\subsection{Exact raw enumeration factorization}
+
+\begin{corollary}[Exact factorization of raw enumeration]
+\label{cor:raw-formal-global}
+For assignments \(a,b\in\mathcal F\) on the fixed typed substrate above,
+\[
+ C_{\mathrm{SG}}(\mathcal X(a))=C_{\mathrm{SG}}(\mathcal X(b))
+ \quad\Longleftrightarrow\quad
+ b=\alpha\cdot a\ \text{for some }\alpha\in A.
+\]
+Consequently, for raw encodings \(r,r'\in\mathcal R\),
+\[
+ C_{\mathrm{SG}}(\mathcal X(q(r)))
+ =C_{\mathrm{SG}}(\mathcal X(q(r')))
+ \quad\Longleftrightarrow\quad
+ [q(r)]_A=[q(r')]_A.
+\]
+Thus the raw route \(\mathcal R\xrightarrow{q}\mathcal F\to\mathcal C\)
+and direct formal enumeration compute the same global partition.
+\end{corollary}
+
+\begin{proof}
+An isomorphism between two configured stereographs over the same substrate
+restricts to an element of \(A\), and Definition~\ref{def:stereo-isomorphism}
+requires its induced port transports to carry every component of \(a\) to the
+corresponding component of \(b\).  Conversely, any such element of \(A\)
+extends through every complete local-orbit gadget and is a
+stereo-isomorphism.  The first equivalence now follows from
+Theorem~\ref{thm:canonical-stereograph}; substituting \(a=q(r)\) and
+\(b=q(r')\) proves the second.
+\end{proof}
+
+Corollary~\ref{cor:raw-formal-global} makes formal enumeration exact rather
+than heuristic compression.  Raw enumeration remains valuable as an
+independent executable check that construction, transport, and serialization
+implement \(q\) consistently; it is not required to repeat every member of a
+local orbit once the quotient law and its implementation gates hold.
+
+
+
+\subsection{Automorphism projection}
+
+\begin{proposition}[Automorphism projection]
+\label{prop:aut-projection}
+Under the admissibility and uniqueness conditions of
+Theorem~\ref{thm:faithful-expansion}, restriction to atom vertices is a group
+isomorphism
+\[
+  \operatorname{proj}_G:
+  \operatorname{Aut}\!\left(\Phi_\chi(\mathcal X)\right)
+  \;\xrightarrow{\ \sim\ }\;
+  \operatorname{Aut}_{\mathrm{st}}(\mathcal X).
+\]
+\end{proposition}
+
+\begin{proof}
+Restriction is a group homomorphism because composition of auxiliary
+automorphisms restricts to composition of their atom parts.  It lands in
+\(\operatorname{Aut}_{\mathrm{st}}(\mathcal X)\) and is surjective by the two
+directions of Theorem~\ref{thm:faithful-expansion} applied with
+\(\mathcal Y=\mathcal X\).  It is injective because an auxiliary automorphism
+fixing every atom vertex fixes every other vertex: an incidence vertex is
+determined by its atom endpoints and type color. A locus is determined by its
+full typed carrier key, recovered from the support incidences and ordered
+support relations, including any pilot and declared coupling identity. The
+atom set alone need not distinguish two paths through the same atoms. The
+unique-key condition therefore excludes exchanging two identical carrier
+gadgets. A port vertex is determined by its owner and referent, a tuple vertex
+by the sequence of ports it reaches through position-colored slots, and a slot
+vertex by the pair it joins together with its position color. Private virtual
+resources are fixed by their typed owner and attached slot. A bijective
+homomorphism of groups is an isomorphism.
+\end{proof}
+
+Consequently the stereo-aware atom orbits reported by the engine are the orbits
+of \(\operatorname{Aut}_{\mathrm{st}}(\mathcal X)\) itself, not an
+approximation of them, and \(|\operatorname{Aut}_{\mathrm{st}}(\mathcal X)|\)
+is available from the same search that produces the certificate.
+
+
+
+\subsection{Historical representation and relation gates}
+\label{sec:historical-gates}
+
+Historical raw products and secondary relation gates are retained here as
+development evidence. Their archived invariance and multiplicity checks supply
+development evidence;
+they do not independently establish the faithfulness of the encoding.  Historical raw A collapses 2,048 encodings onto
+48 formal tuples and 38 global classes; raw B collapses 992,256 encodings onto
+192 formal tuples and 95 classes.  The complete raw C/VS146 slice collapses
+2,359,296 encodings onto its 64 formal tuples and 64 classes.  Each raw result
+matches the corresponding formal partition exactly, as predicted by
+Corollary~\ref{cor:raw-formal-global}.  The
+multi-element experiment shows why this is a global rather than merely local
+test: 32 assignments reduce to 31 classes because one designed symmetry
+identifies two assignments, and the complete mirror relation matrix is
+obtained from the same certificates.
+
+\begin{table}[htbp]
+\caption{Canonicalization and relation results.}
+\label{tab:canon-results}
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}p{0.24\textwidth}X@{}}
+\toprule
+Gate & Result and interpretation \\
+\midrule
+Repository regression & 3881 passed, 6 skipped, and 179 subtests on the development snapshot. \\
+Local quotient & 940 representations yield 67/67 expected classes across ten configured families. \\
+Exact class separation & 67/67 classes are distinct within family, with zero collision or timeout. \\
+Configuration-free local & \LocalAllRaw/\LocalAllRaw{} representations and \LocalAllCarriers/\LocalAllCarriers{} carriers pass over \LocalAllRecords{} rows; direct transport partitions and every positive map are independently checked. \\
+Formal A/B/C & \FormalAllAssignments/\FormalAllAssignments{} assignments pass over \FormalAllCases{} cases; \FormalAObserved/\FormalBObserved/\FormalCObserved{} global classes and complete reference partition agreement. \\
+Historical raw quotient & A: 2,048/2,048; B: 992,256/992,256; C/VS146: 2,359,296/2,359,296 encodings, each with archived production-code/formal quotient agreement; independent negative-separation truth was not part of those historical gates. \\
+Relabeling & 201 per-class and 528 representative checks give zero failure. \\
+Mirror closure & 67/67 classes close under the geometry-specific mirror; seven are fixed. \\
+Public permutations & 888/888 exhaustive atom permutations of four ACS molecules are invariant. \\
+CIP-cache removal & 4/4 certificates are invariant, confirming that nomenclature is excluded. \\
+Multi-element composition & 32 assignments yield 31 classes, 13 enantiomer pairs, 64 diastereomer pairs, and five mirror-fixed classes. \\
+Public multi-element audit & 14/14 renumberings and 7/7 mirror labels pass on seven ACS records with 18 elements. \\
+Pairwise matrix & 9/9 identity, enantiomer, diastereomer, constitution, and incomplete cases are correct. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Table~\ref{tab:global-quotient-results} gives the complete mixed-family
+accounting.  Formal enumeration covers every A/B/C case.  Raw A and B are
+complete, while raw C is complete only for the declared VS146 slice; the
+remaining eight C raw products include a largest Cartesian product of
+782,757,789,696 and are intentionally not claimed as executed.  Complete
+local orbits are still materialized before an automorphism-pruned
+individualization--refinement search.  The archived wall times document the
+executed artifacts but are not normalized performance comparisons across
+budgets, cases, or machines.
+
+\begin{table*}[htbp]
+\caption{Mixed-family raw--formal--global quotient results.  ``Formal tuples''
+is the number covered invariantly by the run; ``classes'' counts distinct
+whole-stereograph certificates.  C/VS146 is a scoped raw stress result, not the
+full C raw product.  Elapsed time is archival wall time and is reported only
+for provenance.}
+\label{tab:global-quotient-results}
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}llXrrrr@{}}
+\toprule
+Budget & Mode & Scope & Cases & Enumerated & Formal tuples & Classes \\
+\midrule
+A & Formal & current complete A & \FormalACases & \FormalAAssignments & \FormalAAssignments & \FormalAObserved \\
+A & Raw & historical complete A & 10 & 2,048 & 48 & 38 \\
+B & Formal & current complete B & \FormalBCases & \FormalBAssignments & \FormalBAssignments & \FormalBObserved \\
+B & Raw & historical complete B & 11 & 992,256 & 192 & 95 \\
+C & Formal & current complete C & \FormalCCases & \FormalCAssignments & \FormalCAssignments & \FormalCObserved \\
+C & Raw & historical VS146 only & 1 & 2,359,296 & 64 & 64 \\
+\midrule
+\multicolumn{3}{@{}l}{Historical raw evidence} & 22 & 3,353,600 & -- & -- \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+The current formal and historical raw runs are complete for their declared
+scopes, with zero reported case failure or timeout. Current formal reports
+require independently checked complete assignment partitions. Historical raw
+reports check representation invariance and production-code quotient agreement.
+Their execution times are not a controlled comparison and are omitted here.  The formal totals are 30/30 cases and 2,160/2,160 assignments.
+The raw totals are 22/22 scoped cases and 3,353,600/3,353,600 assignments.
+These data empirically check the local quotient on more than three million
+redundant encodings; the proof that formal enumeration preserves global
+classes is independent of that sample size.
+
+
+
+\section{Supplementary chemical carrier gallery}
+\label{sec:chemical-gallery}
+
+Figure~\ref{fig:descriptor-examples} provides representative chemical cases
+for the broader descriptor-class set.  The examples identify the kind of
+carrier.  They do not by themselves establish a
+rotational barrier, configurational lifetime, or implemented perception
+capability.
+
+\begin{figure*}[htbp]
+  \centering
+  \resizebox{0.97\textwidth}{!}{\input{fig/descriptor_examples.tex}}
+  \caption{Representative chemical instances of the descriptor classes.  Card
+  names abbreviate the \synkit classes
+  \textsf{\bfseries $\langle$Name$\rangle$Stereo}; the card tint and the glyph
+  in its upper right give the support family, and vermilion marks the carrier of
+  the stereo element.  The corner mark states status: \(\bullet\) configured,
+  \(\circ\) declared, \(\diamond\) future, and \(\times\) for an entry that is
+  deliberately outside configured stereo.  The examples identify the kind of
+  carrier only.  They do not by themselves establish a rotational barrier, a
+  configurational lifetime, or an implemented perception capability.  Ordinary
+  rapidly interconverting \(s\)-cis/\(s\)-trans conformers remain outside
+  configured stereo, and a restricted-bond descriptor requires independent
+  barrier or persistence evidence.}
+  \label{fig:descriptor-examples}
+\end{figure*}
+
+
+\section{Supplementary cost and resource measurements}
+\label{sec:cost-resources}
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{fig/controlled_stereo_resources.pdf}
+\caption{Completed generator-mode resource measurements. (A) Median native
+worker peak RSS, including interpreter and imported libraries. (B) Full
+certificate size. (C) Per-trial phase distributions; boxes give quartiles,
+whiskers use the standard 1.5-interquartile-range rule and outliers are omitted
+only from this panel. Pairwise timing covers its declared six-family subset;
+report timing serializes the worker's measurement payload. (D) Operation CPU
+versus wall medians, excluding interpreter startup. Blue denotes ordinary
+cases and orange stress cases. Censored trials are absent from these panels
+and retained in Table~\ref{tab:cost-coverage}.}
+\label{fig:controlled-resources}
+\end{figure*}

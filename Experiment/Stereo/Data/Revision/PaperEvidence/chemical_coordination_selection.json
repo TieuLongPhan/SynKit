@@ -1,0 +1,2140 @@
+{
+  "schema": "synkit.prospective-coordination-chemical-selection/1",
+  "frozen_utc": "2026-10-03T08:11:31.534847+00:00",
+  "source": {
+    "title": "Complete dataset for MACE: Automated Assessment of Stereochemistry of Transition Metal Complexes and its Applications in Computational Catalysis",
+    "authors": [
+      "Evgeny Pidko",
+      "Ivan Chernyshov"
+    ],
+    "data_doi": "10.4121/539c7137-c285-4543-be11-e230a4fca8b7.v1",
+    "article_doi": "10.1021/acs.jctc.3c01313",
+    "url": "https://data.4tu.nl/datasets/539c7137-c285-4543-be11-e230a4fca8b7",
+    "download_url": "https://data.4tu.nl/file/539c7137-c285-4543-be11-e230a4fca8b7/900df858-580b-441e-8262-1bd67eac674b",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "archive_bytes": 18180843,
+    "archive_md5": "c7ff7f601a6d603f4637529db1f7787d",
+    "archive_sha256": "fc7b2b2ce8dbe856aa0e5547cf460008d7b0648e5c6e003b61e6aaedde881377"
+  },
+  "selection": "For Mn and Ru, use the first ten backbone/substituent strata in the declared Me-then-iPr order and retain numerically first two tridentate configurations per stratum. Source inputs only; no production outcomes used.",
+  "backbone_order": [
+    "NNhN",
+    "NNpyN",
+    "PNhP",
+    "PNpyP",
+    "SNhS",
+    "SNpyS"
+  ],
+  "substituent_order": [
+    "Me",
+    "iPr"
+  ],
+  "records": [
+    {
+      "id": "Mn_NNhN_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNhN_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNhN_Me_tri_0.xyz",
+      "sha256": "2d3301281e836b12cb7132bfc82fc2345ee10693eeebaef8e203bc4e598aae0f",
+      "metal": "Mn",
+      "ligand_backbone": "NNhN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[N]->1(C)C)CC[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 14,
+          "source_slot_label": 3,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 9,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_NNhN_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNhN_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNhN_Me_tri_1.xyz",
+      "sha256": "d5f3c39c22ec49d460443c901239393c88f6601562eb544b1d70058d5af69a53",
+      "metal": "Mn",
+      "ligand_backbone": "NNhN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[N]->1(C)C)CC[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 14,
+          "source_slot_label": 5,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 9,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_NNpyN_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNpyN_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNpyN_Me_tri_0.xyz",
+      "sha256": "f287f59d627affb2d0a38114eefabb05499368c6340d25e12d0565dfeab61594",
+      "metal": "Mn",
+      "ligand_backbone": "NNpyN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[N]->1(C)C)cccc3C[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 16,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_NNpyN_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNpyN_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNpyN_Me_tri_1.xyz",
+      "sha256": "e8c1f797b05fdc267e4a9303fee7940c815fdc71d0f1a952d9b389b3eba0f9be",
+      "metal": "Mn",
+      "ligand_backbone": "NNpyN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[N]->1(C)C)cccc3C[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 16,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_PNhP_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNhP_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNhP_Me_tri_0.xyz",
+      "sha256": "4b2814a7548f3bc8aa3eb02a15772532a115265fc0e9dea5a227e4910575e3d9",
+      "metal": "Mn",
+      "ligand_backbone": "PNhP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[P]->1(C)C)CC[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 14,
+          "source_slot_label": 3,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 9,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_PNhP_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNhP_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNhP_Me_tri_1.xyz",
+      "sha256": "637a169615dff23bee8541d0c1df30ccc6d7407fe3e890692f55a4f1861a32db",
+      "metal": "Mn",
+      "ligand_backbone": "PNhP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[P]->1(C)C)CC[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 14,
+          "source_slot_label": 5,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 9,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_PNpyP_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNpyP_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNpyP_Me_tri_0.xyz",
+      "sha256": "9df568069175413a0ef72d9e3c78f2aae90e27b5d67cade42fef99ac09a3f094",
+      "metal": "Mn",
+      "ligand_backbone": "PNpyP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[P]->1(C)C)cccc3C[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 16,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_PNpyP_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNpyP_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNpyP_Me_tri_1.xyz",
+      "sha256": "db303e64df6f93b6bbcb75a577f0f060ce061c5e6a60849e7e4e89dd44040cd4",
+      "metal": "Mn",
+      "ligand_backbone": "PNpyP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[P]->1(C)C)cccc3C[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 16,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_SNhS_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_SNhS_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_SNhS_Me_tri_0.xyz",
+      "sha256": "6ae8b1db5a01522422a3dc74fa2d649a5060657d5374a8edde0d2c3706d5b993",
+      "metal": "Mn",
+      "ligand_backbone": "SNhS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[S]->1C)CC[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 3,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 8,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_SNhS_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_SNhS_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_SNhS_Me_tri_1.xyz",
+      "sha256": "1a21cd7dcdeb1de8f66f7bd202cf9f9346e8f0f1d2a974e69750e2f37462145c",
+      "metal": "Mn",
+      "ligand_backbone": "SNhS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[S]->1C)CC[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 5,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 8,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_SNpyS_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_SNpyS_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_SNpyS_Me_tri_0.xyz",
+      "sha256": "0b8048419b87ffb53fd0043723f7e04eaba62dee4e4ab5a1bfc9b801a154c5ad",
+      "metal": "Mn",
+      "ligand_backbone": "SNpyS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[S]->1C)cccc3C[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 15,
+          "source_slot_label": 6,
+          "element": "S"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_SNpyS_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_SNpyS_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_SNpyS_Me_tri_1.xyz",
+      "sha256": "827d437f6ce0efc6805ff0fdcaf975845d25177bb78a41e184f3dcb6eaafd2a5",
+      "metal": "Mn",
+      "ligand_backbone": "SNpyS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[S]->1C)cccc3C[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 15,
+          "source_slot_label": 6,
+          "element": "S"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_NNhN_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNhN_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNhN_iPr_tri_0.xyz",
+      "sha256": "5bd8c1e90d66714c48a44b645a80e071d0c03287255ee2c9db447d8159f1d81c",
+      "metal": "Mn",
+      "ligand_backbone": "NNhN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[N]->1(C(C)C)C(C)C)CC[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 18,
+          "source_slot_label": 3,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 13,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_NNhN_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNhN_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNhN_iPr_tri_1.xyz",
+      "sha256": "c0505ae5485d56cc20f9a5e61b9e806efb5ec8a6401c5f622cf76b927c12e38d",
+      "metal": "Mn",
+      "ligand_backbone": "NNhN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[N]->1(C(C)C)C(C)C)CC[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 18,
+          "source_slot_label": 5,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 13,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_NNpyN_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNpyN_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNpyN_iPr_tri_0.xyz",
+      "sha256": "a761dfcb0d6a21e2458ff842c5edb539168f2b271673317403fa01c597d65a7c",
+      "metal": "Mn",
+      "ligand_backbone": "NNpyN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[N]->1(C(C)C)C(C)C)cccc3C[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 20,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_NNpyN_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_NNpyN_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_NNpyN_iPr_tri_1.xyz",
+      "sha256": "5345e90777786483dfc984c116e23b38e655838a67f0f727132b1d3ce0bdbb8f",
+      "metal": "Mn",
+      "ligand_backbone": "NNpyN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[N]->1(C(C)C)C(C)C)cccc3C[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 20,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_PNhP_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNhP_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNhP_iPr_tri_0.xyz",
+      "sha256": "8881eba382f9741bdb8469cd1e2a881c106f38a7fc642ea1fbd8f838929bc492",
+      "metal": "Mn",
+      "ligand_backbone": "PNhP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[P]->1(C(C)C)C(C)C)CC[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 18,
+          "source_slot_label": 3,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 13,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_PNhP_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNhP_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNhP_iPr_tri_1.xyz",
+      "sha256": "b0d2cacdb4e6d6ab7b1ef276e1fe33cfa73afaf832d1210b8b91e091a64b8a1b",
+      "metal": "Mn",
+      "ligand_backbone": "PNhP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[NH](CC[P]->1(C(C)C)C(C)C)CC[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 18,
+          "source_slot_label": 5,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 13,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Mn_PNpyP_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNpyP_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNpyP_iPr_tri_0.xyz",
+      "sha256": "ee88fdb987423a5d21ebcf9db0220612cc64f34d7703e8318d670b5067e44684",
+      "metal": "Mn",
+      "ligand_backbone": "PNpyP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[P]->1(C(C)C)C(C)C)cccc3C[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 20,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Mn_PNpyP_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Mn_PNpyP_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Mn_PNpyP_iPr_tri_1.xyz",
+      "sha256": "19d8a3090d2f1f00d90c2e2491fe7e61eb4999ada262795033fd7eea87a22ef6",
+      "metal": "Mn",
+      "ligand_backbone": "PNpyP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Mn+]12(<-[C-]#[O+])(<-[C-]#[O+])<-[n]3c(C[P]->1(C(C)C)C(C)C)cccc3C[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 20,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_NNhN_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNhN_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNhN_Me_tri_0.xyz",
+      "sha256": "f7d4bafa0c1d4774227defbecab024af9f8c344b2f82ec10931ba177958f5d56",
+      "metal": "Ru",
+      "ligand_backbone": "NNhN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[N]->1(C)C)CC[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 3,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 8,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_NNhN_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNhN_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNhN_Me_tri_1.xyz",
+      "sha256": "ceb238190b502810aa6d050968d5cf9bad912b6923dac985f61f245a62193633",
+      "metal": "Ru",
+      "ligand_backbone": "NNhN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[N]->1(C)C)CC[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 5,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 8,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_NNpyN_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNpyN_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNpyN_Me_tri_0.xyz",
+      "sha256": "e39821d07b48283ba9e5687c85a16e0f8f38cdf0b9ca7e1557de375a1db130d3",
+      "metal": "Ru",
+      "ligand_backbone": "NNpyN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[N]->1(C)C)cccc3C[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 15,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_NNpyN_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNpyN_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNpyN_Me_tri_1.xyz",
+      "sha256": "250b91a9268a416b07bc1c0e1570c2e9e7c76214e9da75d306f7f8ff309867db",
+      "metal": "Ru",
+      "ligand_backbone": "NNpyN",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[N]->1(C)C)cccc3C[N]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 15,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_PNhP_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNhP_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNhP_Me_tri_0.xyz",
+      "sha256": "8997fa49e830394108c1ab7331f25b75a81e6592bc89725c821b3f1e3b518a73",
+      "metal": "Ru",
+      "ligand_backbone": "PNhP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[P]->1(C)C)CC[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 3,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 8,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_PNhP_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNhP_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNhP_Me_tri_1.xyz",
+      "sha256": "66c517e45d5261925f7bbd5fe060a4b89abc6f1a3668f64b9916ccd6d459b148",
+      "metal": "Ru",
+      "ligand_backbone": "PNhP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[P]->1(C)C)CC[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 13,
+          "source_slot_label": 5,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 8,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_PNpyP_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNpyP_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNpyP_Me_tri_0.xyz",
+      "sha256": "255b43094e1c266e2dc2f4164166220475f8d800d58bfdd18eb0b7bf5629dde6",
+      "metal": "Ru",
+      "ligand_backbone": "PNpyP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[P]->1(C)C)cccc3C[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 15,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_PNpyP_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNpyP_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNpyP_Me_tri_1.xyz",
+      "sha256": "61eeb73fa4390aa7527b6ebd7a6220a6f861915a83600de2b91fe7edf8097fdb",
+      "metal": "Ru",
+      "ligand_backbone": "PNpyP",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[P]->1(C)C)cccc3C[P]->2(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 15,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_SNhS_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_SNhS_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_SNhS_Me_tri_0.xyz",
+      "sha256": "5085d65e8401f1acef00313cf28a1b8dccc4c02ff73f338bbe1497f143de93d2",
+      "metal": "Ru",
+      "ligand_backbone": "SNhS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[S]->1C)CC[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 3,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 7,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_SNhS_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_SNhS_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_SNhS_Me_tri_1.xyz",
+      "sha256": "9ba1085f72f8df8250588ae24534fc81eea57b2cf2eeaa423379fd3f86dd0b2a",
+      "metal": "Ru",
+      "ligand_backbone": "SNhS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[S]->1C)CC[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 5,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 7,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_SNpyS_Me_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_SNpyS_Me_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_SNpyS_Me_tri_0.xyz",
+      "sha256": "dc3db5789b01068af622df48fbe1720b9fdc89f9e402b63064c10b4dc183d351",
+      "metal": "Ru",
+      "ligand_backbone": "SNpyS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[S]->1C)cccc3C[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 5,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 14,
+          "source_slot_label": 6,
+          "element": "S"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_SNpyS_Me_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_SNpyS_Me_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_SNpyS_Me_tri_1.xyz",
+      "sha256": "8cb048da56125786dded2d88c7e61811dab25b2d8d044793d11655050c85f3c8",
+      "metal": "Ru",
+      "ligand_backbone": "SNpyS",
+      "substituent": "Me",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[S]->1C)cccc3C[S]->2C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 1,
+          "source_slot_label": 1,
+          "element": "S"
+        },
+        {
+          "source_coordinate_index": 7,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 4,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 6,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 14,
+          "source_slot_label": 6,
+          "element": "S"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_NNhN_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNhN_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNhN_iPr_tri_0.xyz",
+      "sha256": "209cd47f3233b647302527b9df5d08d25587b495dc2a1114f6dfec3817795338",
+      "metal": "Ru",
+      "ligand_backbone": "NNhN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[N]->1(C(C)C)C(C)C)CC[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 17,
+          "source_slot_label": 3,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 12,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_NNhN_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNhN_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNhN_iPr_tri_1.xyz",
+      "sha256": "246c53eb841be3a57c6468bbc9344dbe2e28dc952621a539864ef8b63ddce8eb",
+      "metal": "Ru",
+      "ligand_backbone": "NNhN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[N]->1(C(C)C)C(C)C)CC[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 17,
+          "source_slot_label": 5,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 12,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_NNpyN_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNpyN_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNpyN_iPr_tri_0.xyz",
+      "sha256": "6af4340aacd4eedf5a9181b61cf536618d08cb539835b516be6d64bf899ab51a",
+      "metal": "Ru",
+      "ligand_backbone": "NNpyN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[N]->1(C(C)C)C(C)C)cccc3C[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 19,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_NNpyN_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_NNpyN_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_NNpyN_iPr_tri_1.xyz",
+      "sha256": "aa1a4e1f8b8dff5e8f5365c686e25b255d72f9b538633eaef49f8642ca9cbc89",
+      "metal": "Ru",
+      "ligand_backbone": "NNpyN",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[N]->1(C(C)C)C(C)C)cccc3C[N]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 19,
+          "source_slot_label": 6,
+          "element": "N"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_PNhP_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNhP_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNhP_iPr_tri_0.xyz",
+      "sha256": "7266ed9bdb8051365c8b5a3a93e08149dac9b4017961a1668e373d0862bbb098",
+      "metal": "Ru",
+      "ligand_backbone": "PNhP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[P]->1(C(C)C)C(C)C)CC[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 17,
+          "source_slot_label": 3,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 12,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_PNhP_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNhP_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNhP_iPr_tri_1.xyz",
+      "sha256": "a77e0f60b220a0d6261462ac82c3e9b2ea07b97d2f546be094da2b72f7c61318",
+      "metal": "Ru",
+      "ligand_backbone": "PNhP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[NH](CC[P]->1(C(C)C)C(C)C)CC[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 17,
+          "source_slot_label": 5,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 6,
+          "element": "C"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": [
+        {
+          "source_coordinate_index": 12,
+          "element": "N",
+          "source_chiral_tag": "CHI_TETRAHEDRAL_CCW"
+        }
+      ]
+    },
+    {
+      "id": "Ru_PNpyP_iPr_tri_0",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNpyP_iPr_tri_0.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNpyP_iPr_tri_0.xyz",
+      "sha256": "40da41a8d66013ebefbb65c3771e014b0177267db8a9bf8fa72f3f8ec50ac5a2",
+      "metal": "Ru",
+      "ligand_backbone": "PNpyP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[P]->1(C(C)C)C(C)C)cccc3C[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 10,
+          "source_slot_label": 5,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 19,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    },
+    {
+      "id": "Ru_PNpyP_iPr_tri_1",
+      "source_member": "structures/screening/mace_MeCN/Ru_PNpyP_iPr_tri_1.xyz",
+      "path": "Experiment/Stereo/Data/Revision/Chemical/MACE/Ru_PNpyP_iPr_tri_1.xyz",
+      "sha256": "bad39c587a672a39fb01346fead47c484b7592f9dfdf1845618194d756f02a39",
+      "metal": "Ru",
+      "ligand_backbone": "PNpyP",
+      "substituent": "iPr",
+      "denticity": "tri",
+      "family": "octahedral",
+      "constitution_key": "[H-]->[Ru+2]12(<-[H-])(<-[C-]#[O+])<-[n]3c(C[P]->1(C(C)C)C(C)C)cccc3C[P]->2(C(C)C)C(C)C",
+      "source_configuration_labels": [
+        {
+          "source_coordinate_index": 3,
+          "source_slot_label": 1,
+          "element": "P"
+        },
+        {
+          "source_coordinate_index": 12,
+          "source_slot_label": 2,
+          "element": "N"
+        },
+        {
+          "source_coordinate_index": 8,
+          "source_slot_label": 3,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 9,
+          "source_slot_label": 4,
+          "element": "C"
+        },
+        {
+          "source_coordinate_index": 11,
+          "source_slot_label": 5,
+          "element": "H"
+        },
+        {
+          "source_coordinate_index": 19,
+          "source_slot_label": 6,
+          "element": "P"
+        }
+      ],
+      "input_boundary": "Full attributed chemical constitution, supplied OH inventory and all source-declared local orientation annotations; validate configured frames from first-conformer coordinates independently. Missing or ambiguous source orientation remains unresolved.",
+      "expected_relation_basis": "Independent proper geometry and exact typed constitutional transports satisfying every supplied frame simultaneously; annotation pending, no production prediction.",
+      "development_overlap_sources": [],
+      "source_local_orientation_annotations": []
+    }
+  ],
+  "selected_records": 40,
+  "unique_constitutions": 20,
+  "truth_protocol": {
+    "ideal_octahedron": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        -1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        -1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        -1
+      ]
+    ],
+    "proper_rotations": "derive determinant-positive signed permutation matrices independently; enumerate all 720 donor/slot assignments and minimize proper Kabsch residual",
+    "mirror": "coordinate reflection through x=0; independent reference comparisons use proper rotations only after reflection",
+    "normalized_rmsd_limit": 0.35,
+    "next_inequivalent_pose_gap_minimum": 0.02,
+    "degenerate_or_uncertified": "typed unresolved result, never select the nearest pose without passing both limits",
+    "local_shape_partition": "30 OH poses before quotient by molecular donor-equivalence maps; do not equate source configuration IDs with distinct chemical classes",
+    "constitutional_transport_budget": {
+      "seconds": 10,
+      "max_maps": 50000,
+      "max_rss_mib": 1024
+    },
+    "registered_slot_order_in_reference_coordinates": [
+      4,
+      5,
+      0,
+      2,
+      1,
+      3
+    ],
+    "registered_slot_order_basis": "The existing independently audited OH convention is +z,-z,+x,+y,-x,-y. This fixed change of basis converts the separately declared +x,-x,+y,-y,+z,-z fitting coordinates before constructing a production frame; no predictions used.",
+    "slot_basis_clarified_utc": "2026-10-03T08:22:51.165062+00:00",
+    "source_local_frame_policy": "Retain every source-declared tetrahedral frame using a parser that preserves source tags; validate its orientation independently from coordinates, including coordinate-row witnesses for owner-scoped implicit H. One global map must satisfy all supplied frames."
+  },
+  "annotation_conventions": "MACE donor isotopes 1..6 are coordination-slot annotations, not mass numbers. Atom maps in exported XYZ JSON identify coordinate rows. Strip donor slot isotopes and map numbers from chemical identity; preserve mapping in source evidence.",
+  "claim_boundary": "Generated source chemical structures, not experimental stability or an untouched discovery holdout. Validate the full source-declared configured inventory (OH plus supplied local frames) by independent geometric and constitutional transport; no blind-perception or unsupplied-configuration claim.",
+  "overlap_status": "Input-only overlap audit complete before production evaluation; no selected record overlaps ACS/CIP/RotA or prior designed negatives",
+  "production_evaluated": false,
+  "overlapping_records": [],
+  "source_local_orientation_annotations": 20,
+  "information_boundary_clarified_utc": "2026-10-03T08:25:24.342918+00:00"
+}

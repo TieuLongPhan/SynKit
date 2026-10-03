@@ -1,0 +1,33 @@
+ACS detection: 100/258
+ACS detection: 200/258
+RotA detection: 100/650
+RotA detection: 200/650
+RotA detection: 300/650
+RotA detection: 400/650
+RotA detection: 500/650
+RotA detection: 600/650
+CIP detection: 100/300
+CIP detection: 200/300
+CIP detection: 300/300
+{
+  "coverage": {
+    "acs_cip_identical_smiles": 258,
+    "acs_cip_shared_ids": 258,
+    "acs_rows": 258,
+    "cip_rows": 300,
+    "constitution_identity_contract": {
+      "atom_maps": "erased",
+      "configuration": "erased",
+      "isotopes_charges_hydrogen_counts_aromaticity": "retained",
+      "normalization": "standard RDKit parsing and RemoveHs",
+      "resonance_normalization": false,
+      "shared_key_constructor": "Experiment.Stereo.Perception.corpus_overlap.structure_keys"
+    },
+    "dataset_rows": 1208,
+    "pooled_accuracy_reported": false,
+    "rota_rows": 650,
+    "unique_configuration_neutral_constitutions": 904
+  },
+  "output": "/tmp/synkit-stereo-clean-release-full/retained_detection.json",
+  "seconds": 834.709800631972
+}

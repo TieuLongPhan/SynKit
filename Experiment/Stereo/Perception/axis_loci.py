@@ -241,6 +241,8 @@ def benchmark_rota_loci(
 
 
 def main() -> int:
+    from Experiment.Stereo.provenance import capture_source, finish_source
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--rota-path",
@@ -253,12 +255,15 @@ def main() -> int:
     parser.add_argument("--skip-renumbering", action="store_true")
     arguments = parser.parse_args()
     RDLogger.DisableLog("rdApp.*")
+    source = capture_source((arguments.rota_path,))
     report = benchmark_rota_loci(
         arguments.rota_path,
         check_renumbering=not arguments.skip_renumbering,
     )
+    report["provenance"] = finish_source(source)
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if arguments.output is not None:
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
         arguments.output.write_text(rendered, encoding="utf-8")
     print(rendered, end="")
     return 0

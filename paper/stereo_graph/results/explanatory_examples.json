@@ -1,0 +1,146 @@
+{
+  "schema": "synkit.stereo-explanatory-figure-examples/1",
+  "passed": true,
+  "driver_sha256": "b48c2cf47b1620160fe88a02d5f184189a5c7d87a9abc70738f20027eaf9c6da",
+  "figure_source_sha256": {
+    "incomplete_completions.tex": "64b34f1a88bfa20c8295a203b656f2854fe012d44a34a980052cdedba337416f",
+    "invariant_vs_certificate.tex": "aa374d6eb77e4b6ce26de5845bfcf1cb0e71cf3750c1f0929c1da6fa24ac4cad"
+  },
+  "chemical_cases": [
+    {
+      "case": "partial",
+      "smiles": "C[C@H](Cl)C(Cl)C",
+      "cip_at_carbon_2_and_3": [
+        "S",
+        "?"
+      ],
+      "checks": [
+        {
+          "profile": "chemical",
+          "reverse_atom_order": false,
+          "strict_status": "incomplete"
+        },
+        {
+          "profile": "chemical",
+          "reverse_atom_order": true,
+          "strict_status": "incomplete"
+        },
+        {
+          "profile": "lewis_state",
+          "reverse_atom_order": false,
+          "strict_status": "incomplete"
+        },
+        {
+          "profile": "lewis_state",
+          "reverse_atom_order": true,
+          "strict_status": "incomplete"
+        },
+        {
+          "profile": "acs_topology",
+          "reverse_atom_order": false,
+          "strict_status": "incomplete"
+        },
+        {
+          "profile": "acs_topology",
+          "reverse_atom_order": true,
+          "strict_status": "incomplete"
+        }
+      ]
+    },
+    {
+      "case": "meso",
+      "smiles": "C[C@H](Cl)[C@H](Cl)C",
+      "cip_at_carbon_2_and_3": [
+        "S",
+        "R"
+      ],
+      "checks": [
+        {
+          "profile": "chemical",
+          "reverse_atom_order": false,
+          "strict_status": "achiral"
+        },
+        {
+          "profile": "chemical",
+          "reverse_atom_order": true,
+          "strict_status": "achiral"
+        },
+        {
+          "profile": "lewis_state",
+          "reverse_atom_order": false,
+          "strict_status": "achiral"
+        },
+        {
+          "profile": "lewis_state",
+          "reverse_atom_order": true,
+          "strict_status": "achiral"
+        },
+        {
+          "profile": "acs_topology",
+          "reverse_atom_order": false,
+          "strict_status": "achiral"
+        },
+        {
+          "profile": "acs_topology",
+          "reverse_atom_order": true,
+          "strict_status": "achiral"
+        }
+      ]
+    },
+    {
+      "case": "chiral",
+      "smiles": "C[C@H](Cl)[C@@H](Cl)C",
+      "cip_at_carbon_2_and_3": [
+        "S",
+        "S"
+      ],
+      "checks": [
+        {
+          "profile": "chemical",
+          "reverse_atom_order": false,
+          "strict_status": "chiral"
+        },
+        {
+          "profile": "chemical",
+          "reverse_atom_order": true,
+          "strict_status": "chiral"
+        },
+        {
+          "profile": "lewis_state",
+          "reverse_atom_order": false,
+          "strict_status": "chiral"
+        },
+        {
+          "profile": "lewis_state",
+          "reverse_atom_order": true,
+          "strict_status": "chiral"
+        },
+        {
+          "profile": "acs_topology",
+          "reverse_atom_order": false,
+          "strict_status": "chiral"
+        },
+        {
+          "profile": "acs_topology",
+          "reverse_atom_order": true,
+          "strict_status": "chiral"
+        }
+      ]
+    }
+  ],
+  "strict_chemical_checks": 18,
+  "fischer_projection_convention_checked": true,
+  "schematic_graphs": 3,
+  "reference_serializations_enumerated": 2160,
+  "count_degree_invariants_equal": true,
+  "native_and_independent_exact_partition": [
+    [
+      0,
+      1
+    ],
+    [
+      2
+    ]
+  ],
+  "boundary": "Three retained molecules replay under three profiles and two atom orders. The drawn Fischer arms determine S/R after reversing for horizontal, viewer-facing H; those labels match the source strings. Independent exhaustive adjacency serialization verifies the schematic graph partition. These are explanatory examples, not new benchmark populations or experimental stability evidence."
+}

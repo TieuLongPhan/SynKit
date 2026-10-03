@@ -1,0 +1,751 @@
+{
+  "schema": "synkit.stereo-final-submission/1",
+  "authoring_source_sha256": "eac80b061222bc18a6072189b9a3d06bc3e256b312cd7366d3577e0d22ca72e9",
+  "selected_manifest_sha256": "42c554bdb9584e57f68d99de37255e35bd6b12b2f3c79b4f8f9abe212c10d97c",
+  "numerical_claims": 269,
+  "reviewed_mathematical_blocks": 33,
+  "manuscript_pages": 56,
+  "supporting_information_pages": 56,
+  "artifacts": {
+    "Additional_file_1.pdf": {
+      "sha256": "07343f42bcdd264b5f832fc591d16af400a67fb6024c09477b6f4897a641596d",
+      "bytes": 819092
+    },
+    "cover_letter.pdf": {
+      "sha256": "b85736398aa9f21089afa3f39c9aabe685da7e30b411f656102e05a3c3e0b1ff",
+      "bytes": 60475
+    },
+    "figures/Figure_01.pdf": {
+      "sha256": "8af3b7c558ccf8421fdc0cb6a724a8cc82db802b65f56ae236a38b0621e85896",
+      "bytes": 135615
+    },
+    "figures/Figure_02.pdf": {
+      "sha256": "e4568217e9190b1b84262d29d9dc46adbece17114171dd66a12d60930fe2441d",
+      "bytes": 144781
+    },
+    "figures/Figure_03.pdf": {
+      "sha256": "29222db909a816e59a47a88dd10201df8c9aae88de90bdbfbcf16e57a4a38842",
+      "bytes": 114525
+    },
+    "figures/Figure_04.pdf": {
+      "sha256": "b30fac51ac6ad830d1c0157353118baaf4c98ccc92d878901c22533bd8c6f059",
+      "bytes": 117887
+    },
+    "figures/Figure_05.pdf": {
+      "sha256": "7405038f9d140ccd7a6e1ff663dd11225112d25345b456410f20fd6c7782a302",
+      "bytes": 110792
+    },
+    "figures/Figure_06.pdf": {
+      "sha256": "3673265b5d194588235c0e045e2ab74947c0ea2d9800cf2485ebe5585905b927",
+      "bytes": 115221
+    },
+    "figures/Figure_07.pdf": {
+      "sha256": "8d1417b53d4337b438cc4f4918d7aebef6fadafca4b170044bfaec131584d4e8",
+      "bytes": 118086
+    },
+    "figures/Figure_08.pdf": {
+      "sha256": "22b25ea5a4fe8e0564a212ff2faac4f4747cd615ca5d862bedb8e7ed9a13e2bd",
+      "bytes": 62797
+    },
+    "figures/Figure_09.pdf": {
+      "sha256": "6d01947cb756f99ed82cef61bb7f535cc2b7c739e10f7cbc26bb16de5d658022",
+      "bytes": 25299
+    },
+    "figures/Figure_10.pdf": {
+      "sha256": "b373641b6a71821b72c8c790a154e9b5f24216322a5bb36219f12b4d3ba187d1",
+      "bytes": 19511
+    },
+    "figures/Figure_11.pdf": {
+      "sha256": "73551ed3e1d8023efc9780decced92bae7221697109d4997e1f72fdfd43cffa5",
+      "bytes": 67390
+    },
+    "manuscript.pdf": {
+      "sha256": "e09734c22c59c9598ff8479f4c733c1c2a543e6e04aad9d30e2f6fb24a481d84",
+      "bytes": 763043
+    },
+    "sources.zip": {
+      "sha256": "52c1d6e22c53e5a9a923480229627b1608925c029f9276c18954bce354010c60",
+      "bytes": 307294
+    }
+  },
+  "source_inventory": {
+    "Figure_01.tex": {
+      "sha256": "e9e9f5f9c32248948642ddd3566d790924a374e170fda9c076ed56f2d6abd1f7",
+      "bytes": 3188
+    },
+    "Figure_02.tex": {
+      "sha256": "a4bf636ddbd2ad2576cde72132725c5730fa7f6bfa9ab763358fa3db609e134c",
+      "bytes": 3190
+    },
+    "Figure_03.tex": {
+      "sha256": "994a94a827d5597fef9e980a64cc4ca73ca5b753845c4061619167919ff9b3b4",
+      "bytes": 3180
+    },
+    "Figure_04.tex": {
+      "sha256": "b12cb1e04532151c7c1266650ca5e4342a58591fd77b505a0a2cb38b33bfc8ff",
+      "bytes": 3194
+    },
+    "Figure_05.tex": {
+      "sha256": "e89d993a023fba94db2e4529e0709d42e82270634942fa6bdd6908d360f46447",
+      "bytes": 3194
+    },
+    "Figure_06.tex": {
+      "sha256": "5eecdea5395a6a38ea1122dc6858e784dacefee73b0d69884010a32bc291821f",
+      "bytes": 3196
+    },
+    "Figure_07.tex": {
+      "sha256": "143acdda5612d984b0d9113cb98beb98378cd0c437949105f5f5fb3b4802df8c",
+      "bytes": 3207
+    },
+    "Figure_08.tex": {
+      "sha256": "46edcd004c620edde38cc72962612e40f040aea0924897c5a47ab92dd0f9bf73",
+      "bytes": 3198
+    },
+    "Figure_09.tex": {
+      "sha256": "fc30c8ce291605a32952c82b21989fedaaa38f4f2950c924efb278c7f6f503fd",
+      "bytes": 3192
+    },
+    "Figure_10.tex": {
+      "sha256": "fbb07f48a42771c608317b51daa2ff82873f7fd797f9dfded6a7958ffd4ddbe5",
+      "bytes": 3196
+    },
+    "Figure_11.tex": {
+      "sha256": "ae90ae67efc86db037e4d21584578b448d7f9268901adc696da388ffa71f1a52",
+      "bytes": 3191
+    },
+    "authors.tex": {
+      "sha256": "0d226259c7a4d87cb52a5c64c1ec6d328261ef33af681396136e4013f9004154",
+      "bytes": 1940
+    },
+    "cover_letter.tex": {
+      "sha256": "9c6094268ecbea6125c8630606bc35ed1112aa49030bdda739b0cca7f72cbf12",
+      "bytes": 3059
+    },
+    "fig/ball_permutation.tex": {
+      "sha256": "10ef8a38bb77a59e6119cd8b854a87ac308543c861d467c8ca7e029641b0121d",
+      "bytes": 6172
+    },
+    "fig/benchmark_evidence_map.tex": {
+      "sha256": "53887916a79c97178eff5c64f6c06f643ff24168d9a3950d69a2dfd46eac66cf",
+      "bytes": 4791
+    },
+    "fig/concept_style.tex": {
+      "sha256": "34ac84c1ae9febe78000a29a1a6745806a3672ce566fb642ff100a252e7b13c0",
+      "bytes": 5651
+    },
+    "fig/controlled_stereo_costs.pdf": {
+      "sha256": "2156965c9a470ffdd8a8b9a8a17cb78bee72289ddc6eff270ecf2f4cf47a28ca",
+      "bytes": 25726
+    },
+    "fig/controlled_stereo_resources.pdf": {
+      "sha256": "92ec8a05cc0f117d3c0a8a933735369259699edf6a760efbe31ffdc48e130424",
+      "bytes": 62137
+    },
+    "fig/curated_stereo_registration.pdf": {
+      "sha256": "180bcd25f78552e04faf8f555c13ad316294377cc93e5a30968002b2fb18d91b",
+      "bytes": 19904
+    },
+    "fig/descriptor_examples.tex": {
+      "sha256": "2f5f97adf335cd1f020f381db7d4e77cfafce9bead8b811600b281e004c5dbce",
+      "bytes": 25859
+    },
+    "fig/exact_mirror_mismatches.tex": {
+      "sha256": "404b943ca04d87fa75f90788445cc897f8abe7b66cd64bdbd931b48f04716b70",
+      "bytes": 2128
+    },
+    "fig/exact_mirror_vs170.pdf": {
+      "sha256": "0e1b23e40d6b5e3a9fd55c6f2a478a7612b24da0e56f9d2930002f4474b42fdd",
+      "bytes": 4682
+    },
+    "fig/exact_mirror_vs300.pdf": {
+      "sha256": "7dd9c5e21365238c97a0c3bbabefa0ec18f1f1386101b2fa26f07a46e15f1212",
+      "bytes": 5286
+    },
+    "fig/incomplete_completions.tex": {
+      "sha256": "64b34f1a88bfa20c8295a203b656f2854fe012d44a34a980052cdedba337416f",
+      "bytes": 3113
+    },
+    "fig/invariant_vs_certificate.tex": {
+      "sha256": "aa374d6eb77e4b6ce26de5845bfcf1cb0e71cf3750c1f0929c1da6fa24ac4cad",
+      "bytes": 1812
+    },
+    "fig/mirror_canonical_examples.tex": {
+      "sha256": "d430fea52ba03f830ddbbf6be42fc0e92069bec94f367da45cb762035ae2b025",
+      "bytes": 8603
+    },
+    "fig/orbit_examples_six.tex": {
+      "sha256": "0c8f9164bdd38b73c0e32301c4887ad28370e3dec74a5fa9d6ee80c53c5eba1c",
+      "bytes": 8673
+    },
+    "fig/pipeline.tex": {
+      "sha256": "83811df2b7c546ce8ceb3dd22f7b77bf703237f03b8590ab62dc3f272eabec44",
+      "bytes": 4071
+    },
+    "fig/planar_alignment.tex": {
+      "sha256": "78ac6d8a1b995d714ace3673d0a61ab82de4eb177d1e1687ee719f4fd43bb3a7",
+      "bytes": 13129
+    },
+    "fig/quotient_hierarchy.tex": {
+      "sha256": "6a5af44c77e1496ee375b67cee81cb94288d80857bef1ca646313570e7a08921",
+      "bytes": 2730
+    },
+    "fig/shape_frames.tex": {
+      "sha256": "ecbc46af8a46521cca9740cca6a63b148b327719f40a1edd6d17fd1f40022b96",
+      "bytes": 3834
+    },
+    "fig/si_orbit_atrop.tex": {
+      "sha256": "4a873bb1e69eb6d6a1e5e83780a943cdf48aee5eb84e2441a0d0dc3276b9e952",
+      "bytes": 1408
+    },
+    "fig/si_orbit_oct.tex": {
+      "sha256": "f51f824c9170be351eefce77f3a5ca4c5fec3d9a5ec6a7b93fdb503ed3459027",
+      "bytes": 3210
+    },
+    "fig/si_orbit_planar.tex": {
+      "sha256": "649904d4f2215028125437abf3cdd699930effdefa679c6b856d4490e2e30b9b",
+      "bytes": 1408
+    },
+    "fig/si_orbit_square.tex": {
+      "sha256": "274b1844322fd138c2505efd5a87bdbd50bb47698172eb1c6a2761334cb8586e",
+      "bytes": 3061
+    },
+    "fig/si_orbit_tbp.tex": {
+      "sha256": "448812f81466b400832aa121263cbab46eedd4c139800f4fb3d6e2de9c906c18",
+      "bytes": 1048
+    },
+    "fig/support_motivation.tex": {
+      "sha256": "eeddfcf9cdcf2b5e67e1833b3a2985efa36009fb1daa2f9849cebcdcdd1d20f1",
+      "bytes": 15525
+    },
+    "fig/thesis_figure_style.tex": {
+      "sha256": "2ae413ca35838aad5c4a69b75d3dd3ca510a75a5395194e55662bbc1693e884d",
+      "bytes": 10329
+    },
+    "fig/thesis_tokens.tex": {
+      "sha256": "f3ab179986e9008f5cb3ea563d8aec672b98a671e2487cfc11c22b3bf756d8e4",
+      "bytes": 1774
+    },
+    "figure_captions.tex": {
+      "sha256": "573327a188084a382ded4e1b3e6b302ca3e7e841ca3b58fb7cd10ff2cfc85d8e",
+      "bytes": 9747
+    },
+    "manuscript.aux": {
+      "sha256": "889f96f19ff14ea43e9e81cd7b13c2136b209fc1346525a9119078fb85cdd999",
+      "bytes": 37760
+    },
+    "manuscript.bbl": {
+      "sha256": "17b2fde35a7ad609886d4842102c2ad11102938f5afde534ec32ffa705bbcbe1",
+      "bytes": 12982
+    },
+    "manuscript.tex": {
+      "sha256": "18cc6e54c93d122f9b29ae70112e71ea2c7ce72e8e5c12c00f1c7f3835b858a1",
+      "bytes": 119163
+    },
+    "references.bib": {
+      "sha256": "89bd3ee49d2175bee92bddc03bbf08333bed6d73a51ce8bde1ebafae28d48fd2",
+      "bytes": 27111
+    },
+    "results/numerical_values.tex": {
+      "sha256": "8ede92456ecd201eed15ccf706f440b0d6a8b986ececa585eecaaab274df3700",
+      "bytes": 11805
+    },
+    "sn-jnl.cls": {
+      "sha256": "43259eaff83d046b8529e71d54c318f600bdb9cc2b2430af1af2951d2b938819",
+      "bytes": 55264
+    },
+    "sn-mathphys-num.bst": {
+      "sha256": "7862cd0165dd22188579e42e88a3512846821bec7ef1eeb6e14e16380d502bf9",
+      "bytes": 63289
+    },
+    "supporting_information.aux": {
+      "sha256": "2adc913932a0a74ad5d51d9990bd5fd7b8d27b7e85013e44eef214a621118dc4",
+      "bytes": 31317
+    },
+    "supporting_information.bbl": {
+      "sha256": "33a7b55ae160ac41a71782b706eefcb159aebabdebb162b1b3488cba543cbcd2",
+      "bytes": 3849
+    },
+    "supporting_information.tex": {
+      "sha256": "56453297ed0b028e3eef233821159f6781e73c7f0efa86e3912de8070befbaa0",
+      "bytes": 59264
+    },
+    "technical_details.tex": {
+      "sha256": "433d90a8fbf9fdbedc2e870dbc6e59ae5b9eb202e33947d4b1e0ec74e3618127",
+      "bytes": 51977
+    }
+  },
+  "journal_source_inventory": {
+    "authors.tex": {
+      "sha256": "0d226259c7a4d87cb52a5c64c1ec6d328261ef33af681396136e4013f9004154",
+      "bytes": 1940
+    },
+    "fig/ball_permutation.tex": {
+      "sha256": "10ef8a38bb77a59e6119cd8b854a87ac308543c861d467c8ca7e029641b0121d",
+      "bytes": 6172
+    },
+    "fig/benchmark_evidence_map.tex": {
+      "sha256": "53887916a79c97178eff5c64f6c06f643ff24168d9a3950d69a2dfd46eac66cf",
+      "bytes": 4791
+    },
+    "fig/concept_style.tex": {
+      "sha256": "34ac84c1ae9febe78000a29a1a6745806a3672ce566fb642ff100a252e7b13c0",
+      "bytes": 5651
+    },
+    "fig/controlled_stereo_costs.pdf": {
+      "sha256": "2156965c9a470ffdd8a8b9a8a17cb78bee72289ddc6eff270ecf2f4cf47a28ca",
+      "bytes": 25726
+    },
+    "fig/controlled_stereo_resources.pdf": {
+      "sha256": "92ec8a05cc0f117d3c0a8a933735369259699edf6a760efbe31ffdc48e130424",
+      "bytes": 62137
+    },
+    "fig/curated_stereo_registration.pdf": {
+      "sha256": "180bcd25f78552e04faf8f555c13ad316294377cc93e5a30968002b2fb18d91b",
+      "bytes": 19904
+    },
+    "fig/descriptor_examples.tex": {
+      "sha256": "2f5f97adf335cd1f020f381db7d4e77cfafce9bead8b811600b281e004c5dbce",
+      "bytes": 25859
+    },
+    "fig/exact_mirror_mismatches.tex": {
+      "sha256": "404b943ca04d87fa75f90788445cc897f8abe7b66cd64bdbd931b48f04716b70",
+      "bytes": 2128
+    },
+    "fig/exact_mirror_vs170.pdf": {
+      "sha256": "0e1b23e40d6b5e3a9fd55c6f2a478a7612b24da0e56f9d2930002f4474b42fdd",
+      "bytes": 4682
+    },
+    "fig/exact_mirror_vs300.pdf": {
+      "sha256": "7dd9c5e21365238c97a0c3bbabefa0ec18f1f1386101b2fa26f07a46e15f1212",
+      "bytes": 5286
+    },
+    "fig/incomplete_completions.tex": {
+      "sha256": "64b34f1a88bfa20c8295a203b656f2854fe012d44a34a980052cdedba337416f",
+      "bytes": 3113
+    },
+    "fig/invariant_vs_certificate.tex": {
+      "sha256": "aa374d6eb77e4b6ce26de5845bfcf1cb0e71cf3750c1f0929c1da6fa24ac4cad",
+      "bytes": 1812
+    },
+    "fig/mirror_canonical_examples.tex": {
+      "sha256": "d430fea52ba03f830ddbbf6be42fc0e92069bec94f367da45cb762035ae2b025",
+      "bytes": 8603
+    },
+    "fig/orbit_examples_six.tex": {
+      "sha256": "0c8f9164bdd38b73c0e32301c4887ad28370e3dec74a5fa9d6ee80c53c5eba1c",
+      "bytes": 8673
+    },
+    "fig/pipeline.tex": {
+      "sha256": "83811df2b7c546ce8ceb3dd22f7b77bf703237f03b8590ab62dc3f272eabec44",
+      "bytes": 4071
+    },
+    "fig/planar_alignment.tex": {
+      "sha256": "78ac6d8a1b995d714ace3673d0a61ab82de4eb177d1e1687ee719f4fd43bb3a7",
+      "bytes": 13129
+    },
+    "fig/quotient_hierarchy.tex": {
+      "sha256": "6a5af44c77e1496ee375b67cee81cb94288d80857bef1ca646313570e7a08921",
+      "bytes": 2730
+    },
+    "fig/shape_frames.tex": {
+      "sha256": "ecbc46af8a46521cca9740cca6a63b148b327719f40a1edd6d17fd1f40022b96",
+      "bytes": 3834
+    },
+    "fig/si_orbit_atrop.tex": {
+      "sha256": "4a873bb1e69eb6d6a1e5e83780a943cdf48aee5eb84e2441a0d0dc3276b9e952",
+      "bytes": 1408
+    },
+    "fig/si_orbit_oct.tex": {
+      "sha256": "f51f824c9170be351eefce77f3a5ca4c5fec3d9a5ec6a7b93fdb503ed3459027",
+      "bytes": 3210
+    },
+    "fig/si_orbit_planar.tex": {
+      "sha256": "649904d4f2215028125437abf3cdd699930effdefa679c6b856d4490e2e30b9b",
+      "bytes": 1408
+    },
+    "fig/si_orbit_square.tex": {
+      "sha256": "274b1844322fd138c2505efd5a87bdbd50bb47698172eb1c6a2761334cb8586e",
+      "bytes": 3061
+    },
+    "fig/si_orbit_tbp.tex": {
+      "sha256": "448812f81466b400832aa121263cbab46eedd4c139800f4fb3d6e2de9c906c18",
+      "bytes": 1048
+    },
+    "fig/support_motivation.tex": {
+      "sha256": "eeddfcf9cdcf2b5e67e1833b3a2985efa36009fb1daa2f9849cebcdcdd1d20f1",
+      "bytes": 15525
+    },
+    "fig/thesis_figure_style.tex": {
+      "sha256": "2ae413ca35838aad5c4a69b75d3dd3ca510a75a5395194e55662bbc1693e884d",
+      "bytes": 10329
+    },
+    "fig/thesis_tokens.tex": {
+      "sha256": "f3ab179986e9008f5cb3ea563d8aec672b98a671e2487cfc11c22b3bf756d8e4",
+      "bytes": 1774
+    },
+    "manuscript.aux": {
+      "sha256": "889f96f19ff14ea43e9e81cd7b13c2136b209fc1346525a9119078fb85cdd999",
+      "bytes": 37760
+    },
+    "manuscript.bbl": {
+      "sha256": "17b2fde35a7ad609886d4842102c2ad11102938f5afde534ec32ffa705bbcbe1",
+      "bytes": 12982
+    },
+    "manuscript.tex": {
+      "sha256": "18cc6e54c93d122f9b29ae70112e71ea2c7ce72e8e5c12c00f1c7f3835b858a1",
+      "bytes": 119163
+    },
+    "references.bib": {
+      "sha256": "89bd3ee49d2175bee92bddc03bbf08333bed6d73a51ce8bde1ebafae28d48fd2",
+      "bytes": 27111
+    },
+    "results/numerical_values.tex": {
+      "sha256": "8ede92456ecd201eed15ccf706f440b0d6a8b986ececa585eecaaab274df3700",
+      "bytes": 11805
+    },
+    "sn-jnl.cls": {
+      "sha256": "43259eaff83d046b8529e71d54c318f600bdb9cc2b2430af1af2951d2b938819",
+      "bytes": 55264
+    },
+    "sn-mathphys-num.bst": {
+      "sha256": "7862cd0165dd22188579e42e88a3512846821bec7ef1eeb6e14e16380d502bf9",
+      "bytes": 63289
+    },
+    "supporting_information.aux": {
+      "sha256": "2adc913932a0a74ad5d51d9990bd5fd7b8d27b7e85013e44eef214a621118dc4",
+      "bytes": 31317
+    },
+    "supporting_information.bbl": {
+      "sha256": "33a7b55ae160ac41a71782b706eefcb159aebabdebb162b1b3488cba543cbcd2",
+      "bytes": 3849
+    },
+    "supporting_information.tex": {
+      "sha256": "56453297ed0b028e3eef233821159f6781e73c7f0efa86e3912de8070befbaa0",
+      "bytes": 59264
+    },
+    "technical_details.tex": {
+      "sha256": "433d90a8fbf9fdbedc2e870dbc6e59ae5b9eb202e33947d4b1e0ec74e3618127",
+      "bytes": 51977
+    }
+  },
+  "figure_source_inventory": {
+    "Figure_01.tex": {
+      "sha256": "e9e9f5f9c32248948642ddd3566d790924a374e170fda9c076ed56f2d6abd1f7",
+      "bytes": 3188
+    },
+    "Figure_02.tex": {
+      "sha256": "a4bf636ddbd2ad2576cde72132725c5730fa7f6bfa9ab763358fa3db609e134c",
+      "bytes": 3190
+    },
+    "Figure_03.tex": {
+      "sha256": "994a94a827d5597fef9e980a64cc4ca73ca5b753845c4061619167919ff9b3b4",
+      "bytes": 3180
+    },
+    "Figure_04.tex": {
+      "sha256": "b12cb1e04532151c7c1266650ca5e4342a58591fd77b505a0a2cb38b33bfc8ff",
+      "bytes": 3194
+    },
+    "Figure_05.tex": {
+      "sha256": "e89d993a023fba94db2e4529e0709d42e82270634942fa6bdd6908d360f46447",
+      "bytes": 3194
+    },
+    "Figure_06.tex": {
+      "sha256": "5eecdea5395a6a38ea1122dc6858e784dacefee73b0d69884010a32bc291821f",
+      "bytes": 3196
+    },
+    "Figure_07.tex": {
+      "sha256": "143acdda5612d984b0d9113cb98beb98378cd0c437949105f5f5fb3b4802df8c",
+      "bytes": 3207
+    },
+    "Figure_08.tex": {
+      "sha256": "46edcd004c620edde38cc72962612e40f040aea0924897c5a47ab92dd0f9bf73",
+      "bytes": 3198
+    },
+    "Figure_09.tex": {
+      "sha256": "fc30c8ce291605a32952c82b21989fedaaa38f4f2950c924efb278c7f6f503fd",
+      "bytes": 3192
+    },
+    "Figure_10.tex": {
+      "sha256": "fbb07f48a42771c608317b51daa2ff82873f7fd797f9dfded6a7958ffd4ddbe5",
+      "bytes": 3196
+    },
+    "Figure_11.tex": {
+      "sha256": "ae90ae67efc86db037e4d21584578b448d7f9268901adc696da388ffa71f1a52",
+      "bytes": 3191
+    },
+    "fig/ball_permutation.tex": {
+      "sha256": "10ef8a38bb77a59e6119cd8b854a87ac308543c861d467c8ca7e029641b0121d",
+      "bytes": 6172
+    },
+    "fig/benchmark_evidence_map.tex": {
+      "sha256": "53887916a79c97178eff5c64f6c06f643ff24168d9a3950d69a2dfd46eac66cf",
+      "bytes": 4791
+    },
+    "fig/concept_style.tex": {
+      "sha256": "34ac84c1ae9febe78000a29a1a6745806a3672ce566fb642ff100a252e7b13c0",
+      "bytes": 5651
+    },
+    "fig/controlled_stereo_costs.pdf": {
+      "sha256": "2156965c9a470ffdd8a8b9a8a17cb78bee72289ddc6eff270ecf2f4cf47a28ca",
+      "bytes": 25726
+    },
+    "fig/curated_stereo_registration.pdf": {
+      "sha256": "180bcd25f78552e04faf8f555c13ad316294377cc93e5a30968002b2fb18d91b",
+      "bytes": 19904
+    },
+    "fig/exact_mirror_mismatches.tex": {
+      "sha256": "404b943ca04d87fa75f90788445cc897f8abe7b66cd64bdbd931b48f04716b70",
+      "bytes": 2128
+    },
+    "fig/exact_mirror_vs170.pdf": {
+      "sha256": "0e1b23e40d6b5e3a9fd55c6f2a478a7612b24da0e56f9d2930002f4474b42fdd",
+      "bytes": 4682
+    },
+    "fig/exact_mirror_vs300.pdf": {
+      "sha256": "7dd9c5e21365238c97a0c3bbabefa0ec18f1f1386101b2fa26f07a46e15f1212",
+      "bytes": 5286
+    },
+    "fig/incomplete_completions.tex": {
+      "sha256": "64b34f1a88bfa20c8295a203b656f2854fe012d44a34a980052cdedba337416f",
+      "bytes": 3113
+    },
+    "fig/invariant_vs_certificate.tex": {
+      "sha256": "aa374d6eb77e4b6ce26de5845bfcf1cb0e71cf3750c1f0929c1da6fa24ac4cad",
+      "bytes": 1812
+    },
+    "fig/mirror_canonical_examples.tex": {
+      "sha256": "d430fea52ba03f830ddbbf6be42fc0e92069bec94f367da45cb762035ae2b025",
+      "bytes": 8603
+    },
+    "fig/pipeline.tex": {
+      "sha256": "83811df2b7c546ce8ceb3dd22f7b77bf703237f03b8590ab62dc3f272eabec44",
+      "bytes": 4071
+    },
+    "fig/quotient_hierarchy.tex": {
+      "sha256": "6a5af44c77e1496ee375b67cee81cb94288d80857bef1ca646313570e7a08921",
+      "bytes": 2730
+    },
+    "fig/support_motivation.tex": {
+      "sha256": "eeddfcf9cdcf2b5e67e1833b3a2985efa36009fb1daa2f9849cebcdcdd1d20f1",
+      "bytes": 15525
+    },
+    "fig/thesis_figure_style.tex": {
+      "sha256": "2ae413ca35838aad5c4a69b75d3dd3ca510a75a5395194e55662bbc1693e884d",
+      "bytes": 10329
+    },
+    "fig/thesis_tokens.tex": {
+      "sha256": "f3ab179986e9008f5cb3ea563d8aec672b98a671e2487cfc11c22b3bf756d8e4",
+      "bytes": 1774
+    },
+    "results/numerical_values.tex": {
+      "sha256": "8ede92456ecd201eed15ccf706f440b0d6a8b986ececa585eecaaab274df3700",
+      "bytes": 11805
+    },
+    "sn-jnl.cls": {
+      "sha256": "43259eaff83d046b8529e71d54c318f600bdb9cc2b2430af1af2951d2b938819",
+      "bytes": 55264
+    }
+  },
+  "figures": [
+    {
+      "figure_number": 1,
+      "label": "fig:ball-permutation",
+      "file": "Figure_01.pdf",
+      "sha256": "8af3b7c558ccf8421fdc0cb6a724a8cc82db802b65f56ae236a38b0621e85896",
+      "bytes": 135615,
+      "pages": 1,
+      "title_tex": "Even and odd alignments of one ordered four-ligand frame.",
+      "legend_tex": "Colored numbered balls identify ligand references, the gray digit beside each position identifies the frame slot, and the strip below each center repeats the same state as the ordered tuple read in slot order. All four centers share one fixed geometric frame. It contains two in-plane bonds, a bold wedge at slot 3 toward the viewer, and a hashed bond at slot 4 away from it. Only the assignment of ligands to slots changes. (A) The even 3-cycle \\(\\epsilon=(1\\;2\\;3)\\in A_4=\\Gamma_{\\mathrm{tet}}\\) sends \\(u=(1,2,3,4)\\) to \\((2,3,1,4)\\). Green marks a configuration-preserving action, a rigid rotation of the same local state. (B) The odd transposition \\(\\rho=(1\\;2)\\notin A_4\\) sends \\(u\\) to \\((2,1,3,4)\\). Blue marks the opposite orbit and uses the same verdict colors as Figure~\\ref{fig:orbit-examples}. The ledger states the coset decomposition \\(S_4=A_4\\sqcup\\rho A_4\\) behind Proposition~\\ref{prop:local-parity}: four distinct references admit 24 ordered frames that split \\(12+12\\) into two mirror-image configuration orbits.",
+      "title_words": 9,
+      "conservative_legend_words": 180,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "468 x 187 pts",
+      "preview": "previews/Figure_01.png"
+    },
+    {
+      "figure_number": 2,
+      "label": "fig:support-motivation",
+      "file": "Figure_02.pdf",
+      "sha256": "e4568217e9190b1b84262d29d9dc46adbece17114171dd66a12d60930fe2441d",
+      "bytes": 144781,
+      "pages": 1,
+      "title_tex": "Typed supports for configured stereochemical elements.",
+      "legend_tex": "The support of a stereo element is a subgraph of prescribed shape, and the six families differ in that shape rather than in their algebra. Each header states the support type together with the arity and geometry group where the family uses a finite frame. Vermilion marks the carrier, blue marks the orientation datum, and green distinguishes the second terminal plane in panel C. (A) An atom support is one vertex; the two tetrahedral states share a single constitution and are exchanged by the mirror \\(\\sigma\\). (B) A bond support is one edge carrying two terminal pairs. (C) An axis support is a cumulated path whose termini lie in orthogonal planes, shown here in projection along the axis. (D) A path support is an ordered vertex sequence taken modulo canonical reversal; helicity is the sense of the rise \\(h\\). (E) A plane support is an oriented face whose off-plane pilot \\(p\\) fixes the sense of the normal \\(\\hat n\\). (F) A global support couples frames over a whole component; its joint configuration is retained explicitly. The footer ramp orders the six carriers by spatial extent and defines no inheritance between them. Molecular chirality, including a \\emph{meso} verdict, is a downstream whole-stereograph classification rather than a seventh carrier family.",
+      "title_words": 6,
+      "conservative_legend_words": 209,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "481 x 310 pts",
+      "preview": "previews/Figure_02.png"
+    },
+    {
+      "figure_number": 3,
+      "label": "fig:pipeline",
+      "file": "Figure_03.pdf",
+      "sha256": "29222db909a816e59a47a88dd10201df8c9aae88de90bdbfbcf16e57a4a38842",
+      "bytes": 114525,
+      "pages": 1,
+      "title_tex": "One-way, fail-closed information flow, written as typed objects and the maps between them.",
+      "legend_tex": "Stage~1 is configuration-neutral perception and returns potential carriers with configuration \\(\\bot\\). Only authorized evidence \\(\\operatorname{Auth}\\) may apply the attachment map \\(\\operatorname{att}\\) of Definition~\\ref{def:attachment}, which produces the configured stereograph \\(\\mathcal X\\). The declared support boundary \\(B\\) is audited before the expansion \\(\\Phi_\\chi\\) and the exact certificate \\(C^\\chi_{\\mathrm{SG}}\\); a failed audit refuses instead of returning a partial identity. The mirror map \\(\\mu\\) compares the certificate of \\(\\mathcal X\\) with that of its mirror image \\(\\overline{\\mathcal X}\\) and returns one or two classes. Derived CIP naming is an optional consumer. The footer states the two structural invariants: absent, configured, and molecularly chiral are three distinct predicates, and no downstream stage feeds information back into stages 1--3.",
+      "title_words": 13,
+      "conservative_legend_words": 125,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "478 x 148 pts",
+      "preview": "previews/Figure_03.png"
+    },
+    {
+      "figure_number": 4,
+      "label": "fig:incomplete-completions",
+      "file": "Figure_04.pdf",
+      "sha256": "b30fac51ac6ad830d1c0157353118baaf4c98ccc92d878901c22533bd8c6f059",
+      "bytes": 117887,
+      "pages": 1,
+      "title_tex": "Incomplete configuration permits both achiral and chiral completions.",
+      "legend_tex": "(A) A partially configured 2,3-dichlorobutane fixes the upper center and leaves the lower required center unresolved. (B,C) Completing the lower center yields a meso configuration or a chiral configuration. The drawings use Fischer projections: horizontal bonds point towards the viewer and vertical bonds away; dashed lower arms in (A) indicate missing configuration, not a geometric assignment. The strict input therefore returns incomplete. A source-declared assessment concerns only its represented registry; a completion-population assessment quantifies over the admitted completions. These are different questions under the same declared identity profile.",
+      "title_words": 8,
+      "conservative_legend_words": 90,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "481 x 190 pts",
+      "preview": "previews/Figure_04.png"
+    },
+    {
+      "figure_number": 5,
+      "label": "fig:quotient-hierarchy",
+      "file": "Figure_05.pdf",
+      "sha256": "7405038f9d140ccd7a6e1ff663dd11225112d25345b456410f20fd6c7782a302",
+      "bytes": 110792,
+      "pages": 1,
+      "title_tex": "The two-stage quotient used in theory and validation.",
+      "legend_tex": "Budgets A and B exhaust the displayed raw products. Formal C exhausts all nine C cases; the raw C result is deliberately labelled as the complete VS146 slice rather than as the infeasible full C product. Every reported raw encoding maps to its formal tuple and then to the same exact global class.",
+      "title_words": 8,
+      "conservative_legend_words": 53,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "472 x 176 pts",
+      "preview": "previews/Figure_05.png"
+    },
+    {
+      "figure_number": 6,
+      "label": "fig:invariant-versus-certificate",
+      "file": "Figure_06.pdf",
+      "sha256": "3673265b5d194588235c0e045e2ab74947c0ea2d9800cf2485ebe5585905b927",
+      "bytes": 115221,
+      "pages": 1,
+      "title_tex": "Renumbering invariance and exact identity have different obligations.",
+      "legend_tex": "The first two colored graphs are isomorphic under the displayed renumbering. The third has two connected components and is not isomorphic to them. All three have six identically colored vertices, degree two at each vertex, and identical edge colors, so the displayed vertex-count/degree invariant collides. A full canonical encoding identifies the renumbered pair and separates the nonisomorphic graph. Numbers are display identifiers, not vertex colors. The example concerns colored-graph identity rather than stereochemical perception. The independent assignment-partition checks require both invariance within reference classes and separation across them.",
+      "title_words": 8,
+      "conservative_legend_words": 88,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "481 x 178 pts",
+      "preview": "previews/Figure_06.png"
+    },
+    {
+      "figure_number": 7,
+      "label": "fig:mirror-canonical-examples",
+      "file": "Figure_07.pdf",
+      "sha256": "8d1417b53d4337b438cc4f4918d7aebef6fadafca4b170044bfaec131584d4e8",
+      "bytes": 118086,
+      "pages": 1,
+      "title_tex": "Whole-molecule mirror canonicalization in six real chemical cases.",
+      "legend_tex": "Each panel header gives the support and the improper index \\(\\left[\\widehat\\Gamma:\\Gamma\\right]\\) of Definition~\\ref{def:mirror-local}, which decides whether \\(\\mu\\) can move the local state at all; the verdict counts distinct certificates by Corollary~\\ref{cor:mirror}. Fischer projections place horizontal bonds toward the viewer and vertical bonds away. (A) \\(R/S\\)-bromochlorofluoromethane gives two certificates. (B) For \\emph{meso}-2,3-dibromobutane the index is two at both centers, yet the center-exchange automorphism \\(\\sigma\\) identifies the mirror and one certificate remains: compensation is a property of the global quotient, not of the local index. (C) The planar bond has index one, so spatial reflection preserves the \\(E\\) state of but-2-ene and does not manufacture \\(Z\\). (D) \\(P/M\\)-penta-2,3-diene, (E) \\(P/M\\)-[6]helicene, and (F) \\(pR/pS\\)-1-bromo-2-methylferrocene each retain two mirror-related certificates, the last two through the declared sense inversion of a path and of an oriented plane. One global comparison therefore covers atom, bond, axis, path, and plane carriers as well as meso compensation. Arbitrary atom renumberings within each stereograph have already been quotiented by canonicalization.",
+      "title_words": 8,
+      "conservative_legend_words": 180,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "472 x 318 pts",
+      "preview": "previews/Figure_07.png"
+    },
+    {
+      "figure_number": 8,
+      "label": "fig:benchmark-evidence-map",
+      "file": "Figure_08.pdf",
+      "sha256": "22b25ea5a4fe8e0564a212ff2faac4f4747cd615ca5d862bedb8e7ed9a13e2bd",
+      "bytes": 62797,
+      "pages": 1,
+      "title_tex": "Task-separated overview of the frozen benchmark evidence.",
+      "legend_tex": "Each tile carries one hero ratio, its own denominator, and its own truth contract: exact identity and relation laws (A), carrier perception (B), downstream CIP naming (C), and ACS whole-molecule chirality (D). Every meter is printed with its numeric rate, and each is read against its own tile only. Panel C reports \\(\\CipCoordinatesExactRecords/\\CipCoordinatesRecords\\) as exact-record accuracy, alongside label recall and precision. All 300 inputs have pinned coordinates; 187 is the number with an exactly correct predicted label set. The four tiles are reported side by side but are never pooled into one accuracy statistic.",
+      "title_words": 7,
+      "conservative_legend_words": 95,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": "98.06%",
+      "page_size": "460 x 257 pts",
+      "preview": "previews/Figure_08.png"
+    },
+    {
+      "figure_number": 9,
+      "label": "fig:controlled-costs",
+      "file": "Figure_09.pdf",
+      "sha256": "6d01947cb756f99ed82cef61bb7f535cc2b7c739e10f7cbc26bb16de5d658022",
+      "bytes": 25299,
+      "pages": 1,
+      "title_tex": "Controlled configured-graph costs.",
+      "legend_tex": "(A) Generator-mode search medians against expansion size for completed cases. (B) Variable-support expansion size. (C) Witness-output medians on inputs completed by both modes; the dashed line indicates equality. (D) All planned trial outcomes. Each input has three repetitions; the plot and timings do not treat censored trials as completed. Different completion sets preclude interpreting pooled mode medians as a matched speed comparison.",
+      "title_words": 3,
+      "conservative_legend_words": 62,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "470 x 378 pts",
+      "preview": "previews/Figure_09.png"
+    },
+    {
+      "figure_number": 10,
+      "label": "fig:registration-costs",
+      "file": "Figure_10.pdf",
+      "sha256": "b373641b6a71821b72c8c790a154e9b5f24216322a5bb36219f12b4d3ba187d1",
+      "bytes": 19511,
+      "pages": 1,
+      "title_tex": "Curated registration workload.",
+      "legend_tex": "(A) Total medians and individual repetitions for both pipelines. (B) Pairwise/certificate median ratio; values below one favour pairwise grouping. Both methods recover the independently specified groups, but certificate grouping is slower at every tested size.",
+      "title_words": 3,
+      "conservative_legend_words": 35,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "470 x 180 pts",
+      "preview": "previews/Figure_10.png"
+    },
+    {
+      "figure_number": 11,
+      "label": "fig:exact-mirror-mismatches",
+      "file": "Figure_11.pdf",
+      "sha256": "73551ed3e1d8023efc9780decced92bae7221697109d4997e1f72fdfd43cffa5",
+      "bytes": 67390,
+      "pages": 1,
+      "title_tex": "The two remaining declared task-boundary differences in the 258-record source-declared-configuration audit.",
+      "legend_tex": "Orange circles mark atoms carrying explicit source \\code{@}/\\code{@@} configurations; wedge/hash bonds show the corresponding local orientation. In A, chemical identity preserves the genuine \\(\\mathrm{S{-}I}/\\mathrm{S{\\equiv}I}\\) distinction and returns chiral, whereas the ACS connectivity-only profile returns achiral. In D, the exact mirror isomorphism fixes the central configured carbon and exchanges the two configured cages, so the represented local configurations compensate in a meso-like, mirror-fixed arrangement. This is not a general meso assignment: the historical source-declared protocol lacks the coupled relation. The separate global certificate encodes the topology-completion probes as one orientation-unspecified framework and proves the ACS chiral outcome without reinterpreting the three source tags.",
+      "title_words": 11,
+      "conservative_legend_words": 109,
+      "all_fonts_embedded": true,
+      "caption_removed_from_graphic": true,
+      "crop_margin_points": 1,
+      "rendered_acs_percentage_checked": null,
+      "page_size": "472 x 210 pts",
+      "preview": "previews/Figure_11.png"
+    }
+  ],
+  "submission_performed": false,
+  "boundary": "One local final package. Competing interests remain pending; author approval, public DOI and external journal submission are not asserted. Local TeX Live 2023 is tested; the publisher's TeX Live 2021 server is untested."
+}

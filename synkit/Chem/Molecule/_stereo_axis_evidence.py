@@ -157,9 +157,11 @@ def axis_terminal_symmetry_witnesses(
     """Return one exact symmetry witness for each terminal reference pair.
 
     Axis atoms are fixed in path order and one terminal ligand probe is mapped
-    to the other. A non-``None`` witness therefore proves that terminal frame
-    constitution cannot support a configured axis. This is a constitutional
-    result only; it says nothing about rotational barriers.
+    to the other. A non-``None`` witness proves terminal-reference equivalence
+    under that constitutional stabilizer. The same map can exchange the other
+    terminal pair as well, preserving a configured axial orientation. These
+    witnesses alone do not decide whole-configuration mirror equivalence or
+    rotational barriers.
     """
     return tuple(
         _axis_fixed_reference_symmetry_witness(

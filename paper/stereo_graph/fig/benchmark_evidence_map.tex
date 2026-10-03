@@ -1,0 +1,96 @@
+% Task-separated overview of the frozen stereo benchmark evidence.
+% Stat-tile grid: one hero ratio per task, each with its own denominator and
+% its own truth contract.  Rates are printed as numbers next to their meters,
+% so status colour is never the only carrier of the reading.
+% Tiles are 72mm x 34mm; every element is offset from the tile's north west.
+% Requires concept_style.tex; libraries arrows.meta, calc, backgrounds.
+\begin{tikzpicture}[
+  font=\small,
+  tile/.style={rounded corners=3pt, draw=black!18, fill=black!1,
+    line width=0.5pt, minimum width=72mm, minimum height=34mm,
+    align=left, inner sep=5pt},
+  heading/.style={font=\bfseries\footnotesize, text=black!85, anchor=west},
+  hero/.style={font=\bfseries\large, text=black!88, anchor=north west},
+  unit/.style={font=\scriptsize, text=black!55, anchor=north west},
+  body/.style={font=\scriptsize, text=black!62, align=left,
+    anchor=north west},
+  rate/.style={font=\scriptsize, text=black!70, anchor=west},
+  boundary/.style={rounded corners=5pt, fill=ioOrange!9,
+    draw=ioOrange!75!black, font=\scriptsize, text=black!72,
+    inner xsep=5pt, inner ysep=2.5pt},
+]
+
+% ---- meter: track + fill with rounded ends -------------------------------
+% #1 x  #2 y  #3 full width  #4 fraction in [0,1]  #5 fill colour
+\newcommand{\meter}[5]{%
+  \draw[rounded corners=0.9pt, fill=black!10, draw=none]
+    (#1,#2) rectangle ++(#3,0.13);
+  \draw[rounded corners=0.9pt, fill=#5, draw=none]
+    (#1,#2) rectangle ++({#3*#4},0.13);}
+
+% =========================== A: identity ==================================
+\node[tile] (canon) at (-3.90,1.95) {};
+\node[iocbadge] at ($(canon.north west)+(0.34,-0.34)$) {A};
+\node[heading]  at ($(canon.north west)+(0.62,-0.34)$)
+  {Exact identity and relations};
+\node[hero] at ($(canon.north west)+(0.32,-0.78)$) {\LocalAllRaw\,/\,\LocalAllRaw};
+\node[unit] at ($(canon.north west)+(0.34,-1.34)$)
+  {local representations; 0 failures, 0 timeouts};
+\node[body] at ($(canon.north west)+(0.34,-1.70)$)
+  {\LocalAllCarriers{} configuration-free carriers\\
+   \FormalAllAssignments{} formal global assignments\\
+   9/9 relations; 888/888 public relabelings};
+\meter{-7.16}{0.60}{5.55}{1.0}{ioGreen!70!black}
+\node[rate] at (-1.46,0.665) {100\%};
+
+% =========================== B: perception ================================
+\node[tile] (perc) at (3.90,1.95) {};
+\node[iocbadge] at ($(perc.north west)+(0.34,-0.34)$) {B};
+\node[heading]  at ($(perc.north west)+(0.62,-0.34)$)
+  {Configuration-neutral perception};
+\node[hero] at ($(perc.north west)+(0.32,-0.78)$) {1,208\,/\,1,208};
+\node[unit] at ($(perc.north west)+(0.34,-1.34)$)
+  {reverse-renumbered records invariant};
+\node[body] at ($(perc.north west)+(0.34,-1.70)$)
+  {both retained settings agree\\
+   ACS 1,007/1,007; CIP 1,252/1,252\\
+   RotA 698/698 loci; 15/15 cumulene paths};
+\meter{0.64}{0.60}{5.55}{1.0}{ioGreen!70!black}
+\node[rate] at (6.34,0.665) {100\%};
+
+% =========================== C: derived naming ============================
+\node[tile] (nam) at (-3.90,-2.15) {};
+\node[iocbadge] at ($(nam.north west)+(0.34,-0.34)$) {C};
+\node[heading]  at ($(nam.north west)+(0.62,-0.34)$)
+  {Downstream CIP naming};
+\node[hero] at ($(nam.north west)+(0.32,-0.78)$)
+  {\CipCoordinatesCorrectLabels\,/\,\CipCoordinatesExpectedLabels};
+\node[unit] at ($(nam.north west)+(0.34,-1.34)$)
+  {labels recovered, \CipCoordinatesEmittedLabels{} emitted};
+\node[body] at ($(nam.north west)+(0.34,-1.70)$)
+  {exact records: \CipCoordinatesExactRecords/\CipCoordinatesRecords\\
+   all inputs have pinned coordinates};
+\meter{-7.16}{-3.07}{2.30}{0.7396}{ioOrange!78!black}
+\node[rate] at (-4.72,-3.005) {recall 73.96\%};
+\meter{-7.16}{-3.45}{2.30}{0.9883}{ioGreen!70!black}
+\node[rate] at (-4.72,-3.385) {precision 98.83\%};
+
+% =========================== D: chirality =================================
+\node[tile] (chi) at (3.90,-2.15) {};
+\node[iocbadge] at ($(chi.north west)+(0.34,-0.34)$) {D};
+\node[heading]  at ($(chi.north west)+(0.62,-0.34)$)
+  {Whole-molecule chirality (ACS)};
+\node[hero] at ($(chi.north west)+(0.32,-0.78)$) {\AcsSourceCorrect\,/\,\AcsSourceRecords};
+\node[unit] at ($(chi.north west)+(0.34,-1.34)$)
+  {supplied-stereograph agreement};
+\node[body] at ($(chi.north west)+(0.34,-1.70)$)
+  {\AcsSourceDefinitive/\AcsSourceRecords{} definitive at 5\,s\\
+   \AcsGlobalCorrect/\AcsSourceRecords{} exact + global at 30\,s};
+\meter{0.64}{-3.45}{5.55}{\AcsSourceCorrect/\AcsSourceRecords}{ioGreen!70!black}
+\pgfmathsetmacro{\AcsAgreementPercentage}{100*(\AcsSourceCorrect/\AcsSourceRecords)}
+\node[rate] at (6.34,-3.385)
+  {\pgfmathprintnumber[fixed,precision=2]{\AcsAgreementPercentage}\%};
+
+\node[boundary] at (0,-4.45)
+  {Separate denominators and truth contracts; no pooled ``stereo accuracy.''};
+\end{tikzpicture}

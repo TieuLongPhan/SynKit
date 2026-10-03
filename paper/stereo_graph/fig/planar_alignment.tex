@@ -1,0 +1,248 @@
+% fig/planar_descriptors.tex
+% Input-only TikZ file.  2x2 alignment panels for the planar-bond frame group
+% Gamma_pb = {id, (1 2)(5 6), (1 6)(2 5)(3 4), (1 5)(2 6)(3 4)} ~ V_4.
+%   A  but-2-ene,   whole-bond flip (1 6)(2 5)(3 4)  in Gamma  -> preserved
+%   B  but-2-ene,   single-end swap (5 6)            not in    -> rejected
+%   C  benzaldoxime, two-end swap  (1 2)(5 6)        in Gamma  -> preserved
+%   D  benzaldoxime, single-end swap (5 6): O<->LP   not in    -> rejected
+% Slots: (1,2) first-end substituents, (3,4) bond ends, (5,6) second-end.
+% @H:1 and @LP:2 (green) are the implicit-H and lone-pair virtual references.
+% Requires concept_style.tex (ioBlue, ioGreen, ioVermilion).  Libraries: calc, backgrounds.
+\begin{tikzpicture}[
+  font=\small,
+  bond/.style={line width=0.9pt},
+  dbond/.style={line width=0.9pt,double distance=1.1pt},
+  atom/.style={font=\normalsize},
+  satom/.style={font=\normalsize\bfseries,text=ioBlue!62!black},
+  natom/.style={font=\normalsize\bfseries,text=ioBlue!62!black},
+  lab/.style={font=\scriptsize,align=center},
+  slot/.style={draw,rounded corners=1pt,fill=white,minimum width=9.4mm,
+               minimum height=4.2mm,inner sep=1pt,font=\scriptsize},
+  slotlp/.style={draw=ioGreen!60!black,rounded corners=1pt,fill=ioGreen!12,
+                 minimum width=9.4mm,minimum height=4.2mm,inner sep=1pt,font=\scriptsize},
+  idx/.style={font=\tiny,text=gray},
+  slotidx/.style={circle,draw=gray,text=gray,inner sep=0.4pt,minimum size=2.5mm,
+                  font=\tiny,fill=white},
+  lp/.style={circle,fill=ioBlue,inner sep=0.7pt},
+  lporb/.style={draw=ioGreen!60!black,fill=ioGreen!16,line width=0.5pt},
+  aligngood/.style={->,>=stealth,line width=0.75pt,ioGreen!60!black},
+  alignbad/.style={->,>=stealth,line width=0.75pt,ioVermilion!88!black},
+  goodbox/.style={draw=ioGreen!60!black,fill=ioGreen!12,rounded corners=2pt,
+                  align=center,inner sep=2.6pt,font=\scriptsize},
+  badbox/.style={draw=ioVermilion!88!black,fill=ioVermilion!6,rounded corners=2pt,
+                 align=center,inner sep=2.6pt,font=\scriptsize},
+  card/.style={rounded corners=6pt, draw=black!16, fill=black!2, line width=0.5pt},
+  pbadge/.style={circle, fill=black!82, text=white, font=\footnotesize\bfseries,
+                 inner sep=0pt, minimum size=5.2mm},
+  phdr/.style={font=\bfseries\footnotesize, text=black!82, anchor=west},
+  ftitle/.style={font=\bfseries\normalsize, align=center},
+  fnote/.style={rounded corners=3pt, draw=black!25, fill=black!3, align=left,
+                font=\scriptsize, inner sep=6pt, text width=158mm}
+]
+
+% ---- molecule macros (drawn at local origin; scale via enclosing scope) -----
+% but-2-ene: #1..#4 = UL,DL,UR,DR labels ; #5 = 1 to draw slot circles
+\newcommand{\butmol}[5]{%
+  \draw[dbond] (0.18,0)--(0.87,0);
+  \draw[bond] (0,0)--(-0.85,0.62); \draw[bond] (0,0)--(-0.85,-0.62);
+  \draw[bond] (1.05,0)--(1.9,0.62); \draw[bond] (1.05,0)--(1.9,-0.62);
+  \node[satom,fill=white,inner sep=1pt] at (0,0){C};
+  \node[satom,fill=white,inner sep=1pt] at (1.05,0){C};
+  \node[atom,fill=white,inner sep=1pt] at (-0.85,0.62){#1};
+  \node[atom,fill=white,inner sep=1pt] at (-0.85,-0.62){#2};
+  \node[atom,fill=white,inner sep=1pt] at (1.9,0.62){#3};
+  \node[atom,fill=white,inner sep=1pt] at (1.9,-0.62){#4};
+  \ifnum#5=1
+    \node[slotidx] at (-0.58,0.46){1}; \node[slotidx] at (-0.58,-0.46){2};
+    \node[slotidx] at (0.20,0.30){3};  \node[slotidx] at (0.86,0.30){4};
+    \node[slotidx] at (1.63,0.46){5};  \node[slotidx] at (1.63,-0.46){6};
+  \fi}
+% benzaldoxime: #1,#2 = UL,DL labels ; #3 = 1 if OH up-right / 0 if down-right ;
+% #4 = 1 to draw slot circles.  Lone pair sits opposite OH on the N end.
+\newcommand{\oxmol}[4]{%
+  \draw[dbond] (0.20,0)--(0.93,0);
+  \draw[bond] (0,0)--(-0.85,0.65); \draw[bond] (0,0)--(-0.85,-0.65);
+  \node[satom,fill=white,inner sep=1pt] at (0,0){C};
+  \node[natom,fill=white,inner sep=1pt] at (1.15,0){N};
+  \node[atom,fill=white,inner sep=1pt] at (-0.85,0.65){#1};
+  \node[atom,fill=white,inner sep=1pt] at (-0.85,-0.65){#2};
+  \ifnum#3=1
+    \draw[bond] (1.15,0)--(2.0,0.65);
+    \node[atom,fill=white,inner sep=1pt] at (2.0,0.65){OH};
+    \draw[lporb,rotate around={-35:(1.72,-0.60)}] (1.72,-0.60) ellipse[x radius=0.27,y radius=0.155];
+    \node[lp] at (1.63,-0.52){}; \node[lp] at (1.81,-0.67){};
+  \else
+    \draw[bond] (1.15,0)--(2.0,-0.65);
+    \node[atom,fill=white,inner sep=1pt] at (2.0,-0.65){OH};
+    \draw[lporb,rotate around={35:(1.72,0.60)}] (1.72,0.60) ellipse[x radius=0.27,y radius=0.155];
+    \node[lp] at (1.63,0.52){}; \node[lp] at (1.81,0.67){};
+  \fi
+  \ifnum#4=1
+    \node[slotidx] at (-0.55,0.46){1}; \node[slotidx] at (-0.55,-0.46){2};
+    \node[slotidx] at (0.30,0.28){3};  \node[slotidx] at (0.86,0.28){4};
+    \node[slotidx] at (1.50,-0.44){5}; \node[slotidx] at (1.50,0.44){6};
+  \fi}
+
+\node[font=\footnotesize, align=center, text=black!80] at (7.55,3.05)
+  {$\Gamma_{\mathrm{pb}}=\{\mathrm{id},\,(1\,2)(5\,6),\,(1\,6)(2\,5)(3\,4),\,
+    (1\,5)(2\,6)(3\,4)\}\cong V_4\leq\Sigma_{\mathrm{pb}},
+    \qquad [\Sigma_{\mathrm{pb}}:\Gamma_{\mathrm{pb}}]=2$};
+
+% =====================================================================
+% Panel A : but-2-ene, whole-bond flip -> preserved
+% =====================================================================
+\begin{scope}[shift={(0,0)}, local bounding box=bbA]
+  \begin{scope}[shift={(0,0)},scale=0.78,transform shape] \butmol{$\mathrm{CH_3}$}{H}{H}{$\mathrm{CH_3}$}{1} \end{scope}
+  \node[lab] at (0.4,-0.92) {($E$)};
+  \begin{scope}[shift={(2.20,0)}]
+    \node[slot] (La1) at (0,1.20)  {$\mathrm{CH_3^{(1)}}$};
+    \node[slot] (La2) at (0,0.72)  {$\mathrm{H^{(2)}}$};
+    \node[slot] (La3) at (0,0.24)  {$\mathrm{C^{(2)}}$};
+    \node[slot] (La4) at (0,-0.24) {$\mathrm{C^{(3)}}$};
+    \node[slot] (La5) at (0,-0.72) {$\mathrm{H^{(3)}}$};
+    \node[slot] (La6) at (0,-1.20) {$\mathrm{CH_3^{(4)}}$};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (-0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u$};
+  \end{scope}
+  \begin{scope}[shift={(4.55,0)}]
+    \node[slot] (Ra1) at (0,1.20)  {$\mathrm{CH_3^{(4)}}$};
+    \node[slot] (Ra2) at (0,0.72)  {$\mathrm{H^{(3)}}$};
+    \node[slot] (Ra3) at (0,0.24)  {$\mathrm{C^{(3)}}$};
+    \node[slot] (Ra4) at (0,-0.24) {$\mathrm{C^{(2)}}$};
+    \node[slot] (Ra5) at (0,-0.72) {$\mathrm{H^{(2)}}$};
+    \node[slot] (Ra6) at (0,-1.20) {$\mathrm{CH_3^{(1)}}$};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u'$};
+  \end{scope}
+  \begin{scope}[shift={(6.05,0)},scale=0.78,transform shape] \butmol{$\mathrm{CH_3}$}{H}{H}{$\mathrm{CH_3}$}{0} \end{scope}
+  \node[lab] at (6.45,-0.92) {($E$)};
+  \foreach \a/\b in {1/6,2/5,3/4,4/3,5/2,6/1}
+    \draw[aligngood,shorten <=1.5pt,shorten >=1.5pt] (La\a.east) -- (Ra\b.west);
+  \node[goodbox] at (3.375,-2.02)
+    {$\pi{=}(1\,6)(2\,5)(3\,4)\in\Gamma_{\mathrm{pb}}$ \;\checkmark\;
+     $[u']{=}[u]$};
+\end{scope}
+
+% =====================================================================
+% Panel B : but-2-ene, single-end swap -> rejected
+% =====================================================================
+\begin{scope}[shift={(8.95,0)}, local bounding box=bbB]
+  \begin{scope}[shift={(0,0)},scale=0.78,transform shape] \butmol{$\mathrm{CH_3}$}{H}{H}{$\mathrm{CH_3}$}{1} \end{scope}
+  \node[lab] at (0.4,-0.92) {($E$)};
+  \begin{scope}[shift={(2.20,0)}]
+    \node[slot] (Lb1) at (0,1.20)  {$\mathrm{CH_3^{(1)}}$};
+    \node[slot] (Lb2) at (0,0.72)  {$\mathrm{H^{(2)}}$};
+    \node[slot] (Lb3) at (0,0.24)  {$\mathrm{C^{(2)}}$};
+    \node[slot] (Lb4) at (0,-0.24) {$\mathrm{C^{(3)}}$};
+    \node[slot] (Lb5) at (0,-0.72) {$\mathrm{H^{(3)}}$};
+    \node[slot] (Lb6) at (0,-1.20) {$\mathrm{CH_3^{(4)}}$};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (-0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u$};
+  \end{scope}
+  \begin{scope}[shift={(4.55,0)}]
+    \node[slot] (Rb1) at (0,1.20)  {$\mathrm{CH_3^{(1)}}$};
+    \node[slot] (Rb2) at (0,0.72)  {$\mathrm{H^{(2)}}$};
+    \node[slot] (Rb3) at (0,0.24)  {$\mathrm{C^{(2)}}$};
+    \node[slot] (Rb4) at (0,-0.24) {$\mathrm{C^{(3)}}$};
+    \node[slot] (Rb5) at (0,-0.72) {$\mathrm{CH_3^{(4)}}$};
+    \node[slot] (Rb6) at (0,-1.20) {$\mathrm{H^{(3)}}$};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u'$};
+  \end{scope}
+  \begin{scope}[shift={(6.05,0)},scale=0.78,transform shape] \butmol{$\mathrm{CH_3}$}{H}{$\mathrm{CH_3}$}{H}{0} \end{scope}
+  \node[lab] at (6.45,-0.92) {($Z$)};
+  \foreach \a/\b in {1/1,2/2,3/3,4/4,5/6,6/5}
+    \draw[alignbad,shorten <=1.5pt,shorten >=1.5pt] (Lb\a.east) -- (Rb\b.west);
+  \node[badbox] at (3.375,-2.02)
+    {$\pi{=}(5\,6)\notin\Gamma_{\mathrm{pb}}$ \;$\times$\;
+     $[u']{=}\operatorname{opp}[u]$};
+\end{scope}
+
+% =====================================================================
+% Panel C : benzaldoxime, two-end swap -> preserved
+% =====================================================================
+\begin{scope}[shift={(0,-5.45)}, local bounding box=bbC]
+  \begin{scope}[shift={(0,0)},scale=0.78,transform shape] \oxmol{Ph}{H}{0}{1} \end{scope}
+  \node[lab] at (0.45,-0.95) {($E$)};
+  \begin{scope}[shift={(2.20,0)}]
+    \node[slot]   (Lc1) at (0,1.20)  {Ph};
+    \node[slotlp] (Lc2) at (0,0.72)  {@H:1};
+    \node[slot]   (Lc3) at (0,0.24)  {C};
+    \node[slot]   (Lc4) at (0,-0.24) {N};
+    \node[slot]   (Lc5) at (0,-0.72) {O};
+    \node[slotlp] (Lc6) at (0,-1.20) {@LP:2};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (-0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u$};
+  \end{scope}
+  \begin{scope}[shift={(4.55,0)}]
+    \node[slotlp] (Rc1) at (0,1.20)  {@H:1};
+    \node[slot]   (Rc2) at (0,0.72)  {Ph};
+    \node[slot]   (Rc3) at (0,0.24)  {C};
+    \node[slot]   (Rc4) at (0,-0.24) {N};
+    \node[slotlp] (Rc5) at (0,-0.72) {@LP:2};
+    \node[slot]   (Rc6) at (0,-1.20) {O};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u'$};
+  \end{scope}
+  \begin{scope}[shift={(6.05,0)},scale=0.78,transform shape] \oxmol{H}{Ph}{1}{0} \end{scope}
+  \node[lab] at (6.50,-0.95) {($E$)};
+  \foreach \a/\b in {1/2,2/1,3/3,4/4,5/6,6/5}
+    \draw[aligngood,shorten <=1.5pt,shorten >=1.5pt] (Lc\a.east) -- (Rc\b.west);
+  \node[goodbox] at (3.375,-2.02)
+    {$\pi{=}(1\,2)(5\,6)\in\Gamma_{\mathrm{pb}}$ \;\checkmark\;
+     $[u']{=}[u]$};
+\end{scope}
+
+% =====================================================================
+% Panel D : benzaldoxime, single-end swap (O<->@LP:2) -> rejected
+% =====================================================================
+\begin{scope}[shift={(8.95,-5.45)}, local bounding box=bbD]
+  \begin{scope}[shift={(0,0)},scale=0.78,transform shape] \oxmol{Ph}{H}{0}{1} \end{scope}
+  \node[lab] at (0.45,-0.95) {($E$)};
+  \begin{scope}[shift={(2.20,0)}]
+    \node[slot]   (Ld1) at (0,1.20)  {Ph};
+    \node[slotlp] (Ld2) at (0,0.72)  {@H:1};
+    \node[slot]   (Ld3) at (0,0.24)  {C};
+    \node[slot]   (Ld4) at (0,-0.24) {N};
+    \node[slot]   (Ld5) at (0,-0.72) {O};
+    \node[slotlp] (Ld6) at (0,-1.20) {@LP:2};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (-0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u$};
+  \end{scope}
+  \begin{scope}[shift={(4.55,0)}]
+    \node[slot]   (Rd1) at (0,1.20)  {Ph};
+    \node[slotlp] (Rd2) at (0,0.72)  {@H:1};
+    \node[slot]   (Rd3) at (0,0.24)  {C};
+    \node[slot]   (Rd4) at (0,-0.24) {N};
+    \node[slotlp] (Rd5) at (0,-0.72) {@LP:2};
+    \node[slot]   (Rd6) at (0,-1.20) {O};
+    \foreach \i/\y in {1/1.20,2/0.72,3/0.24,4/-0.24,5/-0.72,6/-1.20} \node[idx] at (0.82,\y){\i};
+    \node[lab] at (0,-1.60) {$u'\;{=}\;(Z)$};
+  \end{scope}
+  \begin{scope}[shift={(6.05,0)},scale=0.78,transform shape] \oxmol{Ph}{H}{1}{0} \end{scope}
+  \node[lab] at (6.50,-0.95) {($Z$)};
+  \foreach \a/\b in {1/1,2/2,3/3,4/4,5/6,6/5}
+    \draw[alignbad,shorten <=1.5pt,shorten >=1.5pt] (Ld\a.east) -- (Rd\b.west);
+  \node[badbox] at (3.375,-2.02)
+    {$\pi{=}(5\,6)$: \texttt{O}$\leftrightarrow$\texttt{@LP:2}
+     $\notin\Gamma_{\mathrm{pb}}$ \;$\times$};
+\end{scope}
+
+
+% ---- badges + sub-headers ----
+\node[pbadge] at ([shift={(-0.02,0.28)}]bbA.north west) {A};
+\node[phdr]   at ([shift={(0.38,0.28)}]bbA.north west) {But-2-ene $\cdot$ whole-bond flip};
+\node[pbadge] at ([shift={(-0.02,0.28)}]bbB.north west) {B};
+\node[phdr]   at ([shift={(0.38,0.28)}]bbB.north west) {But-2-ene $\cdot$ single-end swap};
+\node[pbadge] at ([shift={(-0.02,0.28)}]bbC.north west) {C};
+\node[phdr]   at ([shift={(0.38,0.28)}]bbC.north west) {Benzaldoxime $\cdot$ two-end swap};
+\node[pbadge] at ([shift={(-0.02,0.28)}]bbD.north west) {D};
+\node[phdr]   at ([shift={(0.38,0.28)}]bbD.north west) {Benzaldoxime $\cdot$ single-end swap};
+
+% ---- panel cards ----
+\begin{pgfonlayer}{background}
+  \foreach \bb in {bbA,bbB,bbC,bbD}
+    \draw[card] ([shift={(-0.45,-0.45)}]\bb.south west) rectangle ([shift={(0.45,0.75)}]\bb.north east);
+\end{pgfonlayer}
+
+\end{tikzpicture}

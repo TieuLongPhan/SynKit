@@ -1,0 +1,926 @@
+{
+  "schema": "synkit.rdkit-representation-probe/1",
+  "provenance": {
+    "source_commit": "d8e308397f17332fddc13ff68756fa864422f8aa",
+    "working_tree_dirty": false,
+    "python": "3.12.12",
+    "rdkit": "2026.03.1",
+    "probe_source_sha256": "1834ed0df361a768dbbe813ca02c16f96984933cab1fd4e073221d95a1beecf7",
+    "input_sha256": "9b909788f47063a5ee5d413c93fe316fcd4c0e81be5498752b1a5ec29bfcdd6e",
+    "source_unchanged_during_run": true,
+    "inputs_unchanged_during_run": true
+  },
+  "primary_reference": {
+    "url": "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_03_1/Docs/Book/RDKit_Book.rst",
+    "release_tag": "Release_2026_03_1",
+    "sha256": "d2d7a27847a37f6fc85af65f8f51f596bc5625fe138041c8a26b46f8ee091a9d",
+    "section": "Support for non-tetrahedral atomic stereochemistry / SMILES notation",
+    "access_date": "2026-10-03"
+  },
+  "protocol": {
+    "canonical": true,
+    "isomericSmiles": true,
+    "removeHs": false,
+    "sanitize": true,
+    "allow_nontetrahedral_chirality": true,
+    "atom_orders": "all permutations for every numbered distinct-ligand state",
+    "naming_assessed": false,
+    "coordinate_interpretation_assessed": false,
+    "chemical_truth_assessed": false
+  },
+  "groups": [
+    {
+      "family": "square_planar",
+      "states": 3,
+      "records": [
+        {
+          "state": 1,
+          "input_smiles": "C[Pt@SP1](F)(Cl)[H]",
+          "canonical_smiles": "[H][Pt@SP1]([CH3])([F])[Cl]",
+          "atom_count": 5,
+          "atom_permutations_checked": 120,
+          "distinct_outputs_after_renumbering": [
+            "[H][Pt@SP1]([CH3])([F])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[H][Pt]([CH3])([F])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 2,
+          "input_smiles": "C[Pt@SP2](F)(Cl)[H]",
+          "canonical_smiles": "[H][Pt@SP3]([CH3])([F])[Cl]",
+          "atom_count": 5,
+          "atom_permutations_checked": 120,
+          "distinct_outputs_after_renumbering": [
+            "[H][Pt@SP3]([CH3])([F])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[H][Pt]([CH3])([F])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 3,
+          "input_smiles": "C[Pt@SP3](F)(Cl)[H]",
+          "canonical_smiles": "[H][Pt@SP2]([CH3])([F])[Cl]",
+          "atom_count": 5,
+          "atom_permutations_checked": 120,
+          "distinct_outputs_after_renumbering": [
+            "[H][Pt@SP2]([CH3])([F])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[H][Pt]([CH3])([F])[Cl]",
+          "discrepancy_examples": []
+        }
+      ],
+      "documented_encoding_outputs": [
+        "[H][Pt@SP1]([CH3])([F])[Cl]",
+        "[H][Pt@SP1]([CH3])([F])[Cl]",
+        "[H][Pt@SP1]([CH3])([F])[Cl]"
+      ],
+      "documented_equivalent_encodings_agree": true,
+      "distinct_configurations_retained": true,
+      "removing_stereo_collapses_configurations": true,
+      "passed": true
+    },
+    {
+      "family": "trigonal_bipyramidal",
+      "states": 20,
+      "records": [
+        {
+          "state": 1,
+          "input_smiles": "S[As@TB1](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB6](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB6](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 2,
+          "input_smiles": "S[As@TB2](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB5](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB5](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 3,
+          "input_smiles": "S[As@TB3](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB15](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB15](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 4,
+          "input_smiles": "S[As@TB4](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB20](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB20](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 5,
+          "input_smiles": "S[As@TB5](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB16](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB16](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 6,
+          "input_smiles": "S[As@TB6](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB19](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB19](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 7,
+          "input_smiles": "S[As@TB7](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB14](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB14](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 8,
+          "input_smiles": "S[As@TB8](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB13](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB13](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 9,
+          "input_smiles": "S[As@TB9](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB8](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB8](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 10,
+          "input_smiles": "S[As@TB10](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB9](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB9](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 11,
+          "input_smiles": "S[As@TB11](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB7](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB7](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 12,
+          "input_smiles": "S[As@TB12](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB11](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB11](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 13,
+          "input_smiles": "S[As@TB13](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB10](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB10](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 14,
+          "input_smiles": "S[As@TB14](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB12](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB12](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 15,
+          "input_smiles": "S[As@TB15](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB3](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB3](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 16,
+          "input_smiles": "S[As@TB16](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB18](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB18](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 17,
+          "input_smiles": "S[As@TB17](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB1](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB1](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 18,
+          "input_smiles": "S[As@TB18](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB2](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB2](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 19,
+          "input_smiles": "S[As@TB19](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB17](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB17](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 20,
+          "input_smiles": "S[As@TB20](F)(Cl)(Br)N",
+          "canonical_smiles": "N[As@TB4](F)(S)(Cl)Br",
+          "atom_count": 6,
+          "atom_permutations_checked": 720,
+          "distinct_outputs_after_renumbering": [
+            "N[As@TB4](F)(S)(Cl)Br"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "N[As](F)(S)(Cl)Br",
+          "discrepancy_examples": []
+        }
+      ],
+      "documented_encoding_outputs": [
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br",
+        "N[As@TB6](F)(S)(Cl)Br"
+      ],
+      "documented_equivalent_encodings_agree": true,
+      "distinct_configurations_retained": true,
+      "removing_stereo_collapses_configurations": true,
+      "passed": true
+    },
+    {
+      "family": "octahedral",
+      "states": 30,
+      "records": [
+        {
+          "state": 1,
+          "input_smiles": "O[Co@OH1](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 2,
+          "input_smiles": "O[Co@OH2](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH17]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH17]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 3,
+          "input_smiles": "O[Co@OH3](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH5]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH5]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 4,
+          "input_smiles": "O[Co@OH4](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH30]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH30]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 5,
+          "input_smiles": "O[Co@OH5](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH28]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH28]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 6,
+          "input_smiles": "O[Co@OH6](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH9]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH9]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 7,
+          "input_smiles": "O[Co@OH7](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH12]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH12]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 8,
+          "input_smiles": "O[Co@OH8](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH2]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH2]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 9,
+          "input_smiles": "O[Co@OH9](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH14]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH14]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 10,
+          "input_smiles": "O[Co@OH10](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH1]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH1]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 11,
+          "input_smiles": "O[Co@OH11](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH4]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH4]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 12,
+          "input_smiles": "O[Co@OH12](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH10]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH10]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 13,
+          "input_smiles": "O[Co@OH13](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH8]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH8]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 14,
+          "input_smiles": "O[Co@OH14](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH25]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH25]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 15,
+          "input_smiles": "O[Co@OH15](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH27]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH27]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 16,
+          "input_smiles": "O[Co@OH16](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH15]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH15]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 17,
+          "input_smiles": "O[Co@OH17](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH13]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH13]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 18,
+          "input_smiles": "O[Co@OH18](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH11]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH11]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 19,
+          "input_smiles": "O[Co@OH19](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH24]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH24]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 20,
+          "input_smiles": "O[Co@OH20](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH22]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH22]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 21,
+          "input_smiles": "O[Co@OH21](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH20]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH20]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 22,
+          "input_smiles": "O[Co@OH22](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH23]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH23]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 23,
+          "input_smiles": "O[Co@OH23](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH21]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH21]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 24,
+          "input_smiles": "O[Co@OH24](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH19]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH19]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 25,
+          "input_smiles": "O[Co@OH25](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH6]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH6]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 26,
+          "input_smiles": "O[Co@OH26](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH3]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH3]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 27,
+          "input_smiles": "O[Co@OH27](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH29]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH29]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 28,
+          "input_smiles": "O[Co@OH28](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH26]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH26]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 29,
+          "input_smiles": "O[Co@OH29](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH16]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH16]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        },
+        {
+          "state": 30,
+          "input_smiles": "O[Co@OH30](Cl)(C)(N)(F)P",
+          "canonical_smiles": "[CH3][Co@OH18]([NH2])([OH])([F])([PH2])[Cl]",
+          "atom_count": 7,
+          "atom_permutations_checked": 5040,
+          "distinct_outputs_after_renumbering": [
+            "[CH3][Co@OH18]([NH2])([OH])([F])([PH2])[Cl]"
+          ],
+          "numbering_invariant": true,
+          "round_trip_preserved": true,
+          "configured_tag_written": true,
+          "stereo_removed_smiles": "[CH3][Co]([NH2])([OH])([F])([PH2])[Cl]",
+          "discrepancy_examples": []
+        }
+      ],
+      "documented_encoding_outputs": [
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]",
+        "[CH3][Co@OH7]([NH2])([OH])([F])([PH2])[Cl]"
+      ],
+      "documented_equivalent_encodings_agree": true,
+      "distinct_configurations_retained": true,
+      "removing_stereo_collapses_configurations": true,
+      "passed": true
+    }
+  ],
+  "summary": {
+    "families": 3,
+    "states": 53,
+    "atom_permutations_checked": 165960,
+    "passed_families": 3
+  },
+  "passed": true,
+  "scope": "Documented finite-frame SMILES encodings, with distinct ligand references. Formal representation probes; no experimental geometry, stability or general toolkit proof.",
+  "wall_seconds": 5.64605883101467
+}

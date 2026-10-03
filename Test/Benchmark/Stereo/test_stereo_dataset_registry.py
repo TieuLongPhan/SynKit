@@ -75,8 +75,8 @@ def test_registry_preserves_task_and_license_boundaries() -> None:
 
     cip = datasets["cip_validation_suite"]
     assert cip["records"] == 300
-    assert cip["license"] is None
-    assert not cip["vendored"]
+    assert cip["license"] == "CC BY-NC 4.0"
+    assert cip["vendored"]
     assert cip["protocols"]["native_local_cip_label_assignment"]
     assert cip["protocols"]["configuration_neutral_stereo_element_audit"]
     assert cip["protocols"]["fixed_graph_local_permutation_audit"]

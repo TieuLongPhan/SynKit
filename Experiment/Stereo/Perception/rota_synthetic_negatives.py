@@ -166,10 +166,15 @@ def build_report() -> dict[str, Any]:
 
 
 def main() -> int:
+    from Experiment.Stereo.provenance import capture_source, finish_source
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
     arguments = parser.parse_args()
+    source = capture_source()
     report = build_report()
+    report["provenance"] = finish_source(source)
+    report["provenance"]["input_representation"] = "Cases encoded in checksummed experiment Python source."
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n",

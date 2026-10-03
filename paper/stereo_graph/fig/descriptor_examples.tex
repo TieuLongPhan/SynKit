@@ -1,0 +1,528 @@
+% =====================================================================
+%  Stereo-descriptor atlas -- REAL STRUCTURES, CPK/CDK element colours.
+%  Input-only TikZ file for main.tex; requires concept_style.tex, mhchem,
+%  and the shapes.geometric, arrows.meta, calc, backgrounds, and positioning
+%  TikZ libraries loaded by the manuscript preamble.
+%  Conventions
+%    * heteroatoms coloured by element (CPK): N blue, O red, Cl/F green,
+%      Br brown, P orange, S dark-yellow; metals in CPK tints; C dark grey.
+%    * solid wedge = bond toward viewer, hashed wedge = away (filled
+%      triangle / graded hash -- never an arrow tip).
+%    * vermilion = the carrier of the stereo element.  Vermilion is used
+%      for NOTHING else, so no support family may be vermilion.
+%    * each card is tinted by its SUPPORT family and carries the abstract
+%      carrier glyph of that family (top right); the family word appears
+%      once, in the legend.
+%    * class names abbreviate the SynKit classes <Name>Stereo (legend).
+% =====================================================================
+% Okabe--Ito support colours come from fig/concept_style.tex.
+% ---- CPK / CDK element palette (darkened for legibility) -----------
+\providecolor{cH}{RGB}{95,95,95}%
+\providecolor{cC}{RGB}{35,35,35}%
+\providecolor{cN}{RGB}{34,80,205}%
+\providecolor{cO}{RGB}{210,45,45}%
+\providecolor{cF}{RGB}{70,160,70}%
+\providecolor{cCl}{RGB}{45,150,55}%
+\providecolor{cBr}{RGB}{150,55,45}%
+\providecolor{cP}{RGB}{225,125,0}%
+\providecolor{cS}{RGB}{180,150,0}%
+\providecolor{cFe}{RGB}{205,100,45}%
+\providecolor{cPt}{RGB}{105,115,150}%
+\providecolor{cCo}{RGB}{200,105,135}%
+\providecolor{cRu}{RGB}{30,140,140}%
+\providecolor{cDy}{RGB}{30,155,135}%
+% eighth Okabe--Ito hue, only needed for the AXIS family
+\providecolor{ioYellow}{RGB}{240,228,66}%
+
+% ---- support-family colours (vermilion deliberately absent) ---------
+\colorlet{famAtom}{ioBlue}%
+\colorlet{famBond}{ioOrange!92!black}%
+\colorlet{famAxis}{ioYellow!52!black}%
+\colorlet{famPath}{ioPurple!88!black}%
+\colorlet{famPlane}{ioGreen!88!black}%
+\colorlet{famGlobal}{black!68}%
+\colorlet{famNone}{black!42}%
+
+\def\Wd{3.65}\def\Ht{3.3}%
+
+% ---- stereo bonds: filled wedge and graded hash --------------------
+% (callers pass coordinates WITH parens)
+\newcommand{\wbond}[3][cC]{%
+  \fill[#1] ($#2!0.15!#3$) -- ($#3!0.92mm!90:#2$) -- ($#3!0.92mm!-90:#2$)%
+            -- cycle;}%
+\newcommand{\hbond}[3][cC]{%
+  \foreach \f/\l in {0.28/0.036,0.43/0.056,0.58/0.076,0.73/0.096,0.88/0.116}{%
+    \draw[#1,line width=0.5pt,line cap=round]%
+      ($($#2!\f!#3$)!\l cm!90:#3$)--($($#2!\f!#3$)!\l cm!-90:#3$);}%
+}%
+
+\begin{tikzpicture}[
+  font=\small,
+  cardstyle/.style={rounded corners=3pt, line width=0.5pt},
+  cname/.style={font=\scriptsize\sffamily\bfseries, text=black!84,
+                align=left, text width=27mm, inner sep=0pt},
+  stlive/.style={font=\tiny, text=black!58, inner sep=0pt},
+  stdecl/.style={font=\tiny, text=black!42, inner sep=0pt},
+  bnd/.style={line width=0.75pt, cC},
+  tb/.style={line width=0.6pt, black!55},
+  co/.style={line width=0.6pt, black!45},          % coordinate (dative) bond
+  chel/.style={line width=0.8pt, black!50},        % chelate backbone
+  carrier/.style={draw=ioVermilion!88!black, line width=2.0pt, opacity=0.5,
+                  line cap=round},
+  ce/.style={ioVermilion!88!black, line width=1.6pt, opacity=0.55,
+             line cap=round},
+  el/.style={inner sep=0.6pt, font=\scriptsize},
+  elt/.style={inner sep=0.4pt, font=\tiny},
+  aC/.style={el,text=cC}, aH/.style={el,text=cH}, aN/.style={el,text=cN},
+  aO/.style={el,text=cO}, aP/.style={el,text=cP}, aCl/.style={el,text=cCl},
+  aBr/.style={el,text=cBr}, aF/.style={el,text=cF},
+  aFe/.style={el,text=cFe}, aPt/.style={el,text=cPt},
+  aCo/.style={el,text=cCo}, aRu/.style={el,text=cRu}, aDy/.style={el,text=cDy},
+  cl/.style={font=\tiny, text=ioVermilion!82!black},   % carrier annotation
+  vlab/.style={font=\tiny, text=black!55},             % plain descriptor
+  Ndot/.style={circle, fill=cN, inner sep=0pt, minimum size=2.6pt},
+  Odot/.style={circle, fill=cO, inner sep=0pt, minimum size=2.6pt},
+]
+
+% =====================================================================
+%  abstract carrier glyphs -- one per support family
+% =====================================================================
+\newcommand{\glyphvertex}[1]{%
+  \foreach \a in {40,140,220,320}{%
+    \draw[black!32,line width=0.4pt] (0,0)--(\a:0.19);
+    \fill[black!32] (\a:0.19) circle (0.85pt);}
+  \fill[#1] (0,0) circle (1.7pt);}
+\newcommand{\glyphedge}[1]{%
+  \foreach \s/\a in {-1/145,-1/215,1/35,1/325}{%
+    \draw[black!32,line width=0.4pt] (\s*0.10,0)--++(\a:0.16);
+    \fill[black!32] (\s*0.10,0)++(\a:0.16) circle (0.85pt);}
+  \draw[#1,line width=1.5pt,line cap=round] (-0.10,0)--(0.10,0);
+  \fill[#1] (-0.10,0) circle (1.5pt); \fill[#1] (0.10,0) circle (1.5pt);}
+\newcommand{\glyphaxis}[1]{%
+  \foreach \s/\a in {-1/145,-1/215,1/35,1/325}{%
+    \draw[black!32,line width=0.4pt] (\s*0.18,0)--++(\a:0.15);
+    \fill[black!32] (\s*0.18,0)++(\a:0.15) circle (0.85pt);}
+  \draw[#1,line width=1.5pt,line cap=round] (-0.18,0)--(0.18,0);
+  \foreach \x in {-0.18,0,0.18}{\fill[#1] (\x,0) circle (1.5pt);}}
+\newcommand{\glyphpath}[1]{%
+  \draw[#1,line width=1.4pt,line cap=round] plot[smooth] coordinates
+    {(-0.21,-0.11) (-0.11,0.05) (0.03,0.12) (0.15,0.04) (0.21,-0.11)};
+  \foreach \p in {(-0.21,-0.11),(-0.11,0.05),(0.03,0.12),(0.15,0.04),
+                  (0.21,-0.11)}{\fill[#1] \p circle (1.3pt);}}
+\newcommand{\glyphplane}[1]{%
+  \fill[#1,opacity=0.20] (90:0.19)--(162:0.19)--(234:0.19)--(306:0.19)
+                         --(18:0.19)--cycle;
+  \draw[#1,line width=1.1pt] (90:0.19)--(162:0.19)--(234:0.19)--(306:0.19)
+                         --(18:0.19)--cycle;
+  \foreach \a in {90,162,234,306,18}{\fill[#1] (\a:0.19) circle (1.2pt);}}
+\newcommand{\glyphglobal}[1]{%
+  \draw[#1,line width=1.3pt] (-0.09,0) circle (0.14);
+  \draw[white,line width=2.2pt] (0.09,0) ++(150:0.14) arc (150:480:0.14);
+  \draw[#1,line width=1.3pt]   (0.09,0) ++(150:0.14) arc (150:480:0.14);}
+\newcommand{\glyphnone}[1]{%
+  \draw[#1,line width=0.8pt,dash pattern=on 1.1pt off 1.1pt] (0,0) circle (0.19);
+  \draw[#1,line width=0.9pt] (-0.13,-0.13)--(0.13,0.13);}
+\newcommand{\cglyph}[4]{% type, x, y, colour
+  \begin{scope}[shift={(#2,#3)}]\csname glyph#1\endcsname{#4}\end{scope}}
+
+% ---- one atlas card -------------------------------------------------
+% #1 x  #2 y  #3 family colour  #4 glyph  #5 status style  #6 status
+% #7 class name (without the "Stereo" suffix)  #8 molecule
+\newcommand{\card}[8]{%
+  \draw[cardstyle, fill=#3!4, draw=#3!38] (#1,#2) rectangle ++(\Wd,-\Ht);
+  \node[cname, anchor=north west] at (#1+0.14,#2-0.14)
+       {#7\\[-0.1mm]{\scriptsize\upshape\rmfamily\color{black!62}#8}};
+  \cglyph{#4}{#1+\Wd-0.34}{#2-0.34}{#3}
+  \node[#5, anchor=south east] at (#1+\Wd-0.13,#2-\Ht+0.13) {#6};}
+
+\def\cA{0}\def\cB{3.85}\def\cC{7.70}\def\cD{11.55}
+\def\sAx{1.825}\def\sBx{5.675}\def\sCx{9.525}\def\sDx{13.375}
+\def\rA{0}\def\rB{-3.5}\def\rC{-7.0}\def\rD{-10.5}
+\def\sAy{-2.12}
+
+% naphthalene helper (horizontal molecule at #1,#2 with aromatic circles)
+\newcommand{\naphthalene}[2]{\begin{scope}[shift={(#1,#2)}]
+  \coordinate (Ct) at (0,0.20);\coordinate (Cb) at (0,-0.20);
+  \coordinate (L1) at (-0.35,0.40);\coordinate (L2) at (-0.69,0.20);
+  \coordinate (L3) at (-0.69,-0.20);\coordinate (L4) at (-0.35,-0.40);
+  \coordinate (R1) at (0.35,0.40);\coordinate (R2) at (0.69,0.20);
+  \coordinate (R3) at (0.69,-0.20);\coordinate (R4) at (0.35,-0.40);
+  \draw[bnd] (Ct)--(L1)--(L2)--(L3)--(L4)--(Cb)--(R4)--(R3)--(R2)--(R1)--cycle;
+  \draw[bnd] (Ct)--(Cb);
+  \draw[tb] (-0.345,0) circle (0.145); \draw[tb] (0.345,0) circle (0.145);
+  \end{scope}}
+
+% =====================================================================
+%  ROW 1
+% =====================================================================
+
+% 1  Tetrahedral : CHFClBr
+\card{\cA}{\rA}{famAtom}{vertex}{stlive}{$\bullet$}
+     {Tetrahedral}{CHFClBr}
+\begin{scope}[shift={(\sAx,\sAy)}]
+  \draw[black!12,line width=0.4pt] (0,0.6)--(-0.55,-0.36)--(0,-0.58)
+       --(0.55,-0.36)--cycle;                       % projected tetrahedron
+  \draw[carrier] (0,0) circle (0.27);
+  \draw[bnd] (0,0.12)--(0,0.6);   \node[aBr] at (0,0.78) {Br};
+  \draw[bnd] (-0.1,-0.06)--(-0.55,-0.36); \node[aF] at (-0.72,-0.48) {F};
+  \wbond{(0,0)}{(0.55,-0.36)}      \node[aCl] at (0.72,-0.5) {Cl};
+  \hbond{(0,0)}{(0,-0.58)}         \node[aH] at (0,-0.78) {H};
+  \node[aC] at (0,0) {C};
+  \node[vlab] at (0.92,0.5) {($R$)};
+\end{scope}
+
+% 2  Square planar : cis-[PtCl2(NH3)2]
+\card{\cB}{\rA}{famAtom}{vertex}{stlive}{$\bullet$}
+     {SquarePlanar}{\textit{cis}-\ce{[PtCl2(NH3)2]}}
+\begin{scope}[shift={(\sBx,\sAy)}]
+  \coordinate (Pt) at (0,0);
+  \coordinate (up) at (0,0.62); \coordinate (rt) at (0.82,0);
+  \coordinate (dn) at (0,-0.62);\coordinate (lf) at (-0.82,0);
+  \fill[black!5] (up)--(rt)--(dn)--(lf)--cycle;     % coordination plane
+  \draw[black!20,line width=0.5pt] (up)--(rt)--(dn)--(lf)--cycle;
+  \foreach \d in {up,rt,dn,lf}{\draw[bnd] (Pt)--(\d);}
+  \draw[carrier] (Pt) circle (0.28);
+  \node[aCl] at (0,0.78) {Cl};                      % cis pair (adjacent)
+  \node[aCl] at (0.98,0) {Cl};
+  \node[aN]  at (0,-0.8) {\ce{NH3}};
+  \node[aN]  at (-1.0,0) {\ce{H3N}};
+  \node[aPt] at (0,0) {Pt};
+\end{scope}
+
+% 3  Trigonal bipyramidal : chiral spirophosphorane
+\card{\cC}{\rA}{famAtom}{vertex}{stlive}{$\bullet$}
+     {Trigonal\allowbreak Bipyramidal}{a chiral phosphorane}
+\begin{scope}[shift={(\sCx,\sAy)}]
+  \coordinate (P) at (0,0);
+  \coordinate (ax1) at (0,0.72);  \coordinate (ax2) at (0,-0.72); % axial
+  \coordinate (eqL) at (-0.78,0);                                 % eq in-plane
+  \coordinate (eqF) at (0.6,-0.34);                               % eq front
+  \coordinate (eqB) at (0.6,0.34);                                % eq back
+  \fill[black!5] (eqL)--(eqF)--(eqB)--cycle;        % equatorial plane
+  \draw[black!16,line width=0.5pt] (eqL)--(eqF)--(eqB)--cycle;
+  \draw[black!14,line width=0.4pt] (ax1)--(eqL) (ax1)--(eqF) (ax1)--(eqB)
+        (ax2)--(eqL) (ax2)--(eqF) (ax2)--(eqB);
+  \draw[bnd] (P)--(ax1); \draw[bnd] (P)--(ax2); \draw[bnd] (P)--(eqL);
+  \wbond{(P)}{(eqF)} \hbond{(P)}{(eqB)}
+  \draw[carrier] (P) circle (0.24);
+  \node[aO] at (0,0.88) {O}; \node[aO] at (0,-0.88) {O};
+  \node[aO] at (-0.9,0) {O}; \node[aO] at (0.76,-0.46) {O};
+  \node[aC] at (0.76,0.46) {C};
+  \node[aP] at (0,0) {P};
+  \node[vlab] at (-0.5,0.66) {\itshape ax};
+  \node[vlab] at (0.72,-0.68) {\itshape eq};
+\end{scope}
+
+% 4  Octahedral : Delta/Lambda-[Co(en)3]3+   (carrier = the metal vertex)
+\card{\cD}{\rA}{famAtom}{vertex}{stlive}{$\bullet$}
+     {Octahedral}{$\Delta/\Lambda$-\ce{[Co(en)3]^3+}}
+\begin{scope}[shift={(\sDx,\sAy)}]
+  \coordinate (Co) at (0,0);
+  \coordinate (T) at (0,0.82); \coordinate (B) at (0,-0.82);
+  \coordinate (L) at (-0.82,0.05); \coordinate (R) at (0.82,0.05);
+  \coordinate (Fr) at (0.26,-0.30); \coordinate (Bk) at (-0.26,0.30);
+  \draw[black!16,line width=0.5pt] (T)--(L)--(B)--(R)--(T);
+  \draw[black!16,line width=0.5pt] (Bk)--(L) (Bk)--(T) (Bk)--(B)
+        (Fr)--(R) (Fr)--(T) (Fr)--(B);
+  \foreach \v in {T,B,L,R,Fr,Bk}{\draw[co] (Co)--(\v);}
+  \draw[chel] (T) to[bend left=32] (R);             % three ethylenediamines
+  \draw[chel] (L) to[bend left=32] (B);
+  \draw[chel] (Bk) to[bend left=32] (Fr);
+  \foreach \v in {T,B,L,R,Fr,Bk}{\node[Ndot] at (\v){};}
+  \draw[carrier] (Co) circle (0.26);
+  \node[aCo] at (0,0) {Co};
+  \node[vlab] at (0.84,-0.62) {$\Delta/\Lambda$};
+\end{scope}
+
+% =====================================================================
+%  ROW 2
+% =====================================================================
+
+% 5  Higher polyhedral : pentagonal-bipyramidal [Dy(OtBu)2(py)5]+
+\card{\cA}{\rB}{famAtom}{vertex}{stdecl}{$\circ$}
+     {HigherPolyhedral}{\resizebox{25mm}{!}{\ce{[Dy(OtBu)2(py)5]+}}}
+\begin{scope}[shift={(\sAx,\sAy+\rB)}]
+  \coordinate (M) at (0,0);
+  \foreach \a in {90,162,234,306,18}{
+     \coordinate (e\a) at ({0.86*cos(\a)},{0.30*sin(\a)});}
+  \fill[black!5] (e90)--(e162)--(e234)--(e306)--(e18)--cycle;
+  \draw[black!16,line width=0.5pt] (e90)--(e162)--(e234)--(e306)--(e18)--cycle;
+  \foreach \a in {90,162,234,306,18}{\draw[co](M)--(e\a);\node[Ndot] at (e\a){};}
+  \draw[bnd] (M)--(0,0.62); \node[aO] at (0,0.82) {\ce{O}};   % axial donors
+  \node[elt,text=black!55] at (0.44,0.9) {$t$Bu};
+  \draw[bnd] (M)--(0,-0.62);\node[aO] at (0,-0.82) {\ce{O}};
+  \node[elt,text=black!55] at (0.44,-0.9) {$t$Bu};
+  \draw[carrier] (M) circle (0.26);
+  \node[aDy] at (0,0) {Dy};
+  
+\end{scope}
+
+% 6  Planar bond : E-but-2-ene
+\card{\cB}{\rB}{famBond}{edge}{stlive}{$\bullet$}
+     {PlanarBond}{$E/Z$-but-2-ene}
+\begin{scope}[shift={(\sBx,\sAy+\rB)}]
+  \coordinate (c1) at (-0.3,0); \coordinate (c2) at (0.3,0);
+  \draw[black!8] (0,0) ellipse (0.95 and 0.42);      % the sp2 frame
+  \draw[ce] (c1)--(c2);
+  \draw[bnd] ($(c1)+(0,0.05)$)--($(c2)+(0,0.05)$);
+  \draw[bnd] ($(c1)-(0,0.05)$)--($(c2)-(0,0.05)$);
+  \draw[bnd] (c1)--(-0.62,0.3); \node[aC] at (-0.9,0.42) {\ce{H3C}};
+  \draw[bnd] (c1)--(-0.6,-0.3); \node[aH] at (-0.82,-0.42) {H};
+  \draw[bnd] (c2)--(0.6,0.3);   \node[aH] at (0.82,0.42) {H};
+  \draw[bnd] (c2)--(0.62,-0.3); \node[aC] at (0.9,-0.42) {\ce{CH3}};
+  \node[vlab] at (0,-0.72) {($E$)};
+\end{scope}
+
+% 7  Restricted bond : hindered aromatic amide
+\card{\cC}{\rB}{famBond}{edge}{stdecl}{$\circ$}
+     {RestrictedBond}{an \textit{o}-substituted amide}
+\begin{scope}[shift={(\sCx,\sAy+\rB)}]
+  \foreach \a/\i in {90/1,150/2,210/3,270/4,330/5,30/6}{
+     \coordinate (r\i) at ({-0.70+0.42*cos(\a)},{-0.22+0.42*sin(\a)});}
+  \draw[bnd] (r1)--(r2)--(r3)--(r4)--(r5)--(r6)--cycle;
+  \draw[tb] (-0.70,-0.22) circle (0.24);
+  \draw[bnd] (r6)--(-0.98,0.18); \node[aC] at (-1.26,0.28) {\ce{CH3}}; % ortho
+  \coordinate (Cc) at (-0.05,0.5); \draw[bnd] (r1)--(Cc);
+  % amide C=O as a proper double bond
+  \draw[bnd] ($(Cc)!0.10!(-0.40,0.82)$)--(-0.40,0.82);
+  \draw[bnd] ($(Cc)!0.10!(-0.40,0.82)$)++(0.09,0.07)--($(-0.40,0.82)+(0.09,0.07)$);
+  \node[aO] at (-0.54,0.92) {O};
+  \coordinate (N) at (0.52,0.36);
+  \draw[carrier] (Cc)--(N); \draw[bnd] (Cc)--(N);   % restricted C--N
+  \wbond{(N)}{(0.86,0.62)} \node[aC] at (1.06,0.72) {$i$Pr};
+  \hbond{(N)}{(0.86,0.10)} \node[aC] at (1.06,0.0)  {$i$Pr};
+  \node[aN] at (0.52,0.36) {N};
+  % hindered rotation: a curled arrow, struck through
+  \draw[-{Latex[length=1.4mm]}, ioVermilion!85!black, line width=0.6pt]
+        (0.24,0.43) ++(120:0.26) arc (120:-150:0.26);
+  \draw[ioVermilion!85!black, line width=0.7pt]
+        (0.06,0.24)--(0.42,0.62);
+\end{scope}
+
+% 8  Cumulene axis : aR/aS-penta-2,3-diene
+\card{\cD}{\rB}{famAxis}{axis}{stlive}{$\bullet$}
+     {CumuleneAxis}{$aR/aS$-penta-2,3-diene}
+\begin{scope}[shift={(\sDx,\sAy+\rB)}]
+  \coordinate (a1) at (-0.55,0); \coordinate (a2) at (0,0);
+  \coordinate (a3) at (0.55,0);
+  \draw[black!8] (-0.55,0) ellipse (0.34 and 0.42);      % terminal planes
+  \draw[black!8, rotate around={90:(0.55,0)}] (0.55,0) ellipse (0.34 and 0.42);
+  \draw[carrier] (a1)--(a3);
+  \foreach \s in {0.05,-0.05}{
+    \draw[bnd] ($(a1)+(0,\s)$)--($(a2)+(0,\s)$);
+    \draw[bnd] ($(a2)+(0,\s)$)--($(a3)+(0,\s)$);}
+  \draw[bnd] (a1)--(-0.75,0.28); \node[aC] at (-1.03,0.4) {\ce{CH3}};
+  \draw[bnd] (a1)--(-0.72,-0.28);\node[aH] at (-0.98,-0.4) {H};
+  \wbond{(a3)}{(0.78,0.3)}  \node[aC] at (1.03,0.4) {\ce{CH3}};
+  \hbond{(a3)}{(0.75,-0.3)} \node[aH] at (0.98,-0.4) {H};
+  \node[vlab] at (0,-0.66) {$90^\circ$};
+\end{scope}
+
+% =====================================================================
+%  ROW 3
+% =====================================================================
+
+% 9  Atrop axis : aR/aS-BINOL (two naphthalenes)
+\card{\cA}{\rC}{famAxis}{axis}{stlive}{$\bullet$}
+     {AtropAxis}{$aR/aS$-BINOL}
+\begin{scope}[shift={(\sAx,\sAy+\rC)}]
+  \naphthalene{-0.35}{0.62}   % upper unit; attachment vertex ~ (0,0.22)
+  \naphthalene{-0.35}{-0.62}  % lower unit; attachment vertex ~ (0,-0.22)
+  \draw[carrier] (0,0.22)--(0,-0.22);                  % 1,1'-biaryl axis
+  \draw[bnd] (0,0.22)--(0,-0.22);
+  \draw[bnd] (0.34,0.42)--(0.56,0.56); \node[aO] at (0.74,0.62) {OH};
+  \draw[bnd] (0.34,-0.42)--(0.56,-0.56);\node[aO] at (0.74,-0.62) {OH};
+  % hindered biaryl rotation
+  \draw[-{Latex[length=1.4mm]}, ioVermilion!85!black, line width=0.6pt]
+        (-0.30,0) ++(70:0.24) arc (70:-190:0.24);
+  \draw[ioVermilion!85!black, line width=0.7pt] (-0.48,-0.18)--(-0.12,0.18);
+\end{scope}
+
+% 10  Spiro axis : SPINOL spirobiindane
+\card{\cB}{\rC}{famAxis}{axis}{stdecl}{$\circ$}
+     {SpiroAxis}{SPINOL spirobiindane}
+\begin{scope}[shift={(\sBx,\sAy+\rC+0.16)}, scale=0.86]
+  \coordinate (sp) at (0,0);
+  % ring system A in the page plane (lower right)
+  \coordinate (a1) at (0.5,0.28);\coordinate (a2) at (0.92,-0.04);
+  \coordinate (a3) at (0.66,-0.5);\coordinate (a4) at (0.14,-0.4);
+  \draw[bnd] (sp)--(a1)--(a2)--(a3)--(a4)--(sp);
+  \coordinate (a5) at (1.14,-0.5);\coordinate (a6) at (1.0,-0.98);
+  \coordinate (a7) at (0.5,-1.0);
+  \draw[bnd] (a2)--(a5)--(a6)--(a7)--(a3); \draw[tb] (0.8,-0.24) circle (0.2);
+  \draw[bnd] (a7)--(0.5,-1.12); \node[aO] at (0.5,-1.26) {OH};
+  % ring system B in the orthogonal plane (upper left)
+  \coordinate (b1) at (-0.28,0.5);\coordinate (b2) at (0.02,0.94);
+  \coordinate (b3) at (0.44,0.68);\coordinate (b4) at (0.36,0.16);
+  \wbond{(sp)}{(b1)} \hbond{(sp)}{(b4)}
+  \draw[bnd] (b1)--(b2)--(b3)--(b4);
+  \coordinate (b5) at (-0.46,0.92);\coordinate (b6) at (-0.94,0.78);
+  \coordinate (b7) at (-0.98,0.3);
+  \draw[bnd] (b2)--(b5)--(b6)--(b7)--(b1); \draw[tb] (-0.5,0.66) circle (0.2);
+  \draw[bnd] (b7)--(-1.1,0.2); \node[aO] at (-1.28,0.12) {HO};
+  % the spiro axis itself
+  \draw[carrier] (-0.34,-0.28)--(0.34,0.28);
+  \draw[carrier] (sp) circle (0.13);
+\end{scope}
+
+% 11  Helical : P/M-[6]helicene  (one full turn; terminal rings overlap)
+\card{\cC}{\rC}{famPath}{path}{stlive}{$\bullet$}
+     {Helical}{$P/M$-[6]helicene}
+\begin{scope}[shift={(\sCx,\sAy+\rC)}]
+  \foreach \x/\y/\r/\i in {%
+     -0.231/-0.385/2/0, 0.304/-0.338/8/1, 0.478/0.169/14/2,
+     0.086/0.536/20/3, -0.409/0.326/26/4, -0.418/-0.211/32/5}{
+     \node[regular polygon, regular polygon sides=6, draw=cC, fill=white,
+           line width=0.6pt, minimum size=6.2mm, inner sep=0pt,
+           rotate=\r] (h\i) at (\x,\y) {};}
+  \draw[carrier] plot[smooth] coordinates
+     {(h0.center)(h1.center)(h2.center)(h3.center)(h4.center)(h5.center)};
+  \node[regular polygon, regular polygon sides=6, draw=cC, fill=white,
+        line width=0.6pt, minimum size=6.2mm, inner sep=0pt,
+        rotate=32] at (-0.418,-0.211) {};        % terminal ring rides over
+  \draw[{Latex[length=1.3mm]}-{Latex[length=1.3mm]},
+        ioVermilion!85!black, line width=0.55pt]
+        (-0.46,-0.56)--(-0.64,-0.40);
+  \draw[-{Latex[length=1.6mm]}, ioVermilion!85!black, line width=0.6pt]
+        (0,0.05) ++(150:0.30) arc (150:-120:0.30);
+  \node[cl] at (0.30,-0.72) {$P/M$};
+\end{scope}
+
+% 12  Chelate helicity : Delta/Lambda-[Ru(bpy)3]2+
+\card{\cD}{\rC}{famPath}{path}{stdecl}{$\circ$}
+     {ChelateHelicity}{$\Delta/\Lambda$-\ce{[Ru(bpy)3]^2+}}
+\begin{scope}[shift={(\sDx,\sAy+\rC)}]
+  \coordinate (Ru) at (0,0);
+  \coordinate (T) at (0,0.82); \coordinate (B) at (0,-0.82);
+  \coordinate (FL) at (-0.72,-0.14); \coordinate (FR) at (0.72,-0.14);
+  \coordinate (BL) at (-0.42,0.30); \coordinate (BR) at (0.42,0.30);
+  \foreach \v in {T,B,FL,FR,BL,BR}{\draw[co] (Ru)--(\v); \node[Ndot] at (\v){};}
+  \draw[carrier] (T)  to[bend left=28] (FR);
+  \draw[carrier] (FL) to[bend left=28] (B);
+  \draw[carrier] (BR) to[bend left=28] (BL);
+  \draw[-{Latex[length=1.6mm]}, ioVermilion!85!black, line width=0.6pt]
+        (0,0) ++(60:0.36) arc[start angle=60,end angle=-200,radius=0.36];
+  \node[aRu] at (0,0) {Ru};
+  \node[cl] at (0.86,0.62) {$\Delta/\Lambda$};
+\end{scope}
+
+% =====================================================================
+%  ROW 4
+% =====================================================================
+
+% 13  Planar chirality : 1,2-disubstituted ferrocene
+\card{\cA}{\rD}{famPlane}{plane}{stlive}{$\bullet$}
+     {PlanarChirality}{a $pR/pS$-ferrocene}
+\begin{scope}[shift={(\sAx,\sAy+\rD)}, scale=0.92]
+  \coordinate (t0) at (0,0.72); \coordinate (t1) at (-0.44,0.606);
+  \coordinate (t2) at (-0.272,0.42); \coordinate (t3) at (0.272,0.42);
+  \coordinate (t4) at (0.44,0.606);
+  \coordinate (b0) at (0,-0.72); \coordinate (b1) at (-0.44,-0.606);
+  \coordinate (b2) at (-0.272,-0.42); \coordinate (b3) at (0.272,-0.42);
+  \coordinate (b4) at (0.44,-0.606);
+  \foreach \v in {b0,b1,b2,b3,b4}{\draw[co,cFe!60!black] (0,0)--(\v);}
+  \foreach \v in {t1,t2,t3,t4}{\draw[co,cFe!35!white] (0,0)--(\v);}
+  \draw[bnd] (b1)--(b2)--(b3)--(b4)--(b0)--cycle;
+  \fill[ioVermilion!85!black,opacity=0.13] (t1)--(t2)--(t3)--(t4)--(t0)--cycle;
+  \draw[carrier] (t1)--(t2)--(t3)--(t4)--(t0)--cycle;
+  \draw[bnd] (t1)--(t2)--(t3)--(t4)--(t0)--cycle;
+  \draw[bnd] (t2)--(-0.62,0.28); \node[aC] at (-0.78,0.22) {R};
+  \draw[bnd] (t3)--(0.62,0.28);  \node[aC] at (0.78,0.22) {R$'$};
+  \draw[-{Latex[length=1.5mm]}, ioVermilion!85!black, line width=0.6pt]
+        (0,0.56)--(0,1.0);                       % oriented face normal
+  \node[aFe] at (0,0) {Fe};
+  \node[cl] at (0.74,0.86) {$pR/pS$};
+\end{scope}
+
+% 14  Topological : molecular trefoil knot (alternating over/under)
+\card{\cB}{\rD}{famGlobal}{global}{stdecl}{$\diamond$}
+     {Topological}{a molecular trefoil knot}
+\begin{scope}[shift={(\sBx,\sAy+\rD)}, scale=0.30]
+  \draw[ce, line width=3.2pt] plot[smooth cycle,samples=150,domain=0:360,
+        variable=\t] ({sin(\t)+2*sin(2*\t)},{cos(\t)-2*cos(2*\t)});
+  \draw[carrier, line width=1.6pt] plot[smooth cycle,samples=150,domain=0:360,
+        variable=\t] ({sin(\t)+2*sin(2*\t)},{cos(\t)-2*cos(2*\t)});
+  % erase at the three double points, then restore the over-strands
+  \foreach \a in {90,210,330}{\fill[white] (\a:1.5) circle (0.52);}
+  \foreach \ta/\tb in {358/393, 118/153, 238/273}{
+    \draw[ce, line width=3.2pt] plot[samples=40,domain=\ta:\tb,variable=\t]
+         ({sin(\t)+2*sin(2*\t)},{cos(\t)-2*cos(2*\t)});
+    \draw[carrier, line width=1.6pt] plot[samples=40,domain=\ta:\tb,variable=\t]
+         ({sin(\t)+2*sin(2*\t)},{cos(\t)-2*cos(2*\t)});}
+  \node[vlab, scale=2.4] at (0,-2.85) {$\pm$};
+\end{scope}
+
+% 15  Mechanical bond : mechanically planar-chiral rotaxane
+\card{\cC}{\rD}{famGlobal}{global}{stdecl}{$\diamond$}
+     {MechanicalBond}{a planar-chiral rotaxane}
+\begin{scope}[shift={(\sCx,\sAy+\rD)}]
+  % ring behind, axle through it, near arc of the ring in front
+  \draw[carrier] (0,0) ellipse (0.34 and 0.62);
+  \draw[bnd]     (0,0) ellipse (0.34 and 0.62);
+  \draw[bnd] (-1.15,0)--(1.15,0);
+  \draw[carrier] (0,0.62) arc (90:270:0.34 and 0.62);
+  \draw[bnd]     (0,0.62) arc (90:270:0.34 and 0.62);
+  \fill[black!68] (-1.15,0) circle (0.19);
+  \fill[ioBlue!70!black] (1.15,0) circle (0.19);
+  \node[el, text=white] at (-1.15,0) {A};
+  \node[el, text=white] at (1.15,0) {B};
+  \draw[-{Latex[length=1.4mm]}, ioVermilion!85!black, line width=0.6pt]
+        (0,0) ++(90:0.50) arc[start angle=90,end angle=-40,
+                              x radius=0.24,y radius=0.50];
+  \node[vlab] at (0,-0.90) {A $\neq$ B};
+\end{scope}
+
+% 16  Conformational boundary -- a rotamer, shown rather than asserted
+\card{\cD}{\rD}{famNone}{none}{stdecl}{$\times$}
+     {Conformational boundary}{ethane conformers}
+\begin{scope}[shift={(\sDx,\sAy+\rD)}]
+  % staggered Newman projection
+  \begin{scope}[shift={(-0.70,0.02)}]
+    \foreach \a in {30,150,270}{\draw[bnd] (\a:0.30)--(\a:0.60);}   % rear C
+    \draw[tb] (0,0) circle (0.30);
+    \foreach \a in {90,210,330}{\draw[bnd] (0,0)--(\a:0.60);}       % front C
+    \fill[cC] (0,0) circle (0.8pt);
+  \end{scope}
+  \node[vlab] at (-0.70,-0.80) {staggered};
+  % eclipsed Newman projection (rear bonds fanned out to stay visible)
+  \begin{scope}[shift={(0.70,0.02)}]
+    \foreach \a in {82,202,322}{\draw[bnd] (\a:0.30)--(\a:0.60);}
+    \draw[tb] (0,0) circle (0.30);
+    \foreach \a in {98,218,338}{\draw[bnd] (0,0)--(\a:0.60);}
+    \fill[cC] (0,0) circle (0.8pt);
+  \end{scope}
+  \node[vlab] at (0.70,-0.80) {eclipsed};
+  % free interconversion: no barrier, hence no descriptor
+  \draw[{Latex[length=1.5mm]}-{Latex[length=1.5mm]}, black!45, line width=0.6pt]
+        (-0.30,0.70) to[bend left=26] (0.30,0.70);
+  \node[vlab] at (0,0.94) {$\rightleftharpoons$};
+\end{scope}
+
+% =====================================================================
+%  legend
+% =====================================================================
+\begin{scope}[shift={(0,-14.42)}]
+  \node[anchor=west, font=\scriptsize\bfseries, text=black!75] at (0,0.02)
+       {support:};
+  \foreach \x/\g/\c/\lab in {1.30/vertex/famAtom/ATOM, 3.05/edge/famBond/BOND,
+        4.80/axis/famAxis/AXIS, 6.55/path/famPath/PATH,
+        8.30/plane/famPlane/PLANE, 10.15/global/famGlobal/GLOBAL}{
+     \cglyph{\g}{\x}{0.02}{\c}
+     \node[anchor=west, font=\tiny\bfseries, text=\c] at (\x+0.28,0.02) {\lab};}
+  % second legend line
+  \draw[carrier] (0.06,-0.60)--(0.62,-0.60);
+  \node[anchor=west, font=\tiny, text=black!62] at (0.70,-0.60) {carrier};
+  \wbond{(2.20,-0.60)}{(2.70,-0.60)}
+  \node[anchor=west, font=\tiny, text=black!62] at (2.78,-0.60) {front};
+  \hbond{(3.90,-0.60)}{(4.40,-0.60)}
+  \node[anchor=west, font=\tiny, text=black!62] at (4.48,-0.60) {back};
+  \node[anchor=west, font=\tiny, text=black!62] at (5.60,-0.60)
+       {$\bullet$ configured \quad $\circ$ declared \quad $\diamond$ future
+        \quad $\times$ outside configured stereo};
+  \node[anchor=west, font=\tiny, text=black!62] at (0.06,-1.00) {CPK:};
+  \foreach \x/\c/\lab in {0.70/cN/N, 1.10/cO/O, 1.50/cCl/Cl, 2.10/cBr/Br,
+        2.70/cP/P, 3.10/cF/F}{
+     \node[font=\tiny\bfseries, text=\c] at (\x,-1.00) {\lab};}
+\end{scope}
+
+\end{tikzpicture}

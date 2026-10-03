@@ -1,0 +1,24 @@
+{
+  "output": "/tmp/synkit-stereo-clean-release-full/relations.json",
+  "summary": {
+    "accuracy": 1.0,
+    "cases": 9,
+    "correct": 9,
+    "expected_relations": {
+      "constitutionally_different": 1,
+      "diastereomers": 3,
+      "enantiomers": 2,
+      "identical": 2,
+      "incomplete": 1
+    },
+    "observed_relations": {
+      "constitutionally_different": 1,
+      "diastereomers": 3,
+      "enantiomers": 2,
+      "identical": 2,
+      "incomplete": 1
+    },
+    "seconds": 0.359201053972356
+  },
+  "task": "relations"
+}

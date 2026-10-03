@@ -1,0 +1,213 @@
+{
+  "schema": "synkit.stereo-workspace-integration/1",
+  "integrated_into": "/home/lolo/Documents/TACsy/SynEco/SynKit",
+  "review_source_commit": "cc01a97b40ef5abe5a44ad235cad3af92596b809",
+  "base_commit": "c3c85cea311bc495e4f0bb40f17214f4baaa2ad1",
+  "core_library_files_identical_to_reviewed_source": 10,
+  "protected_preexisting_files_unchanged": 76,
+  "selected_reports": 37,
+  "numerical_claims_unchanged": 269,
+  "raw_clean_execution_files_unchanged": 90,
+  "mathematical_blocks_checked": 33,
+  "stereo_canonicalization_tests": {
+    "passed": 2082,
+    "skipped": 22,
+    "failures": 0,
+    "skip_reasons": {
+      "pinned StereoMolGraph checkout is unavailable": 1,
+      "generated stereo benchmark reports are absent; run Experiment/Stereo/benchmark.sh to exercise artifact assertions": 21
+    }
+  },
+  "explanatory_examples": {
+    "schema": "synkit.stereo-explanatory-figure-examples/1",
+    "passed": true,
+    "driver_sha256": "b48c2cf47b1620160fe88a02d5f184189a5c7d87a9abc70738f20027eaf9c6da",
+    "figure_source_sha256": {
+      "incomplete_completions.tex": "64b34f1a88bfa20c8295a203b656f2854fe012d44a34a980052cdedba337416f",
+      "invariant_vs_certificate.tex": "aa374d6eb77e4b6ce26de5845bfcf1cb0e71cf3750c1f0929c1da6fa24ac4cad"
+    },
+    "chemical_cases": [
+      {
+        "case": "partial",
+        "smiles": "C[C@H](Cl)C(Cl)C",
+        "cip_at_carbon_2_and_3": [
+          "S",
+          "?"
+        ],
+        "checks": [
+          {
+            "profile": "chemical",
+            "reverse_atom_order": false,
+            "strict_status": "incomplete"
+          },
+          {
+            "profile": "chemical",
+            "reverse_atom_order": true,
+            "strict_status": "incomplete"
+          },
+          {
+            "profile": "lewis_state",
+            "reverse_atom_order": false,
+            "strict_status": "incomplete"
+          },
+          {
+            "profile": "lewis_state",
+            "reverse_atom_order": true,
+            "strict_status": "incomplete"
+          },
+          {
+            "profile": "acs_topology",
+            "reverse_atom_order": false,
+            "strict_status": "incomplete"
+          },
+          {
+            "profile": "acs_topology",
+            "reverse_atom_order": true,
+            "strict_status": "incomplete"
+          }
+        ]
+      },
+      {
+        "case": "meso",
+        "smiles": "C[C@H](Cl)[C@H](Cl)C",
+        "cip_at_carbon_2_and_3": [
+          "S",
+          "R"
+        ],
+        "checks": [
+          {
+            "profile": "chemical",
+            "reverse_atom_order": false,
+            "strict_status": "achiral"
+          },
+          {
+            "profile": "chemical",
+            "reverse_atom_order": true,
+            "strict_status": "achiral"
+          },
+          {
+            "profile": "lewis_state",
+            "reverse_atom_order": false,
+            "strict_status": "achiral"
+          },
+          {
+            "profile": "lewis_state",
+            "reverse_atom_order": true,
+            "strict_status": "achiral"
+          },
+          {
+            "profile": "acs_topology",
+            "reverse_atom_order": false,
+            "strict_status": "achiral"
+          },
+          {
+            "profile": "acs_topology",
+            "reverse_atom_order": true,
+            "strict_status": "achiral"
+          }
+        ]
+      },
+      {
+        "case": "chiral",
+        "smiles": "C[C@H](Cl)[C@@H](Cl)C",
+        "cip_at_carbon_2_and_3": [
+          "S",
+          "S"
+        ],
+        "checks": [
+          {
+            "profile": "chemical",
+            "reverse_atom_order": false,
+            "strict_status": "chiral"
+          },
+          {
+            "profile": "chemical",
+            "reverse_atom_order": true,
+            "strict_status": "chiral"
+          },
+          {
+            "profile": "lewis_state",
+            "reverse_atom_order": false,
+            "strict_status": "chiral"
+          },
+          {
+            "profile": "lewis_state",
+            "reverse_atom_order": true,
+            "strict_status": "chiral"
+          },
+          {
+            "profile": "acs_topology",
+            "reverse_atom_order": false,
+            "strict_status": "chiral"
+          },
+          {
+            "profile": "acs_topology",
+            "reverse_atom_order": true,
+            "strict_status": "chiral"
+          }
+        ]
+      }
+    ],
+    "strict_chemical_checks": 18,
+    "fischer_projection_convention_checked": true,
+    "schematic_graphs": 3,
+    "reference_serializations_enumerated": 2160,
+    "count_degree_invariants_equal": true,
+    "native_and_independent_exact_partition": [
+      [
+        0,
+        1
+      ],
+      [
+        2
+      ]
+    ],
+    "boundary": "Three retained molecules replay under three profiles and two atom orders. The drawn Fischer arms determine S/R after reversing for horizontal, viewer-facing H; those labels match the source strings. Independent exhaustive adjacency serialization verifies the schematic graph partition. These are explanatory examples, not new benchmark populations or experimental stability evidence."
+  },
+  "all_eleven_figures_render_identically_to_reviewed_versions": true,
+  "final_package": "paper/stereo_graph/submission",
+  "editable_source_zip": "paper/stereo_graph/submission/sources.zip",
+  "editable_source_files": 51,
+  "source_rebuild_verification_sha256": "45fa1e6e95ecc3c1df8650d2614a2a7574aab976255002142be5772a5ba8278a",
+  "archived_paper_revision_sha256": "7e07348cf82682659f6c681b6889c4c49d8cd8e68ebfdab77c1ad7205bd3f6b5",
+  "retained_outputs": [
+    {
+      "path": "Experiment/Stereo/Data/Revision/PaperEvidence/integration_tests.xml.gz",
+      "sha256": "565d2aec7b0356939c1b08cf1c9da15ccf877c9bba38b4030998418750087e36",
+      "uncompressed_sha256": "2217e72b1cb967a91b82ceca3b2a2cb11f8fb1b4036b8cc11789dadc755f1c11"
+    },
+    {
+      "path": "Experiment/Stereo/Data/Revision/PaperEvidence/integration_tests.log.gz",
+      "sha256": "ab387e8b1a8b4430b2649771668c22d2e656a2b158f0841b7404061a925da74b",
+      "uncompressed_sha256": "1f96d64dd2f80fe89792f1fded98987a4075caa85ac82dce0e2ce8053a49b966"
+    },
+    {
+      "path": "Experiment/Stereo/Data/Revision/PaperEvidence/integration_submission_build.log.gz",
+      "sha256": "d7491c61b3094a6665be9e8436331c11e57482226bbceba90da3467c18f64f9b",
+      "uncompressed_sha256": "9ff6dabb8eb3ac6742661eb35f6a5112ae0bc8ac06400f4baf20f4844b9263f2"
+    },
+    {
+      "path": "Experiment/Stereo/Data/Revision/PaperEvidence/integration_source_verification.log.gz",
+      "sha256": "7378432d0dbc33dae0295c3517fcab6b0e3d22677aa5268b2977f401610ecad2",
+      "uncompressed_sha256": "ea5284ce60d84cd5e34205d30de4f5e2a4fcadb4c8b4a92347a5e951d5f4d6b1"
+    }
+  ],
+  "publication_or_submission_performed": false,
+  "boundary": "Integrated stereo library code is unchanged from the reviewed source. Experiment/test input paths are relocated and tested. Historical 35-stage measurements retain their original source/runtime provenance; unrelated current workspace work is preserved and is not asserted to be part of that clean execution.",
+  "historical_workspace_artifacts": {
+    "archive": "Experiment/Stereo/Data/Revision/PaperEvidence/archived_workspace_artifacts.tar.gz",
+    "inventory": "Experiment/Stereo/Data/Revision/PaperEvidence/workspace_artifact_archive.json",
+    "files": 143,
+    "experiment_files": 46,
+    "sha256": "7f960097a07790c53b1b3c86fcf4116f5d3fe76c7b8cc601f7e6f68eabe71f9f",
+    "all_archived_members_verified": true
+  },
+  "prior_main_paper_unique_files_preserved": {
+    "files": 16,
+    "archive": "Experiment/Stereo/Data/Revision/PaperEvidence/prior_main_paper_delta.tar.gz",
+    "inventory": "Experiment/Stereo/Data/Revision/PaperEvidence/prior_main_paper_delta.json",
+    "sha256": "bafef33f66ae46b66dea151cba47ddee3a7bb66bb3f4f15013065fbdc88e4215"
+  },
+  "separate_review_worktree_removed": true,
+  "review_branch_retained": "stereo-paper-revision"
+}

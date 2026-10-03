@@ -27,6 +27,7 @@ from Experiment.Stereo.datasets import (  # noqa: E402
     CIP_SHA256,
     load_cip,
 )
+from Experiment.Stereo.cip_sources import source_metadata  # noqa: E402
 from synkit.Chem.Molecule.stereo_perception import (  # noqa: E402
     TetrahedralConstitutionStatus,
     TetrahedralFrameStatus,
@@ -277,7 +278,7 @@ def benchmark_stereo_elements(
         "dataset": {
             "records": len(records),
             "audited_sha256": CIP_SHA256,
-            "structures_vendored": False,
+            **source_metadata(path),
         },
         "environment": {
             "python": sys.version.split()[0],
@@ -357,18 +358,23 @@ def benchmark_stereo_elements(
 
 
 def main() -> int:
+    from Experiment.Stereo.provenance import capture_source, finish_source
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cip-path", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--skip-renumbering", action="store_true")
     arguments = parser.parse_args()
     RDLogger.DisableLog("rdApp.*")
+    source = capture_source((arguments.cip_path,))
     report = benchmark_stereo_elements(
         arguments.cip_path,
         check_renumbering=not arguments.skip_renumbering,
     )
+    report["provenance"] = finish_source(source)
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if arguments.output is not None:
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
         arguments.output.write_text(rendered, encoding="utf-8")
     print(rendered, end="")
     return 0

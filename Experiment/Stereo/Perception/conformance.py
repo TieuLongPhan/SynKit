@@ -352,8 +352,12 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    from Experiment.Stereo.provenance import capture_source, finish_source
+
     arguments = _parser().parse_args()
+    source = capture_source((arguments.dataset,))
     report = benchmark_perception_conformance(arguments.dataset)
+    report["provenance"] = finish_source(source)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n",

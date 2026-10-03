@@ -1,0 +1,201 @@
+\ifdefined\ThesisFigureStyleLoaded\endinput\fi%
+\def\ThesisFigureStyleLoaded{1}%
+\input{fig/thesis_tokens.tex}%
+\colorlet{FigInk}{ThesisText}%
+\colorlet{FigMuted}{ThesisMuted}%
+\colorlet{FigRule}{ThesisRule}%
+\colorlet{FigFill}{ThesisPanel}%
+\colorlet{FigBadge}{ThesisNavy}%
+
+\newcommand{\figdesign}[1]{%
+  \pgfmathsetmacro{\FigScale}{(#1)/\ThesisFigWidthCm}%
+  \pgfmathsetmacro{\FigFontPt}{\ThesisFontSize*\FigScale}%
+  \pgfmathsetmacro{\FigFontLead}{\FigFontPt*1.18}%
+  \pgfmathsetmacro{\FigTitlePt}{\ThesisTitleSize*\FigScale}%
+  \pgfmathsetmacro{\FigMapPt}{\ThesisMapSize*\FigScale}%
+  \pgfmathsetmacro{\FigNotePt}{\ThesisNoteSize*\FigScale}%
+  \pgfmathsetmacro{\FigNoteLead}{\FigNotePt*1.18}%
+  \pgfmathsetmacro{\FigFinePt}{\FigNotePt*0.88}%
+  \pgfmathsetmacro{\FigFineLead}{\FigFinePt*1.18}%
+  \pgfmathsetmacro{\FigChipPt}{\FigNotePt*0.97}%
+  \pgfmathsetmacro{\FigSigPt}{\FigNotePt*1.11}%
+  \pgfmathsetmacro{\FigSigLead}{\FigNotePt*1.20}%
+  \pgfmathsetmacro{\FigScalePt}{\FigNotePt*1.06}%
+  \pgfmathsetmacro{\FigBadgePt}{\ThesisBadgeSize*\FigScale}%
+  \pgfmathsetmacro{\FigChemAtomPt}{10*\FigScale}%
+  \pgfmathsetmacro{\FigChemAtomLead}{\FigChemAtomPt}%
+  \pgfmathsetmacro{\FigChemMapPt}{5.6*\FigScale}%
+  \pgfmathsetmacro{\FigBadgeMm}{\ThesisBadgeDiameterMm*\FigScale}%
+  \pgfmathsetmacro{\FigBadgeWideMm}{\FigBadgeMm*1.44}%
+  \pgfmathsetmacro{\FigNodeMm}{\FigBadgeMm*0.76}%
+  \pgfmathsetmacro{\FigTokenMm}{\FigBadgeMm*0.83}%
+  \pgfmathsetmacro{\FigPillMm}{\FigBadgeMm}%
+  \pgfmathsetmacro{\FigOpMm}{\FigBadgeMm*1.74}%
+  \pgfmathsetmacro{\FigScaleBoxMm}{\FigBadgeMm*1.04}%
+  \pgfmathsetmacro{\FigVerdictMm}{\FigBadgeMm*1.30}%
+  \pgfmathsetmacro{\FigRulePt}{\ThesisRuleWidth*\FigScale}%
+  \pgfmathsetmacro{\FigRuleThin}{\FigRulePt*0.64}%
+  \pgfmathsetmacro{\FigRuleSoft}{\FigRulePt*0.82}%
+  \pgfmathsetmacro{\FigRuleFine}{\FigRulePt*0.91}%
+  \pgfmathsetmacro{\FigRuleMed}{\FigRulePt*1.09}%
+  \pgfmathsetmacro{\FigRuleFlow}{\FigRulePt*1.20}%
+  \pgfmathsetmacro{\FigRuleBold}{\FigRulePt*1.18}%
+  \pgfmathsetmacro{\FigRuleEdge}{\FigRulePt*1.36}%
+  \pgfmathsetmacro{\FigChemBondPt}{0.6*\FigScale}%
+  \pgfmathsetmacro{\FigChemChangePt}{1.2*\FigScale}%
+  \pgfmathsetmacro{\FigAxisPt}{\ThesisAxisWidth*\FigScale}%
+  \pgfmathsetmacro{\FigFlowPt}{\ThesisFlowWidth*\FigScale}%
+  \pgfmathsetmacro{\FigStagePt}{\FigFlowPt*1.06}%
+  \pgfmathsetmacro{\FigCornerPt}{\ThesisCornerRadius*\FigScale}%
+  \pgfmathsetmacro{\FigArrowMm}{2.4*\FigScale}%
+  \pgfmathsetmacro{\FigArrowWMm}{\FigArrowMm*0.71}%
+  \pgfmathsetmacro{\FigThinArrowMm}{\FigArrowMm*0.69}%
+  \pgfmathsetmacro{\FigThinArrowWMm}{\FigArrowMm*0.50}%
+  \pgfmathsetmacro{\FigChemArrowMm}{2.2*\FigScale}%
+  \pgfmathsetmacro{\FigChemArrowWMm}{1.6*\FigScale}%
+}%
+\figdesign{\ThesisFigWidthCm}%
+\newcommand{\figcanvas}[2]{%
+  \figdesign{#1}%
+  \path[use as bounding box] (0,0) rectangle (#1,-#2);%
+}%
+
+\tikzset{%
+  fig panel/.style={rounded corners=\FigCornerPt pt, draw=FigRule, fill=white,%
+    line width=\FigRulePt pt},%
+  fig card/.style={rounded corners=\FigCornerPt pt, draw=FigRule, fill=FigFill,%
+    line width=\FigRulePt pt},%
+  fig badge/.style={circle, fill=FigBadge, text=white, inner sep=0pt,%
+    minimum size=\FigBadgeMm mm,%
+    font=\rmfamily\bfseries\fontsize{\FigBadgePt}{\FigBadgePt}\selectfont},%
+  fig badge wide/.style={fig badge, shape=rectangle, rounded corners=2pt,%
+    minimum width=\FigBadgeWideMm mm, minimum height=\FigBadgeMm mm,%
+    inner xsep=2pt},%
+  fig title/.style={anchor=west, text=FigInk,%
+    font=\rmfamily\bfseries\fontsize{\FigTitlePt}{\FigTitlePt}\selectfont},%
+  fig subtitle/.style={anchor=west, text=FigMuted,%
+    font=\sffamily\fontsize{\FigNotePt}{\FigNoteLead}\selectfont},%
+  fig legend/.style={text=FigMuted,%
+    font=\sffamily\fontsize{\FigNotePt}{\FigNotePt}\selectfont},%
+  fig note/.style={text=FigInk, align=center,%
+    font=\sffamily\fontsize{\FigNotePt}{\FigNotePt}\selectfont},%
+  fig body/.style={text=FigInk, align=left,%
+    font=\sffamily\fontsize{\FigFontPt}{\FigFontPt}\selectfont},%
+  fig fine/.style={text=FigInk, align=center,%
+    font=\sffamily\fontsize{\FigFinePt}{\FigFinePt}\selectfont},%
+  fig flow/.style={-{Latex[length=\FigArrowMm mm,width=\FigArrowWMm mm]},%
+    draw=FigInk!72, line width=\FigFlowPt pt},%
+  fig thin flow/.style={-{Stealth[length=\FigThinArrowMm mm,%
+    width=\FigThinArrowWMm mm]}, draw=FigBadge!78,%
+    line width=\FigRuleFlow pt},%
+  fig edgeword/.style={text=FigMuted, fill=white, inner sep=1.2pt,%
+    font=\sffamily\fontsize{\FigChipPt}{\FigNotePt}\selectfont},%
+  fig chip/.style={rounded corners=2pt, draw=FigRule, fill=FigFill,%
+    text=FigInk, line width=\FigRulePt pt, inner xsep=4pt, inner ysep=2pt,%
+    font=\sffamily\bfseries\fontsize{\FigChipPt}{\FigNotePt}\selectfont},%
+  fig chip solid/.style={rounded corners=2pt, draw=FigBadge, fill=FigBadge,%
+    text=white, align=center, inner xsep=3.5pt, inner ysep=3pt,%
+    font=\sffamily\fontsize{\FigNotePt}{\FigNotePt}\selectfont},%
+  fig rule/.style={draw=FigRule, line width=\FigRulePt pt},%
+  % A tinted disc joining two panels: $\cong$ in teal, $\ncong$ in vermilion.%
+  fig verdict/.style={circle, inner sep=0pt, minimum size=\FigVerdictMm mm,%
+    draw=#1, fill=#1!12, text=#1!70!black, line width=\FigRuleEdge pt,%
+    font=\sffamily\fontsize{\FigTitlePt}{\FigTitlePt}\selectfont},%
+  fig verdict/.default=ThesisTeal,%
+  fig same/.style={fig verdict=ThesisTeal},%
+  fig differ/.style={fig verdict=ThesisVermilion},%
+  fig box/.style={rounded corners=\FigCornerPt pt, draw=#1!65!FigInk,%
+    fill=#1!6, line width=\FigRulePt pt, inner sep=5pt,%
+    align=center, text=FigInk,%
+    font=\sffamily\fontsize{\FigFontPt}{\FigFontLead}\selectfont},%
+  fig box/.default=ThesisBlue,%
+  fig band/.style={rounded corners=4pt, draw=FigRule, fill=FigFill,%
+    densely dashed, line width=\FigRulePt pt, inner sep=7pt},%
+  fig emphasis/.style={fig box=#1, line width=\FigFlowPt pt},%
+  fig emphasis/.default=ThesisTeal,%
+  fig optional flow/.style={fig flow, densely dashed},%
+  fig reference/.style={fig box=ThesisBlue},%
+  fig accepted/.style={fig box=ThesisTeal},%
+  fig warning/.style={fig box=ThesisGold},%
+  fig removed/.style={fig box=ThesisVermilion},%
+  fig pill/.style={rounded corners=2pt, draw=FigRule, fill=FigFill,%
+    text=FigInk, line width=\FigRulePt pt, align=center,%
+    minimum height=\FigPillMm mm, inner xsep=5pt, inner ysep=2pt,%
+    font=\sffamily\bfseries\fontsize{\FigNotePt}{\FigNotePt}\selectfont},%
+  fig status/.style={fig pill, draw=#1!60!FigInk, fill=#1!8,%
+    text=#1!65!black},%
+  fig status/.default=ThesisTeal,%
+  fig keep/.style={rounded corners=1.6pt, draw=ThesisTeal!60,%
+    fill=ThesisPaleTeal, text=ThesisTeal!60!black, line width=\FigRulePt pt,%
+    inner xsep=3.5pt, inner ysep=2.5pt,%
+    font=\sffamily\fontsize{\FigNotePt}{\FigNotePt}\selectfont},%
+  fig drop/.style={rounded corners=1.6pt, draw=ThesisVermilion!60,%
+    fill=ThesisPaleRed, text=ThesisVermilion!65!black,%
+    line width=\FigRulePt pt, inner xsep=3.5pt, inner ysep=2.5pt,%
+    font=\sffamily\fontsize{\FigNotePt}{\FigNotePt}\selectfont},%
+  fig op/.style={rounded corners=2pt, draw=FigBadge, fill=FigBadge,%
+    text=white, align=center, minimum height=\FigOpMm mm,%
+    inner xsep=5pt,%
+    font=\sffamily\bfseries\fontsize{\FigFontPt}{\FigFontPt}\selectfont},%
+  fig space/.style={rounded corners=\FigCornerPt pt, draw=FigBadge!40,%
+    fill=white, line width=\FigRuleMed pt, align=center, inner sep=3.5pt,%
+    font=\sffamily\fontsize{\FigFontPt}{\FigFontPt}\selectfont},%
+  fig stage/.style={rounded corners=3pt, draw=FigBadge, fill=FigFill,%
+    line width=\FigStagePt pt, align=center, inner sep=4pt,%
+    font=\sffamily\fontsize{\FigFontPt}{\FigFontPt}\selectfont},%
+  fig signature/.style={rounded corners=\FigCornerPt pt, draw=FigBadge!30,%
+    fill=FigFill, line width=\FigRuleFine pt, text=FigBadge!85,%
+    inner xsep=5pt, inner ysep=2pt,%
+    font=\sffamily\fontsize{\FigSigPt}{\FigSigLead}\selectfont},%
+  fig node/.style={circle, draw=FigBadge, fill=white,%
+    line width=\FigRuleBold pt, minimum size=\FigNodeMm mm,%
+    inner sep=0pt},%
+  fig edge/.style={draw=FigBadge, line width=\FigRuleEdge pt},%
+  fig token/.style={circle, draw=FigBadge!80, fill=FigFill,%
+    line width=\FigRulePt pt, minimum size=\FigTokenMm mm, inner sep=0pt},%
+  fig token/.default=ThesisBlue,%
+  fig token role/.style={fig token, draw=#1!85!black, fill=#1!12},%
+  fig link/.style={draw=FigBadge!35, line width=\FigRuleFine pt,%
+    dash pattern=on 1.1pt off 1.3pt},%
+  fig guide/.style={draw=FigRule, line width=\FigRuleSoft pt,%
+    densely dashed},%
+  fig separator/.style={draw=FigRule, line width=\FigRuleFine pt},%
+  fig axis/.style={draw=FigBadge!65, line width=\FigAxisPt pt},%
+  fig bar/.style={draw=#1, fill=#1!18, line width=\FigAxisPt pt},%
+  fig bar/.default=ThesisBlue,%
+  fig cell/.style={draw=FigBadge!75, line width=\FigRuleThin pt},%
+}%
+
+\newcommand{\figpanelhead}[4][]{%
+  \node[fig badge, anchor=north west] (figheadb) at (#2) {#3};%
+  \node[fig title, anchor=west] (figheadt)%
+    at ($(figheadb.east)+(0.12,0)$) {#4};%
+  \ifx\relax#1\relax\else
+    \node[fig subtitle, anchor=north west]%
+      at ($(figheadt.south west)+(0,-0.02)$) {#1};%
+  \fi
+}%
+
+\def\FigScalePrecision{2}%
+\newcommand{\figscalebox}[4][1.12]{%
+  \pgfmathtruncatemacro{\figband}{min(4,max(0,round(4*(#4))))}%
+  \edef\figbandfill{ThesisScale\figband}%
+  \ifnum\figband>2\def\figbandtext{white}\else\def\figbandtext{FigInk}\fi
+  \node[draw=FigRule, fill=\figbandfill, text=\figbandtext,%
+    line width=\FigRuleSoft pt, rounded corners=1.2pt,%
+    minimum width=#1 cm, minimum height=\FigScaleBoxMm mm, inner sep=1pt,%
+    font=\sffamily\bfseries\fontsize{\FigScalePt}{\FigScalePt}\selectfont]%
+    at (#2,#3)%
+    {\pgfmathprintnumber[fixed,precision=\FigScalePrecision,zerofill]{#4}};%
+}%
+\newcommand{\figscalebar}[4][2.60]{%
+  \pgfmathsetmacro{\figbarseg}{#1/5}%
+  \pgfmathsetmacro{\figbarbot}{#3-#1/2}%
+  \foreach \figc [count=\figi from 0] in%
+    {ThesisScale0,ThesisScale1,ThesisScale2,ThesisScale3,ThesisScale4}{%
+    \fill[\figc] ({#2-.14},{\figbarbot+\figi*\figbarseg})%
+      rectangle ({#2+.14},{\figbarbot+(\figi+1)*\figbarseg});}%
+  \draw[draw=FigRule, line width=\FigRuleThin pt]%
+    ({#2-.14},\figbarbot) rectangle ({#2+.14},{\figbarbot+#1});%
+  \node[fig legend, rotate=90] at ({#2+.48},#3) {#4};%
+}%

@@ -127,6 +127,7 @@ class CanonicalStereographResult:
     locus_automorphisms: tuple[AutomorphismWitness, ...]
     port_automorphisms: tuple[AutomorphismWitness, ...]
     auxiliary: ExactCanonicalResult
+    identity_profile: str = "attributed_graph"
 
     @property
     def complete(self) -> bool:
@@ -146,6 +147,7 @@ class CanonicalStereographResult:
         return (
             isinstance(other, CanonicalStereographResult)
             and self.schema == other.schema
+            and self.identity_profile == other.identity_profile
             and self.auxiliary.same_canonical_graph(other.auxiliary)
         )
 
@@ -177,6 +179,9 @@ class StereographMirrorResult:
     unsupported_loci: tuple[str, ...] = ()
     unsupported_families: tuple[str, ...] = ()
     method: str = "exact_canonical_stereograph_mirror_comparison"
+    identity_profile: str = "attributed_graph"
+    original_identity: Any | None = None
+    mirror_identity: Any | None = None
 
     @property
     def is_definitive(self) -> bool:
@@ -575,11 +580,19 @@ def canonicalize_rdkit_tetrahedral_stereograph(
 
 def canonicalize_rdkit_stereograph(
     molecule: Any,
-) -> CanonicalStereographResult:
-    """Canonicalize RDKit constitution plus all supported configured stereo."""
+    *,
+    identity_profile: Literal["chemical", "lewis_state", "acs_topology"] = "lewis_state",
+):
+    """Canonicalize configured RDKit stereo under an explicit identity profile.
+
+    The compatibility default is the supplied Lewis drawing.  Chemical
+    identity returns a versioned resonance-family certificate; it is not a
+    single drawing's certificate.  Mirror classification defaults to chemical
+    identity, so select the same profile when comparing the operations.
+    """
     from .configured import canonicalize_rdkit_configured_stereograph
 
-    return canonicalize_rdkit_configured_stereograph(molecule)
+    return canonicalize_rdkit_configured_stereograph(molecule, identity_profile=identity_profile)
 
 
 def classify_rdkit_stereograph_mirror(

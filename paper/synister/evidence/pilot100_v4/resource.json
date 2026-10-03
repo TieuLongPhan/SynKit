@@ -1,0 +1,10 @@
+{
+  "command_wall_seconds": 188.68,
+  "hard_address_space_limit_bytes": 6442450944,
+  "maximum_resident_set_kib": 293772,
+  "numerical_threads": 1,
+  "processes": 1,
+  "schema_version": 1,
+  "swap_events_observed": 0,
+  "timeout_seconds_for_campaign_process": 300
+}

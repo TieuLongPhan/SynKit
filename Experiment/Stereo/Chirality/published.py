@@ -30,6 +30,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
 from synkit.Chem.Molecule.chirality import (  # noqa: E402
     classify_molecular_chirality,
 )
+from Experiment.Stereo.provenance import capture_source, finish_source  # noqa: E402
 
 DATASET = (
     Path(__file__).resolve().parents[1]
@@ -189,6 +190,7 @@ def benchmark(
     stereomolgraph: Path | None = None,
 ) -> dict[str, object]:
     """Return published-label, SynKit, and optional live-SMG evidence."""
+    source_provenance = capture_source()
     molecules = []
     for row in rows:
         molecule = Chem.MolFromSmiles(row["Input SMILES"])
@@ -213,7 +215,20 @@ def benchmark(
     )
     published_predictions = [row["StereoMolGraph"] for row in rows]
     result: dict[str, object] = {
-        "schema": "synkit.molecular-chirality-benchmark/1",
+        "schema": "synkit.molecular-chirality-benchmark/2",
+        "input_contract": {
+            "identity_profile": "ACS-specialized element/H-count/connectivity",
+            "structural_input": "normally sanitized pinned SMILES",
+            "topology_completion": True,
+            "manual_labels_used_for_prediction": False,
+            "external_orientation": False,
+            "interpretation": (
+                "specialized provisional topology completion; not strict configured chemical identity"
+            ),
+            "timing_boundary": (
+                "legacy total backend evaluation; external explicit-H preparation excluded and disclosed"
+            ),
+        },
         "dataset": {
             "doi": "10.1021/acs.jcim.5c02523.s002",
             "sha256": EXPECTED_SHA256,
@@ -240,7 +255,8 @@ def benchmark(
                 "isomorphism"
             ),
         },
-        "failure_analysis": {
+        "historical_failure_analysis": {
+            "status": "development observations, not freshly regenerated ablations",
             "assigned_local_plus_lewis_identity": {
                 "correct": 235,
                 "false_achiral": 20,
@@ -262,7 +278,7 @@ def benchmark(
                 ),
             },
             "complete_topology_plus_molecular_identity": {
-                "expected_correct": 258,
+                "historical_expected_correct": 258,
                 "identity": "element, total hydrogen count, connectivity",
             },
             "missing_complete_topology_ids": [
@@ -332,6 +348,7 @@ def benchmark(
         result["timing_ratio_synkit_over_live_stereomolgraph"] = (
             synkit_total / live_total
         )
+    result["provenance"] = finish_source(source_provenance)
     return result
 
 
@@ -349,8 +366,11 @@ def main() -> int:
     report = benchmark(load_dataset(), arguments.stereomolgraph)
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if arguments.output is not None:
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
         arguments.output.write_text(rendered, encoding="utf-8")
-    print(rendered, end="")
+        print(json.dumps({"output": str(arguments.output), "correct": report["synkit"]["correct"]}))
+    else:
+        print(rendered, end="")
     return 0
 
 

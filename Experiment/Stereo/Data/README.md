@@ -25,7 +25,7 @@ Diagnostics/       historical or task-mismatched backend comparisons
 | --- | ---: | --- | --- | --- |
 | ACS StereoMolGraph validation enantiomer | 258 | Global whole-molecule chiral/achiral classification | Yes | CC BY-NC 4.0 |
 | ChiralFinder RotA | 650 | Positive axial-locus detection over 2D structures / 3D conformers | Yes | MIT |
-| CIP Validation Suite | 300 | Local CIP descriptor assignment across multiple stereo-unit types | No | No redistribution license found |
+| CIP Validation Suite | 300 | Local CIP descriptor assignment across multiple stereo-unit types | Yes, original publisher inputs | CC BY-NC 4.0 |
 
 Only the ACS dataset supports both whole-molecule protocols as accuracy
 benchmarks directly:
@@ -194,3 +194,5 @@ reverse atom renumbering. Because RotA is positive-only and its 2D input
 generally lacks orientation,
 ``rota_locus_report.json`` is evidence for typed locus scope only, not
 handedness, stability, true-negative specificity, or global chirality.
+
+The CIP publisher archive and attribution are in `Revision/CIPPublished`. `python -m Experiment.Stereo.cip_sources` verifies every provided input against that archive. The prepared SMILES alter two citation punctuation fields only; the original 3D coordinates remain unchanged. Historical reports evaluated later GitHub coordinates, including a different VS095 atom ordering and conformation. Those reports and hashes remain immutable; newly generated reports record the actual coordinate source.

@@ -1,0 +1,4701 @@
+{
+  "schema": "synkit.prospective-source-chemical-negatives/1",
+  "frozen_utc": "2026-10-03T08:15:46.060903+00:00",
+  "source_report": "Experiment/Stereo/Data/Revision/Chemical/pubchem_name_queries.json",
+  "source_sha256": "e33eb64f3b28a932fce111c4373621ce9625bf10d1500ee5c51d65c796814e30",
+  "query_manifest": "paper/stereo_graph/revision/chemical_negative_query_manifest.json",
+  "query_manifest_sha256": "ba64992bdba0de686b771fc0ff35cadeb953b989c00f05acbdc959287f0b96d1",
+  "input_selection_and_reference_truth_only": true,
+  "production_evaluated": false,
+  "selection_decisions": [
+    {
+      "query": "2-fluorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 67579,
+      "constitution_key": "Fc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-fluorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 145663,
+      "constitution_key": "Fc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-fluorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 9461,
+      "constitution_key": "Fc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-chlorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 249266,
+      "constitution_key": "Clc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-chlorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 16322,
+      "constitution_key": "Clc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-chlorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 16323,
+      "constitution_key": "Clc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-bromobiphenyl",
+      "source_status": "retrieved",
+      "cid": 16329,
+      "constitution_key": "Brc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-bromobiphenyl",
+      "source_status": "retrieved",
+      "cid": 16449,
+      "constitution_key": "Brc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-bromobiphenyl",
+      "source_status": "retrieved",
+      "cid": 7101,
+      "constitution_key": "Brc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-iodobiphenyl",
+      "source_status": "retrieved",
+      "cid": 75025,
+      "constitution_key": "Ic1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-iodobiphenyl",
+      "source_status": "retrieved",
+      "cid": 88542,
+      "constitution_key": "Ic1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-iodobiphenyl",
+      "source_status": "retrieved",
+      "cid": 15322,
+      "constitution_key": "Ic1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-methylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 12563,
+      "constitution_key": "Cc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-methylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 12564,
+      "constitution_key": "Cc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-methylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 12566,
+      "constitution_key": "Cc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-ethylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 15742,
+      "constitution_key": "CCc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-ethylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 79752,
+      "constitution_key": "CCc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-ethylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 79786,
+      "constitution_key": "CCc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-methoxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 6835,
+      "constitution_key": "COc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-methoxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 257971,
+      "constitution_key": "COc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-methoxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 11943,
+      "constitution_key": "COc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-ethoxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 251164,
+      "constitution_key": "CCOc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-ethoxybiphenyl",
+      "source_status": "source_refusal",
+      "selection_status": "source_refusal"
+    },
+    {
+      "query": "4-ethoxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 222517,
+      "constitution_key": "CCOc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-aminobiphenyl",
+      "source_status": "retrieved",
+      "cid": 7015,
+      "constitution_key": "Nc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-aminobiphenyl",
+      "source_status": "retrieved",
+      "cid": 16717,
+      "constitution_key": "Nc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-aminobiphenyl",
+      "source_status": "retrieved",
+      "cid": 7102,
+      "constitution_key": "Nc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-hydroxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 7017,
+      "constitution_key": "Oc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-hydroxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 11381,
+      "constitution_key": "Oc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-hydroxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 7103,
+      "constitution_key": "Oc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-cyanobiphenyl",
+      "source_status": "retrieved",
+      "cid": 141162,
+      "constitution_key": "N#Cc1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-cyanobiphenyl",
+      "source_status": "retrieved",
+      "cid": 34340,
+      "constitution_key": "N#Cc1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-cyanobiphenyl",
+      "source_status": "retrieved",
+      "cid": 18021,
+      "constitution_key": "N#Cc1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-nitrobiphenyl",
+      "source_status": "retrieved",
+      "cid": 6829,
+      "constitution_key": "O=[N+]([O-])c1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-nitrobiphenyl",
+      "source_status": "retrieved",
+      "cid": 16450,
+      "constitution_key": "O=[N+]([O-])c1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-nitrobiphenyl",
+      "source_status": "retrieved",
+      "cid": 7114,
+      "constitution_key": "O=[N+]([O-])c1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-trifluoromethylbiphenyl",
+      "source_status": "source_refusal",
+      "selection_status": "source_refusal"
+    },
+    {
+      "query": "3-trifluoromethylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 3801100,
+      "constitution_key": "FC(F)(F)c1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-trifluoromethylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 9877863,
+      "constitution_key": "FC(F)(F)c1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-acetylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 11159903,
+      "constitution_key": "CC(=O)c1ccccc1-c1ccccc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3-acetylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 258568,
+      "constitution_key": "CC(=O)c1cccc(-c2ccccc2)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "4-acetylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 7113,
+      "constitution_key": "CC(=O)c1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-carboxybiphenyl",
+      "source_status": "source_refusal",
+      "selection_status": "source_refusal"
+    },
+    {
+      "query": "3-carboxybiphenyl",
+      "source_status": "source_refusal",
+      "selection_status": "source_refusal"
+    },
+    {
+      "query": "4-carboxybiphenyl",
+      "source_status": "retrieved",
+      "cid": 66724,
+      "constitution_key": "O=C(O)c1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2-tert-butylbiphenyl",
+      "source_status": "source_refusal",
+      "selection_status": "source_refusal"
+    },
+    {
+      "query": "3-tert-butylbiphenyl",
+      "source_status": "source_refusal",
+      "selection_status": "source_refusal"
+    },
+    {
+      "query": "4-tert-butylbiphenyl",
+      "source_status": "retrieved",
+      "cid": 137120,
+      "constitution_key": "CC(C)(C)c1ccc(-c2ccccc2)cc1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "biphenyl",
+      "source_status": "retrieved",
+      "cid": 7095,
+      "constitution_key": "c1ccc(-c2ccccc2)cc1",
+      "selection_status": "development_overlap",
+      "overlap_sources": [
+        "designed_negatives"
+      ]
+    },
+    {
+      "query": "2,3-difluorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 13022387,
+      "constitution_key": "Fc1cccc(-c2ccccc2)c1F",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2,4-difluorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 169974,
+      "constitution_key": "Fc1ccc(-c2ccccc2)c(F)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3,4-difluorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 13022390,
+      "constitution_key": "Fc1ccc(-c2ccccc2)cc1F",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2,3-dichlorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 27959,
+      "constitution_key": "Clc1cccc(-c2ccccc2)c1Cl",
+      "selection_status": "selected"
+    },
+    {
+      "query": "2,4-dichlorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 36399,
+      "constitution_key": "Clc1ccc(-c2ccccc2)c(Cl)c1",
+      "selection_status": "selected"
+    },
+    {
+      "query": "3,4-dichlorobiphenyl",
+      "source_status": "retrieved",
+      "cid": 18102,
+      "constitution_key": "Clc1ccc(-c2ccccc2)cc1Cl",
+      "selection_status": "selected"
+    }
+  ],
+  "selected_records": 48,
+  "unique_constitutions": 48,
+  "selection_summary": {
+    "selected": 48,
+    "source_refusal": 6,
+    "development_overlap": 1
+  },
+  "truth_contract": "Full typed atom bijection preserves all node/bond attributes, fixes both axis endpoints and every atom outside one unsubstituted phenyl ring, and exchanges exactly the two terminal ring branches. Constitutional bond atropisomerism is therefore absent under this profile; this is not experimental stability evidence.",
+  "source_boundary": "Computed PubChem structure properties with retained CID, primary API URL and response hashes. Structural facts and new derived witnesses; no source narratives or experimental labels copied.",
+  "baseline_rows": {
+    "acs": 258,
+    "cip": 300,
+    "rota": 650,
+    "designed_negatives": 24
+  },
+  "records": [
+    {
+      "id": "PubChem-67579",
+      "cid": 67579,
+      "query": "2-fluorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-fluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2F",
+      "iupac_name": "1-fluoro-2-phenylbenzene",
+      "constitution_key": "Fc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-145663",
+      "cid": 145663,
+      "query": "3-fluorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-fluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)F",
+      "iupac_name": "1-fluoro-3-phenylbenzene",
+      "constitution_key": "Fc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-9461",
+      "cid": 9461,
+      "query": "4-fluorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-fluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)F",
+      "iupac_name": "1-fluoro-4-phenylbenzene",
+      "constitution_key": "Fc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-249266",
+      "cid": 249266,
+      "query": "2-chlorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-chlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2Cl",
+      "iupac_name": "1-chloro-2-phenylbenzene",
+      "constitution_key": "Clc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-16322",
+      "cid": 16322,
+      "query": "3-chlorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-chlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)Cl",
+      "iupac_name": "1-chloro-3-phenylbenzene",
+      "constitution_key": "Clc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-16323",
+      "cid": 16323,
+      "query": "4-chlorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-chlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)Cl",
+      "iupac_name": "1-chloro-4-phenylbenzene",
+      "constitution_key": "Clc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-16329",
+      "cid": 16329,
+      "query": "2-bromobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-bromobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2Br",
+      "iupac_name": "1-bromo-2-phenylbenzene",
+      "constitution_key": "Brc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-16449",
+      "cid": 16449,
+      "query": "3-bromobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-bromobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)Br",
+      "iupac_name": "1-bromo-3-phenylbenzene",
+      "constitution_key": "Brc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-7101",
+      "cid": 7101,
+      "query": "4-bromobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-bromobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)Br",
+      "iupac_name": "1-bromo-4-phenylbenzene",
+      "constitution_key": "Brc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-75025",
+      "cid": 75025,
+      "query": "2-iodobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-iodobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2I",
+      "iupac_name": "1-iodo-2-phenylbenzene",
+      "constitution_key": "Ic1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-88542",
+      "cid": 88542,
+      "query": "3-iodobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-iodobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)I",
+      "iupac_name": "1-iodo-3-phenylbenzene",
+      "constitution_key": "Ic1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-15322",
+      "cid": 15322,
+      "query": "4-iodobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-iodobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)I",
+      "iupac_name": "1-iodo-4-phenylbenzene",
+      "constitution_key": "Ic1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-12563",
+      "cid": 12563,
+      "query": "2-methylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-methylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CC1=CC=CC=C1C2=CC=CC=C2",
+      "iupac_name": "1-methyl-2-phenylbenzene",
+      "constitution_key": "Cc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          6,
+          7
+        ],
+        "fixed_terminal": 7,
+        "ring_order": [
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "swapped_terminal_references": [
+          8,
+          12
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            9,
+            11
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            9
+          ],
+          [
+            12,
+            8
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-12564",
+      "cid": 12564,
+      "query": "3-methylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-methylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CC1=CC(=CC=C1)C2=CC=CC=C2",
+      "iupac_name": "1-methyl-3-phenylbenzene",
+      "constitution_key": "Cc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          7
+        ],
+        "fixed_terminal": 7,
+        "ring_order": [
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "swapped_terminal_references": [
+          8,
+          12
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            9,
+            11
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            9
+          ],
+          [
+            12,
+            8
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-12566",
+      "cid": 12566,
+      "query": "4-methylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-methylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CC1=CC=C(C=C1)C2=CC=CC=C2",
+      "iupac_name": "1-methyl-4-phenylbenzene",
+      "constitution_key": "Cc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          4,
+          7
+        ],
+        "fixed_terminal": 7,
+        "ring_order": [
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "swapped_terminal_references": [
+          8,
+          12
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            12
+          ],
+          [
+            9,
+            11
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            9
+          ],
+          [
+            12,
+            8
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-15742",
+      "cid": 15742,
+      "query": "2-ethylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-ethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CCC1=CC=CC=C1C2=CC=CC=C2",
+      "iupac_name": "1-ethyl-2-phenylbenzene",
+      "constitution_key": "CCc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          7,
+          8
+        ],
+        "fixed_terminal": 8,
+        "ring_order": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "swapped_terminal_references": [
+          9,
+          13
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            13
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            10
+          ],
+          [
+            13,
+            9
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-79752",
+      "cid": 79752,
+      "query": "3-ethylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-ethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CCC1=CC(=CC=C1)C2=CC=CC=C2",
+      "iupac_name": "1-ethyl-3-phenylbenzene",
+      "constitution_key": "CCc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          4,
+          8
+        ],
+        "fixed_terminal": 8,
+        "ring_order": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "swapped_terminal_references": [
+          9,
+          13
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            13
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            10
+          ],
+          [
+            13,
+            9
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-79786",
+      "cid": 79786,
+      "query": "4-ethylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-ethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CCC1=CC=C(C=C1)C2=CC=CC=C2",
+      "iupac_name": "1-ethyl-4-phenylbenzene",
+      "constitution_key": "CCc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          5,
+          8
+        ],
+        "fixed_terminal": 8,
+        "ring_order": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "swapped_terminal_references": [
+          9,
+          13
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            13
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            10
+          ],
+          [
+            13,
+            9
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-6835",
+      "cid": 6835,
+      "query": "2-methoxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-methoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "COC1=CC=CC=C1C2=CC=CC=C2",
+      "iupac_name": "1-methoxy-2-phenylbenzene",
+      "constitution_key": "COc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          7,
+          8
+        ],
+        "fixed_terminal": 8,
+        "ring_order": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "swapped_terminal_references": [
+          9,
+          13
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            13
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            10
+          ],
+          [
+            13,
+            9
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-257971",
+      "cid": 257971,
+      "query": "3-methoxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-methoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "COC1=CC=CC(=C1)C2=CC=CC=C2",
+      "iupac_name": "1-methoxy-3-phenylbenzene",
+      "constitution_key": "COc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          6,
+          8
+        ],
+        "fixed_terminal": 8,
+        "ring_order": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "swapped_terminal_references": [
+          9,
+          13
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            13
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            10
+          ],
+          [
+            13,
+            9
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-11943",
+      "cid": 11943,
+      "query": "4-methoxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-methoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "COC1=CC=C(C=C1)C2=CC=CC=C2",
+      "iupac_name": "1-methoxy-4-phenylbenzene",
+      "constitution_key": "COc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          5,
+          8
+        ],
+        "fixed_terminal": 8,
+        "ring_order": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13
+        ],
+        "swapped_terminal_references": [
+          9,
+          13
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            13
+          ],
+          [
+            10,
+            12
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            10
+          ],
+          [
+            13,
+            9
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-251164",
+      "cid": 251164,
+      "query": "2-ethoxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-ethoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CCOC1=CC=CC=C1C2=CC=CC=C2",
+      "iupac_name": "1-ethoxy-2-phenylbenzene",
+      "constitution_key": "CCOc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          8,
+          9
+        ],
+        "fixed_terminal": 9,
+        "ring_order": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "swapped_terminal_references": [
+          10,
+          14
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            14
+          ],
+          [
+            11,
+            13
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            11
+          ],
+          [
+            14,
+            10
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-222517",
+      "cid": 222517,
+      "query": "4-ethoxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-ethoxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CCOC1=CC=C(C=C1)C2=CC=CC=C2",
+      "iupac_name": "1-ethoxy-4-phenylbenzene",
+      "constitution_key": "CCOc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          6,
+          9
+        ],
+        "fixed_terminal": 9,
+        "ring_order": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "swapped_terminal_references": [
+          10,
+          14
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            14
+          ],
+          [
+            11,
+            13
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            11
+          ],
+          [
+            14,
+            10
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-7015",
+      "cid": 7015,
+      "query": "2-aminobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-aminobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2N",
+      "iupac_name": "2-phenylaniline",
+      "constitution_key": "Nc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-16717",
+      "cid": 16717,
+      "query": "3-aminobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-aminobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)N",
+      "iupac_name": "3-phenylaniline",
+      "constitution_key": "Nc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-7102",
+      "cid": 7102,
+      "query": "4-aminobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-aminobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)N",
+      "iupac_name": "4-phenylaniline",
+      "constitution_key": "Nc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-7017",
+      "cid": 7017,
+      "query": "2-hydroxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-hydroxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2O",
+      "iupac_name": "2-phenylphenol",
+      "constitution_key": "Oc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-11381",
+      "cid": 11381,
+      "query": "3-hydroxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-hydroxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)O",
+      "iupac_name": "3-phenylphenol",
+      "constitution_key": "Oc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-7103",
+      "cid": 7103,
+      "query": "4-hydroxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-hydroxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)O",
+      "iupac_name": "4-phenylphenol",
+      "constitution_key": "Oc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-141162",
+      "cid": 141162,
+      "query": "2-cyanobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-cyanobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2C#N",
+      "iupac_name": "2-phenylbenzonitrile",
+      "constitution_key": "N#Cc1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-34340",
+      "cid": 34340,
+      "query": "3-cyanobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-cyanobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC(=C2)C#N",
+      "iupac_name": "3-phenylbenzonitrile",
+      "constitution_key": "N#Cc1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-18021",
+      "cid": 18021,
+      "query": "4-cyanobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-cyanobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)C#N",
+      "iupac_name": "4-phenylbenzonitrile",
+      "constitution_key": "N#Cc1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-6829",
+      "cid": 6829,
+      "query": "2-nitrobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-nitrobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=CC=C2[N+](=O)[O-]",
+      "iupac_name": "1-nitro-2-phenylbenzene",
+      "constitution_key": "O=[N+]([O-])c1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ],
+          [
+            14,
+            14
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-16450",
+      "cid": 16450,
+      "query": "3-nitrobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-nitrobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)[N+](=O)[O-]",
+      "iupac_name": "1-nitro-3-phenylbenzene",
+      "constitution_key": "O=[N+]([O-])c1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ],
+          [
+            14,
+            14
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-7114",
+      "cid": 7114,
+      "query": "4-nitrobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-nitrobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)[N+](=O)[O-]",
+      "iupac_name": "1-nitro-4-phenylbenzene",
+      "constitution_key": "O=[N+]([O-])c1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ],
+          [
+            14,
+            14
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-3801100",
+      "cid": 3801100,
+      "query": "3-trifluoromethylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-trifluoromethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=CC=C2)C(F)(F)F",
+      "iupac_name": "1-phenyl-3-(trifluoromethyl)benzene",
+      "constitution_key": "FC(F)(F)c1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ],
+          [
+            14,
+            14
+          ],
+          [
+            15,
+            15
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-9877863",
+      "cid": 9877863,
+      "query": "4-trifluoromethylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-trifluoromethylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)C(F)(F)F",
+      "iupac_name": "1-phenyl-4-(trifluoromethyl)benzene",
+      "constitution_key": "FC(F)(F)c1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ],
+          [
+            14,
+            14
+          ],
+          [
+            15,
+            15
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-11159903",
+      "cid": 11159903,
+      "query": "2-acetylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2-acetylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CC(=O)C1=CC=CC=C1C2=CC=CC=C2",
+      "iupac_name": "1-(2-phenylphenyl)ethanone",
+      "constitution_key": "CC(=O)c1ccccc1-c1ccccc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          8,
+          9
+        ],
+        "fixed_terminal": 9,
+        "ring_order": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "swapped_terminal_references": [
+          10,
+          14
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            14
+          ],
+          [
+            11,
+            13
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            11
+          ],
+          [
+            14,
+            10
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-258568",
+      "cid": 258568,
+      "query": "3-acetylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3-acetylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CC(=O)C1=CC=CC(=C1)C2=CC=CC=C2",
+      "iupac_name": "1-(3-phenylphenyl)ethanone",
+      "constitution_key": "CC(=O)c1cccc(-c2ccccc2)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          7,
+          9
+        ],
+        "fixed_terminal": 9,
+        "ring_order": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "swapped_terminal_references": [
+          10,
+          14
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            14
+          ],
+          [
+            11,
+            13
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            11
+          ],
+          [
+            14,
+            10
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-7113",
+      "cid": 7113,
+      "query": "4-acetylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-acetylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CC(=O)C1=CC=C(C=C1)C2=CC=CC=C2",
+      "iupac_name": "1-(4-phenylphenyl)ethanone",
+      "constitution_key": "CC(=O)c1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          6,
+          9
+        ],
+        "fixed_terminal": 9,
+        "ring_order": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "swapped_terminal_references": [
+          10,
+          14
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            14
+          ],
+          [
+            11,
+            13
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            11
+          ],
+          [
+            14,
+            10
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-66724",
+      "cid": 66724,
+      "query": "4-carboxybiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-carboxybiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC=C(C=C2)C(=O)O",
+      "iupac_name": "4-phenylbenzoic acid",
+      "constitution_key": "O=C(O)c1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ],
+          [
+            14,
+            14
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-137120",
+      "cid": 137120,
+      "query": "4-tert-butylbiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4-tert-butylbiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "CC(C)(C)C1=CC=C(C=C1)C2=CC=CC=C2",
+      "iupac_name": "1-tert-butyl-4-phenylbenzene",
+      "constitution_key": "CC(C)(C)c1ccc(-c2ccccc2)cc1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          7,
+          10
+        ],
+        "fixed_terminal": 10,
+        "ring_order": [
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "swapped_terminal_references": [
+          11,
+          15
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            5
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            15
+          ],
+          [
+            12,
+            14
+          ],
+          [
+            13,
+            13
+          ],
+          [
+            14,
+            12
+          ],
+          [
+            15,
+            11
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-13022387",
+      "cid": 13022387,
+      "query": "2,3-difluorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C3-difluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=C(C(=CC=C2)F)F",
+      "iupac_name": "1,2-difluoro-3-phenylbenzene",
+      "constitution_key": "Fc1cccc(-c2ccccc2)c1F",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-169974",
+      "cid": 169974,
+      "query": "2,4-difluorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C4-difluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=C(C=C(C=C2)F)F",
+      "iupac_name": "2,4-difluoro-1-phenylbenzene",
+      "constitution_key": "Fc1ccc(-c2ccccc2)c(F)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-13022390",
+      "cid": 13022390,
+      "query": "3,4-difluorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3%2C4-difluorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=C(C=C2)F)F",
+      "iupac_name": "1,2-difluoro-4-phenylbenzene",
+      "constitution_key": "Fc1ccc(-c2ccccc2)cc1F",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-27959",
+      "cid": 27959,
+      "query": "2,3-dichlorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C3-dichlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=C(C(=CC=C2)Cl)Cl",
+      "iupac_name": "1,2-dichloro-3-phenylbenzene",
+      "constitution_key": "Clc1cccc(-c2ccccc2)c1Cl",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-36399",
+      "cid": 36399,
+      "query": "2,4-dichlorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/2%2C4-dichlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=C(C=C(C=C2)Cl)Cl",
+      "iupac_name": "2,4-dichloro-1-phenylbenzene",
+      "constitution_key": "Clc1ccc(-c2ccccc2)c(Cl)c1",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    },
+    {
+      "id": "PubChem-18102",
+      "cid": 18102,
+      "query": "3,4-dichlorobiphenyl",
+      "source_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3%2C4-dichlorobiphenyl/property/ConnectivitySMILES,SMILES,InChIKey,IUPACName/JSON",
+      "smiles": "C1=CC=C(C=C1)C2=CC(=C(C=C2)Cl)Cl",
+      "iupac_name": "1,2-dichloro-4-phenylbenzene",
+      "constitution_key": "Clc1ccc(-c2ccccc2)cc1Cl",
+      "expected": "no_constitutional_atropisomeric_configuration_at_declared_biaryl_bond",
+      "independent_negative_witness": {
+        "axis_endpoints": [
+          3,
+          6
+        ],
+        "fixed_terminal": 3,
+        "ring_order": [
+          3,
+          2,
+          1,
+          0,
+          5,
+          4
+        ],
+        "swapped_terminal_references": [
+          2,
+          4
+        ],
+        "atom_map": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            5
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            3
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            9,
+            9
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            11,
+            11
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            13,
+            13
+          ]
+        ],
+        "typed_bijection_replayed": true,
+        "outside_ring_fixed": true
+      },
+      "production_evaluated": false
+    }
+  ]
+}

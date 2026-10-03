@@ -596,7 +596,7 @@ def main() -> int:
     parser.add_argument(
         "--cip-path",
         type=Path,
-        help="external compounds.smi checkout (validated by SHA-256)",
+        help="prepared publisher or external compounds.smi input (validated by SHA-256)",
     )
     parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()

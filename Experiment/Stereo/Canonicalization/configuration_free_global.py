@@ -12,7 +12,6 @@ import argparse
 from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor
 import csv
-from dataclasses import dataclass
 from itertools import product
 import json
 from math import prod
@@ -38,6 +37,14 @@ from Experiment.Stereo.Canonicalization.global_local import (  # noqa: E402
 from Experiment.Stereo.Canonicalization.local_permutations import (  # noqa: E402
     all_local_arrangements,
 )
+from Experiment.Stereo.Canonicalization.independent_model import (  # noqa: E402
+    from_descriptor, raw_representation_key, raw_states, state_key,
+)
+from Experiment.Stereo.Canonicalization.independent_orbits import (  # noqa: E402
+    partition_agreement, reference_partition,
+)
+from Experiment.Stereo.provenance import capture_source, finish_source  # noqa: E402
+from Experiment.Stereo.Canonicalization.exact_code_store import ExactCodeStore  # noqa: E402
 from Experiment.Stereo.Chirality.published import (  # noqa: E402
     DATASET as ACS_DATASET,
     EXPECTED_SHA256 as ACS_SHA256,
@@ -65,7 +72,11 @@ from synkit.Graph.Stereo.enumeration import (  # noqa: E402
     _rdkit_identifier_map,
 )
 
-_BUDGETS = ("A", "B", "C")
+from Experiment.Stereo.Canonicalization.configuration_free_cases import (  # noqa: E402
+    CASES_BY_BUDGET, CaseSpec, _BUDGETS,
+)
+from Experiment.Stereo.Canonicalization.configuration_free_cases import _CASES as _CASES  # noqa: E402,F401
+
 _ENUMERATION_MODES = ("formal", "raw")
 _TABLE_FIELDS = (
     "budget",
@@ -85,233 +96,12 @@ _TABLE_FIELDS = (
     "formal_assignments_per_global_class",
     "raw_assignments_per_global_class",
     "representation_invariance_passed",
+    "independent_partition_passed",
     "timeouts",
     "passed",
     "seconds",
     "issues",
 )
-
-
-@dataclass(frozen=True)
-class CaseSpec:
-    budget: str
-    source: str
-    record_id: str
-    composition: tuple[tuple[str, int], ...]
-    raw_product: int
-    formal_assignments: int
-
-    def __post_init__(self) -> None:
-        if self.budget not in _BUDGETS:
-            raise ValueError(f"Unknown global benchmark budget: {self.budget}.")
-        if self.source not in {"acs", "cip", "rota"}:
-            raise ValueError(f"Unknown global benchmark source: {self.source}.")
-        if len(self.composition) < 2:
-            raise ValueError("ABC global cases must mix at least two families.")
-
-
-def _composition(**families: int) -> tuple[tuple[str, int], ...]:
-    return tuple(sorted(families.items()))
-
-
-_CASES = (
-    # A: every mixed-family pairing available in the molecular datasets.
-    CaseSpec("A", "cip", "VS141", _composition(cumulene_axis=1, planar_bond=1), 64, 4),
-    CaseSpec(
-        "A",
-        "cip",
-        "VS154",
-        _composition(extended_cis_trans=1, planar_bond=1),
-        64,
-        4,
-    ),
-    CaseSpec(
-        "A", "rota", "RotA-0071", _composition(atrop_bond=1, planar_bond=1), 64, 4
-    ),
-    CaseSpec(
-        "A", "rota", "RotA-0073", _composition(atrop_bond=1, planar_bond=1), 64, 4
-    ),
-    CaseSpec("A", "acs", "VS032", _composition(planar_bond=1, tetrahedral=1), 192, 4),
-    CaseSpec("A", "cip", "VS072", _composition(atrop_bond=1, tetrahedral=1), 192, 4),
-    CaseSpec("A", "cip", "VS078", _composition(cumulene_axis=1, tetrahedral=1), 192, 4),
-    CaseSpec(
-        "A",
-        "cip",
-        "VS164",
-        _composition(extended_cis_trans=1, tetrahedral=1),
-        192,
-        4,
-    ),
-    CaseSpec(
-        "A",
-        "rota",
-        "RotA-0072",
-        _composition(atrop_bond=1, planar_bond=2),
-        512,
-        8,
-    ),
-    CaseSpec(
-        "A",
-        "rota",
-        "RotA-0468",
-        _composition(atrop_bond=2, planar_bond=1),
-        512,
-        8,
-    ),
-    # B: increasing multiplicity and matched symmetry/non-symmetry cases.
-    CaseSpec("B", "acs", "VS192", _composition(planar_bond=2, tetrahedral=1), 1_536, 8),
-    CaseSpec(
-        "B",
-        "rota",
-        "RotA-0551",
-        _composition(atrop_bond=2, tetrahedral=1),
-        1_536,
-        8,
-    ),
-    CaseSpec("B", "acs", "VS018", _composition(planar_bond=1, tetrahedral=2), 4_608, 8),
-    CaseSpec(
-        "B",
-        "cip",
-        "VS063",
-        _composition(extended_cis_trans=1, tetrahedral=2),
-        4_608,
-        8,
-    ),
-    CaseSpec(
-        "B",
-        "cip",
-        "VS120",
-        _composition(cumulene_axis=1, tetrahedral=2),
-        4_608,
-        8,
-    ),
-    CaseSpec(
-        "B",
-        "cip",
-        "VS243",
-        _composition(cumulene_axis=1, tetrahedral=2),
-        4_608,
-        8,
-    ),
-    CaseSpec(
-        "B",
-        "rota",
-        "RotA-0262",
-        _composition(atrop_bond=3, tetrahedral=1),
-        12_288,
-        16,
-    ),
-    CaseSpec(
-        "B",
-        "rota",
-        "RotA-0195",
-        _composition(atrop_bond=2, tetrahedral=2),
-        36_864,
-        16,
-    ),
-    CaseSpec(
-        "B",
-        "rota",
-        "RotA-0497",
-        _composition(atrop_bond=2, tetrahedral=2),
-        36_864,
-        16,
-    ),
-    CaseSpec(
-        "B",
-        "acs",
-        "VS053",
-        _composition(planar_bond=4, tetrahedral=1),
-        98_304,
-        32,
-    ),
-    CaseSpec(
-        "B",
-        "rota",
-        "RotA-0273",
-        _composition(atrop_bond=5, tetrahedral=1),
-        786_432,
-        64,
-    ),
-    # C: mixed-family stress cases, capped at 1,024 formal assignments.
-    CaseSpec(
-        "C",
-        "acs",
-        "VS146",
-        _composition(planar_bond=4, tetrahedral=2),
-        2_359_296,
-        64,
-    ),
-    CaseSpec(
-        "C",
-        "acs",
-        "VS245",
-        _composition(planar_bond=1, tetrahedral=4),
-        2_654_208,
-        32,
-    ),
-    CaseSpec(
-        "C",
-        "rota",
-        "RotA-0256",
-        _composition(atrop_bond=1, tetrahedral=4),
-        2_654_208,
-        32,
-    ),
-    CaseSpec(
-        "C",
-        "acs",
-        "VS191",
-        _composition(planar_bond=6, tetrahedral=1),
-        6_291_456,
-        128,
-    ),
-    CaseSpec(
-        "C",
-        "rota",
-        "RotA-0272",
-        _composition(atrop_bond=7, tetrahedral=1),
-        50_331_648,
-        256,
-    ),
-    CaseSpec(
-        "C",
-        "acs",
-        "VS259",
-        _composition(planar_bond=1, tetrahedral=5),
-        63_700_992,
-        64,
-    ),
-    CaseSpec(
-        "C",
-        "rota",
-        "RotA-0378",
-        _composition(planar_bond=1, tetrahedral=5),
-        63_700_992,
-        64,
-    ),
-    CaseSpec(
-        "C",
-        "rota",
-        "RotA-0290",
-        _composition(atrop_bond=2, tetrahedral=6),
-        12_230_590_464,
-        256,
-    ),
-    CaseSpec(
-        "C",
-        "acs",
-        "VS126",
-        _composition(planar_bond=4, tetrahedral=6),
-        782_757_789_696,
-        1_024,
-    ),
-)
-
-CASES_BY_BUDGET = {
-    budget: tuple(case for case in _CASES if case.budget == budget)
-    for budget in _BUDGETS
-}
 
 
 def _carrier_inventory(
@@ -353,7 +143,9 @@ def _carrier_inventory(
         arrangements = all_local_arrangements(entry["seed"])
         grouped: dict[str, list[Any]] = defaultdict(list)
         for arrangement in arrangements:
-            grouped[repr(arrangement.canonical_form())].append(arrangement)
+            grouped[repr(state_key(from_descriptor(arrangement)))].append(arrangement)
+        actual_raw = {raw_representation_key(from_descriptor(value)) for value in arrangements}
+        expected_raw = {raw_representation_key(value) for value in raw_states(from_descriptor(entry["seed"]))}
         class_keys = sorted(grouped)
         sources = tuple(sorted(entry["support_sources"]))
         carriers.append(
@@ -364,6 +156,7 @@ def _carrier_inventory(
                 "support_sources": sources,
                 "configuration_dependent_support": sources == ("supplied_input",),
                 "raw_local_permutations": len(arrangements),
+                "raw_inventory_exhaustive": actual_raw == expected_raw and len(actual_raw) == len(arrangements),
                 "formal_configuration_classes": len(grouped),
                 "formal_class_multiplicities": [
                     len(grouped[class_key]) for class_key in class_keys
@@ -416,7 +209,9 @@ def _canonicalize_assignment(
             f"{type(error).__name__}: {error}",
             time.perf_counter() - started,
         )
-    return result.canonical_digest, None, time.perf_counter() - started
+    if not result.complete or not result.exact:
+        return None, "non_exact_or_incomplete_result", time.perf_counter() - started
+    return result.canonical_code, None, time.perf_counter() - started
 
 
 def _composition_text(composition: tuple[tuple[str, int], ...]) -> str:
@@ -499,8 +294,40 @@ class _RawProgress:
         self._last_report = now
 
 
+def _case_validation(spec, composition, raw_product, formal_count, max_assignments, carriers):
+    """Check frozen input composition and independent enumeration coverage."""
+    issues = []
+    if not all(carrier["raw_inventory_exhaustive"] for carrier in carriers):
+        issues.append("raw_inventory_not_independently_exhaustive")
+    if composition != spec.composition:
+        issues.append(
+            f"composition_mismatch:{_composition_text(composition)}"
+        )
+    if raw_product != spec.raw_product:
+        issues.append(
+            f"raw_product_mismatch:{raw_product}!={spec.raw_product}"
+        )
+    if formal_count != spec.formal_assignments:
+        issues.append(
+            f"formal_count_mismatch:{formal_count}!={spec.formal_assignments}"
+        )
+    if len(composition) < 2:
+        issues.append("not_mixed_family")
+    if formal_count > max_assignments:
+        issues.append(f"assignment_limit:{formal_count}>{max_assignments}")
+    return issues
+
+
 def _case_result(
     item: tuple[CaseSpec, str, str, float, int, float | None],
+) -> dict[str, Any]:
+    """Bound full-certificate storage for formal and raw Cartesian products."""
+    with ExactCodeStore() as store:
+        return _case_result_exact(item, store)
+
+
+def _case_result_exact(
+    item: tuple[CaseSpec, str, str, float, int, float | None], code_store: ExactCodeStore,
 ) -> dict[str, Any]:
     (
         spec,
@@ -544,23 +371,7 @@ def _case_result(
     composition = tuple(sorted(Counter(c["family"] for c in carriers).items()))
     raw_product = prod(c["raw_local_permutations"] for c in carriers)
     formal_count = prod(c["formal_configuration_classes"] for c in carriers)
-    validation_issues = []
-    if composition != spec.composition:
-        validation_issues.append(
-            f"composition_mismatch:{_composition_text(composition)}"
-        )
-    if raw_product != spec.raw_product:
-        validation_issues.append(
-            f"raw_product_mismatch:{raw_product}!={spec.raw_product}"
-        )
-    if formal_count != spec.formal_assignments:
-        validation_issues.append(
-            f"formal_count_mismatch:{formal_count}!={spec.formal_assignments}"
-        )
-    if len(composition) < 2:
-        validation_issues.append("not_mixed_family")
-    if formal_count > max_assignments:
-        validation_issues.append(f"assignment_limit:{formal_count}>{max_assignments}")
+    validation_issues = _case_validation(spec, composition, raw_product, formal_count, max_assignments, carriers)
     public_carriers = [
         {
             key: value
@@ -621,8 +432,8 @@ def _case_result(
         )
         enumerated_expected = formal_count
 
-    digest_raw_counts: Counter[str] = Counter()
-    formal_digest_sets: dict[tuple[int, ...], set[str]] = defaultdict(set)
+    digest_raw_counts: Counter[int] = Counter()
+    formal_digest_sets: dict[tuple[int, ...], set[int]] = defaultdict(set)
     formal_enumeration_counts: Counter[tuple[int, ...]] = Counter()
     assignment_issues = []
     completed = 0
@@ -665,6 +476,7 @@ def _case_result(
                 }
             )
         else:
+            digest = code_store.intern(digest)
             completed += 1
             digest_raw_counts[digest] += 1
             formal_digest_sets[formal_indices].add(digest)
@@ -699,7 +511,7 @@ def _case_result(
         and formal_enumeration_counts[formal_indices]
         == formal_expected_counts[formal_indices]
     }
-    digest_formal_tuples: dict[str, list[tuple[int, ...]]] = defaultdict(list)
+    digest_formal_tuples: dict[int, list[tuple[int, ...]]] = defaultdict(list)
     for formal_indices in expected_formal_tuples:
         digests = formal_digest_sets[formal_indices]
         if len(digests) == 1:
@@ -718,7 +530,7 @@ def _case_result(
         global_classes.append(
             {
                 "global_class_index": index,
-                "canonical_digest": digest,
+                "canonical_digest": code_store.index_digest(digest),
                 "formal_assignment_multiplicity": len(formal_tuples),
                 "formal_assignments": [
                     list(formal_indices) for formal_indices in formal_tuples
@@ -736,10 +548,21 @@ def _case_result(
         result["represented_raw_assignment_multiplicity"] for result in global_classes
     )
     representation_invariance = len(invariant_formal_tuples) == formal_count
+    reference = reference_partition(
+        graph, tuple(carrier["class_representatives"] for carrier in carriers),
+        max_assignments=max_assignments, timeout_seconds=timeout_seconds,
+    )
+    full_codes = [next(iter(formal_digest_sets[indices])) if len(formal_digest_sets[indices]) == 1 else None
+                  for indices in expected_formal_tuples]
+    independent_passed = partition_agreement(reference, expected_formal_tuples, full_codes)
+    if not independent_passed:
+        failure = "independent_partition_disagreement" if reference["status"] == "complete" else "oracle_incomplete"
+        issues.append(failure)
     passed = (
         complete
         and bool(global_classes)
         and representation_invariance
+        and independent_passed
         and sum(formal_multiplicities) == formal_count
         and sum(raw_multiplicities) == raw_product
     )
@@ -766,6 +589,8 @@ def _case_result(
         "formal_assignments_per_global_class": formal_multiplicities,
         "raw_assignments_per_global_class": raw_multiplicities,
         "representation_invariance_passed": representation_invariance,
+        "independent_partition_passed": independent_passed,
+        "independent_reference": reference,
         "timeouts": sum(issue == "timeout" for issue in issues),
         "canonicalization_seconds": canonical_seconds,
         "carriers": public_carriers,
@@ -844,6 +669,7 @@ def benchmark_budget(
     max_assignments: int = 4096,
     progress_interval_seconds: float | None = None,
 ) -> dict[str, Any]:
+    source_provenance = capture_source()
     budget = budget.upper()
     if budget not in CASES_BY_BUDGET:
         raise ValueError(f"Unknown budget: {budget}.")
@@ -898,7 +724,8 @@ def benchmark_budget(
         record.get("enumerated_assignments_completed", 0) for record in records
     )
     return {
-        "schema": "synkit.configuration-free-global-abc/1",
+        "schema": "synkit.configuration-free-global-abc/2",
+        "provenance": finish_source(source_provenance),
         "budget": budget,
         "enumeration_mode": enumeration_mode,
         "environment": {
@@ -915,6 +742,10 @@ def benchmark_budget(
             "local_raw_orbits_factorized": True,
             "all_carriers_configured_simultaneously": True,
             "joint_formal_assignment_product": "exhaustive",
+            "local_class_truth": "independent_geometry_rotation_orbits",
+            "global_partition_truth": "exhaustive_inventory_preserving_constitutional_automorphisms",
+            "identity_comparison": "full_exact_codes; digests_are_indices_only",
+            "oracle_incomplete_is_pass": False,
             "enumeration_mode": enumeration_mode,
             "raw_representation_cartesian_product_enumerated": (
                 enumeration_mode == "raw"
@@ -971,7 +802,7 @@ def benchmark_budget(
 def _write_table(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=_TABLE_FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=_TABLE_FIELDS, lineterminator="\n")
         writer.writeheader()
         for record in report["records"]:
             row = {}
