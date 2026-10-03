@@ -1,117 +1,117 @@
 {
   "schema": "synkit.stereo-final-submission/1",
-  "authoring_source_sha256": "eac80b061222bc18a6072189b9a3d06bc3e256b312cd7366d3577e0d22ca72e9",
+  "authoring_source_sha256": "91d40522c708cb1934af1fda471565ec50a77b924013ba089be245cad2aa36da",
   "selected_manifest_sha256": "42c554bdb9584e57f68d99de37255e35bd6b12b2f3c79b4f8f9abe212c10d97c",
   "numerical_claims": 269,
   "reviewed_mathematical_blocks": 33,
   "manuscript_pages": 56,
-  "supporting_information_pages": 56,
+  "supporting_information_pages": 55,
   "artifacts": {
     "Additional_file_1.pdf": {
-      "sha256": "07343f42bcdd264b5f832fc591d16af400a67fb6024c09477b6f4897a641596d",
-      "bytes": 819092
+      "sha256": "85c2d72ef00ca56211b20a133645bf3c837d9d8262f5fc9eb2594687a59ee873",
+      "bytes": 818529
     },
     "cover_letter.pdf": {
-      "sha256": "b85736398aa9f21089afa3f39c9aabe685da7e30b411f656102e05a3c3e0b1ff",
+      "sha256": "b6fed0639505468f84ac6206ff54de9ba28a5091203de60674612511fd678917",
       "bytes": 60475
     },
     "figures/Figure_01.pdf": {
-      "sha256": "8af3b7c558ccf8421fdc0cb6a724a8cc82db802b65f56ae236a38b0621e85896",
-      "bytes": 135615
+      "sha256": "71be1d442bfa6b4eb2d77ce1cd96a0bd4245ebd2f4d6e55bf981a92d99224e6f",
+      "bytes": 135613
     },
     "figures/Figure_02.pdf": {
-      "sha256": "e4568217e9190b1b84262d29d9dc46adbece17114171dd66a12d60930fe2441d",
-      "bytes": 144781
+      "sha256": "da186b76c205e65c4d85d9062af27967293e374fb26d8668e96b7bd85e5ccfc0",
+      "bytes": 144779
     },
     "figures/Figure_03.pdf": {
-      "sha256": "29222db909a816e59a47a88dd10201df8c9aae88de90bdbfbcf16e57a4a38842",
+      "sha256": "e55f424f05fc07403402d3ad3219f50b25d44fccb71f69d2641eb56eb1d405b2",
       "bytes": 114525
     },
     "figures/Figure_04.pdf": {
-      "sha256": "b30fac51ac6ad830d1c0157353118baaf4c98ccc92d878901c22533bd8c6f059",
+      "sha256": "ff90a226880abdca8a7800de87f434fbd6f1aca73b0c24a4930056981270176c",
       "bytes": 117887
     },
     "figures/Figure_05.pdf": {
-      "sha256": "7405038f9d140ccd7a6e1ff663dd11225112d25345b456410f20fd6c7782a302",
+      "sha256": "cff1550ba11e99ce4975ce1bdfaf4f0762f15bff785c045d8541b2f1ca97f6d1",
       "bytes": 110792
     },
     "figures/Figure_06.pdf": {
-      "sha256": "3673265b5d194588235c0e045e2ab74947c0ea2d9800cf2485ebe5585905b927",
+      "sha256": "f331b45f50adba2acfa924126f32fff8341aae3118678a79d5f843c161e5d315",
       "bytes": 115221
     },
     "figures/Figure_07.pdf": {
-      "sha256": "8d1417b53d4337b438cc4f4918d7aebef6fadafca4b170044bfaec131584d4e8",
+      "sha256": "03589b176ebe0ce767e95936d4091b05a9ebf5f1dee4635144fe810be8ec5d16",
       "bytes": 118086
     },
     "figures/Figure_08.pdf": {
-      "sha256": "22b25ea5a4fe8e0564a212ff2faac4f4747cd615ca5d862bedb8e7ed9a13e2bd",
-      "bytes": 62797
+      "sha256": "d2b6a1f16583231a26af87e42ba2b26280ec59492fbcd88218516bbb1098ba3a",
+      "bytes": 62796
     },
     "figures/Figure_09.pdf": {
-      "sha256": "6d01947cb756f99ed82cef61bb7f535cc2b7c739e10f7cbc26bb16de5d658022",
+      "sha256": "8b5264af5e4989f5cf0ac1035f6bf7a0c0b16cff5afc1acea6d5e50e8485fba9",
       "bytes": 25299
     },
     "figures/Figure_10.pdf": {
-      "sha256": "b373641b6a71821b72c8c790a154e9b5f24216322a5bb36219f12b4d3ba187d1",
+      "sha256": "cf859f7a501e1cba02c8d2eb4890db2d1c02871a76611e01cbcabb3bdb09ff73",
       "bytes": 19511
     },
     "figures/Figure_11.pdf": {
-      "sha256": "73551ed3e1d8023efc9780decced92bae7221697109d4997e1f72fdfd43cffa5",
+      "sha256": "bb75f58870a3e07d07a7464e0badc3af03bdadb90bd30dccdd90f84d404e3578",
       "bytes": 67390
     },
     "manuscript.pdf": {
-      "sha256": "e09734c22c59c9598ff8479f4c733c1c2a543e6e04aad9d30e2f6fb24a481d84",
-      "bytes": 763043
+      "sha256": "b765733af122cff5cba45accc517705f2e381e60d95ae344f700f8e0644a7192",
+      "bytes": 764161
     },
     "sources.zip": {
-      "sha256": "52c1d6e22c53e5a9a923480229627b1608925c029f9276c18954bce354010c60",
-      "bytes": 307294
+      "sha256": "d4fa8986a786f5061595ec9e779e1546f51c6d95f5ead3f5dc1aad72cfd112b7",
+      "bytes": 306073
     }
   },
   "source_inventory": {
     "Figure_01.tex": {
-      "sha256": "e9e9f5f9c32248948642ddd3566d790924a374e170fda9c076ed56f2d6abd1f7",
-      "bytes": 3188
-    },
-    "Figure_02.tex": {
-      "sha256": "a4bf636ddbd2ad2576cde72132725c5730fa7f6bfa9ab763358fa3db609e134c",
+      "sha256": "c32e702ccd203f419b430b27708aca054620eee007e69cea414120e8b057d35c",
       "bytes": 3190
     },
-    "Figure_03.tex": {
-      "sha256": "994a94a827d5597fef9e980a64cc4ca73ca5b753845c4061619167919ff9b3b4",
-      "bytes": 3180
-    },
-    "Figure_04.tex": {
-      "sha256": "b12cb1e04532151c7c1266650ca5e4342a58591fd77b505a0a2cb38b33bfc8ff",
-      "bytes": 3194
-    },
-    "Figure_05.tex": {
-      "sha256": "e89d993a023fba94db2e4529e0709d42e82270634942fa6bdd6908d360f46447",
-      "bytes": 3194
-    },
-    "Figure_06.tex": {
-      "sha256": "5eecdea5395a6a38ea1122dc6858e784dacefee73b0d69884010a32bc291821f",
-      "bytes": 3196
-    },
-    "Figure_07.tex": {
-      "sha256": "143acdda5612d984b0d9113cb98beb98378cd0c437949105f5f5fb3b4802df8c",
-      "bytes": 3207
-    },
-    "Figure_08.tex": {
-      "sha256": "46edcd004c620edde38cc72962612e40f040aea0924897c5a47ab92dd0f9bf73",
-      "bytes": 3198
-    },
-    "Figure_09.tex": {
-      "sha256": "fc30c8ce291605a32952c82b21989fedaaa38f4f2950c924efb278c7f6f503fd",
+    "Figure_02.tex": {
+      "sha256": "041e3cbd951daa41febda65d1e7ea12e808da77f51cc1e5d3cce8e35e6ddae92",
       "bytes": 3192
     },
-    "Figure_10.tex": {
-      "sha256": "fbb07f48a42771c608317b51daa2ff82873f7fd797f9dfded6a7958ffd4ddbe5",
+    "Figure_03.tex": {
+      "sha256": "916ccc79ef7fa9beffe0acbbf05efeceb8a9ff7a07eb11c21cd1120edaebd9a7",
+      "bytes": 3182
+    },
+    "Figure_04.tex": {
+      "sha256": "469b26e533b14e44a93f308a8059f2346006361283fbb93492d464ab0b89460e",
       "bytes": 3196
     },
+    "Figure_05.tex": {
+      "sha256": "649b2fdeb351aeec7bc411df8dd8f1afbf8ed57fd2009063fcc5f39e8e79d451",
+      "bytes": 3196
+    },
+    "Figure_06.tex": {
+      "sha256": "9e79ddeb030c0c885a99e6c32643d90b5733cee8e2418a6b3f838749136b3dda",
+      "bytes": 3198
+    },
+    "Figure_07.tex": {
+      "sha256": "43ae17e560491ee0b9a36b38cda461576dabfec72d388238bc172cac820f3248",
+      "bytes": 3209
+    },
+    "Figure_08.tex": {
+      "sha256": "48af111794cdcf0df03e89648d7e6f2e82645afeb57040f32db0e88fa52b18ef",
+      "bytes": 3200
+    },
+    "Figure_09.tex": {
+      "sha256": "b6c9dc9e412e4a0df9f41c03a9b2bf0a37375f857a7a690f25480e88e20ad1cc",
+      "bytes": 3194
+    },
+    "Figure_10.tex": {
+      "sha256": "ea1c9ae0bf30414d4f785f2c2f677d580d7074fbe9d199389d3486348ecb1d8b",
+      "bytes": 3198
+    },
     "Figure_11.tex": {
-      "sha256": "ae90ae67efc86db037e4d21584578b448d7f9268901adc696da388ffa71f1a52",
-      "bytes": 3191
+      "sha256": "6f1d01d70c7245947af1c9598e25e6e3ffb0405740cf853bbb2f7340d0d9d956",
+      "bytes": 3193
     },
     "authors.tex": {
       "sha256": "0d226259c7a4d87cb52a5c64c1ec6d328261ef33af681396136e4013f9004154",
@@ -230,16 +230,16 @@
       "bytes": 9747
     },
     "manuscript.aux": {
-      "sha256": "889f96f19ff14ea43e9e81cd7b13c2136b209fc1346525a9119078fb85cdd999",
-      "bytes": 37760
+      "sha256": "56adce05638d9421c244797f892e1408fe87a29967a1fea902cd7940359ecb6b",
+      "bytes": 38000
     },
     "manuscript.bbl": {
       "sha256": "17b2fde35a7ad609886d4842102c2ad11102938f5afde534ec32ffa705bbcbe1",
       "bytes": 12982
     },
     "manuscript.tex": {
-      "sha256": "18cc6e54c93d122f9b29ae70112e71ea2c7ce72e8e5c12c00f1c7f3835b858a1",
-      "bytes": 119163
+      "sha256": "f1caf10c0afedae62a385dc35820cb5e14679246b6d3f8fe214a27ecd98b7a0d",
+      "bytes": 119202
     },
     "references.bib": {
       "sha256": "89bd3ee49d2175bee92bddc03bbf08333bed6d73a51ce8bde1ebafae28d48fd2",
@@ -258,7 +258,7 @@
       "bytes": 63289
     },
     "supporting_information.aux": {
-      "sha256": "2adc913932a0a74ad5d51d9990bd5fd7b8d27b7e85013e44eef214a621118dc4",
+      "sha256": "ddcee1a960cf60fc3dcf9288e65ff6e4348110ad9cb055c6ef12d76d6ad3f8dd",
       "bytes": 31317
     },
     "supporting_information.bbl": {
@@ -266,12 +266,8 @@
       "bytes": 3849
     },
     "supporting_information.tex": {
-      "sha256": "56453297ed0b028e3eef233821159f6781e73c7f0efa86e3912de8070befbaa0",
-      "bytes": 59264
-    },
-    "technical_details.tex": {
-      "sha256": "433d90a8fbf9fdbedc2e870dbc6e59ae5b9eb202e33947d4b1e0ec74e3618127",
-      "bytes": 51977
+      "sha256": "7e1bc16817618d5c5b63c241b0d237aba0d6dcdaae75d41424b9e4430f21dd78",
+      "bytes": 111218
     }
   },
   "journal_source_inventory": {
@@ -384,16 +380,16 @@
       "bytes": 1774
     },
     "manuscript.aux": {
-      "sha256": "889f96f19ff14ea43e9e81cd7b13c2136b209fc1346525a9119078fb85cdd999",
-      "bytes": 37760
+      "sha256": "56adce05638d9421c244797f892e1408fe87a29967a1fea902cd7940359ecb6b",
+      "bytes": 38000
     },
     "manuscript.bbl": {
       "sha256": "17b2fde35a7ad609886d4842102c2ad11102938f5afde534ec32ffa705bbcbe1",
       "bytes": 12982
     },
     "manuscript.tex": {
-      "sha256": "18cc6e54c93d122f9b29ae70112e71ea2c7ce72e8e5c12c00f1c7f3835b858a1",
-      "bytes": 119163
+      "sha256": "f1caf10c0afedae62a385dc35820cb5e14679246b6d3f8fe214a27ecd98b7a0d",
+      "bytes": 119202
     },
     "references.bib": {
       "sha256": "89bd3ee49d2175bee92bddc03bbf08333bed6d73a51ce8bde1ebafae28d48fd2",
@@ -412,7 +408,7 @@
       "bytes": 63289
     },
     "supporting_information.aux": {
-      "sha256": "2adc913932a0a74ad5d51d9990bd5fd7b8d27b7e85013e44eef214a621118dc4",
+      "sha256": "ddcee1a960cf60fc3dcf9288e65ff6e4348110ad9cb055c6ef12d76d6ad3f8dd",
       "bytes": 31317
     },
     "supporting_information.bbl": {
@@ -420,58 +416,54 @@
       "bytes": 3849
     },
     "supporting_information.tex": {
-      "sha256": "56453297ed0b028e3eef233821159f6781e73c7f0efa86e3912de8070befbaa0",
-      "bytes": 59264
-    },
-    "technical_details.tex": {
-      "sha256": "433d90a8fbf9fdbedc2e870dbc6e59ae5b9eb202e33947d4b1e0ec74e3618127",
-      "bytes": 51977
+      "sha256": "7e1bc16817618d5c5b63c241b0d237aba0d6dcdaae75d41424b9e4430f21dd78",
+      "bytes": 111218
     }
   },
   "figure_source_inventory": {
     "Figure_01.tex": {
-      "sha256": "e9e9f5f9c32248948642ddd3566d790924a374e170fda9c076ed56f2d6abd1f7",
-      "bytes": 3188
-    },
-    "Figure_02.tex": {
-      "sha256": "a4bf636ddbd2ad2576cde72132725c5730fa7f6bfa9ab763358fa3db609e134c",
+      "sha256": "c32e702ccd203f419b430b27708aca054620eee007e69cea414120e8b057d35c",
       "bytes": 3190
     },
-    "Figure_03.tex": {
-      "sha256": "994a94a827d5597fef9e980a64cc4ca73ca5b753845c4061619167919ff9b3b4",
-      "bytes": 3180
-    },
-    "Figure_04.tex": {
-      "sha256": "b12cb1e04532151c7c1266650ca5e4342a58591fd77b505a0a2cb38b33bfc8ff",
-      "bytes": 3194
-    },
-    "Figure_05.tex": {
-      "sha256": "e89d993a023fba94db2e4529e0709d42e82270634942fa6bdd6908d360f46447",
-      "bytes": 3194
-    },
-    "Figure_06.tex": {
-      "sha256": "5eecdea5395a6a38ea1122dc6858e784dacefee73b0d69884010a32bc291821f",
-      "bytes": 3196
-    },
-    "Figure_07.tex": {
-      "sha256": "143acdda5612d984b0d9113cb98beb98378cd0c437949105f5f5fb3b4802df8c",
-      "bytes": 3207
-    },
-    "Figure_08.tex": {
-      "sha256": "46edcd004c620edde38cc72962612e40f040aea0924897c5a47ab92dd0f9bf73",
-      "bytes": 3198
-    },
-    "Figure_09.tex": {
-      "sha256": "fc30c8ce291605a32952c82b21989fedaaa38f4f2950c924efb278c7f6f503fd",
+    "Figure_02.tex": {
+      "sha256": "041e3cbd951daa41febda65d1e7ea12e808da77f51cc1e5d3cce8e35e6ddae92",
       "bytes": 3192
     },
-    "Figure_10.tex": {
-      "sha256": "fbb07f48a42771c608317b51daa2ff82873f7fd797f9dfded6a7958ffd4ddbe5",
+    "Figure_03.tex": {
+      "sha256": "916ccc79ef7fa9beffe0acbbf05efeceb8a9ff7a07eb11c21cd1120edaebd9a7",
+      "bytes": 3182
+    },
+    "Figure_04.tex": {
+      "sha256": "469b26e533b14e44a93f308a8059f2346006361283fbb93492d464ab0b89460e",
       "bytes": 3196
     },
+    "Figure_05.tex": {
+      "sha256": "649b2fdeb351aeec7bc411df8dd8f1afbf8ed57fd2009063fcc5f39e8e79d451",
+      "bytes": 3196
+    },
+    "Figure_06.tex": {
+      "sha256": "9e79ddeb030c0c885a99e6c32643d90b5733cee8e2418a6b3f838749136b3dda",
+      "bytes": 3198
+    },
+    "Figure_07.tex": {
+      "sha256": "43ae17e560491ee0b9a36b38cda461576dabfec72d388238bc172cac820f3248",
+      "bytes": 3209
+    },
+    "Figure_08.tex": {
+      "sha256": "48af111794cdcf0df03e89648d7e6f2e82645afeb57040f32db0e88fa52b18ef",
+      "bytes": 3200
+    },
+    "Figure_09.tex": {
+      "sha256": "b6c9dc9e412e4a0df9f41c03a9b2bf0a37375f857a7a690f25480e88e20ad1cc",
+      "bytes": 3194
+    },
+    "Figure_10.tex": {
+      "sha256": "ea1c9ae0bf30414d4f785f2c2f677d580d7074fbe9d199389d3486348ecb1d8b",
+      "bytes": 3198
+    },
     "Figure_11.tex": {
-      "sha256": "ae90ae67efc86db037e4d21584578b448d7f9268901adc696da388ffa71f1a52",
-      "bytes": 3191
+      "sha256": "6f1d01d70c7245947af1c9598e25e6e3ffb0405740cf853bbb2f7340d0d9d956",
+      "bytes": 3193
     },
     "fig/ball_permutation.tex": {
       "sha256": "10ef8a38bb77a59e6119cd8b854a87ac308543c861d467c8ca7e029641b0121d",
@@ -551,8 +543,8 @@
       "figure_number": 1,
       "label": "fig:ball-permutation",
       "file": "Figure_01.pdf",
-      "sha256": "8af3b7c558ccf8421fdc0cb6a724a8cc82db802b65f56ae236a38b0621e85896",
-      "bytes": 135615,
+      "sha256": "71be1d442bfa6b4eb2d77ce1cd96a0bd4245ebd2f4d6e55bf981a92d99224e6f",
+      "bytes": 135613,
       "pages": 1,
       "title_tex": "Even and odd alignments of one ordered four-ligand frame.",
       "legend_tex": "Colored numbered balls identify ligand references, the gray digit beside each position identifies the frame slot, and the strip below each center repeats the same state as the ordered tuple read in slot order. All four centers share one fixed geometric frame. It contains two in-plane bonds, a bold wedge at slot 3 toward the viewer, and a hashed bond at slot 4 away from it. Only the assignment of ligands to slots changes. (A) The even 3-cycle \\(\\epsilon=(1\\;2\\;3)\\in A_4=\\Gamma_{\\mathrm{tet}}\\) sends \\(u=(1,2,3,4)\\) to \\((2,3,1,4)\\). Green marks a configuration-preserving action, a rigid rotation of the same local state. (B) The odd transposition \\(\\rho=(1\\;2)\\notin A_4\\) sends \\(u\\) to \\((2,1,3,4)\\). Blue marks the opposite orbit and uses the same verdict colors as Figure~\\ref{fig:orbit-examples}. The ledger states the coset decomposition \\(S_4=A_4\\sqcup\\rho A_4\\) behind Proposition~\\ref{prop:local-parity}: four distinct references admit 24 ordered frames that split \\(12+12\\) into two mirror-image configuration orbits.",
@@ -569,8 +561,8 @@
       "figure_number": 2,
       "label": "fig:support-motivation",
       "file": "Figure_02.pdf",
-      "sha256": "e4568217e9190b1b84262d29d9dc46adbece17114171dd66a12d60930fe2441d",
-      "bytes": 144781,
+      "sha256": "da186b76c205e65c4d85d9062af27967293e374fb26d8668e96b7bd85e5ccfc0",
+      "bytes": 144779,
       "pages": 1,
       "title_tex": "Typed supports for configured stereochemical elements.",
       "legend_tex": "The support of a stereo element is a subgraph of prescribed shape, and the six families differ in that shape rather than in their algebra. Each header states the support type together with the arity and geometry group where the family uses a finite frame. Vermilion marks the carrier, blue marks the orientation datum, and green distinguishes the second terminal plane in panel C. (A) An atom support is one vertex; the two tetrahedral states share a single constitution and are exchanged by the mirror \\(\\sigma\\). (B) A bond support is one edge carrying two terminal pairs. (C) An axis support is a cumulated path whose termini lie in orthogonal planes, shown here in projection along the axis. (D) A path support is an ordered vertex sequence taken modulo canonical reversal; helicity is the sense of the rise \\(h\\). (E) A plane support is an oriented face whose off-plane pilot \\(p\\) fixes the sense of the normal \\(\\hat n\\). (F) A global support couples frames over a whole component; its joint configuration is retained explicitly. The footer ramp orders the six carriers by spatial extent and defines no inheritance between them. Molecular chirality, including a \\emph{meso} verdict, is a downstream whole-stereograph classification rather than a seventh carrier family.",
@@ -587,7 +579,7 @@
       "figure_number": 3,
       "label": "fig:pipeline",
       "file": "Figure_03.pdf",
-      "sha256": "29222db909a816e59a47a88dd10201df8c9aae88de90bdbfbcf16e57a4a38842",
+      "sha256": "e55f424f05fc07403402d3ad3219f50b25d44fccb71f69d2641eb56eb1d405b2",
       "bytes": 114525,
       "pages": 1,
       "title_tex": "One-way, fail-closed information flow, written as typed objects and the maps between them.",
@@ -605,7 +597,7 @@
       "figure_number": 4,
       "label": "fig:incomplete-completions",
       "file": "Figure_04.pdf",
-      "sha256": "b30fac51ac6ad830d1c0157353118baaf4c98ccc92d878901c22533bd8c6f059",
+      "sha256": "ff90a226880abdca8a7800de87f434fbd6f1aca73b0c24a4930056981270176c",
       "bytes": 117887,
       "pages": 1,
       "title_tex": "Incomplete configuration permits both achiral and chiral completions.",
@@ -623,7 +615,7 @@
       "figure_number": 5,
       "label": "fig:quotient-hierarchy",
       "file": "Figure_05.pdf",
-      "sha256": "7405038f9d140ccd7a6e1ff663dd11225112d25345b456410f20fd6c7782a302",
+      "sha256": "cff1550ba11e99ce4975ce1bdfaf4f0762f15bff785c045d8541b2f1ca97f6d1",
       "bytes": 110792,
       "pages": 1,
       "title_tex": "The two-stage quotient used in theory and validation.",
@@ -641,7 +633,7 @@
       "figure_number": 6,
       "label": "fig:invariant-versus-certificate",
       "file": "Figure_06.pdf",
-      "sha256": "3673265b5d194588235c0e045e2ab74947c0ea2d9800cf2485ebe5585905b927",
+      "sha256": "f331b45f50adba2acfa924126f32fff8341aae3118678a79d5f843c161e5d315",
       "bytes": 115221,
       "pages": 1,
       "title_tex": "Renumbering invariance and exact identity have different obligations.",
@@ -659,7 +651,7 @@
       "figure_number": 7,
       "label": "fig:mirror-canonical-examples",
       "file": "Figure_07.pdf",
-      "sha256": "8d1417b53d4337b438cc4f4918d7aebef6fadafca4b170044bfaec131584d4e8",
+      "sha256": "03589b176ebe0ce767e95936d4091b05a9ebf5f1dee4635144fe810be8ec5d16",
       "bytes": 118086,
       "pages": 1,
       "title_tex": "Whole-molecule mirror canonicalization in six real chemical cases.",
@@ -677,8 +669,8 @@
       "figure_number": 8,
       "label": "fig:benchmark-evidence-map",
       "file": "Figure_08.pdf",
-      "sha256": "22b25ea5a4fe8e0564a212ff2faac4f4747cd615ca5d862bedb8e7ed9a13e2bd",
-      "bytes": 62797,
+      "sha256": "d2b6a1f16583231a26af87e42ba2b26280ec59492fbcd88218516bbb1098ba3a",
+      "bytes": 62796,
       "pages": 1,
       "title_tex": "Task-separated overview of the frozen benchmark evidence.",
       "legend_tex": "Each tile carries one hero ratio, its own denominator, and its own truth contract: exact identity and relation laws (A), carrier perception (B), downstream CIP naming (C), and ACS whole-molecule chirality (D). Every meter is printed with its numeric rate, and each is read against its own tile only. Panel C reports \\(\\CipCoordinatesExactRecords/\\CipCoordinatesRecords\\) as exact-record accuracy, alongside label recall and precision. All 300 inputs have pinned coordinates; 187 is the number with an exactly correct predicted label set. The four tiles are reported side by side but are never pooled into one accuracy statistic.",
@@ -695,7 +687,7 @@
       "figure_number": 9,
       "label": "fig:controlled-costs",
       "file": "Figure_09.pdf",
-      "sha256": "6d01947cb756f99ed82cef61bb7f535cc2b7c739e10f7cbc26bb16de5d658022",
+      "sha256": "8b5264af5e4989f5cf0ac1035f6bf7a0c0b16cff5afc1acea6d5e50e8485fba9",
       "bytes": 25299,
       "pages": 1,
       "title_tex": "Controlled configured-graph costs.",
@@ -713,7 +705,7 @@
       "figure_number": 10,
       "label": "fig:registration-costs",
       "file": "Figure_10.pdf",
-      "sha256": "b373641b6a71821b72c8c790a154e9b5f24216322a5bb36219f12b4d3ba187d1",
+      "sha256": "cf859f7a501e1cba02c8d2eb4890db2d1c02871a76611e01cbcabb3bdb09ff73",
       "bytes": 19511,
       "pages": 1,
       "title_tex": "Curated registration workload.",
@@ -731,7 +723,7 @@
       "figure_number": 11,
       "label": "fig:exact-mirror-mismatches",
       "file": "Figure_11.pdf",
-      "sha256": "73551ed3e1d8023efc9780decced92bae7221697109d4997e1f72fdfd43cffa5",
+      "sha256": "bb75f58870a3e07d07a7464e0badc3af03bdadb90bd30dccdd90f84d404e3578",
       "bytes": 67390,
       "pages": 1,
       "title_tex": "The two remaining declared task-boundary differences in the 258-record source-declared-configuration audit.",

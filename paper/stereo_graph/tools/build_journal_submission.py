@@ -1,7 +1,7 @@
 """Build separate, numbered journal manuscript and supporting-information PDFs.
 
-Scientific text is taken directly from the combined authoring manuscript. Only
-document boundaries, review formatting and external-reference wiring change.
+Scientific text is taken directly from the two standalone authoring documents.
+Only build names and external-reference wiring change.
 The source ZIP contains every local dependency observed by the TeX recorder.
 """
 
@@ -55,22 +55,24 @@ def main():
     require(not out.exists(), "Use a new output directory to preserve previous builds.")
     snapshot.mkdir(parents=True)
     source = (paper / "main.tex").read_text()
-    require(source.count("\\begin{document}") == 1 and source.count("\\appendix") == 1,
-            "Expected a single authoring document and appendix boundary.")
-    preamble, body = source.split("\\begin{document}", 1)
-    narrative, supplementary = body.split("\\appendix", 1)
-    require(narrative.count("\\bibliography{references}") == 1, "Main bibliography boundary changed.")
-    require(supplementary.rstrip().endswith("\\end{document}"), "Expected a terminal document boundary.")
-    supplementary = supplementary.rsplit("\\end{document}", 1)[0]
-    narrative = re.sub(r"^\\clearpage\s*$", "", narrative, flags=re.M)
-    supplementary = re.sub(r"^\\clearpage\s*$", "", supplementary, flags=re.M)
-    formatted = preamble.replace("[pdflatex,sn-mathphys-num]", "[pdflatex,sn-mathphys-num,referee,lineno]")
-    require(formatted != preamble, "Expected the audited Springer class options.")
-    require("\\clearpage" not in narrative + supplementary, "An explicit author page break remains.")
-    # Allow unbreakable algorithm floats to move to a page with enough space.
-    # Forcing them immediately below a preceding float can overflow review pages.
-    narrative = narrative.replace("\\begin{algorithm}[H]", "\\begin{algorithm}[htbp]")
-    supplementary = supplementary.replace("\\begin{algorithm}[H]", "\\begin{algorithm}[htbp]")
+    supporting = (paper / "technical_details.tex").read_text()
+    require(re.findall(r"^\\section\{([^}]+)\}", source, re.M) ==
+            ["Introduction", "Methods", "Results", "Discussion", "Conclusions"],
+            "The journal manuscript section hierarchy changed.")
+    for name, text in [("main", source), ("technical_details", supporting)]:
+        require(text.count("\\begin{document}") == 1 and text.count("\\end{document}") == 1,
+                "Expected a standalone document: " + name)
+        require("[pdflatex,sn-mathphys-num,referee,lineno]" in text,
+                "Expected double spacing and line numbering: " + name)
+        require(text.count("\\bibliography{references}") == 1,
+                "Bibliography boundary changed: " + name)
+        require("\\clearpage" not in text and "\\newpage" not in text,
+                "An explicit author page break remains: " + name)
+    require("\\appendix" not in source and supporting.count("\\appendix") == 1,
+            "Supporting information must be separate from the main article.")
+    require(source.count("\\externaldocument{technical_details}") == 1 and
+            supporting.count("\\externaldocument{main}") == 1,
+            "Expected reciprocal cross-document references.")
     for path in sorted(paper.rglob("*")):
         if not path.is_file():
             continue
@@ -81,18 +83,10 @@ def main():
             target = snapshot / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, target)
-    main_preamble = formatted + "\n\\usepackage{xr-hyper}\n\\externaldocument{supporting_information}\n"
-    si_preamble = formatted + "\n\\usepackage{xr-hyper}\n\\externaldocument{manuscript}\n"
-    (snapshot / "manuscript.tex").write_text(main_preamble + "\\begin{document}" + narrative + "\n\\end{document}\n")
-    title = "Supporting information: Exact canonicalization of configured molecular stereographs"
-    si_header = ("\\begin{document}\n\\title{" + title + "}\n\\input{authors.tex}\n\\maketitle\n\\appendix\n"
-                 "\\renewcommand{\\thetheorem}{S\\arabic{theorem}}\n"
-                 "\\renewcommand{\\theequation}{S\\arabic{equation}}\n"
-                 "\\renewcommand{\\thefigure}{S\\arabic{figure}}\n"
-                 "\\renewcommand{\\thetable}{S\\arabic{table}}\n"
-                 "\\renewcommand{\\thealgorithm}{S\\arabic{algorithm}}\n")
-    (snapshot / "supporting_information.tex").write_text(si_preamble + si_header + supplementary
-                                                         + "\n\\bibliography{references}\n\\end{document}\n")
+    (snapshot / "manuscript.tex").write_text(
+        source.replace("\\externaldocument{technical_details}", "\\externaldocument{supporting_information}"))
+    (snapshot / "supporting_information.tex").write_text(
+        supporting.replace("\\externaldocument{main}", "\\externaldocument{manuscript}"))
     # Cross-document auxiliary files are established before final compilation.
     for name in ("manuscript", "supporting_information", "manuscript", "supporting_information"):
         build(snapshot, name)
@@ -144,8 +138,9 @@ def main():
               "source_inventory": source_inventory,
               "class_options": ["pdflatex", "sn-mathphys-num", "referee", "lineno"],
               "explicit_author_page_breaks_removed": True,
-              "algorithm_float_placement": "htbp instead of forced H; scientific pseudocode unchanged",
-              "main_and_supporting_scientific_text_split_at_original_appendix": True,
+              "algorithm_float_placement": "htbp; scientific pseudocode unchanged",
+              "main_and_supporting_information_are_standalone_sources": True,
+              "main_section_headings": ["Introduction", "Methods", "Results", "Discussion", "Conclusions"],
               "supplemental_statement_equation_figure_table_numbers":
               "S prefix distinguishes cross-document references",
               "journal_additional_file_upload_name": "Additional_file_1.pdf",

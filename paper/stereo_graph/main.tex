@@ -3,7 +3,7 @@
 % hyperref can patch all float types without creating duplicate anchors.
 \RequirePackage{algorithm}
 \RequirePackage{algpseudocode}
-\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+\documentclass[pdflatex,sn-mathphys-num,referee,lineno]{sn-jnl}
 
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb,amsfonts}
@@ -56,6 +56,9 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 
+
+\usepackage{xr-hyper}
+\externaldocument{technical_details}
 \begin{document}
 
 \title[Configured molecular stereographs]{\textbf{Exact canonicalization of configured molecular stereographs}}
@@ -109,7 +112,7 @@ permutation group, graph isomorphism, molecular chirality, CIP nomenclature}
 
 \maketitle
 
-\section{Background}
+\section{Introduction}
 \label{sec:introduction}
 
 Canonical molecular identity underlies registration, database deduplication,
@@ -547,10 +550,10 @@ stereograph canonicalization developed in Section~\ref{sec:canonicalization}.
   \label{fig:pipeline}
 \end{figure*}
 
-\section{Stereochemical supports and configurations}
+\subsection{Stereochemical supports and configurations}
 \label{sec:center-types}
 
-\subsection{Configured support families}
+\subsubsection{Configured support families}
 
 A stereo support is an immutable carrier together with its dependency set and
 relabeling action.  Table~\ref{tab:center-types} summarizes the configured
@@ -627,7 +630,7 @@ carrier gallery in Appendix~\ref{sec:chemical-gallery} illustrates that scope;
 it does not independently validate handedness, persistence or automatic
 perception for every depicted family.
 
-\subsection{Input information and required configuration}
+\subsubsection{Input information and required configuration}
 \label{sec:input-boundaries}
 
 A potential carrier is evidence about a support, not an assigned configuration.
@@ -674,7 +677,7 @@ fixed partial input and the distinct questions answered by each boundary.
   \label{fig:incomplete-completions}
 \end{figure*}
 
-\subsection{Finite-frame configuration orbits}
+\subsubsection{Finite-frame configuration orbits}
 \label{sec:orbit-summary}
 
 For a geometry \(\tau\), \(\Sigma_\tau\) comprises admissible slot
@@ -694,7 +697,7 @@ local orbit. In particular, the binary change \(E\leftrightarrow Z\) is not
 geometric reflection. Appendix~\ref{sec:local-orbits} proves the configuration
 count and binary-opposite statements and illustrates admitted frame changes.
 
-\subsection{Extended axis, path, and plane configurations}
+\subsubsection{Extended axis, path, and plane configurations}
 
 Atrop and cumulene axes use the same four-reference \(V_4\) frame algebra but
 different support and admissibility conditions.  A cumulene-axis descriptor
@@ -707,7 +710,7 @@ configuration or stability from connectivity alone.  The chemical cases,
 canonical forms, and reversal laws are detailed in
 Appendix~\ref{sec:si-orbits} through Appendix~\ref{sec:si-classsets}.
 
-\subsection{Local relations and transport evidence}
+\subsubsection{Local relations and transport evidence}
 
 A transport witness replays a concrete reference alignment. Replacing either
 representative within its geometry orbit changes that witness by left and
@@ -719,7 +722,7 @@ absent information remains distinct. Query wildcards are an explicit matching
 policy, not stored equality. Detailed relation and morphism contracts are in
 Appendices~\ref{sec:local-relations} and~\ref{sec:si-entities}.
 
-\section{Exact graph canonicalization}
+\subsection{Exact graph canonicalization}
 \label{sec:canonicalization}
 
 The central task is to turn \(\mathcal X=(G,\mathcal R)\) into one exact,
@@ -729,7 +732,7 @@ choose a canonical atom order.  We instead reduce the complete configured
 stereograph to one colored auxiliary graph and delegate the local--global
 symmetry interaction to a complete graph canonizer.
 
-\subsection{One global map must satisfy every local constraint}
+\subsubsection{One global map must satisfy every local constraint}
 \label{sec:global-constraints}
 
 A constitutional bijection \(f:G\to H\) transports all configured supports
@@ -748,7 +751,7 @@ simultaneous requirements in one colored graph. An automorphism of that graph
 therefore resolves whole-molecule symmetry, including meso exchange, rather
 than selecting a local ordering first.
 
-\subsection{Raw, formal, and global quotients}
+\subsubsection{Raw, formal, and global quotients}
 \label{sec:quotient-hierarchy}
 
 Raw encodings choose an ordered frame at each locus. Formal assignments
@@ -781,7 +784,7 @@ scoped validation populations.
   \label{fig:quotient-hierarchy}
 \end{figure*}
 
-\subsection{Stereo-isomorphism}
+\subsubsection{Stereo-isomorphism}
 
 \begin{definition}[Stereo-isomorphism]
 \label{def:stereo-isomorphism}
@@ -839,7 +842,7 @@ stored tuples: by Lemma~\ref{lem:induced-alignment}(i) it is invariant under
 the choice of representative at either end, so no local normalization is needed
 before the global comparison.
 
-\subsection{Faithful auxiliary-graph expansion}
+\subsubsection{Faithful auxiliary-graph expansion}
 \label{sec:expansion}
 
 Let \(\Phi_\chi(\mathcal X)\) be a finite colored graph with the vertex roles in
@@ -968,7 +971,7 @@ owners and unique carrier keys determine the auxiliary extension of a given
 atom map in each construction.
 \end{proof}
 
-\subsection{Faithfulness}
+\subsubsection{Faithfulness}
 
 \begin{theorem}[Faithful stereograph expansion]
 \label{thm:faithful-expansion}
@@ -1027,7 +1030,7 @@ The theorem is the bridge missing from a collection of local descriptors.  It
 makes the complete colored graph, rather than an iterative exchange of local
 ranks, the single object whose symmetries must be resolved.
 
-\subsection{Exact canonical certificate}
+\subsubsection{Exact canonical certificate}
 \label{sec:certificate}
 
 Let \(\operatorname{Can}\) be a canonical form for finite colored graphs, that
@@ -1145,7 +1148,7 @@ none. Reported atom orbits therefore describe the configured object's actual
 symmetry. Complete group materialization is a distinct output cost; exact
 certificates do not require enumerating every group element.
 
-\subsection{Algorithm and complexity}
+\subsubsection{Algorithm and complexity}
 \label{sec:canon-algorithm}
 
 Algorithm~\ref{alg:canonicalization} is the constructive form of
@@ -1154,7 +1157,7 @@ full canonical graph \(K\), a canonical map \(\kappa\), automorphisms, and
 search evidence.  Any node, depth, or time stop produces a refusal rather than
 a partial code.
 
-\begin{algorithm}[H]
+\begin{algorithm}[htbp]
 \caption{Exact canonicalization of a configured molecular stereograph}
 \label{alg:canonicalization}
 \begin{algorithmic}[1]
@@ -1229,7 +1232,7 @@ The present implementation retains the exhaustive search as a correctness
 oracle and uses verified automorphism pruning in the production exact path;
 Section~\ref{sec:canon-results} reports the remaining scalability boundary.
 
-\subsection{Consequences for identity and matching}
+\subsubsection{Consequences for identity and matching}
 
 Two equal certificates prove identity.  Unequal hashes do reject identity, but
 equal hashes do not replace comparison of the full certificate.  This contract
@@ -1241,10 +1244,10 @@ information and presence policies.  Identity witnesses compose, while query
 wildcards remain outside stored equality.  The complete morphism policy matrix
 and composition proofs are in Appendix~\ref{sec:si-entities}.
 
-\section{Molecular chirality}
+\subsection{Molecular chirality}
 \label{sec:chirality}
 
-\subsection{Mirror action and exact classification}
+\subsubsection{Mirror action and exact classification}
 
 Mirror action is geometry specific, and for a finite-frame family it is fixed
 by which improper spatial operation the geometry actually realizes on its
@@ -1405,7 +1408,7 @@ Algorithm~\ref{alg:chirality} turns this criterion into a proof-bearing
 decision.  When the certificates agree, the two canonical maps construct the
 mirror isomorphism rather than merely asserting that one exists.
 
-\begin{algorithm}[H]
+\begin{algorithm}[htbp]
 \caption{Exact whole-molecule chirality by mirror canonicalization}
 \label{alg:chirality}
 \begin{algorithmic}[1]
@@ -1478,7 +1481,7 @@ Because \(C_{\mathrm{SG}}\) is numbering independent
 verdicts are invariant under relabeling of either input and independent of
 which local representatives were stored.
 
-\subsection{Complete inputs and completion populations}
+\subsubsection{Complete inputs and completion populations}
 \label{sec:completion-summary}
 
 The end-to-end operation normalizes the declared constitution, obtains typed
@@ -1514,11 +1517,9 @@ under its declared transport and geometry rules. A constitutional axis can be
 structurally stereogenic while interconverting rapidly; the identity model does
 not infer an experimental lifetime from the existence of that axis.
 
-\section{Experiments and results}
-\label{sec:experiments}
 \label{sec:results}
 
-\subsection{Datasets, experiment inventory, and protocols}
+\subsection{Validation datasets and protocols}
 \label{sec:experiment-list}
 
 The evaluation is divided by scientific question (Table~
@@ -1625,6 +1626,9 @@ completeness claim.  The stereo-stripped completion experiment uses a
 not claim to recover erased stereo.  When a tetrahedral assignment product
 exceeds the cap, exact XOR constraints over the constitutional automorphisms
 test whether any achiral completion exists, avoiding a raw \(2^n\) search.
+
+\section{Results}
+\label{sec:experiments}
 
 \subsection{Independent assignment-partition validation}
 \label{sec:independent-orbits}
@@ -2117,7 +2121,7 @@ through a typed boundary, and incomplete chemistry fails closed.  Finding a
 possible stereocenter is therefore only the first step and never, by itself,
 establishes molecular chirality.
 
-\section*{Abbreviations}
+\section*{List of abbreviations}
 ACS, American Chemical Society; API, application programming interface;
 CC~BY, Creative Commons Attribution; CC~BY-NC, Creative Commons Attribution
 NonCommercial; CIP, Cahn--Ingold--Prelog; CPU, central processing unit;
@@ -2195,7 +2199,7 @@ Intelligence Dresden/Leipzig} (ScaDS.AI, proj.\ no.\ SCADS24B), and by the
 Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under
 Germany's Excellence Strategy (EXC-3105/1, 533765739).
 
-\subsection*{Author contributions}
+\subsection*{Authors' contributions}
 T.-L.P. conceived and developed the method, implemented the reference
 realization, designed and performed the validation, prepared the figures, and
 wrote the manuscript.
@@ -2207,1025 +2211,8 @@ funding.
 was cross-validated against the MIT-licensed \stereomolgraph implementation;
 its notice and pinned conformance commit are distributed with the source.
 
-\clearpage
+
 \bibliography{references}
 
-\clearpage
-\appendix
-\input{technical_details.tex}
-\begingroup
-% The main-text six-shape gallery defines private drawing helpers with the
-% same names as the denser appendix galleries. Replace them within this group.
-\let\sqF\relax
-\let\tbpF\relax
-\let\octF\relax
-\let\bondF\relax
-\input{fig/shape_frames.tex}
-
-\section{Scope and claim boundary of the technical appendices}
-\label{sec:si-scope}
-
-These appendices consolidate the technical contracts for the
-molecular-graph layer of \synkit's configuration-neutral stereochemical
-identity model: carrier perception and constitutional evidence, typed supports,
-frames, groups, orbits, relation classes, witnesses,
-stereo-preserving morphisms, graph identity, derived-label projection, and
-whole-molecule chirality. Reaction-layer operations, including rule guards and
-effects, reference-aligned stereo change, reversal, imaginary transition
-states and mechanism replay, are outside the present validation scope.
-
-The novelty boundary is explicit.  Ordered local frames modulo finite geometry
-groups are prior M{\O}D work, while permutation-invariant local descriptors and
-whole-graph stereoisomer comparison are also provided by \stereomolgraph
-\cite{andersen2017stereo,papusha2026stereomolgraph}.  This work does not claim
-either premise as new.  Its claim is the evidence-bearing contract joining
-configuration-neutral chemical-neighbourhood frames and carrier-stabilizer tie
-certificates to typed configured states, double-coset relations, composable
-transport witnesses, exact global equivalence, and derived labels that cannot
-feed back into identity.  The complete configured object is additionally
-encoded as a coloured auxiliary stereograph whose exact canonical label is the
-exact configured-stereograph identity certificate.
-
-The SACA comparison uses its accessible primary abstract and the authors'
-inspected experiment source, rather than attributing guarantees from an
-unavailable full text \cite{papusha2026saca}. Its resonance-invariant circular
-fingerprints are credited separately from the full-certificate identity
-contract studied here.
-
-The method is compatible with the ordered-local-frame and finite-group
-model used by M{\O}D; it is not claimed to be a complete
-monomorphic Double-Pushout implementation, a three-dimensional perception
-engine, or a predictor of stereochemical outcome.
-
-Eight orbit shapes are registered---tetrahedral, square-planar,
-trigonal-bipyramidal, octahedral, planar-bond, atrop-axis, cumulene-axis,
-and extended-cis/trans---together with configured helical-path and planar-chirality
-descriptors.  Global support is implemented by the coupled-frame
-\code{FrameworkStereo} descriptor and an orientation-unspecified analysis
-certificate.  Section~\ref{sec:si-classsets} states exactly which consumers
-accept which classes.
-
-\section{Reproducibility and environment manifest}
-\label{sec:si-manifest}
-
-\begingroup
-\small
-\renewcommand{\code}[1]{\path{#1}}
-\begin{table}[htbp]
-\caption{Research artifacts and their provenance.}
-\label{tab:manifest}
-\centering
-\begin{tabularx}{\textwidth}{@{}lXX@{}}
-\toprule
-Artifact & Recorded revision & Retained evidence \\
-\midrule
-\synkit source & Package metadata \code{1.6.2}; clean experiment commit \code{e2526b9} & Exact source and input hashes; complete raw execution archive \\
-Core fixtures & \code{Test/Graph/Stereo}, \code{Test/Graph/Morphism}, \code{Test/Chem/Molecule} & Frozen cases and source checksums in the research archive \\
-Recorded environment & Linux, Python 3.12.12; 46-package base and separate comparator overlay & Wheel-hash locks and original conda bootstrap specification \\
-Optional comparator & Current \stereomolgraph \code{2b99f62}; historical \code{2189f61} remains separate & Pinned comparison reports and MIT notice; no runtime dependency \\
-Benchmark registry & \code{Experiment/Stereo/Data/manifest.json}, schema \code{synkit.stereo-benchmark-registry/1} & Dataset revisions, input hashes, attribution and separate source licences \\
-\bottomrule
-\end{tabularx}
-\end{table}
-\endgroup
-
-Descriptor equality, finite group actions, support projection, morphism
-construction, CIP ranking, and label projection are deterministic and use no
-random seed.  Stereoisomer enumeration for the chirality benchmark is capped
-and the cap is reported with the result.
-
-\section{Typed supports}
-\label{sec:si-supports}
-
-Support answers where a stereo element lives.  It deliberately does not encode
-configuration, CIP labels, provenance, or configurational stability.
-
-\begin{table}[htbp]
-\caption{Support families, their data, and their validation invariants.}
-\label{tab:supports}
-\centering
-\begin{tabularx}{\textwidth}{@{}lXX@{}}
-\toprule
-Family & Data & Rejects \\
-\midrule
-Atom & one centre & non-integer centre \\
-Bond & two endpoints & equal endpoints \\
-Axis & ordered path of \(\ge 2\) atoms; two ordered two-reference terminal
-frames & repeated path atoms; wrong frame count or width; duplicate references
-inside one terminal frame \\
-Path & ordered atoms; open/cyclic flag & fewer than two atoms; repeated atoms;
-cyclic with fewer than three atoms \\
-Plane & \(\ge 3\) oriented atoms & fewer than three atoms; repeated atoms \\
-Global & component atom set & empty or non-integer atom set \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Every support exposes a dependency set---the atoms whose renumbering affects
-it---and a relabelling action.  Axis-support relabelling covers the path, the
-material references in both terminal frames, and the owners of virtual
-references, so that \code{@H:<owner>} and \code{@LP:<owner>} follow their atom.
-
-\section{Permutation-orbit data model}
-
-\subsection{Frames, groups, and canonical identity}
-
-A permutation \(p\) acts by
-\[
- p(N)_i=N_{p(i)},
-\]
-and \code{p.then(q)} has slot image \(p\circ q\), so
-\code{p.then(q).apply(N)} equals \code{q.apply(p.apply(N))}.
-Atom-supported frames place the
-locus first and then their ligand references.  Bond- and axis-supported frames
-use \((l_1,l_2,l,r,r_1,r_2)\).  Material references are atom maps; virtual
-ligands have the owner-scoped forms \code{@H:<owner>} and
-\code{@LP:<owner>}.
-
-For a registered shape \(\tau\) with geometry group \(\Gamma_\tau\) and frame
-\(N\), a fixed configuration is the orbit \([N]_{\Gamma_\tau}\), and the number
-of configurations is the index \([\Sigma_\tau:\Gamma_\tau]\) of
-Proposition~\ref{prop:config-count}.  The canonical representative is
-the minimum deterministically encoded orbit member.  Two configurations are
-equal exactly when shape, specification level, and canonical frame agree.
-
-\begin{table}[htbp]
-\caption{Registered fixed and unspecified group actions.}
-\label{tab:groups}
-\centering
-\begin{tabularx}{\textwidth}{@{}llXX@{}}
-\toprule
-Shape & Support & Fixed group & Unspecified information group \\
-\midrule
-Tetrahedral & atom & \(A_4\), order 12 & \(S_4\), order 24 \\
-Square planar & atom & \(D_4\), order 8 & \(S_4\), order 24 \\
-Trigonal bipyramidal & atom & \(D_3\), order 6 & \(S_5\), order 120 \\
-Octahedral & atom & proper \(O\), order 24 & \(S_6\), order 720 \\
-Planar bond & bond & \(V_4\), order 4 & bond-frame group, order 8 \\
-Atrop axis & axis & \(V_4\), order 4 & bond-frame group, order 8 \\
-Cumulene axis & axis & \(V_4\), order 4 & bond-frame group, order 8 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Planar-bond, atrop-axis, and cumulene-axis fixed actions are distinct even
-though all three are abstractly \(V_4\): they differ in their frame-reversal
-action and in the support that may carry them.  Stored unspecified orientation
-uses the larger group and is distinct from descriptor absence and query
-wildcard behavior.  The legacy
-\code{atoms}, \code{parity}, and \code{provenance} fields remain compatible
-encodings; parity is decoded to a concrete frame and is not mathematical
-identity.  Existing \code{canonical\_form()} and serialized descriptor payloads
-remain the Beta-2 compatibility boundary, and \code{AtropBondStereo} remains a
-wire-compatible alias of \code{AtropAxisStereo}.
-
-\subsection{Permutation orbits of the six atom- and bond-supported geometries}
-\label{sec:si-orbits}
-
-The tetrahedral orbit structure is drawn exhaustively in the main text: all
-\(4!=24\) orderings of four distinguishable ligands split into two
-\(12\)-element orbits (the even rotations \(A_4\) and their odd mirror images),
-so a stored descriptor is the orbit, in practice the parity.
-Figures~\ref{fig:si-square}--\ref{fig:si-atrop} apply the same construction to
-the remaining five geometries, using the same colour-for-ligand convention;
-each cell is one frame ordering, labelled by the permutation that produces it
-from the reference in cycle notation over the numbered slots.  All cells,
-groupings, and labels were generated directly from the registered groups of
-Table~\ref{tab:groups}.  Where the full ordering set is too large to draw
-(trigonal-bipyramidal, \(5!=120\); octahedral, \(6!=720\)), one
-configuration's orbit---the frame maps belonging to \(\Gamma_\tau\)---is shown
-and the total configuration count \([\Sigma_\tau:\Gamma_\tau]\) is stated.
-The cumulene-axis frame is not drawn: its group and orbit structure coincide
-with the atrop frame of Figure~\ref{fig:si-atrop}, and it differs in support
-and admissibility rather than in group action.
-
-\begin{figure*}[htbp]
-  \centering
-  \resizebox{0.72\textwidth}{!}{\input{fig/si_orbit_square.tex}}
-  \caption{Square planar.  All \(24\) orderings of four distinct ligands,
-  grouped by configuration.  Here \(\Sigma_\tau=S_4\) and
-  \(\Gamma_\tau=D_4\) of order \(8\), so each configuration is an orbit of
-  \(8\) orderings and there are \([\Sigma_\tau:\Gamma_\tau]=24/8=3\)
-  configurations; unlike the tetrahedral case there is no single binary
-  ``opposite'', which is why nonidentity square-planar relations are general
-  \code{RECONFIGURED} classes.}
-  \label{fig:si-square}
-\end{figure*}
-
-\begin{figure}[htbp]
-  \centering
-  \resizebox{0.62\columnwidth}{!}{\input{fig/si_orbit_tbp.tex}}
-  \caption{Trigonal bipyramidal.  The six orderings forming one configuration
-  (the \(\Gamma_\tau=D_3\) orbit: an axial pair and an equatorial triple).
-  With five distinct ligands there are
-  \([\Sigma_\tau:\Gamma_\tau]=120/6=20\) configurations in total, so only one
-  \(6\)-element orbit is drawn.}
-  \label{fig:si-tbp}
-\end{figure}
-
-\begin{figure*}[htbp]
-  \centering
-  \resizebox{\textwidth}{!}{\input{fig/si_orbit_oct.tex}}
-  \caption{Octahedral.  The \(24\) orderings forming one configuration (the
-  proper rotation group \(\Gamma_\tau=O\)).  With six distinct ligands there
-  are \([\Sigma_\tau:\Gamma_\tau]=720/24=30\) configurations in total (the
-  classical \([Mabcdef]\) stereoisomer count); only one \(24\)-element orbit is
-  drawn.}
-  \label{fig:si-oct}
-\end{figure*}
-
-\begin{figure*}[htbp]
-  \centering
-  \resizebox{0.78\textwidth}{!}{\input{fig/si_orbit_planar.tex}}
-  \caption{Planar bond (\(E/Z\)).  The eight bond-frame maps split into two
-  orbits of four; each orbit is one configuration.  Here
-  \(\Gamma_\tau=V_4\) of order \(4\) sits inside the bond-frame group
-  \(\Sigma_\tau\) of order \(8\), so \([\Sigma_\tau:\Gamma_\tau]=2\) and a
-  single admissible one-end swap realizes the binary
-  \(E\!\leftrightarrow\!Z\) opposite of Corollary~\ref{cor:binary-opposite}.}
-  \label{fig:si-planar}
-\end{figure*}
-
-\begin{figure*}[htbp]
-  \centering
-  \resizebox{0.78\textwidth}{!}{\input{fig/si_orbit_atrop.tex}}
-  \caption{Atrop axis.  The eight frame maps split into two orbits
-  of four; each orbit is one assigned axial sense.  Again
-  \(\Gamma_\tau=V_4\leq\Sigma_\tau\) with \([\Sigma_\tau:\Gamma_\tau]=2\),
-  realizing the binary \(P\!\leftrightarrow\!M\) opposite; unlike the planar
-  bond, the improper extension here also has index two, which is why the axis
-  is chiral.  The frame
-  is drawn with a single bond to distinguish it from the planar-bond
-  ($\pi$-bearing) frame of Figure~\ref{fig:si-planar}.  The cumulene-axis frame
-  shares this structure over an even-cumulene path.}
-  \label{fig:si-atrop}
-\end{figure*}
-
-\subsection{Relations and witnesses}
-
-If a concrete permutation \(\pi\) transports one fixed frame to another, the
-representative-independent relation class is the double coset
-\(\Gamma_\tau\pi\Gamma_\tau\) of Lemma~\ref{lem:double-coset}.  \code{StereoRelation} stores a stable minimum class
-identifier and a concrete \code{PermutationWitness}.  Witnesses compose;
-double-coset identifiers do not.  The public relation kinds are
-\code{EQUIVALENT}, \code{OPPOSITE}, \code{RECONFIGURED},
-\code{UNRELATED}, and \code{UNSPECIFIED}.
-
-Only tetrahedral, planar-bond, atrop-axis, and cumulene-axis shapes declare a
-binary opposite.  Nonidentity square-planar, trigonal-bipyramidal, and
-octahedral relations are general reconfigurations.  This is why a
-non-tetrahedral legacy \code{INVERTED} label can coexist with authoritative
-\code{reconfigured:<class>} evidence.
-
-\section{Extended descriptors without a finite frame group}
-
-\subsection{Cumulene axes}
-
-A cumulene-axis descriptor stores the full ordered axis path and two ordered
-two-reference terminal frames owned by the first and last path atoms.
-Validation requires at least three path atoms, pairwise distinct path atoms,
-integer path entries, exactly two terminal frames of width two, references
-distinct within each frame, and an \emph{even} number of cumulated bonds.  The
-even-bond requirement is the classical parity rule: an even run places the
-terminal substituent planes orthogonally and the element is axis-supported and
-chiral, whereas an odd run places them coplanar and the element is the
-bond-supported \(E/Z\) case.
-
-\subsection{Helical paths}
-
-A helical descriptor stores an ordered path of at least four atoms, an
-open/cyclic flag, a parity in \(\{-1,+1\}\) or \(\bot\), optional reported
-positions lying on the path, and an optional non-empty coupling identity.
-Identity is the canonical path form: for an open path, the minimum of the path
-and its reversal; for a cyclic path, the minimum over all rotations of the path
-and of its reversal.  Equality compares descriptor class, canonical path,
-cyclicity, parity, and coupling identity.
-
-Reported positions associate several reported atoms with one configuration and
-do not create independent local stereocentres; they are emitted in canonical
-path order.  A fixed helical configuration may be constructed only through an
-authorized evidence source, and the declared-sidecar constructor requires an
-explicit \code{evidence\_source} marker on deserialization, so bare
-connectivity cannot produce one.  Reference replacement is refused on path
-atoms, which protects the locus in the same way that locus positions are
-protected in frame-based descriptors.
-
-\subsection{Descriptor-class sets}
-\label{sec:si-classsets}
-
-\begin{table}[htbp]
-\caption{Descriptor-class sets and the consumers that accept them.}
-\label{tab:classsets}
-\centering
-\begin{tabularx}{\textwidth}{@{}lXl@{}}
-\toprule
-Set & Members & Size \\
-\midrule
-Legacy supported set (prefilter/rule consumers) & tetrahedral, square-planar,
-trigonal-bipyramidal, octahedral, planar-bond, atrop & 6 \\
-Local configured (exact certificate) & supported set, plus
-cumulene-axis, extended cis/trans, helical, and planar chirality & 10 \\
-Coupled framework (exact certificate/mirror) & fixed framework orientation
-with relative frame coupling; helper enumeration/focal operations refuse & 1 \\
-Local enumeration and focal evidence & the ten local configured families;
-framework inputs deliberately refuse & 10 \\
-Descriptor JSON restoration & all local configured families and framework & 11 \\
-\rdkit{} adapter & the supported set & 6 \\
-Deferred (declared names only) & \code{rigid\_bond\_33}, \code{rigid\_bond\_23},
-\code{rigid\_bond\_13}, \code{rigid\_bond\_12} & 4 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\subsection{Exact auxiliary stereograph}
-
-For each configured registry, the exact encoder creates typed vertices for
-atoms, bonds, stereo loci, owner-specific ligand ports, virtual resources,
-allowed orbit tuples, and position-coloured tuple slots.  Constitution and
-stereo are therefore canonicalized together by the native exact coloured-graph
-kernel.  The certificate schema is
-\code{synkit.canonical-stereograph/2}.  Equality compares complete canonical
-graphs; the associated SHA-256 digest is an index, not a substitute proof.
-
-The pairwise classifier first compares constitution-only certificates.  Equal
-constitutions are then compared as configured stereographs and, if unequal,
-after geometry-specific mirror transformation of the left registry.  The
-outcomes are \code{IDENTICAL}, \code{ENANTIOMERS}, \code{DIASTEREOMERS},
-\code{CONSTITUTIONALLY\_DIFFERENT}, \code{INCOMPLETE}, and
-\code{UNSUPPORTED}, and \code{INFORMATION\_MISMATCH}. RDKit drawing keys
-record their selected profile under \code{synkit.rdkit-stereograph/1}; chemical
-family keys use \code{synkit.resonance-family-stereograph/1}. Canonicalization
-and pairwise operations retain their Lewis-state defaults, while mirror
-assessment defaults to chemical family identity. Select a common explicit
-profile when comparing these operations. The pairwise result schema is
-\code{synkit.stereoisomer-relation/2}.
-
-\section{Proof-bearing computational entities}
-\label{sec:si-entities}
-
-\begingroup
-\small
-\renewcommand{\code}[1]{\path{#1}}
-\begin{longtable}{@{}p{0.30\textwidth}p{0.63\textwidth}@{}}
-\caption{Public molecular-layer value objects and evidence contracts.}\label{tab:objects}\\
-\toprule
-Object & Contract \\
-\midrule
-\endfirsthead
-\toprule
-Object & Contract \\
-\midrule
-\endhead
-\code{StereoSupport} family & Immutable typed carrier with dependency set and relabelling that commutes with descriptor relabelling \\
-\code{PotentialStereoElement} & Candidate carrier type, typed support, supplied-configuration state, provenance, and source identifier; no stereogenicity or configuration claim \\
-\code{TetrahedralConstitution} & Center-fixed exact ligand orbits, multiplicities, automorphism count, and constitutionally-distinct or symmetry-related status \\
-\code{StereoConfiguration} & Shape, specification level, concrete and canonical frames, relation and replacement operations \\
-\code{HelicalStereo} & Path support, cyclicity, parity, reported positions, coupling identity, canonical path form \\
-\code{PermutationWitness} & Concrete position permutation whose replay is checked \\
-\code{StereoRelation} & Kind, double-coset class, and replayable witness \\
-\code{GraphMorphism} & Immutable total injective material-node embedding with typed wildcard environment \\
-\code{StereoMorphism} & Graph morphism plus local stereo certificates and explicit policy choices \\
-\code{LocalStereoCertificate} & Layer, endpoint configurations, relation, witness, effective policy, and matched/ignored/propagate status \\
-\code{CIPRanking} & Ordered references, per-pair comparisons, completeness flag, and digest \\
-\code{CIPAssignment} & Label or typed status, rankings, supplemental comparisons, projection witness, required rules, and digest \\
-\code{MolecularChirality\-Result} & Classification, mirror isomorphism witness, descriptor counts, and evidence provenance \\
-\bottomrule
-\end{longtable}
-\endgroup
-
-\subsection{Stereo-preserving graph morphisms}
-
-\code{StereoMorphism} proves match compatibility; it does not classify a
-reaction-induced change. Material references are transported through the
-underlying injective map.  Virtual hydrogen and lone-pair tokens retain their
-typed owner.  A mapped explicit hydrogen removed by normalization is projected
-onto virtual H only when owner-local evidence makes the projection unique.
-
-Every matched local certificate is checked twice: its witness must replay the
-transported frame, and its stored relation kind and class must agree with direct
-endpoint classification.  Missing references, invalid virtual owners,
-non-injective maps, missing required targets, strict target extras, and forged
-witnesses are structured failures.
-
-\begin{table}[htbp]
-\caption{Independent stereo-morphism policy axes.}
-\label{tab:policies}
-\centering
-\begin{tabularx}{\textwidth}{@{}llX@{}}
-\toprule
-Axis & Value & Meaning \\
-\midrule
-Information & \code{exact} & Fixed matches equivalent fixed; unspecified matches unspecified \\
-Information & \code{wildcard} & An unspecified query may specialize; a fixed query remains exact \\
-Information & \code{either} & As wildcard; a fixed query may also use its declared compatibility alternative \\
-Presence & \code{require} & Every source descriptor has one valid target; target extras allowed \\
-Presence & \code{strict} & Require, and reject unmatched target descriptors touching the image \\
-Presence & \code{ignore} & Accept structurally and emit explicit ignored certificates \\
-Presence & \code{propagate} & Emit a visible obligation for a source descriptor without a target \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Identity stereo morphisms contain identity node maps and witnesses.  Composition
-pairs the concrete intermediate configurations, composes witnesses, replays the
-composition on the transported source, and reclassifies the direct endpoint
-relation.  The canonical signature includes shape, information level, status,
-policy, class, witness permutation, virtual-reference kinds, and wildcard-frame
-positions, and is invariant under consistent endpoint renumbering.
-
-\subsection{Value identity and hashing}
-
-For stereo-bearing graphs the map-invariant registry form built from
-connectivity/LLG colour-refinement tokens is a prefilter only.
-Equality enumerates exact structural isomorphisms and accepts one only if every
-registered descriptor aligns into its fixed group.  Equal objects hash equally;
-equal hashes are never reported as isomorphism.
-
-\section{Derived-label projection}
-\label{sec:si-cip}
-
-\subsection{Ranking kernel}
-
-Ligand ranking is computed from molecular constitution, isotopes,
-multiple-bond duplicate nodes, and ring closures.  No toolkit CIP code or rank
-property is read.  Per-ligand evidence records, for each sphere, the node's
-atomic number, mass, atom index, path, duplicate flag, duplicate source depth,
-and duplicate kind, together with one of three termination reasons:
-\code{exhausted}, \code{virtual\_reference}, or \code{depth\_cap}.
-
-Rules are applied hierarchically: Rule~1a (atomic number, including averaged
-duplicate atomic numbers for simple non-fused even mancude rings) is exhausted
-over successive spheres before Rule~1b (duplicate-node distance), which
-precedes Rule~2 (isotopic mass).  Rule~3 and the reference-independent,
-single-corresponding-pair subset of Rules~4c/5 are active.  Each comparison
-records its outcome
-(\code{left\_higher}, \code{right\_higher}, \code{tie}, or
-\code{unsupported}), the first deciding rule, the deciding depth, and the
-compared witnesses on both sides.  Multi-unit reference-descriptor pairing
-under Rule~4b and sequence-rule cases outside the implemented subset fail
-closed.
-
-\subsection{Assignment statuses}
-
-\begin{table}[htbp]
-\caption{Label-assignment statuses and their meaning.}
-\label{tab:cipstatus}
-\centering
-\begin{tabularx}{\textwidth}{@{}lX@{}}
-\toprule
-Status & Meaning \\
-\midrule
-\code{assigned} & A label is justified by a complete ranking and a witnessed projection \\
-\code{unspecified\_configuration} & The descriptor carries no orientation; no label may be emitted \\
-\code{unresolved\_priority} & The ranking returned a tie at the required depth \\
-\code{unsupported\_sequence\_rule} & The comparison requires an unimplemented sequence-rule case, notably multi-unit Rule~4b \\
-\code{unsupported\_descriptor} & No CIP-style projection is claimed for this class (coordination geometries) \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Axial \(M/P\) projection uses the IUPAC helicity convention from a witnessed
-viewing direction.  When constitution cannot witness a stable viewing
-direction---a symmetric axis---the projection fails closed rather than using
-atom indices as a tiebreak.  Assignments are immutable reports: they never
-mutate a molecule or descriptor, and their labels are absent from stereo
-identity, hashing, rule matching, and descriptor serialization.
-
-\section{Whole-molecule chirality}
-\label{sec:si-chirality}
-
-Classification searches for a stereo-preserving isomorphism between the
-stereo-bearing graph and its descriptor-inverted mirror, refined by
-connectivity and LLG colours and by semantic feasibility on
-descriptors.  A verdict of achiral returns the mirror map as its witness.
-
-For underspecified input the outcome is four-valued:
-\code{necessarily\_achiral}, \code{necessarily\_chiral},
-\code{configuration\_dependent}, and \code{unsupported\_or\_incomplete}.
-Configuration dependence means at least one enumerated completion is chiral and
-at least one is achiral; it is a definitive property of the constitution.
-Enumeration is capped, mixed populations may terminate only after both classes
-have been witnessed, and caps without an independent proof fail closed to
-\code{unsupported\_or\_incomplete}.  For an oversized all-tetrahedral
-assignment product, the implementation enumerates the constitutional
-automorphisms instead.  Transport into the descriptor-inverted mirror gives
-binary XOR constraints on the local configurations.  A satisfying assignment
-is verified as an achiral witness; exhaustion of the automorphisms proves that
-no achiral completion exists.
-
-Detection of a potential stereo locus from two-dimensional connectivity yields
-a typed \code{PotentialStereoLocus} carrying its axis support, an unspecified
-orientation state, its evidence provenance, and an unassessed stability status.
-Promotion to a fixed configuration requires an authorized evidence source:
-\code{explicit\_stereo}, \code{validated\_geometry}, or
-\code{declared\_sidecar}.  Molecular configuration evidence additionally
-carries a stability state (\code{unassessed} or \code{validated}) and an
-optional population fraction in \((0,1]\), kept distinct from orientation.
-
-Broad tetrahedral-carrier detection precedes stereogenicity.  A carrier has
-four represented or hidden-hydrogen slots but may have repeated ligands.  The
-constitution-only canonicalizer uniquely marks the center, enumerates exact
-attributed-graph automorphisms, and intersects their node orbits with the four
-ligand slots.  Four singleton classes give
-\code{constitutionally\_distinct}; any repeated class gives
-\code{symmetry\_related}.  The latter is deliberately not called achiral,
-because it means only that the configuration-neutral detector cannot confirm
-the center.  Supplied configuration and CIP properties are not inputs and may
-not split or reorder the constitutional neighbor classes.
-
-\section{Finite propositions and executable obligations}
-
-Let \(\tau\) be a registered shape, \(\Gamma_\tau\leq\Sigma_\tau\) its finite
-geometry group inside the frame symmetry group, and \([N]\) the orbit of a
-frame \(N\).
-
-\paragraph{P0---Configuration-neutral frame construction.}
-A local-frame constructor reads only constitutional attributes and is required
-to commute with attributed-graph relabelling.  Exact support-stabilizer orbits
-are its tie authority.  Conjugation transports the stabilizer and its reference
-orbits under every graph isomorphism, proving that the tie certificate is
-independent of atom numbering, supplied configuration, and CIP.  The executable
-tetrahedral slice currently validates the orbit partition; recursive total
-ordering of distinguishable classes is a subsequent implementation gate.
-
-\paragraph{P1---Orbit canonicalization.}
-The minimum of the deterministically ordered orbit is unique, and two fixed
-configurations have the same canonical frame exactly when their frames share
-one orbit.  Exhaustive atom-frame partitions contain 2, 3, 20, and 30 fixed
-orbits for tetrahedral, square-planar, trigonal-bipyramidal, and octahedral
-geometry; the bond and axis actions are also completely enumerated.
-
-\paragraph{P2---Relabelling equivariance.}
-For bijective relabelling \(f\), \([N]=[M]\) if and only if
-\([f(N)]=[f(M)]\), because position actions commute with value relabelling
-(Lemma~\ref{lem:frame-action}).
-
-\paragraph{P3---Replacement well-definedness.}
-An injective replacement of non-locus references that preserves frame
-distinctness descends to orbit classes.  Missing sources, locus replacement,
-and reference collisions are rejected.
-
-\paragraph{P4---Relation invariance.}
-The double coset \(\Gamma_\tau\pi\Gamma_\tau\) is unchanged when either endpoint is replaced
-by an equivalent representative; relation kind and class ID are therefore
-representative independent.  This is Lemma~\ref{lem:double-coset}, and the
-gate checks it exhaustively for every registered action.
-
-\paragraph{P5---Witness composition.}
-If \(p\) replays \(A\to B\) and \(q\) replays \(B\to C\), then
-\code{p.then(q)} replays \(A\to C\); the global form of this law is the cocycle
-identity of Eq.~\eqref{eq:alignment-cocycle}.  Composition of stereo morphisms records
-and rechecks both legs and the direct endpoint claim; the companion paper
-extends the same obligation to reaction and fusion legs.
-
-\paragraph{P6---Binary-opposite involution.}
-For tetrahedral, planar-bond, atrop-axis, and cumulene-axis shapes,
-\(\operatorname{opp}(\operatorname{opp}([N]))=[N]\).  These are exactly the
-index-two families of Corollary~\ref{cor:binary-opposite}, which also shows why
-the three coordination geometries are not forced into a binary relation.
-
-\paragraph{P7---Support commutation.}
-For every configured descriptor \(d\) and relabelling \(f\),
-\(\operatorname{support}(\operatorname{relabel}(d,f))
- =\operatorname{relabel}(\operatorname{support}(d),f)\).
-Axis-support relabelling covers path atoms, material terminal references, and
-virtual-reference owners.
-
-\paragraph{P8---Axis laws.}
-Every preserving terminal order and axis reversal yields an equivalent
-configuration; axis reversal and mirror action are involutions; an unspecified
-axis forgets terminal order but not its path; and reference replacement is
-refused on the full locus.
-
-\paragraph{P9---Path laws.}
-Open-path reversal, and cyclic rotation together with reversal, are
-identity-preserving and involutive; mirror inversion changes only a fixed
-helical configuration; relabelling commutes with path support and
-canonicalization; reported positions are one coupled configuration rather than
-independent local centres; and coupling identity distinguishes two
-configurations on the same path.
-
-\paragraph{P10---No inference from bare connectivity.}
-Two-dimensional topology detection produces only potential loci.  Identical
-supports may carry opposite configurations only when an authorized evidence
-source declares them.
-
-\paragraph{P11---Label independence.}
-Ranking is invariant under atom renumbering and fragment order; labels are
-invariant under renumbering, fragment order, valid support reversal, and
-descriptor canonicalization; mirror inversion changes the label exactly where
-the specification requires; toolkit CIP properties are never inputs; and no
-label is emitted from an unspecified configuration.
-
-\paragraph{P12---Complete certificate invariance.}
-For every configured family, relabelling atoms and reconstructing the complete
-auxiliary stereograph preserves the exact certificate
-(Corollary~\ref{cor:numbering-independence}); changing a fixed
-configuration changes it unless a whole-graph automorphism identifies the two
-states.  CIP cache properties never enter vertex colours.
-
-\paragraph{P13---Whole-stereograph relation partition.}
-After constitution equality is established, direct certificate equality,
-left-mirror equality, and residual inequality partition complete same-
-constitution pairs into identical, enantiomeric, and diastereomeric outcomes.
-Missing configuration and unsupported population semantics remain
-nondefinitive.
-
-\begingroup
-\small
-\renewcommand{\code}[1]{\path{#1}}
-\begin{longtable}{@{}p{0.08\textwidth}p{0.85\textwidth}@{}}
-\caption{Principal executable obligations.}\label{tab:obligations}\\
-\toprule
-Claim & Principal test \\
-\midrule
-\endfirsthead
-\toprule
-Claim & Principal test \\
-\midrule
-\endhead
-P1 & \code{Test/Graph/Stereo/test_orbit_kernel.py::test_all_atom_frame_permutations_partition_into_expected_fixed_orbits} and the bond-frame orbit-size test \\
-P2--P3 & \code{test_relabeling_and_reference_replacement_are_equivariant} plus descriptor-migration locus protection \\
-P4 & \code{test_relation_class_is_independent_of_fixed_representatives} \\
-P5 & \code{test_witness_composition_replays_direct_transport} \\
-P6 & \code{test_binary_opposite_is_an_involution} \\
-P7 & \code{Test/Graph/Stereo/test_support_hierarchy.py::test_existing_descriptors_expose_typed_support_without_wire_changes} and \code{test_axis_support_relabeling_includes_path_material_and_virtual_owners} \\
-P8 & \code{Test/Graph/Stereo/test_axis_descriptors.py::test_every_preserving_terminal_order_and_axis_reversal_is_equivalent} and \code{test_axis_reversal_and_mirror_actions_are_involutions} \\
-P9 & \code{Test/Graph/Stereo/test_helical_descriptors.py::test_open_path_reversal_is_identity_preserving_and_involutive}, \code{test_cyclic_rotation_and_reversal_are_identity_preserving}, and \code{test_reported_positions_are_one_coupled_configuration_not_local_centers} \\
-P10 & \code{test_connectivity_detection_still_returns_only_potential_support} and \code{test_bare_connectivity_does_not_infer_helicity} \\
-P11 & \code{Test/Chem/Molecule/test_cip_ranking.py::test_atom_renumbering_preserves_the_rank_order}, \code{test_toolkit_cip_properties_are_not_inputs_to_ranking}, and \code{Test/Chem/Molecule/test_cip_assignment.py::test_atom_renumbering_and_fragment_order_preserve_the_label} \\
-P12 & \code{Test/Graph/Stereo/test_configured_stereograph_families.py} and \code{test_canonical_stereograph_determinism.py}; public exhaustive relabelling report \code{exact_canonicalization_report.json} \\
-P13 & \code{Test/Graph/Stereo/test_pairwise_stereoisomer_relations.py} and \code{stereoisomer_relation_report.json} \\
-\bottomrule
-\end{longtable}
-\endgroup
-
-\section{Validation corpus and conformance}
-
-Deterministic fixtures cover the registered shapes, the extended axis and path
-descriptors, support validation, symmetric isomorphisms, query policies,
-morphism policy axes, composition, CIP ranking and assignment, and
-serialization of descriptor payloads.
-
-\begin{table}[htbp]
-\caption{Development-snapshot conformance results for the molecular-graph
-layer.}
-\label{tab:results}
-\centering
-\begin{tabularx}{\textwidth}{@{}lXX@{}}
-\toprule
-Gate & Result & Boundary \\
-\midrule
-Full Pytest suite & 3881 passed; 6 skipped; 179 passing subtests & Repository snapshot, 2026-07-26 \\
-Orbit, support, axis, path, and plane laws & Exhaustive enumeration for all registered actions; P7--P12 fixtures pass & Algebraic method boundaries \\
-All-family local quotient & 940 raw representations yield 67/67 expected classes & Ten configured families \\
-All-family exact certificates & 67/67 classes distinct within family; 0 collision or timeout & Every configured class \\
-Configuration-free local corpus & 66,468/66,468 representations; 3,476/3,476 carriers & 1,218 Internal, ACS, CIP, and RotA rows \\
-Formal mixed-family A/B/C & 2,160/2,160 assignments; 30/30 cases; 38/95/752 classes & Simultaneous carrier configurations; no failure or timeout \\
-Raw mixed-family A/B/C slice & 3,353,600/3,353,600 encodings over 22 scoped cases & Complete A and B plus complete VS146 slice of C; no failure or timeout \\
-Synthetic whole-graph relabelling & 201 per-class plus 528 representative checks; 0 failures & Exhaustive \(5!\) for four small fixtures, sampled otherwise \\
-Mirror closure & 67/67 classes closed; 7 fixed & Three square-planar, two planar-bond, plus two extended-cis/trans classes \\
-Public ACS certificate audit & 888/888 atom permutations invariant; 4/4 CIP-cache removals invariant & Four small configured records \\
-Multi-element composition & 32 assignments yield 31 classes; 13 enantiomer and 64 diastereomer pairs & Six designed graphs; every class mirrored \\
-Multi-element ACS audit & 14/14 sampled renumberings; 7/7 mirror labels & Seven records with 18 configured elements \\
-Pairwise relation matrix & 9/9 correct & P13 designed conformance cases \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-The configuration-free local totals comprise 6,999 theoretical local classes
-and 5,885 observed whole-graph classes.  The difference of 1,114 is fully
-accounted for by exact global-symmetry quotients.  Formal A, B, and C contain
-48, 192, and 1,920 assignments, respectively.  Raw A independently enumerates
-all 2,048 local encodings and produces the same 48 formal tuples and 38 global
-classes as formal A.  The larger raw runs are stress evidence rather than
-additional assumptions of the correctness theorem.  Raw B enumerates all
-992,256 encodings and recovers
-the same 192 formal tuples and 95 classes as formal B.  The raw C/VS146 stress
-run enumerates all 2,359,296 encodings for that record and recovers its 64
-formal tuples and 64 classes.  The other eight C raw products are deliberately
-absent from the maintained reproduction command; formal C nevertheless
-exhausts all nine cases by Corollary~\ref{cor:raw-formal-global}.
-
-The optional \stereomolgraph bridge uses direct descriptor exchange.  A legacy
-molecule-reconstruction diagnostic is retained only to show why bond-order
-recovery by another toolkit is not an appropriate acceptance criterion.
-\stereomolgraph remains absent from runtime dependencies.  The pre-split
-300/300 bridge and 6/6 conformance totals are not current evidence and must be
-regenerated before inclusion in the submission artifact.
-
-\section{Frozen chemical annotation and replay}
-\label{sec:chemical-annotation}
-
-The source-selection manifests record retrieval, terms, exact checksums,
-constitution keys and annotation conventions. The coordination and negative
-selections are outside the ACS/CIP/RotA development constitutions. The RotA
-sample is explicitly drawn from that development data. Original annotations
-remain archived byte-unchanged. The clean-release replay regenerates annotations
-and production reports, binds their SHA-256 checksums, and reproduces every
-scientific summary field. The manuscript summary recomputes its counts from
-those four fresh reports; their execution provenance is separately recorded.
-Selection, annotation, production evaluation and mathematical reference
-coverage therefore remain separate audit steps.
-
-For coordination, the first source conformer is used without selecting the
-best later conformer. Donor-slot isotope labels are removed before assigning
-the physical constitutional profile, while the supplied local tetrahedral
-annotations are transported into the reference and production inputs.
-The independent octahedral fit minimizes normalized RMSD over proper
-rotations and all donor-slot assignments. Its acceptance limits were fixed
-before evaluation: normalized RMSD at most 0.35 and a gap of at least 0.02
-to the next inequivalent pose. The same criteria apply to the reflected
-coordinates. The two refusals are \code{Mn\_PNhP\_iPr\_tri\_0} and
-\code{Ru\_NNhN\_iPr\_tri\_0}, with RMSDs approximately 0.490 and 0.489.
-They remain in the selected denominator and are not recast as incorrect
-production predictions. The \ChemicalCoordinationCertified{} certified
-examples retain \ChemicalCoordinationRetainedTetrahedralFrames{} local frames;
-their independent source/mirror relations are
-\ChemicalCoordinationSourceAchiral{} achiral and
-\ChemicalCoordinationSourceChiral{} chiral. These are configured-graph
-relations under the declared retained information.
-
-Direct reference enumeration covers all
-\ChemicalCoordinationReferenceAssignments{} formal assignments. Production
-replays every reference partition and mirror map, then compares the
-certificates of certified source, source-renumbered, coordinate-mirrored and
-production-mirrored states. The resulting equality relation must neither split
-one reference class nor merge different classes. The
-\ChemicalCoordinationObservedSourceMirrorClasses{} observed classes are
-therefore a subset of the \ChemicalCoordinationReferenceClasses{} reference
-classes, rather than a claimed evaluation of every generated reference pose.
-
-The sourced biaryl negatives are retained with original retrieval responses
-and failed-query exclusions. Their truth witnesses preserve the complete
-typed graph, fix the two axis endpoints, and exchange a declared terminal
-ligand pair. The same map is replayed before original/renumbered perception.
-This checks a constitutional counterexample to axis confirmation; it neither
-estimates a kinetic barrier nor labels a compound experimentally achiral.
-
-The RotA annotation contains every frozen sample locus and records uncertainty
-without replacing difficult cases. Of \ChemicalRotAAxisSupports{} axis
-supports, \ChemicalRotATerminalRelatedAxes{} admit the terminal-exchange
-witness and \ChemicalRotATerminalConfirmedAxes{} exhaust the bounded search
-without one. This terminal criterion differs from global configured identity:
-a simultaneous exchange at both ends can preserve a coupled axis orientation.
-The complete per-case assignments, partitions, mirror involutions and
-transport composition checks define the reference used in the production
-comparison. For atom pairs and spiro categories, geometry does not by itself
-confirm the focal tetrahedral support. Negative tetrahedral perception may
-omit a symmetry-related center, and the category projection requires the
-actual focal carrier status. All \ChemicalRotAPerceptionComputations{}
-original/renumbered perception comparisons are checked against those frozen
-expectations. The \ChemicalRotASumPerCaseClasses{} reported classes are
-summed over cases and are not a count of distinct chemical compounds.
-Experimental persistence remains unknown throughout this sample.
-
-\section{Local perception and naming benchmarks}
-
-\begin{table}[htbp]
-\caption{Task-specific two-setting local validation.  ``Retained'' uses
-supplied orientation only at other local-neighbor frames; ``erased'' removes
-all configuration.  CIP positions and labels are not global chirality truth;
-RotA is positive-only.}
-\label{tab:si-local}
-\centering
-\begin{tabularx}{\textwidth}{@{}XrrrX@{}}
-\toprule
-Task & Retained & Erased & Reference & Additional evidence \\
-\midrule
-ACS configured source loci & \AcsRetainedRecovered & \AcsErasedRecovered & \AcsErasedReferenceLoci & \AcsRetainedAdditional/\AcsErasedAdditional{} additional candidates \\
-CIP all local positions & \CipRetainedRecovered & \CipErasedRecovered & \CipErasedReferenceLoci & \CipRetainedAdditional/\CipErasedAdditional{} additional candidates \\
-\quad tetrahedral & \CipTetrahedralRetainedRecovered & \CipTetrahedralErasedRecovered & \CipTetrahedralErasedReference & Exact center-stabilizer criterion \\
-\quad planar & \CipPlanarRetainedRecovered & \CipPlanarErasedRecovered & \CipPlanarErasedReference & Typed planar carriers \\
-\quad axial/helical & \CipAxialRetainedRecovered & \CipAxialErasedRecovered & \CipAxialErasedReference & No stability claim \\
-RotA annotated typed loci & \RotARetainedRecovered & \RotAErasedRecovered & \RotAErasedReferenceLoci & \RotAErasedAdditional{} broad additional projections \\
-RotA expanded cumulene paths & \RotAExpandedRetainedRecovered & \RotAExpandedErasedRecovered & \RotAExpandedErasedReference & Modulo path reversal \\
-Reverse-renumbered records & \DevelopmentRows & \DevelopmentRows & \DevelopmentRows & Complete invariance in each setting \\
-CIP coordinate-assisted exact records & \multicolumn{2}{c}{\CipCoordinatesExactRecords} &
-\CipCoordinatesRecords & \CipCoordinatesCorrectLabels/\CipCoordinatesExpectedLabels{} labels;
-\CipCoordinatesEmittedLabels{} emitted \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-All \DevelopmentRows{} records are invariant under reverse atom renumbering independently
-in both settings. The erased setting misses \AcsErasedMisses{} ACS and \CipErasedMisses{} CIP positions;
-all \AllErasedMisses{} are carbon tetrahedral carriers classified as symmetry-related by the
-configuration-erased center stabilizer and all are recovered in the retained
-setting. ACS contains \AcsAcyclicMisses{} acyclic and \AcsRingMisses{} ring misses; CIP contains \CipAcyclicMisses{}
-acyclic and \CipRingMisses{} ring misses. Available neighbor evidence comprises \AllTetrahedralNeighborMisses{}
-tetrahedral-only, \AllPlanarNeighborMisses{} planar-only, \AllMixedNeighborMisses{} mixed tetrahedral--planar, and \CipCumuleneNeighborMisses{}
-cumulene case.
-
-Additional candidates are serialized per record.  Their retained/erased
-counts are \AcsRetainedAdditional/\AcsErasedAdditional{} for ACS and \CipRetainedAdditional/\CipErasedAdditional{} for CIP. RotA has \RotAErasedAdditional{} additional
-broad typed projections in either setting. Restricting to constitutionally
-confirmed carriers recovers \RotAConfirmedRecovered/\RotAReferenceLoci{}
-annotated loci and leaves \RotAConfirmedAdditional{} additional projections.
-Confirmed spiro-category projections require actual confirmed tetrahedral
-supports; geometry alone does not supply confirmation. These values are annotation-list
-differences, not false-positive rates: ACS local annotations are incomplete
-and RotA is positive-only.  They make no handedness, configurational-stability,
-or whole-molecule chirality claim.
-
-A separate synthetic negative protocol contains \SyntheticAxisNegatives{} constitutional controls.
-\SyntheticAxisWitnessNegatives{} axis-like cases have exact axis-fixed automorphisms exchanging a
-terminal ligand pair, and \SyntheticAxisNoSupportNegatives{} have no supported axis topology. Every case
-is invariant under reverse atom renumbering and the confirmed-axis
-false-positive count is zero.  Because these are constitutional proofs rather
-than kinetic measurements, they do not validate rotational barriers,
-isolation timescales, stability, or handedness.
-
-\paragraph{CIP source versions.}
-The provided publisher supporting archive (DOI
-\url{https://doi.org/10.1021/acs.jcim.8b00324.s001}) is unchanged and is
-licensed under CC~BY-NC~4.0. Preparation repairs citation punctuation in
-VS297 and VS298 only; all 300 molecular inputs and expected labels are
-unchanged, and the resulting SMILES file matches the evaluated checksum.
-The original publisher SDF differs from the later GitHub SDF at VS095
-(atom ordering and conformer) and in those two citation fields.
-Original and amended coordinates have separate accepted checksums. A fresh
-full 300-record evaluation of the original SDF reproduces every native naming
-record and every RDKit comparator record from the amended-SDF evaluation;
-the primary numerical manifest now identifies that original-source report.
-This agreement does not assert coordinate equivalence. The publisher grant
-is asserted only for the
-provided original data and documented citation repair.
-
-The pinned-coordinate CIP naming protocol has 73.96\% micro-label recall and
-98.83\% precision; the SMILES-only exact-record baseline remains 175/300.
-The 113 non-exact records are retained as 83 ranking defects, 21 missing-
-orientation cases, and 9 unsupported classes.  Rules 1a/1b/2, simple
-mancude-ring averaging, Rule 3, and the reference-independent one-pair subset
-of Rules 4c/5 are active; multi-unit Rule 4b remains fail-closed.
-The input-contract audit also identifies a strict information boundary:
-VS010 and VS011 have the same supplied SMILES but opposite helical labels, so
-SMILES-only exact-record accuracy is bounded by \CipSmilesDeterministicCeiling/\CipSmilesRecords. In the pinned
-3D file, atom positions 1--4 have opposite nonzero signed normalized
-volumes for the two records.  This translation- and proper-rotation-invariant,
-reflection-sensitive witness makes the pair distinguishable without reading
-its reference labels. The coordinate protocol completes both helical records,
-all five CT4 records, four of seven AT records, and the fully material-framed
-VS144 cumulene; the remaining sequence rules and extended classes remain
-incomplete.
-
-\section{Whole-molecule chirality benchmark}
-
-\begin{table}[htbp]
-\caption{Supplied-stereo protocol on the 258-record ACS validation set.
-Comparator columns are the publisher's recorded results.  ``Agreement'' is
-cross-profile agreement with the ACS topology labels, not internal certificate
-correctness.  ACS labels: 94 achiral, 164 chiral.}
-\label{tab:si-chirality}
-\centering
-\begin{tabularx}{\textwidth}{@{}Xrr@{}}
-\toprule
-Procedure & Agreement & Fraction \\
-\midrule
-Topology completion (this work) & 258/258 & 1.000 \\
-Exact + necessary global certificate & 257/258 & 0.996 \\
-\stereomolgraph (published) & 258/258 & 1.000 \\
-InChI (published) & 238/258 & 0.922 \\
-\rdkit{} SMILES (published) & 235/258 & 0.911 \\
-chython (published) & 210/258 & 0.814 \\
-Exact supplied stereograph & \AcsSourceCorrect/\AcsSourceRecords & 0.981 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-The exact-stereograph row is a separate 5\,s per-case supplied-configuration audit.
-It preserves every explicit source \code{@}/\code{@@} atom configuration and
-leaves additional undeclared potential loci unconstrained. Chemical identity
-compares the exact resonance family while retaining genuine bond-order
-differences. It gives \AcsSourceDefinitive{} definitive outcomes, of which
-\AcsSourceCorrect{} agree, and times out on VS126, VS127 and VS208. VS170 is chiral
-under chemical identity because
-its \code{S-I} and \code{S\#I} ligands remain distinct, whereas the ACS topology profile
-omits bond order. In VS300 the exact certificate mirror fixes the central
-configured atom and exchanges the two configured cages; the ACS result instead
-depends on global topology-completion probes outside the configured support
-catalogue.
-This audit makes no configured-locus completeness claim and must not be
-presented as the source of the topology-completion 258/258 result.
-
-The separately versioned exact-plus-global protocol uses a 30-second budget
-for source-declared identity and adds a map-independent, orientation-unspecified
-coupled-frame certificate.  It proves VS300 necessarily chiral and therefore
-agrees with 257/258 ACS labels.  It does not choose a VS300 enantiomer and does
-not alter the frozen source-declared report; VS170 remains a declared chemical
-identity/profile difference.
-
-\begin{table}[htbp]
-\caption{Stereo-stripped four-state protocol on the same set, 256-isomer cap.
-The 258 records reduce to 214 unique constitutions.}
-\label{tab:si-fourstate}
-\centering
-\begin{tabularx}{\textwidth}{@{}Xr@{}}
-\toprule
-Outcome & Rows \\
-\midrule
-Necessarily chiral & 125 \\
-Necessarily achiral & 66 \\
-Configuration dependent & 67 \\
-Unsupported or incomplete & 0 \\
-\midrule
-Definitive rows & 258 \\
-Erased manual label still in the possible population & 258 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-Coverage asks whether the erased manual label remains among the possible
-configurations; it is not recovery accuracy, because the input configuration was
-deliberately destroyed.  VS226 exhausts after six symmetry-unique isomers and
-is necessarily achiral.  Exact automorphism-parity analysis proves VS265 and
-VS266 necessarily chiral and supplies both class witnesses for
-configuration-dependent VS268, without enumerating their multi-million-entry
-raw assignment spaces.
-
-The RotA and CIP datasets are not scored as chirality benchmarks.  Historical
-binary columns for those datasets used an exploratory arbitrary-axis
-orientation and carry a machine-readable retraction; they must not be cited as
-current classification or accuracy.
-
-\section{Reproduction commands}
-
-\begin{verbatim}
-# from repository root in the locked Linux/Python 3.12 environment
-PYTHON=python bash scripts/lint.sh
-PYTHON=python bash scripts/pytest.sh -q Test/
-python -m Experiment.Stereo.reproduce --tier bounded --jobs 2 \
-  --output-dir /tmp/stereo-bounded
-python -m Experiment.Stereo.reproduce --tier full --jobs 2 \
-  --stereomolgraph /path/to/pinned/StereoMolGraph \
-  --output-dir /tmp/stereo-full
-
-# compile this paper
-cd paper/stereo_graph
-latexmk -pdf main.tex
-\end{verbatim}
-
-The release instructions specify the wheel-hash environment lock, the separate
-optional-comparator dependency overlay and exact comparator commit. The
-complete 35-stage clean execution retains every report and stage log. Optional
-raw Cartesian stress is excluded from this sequence and remains separately
-identified historical supplemental evidence.
-
-\section{Known limitations}
-
-\begin{itemize}
-  \item The local descriptors do not infer coordinates, conformations,
-        configurational stability, reaction selectivity, or preferred paths.
-  \item Planar chirality and coupled tetrahedral framework orientation are
-        configured. Additional global geometry families and configured
-        orientation perception remain unsupported. The analyzer fails closed
-        above 256 support atoms or 64 coupled frames and for disconnected
-        frame-bearing components. The four
-        \code{rigid\_bond} variants are class
-        names only, and enhanced stereo groups remain deferred.
-  \item The exact certificate consumes all ten configured classes.
-        Cumulene-axis, helical, and planar-chiral descriptors remain outside
-        the narrower legacy graph-identity, rule, JSON/GML, and \rdkit{}
-        surfaces.
-  \item Exact configured canonicalization currently materializes complete
-        local orbits and uses verified automorphism pruning.  The retained ACS
-        audit has no 2\,s timeout, but larger raw local products remain outside
-        the maintained benchmark.
-\item The RotA corpus is positive-only.  Full annotated-locus recovery therefore
-      does not validate the 1,562 additional broad axis candidates, their
-      configurational stability, or their handedness.  The 24 synthetic
-      negatives validate constitutional specificity but not those experimental
-      properties.
-  \item RDKit round-trips the six supported classes and assigned
-        non-tetrahedral/atrop states; unsupported unknown orientations fail
-        explicitly.
-  \item The CIP kernel implements Rules~1a, 1b, and 2, simple mancude-ring
-        averaging, Rule~3, and the reference-independent one-pair subset of
-        Rules~4c/5. Multi-unit Rule~4b and coordination-geometry projections
-        remain fail-closed.  Full 300-record evaluation additionally requires
-        coordinates or declared orientation evidence because two supplied
-        SMILES are identical but configurationally opposite.
-  \item Local finite-group evidence does not prove equivalence of \synkit's
-        operational graph matching and a full DPO system.
-\end{itemize}
-
-\section{Attribution and reproducibility checklist}
-
-The ordered local-list and group-action formulation follows Andersen, Flamm,
-Merkle, and Stadler \cite{andersen2017stereo}.  The six-class relative
-descriptor layer independently implements ideas from Papusha and Leonhard
-\cite{papusha2026stereomolgraph}.  Non-tetrahedral tables were cross-validated against the MIT-licensed
-\stereomolgraph commit named in Table~\ref{tab:manifest}; the retained notice is
-\code{LICENSES/StereoMolGraph-MIT.txt}.  The CIP sequence-rule hierarchy
-follows IUPAC recommendations P-92.  The ACS validation set is redistributed
-under CC~BY-NC~4.0 and the RotA corpus under the MIT License. The original
-CIP publisher inputs are included under CC~BY-NC~4.0 with attribution and
-two explicitly documented bibliographic punctuation repairs.
-
-The research archive retains the exact executed source and input checksums,
-the environment lock, independent fixtures, unchanged raw execution reports
-and the numerical manifest used to generate manuscript values. Package version,
-source commit and report schema identify distinct parts of this provenance.
-\endgroup
 
 \end{document}

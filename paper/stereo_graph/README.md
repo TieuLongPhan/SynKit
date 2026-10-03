@@ -32,4 +32,8 @@ The command regenerates all 269 numerical claims from 37 checksummed reports, ch
 
 Scientific code, tests, datasets and experiments are integrated into `synkit/`, `Test/` and `Experiment/Stereo/`. Frozen chemical selections, dependency locks and the compressed historical paper audit are in [PaperEvidence](../../Experiment/Stereo/Data/Revision/PaperEvidence/README.md). Earlier paper revisions and build products are removed from this active directory; their provenance is retained in that archive and Git history.
 
+`main.tex` is the standalone journal manuscript: Introduction, Methods, Results, Discussion and Conclusions, followed by abbreviations, declarations and references. The theoretical development and validation protocols are nested under Methods. `technical_details.tex` is the standalone supporting information, with separate S-prefixed numbering. Both sources enable double spacing and line numbering directly. This structure was checked against the current [Methodology instructions](https://link.springer.com/journal/13321/submission-guidelines/methodology) and [general formatting instructions](https://link.springer.com/journal/13321/submission-guidelines) on 3 October 2026.
+
+After a successful build, `main.pdf`, `technical_details.pdf` and `cover_letter.pdf` beside their sources link to the verified PDFs in `submission/`. There is one physical copy of each final PDF. Use the full build command above to establish both documents' cross-references.
+
 See [review.md](review.md) for the scientific assessment and final preparation checklist. The local source rebuild uses TeX Live 2023; the journal's TeX Live 2021 server has not been tested.

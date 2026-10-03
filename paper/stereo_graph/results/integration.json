@@ -167,8 +167,8 @@
   "all_eleven_figures_render_identically_to_reviewed_versions": true,
   "final_package": "paper/stereo_graph/submission",
   "editable_source_zip": "paper/stereo_graph/submission/sources.zip",
-  "editable_source_files": 51,
-  "source_rebuild_verification_sha256": "45fa1e6e95ecc3c1df8650d2614a2a7574aab976255002142be5772a5ba8278a",
+  "editable_source_files": 50,
+  "source_rebuild_verification_sha256": "7235c2bfa6efdef38ccd0b9e3169717b56d14b1264fff4041c1b51f243b7cc33",
   "archived_paper_revision_sha256": "7e07348cf82682659f6c681b6889c4c49d8cd8e68ebfdab77c1ad7205bd3f6b5",
   "retained_outputs": [
     {
@@ -182,14 +182,19 @@
       "uncompressed_sha256": "1f96d64dd2f80fe89792f1fded98987a4075caa85ac82dce0e2ce8053a49b966"
     },
     {
-      "path": "Experiment/Stereo/Data/Revision/PaperEvidence/integration_submission_build.log.gz",
-      "sha256": "d7491c61b3094a6665be9e8436331c11e57482226bbceba90da3467c18f64f9b",
-      "uncompressed_sha256": "9ff6dabb8eb3ac6742661eb35f6a5112ae0bc8ac06400f4baf20f4844b9263f2"
-    },
-    {
       "path": "Experiment/Stereo/Data/Revision/PaperEvidence/integration_source_verification.log.gz",
       "sha256": "7378432d0dbc33dae0295c3517fcab6b0e3d22677aa5268b2977f401610ecad2",
       "uncompressed_sha256": "ea5284ce60d84cd5e34205d30de4f5e2a4fcadb4c8b4a92347a5e951d5f4d6b1"
+    },
+    {
+      "path": "Experiment/Stereo/Data/Revision/PaperEvidence/journal_format_build.log.gz",
+      "sha256": "1257ac776845e7ce62472d13f17e279b013fcbe92533804c76b2048321ee14a3",
+      "uncompressed_sha256": "381e16a76a4df5f7799472d79cf56c02d885d0f59460553d2f3cc5085be4aa03"
+    },
+    {
+      "path": "Experiment/Stereo/Data/Revision/PaperEvidence/integration_submission_build.log.gz",
+      "sha256": "d7491c61b3094a6665be9e8436331c11e57482226bbceba90da3467c18f64f9b",
+      "uncompressed_sha256": "9ff6dabb8eb3ac6742661eb35f6a5112ae0bc8ac06400f4baf20f4844b9263f2"
     }
   ],
   "publication_or_submission_performed": false,
@@ -209,5 +214,20 @@
     "sha256": "bafef33f66ae46b66dea151cba47ddee3a7bb66bb3f4f15013065fbdc88e4215"
   },
   "separate_review_worktree_removed": true,
-  "review_branch_retained": "stereo-paper-revision"
+  "review_branch_retained": "stereo-paper-revision",
+  "journal_format_correction": {
+    "audit": "paper/stereo_graph/results/journal_format_audit.json",
+    "checked_on": "2026-10-03",
+    "manuscript_pages": 56,
+    "supporting_information_pages": 55,
+    "main_sections": [
+      "Introduction",
+      "Methods",
+      "Results",
+      "Discussion",
+      "Conclusions"
+    ],
+    "scientific_text_and_mathematical_blocks_preserved": true,
+    "independent_source_rebuild_passed": true
+  }
 }

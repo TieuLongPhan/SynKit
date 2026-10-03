@@ -41,3 +41,11 @@ Sourced coordination validation certifies 38/40 cases, with two frozen geometry 
 - The integrated stereo/canonicalization tests and preservation of pre-existing unrelated work are recorded in `results/integration.json`.
 
 Journal of Cheminformatics, Methodology, remains the proposed target from the reviewed plan. Any future submission needs the authors' competing-interest declaration and approval, accurate publication/preprint facts and an exact public archive identifier. No external publication or submission is performed here.
+
+## Journal format correction, 3 October 2026
+
+The current Methodology instructions use Introduction, Results, Discussion, Conclusions and Methods/Experimental; they explicitly permit Methods after Introduction. The manuscript now follows Introduction, Methods, Results, Discussion and Conclusions. The former separate support, canonicalization and chirality sections are subsections of Methods, and the dataset/protocol description belongs to Methods. The declarations use the requested Authors' contributions heading. See the [official article-type instructions](https://link.springer.com/journal/13321/submission-guidelines/methodology).
+
+The earlier 80-page root PDF combined the manuscript with technical appendices. The root sources now define two standalone documents and directly enable double spacing and line numbering. The one-package build creates root PDF links to its verified main, supporting-information and cover-letter outputs. Scientific paragraphs, mathematical blocks and numerical values are unchanged. The [general formatting instructions](https://link.springer.com/journal/13321/submission-guidelines) encourage the Springer Nature LaTeX template; the manuscript should not imitate the publisher's final typeset layout.
+
+The main narrative remains extensive, with 18 subsections and 17 subsubsections across the article. The inspected instructions do not give a maximum section count. Further shortening would require selecting which explanation and proof detail to move to supporting information; the present correction preserves the scientific account. The journal's TeX Live 2021 submission server remains untested. The local package is prepared for review, with the competing-interest declaration still pending.

@@ -47,11 +47,15 @@ def main():
     narrative = narrative.split("\\appendix", 1)[0]
     figures = list(re.finditer(r"\\begin\{figure\*?\}.*?\\end\{figure\*?\}", narrative, re.S))
     require(len(figures) == 11, "The current main figure inventory changed.")
-    require("\\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}" in preamble,
+    require("\\documentclass[pdflatex,sn-mathphys-num,referee,lineno]{sn-jnl}" in preamble,
             "Expected the checked article class options.")
     # Keep the manuscript class and its font sizes. Only the available graphic
     # width and page furniture change before the final whitespace crop.
-    figure_preamble = preamble + "\n\\pagestyle{empty}\n\\setlength{\\textwidth}{170mm}\n"
+    figure_preamble = preamble.replace("[pdflatex,sn-mathphys-num,referee,lineno]",
+                                       "[pdflatex,sn-mathphys-num]")
+    figure_preamble = re.sub(r"^\\(?:usepackage\{xr-hyper\}|externaldocument\{[^}]+\})\s*$",
+                             "", figure_preamble, flags=re.M)
+    figure_preamble += "\n\\pagestyle{empty}\n\\setlength{\\textwidth}{170mm}\n"
     shutil.copy2(paper / "sn-jnl.cls", snapshot / "sn-jnl.cls")
     # Retain local inputs; the final source ZIP is restricted to dependencies
     # actually observed by each figure's TeX recorder.

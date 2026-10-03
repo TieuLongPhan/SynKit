@@ -17,8 +17,13 @@ def sha256(path):
 
 
 def run(argv, log, cwd=None):
-    with log.open("w") as stream:
-        subprocess.run(argv, cwd=cwd, stdout=stream, stderr=subprocess.STDOUT, check=True)
+    try:
+        with log.open("w") as stream:
+            subprocess.run(argv, cwd=cwd, stdout=stream, stderr=subprocess.STDOUT, check=True)
+    except subprocess.CalledProcessError as error:
+        rescue = Path(tempfile.mkdtemp(prefix="synkit-stereo-failed-build-"))
+        shutil.copytree(log.parent, rescue / "build")
+        raise RuntimeError("Build failed; diagnostic files retained in " + str(rescue)) from error
 
 
 def main():
@@ -122,6 +127,15 @@ def main():
         if output.exists():
             shutil.rmtree(output)
         shutil.copytree(final, output)
+        # Convenient root PDFs point to the one verified package, so rebuilding
+        # never leaves an older combined manuscript beside the editable source.
+        for name, target in [("main.pdf", "manuscript.pdf"),
+                             ("technical_details.pdf", "Additional_file_1.pdf"),
+                             ("cover_letter.pdf", "cover_letter.pdf")]:
+            alias = paper / name
+            if alias.exists() or alias.is_symlink():
+                alias.unlink()
+            alias.symlink_to(Path("submission") / target)
         print(json.dumps({"package": str(output), "figures": len(fig_manifest["figures"]),
                           "editable_source_files": len(sources), "claims": len(ledger), "verified": True}))
     return 0

@@ -4,16 +4,16 @@
   "reviewed_base_commit": "347b81877352cb625e5cc0cbeb1b7deabb9e47b5",
   "source_documents": {
     "paper/stereo_graph/main.tex": {
-      "sha256": "eac80b061222bc18a6072189b9a3d06bc3e256b312cd7366d3577e0d22ca72e9",
+      "sha256": "91d40522c708cb1934af1fda471565ec50a77b924013ba089be245cad2aa36da",
       "statements_and_immediate_proofs_compared": 13,
       "all_compared_statement_and_proof_bytes_match_reviewed_base": true,
       "entire_file_matches_base": false
     },
     "paper/stereo_graph/technical_details.tex": {
-      "sha256": "433d90a8fbf9fdbedc2e870dbc6e59ae5b9eb202e33947d4b1e0ec74e3618127",
+      "sha256": "2c7d231a5d026b86ad68b1947643dfdc565c3fe4ae1071d9d425d1a4f4ae0112",
       "statements_and_immediate_proofs_compared": 20,
       "all_compared_statement_and_proof_bytes_match_reviewed_base": true,
-      "entire_file_matches_base": true
+      "entire_file_matches_base": false
     }
   },
   "labelled_statements_and_immediate_proofs": {
@@ -499,7 +499,8 @@
     "User-requested three-author metadata from Syndoku; thesis graph-indexed labels, notation table and Can/can distinction; canonical axioms imply the equality test (not an equivalence to the representative property); two new explanatory figures and local thesis style. All 33 labelled statement/immediate-proof blocks remain unchanged.",
     "User-directed verbatim import of all Syndoku funding and confirmation of Peter Stadler and Daniel Merkle roles in revision, supervision and funding acquisition; no competing-interest, author-approval or publication facts inferred.",
     "User explicitly limits completion to the review package, with no publication or submission. Copied funding and Peter/Daniel roles applied; unconfirmed competing interests are labelled pending and local review archive is distinguished from a public DOI.",
-    "Integrated directly into SynKit; relocated numerical inputs and performance PDFs; historical audit material archived separately. Mathematical blocks are unchanged."
+    "Integrated directly into SynKit; relocated numerical inputs and performance PDFs; historical audit material archived separately. Mathematical blocks are unchanged.",
+    "Journal format checked against current Methodology guidelines: Introduction/Methods/Results/Discussion/Conclusions hierarchy, theory topics nested under Methods, dataset protocols included in Methods, default referee/lineno format, and supporting information made a standalone document. All 33 statement/immediate-proof blocks remain byte-identical; original appendix blocks relocate to technical_details.tex."
   ],
   "scope": "All 33 extracted labelled mathematical statements and immediate proofs match the reviewed base. Complete clean execution is reconciled separately; finite tests do not prove every theorem. Final author and exact release archive gates remain."
 }
