@@ -5,7 +5,8 @@ composition.  Objects are finite simple undirected attributed graphs.  Arrows
 are total injective node maps whose induced edge maps preserve incidence and
 all declared identity and state labels.  Derived labels are checked when an
 object is built but are not independent matching data; annotations are never
-matching data.
+matching data. Partial patterns use the same schema with omitted coordinates;
+DPO embeddings and certificate maps preserve their defined coordinates.
 
 The category deliberately makes no blanket adhesivity claim.  Pullbacks of
 strict embeddings are available as finite fibre products.  A pushout along
@@ -16,9 +17,9 @@ where dangling and identification premises can be reported explicitly.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
-from numbers import Real
+from numbers import Integral, Real
 from typing import Any, Hashable, Iterable, Mapping
 
 import networkx as nx
@@ -52,6 +53,7 @@ class LLGIssueCode(str, Enum):
     INVALID_RELABELING = "LLG_INVALID_RELABELING"
     UNSUPPORTED_ITS_FORMAT = "LLG_UNSUPPORTED_ITS_FORMAT"
     LOSSY_ELECTRON_ADAPTER = "LLG_LOSSY_ELECTRON_ADAPTER"
+    INVALID_ISOTOPE = "LLG_INVALID_ISOTOPE"
 
 
 @dataclass(frozen=True)
@@ -209,6 +211,35 @@ ELECTRON_LLG_SCHEMA = LabelSchema(
     name="lewis-electron/1",
 )
 
+ISOTOPE_ELECTRON_LLG_SCHEMA = replace(
+    ELECTRON_LLG_SCHEMA,
+    node_identity=("element", "isotope"),
+    name="lewis-electron-isotope/1",
+)
+
+
+def is_electron_schema(schema: LabelSchema) -> bool:
+    """Return whether the schema has the supported authoritative Lewis state."""
+    return schema in (ELECTRON_LLG_SCHEMA, ISOTOPE_ELECTRON_LLG_SCHEMA)
+
+
+def _validate_isotopes(nodes, schema):
+    if schema != ISOTOPE_ELECTRON_LLG_SCHEMA:
+        return
+    for node, labels in nodes:
+        values = dict(labels)
+        if "isotope" not in values:
+            continue
+        mass = values["isotope"]
+        if isinstance(mass, bool) or not isinstance(mass, Integral) or mass < 0:
+            raise LLGError(
+                LLGIssue(
+                    LLGIssueCode.INVALID_ISOTOPE,
+                    "An isotope mass must be a nonnegative integer; zero is unspecified.",
+                    {"node": repr(node), "isotope": repr(mass)},
+                )
+            )
+
 
 def _select_labels(
     values: Mapping[str, Any],
@@ -232,7 +263,9 @@ def _select_labels(
     declared_set = set(declared)
     for key, value in values.items():
         if key not in declared_set:
-            selected[f"annotation:{key}"] = value
+            selected[key if key.startswith("annotation:") else f"annotation:{key}"] = (
+                value
+            )
     return selected
 
 
@@ -244,6 +277,7 @@ class LewisLabelledGraph:
     nodes: tuple[tuple[Hashable, LabelBundle], ...]
     edges: tuple[tuple[EdgeKey, LabelBundle], ...]
     name: Hashable | None = field(default=None, compare=False, hash=False)
+    partial: bool = False
 
     def __post_init__(self) -> None:
         normalized_nodes = tuple(
@@ -260,6 +294,7 @@ class LewisLabelledGraph:
         )
         object.__setattr__(self, "nodes", normalized_nodes)
         object.__setattr__(self, "edges", normalized_edges)
+        _validate_isotopes(normalized_nodes, self.schema)
 
         issues: list[LLGIssue] = []
         node_ids = tuple(node for node, _ in normalized_nodes)
@@ -293,6 +328,26 @@ class LewisLabelledGraph:
         if issues:
             raise LLGError(*issues)
 
+        # Missing keys represent undefined coordinates only in partial patterns.
+        for node, labels in normalized_nodes:
+            if not self.partial:
+                _select_labels(
+                    dict(labels),
+                    self.schema.declared_node_keys,
+                    required=self.schema.semantic_node_keys,
+                    issue_code=LLGIssueCode.MISSING_NODE_LABEL,
+                    owner=node,
+                )
+        for edge, labels in normalized_edges:
+            if not self.partial:
+                _select_labels(
+                    dict(labels),
+                    self.schema.declared_edge_keys,
+                    required=self.schema.semantic_edge_keys,
+                    issue_code=LLGIssueCode.MISSING_EDGE_LABEL,
+                    owner=edge,
+                )
+
     @classmethod
     def from_networkx(
         cls,
@@ -300,6 +355,7 @@ class LewisLabelledGraph:
         schema: LabelSchema,
         *,
         name: Hashable | None = None,
+        partial: bool = False,
     ) -> "LewisLabelledGraph":
         """Freeze a NetworkX graph under an explicit label schema."""
         if graph.is_directed():
@@ -320,7 +376,7 @@ class LewisLabelledGraph:
             labels = _select_labels(
                 attrs,
                 schema.declared_node_keys,
-                required=schema.semantic_node_keys,
+                required=() if partial else schema.semantic_node_keys,
                 issue_code=LLGIssueCode.MISSING_NODE_LABEL,
                 owner=node,
             )
@@ -330,31 +386,49 @@ class LewisLabelledGraph:
             labels = _select_labels(
                 attrs,
                 schema.declared_edge_keys,
-                required=schema.semantic_edge_keys,
+                required=() if partial else schema.semantic_edge_keys,
                 issue_code=LLGIssueCode.MISSING_EDGE_LABEL,
                 owner=(left, right),
             )
             edges.append((frozenset((left, right)), _bundle(labels)))
-        return cls(schema, tuple(nodes), tuple(edges), name)
+        return cls(schema, tuple(nodes), tuple(edges), name, partial)
 
     @property
     def node_ids(self) -> frozenset[Hashable]:
-        return frozenset(node for node, _ in self.nodes)
+        return self._index(self.nodes, "_node_index")[1]
 
     @property
     def edge_keys(self) -> frozenset[EdgeKey]:
-        return frozenset(edge for edge, _ in self.edges)
+        return self._index(self.edges, "_edge_index")[1]
+
+    def _index(self, values, cache_name):
+        # Cache geometry/bundle references, never label values or validation results.
+        # Identity of the authoritative tuple also detects bypassed frozen-field edits.
+        cached = self.__dict__.get(cache_name)
+        if cached is None or cached[0] is not values:
+            lookup = dict(values)
+            cached = (values, lookup, frozenset(lookup))
+            object.__setattr__(self, cache_name, cached)
+        return cached[1:]
 
     def node_labels(self, node: Hashable, *, semantic: bool = False) -> dict[str, Any]:
-        values = _bundle_dict(dict(self.nodes)[node])
+        values = _bundle_dict(self._index(self.nodes, "_node_index")[0][node])
         if semantic:
-            return {key: values[key] for key in self.schema.semantic_node_keys}
+            return {
+                key: values[key]
+                for key in self.schema.semantic_node_keys
+                if key in values
+            }
         return values
 
     def edge_labels(self, edge: EdgeKey, *, semantic: bool = False) -> dict[str, Any]:
-        values = _bundle_dict(dict(self.edges)[frozenset(edge)])
+        values = _bundle_dict(self._index(self.edges, "_edge_index")[0][frozenset(edge)])
         if semantic:
-            return {key: values[key] for key in self.schema.semantic_edge_keys}
+            return {
+                key: values[key]
+                for key in self.schema.semantic_edge_keys
+                if key in values
+            }
         return values
 
     def _matching_node_labels(self, node: Hashable) -> dict[str, Any]:
@@ -366,7 +440,11 @@ class LewisLabelledGraph:
         :rtype: dict[str, Any]
         """
         values = self.node_labels(node, semantic=True)
-        if self.schema != ELECTRON_LLG_SCHEMA or not values.get("aromatic", False):
+        if (
+            self.partial
+            or not is_electron_schema(self.schema)
+            or not values.get("aromatic", False)
+        ):
             return values
         pi_valence = 0.0
         for edge in self.edge_keys:
@@ -398,7 +476,7 @@ class LewisLabelledGraph:
         :return: Whether Kekulé phase may be normalized for matching.
         :rtype: bool
         """
-        if self.schema != ELECTRON_LLG_SCHEMA:
+        if self.partial or not is_electron_schema(self.schema):
             return False
         endpoints = tuple(edge)
         if len(endpoints) != 2 or not all(
@@ -480,6 +558,7 @@ class LewisLabelledGraph:
                 for edge, labels in self.edges
             ),
             self.name,
+            self.partial,
         )
 
     def is_isomorphic(self, other: "LewisLabelledGraph") -> bool:
@@ -907,6 +986,7 @@ def llg_from_its(
 __all__ = [
     "COMMON_CHEMICAL_SCHEMA",
     "ELECTRON_LLG_SCHEMA",
+    "ISOTOPE_ELECTRON_LLG_SCHEMA",
     "LLGError",
     "LLGIssue",
     "LLGIssueCode",
@@ -914,5 +994,6 @@ __all__ = [
     "LabelSchema",
     "LewisLabelledGraph",
     "derive_electron_labeled_graph",
+    "is_electron_schema",
     "llg_from_its",
 ]

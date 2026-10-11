@@ -30,6 +30,7 @@ class LawIssueCode(str, Enum):
     ADD_ADD_EDGE = "LAW_ADD_ADD_EDGE"
     SEQUENTIAL_APPLICATION = "LAW_SEQUENTIAL_APPLICATION"
     NONCOMMUTATIVE = "LAW_NONCOMMUTATIVE"
+    CONDITION_REVERSAL = "LAW_CONDITION_REVERSAL_UNSUPPORTED"
 
 
 @dataclass(frozen=True)
@@ -92,14 +93,43 @@ class CommutationCertificate:
     independence: ParallelIndependenceCertificate
 
     def replay(self) -> bool:
+        if len(self.first_then_second) != 2 or len(self.second_then_first) != 2:
+            return False
         applications = self.first_then_second + self.second_then_first
         return (
             self.independence.independent
-            and all(item.certificate.replay().valid for item in applications)
+            and all(
+                item.result == item.certificate.result
+                and item.certificate.replay().valid
+                for item in applications
+            )
+            and self._application_links_valid()
             and self.result_isomorphism.is_isomorphism
             and self.result_isomorphism.source == self.first_then_second[1].result
             and self.result_isomorphism.target == self.second_then_first[1].result
         )
+
+    def _application_links_valid(self) -> bool:
+        first, after_first = self.first_then_second
+        second, after_second = self.second_then_first
+        left, right = first.certificate, second.certificate
+        first_access = _rule_access(left.rule, dict(left.match))
+        second_access = _rule_access(right.rule, dict(right.match))
+        checks = (
+            left.host == right.host,
+            after_first.certificate.host == first.result,
+            after_second.certificate.host == second.result,
+            after_first.certificate.rule == right.rule,
+            after_second.certificate.rule == left.rule,
+            dict(after_first.certificate.match) == dict(right.match),
+            dict(after_second.certificate.match) == dict(left.match),
+            self.independence.first_application == first,
+            self.independence.second_application == second,
+            self.independence.first_access == first_access,
+            self.independence.second_access == second_access,
+            not _access_issues(first_access, second_access),
+        )
+        return all(checks)
 
 
 def identity_rule(
@@ -118,14 +148,26 @@ def identity_rule(
     )
 
 
-def reverse_rule(rule: RuleSpan) -> RuleSpan:
-    """Reverse a rule; open resource deltas change sign."""
+def reverse_rule(rule: RuleSpan, *, span_only: bool = False) -> RuleSpan:
+    """Reverse an unguarded rule, or explicitly project a reversed bare span.
+
+    Execution conditions require their own inverse construction. They must
+    never be silently discarded when reversing a guarded rule.
+    """
+    if rule.condition is not None and not span_only:
+        raise LawError(
+            LawIssue(
+                LawIssueCode.CONDITION_REVERSAL,
+                "Reversal of a guarded rule needs a transported inverse condition.",
+            )
+        )
     environment = rule.environment
     if environment is not None:
         environment = EnvironmentToken(
             environment.name,
             tuple((element, -count) for element, count in environment.element_delta),
             -environment.electron_delta,
+            tuple((isotope, -count) for isotope, count in environment.isotope_delta),
         )
     return RuleSpan(
         rule.right,

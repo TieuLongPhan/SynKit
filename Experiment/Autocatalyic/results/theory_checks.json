@@ -1,0 +1,103 @@
+{
+  "balance": {
+    "samples": 400,
+    "largest_spectrum_difference": 5.684341886080802e-14,
+    "window_cases": 1710,
+    "window_agreements": 1710
+  },
+  "pitchfork": {
+    "constructive": {
+      "mechanism": "constructive",
+      "kr_critical": 0.22408281464727486,
+      "cubic_coefficient": -8.642841177962525,
+      "growth_slope_in_kr": -0.2315168945661201,
+      "supercritical": true,
+      "branch": [
+        {
+          "fraction": 0.9,
+          "growth_rate": 0.005435690870295162,
+          "predicted_L_minus_D": 0.025078358645399906,
+          "integrated_L_minus_D": 0.025637215288879266
+        },
+        {
+          "fraction": 0.99,
+          "growth_rate": 0.0005211789640628961,
+          "predicted_L_minus_D": 0.007765423987748281,
+          "integrated_L_minus_D": 0.007782909983117314
+        }
+      ]
+    },
+    "destructive": {
+      "mechanism": "destructive",
+      "kr_critical": 0.030621348190347446,
+      "cubic_coefficient": -11.586864194511982,
+      "growth_slope_in_kr": -0.12829066311285417,
+      "supercritical": true,
+      "branch": [
+        {
+          "fraction": 0.9,
+          "growth_rate": 0.00039429253373413076,
+          "predicted_L_minus_D": 0.005833461263366108,
+          "integrated_L_minus_D": 0.005823364550108921
+        },
+        {
+          "fraction": 0.99,
+          "growth_rate": 3.9298778252705446e-05,
+          "predicted_L_minus_D": 0.0018416477471026693,
+          "integrated_L_minus_D": 0.0018413292510819565
+        }
+      ]
+    }
+  },
+  "thermodynamics": {
+    "constructive": {
+      "wegscheider_residual": 1.7763568394002505e-15,
+      "reversible_pairs": 8,
+      "affinity_reference": 6.381178647664663,
+      "threshold_ratio": 1.7086723269742807,
+      "affinity_threshold": 7.371742446942448,
+      "largest_unstable_kdim": {
+        "value": 2.9144713318426683,
+        "ends_by": "no active racemate"
+      },
+      "largest_unstable_kmon": {
+        "value": 0.9,
+        "ends_by": "not reached"
+      }
+    },
+    "destructive": {
+      "wegscheider_residual": 8.881784197001252e-16,
+      "reversible_pairs": 8,
+      "affinity_reference": -1.673546876588333,
+      "threshold_ratio": 6.917182755847798,
+      "affinity_threshold": -1.7299725136589148,
+      "largest_unstable_kdim": {
+        "value": 5.0,
+        "ends_by": "not reached"
+      },
+      "largest_unstable_kmon": {
+        "value": 0.012204877239705673,
+        "ends_by": "odd sector stable"
+      }
+    }
+  },
+  "closure": {
+    "samples": 3000,
+    "species": 4,
+    "reactions": 5,
+    "empty_no_core": 629,
+    "nonempty_no_core": 578,
+    "nonempty_core": 1793,
+    "empty_core": 0,
+    "model_counterexample": {
+      "support": "0001 with reverse ligation",
+      "closure_species": [
+        "L",
+        "D",
+        "LD",
+        "DL"
+      ],
+      "cores": 0
+    }
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "cores": [
+    {
+      "species": [
+        "L",
+        "LL"
+      ],
+      "channels": [
+        "matched_L_f",
+        "homo_L_f"
+      ],
+      "modules": [
+        "homoligation",
+        "matched"
+      ],
+      "net_stoichiometry": [
+        [
+          1,
+          -2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "flux_witness": [
+        3.0,
+        1.0
+      ],
+      "production_witness": [
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "species": [
+        "D",
+        "DD"
+      ],
+      "channels": [
+        "matched_D_f",
+        "homo_D_f"
+      ],
+      "modules": [
+        "homoligation",
+        "matched"
+      ],
+      "net_stoichiometry": [
+        [
+          1,
+          -2
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "flux_witness": [
+        3.0,
+        1.0
+      ],
+      "production_witness": [
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "species": [
+        "L",
+        "D",
+        "LL",
+        "DD"
+      ],
+      "channels": [
+        "mismatched_L_f",
+        "homo_L_f",
+        "mismatched_D_f",
+        "homo_D_f"
+      ],
+      "modules": [
+        "homoligation",
+        "mismatched"
+      ],
+      "net_stoichiometry": [
+        [
+          1,
+          -2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          -2
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "flux_witness": [
+        3.0,
+        1.0,
+        3.0,
+        1.0
+      ],
+      "production_witness": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ],
+  "all_nonempty_support_pairs": 257985,
+  "well_formed_candidates_after_core_pruning": 14226,
+  "lp_calls": 3,
+  "core_supersets_pruned": 31997,
+  "complete_over_declared_rows_and_channels": true,
+  "boundary_policy": [
+    "L",
+    "D",
+    "LL",
+    "LD",
+    "DL",
+    "DD"
+  ],
+  "method": "exhaustive supports; HiGHS feasibility and direct witness validation"
+}

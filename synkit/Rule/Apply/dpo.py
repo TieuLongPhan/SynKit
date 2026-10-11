@@ -1,9 +1,8 @@
 """Typed DPO rule spans and application over finite Lewis-labelled graphs.
 
-Rule interfaces carry identity labels and incidence only.  Endpoint state is
-stored separately in the left and right LLG objects, so a preserved atom or
-bond may change state without pretending that a strict LLG morphism preserves
-two different values.  Matches into host graphs remain strict LLG morphisms.
+Rule interfaces use the endpoint schema with explicitly undefined coordinates.
+Contexts erase these coordinates; labels on the two squares are checked by
+coordinate unions and agreement pullbacks. Matches into total hosts are exact.
 """
 
 from __future__ import annotations
@@ -11,18 +10,19 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
+from numbers import Integral
 from typing import Any, Hashable, Mapping
 
 import networkx as nx
 
 from synkit.Graph.Morphism import (
-    ELECTRON_LLG_SCHEMA,
+    ISOTOPE_ELECTRON_LLG_SCHEMA,
     LLGError,
     LLGIssueCode,
     LLGMorphism,
-    LabelSchema,
     LewisLabelledGraph,
     derive_electron_labeled_graph,
+    is_electron_schema,
     llg_from_its,
 )
 
@@ -50,6 +50,8 @@ class DPOIssueCode(str, Enum):
     ELECTRON_SCHEMA_REQUIRED = "DPO_ELECTRON_SCHEMA_REQUIRED"
     NONCOMMUTATIVE = "DPO_NONCOMMUTATIVE_SQUARE"
     SOURCE_MUTATED = "DPO_SOURCE_MUTATED"
+    APPLICATION_CONDITION = "DPO_APPLICATION_CONDITION"
+    CLOSED_ISOTOPE = "DPO_CLOSED_ISOTOPE_IMBALANCE"
 
 
 @dataclass(frozen=True)
@@ -93,6 +95,7 @@ class EnvironmentToken:
     name: str
     element_delta: tuple[tuple[str, int], ...] = ()
     electron_delta: float = 0.0
+    isotope_delta: tuple[tuple[tuple[str, int], int], ...] = ()
 
     def __post_init__(self) -> None:
         if not self.name.strip():
@@ -106,19 +109,14 @@ class EnvironmentToken:
         )
         object.__setattr__(self, "element_delta", normalized)
         object.__setattr__(self, "electron_delta", float(self.electron_delta))
-
-
-def _identity_schema(schema: LabelSchema) -> LabelSchema:
-    return LabelSchema(
-        node_identity=schema.node_identity,
-        edge_identity=schema.edge_identity,
-        name=f"{schema.name}/partial-interface",
-    )
+        object.__setattr__(
+            self, "isotope_delta", _normalize_isotope_delta(self.isotope_delta)
+        )
 
 
 @dataclass(frozen=True)
 class RuleEmbedding:
-    """An identity-labelled interface embedding into a valued endpoint."""
+    """An embedding preserving identity and every defined interface coordinate."""
 
     interface: LewisLabelledGraph
     endpoint: LewisLabelledGraph
@@ -127,19 +125,27 @@ class RuleEmbedding:
     def __post_init__(self) -> None:
         pairs = tuple(self.f.items()) if isinstance(self.f, Mapping) else tuple(self.f)
         object.__setattr__(self, "f", tuple(sorted(pairs, key=repr)))
-        expected = _identity_schema(self.endpoint.schema)
-        if self.interface.schema != expected:
+        if (
+            self.interface.schema != self.endpoint.schema
+            or not self.interface.partial
+            or self.endpoint.partial
+        ):
             raise DPOError(
                 DPOIssue(
                     DPOIssueCode.INTERFACE_SCHEMA,
-                    "The rule interface must carry exactly endpoint identity labels.",
+                    "The rule interface must be a partial pattern under the endpoint schema.",
                 )
             )
         source_keys = tuple(left for left, _ in pairs)
         target_values = tuple(right for _, right in pairs)
         missing = set(self.interface.node_ids) - set(source_keys)
         outside = set(target_values) - set(self.endpoint.node_ids)
-        if len(set(source_keys)) != len(source_keys) or missing or outside:
+        if (
+            len(set(source_keys)) != len(source_keys)
+            or missing
+            or outside
+            or set(source_keys) != set(self.interface.node_ids)
+        ):
             raise DPOError(
                 DPOIssue(
                     DPOIssueCode.INTERFACE_PARTIAL,
@@ -162,14 +168,16 @@ class RuleEmbedding:
         for node, image in pairs:
             interface_labels = self.interface.node_labels(node, semantic=True)
             endpoint_labels = self.endpoint.node_labels(image, semantic=True)
-            endpoint_identity = {
-                key: endpoint_labels[key] for key in self.endpoint.schema.node_identity
-            }
-            if interface_labels != endpoint_identity:
+            if not set(self.endpoint.schema.node_identity) <= set(
+                interface_labels
+            ) or any(
+                endpoint_labels.get(key) != value
+                for key, value in interface_labels.items()
+            ):
                 issues.append(
                     DPOIssue(
                         DPOIssueCode.INTERFACE_LABEL,
-                        "An interface node identity label is not preserved.",
+                        "An interface node omits identity or does not preserve a defined coordinate.",
                         {"node": repr(node), "image": repr(image)},
                     )
                 )
@@ -186,14 +194,16 @@ class RuleEmbedding:
                 continue
             interface_labels = self.interface.edge_labels(edge, semantic=True)
             endpoint_labels = self.endpoint.edge_labels(image, semantic=True)
-            endpoint_identity = {
-                key: endpoint_labels[key] for key in self.endpoint.schema.edge_identity
-            }
-            if interface_labels != endpoint_identity:
+            if not set(self.endpoint.schema.edge_identity) <= set(
+                interface_labels
+            ) or any(
+                endpoint_labels.get(key) != value
+                for key, value in interface_labels.items()
+            ):
                 issues.append(
                     DPOIssue(
                         DPOIssueCode.INTERFACE_LABEL,
-                        "An interface edge identity label is not preserved.",
+                        "An interface edge omits identity or does not preserve a defined coordinate.",
                         {"edge": tuple(sorted(map(repr, edge)))},
                     )
                 )
@@ -219,12 +229,50 @@ class ResourceDelta:
 
     element_delta: tuple[tuple[str, int], ...]
     electron_delta: float
+    isotope_delta: tuple[tuple[tuple[str, int], int], ...] = ()
+
+
+def _normalize_isotope_delta(pairs):
+    pairs = tuple(pairs)
+    for (element, mass), count in pairs:
+        if (
+            not str(element)
+            or isinstance(mass, bool)
+            or not isinstance(mass, Integral)
+            or mass < 0
+            or isinstance(count, bool)
+            or not isinstance(count, Integral)
+        ):
+            raise ValueError(
+                "Isotope resource deltas need an element, integral mass and integral count."
+            )
+    return tuple(
+        sorted(
+            ((str(element), int(mass)), int(count))
+            for (element, mass), count in dict(pairs).items()
+            if count
+        )
+    )
+
+
+def _isotope_inventory(graph):
+    if graph.schema != ISOTOPE_ELECTRON_LLG_SCHEMA:
+        return Counter()
+    values = Counter(
+        (
+            str(graph.node_labels(node)["element"]),
+            int(graph.node_labels(node)["isotope"]),
+        )
+        for node in graph.node_ids
+    )
+    values[("H", 0)] += sum(int(graph.node_labels(n)["hcount"]) for n in graph.node_ids)
+    return values
 
 
 def _resource_delta(
     left: LewisLabelledGraph, right: LewisLabelledGraph
 ) -> ResourceDelta:
-    if left.schema != ELECTRON_LLG_SCHEMA or right.schema != ELECTRON_LLG_SCHEMA:
+    if not is_electron_schema(left.schema) or not is_electron_schema(right.schema):
         raise DPOError(
             DPOIssue(
                 DPOIssueCode.ELECTRON_SCHEMA_REQUIRED,
@@ -238,6 +286,15 @@ def _resource_delta(
         for node in graph.node_ids:
             labels = graph.node_labels(node)
             elements[str(labels["element"])] += 1
+            hydrogen_count = float(labels["hcount"])
+            if not hydrogen_count.is_integer() or hydrogen_count < 0:
+                raise DPOError(
+                    DPOIssue(
+                        DPOIssueCode.CLOSED_MATERIAL,
+                        "Unexpanded hydrogen inventory must be a nonnegative integer.",
+                    )
+                )
+            elements["H"] += int(hydrogen_count)
             electrons += (
                 float(labels["valence_electrons"])
                 + float(labels["hcount"])
@@ -253,7 +310,49 @@ def _resource_delta(
         for key in keys
         if right_elements[key] != left_elements[key]
     )
-    return ResourceDelta(element_delta, right_electrons - left_electrons)
+    isotope_delta = _isotope_inventory(right)
+    isotope_delta.subtract(_isotope_inventory(left))
+    return ResourceDelta(
+        element_delta,
+        right_electrons - left_electrons,
+        _normalize_isotope_delta(isotope_delta.items()),
+    )
+
+
+def _closed_boundary_issues(delta, environment):
+    issues = []
+    if delta.isotope_delta:
+        issues.append(
+            DPOIssue(
+                DPOIssueCode.CLOSED_ISOTOPE,
+                "A closed rule changes the isotope-resolved material inventory.",
+                {"delta": delta.isotope_delta},
+            )
+        )
+    if delta.element_delta:
+        issues.append(
+            DPOIssue(
+                DPOIssueCode.CLOSED_MATERIAL,
+                "A closed rule changes the elemental inventory.",
+                {"delta": delta.element_delta},
+            )
+        )
+    if delta.electron_delta != 0:
+        issues.append(
+            DPOIssue(
+                DPOIssueCode.CLOSED_ELECTRON,
+                "A closed rule changes the electron inventory.",
+                {"delta": delta.electron_delta},
+            )
+        )
+    if environment is not None:
+        issues.append(
+            DPOIssue(
+                DPOIssueCode.OPEN_TOKEN_MISMATCH,
+                "A closed rule cannot carry an environment token.",
+            )
+        )
+    return issues
 
 
 @dataclass(frozen=True)
@@ -268,8 +367,16 @@ class RuleSpan:
     boundary: SystemBoundary = SystemBoundary.ABSTRACT
     environment: EnvironmentToken | None = None
     name: str = "rule"
+    condition: Any = None
 
     def __post_init__(self) -> None:
+        if self.left.partial or self.right.partial:
+            raise DPOError(
+                DPOIssue(
+                    DPOIssueCode.INTERFACE_SCHEMA,
+                    "Rule endpoints must have total semantic labels.",
+                )
+            )
         if self.left.schema != self.right.schema:
             raise DPOError(
                 DPOIssue(
@@ -302,30 +409,7 @@ class RuleSpan:
             return
         delta = _resource_delta(self.left, self.right)
         if boundary is SystemBoundary.CLOSED:
-            issues = []
-            if delta.element_delta:
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.CLOSED_MATERIAL,
-                        "A closed rule changes the elemental inventory.",
-                        {"delta": delta.element_delta},
-                    )
-                )
-            if delta.electron_delta != 0:
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.CLOSED_ELECTRON,
-                        "A closed rule changes the electron inventory.",
-                        {"delta": delta.electron_delta},
-                    )
-                )
-            if self.environment is not None:
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.OPEN_TOKEN_MISMATCH,
-                        "A closed rule cannot carry an environment token.",
-                    )
-                )
+            issues = _closed_boundary_issues(delta, self.environment)
             if issues:
                 raise DPOError(*issues)
             return
@@ -339,6 +423,7 @@ class RuleSpan:
         if (
             self.environment.element_delta != delta.element_delta
             or self.environment.electron_delta != delta.electron_delta
+            or self.environment.isotope_delta != delta.isotope_delta
         ):
             raise DPOError(
                 DPOIssue(
@@ -349,6 +434,8 @@ class RuleSpan:
                         "observed_elements": self.environment.element_delta,
                         "expected_electrons": delta.electron_delta,
                         "observed_electrons": self.environment.electron_delta,
+                        "expected_isotopes": delta.isotope_delta,
+                        "observed_isotopes": self.environment.isotope_delta,
                     },
                 )
             )
@@ -386,7 +473,7 @@ class RuleSpan:
                     "Each preserved left node occurs once.",
                 )
             )
-        interface_schema = _identity_schema(left.schema)
+        interface_schema = left.schema
         interface_graph = nx.Graph()
         for interface_node, (left_node, right_node) in enumerate(pairs):
             if left_node not in left.node_ids or right_node not in right.node_ids:
@@ -412,7 +499,14 @@ class RuleSpan:
                         {"left": repr(left_node), "right": repr(right_node)},
                     )
                 )
-            interface_graph.add_node(interface_node, **left_identity)
+            left_values = left.node_labels(left_node, semantic=True)
+            right_values = right.node_labels(right_node, semantic=True)
+            common = {
+                key: value
+                for key, value in left_values.items()
+                if key in right_values and right_values[key] == value
+            }
+            interface_graph.add_node(interface_node, **common)
 
         left_to_interface = {
             left_node: interface_node
@@ -451,12 +545,19 @@ class RuleSpan:
                         "Preserved edges disagree on identity labels.",
                     )
                 )
+            left_values = left.edge_labels(edge, semantic=True)
+            right_values = right.edge_labels(right_edge, semantic=True)
+            common = {
+                key: value
+                for key, value in left_values.items()
+                if key in right_values and right_values[key] == value
+            }
             interface_graph.add_edge(
-                left_to_interface[left_a], left_to_interface[left_b], **left_identity
+                left_to_interface[left_a], left_to_interface[left_b], **common
             )
 
         interface = LewisLabelledGraph.from_networkx(
-            interface_graph, interface_schema, name=f"{name}:K"
+            interface_graph, interface_schema, name=f"{name}:K", partial=True
         )
         left_map = {
             interface_node: left_node
@@ -510,103 +611,9 @@ class DPOCertificate:
     resource_delta: ResourceDelta | None
 
     def replay(self) -> DPOReplay:
-        issues: list[DPOIssue] = []
-        match = dict(self.match)
-        left_arm = self.rule.left_arm.mapping
-        right_arm = self.rule.right_arm.mapping
-        to_context = dict(self.interface_to_context)
-        context_host = dict(self.context_to_host)
-        context_result = dict(self.context_to_result)
-        right_result = dict(self.right_to_result)
-        domains = (
-            ("match", set(match), set(self.rule.left.node_ids)),
-            (
-                "interface_to_context",
-                set(to_context),
-                set(self.rule.interface.node_ids),
-            ),
-            ("context_to_host", set(context_host), set(self.context.node_ids)),
-            ("context_to_result", set(context_result), set(self.context.node_ids)),
-            ("right_to_result", set(right_result), set(self.rule.right.node_ids)),
-        )
-        for name, observed, expected in domains:
-            if observed != expected:
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.NONCOMMUTATIVE,
-                        "A certificate carrier map has the wrong domain.",
-                        {
-                            "map": name,
-                            "missing": tuple(sorted(map(repr, expected - observed))),
-                            "extra": tuple(sorted(map(repr, observed - expected))),
-                        },
-                    )
-                )
-        missing_host = set(context_host.values()) - set(self.host.node_ids)
-        missing_result = (
-            set(context_result.values()) | set(right_result.values())
-        ) - set(self.result.node_ids)
-        if missing_host or missing_result:
-            issues.append(
-                DPOIssue(
-                    DPOIssueCode.NONCOMMUTATIVE,
-                    "A certificate map lands outside its declared object.",
-                    {
-                        "host": tuple(sorted(map(repr, missing_host))),
-                        "result": tuple(sorted(map(repr, missing_result))),
-                    },
-                )
-            )
-        missing = object()
-        for node in self.rule.interface.node_ids:
-            left_path = match.get(left_arm[node], missing)
-            context_node = to_context.get(node, missing)
-            complement_path = context_host.get(context_node, missing)
-            if left_path != complement_path:
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.NONCOMMUTATIVE,
-                        "The pushout-complement square does not commute.",
-                        {"interface_node": repr(node)},
-                    )
-                )
-            right_path = right_result.get(right_arm[node], missing)
-            pushout_path = context_result.get(context_node, missing)
-            if right_path != pushout_path:
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.NONCOMMUTATIVE,
-                        "The result pushout square does not commute.",
-                        {"interface_node": repr(node)},
-                    )
-                )
-        for edge in self.rule.interface.edge_keys:
-            left_edge = _map_edge(left_arm, edge)
-            matched_edge = _map_edge(match, left_edge)
-            context_edge = _map_edge(to_context, edge)
-            complement_edge = _map_edge(context_host, context_edge)
-            if (
-                matched_edge != complement_edge
-                or matched_edge not in self.host.edge_keys
-            ):
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.NONCOMMUTATIVE,
-                        "The pushout-complement edge square does not commute.",
-                        {"interface_edge": tuple(sorted(map(repr, edge)))},
-                    )
-                )
-            right_edge = _map_edge(right_arm, edge)
-            result_edge = _map_edge(right_result, right_edge)
-            pushout_edge = _map_edge(context_result, context_edge)
-            if result_edge != pushout_edge or result_edge not in self.result.edge_keys:
-                issues.append(
-                    DPOIssue(
-                        DPOIssueCode.NONCOMMUTATIVE,
-                        "The result edge square does not commute.",
-                        {"interface_edge": tuple(sorted(map(repr, edge)))},
-                    )
-                )
+        from .validation import validate_certificate
+
+        issues = validate_certificate(self)
         return DPOReplay(not issues, tuple(issues))
 
 
@@ -731,11 +738,35 @@ def _construct_context(
     rule: RuleSpan,
     host: LewisLabelledGraph,
     deletion: _DeletionPlan,
+    match: Mapping[Hashable, Hashable],
 ) -> LewisLabelledGraph:
     graph = host.to_networkx()
     graph.remove_edges_from(tuple(tuple(edge) for edge in deletion.edges))
     graph.remove_nodes_from(deletion.nodes)
-    return LewisLabelledGraph.from_networkx(graph, host.schema, name=f"{rule.name}:D")
+    # Naturality requires erasing precisely the coordinates undefined in K.
+    for node in rule.interface.node_ids:
+        image = match[rule.left_arm.mapping[node]]
+        labels = rule.interface.node_labels(node, semantic=True)
+        for key in host.schema.semantic_node_keys:
+            if key not in labels:
+                graph.nodes[image].pop(key, None)
+    for edge in rule.interface.edge_keys:
+        image = _map_edge(match, rule.left_arm.edge_mapping[edge])
+        left, right = tuple(image)
+        labels = rule.interface.edge_labels(edge, semantic=True)
+        for key in host.schema.semantic_edge_keys:
+            if key not in labels:
+                graph.edges[left, right].pop(key, None)
+    # Derived chemistry is meaningful on complete host states, not on D.
+    for _, labels in graph.nodes(data=True):
+        for key in host.schema.node_derived:
+            labels.pop(key, None)
+    for _, _, labels in graph.edges(data=True):
+        for key in host.schema.edge_derived:
+            labels.pop(key, None)
+    return LewisLabelledGraph.from_networkx(
+        graph, host.schema, name=f"{rule.name}:D", partial=True
+    )
 
 
 def _initialize_result(
@@ -813,7 +844,7 @@ def _coherent_result(
     plan: _ResultPlan,
 ) -> LewisLabelledGraph:
     graph = plan.graph
-    if host.schema == ELECTRON_LLG_SCHEMA:
+    if is_electron_schema(host.schema):
         for _, attrs in graph.nodes(data=True):
             for key in host.schema.node_derived:
                 attrs.pop(key, None)
@@ -871,8 +902,10 @@ def apply_dpo(
     match_morphism = _validated_match(rule, host, match)
     before = (host.to_networkx(), rule.left.to_networkx(), rule.right.to_networkx())
     match_map = match_morphism.mapping
+    if rule.condition is not None:
+        rule.condition.validate(host, match_map)
     deletion = _deletion_plan(rule, host, match_map)
-    context = _construct_context(rule, host, deletion)
+    context = _construct_context(rule, host, deletion, match_map)
     plan = _initialize_result(rule, context, match_map)
     _update_preserved_values(rule, plan)
     _add_right_edges(rule, plan)

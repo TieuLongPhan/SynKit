@@ -16,6 +16,25 @@ Experiment/Stereo/
 └── benchmark.sh       historical long pipeline (includes expensive raw stress)
 ```
 
+## Data used by the paper
+
+`paper/stereo_graph/results/manifest.json` selects the reports behind every
+number in the manuscript. Only these `Data/Revision` directories are kept:
+
+| Directory | Role |
+| --- | --- |
+| `CleanReleaseFull/` | The full run from a clean checkout; source of 34 of the 37 selected reports and of the cost and registration plots |
+| `PaperEvidence/` | Chemical selection manifests, RDKit representation fixtures, environment locks and the archived earlier paper revisions |
+| `Protocols/` | Topology-completion report selected by the manifest |
+| `CIPPublished/` | Publisher CIP inputs read by `cip_sources.py` |
+| `Chemical/`, `Performance/`, `ProtocolReconciled/`, `Historical/` | Reports read by `chemical_results.py` and by `Test/Benchmark/Stereo` |
+
+Intermediate reruns that the final run superseded (`Bounded*`,
+`ArchiveReaderBounded`, `CleanReleaseBounded`, `ProtocolIsotopeCorrected`,
+`PublisherCoordinates` and the earlier `Revision/Canonicalization` reports)
+were removed from the working tree. They remain in Git history at commit
+`8faacf2a`.
+
 ## Revision reproduction
 
 The current revision entry point defaults to bounded correctness validation:

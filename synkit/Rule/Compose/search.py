@@ -304,9 +304,12 @@ def _extension_is_compatible(
         if target_edge not in target.edge_keys:
             continue
         source_edge = frozenset((source_node, mapped_source))
-        if source_edge not in source.edge_keys:
-            return False
-        if _edge_labels(source, source_edge) != _edge_labels(target, target_edge):
+        # An edge present only in L2 can be supplied by the first rule's frame.
+        # Only a shared pair with conflicting values prevents a common world.
+        # Dangling and deleted-frame requirements are checked by composition.
+        if source_edge in source.edge_keys and (
+            _edge_labels(source, source_edge) != _edge_labels(target, target_edge)
+        ):
             return False
     return True
 
@@ -523,9 +526,29 @@ def _mapping_is_colored_isomorphism(
 def find_rule_span_isomorphism(
     left: RuleSpan, right: RuleSpan
 ) -> RuleSpanIsomorphism | None:
-    """Return an exact replayable witness, or ``None`` when none exists."""
+    """Return an exact carrier-span witness, or ``None`` when none exists.
+
+    Sequential application conditions are retained on each rule but are not
+    compared here. A span quotient does not prove guarded-rule equivalence.
+    """
     if _rule_metadata_key(left) != _rule_metadata_key(right):
         return None
+    layers = (
+        (left.left, right.left),
+        (left.interface, right.interface),
+        (left.right, right.right),
+    )
+    if all(source.node_ids == target.node_ids for source, target in layers):
+        identity = RuleSpanIsomorphism(
+            left,
+            right,
+            *(
+                tuple((node, node) for node in sorted(source.node_ids, key=repr))
+                for source, _ in layers
+            ),
+        )
+        if identity.replay():
+            return identity
     matcher = nx.algorithms.isomorphism.GraphMatcher(
         _rule_graph(left),
         _rule_graph(right),

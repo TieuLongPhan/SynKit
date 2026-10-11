@@ -1,0 +1,123 @@
+{
+  "Frank, flow reactor": {
+    "racemate": [
+      0.25,
+      0.15,
+      0.15
+    ],
+    "mirror_fixed_species": [
+      "A"
+    ],
+    "alpha_even": -0.275,
+    "alpha_odd": 0.15,
+    "alpha_pair_sum": -0.15,
+    "classes": [
+      "cross",
+      "shared"
+    ],
+    "inhibition_only": true
+  },
+  "Kondepudi--Nelson": {
+    "racemate": [
+      0.8291460018962881,
+      0.8291460018962881
+    ],
+    "mirror_fixed_species": [],
+    "alpha_even": -0.9241212041718337,
+    "alpha_odd": 0.7341707996207424,
+    "alpha_pair_sum": -0.9241212041718337,
+    "classes": [
+      "cross"
+    ],
+    "inhibition_only": true
+  },
+  "Limited enantioselectivity": {
+    "racemate": [
+      0.48598885875848324,
+      0.48598885875848324
+    ],
+    "mirror_fixed_species": [],
+    "alpha_even": -1.0411532067856297,
+    "alpha_odd": 0.7028022282483034,
+    "alpha_pair_sum": -1.0411532067856297,
+    "classes": [
+      "cross"
+    ],
+    "inhibition_only": true
+  },
+  "Autocatalysis with recycling": {
+    "racemate": [
+      0.27639320225002106,
+      0.36180339887498947,
+      0.36180339887498947
+    ],
+    "mirror_fixed_species": [
+      "A"
+    ],
+    "alpha_even": -0.16180339887498943,
+    "alpha_odd": 0.1,
+    "alpha_pair_sum": 0.1,
+    "classes": [
+      "shared"
+    ],
+    "inhibition_only": false
+  },
+  "Control B": {
+    "racemate": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "mirror_fixed_species": [],
+    "alpha_even": -2.3944487245360104,
+    "alpha_odd": 0.08276253029821978,
+    "alpha_pair_sum": -2.3944487245360104,
+    "classes": [
+      "cross"
+    ],
+    "inhibition_only": true
+  },
+  "Constructive 1010": {
+    "racemate": [
+      0.09407466741768089,
+      0.1275553450868175,
+      0.1275553450868175,
+      0.162703660602171,
+      0.0,
+      0.0,
+      0.162703660602171
+    ],
+    "mirror_fixed_species": [
+      "P"
+    ],
+    "alpha_even": -0.1,
+    "alpha_odd": 0.01306281546868078,
+    "alpha_pair_sum": 0.01306281546868078,
+    "classes": [
+      "shared"
+    ],
+    "inhibition_only": false
+  },
+  "Destructive 0110": {
+    "racemate": [
+      0.8523728215261238,
+      0.04069383123130287,
+      0.04069383123130287,
+      0.01655987900281761,
+      0.0,
+      0.0,
+      0.01655987900281761
+    ],
+    "mirror_fixed_species": [
+      "P"
+    ],
+    "alpha_even": -0.09999999999999999,
+    "alpha_odd": 0.029528602982974522,
+    "alpha_pair_sum": -0.1,
+    "classes": [
+      "cross"
+    ],
+    "inhibition_only": true
+  }
+}

@@ -1,0 +1,10 @@
+// Own adapter for the bound N-poset; immutable ids carry shared supplied anchors.
+// Free-site tests implement its singleton material ports. No sequence controller.
+%agent: Carrier(id{z0 z1 z2},s{zero one},b)
+'a' Carrier(id{z0},s{zero},b[1]),Carrier(id{z1},s{zero},b[1]) -> Carrier(id{z0},s{zero},b[.]),Carrier(id{z1},s{zero},b[.]) @ 1
+'b' Carrier(id{z0},s{zero},b[.]) -> Carrier(id{z0},s{one},b[.]) @ 1
+'c' Carrier(id{z2},s{zero}) -> Carrier(id{z2},s{one}) @ 1
+'d' Carrier(id{z1},s{zero},b[.]),Carrier(id{z2},s{one},b[.]) -> Carrier(id{z1},s{zero},b[1]),Carrier(id{z2},s{one},b[1]) @ 1
+%init: 1 Carrier(id{z0},s{zero},b[1]),Carrier(id{z1},s{zero},b[1]),Carrier(id{z2},s{zero},b[.])
+%obs: 'goal' |Carrier(id{z0},s{one},b[.]),Carrier(id{z1},s{zero},b[1]),Carrier(id{z2},s{one},b[1])|
+%mod: [true] do $TRACK 'goal' [true];

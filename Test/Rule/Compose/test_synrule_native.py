@@ -40,7 +40,8 @@ def test_synrule_exposes_a_lossless_tuple_dpo_view() -> None:
 
     assert direct.left.schema is ELECTRON_LLG_SCHEMA
     assert direct == method
-    assert direct.interface.schema.node_state == ()
+    assert direct.interface.partial
+    assert direct.interface.schema == direct.left.schema
 
 
 def test_synrule_composes_one_explicit_overlap_natively() -> None:

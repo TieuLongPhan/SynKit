@@ -138,11 +138,11 @@ def test_reversal_negates_an_open_environment_resource_token() -> None:
     assert witness is not None and witness.replay()
 
 
-def test_reversal_duality_reverses_composition_order() -> None:
+def test_carrier_span_reversal_duality_reverses_composition_order() -> None:
     first = _state_rule(0, 1, "p1")
     second = _state_rule(1, 2, "p2")
     forward = compose_rules(first, second, _full_overlap(first, second)).rule
-    reversed_forward = reverse_rule(forward)
+    reversed_forward = reverse_rule(forward, span_only=True)
     reverse_second = reverse_rule(second)
     reverse_first = reverse_rule(first)
     backward = compose_rules(
@@ -153,6 +153,16 @@ def test_reversal_duality_reverses_composition_order() -> None:
 
     witness = find_rule_span_isomorphism(reversed_forward, backward)
     assert witness is not None and witness.replay()
+
+
+def test_reversal_does_not_silently_drop_a_sequential_condition() -> None:
+    first = _state_rule(0, 1, "p1")
+    second = _state_rule(1, 2, "p2")
+    guarded = compose_rules(first, second, _full_overlap(first, second)).rule
+    with pytest.raises(LawError) as error:
+        reverse_rule(guarded)
+    assert error.value.issues[0].code is LawIssueCode.CONDITION_REVERSAL
+    assert reverse_rule(guarded, span_only=True).condition is None
 
 
 def test_sequential_and_composed_application_agree_in_larger_context() -> None:
@@ -351,3 +361,49 @@ def test_nonisomorphic_linearizations_are_a_typed_failure(
             host,
         )
     assert error.value.issues[0].code is LawIssueCode.NONCOMMUTATIVE
+
+
+@pytest.mark.parametrize(
+    "corruption",
+    ["application-result", "unlinked-chain", "missing-premises", "wrong-footprint"],
+)
+def test_commutation_replay_rejects_individually_valid_but_unlinked_evidence(
+    corruption,
+):
+    host = _llg({"a": 0, "b": 0})
+    first, second = _state_rule(0, 1, "first"), _state_rule(0, 2, "second")
+    certificate = commute_independent(
+        first, {"first:L": "a"}, second, {"second:L": "b"}, host
+    )
+    step_one, step_two = certificate.first_then_second
+    if corruption == "application-result":
+        unrelated = _llg({"a": 1, "b": 9})
+        tampered = replace(
+            certificate,
+            first_then_second=(replace(step_one, result=unrelated), step_two),
+        )
+    elif corruption == "unlinked-chain":
+        unrelated = apply_dpo(
+            _state_rule(0, 7, "unrelated"), host, {"unrelated:L": "a"}
+        )
+        assert unrelated.certificate.replay().valid
+        tampered = replace(certificate, first_then_second=(unrelated, step_two))
+    elif corruption == "missing-premises":
+        empty = replace(
+            certificate.independence,
+            first_application=None,
+            second_application=None,
+            first_access=None,
+            second_access=None,
+        )
+        tampered = replace(certificate, independence=empty)
+    else:
+        incorrect = replace(
+            certificate.independence.first_access, read_nodes=frozenset()
+        )
+        tampered = replace(
+            certificate,
+            independence=replace(certificate.independence, first_access=incorrect),
+        )
+    assert all(step.certificate.replay().valid for step in tampered.first_then_second)
+    assert not tampered.replay()

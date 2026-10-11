@@ -162,6 +162,21 @@ def _components(endpoint: LewisLabelledGraph) -> frozenset[frozenset[Hashable]]:
     )
 
 
+def _witness_rule_matches(declared: RuleSpan, witnessed: RuleSpan) -> bool:
+    """Require the supplied execution contract as well as the carrier span.
+
+    Arbitrary guard equivalence or guard transport is not inferred from span
+    isomorphism. A guarded event must use the same condition object that the
+    finite commutation witness executed.
+    """
+    return (
+        declared.condition is witnessed.condition
+        and declared.boundary == witnessed.boundary
+        and declared.environment == witnessed.environment
+        and rule_spans_isomorphic(declared, witnessed)
+    )
+
+
 @dataclass(frozen=True)
 class OccurrenceProcess:
     """A finite causal configuration with explicit material-copy flow."""
@@ -350,8 +365,8 @@ class OccurrenceProcess:
             second_rule = certificate.second_then_first[0].certificate.rule
             if (
                 not certificate.replay()
-                or not rule_spans_isomorphic(first.rule, first_rule)
-                or not rule_spans_isomorphic(second.rule, second_rule)
+                or not _witness_rule_matches(first.rule, first_rule)
+                or not _witness_rule_matches(second.rule, second_rule)
             ):
                 issues.append(
                     ProcessIssue(

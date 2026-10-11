@@ -22,6 +22,7 @@ from .morphism import (
 from .llg import (
     COMMON_CHEMICAL_SCHEMA,
     ELECTRON_LLG_SCHEMA,
+    ISOTOPE_ELECTRON_LLG_SCHEMA,
     LLGError,
     LLGIssue,
     LLGIssueCode,
@@ -29,6 +30,7 @@ from .llg import (
     LabelSchema,
     LewisLabelledGraph,
     derive_electron_labeled_graph,
+    is_electron_schema,
     llg_from_its,
 )
 from .stereo import (
@@ -59,6 +61,7 @@ __all__ = [
     "EndpointSide",
     "COMMON_CHEMICAL_SCHEMA",
     "ELECTRON_LLG_SCHEMA",
+    "ISOTOPE_ELECTRON_LLG_SCHEMA",
     "GraphMorphism",
     "GraphMorphismError",
     "LLGError",
@@ -89,6 +92,7 @@ __all__ = [
     "adapt_legacy_node_state",
     "adapt_legacy_wildcard",
     "derive_electron_labeled_graph",
+    "is_electron_schema",
     "llg_from_its",
     "transport_stereo_descriptor",
     "transport_stereo_registry",

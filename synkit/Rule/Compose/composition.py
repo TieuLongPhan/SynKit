@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Any, Hashable, Mapping
 
@@ -15,15 +15,18 @@ from synkit.Graph.Morphism import (
     LLGMorphism,
     LewisLabelledGraph,
     derive_electron_labeled_graph,
+    is_electron_schema,
 )
 from synkit.Rule.Apply import (
     DPOApplication,
     DPOError,
     EnvironmentToken,
+    RuleEmbedding,
     RuleSpan,
     SystemBoundary,
     apply_dpo,
 )
+from synkit.Rule.Apply.conditions import SequentialCondition
 
 
 class CompositionIssueCode(str, Enum):
@@ -257,7 +260,7 @@ class CompositionCertificate:
     provenance: CompositionProvenance
 
     def replay(self) -> CompositionReplay:
-        issues: list[CompositionIssue] = []
+        issues = _application_link_issues(self)
         if not self.first_application.certificate.replay().valid:
             issues.append(
                 CompositionIssue(
@@ -326,6 +329,55 @@ class CompositionResult:
     certificate: CompositionCertificate
 
 
+def _application_link_issues(c: CompositionCertificate) -> list[CompositionIssue]:
+    """Tie retained proofs to the actual applications and dependency witness."""
+    first, second, outer = (
+        c.first_application,
+        c.second_application,
+        c.outer_application,
+    )
+    checks = (
+        first.certificate.rule == c.first,
+        first.certificate.host == c.minimal_host,
+        second.certificate.rule == c.second,
+        second.certificate.host == first.result,
+        outer.certificate.rule == c.composite,
+        outer.certificate.host == c.minimal_host,
+        c.composite.left == c.minimal_host,
+        c.composite.right == second.result,
+        dict(second.certificate.match) == dict(c.second_match),
+        c.overlap.first_arm.target == c.first.right,
+        c.overlap.second_arm.target == c.second.left,
+    )
+    expected_condition = SequentialCondition(
+        c.first,
+        c.second,
+        first.certificate.match,
+        first.certificate.right_to_result,
+        c.second_match,
+    )
+    right_result = dict(first.certificate.right_to_result)
+    second_match = dict(c.second_match)
+    overlap_consistent = all(
+        right_result.get(c.overlap.first_arm.mapping[n])
+        == second_match.get(c.overlap.second_arm.mapping[n])
+        for n in c.overlap.interface.node_ids
+    )
+    if (
+        not all(checks)
+        or not overlap_consistent
+        or c.composite.condition != expected_condition
+        or any(a.result != a.certificate.result for a in (first, second, outer))
+    ):
+        return [
+            CompositionIssue(
+                CompositionIssueCode.NONCOMMUTATIVE,
+                "Application objects, sequential condition, and retained proofs disagree.",
+            )
+        ]
+    return []
+
+
 @dataclass
 class _HostPlan:
     graph: nx.Graph
@@ -358,11 +410,11 @@ def _overlap_edge_closed(overlap: RuleOverlap) -> None:
             continue
         interface_edge = frozenset(inverse_second[node] for node in second_edge)
         first_edge = frozenset(first_map[node] for node in interface_edge)
-        if interface_edge not in interface_edges or first_edge not in first.edge_keys:
+        if first_edge in first.edge_keys and interface_edge not in interface_edges:
             raise CompositionError(
                 CompositionIssue(
                     CompositionIssueCode.OVERLAP_EDGE_CLOSURE,
-                    "The declared overlap omits an L2 edge induced by overlap nodes.",
+                    "The declared overlap omits an edge shared by both endpoints.",
                     {"edge": tuple(sorted(map(repr, second_edge)))},
                 )
             )
@@ -466,12 +518,10 @@ def _add_second_context_edges(
             continue
         interface_edge = frozenset(inverse_second[node] for node in second_edge)
         if interface_edge not in interface_edges:
-            raise CompositionError(
-                CompositionIssue(
-                    CompositionIssueCode.OVERLAP_EDGE_CLOSURE,
-                    "An overlap-node edge is absent from D.",
-                )
+            _add_external_second_edge(
+                second, graph, second_to_initial, edge_refs, second_edge
             )
+            continue
         initial_endpoints = tuple(second_to_initial[node] for node in second_edge)
         if all(node is not None for node in initial_endpoints):
             initial_edge = frozenset(initial_endpoints)
@@ -526,7 +576,7 @@ def _minimal_host_plan(
         inverse_second,
         edge_refs,
     )
-    if first.left.schema == ELECTRON_LLG_SCHEMA:
+    if is_electron_schema(first.left.schema):
         graph = _derive_initial_electron_state(graph)
     return _HostPlan(graph, second_to_initial, node_refs, edge_refs)
 
@@ -595,12 +645,14 @@ def _combine_boundary(
         return SystemBoundary.CLOSED, None
     deltas = (first.resource_delta, second.resource_delta)
     elements: Counter[str] = Counter()
+    isotopes = Counter()
     electrons = 0.0
     names = []
     for rule, delta in zip((first, second), deltas):
         if delta is None:
             continue
         elements.update(dict(delta.element_delta))
+        isotopes.update(dict(delta.isotope_delta))
         electrons += delta.electron_delta
         if rule.environment is not None:
             names.append(rule.environment.name)
@@ -608,8 +660,49 @@ def _combine_boundary(
         " + ".join(names) or "composed environment",
         tuple((element, count) for element, count in elements.items() if count),
         electrons,
+        tuple((isotope, count) for isotope, count in isotopes.items() if count),
     )
     return SystemBoundary.OPEN, token
+
+
+def _outer_interface_from_contexts(
+    rule: RuleSpan,
+    first_application: DPOApplication,
+    second_application: DPOApplication,
+) -> RuleSpan:
+    """Preserve only coordinates that survive both realized natural contexts."""
+    contexts = (
+        first_application.certificate.context,
+        second_application.certificate.context,
+    )
+    graph = rule.interface.to_networkx()
+    for node, carrier in rule.left_arm.mapping.items():
+        labels = [context.node_labels(carrier, semantic=True) for context in contexts]
+        for key in rule.left.schema.semantic_node_keys:
+            if (
+                key not in labels[0]
+                or key not in labels[1]
+                or labels[0][key] != labels[1][key]
+            ):
+                graph.nodes[node].pop(key, None)
+    for edge, carrier in rule.left_arm.edge_mapping.items():
+        labels = [context.edge_labels(carrier, semantic=True) for context in contexts]
+        for key in rule.left.schema.semantic_edge_keys:
+            if (
+                key not in labels[0]
+                or key not in labels[1]
+                or labels[0][key] != labels[1][key]
+            ):
+                graph.edges[tuple(edge)].pop(key, None)
+    interface = LewisLabelledGraph.from_networkx(
+        graph, rule.interface.schema, name=rule.interface.name, partial=True
+    )
+    return replace(
+        rule,
+        interface=interface,
+        left_arm=RuleEmbedding(interface, rule.left, rule.left_arm.f),
+        right_arm=RuleEmbedding(interface, rule.right, rule.right_arm.f),
+    )
 
 
 def _outer_rule(
@@ -628,15 +721,29 @@ def _outer_rule(
         and node not in removed_second
         and node in second_application.result.node_ids
     }
+    removed_edges = set(first_application.certificate.deleted_edges) | set(
+        second_application.certificate.deleted_edges
+    )
+    preserved_edges = {
+        edge
+        for edge in host.edge_keys
+        if edge <= set(preserved)
+        and edge not in removed_edges
+        and edge in second_application.result.edge_keys
+    }
     boundary, environment = _combine_boundary(first, second)
     try:
-        return RuleSpan.from_mapping(
+        rule = RuleSpan.from_mapping(
             host,
             second_application.result,
             preserved,
+            preserved_edges=preserved_edges,
             boundary=boundary,
             environment=environment,
             name=f"{first.name};{second.name}",
+        )
+        return _outer_interface_from_contexts(
+            rule, first_application, second_application
         )
     except DPOError as error:
         raise CompositionError(
@@ -666,11 +773,19 @@ def _provenance(
     final = second_application.result
     left_nodes = {node: set(refs) for node, refs in plan.node_refs.items()}
     left_edges = {edge: set(refs) for edge, refs in plan.edge_refs.items()}
+    removed_nodes = set(first_application.certificate.deleted_nodes) | set(
+        second_application.certificate.deleted_nodes
+    )
+    removed_edges = set(first_application.certificate.deleted_edges) | set(
+        second_application.certificate.deleted_edges
+    )
     final_nodes: dict[Hashable, set[ProvenanceRef]] = {
-        node: set(left_nodes.get(node, ())) for node in final.node_ids
+        node: set() if node in removed_nodes else set(left_nodes.get(node, ()))
+        for node in final.node_ids
     }
     final_edges: dict[frozenset[Hashable], set[ProvenanceRef]] = {
-        edge: set(left_edges.get(edge, ())) for edge in final.edge_keys
+        edge: set() if edge in removed_edges else set(left_edges.get(edge, ()))
+        for edge in final.edge_keys
     }
 
     first_right = dict(first_application.certificate.right_to_result)
@@ -681,7 +796,10 @@ def _provenance(
             final_nodes[result_node].add(ProvenanceRef(1, "right", node))
     for edge in first.right.edge_keys:
         result_edge = _mapped_edge(first_right, edge)
-        if result_edge in final.edge_keys:
+        if (
+            result_edge in final.edge_keys
+            and result_edge not in second_application.certificate.deleted_edges
+        ):
             final_edges[result_edge].add(ProvenanceRef(1, "right", edge))
 
     second_right = dict(second_application.certificate.right_to_result)
@@ -785,6 +903,16 @@ def compose_rules(
         CompositionIssueCode.SECOND_APPLICATION,
     )
     composite = _outer_rule(first, second, host, first_application, second_application)
+    composite = replace(
+        composite,
+        condition=SequentialCondition(
+            first,
+            second,
+            first_application.certificate.match,
+            first_application.certificate.right_to_result,
+            tuple(sorted(second_match.items(), key=repr)),
+        ),
+    )
     outer_application = _apply_or_translate(
         composite,
         host,
