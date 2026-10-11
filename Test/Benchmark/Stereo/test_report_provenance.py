@@ -1,6 +1,7 @@
 """A research report must refuse changed executable sources or supplied inputs."""
 
 import json
+from pathlib import PureWindowsPath
 
 import pytest
 
@@ -30,6 +31,17 @@ def test_report_captures_deduplicated_inputs_and_proves_they_remain_unchanged(so
     assert len(start["source_sha256"]) == 2
     final = provenance.finish_source(start)
     assert final["inputs_unchanged_during_run"] and final["source_unchanged_during_run"]
+
+
+def test_report_source_names_are_portable_from_windows_paths(source_tree, monkeypatch):
+    class WindowsRelativePath(type(source_tree)):
+        def relative_to(self, *args, **kwargs):
+            return PureWindowsPath(super().relative_to(*args, **kwargs).as_posix())
+
+    monkeypatch.setattr(provenance, "ROOT", WindowsRelativePath(source_tree))
+    snapshot = provenance.capture_source()
+    assert set(snapshot["source_sha256"]) == {"synkit/source.py", "Experiment/Stereo/runner.py"}
+    assert provenance.finish_source(snapshot)["source_unchanged_during_run"]
 
 
 @pytest.mark.parametrize("change", ["input", "source", "new_source"])

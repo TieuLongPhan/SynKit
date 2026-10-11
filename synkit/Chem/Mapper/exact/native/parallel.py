@@ -2,12 +2,12 @@
 
 import math
 import multiprocessing as mp
-import os
 import time
 from concurrent.futures import ProcessPoolExecutor
 
 from .candidates import NativeEnumerationStop, enumerate_native_candidates
 from .orbit_aggregation import OrbitAccumulator
+from .runtime import limit_worker_address_space, pin_worker_cpu, worker_cpus
 
 try:
     import resource
@@ -26,8 +26,7 @@ def _init_worker(counter, deadline, barrier, cap):
     global _STATE, _READY
     _READY = False
     _STATE = counter, deadline, barrier, cap
-    if resource is not None and hasattr(resource, "RLIMIT_AS"):
-        resource.setrlimit(resource.RLIMIT_AS, (4 * 1024**3, 4 * 1024**3))
+    limit_worker_address_space(resource)
 
 
 def _worker(lgp, target, config, seed, library_path, index, workers, cpu):
@@ -37,8 +36,7 @@ def _worker(lgp, target, config, seed, library_path, index, workers, cpu):
     from ...slap.lap import _adjacency_and_elements
     from ..symmetry import permutation_group_order
 
-    if hasattr(os, "sched_setaffinity"):
-        os.sched_setaffinity(0, {cpu})
+    pin_worker_cpu(cpu)
     a, labels = _adjacency_and_elements(lgp[0], config.binary)
     b, _ = _adjacency_and_elements(lgp[1], config.binary)
     properties = _property_vectors(lgp, config.reaction_center_properties)
@@ -141,11 +139,7 @@ def parallel_orbit_search(
     counter = context.Value("q", 0)
     deadline = context.Value("d", 0)
     barrier = context.Barrier(workers + 1)
-    cpus = (
-        sorted(os.sched_getaffinity(0))
-        if hasattr(os, "sched_getaffinity")
-        else list(range(workers))
-    )
+    cpus = worker_cpus(workers)
     started = time.perf_counter()
     results = []
     # One complete representative per class survives the exact-key union.
@@ -166,7 +160,7 @@ def parallel_orbit_search(
                 str(library_path),
                 i,
                 shard_count,
-                cpus[i % min(workers, len(cpus))],
+                cpus[i % len(cpus)] if cpus else None,
             )
             for i in range(shard_count)
         ]

@@ -30,7 +30,7 @@ def capture_source(input_paths=()) -> dict:
         "dirty_state_policy": "content hashes identify the executed source; dirty state is disclosed",
         "python": platform.python_version(), "rdkit": rdkit.__version__,
         "networkx": networkx.__version__, "platform": platform.platform(),
-        "source_sha256": {str(path.relative_to(ROOT)): sha256(path) for path in paths},
+        "source_sha256": {path.relative_to(ROOT).as_posix(): sha256(path) for path in paths},
     }
     if input_paths:
         inputs = sorted({Path(path).resolve() for path in input_paths})

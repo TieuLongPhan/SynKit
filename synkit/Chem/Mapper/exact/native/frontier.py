@@ -16,6 +16,7 @@ from .candidates import (
 )
 from .canonical import compact_code_identifier, transport_canonical_key
 from .orbit_aggregation import OrbitAccumulator
+from .runtime import limit_worker_address_space, pin_worker_cpu, worker_cpus
 
 try:
     import resource
@@ -23,6 +24,7 @@ except ImportError:  # Windows has no Unix resource module.
     resource = None
 
 _STATE = None
+_ADDRESS_SPACE_LIMIT = None
 
 
 def _init(
@@ -38,17 +40,15 @@ def _init(
     cpus,
     prepared_data,
 ):
-    global _STATE
+    global _STATE, _ADDRESS_SPACE_LIMIT
     from ...reporting.analysis import _BlindShellObserver, _property_vectors
     from ...slap.lap import _adjacency_and_elements
 
-    if resource is not None and hasattr(resource, "RLIMIT_AS"):
-        resource.setrlimit(resource.RLIMIT_AS, (4 * 1024**3, 4 * 1024**3))
+    _ADDRESS_SPACE_LIMIT = limit_worker_address_space(resource)
     with cpu_index.get_lock():
         index = cpu_index.value
         cpu_index.value += 1
-    if hasattr(os, "sched_setaffinity"):
-        os.sched_setaffinity(0, {cpus[index % len(cpus)]})
+    pin_worker_cpu(cpus[index % len(cpus)] if cpus else None)
     a, labels = _adjacency_and_elements(lgp[0], False)
     b, _ = _adjacency_and_elements(lgp[1], False)
     observer = _BlindShellObserver(
@@ -84,6 +84,7 @@ def _ready():
     barrier = _STATE[7]
     barrier.wait(timeout=30)
     barrier.wait(timeout=30)
+    return _ADDRESS_SPACE_LIMIT
 
 
 def _slice(prefixes, slice_nodes):  # noqa: C901
@@ -280,12 +281,7 @@ def frontier_orbit_search(  # noqa: C901
     counter, deadline = context.Value("q", 0), context.Value("d", 0)
     cpu_index = context.Value("i", 0)
     barrier = context.Barrier(workers + 1)
-    cpus = (
-        sorted(os.sched_getaffinity(0))
-        if hasattr(os, "sched_getaffinity")
-        else list(range(workers))
-    )
-    cpus = cpus[:workers]
+    cpus = worker_cpus(workers)
     started = time.perf_counter()
     coordinator_cpu_started = time.process_time()
     merge_seconds = wait_seconds = 0.0

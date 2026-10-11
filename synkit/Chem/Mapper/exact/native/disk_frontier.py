@@ -9,7 +9,6 @@ import hashlib
 import json
 import math
 import multiprocessing as mp
-import os
 import pickle
 import shutil
 import sqlite3
@@ -24,6 +23,7 @@ from . import frontier as native_frontier
 from .candidates import prepare_native_candidates
 from .canonical import compact_code_identifier, transport_canonical_key
 from .orbit_aggregation import OrbitAccumulator
+from .runtime import WORKER_ADDRESS_SPACE_BYTES, worker_cpus
 
 
 def _key(key):
@@ -236,7 +236,7 @@ def analyze_disk_reference_shell(  # noqa: C901
     context = mp.get_context("spawn")
     counter, deadline = context.Value("q", 0), context.Value("d", deadline_at)
     index, barrier = context.Value("i", 0), context.Barrier(workers + 1)
-    cpus = sorted(os.sched_getaffinity(0))[:workers]
+    cpus = worker_cpus(workers)
     pending, running = deque([()]), set()
     reasons, totals = set(), Counter()
     batches, last_progress = 0, 0.0
@@ -244,7 +244,8 @@ def analyze_disk_reference_shell(  # noqa: C901
         "name": "disk_exact_reference_shell_v1",
         "seconds": seconds,
         "workers": workers,
-        "worker_address_space_bytes": 4 * 1024**3,
+        "requested_worker_address_space_bytes": WORKER_ADDRESS_SPACE_BYTES,
+        "worker_address_space_bytes": None,
         "record_cap": None,
         "worker_history": "one_batch",
         "class_equality": "full_exact_certificate",
@@ -274,8 +275,10 @@ def analyze_disk_reference_shell(  # noqa: C901
             ready = [pool.submit(native_frontier._ready) for _ in range(workers)]
             barrier.wait(timeout=30)
             barrier.wait(timeout=30)
-            for future in ready:
-                future.result()
+            limits = [future.result() for future in ready]
+            if all(limit is not None for limit in limits):
+                protocol["worker_address_space_bytes"] = max(limits)
+            (output / "protocol.json").write_text(json.dumps(protocol, indent=2) + "\n")
             with (output / "batches.jsonl").open("w") as log:
                 while pending or running:
                     if time.perf_counter() >= deadline_at:

@@ -81,6 +81,10 @@ def test_disk_spectra_equal_in_memory_across_batches(
         slice_nodes=3,
         seconds=60,
     )
+    protocol = json.loads((tmp_path / "run/protocol.json").read_text())
+    assert protocol == actual["protocol"]
+    applied = protocol["worker_address_space_bytes"]
+    assert applied is None or 0 < applied <= protocol["requested_worker_address_space_bytes"]
     assert (
         expected["complete"] and actual["complete"] and actual["structure"]["complete"]
     )

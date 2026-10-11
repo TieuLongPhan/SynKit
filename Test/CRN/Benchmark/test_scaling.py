@@ -1,5 +1,6 @@
 import unittest
 import time
+from unittest.mock import patch
 
 from synkit.CRN.Benchmark.scaling import (
     NETWORK_FAMILIES,
@@ -10,6 +11,12 @@ from synkit.CRN.Benchmark.scaling import (
     scaling_table,
 )
 from synkit.CRN.Structure.syncrn import SynCRN
+
+
+def _slow_rank(crn):
+    """Use an importable task so a spawned Windows process can deserialize it."""
+    time.sleep(1.0)
+    return crn.n_species
 
 
 class TestNetworkFamilies(unittest.TestCase):
@@ -98,25 +105,31 @@ class TestRunScalingBenchmark(unittest.TestCase):
     def test_time_budget_terminates_current_measurement(self):
         original = TASKS["rank"]
 
-        def slow_rank(crn):
-            time.sleep(1.0)
-            return crn.n_species
-
-        TASKS["rank"] = slow_rank
+        TASKS["rank"] = _slow_rank
         started = time.perf_counter()
         try:
-            records = run_scaling_benchmark(
-                sizes=(4,),
-                families=("chain",),
-                tasks=("rank",),
-                time_budget=0.05,
-            )
+            with patch("synkit.CRN.Benchmark.scaling.get_all_start_methods", return_value=["spawn"]):
+                records = run_scaling_benchmark(
+                    sizes=(4,),
+                    families=("chain",),
+                    tasks=("rank",),
+                    time_budget=0.05,
+                )
         finally:
             TASKS["rank"] = original
 
         self.assertLess(time.perf_counter() - started, 0.5)
         self.assertTrue(records[0].timed_out)
         self.assertIsNone(records[0].seconds)
+        self.assertIsNone(records[0].error)
+
+    def test_spawned_task_returns_the_registered_result(self):
+        with patch("synkit.CRN.Benchmark.scaling.get_all_start_methods", return_value=["spawn"]):
+            records = run_scaling_benchmark(
+                sizes=(4,), families=("chain",), tasks=("rank",), time_budget=30.0,
+            )
+        self.assertEqual(records[0].result, 4)
+        self.assertFalse(records[0].timed_out)
         self.assertIsNone(records[0].error)
 
     def test_records_serialize(self):
