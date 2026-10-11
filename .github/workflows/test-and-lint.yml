@@ -67,20 +67,6 @@ jobs:
           conda activate synkit-ci
           bash scripts/pytest.sh
 
-  mapper-contracts:
-    name: Mapper contracts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install SynKit and test tools
-        run: python -m pip install -e . pytest
-      - name: Run deterministic contracts without research datasets
-        run: python -m pytest -q Test/Chem/Mapper/studies/contracts
-
   mapper-native:
     name: Mapper C++ kernel and wheel
     runs-on: ubuntu-latest
@@ -147,31 +133,3 @@ jobs:
         run: |
           python -m twine check dist/*
           python scripts/check_package_artifacts.py dist
-
-  crn-reproducibility:
-    name: CRN evidence and notebook
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install project and notebook runner
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install --no-deps -e .
-          python -m pip install jupyter nbconvert
-      - name: Run offline CRN evidence contracts
-        run: |
-          python Experiment/CRN/validation.py --output /tmp/crn-validation.json
-          python Experiment/CRN/kegg_case_study.py --output /tmp/crn-kegg.json
-          python Experiment/CRN/paper_assets.py /tmp --output-dir /tmp/crn-tables --allow-missing
-          python Experiment/CRN/paper_assets.py /tmp --output-dir /tmp/crn-tables --allow-missing --check
-      - name: Execute the CRN quick-start notebook
-        run: |
-          jupyter nbconvert --to notebook --execute \
-            Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb \
-            --output /tmp/crn-glycolysis-executed.ipynb \
-            --ExecutePreprocessor.timeout=180

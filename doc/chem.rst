@@ -541,7 +541,12 @@ shared by search, hydrogen lifting and classification. A limit cannot be
 passed to a method that does not support it.
 
 Native search requires a library built with ``build_native`` and a C++17 compiler for
-the build step:
+the build step. Use a GNU-compatible compiler (MinGW-w64 on Windows). The builder
+produces a ``.dll`` on Windows, a ``.dylib`` on macOS or a ``.so`` on Linux, and checks
+that Python can load it and call the supported ABI before returning it. Windows
+artifacts include the compiler runtime, so runtime DLLs do not need to be on PATH.
+
+Build and select the native method:
 
 .. code-block:: python
    :caption: Build and select the optional native method

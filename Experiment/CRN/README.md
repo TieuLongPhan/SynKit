@@ -85,5 +85,10 @@ coverage claim.
 The underlying library contracts are covered by `Test/CRN/Benchmark/`, which runs
 the validation set, the scaling harness and the KEGG case study as unit tests.
 
+Manuscript evidence and notebook execution run separately in the manual
+**CRN research reproducibility** GitHub Actions workflow. Start it with
+**Run workflow** when checking the research outputs; it does not run on pushes
+or pull requests.
+
 The executable [glycolysis notebook](notebooks/crn_glycolysis_case_study.ipynb)
 replays the cached KEGG case study and its firing certificate.

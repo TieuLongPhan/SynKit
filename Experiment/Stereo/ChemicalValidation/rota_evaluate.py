@@ -12,7 +12,7 @@ from Experiment.Stereo.Canonicalization.independent_fixtures import Fixture
 from Experiment.Stereo.Canonicalization.independent_model import formal_states
 from Experiment.Stereo.Canonicalization.independent_orbits import partition_agreement, partition_from_labels
 from Experiment.Stereo.Canonicalization.independent_runner import _production_assignments
-from Experiment.Stereo.ChemicalValidation.common import provenance, sha256, wall_limit
+from Experiment.Stereo.ChemicalValidation.common import provenance, replay_typed_map, sha256, wall_limit
 from Experiment.Stereo.ChemicalValidation.coordination import source_molecule
 from Experiment.Stereo.ChemicalValidation.rota_annotation import MANIFEST, annotate, source_inventory
 
@@ -23,6 +23,36 @@ def _without_elapsed(value):
     if isinstance(value, (tuple, list)):
         return [_without_elapsed(item) for item in value]
     return value
+
+
+def _carrier_conclusions(record, annotation):
+    """Replay axial witnesses without requiring one particular valid automorphism."""
+    carrier = _without_elapsed(annotation["constitutional_carrier"])
+    if annotation["independent_family"] != "axis":
+        return carrier
+    graph, seeds, _family, _facts = source_inventory(record)
+    seed = seeds[0]
+    left, right = seed.atoms[2:4]
+    frames = (seed.atoms[:2], seed.atoms[4:])
+    witnesses = carrier["terminal_exchange_witnesses"]
+    if len(witnesses) != len(frames):
+        raise ValueError("rota_terminal_witness_count_mismatch")
+    for witness, (first, second) in zip(witnesses, frames, strict=True):
+        if witness is None:
+            continue
+        mapping = dict(witness)
+        if len(mapping) != len(witness):
+            raise ValueError("rota_terminal_witness_duplicate_domain")
+        replay_typed_map(graph, graph, mapping)
+        if (mapping[left] != left or mapping[right] != right or
+                mapping[first] != second or mapping[second] != first):
+            raise ValueError("rota_terminal_witness_does_not_fix_axis_and_exchange_frame")
+    present = [witness is not None for witness in witnesses]
+    expected_status = "symmetry_related" if any(present) else "confirmed"
+    if (carrier["negative_queries_exhausted"] != [not value for value in present] or
+            carrier["carrier_status"] != expected_status):
+        raise ValueError("rota_terminal_witness_conclusion_mismatch")
+    return {**carrier, "terminal_exchange_witnesses": present}
 
 
 def replay_frozen_annotation(annotation, selected):
@@ -37,7 +67,7 @@ def replay_frozen_annotation(annotation, selected):
     if expected_keys != observed_keys or len(set(observed_keys)) != 60:
         raise ValueError("rota_annotation_does_not_cover_all_sixty_frozen_loci_once")
     fields = ("status", "independent_family", "input_facts", "configured_seeds", "configured_class_count",
-              "constitutional_carrier", "experimental_persistence")
+              "experimental_persistence")
     reference_fields = ("assignments", "partition", "mirror_assignment_images", "mirror_classes",
                         "formal_local_class_counts")
     for old, record in zip(annotation["records"], selected, strict=True):
@@ -45,6 +75,8 @@ def replay_frozen_annotation(annotation, selected):
         if fresh["status"] != old["status"] or fresh["status"] != "complete":
             raise ValueError("rota_structural_annotation_cannot_be_completely_replayed")
         if any(_without_elapsed(fresh[field]) != _without_elapsed(old[field]) for field in fields):
+            raise ValueError("rota_frozen_structural_truth_disagrees_with_independent_replay")
+        if _carrier_conclusions(record, fresh) != _carrier_conclusions(record, old):
             raise ValueError("rota_frozen_structural_truth_disagrees_with_independent_replay")
         if any(_without_elapsed(fresh["reference"][field]) != old["reference"][field] for field in reference_fields):
             raise ValueError("rota_frozen_partition_disagrees_with_independent_replay")

@@ -26,6 +26,40 @@ def test_all_sixty_independent_annotations_replay(frozen):
     assert replay_frozen_annotation(annotation, selected)["all_sixty_references_replayed"]
 
 
+def test_alternative_valid_terminal_exchange_witness_replays(frozen):
+    selected, original = frozen
+    annotation = deepcopy(original)
+    index = next(index for index, record in enumerate(selected) if record["source_id"] == "RotA-0130")
+    witness = annotation["records"][index]["constitutional_carrier"]["terminal_exchange_witnesses"][1]
+    # NetworkX 3.7 chooses another symmetry within these equivalent branches.
+    alternative = {25: 30, 26: 31, 27: 32, 28: 33, 29: 34, 30: 28, 31: 29, 32: 25, 33: 26, 34: 27}
+    changed = [[node, alternative.get(node, image)] for node, image in witness]
+    assert changed != witness
+    annotation["records"][index]["constitutional_carrier"]["terminal_exchange_witnesses"][1] = changed
+    assert replay_frozen_annotation(annotation, selected)["all_sixty_references_replayed"]
+
+
+@pytest.mark.parametrize("mutation", ["missing_atom", "duplicate_atom", "non_bijective", "identity", "exhaustion"])
+def test_corrupt_frozen_terminal_exchange_witness_is_rejected(frozen, mutation):
+    selected, original = frozen
+    annotation = deepcopy(original)
+    carrier = annotation["records"][0]["constitutional_carrier"]
+    witness = carrier["terminal_exchange_witnesses"][1]
+    assert witness is not None
+    if mutation == "missing_atom":
+        witness.pop()
+    elif mutation == "duplicate_atom":
+        witness.append(witness[0])
+    elif mutation == "non_bijective":
+        witness[0][1] = witness[1][1]
+    elif mutation == "identity":
+        carrier["terminal_exchange_witnesses"][1] = [[node, node] for node, _image in witness]
+    else:
+        carrier["negative_queries_exhausted"][1] = True
+    with pytest.raises(ValueError, match="rota_|chemical_witness"):
+        replay_frozen_annotation(annotation, selected)
+
+
 @pytest.mark.parametrize("mutation", ["scope", "carrier", "partition", "class_count", "production_used"])
 def test_false_frozen_truth_is_rejected_before_production(frozen, mutation):
     selected, original = frozen

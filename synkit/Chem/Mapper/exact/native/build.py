@@ -7,10 +7,26 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
+
+
+def _verify_library(library):
+    """Check loadability and ABI in a child so Windows can release the DLL file."""
+    script = (
+        "import ctypes, sys; library = ctypes.CDLL(sys.argv[1]); "
+        "abi = library.synkit_distance_abi(); "
+        "assert abi == 3, f'unsupported native ABI: {abi}'"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(library)], capture_output=True, text=True
+    )
+    if result.returncode:
+        raise RuntimeError(f"Native artifact cannot be loaded: {library}\n{result.stderr}")
 
 
 def build_native(output_dir, compiler="g++", *, native_arch=False):
@@ -22,7 +38,18 @@ def build_native(output_dir, compiler="g++", *, native_arch=False):
     version = subprocess.run(
         [compiler_path, "--version"], check=True, capture_output=True, text=True
     ).stdout
-    flags = ["-std=c++17", "-O3", "-Wall", "-Wextra", "-fPIC", "-shared"]
+    flags = ["-std=c++17", "-O3", "-Wall", "-Wextra"]
+    if sys.platform == "win32":
+        # MinGW runtime DLLs on PATH are not searched by modern ctypes loaders.
+        # Link their code into the artifact and explicitly export the C ABI.
+        flags += ["-shared", "-static", "-Wl,--export-all-symbols"]
+        suffix = ".dll"
+    elif sys.platform == "darwin":
+        flags += ["-fPIC", "-dynamiclib"]
+        suffix = ".dylib"
+    else:
+        flags += ["-fPIC", "-shared"]
+        suffix = ".so"
     target_options = None
     if native_arch:
         flags += ["-march=native", "-mtune=native"]
@@ -37,19 +64,22 @@ def build_native(output_dir, compiler="g++", *, native_arch=False):
                 "-x",
                 "c++",
                 "-c",
-                "/dev/null",
+                "-",
                 "-o",
-                "/dev/null",
+                os.devnull,
             ],
             check=True,
             capture_output=True,
             text=True,
+            input="",
         ).stdout
     provenance = {
         "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
         "compiler": compiler_path,
         "compiler_version": version,
         "flags": flags,
+        "platform": sys.platform,
+        "machine": platform.machine(),
     }
     if native_arch:
         provenance["resolved_target_options"] = target_options
@@ -61,7 +91,7 @@ def build_native(output_dir, compiler="g++", *, native_arch=False):
     ).hexdigest()
     output_dir = Path(output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    library = output_dir / f"libsynkit_distance_{build_key[:20]}.so"
+    library = output_dir / f"libsynkit_distance_{build_key[:20]}{suffix}"
     manifest = library.with_suffix(".json")
     if library.exists():
         if not manifest.exists():
@@ -75,18 +105,20 @@ def build_native(output_dir, compiler="g++", *, native_arch=False):
             raise RuntimeError(
                 f"Existing native artifact failed integrity verification: {library}"
             )
+        _verify_library(library)
         return library
     # A distinct path avoids overwriting code already mapped into another process.
     with tempfile.TemporaryDirectory(
         prefix="synkit-build-", dir=output_dir
     ) as temporary:
-        candidate = Path(temporary) / "kernel.so"
+        candidate = Path(temporary) / f"kernel{suffix}"
         result = subprocess.run(
             [compiler_path, *flags, str(source), "-o", str(candidate)],
             check=True,
             capture_output=True,
             text=True,
         )
+        _verify_library(candidate)
         provenance.update(
             build_key=build_key,
             library=str(library),
@@ -107,7 +139,7 @@ def build_native(output_dir, compiler="g++", *, native_arch=False):
 def main():
     """Build the optional C++ solver from an installed SynKit package."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output-dir", type=Path, default=Path("/tmp/synkit-native"))
+    parser.add_argument("--output-dir", type=Path, default=Path(tempfile.gettempdir()) / "synkit-native")
     parser.add_argument("--compiler", default="g++")
     parser.add_argument(
         "--native-arch",
