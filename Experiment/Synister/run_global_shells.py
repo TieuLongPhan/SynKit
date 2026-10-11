@@ -40,7 +40,7 @@ for _variable in (
 ):
     os.environ[_variable] = "1"
 
-ROOT = Path(__file__).parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from synkit.Chem.Mapper import (  # noqa: E402

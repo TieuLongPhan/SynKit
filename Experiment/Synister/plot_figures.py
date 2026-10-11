@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Render publication figures directly from frozen Synister evidence."""
+"""Render publication figures from frozen mapping experiments."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -12,9 +13,12 @@ from typing import Any
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from summarize_synister_evidence import summarize, _verify_embedded_digest
 
-REPOSITORY = Path(__file__).resolve().parents[1]
+REPOSITORY = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPOSITORY))
+
+from Experiment.Synister.summarize_evidence import summarize, _verify_embedded_digest
+
 DEFAULT_PILOT = (
     REPOSITORY
     / "paper"
@@ -276,7 +280,7 @@ def render(pilot_path: Path, case_path: Path, output: Path) -> None:
         metadata={
             "Title": "Synister exact-shell evidence",
             "Author": "Tieu-Long Phan",
-            "Creator": "scripts/plot_synister_figures.py",
+            "Creator": "Experiment/Synister/plot_figures.py",
             "CreationDate": fixed_date,
             "ModDate": fixed_date,
         },

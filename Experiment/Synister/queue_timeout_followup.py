@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Wait for a Synister campaign, then rerun its timeout cases at 120 seconds."""
+"""Wait for a mapping campaign and rerun its timeout cases at 120 seconds."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CASE_KIND = "synister_reference_blinded_global_shell_case"
 
 
@@ -225,7 +225,7 @@ def _launch_followup(args: argparse.Namespace, timeout_dataset: Path) -> None:
         f"--property=StandardOutput=append:{log_path}",
         f"--property=StandardError=append:{log_path}",
         sys.executable,
-        str(ROOT / "scripts/run_synister_global_shells.py"),
+        str(ROOT / "Experiment/Synister/run_global_shells.py"),
         "--dataset",
         str(timeout_dataset),
         "--output",

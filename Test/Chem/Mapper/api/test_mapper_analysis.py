@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from scripts import run_synister_global_shells as campaign
+from Experiment.Synister import run_global_shells as campaign
 from synkit.Chem.Mapper import (
     GlobalShellConfig,
     analyze_reference_blinded_global_shell,

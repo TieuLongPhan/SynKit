@@ -331,7 +331,7 @@ def main():
                                 *FOCUSED_TEST_NODES,
                                 "--junitxml=" + str(junit)], artifacts / "selected_tests.log")
     commands.append(selection)
-    historic = load(ROOT / "evidence/stereo_rxn_closeout.json")
+    historic = load(ROOT / "Experiment/StereoReaction/evidence/stereo_rxn_closeout.json")
     historic_input_checks = {
         name: digest(DATA / name) == historic["checksums"][name]
         for name in ("stereo.json", "stereo_couplings.json", "electrocyclic_machinery.json",
@@ -374,7 +374,8 @@ def main():
         "selected_tests": junit_report(junit) if junit.exists() else None,
         "bounded_validation": bounded_payload, "migration": workers["migration"],
         "witness_basis": workers["witness-basis"],
-        "historical_snapshot": {"path": "evidence/stereo_rxn_closeout.json", "date": historic["date"],
+        "historical_snapshot": {"path": "Experiment/StereoReaction/evidence/stereo_rxn_closeout.json",
+                                "date": historic["date"],
                                 "package_version": historic["package_version"],
                                 "reported_full_suite": historic["tests"],
                                 "current_corpus_checksum_matches": historic_input_checks,

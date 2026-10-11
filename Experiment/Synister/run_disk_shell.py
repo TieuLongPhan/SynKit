@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--dataset', required=True, type=Path)
     parser.add_argument('--dataset-sha256')
     parser.add_argument('--source-line', required=True, type=int)
-    parser.add_argument('--source-root', type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument('--source-root', type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument('--library', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--seconds', required=True, type=float,

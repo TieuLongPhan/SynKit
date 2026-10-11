@@ -7,7 +7,7 @@ if [[ $# -lt 1 || $# -gt 2 ]]; then
 fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd -- "${script_dir}/.." && pwd)"
+repo_root="$(cd -- "${script_dir}/../.." && pwd)"
 if [[ ! -f "$1" ]]; then
     echo "dataset does not exist: $1" >&2
     exit 2
@@ -38,7 +38,7 @@ systemd-run --user --collect \
     --property=OOMPolicy=stop \
     --property="StandardOutput=append:${log_path}" \
     --property="StandardError=append:${log_path}" \
-    "${python_bin}" scripts/run_synister_global_shells.py \
+    "${python_bin}" Experiment/Synister/run_global_shells.py \
     --dataset "${dataset}" \
     --output "${output}" \
     --mode both \

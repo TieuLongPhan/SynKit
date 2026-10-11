@@ -1,0 +1,66 @@
+{
+  "schema": "synkit.stereo-rxn-closeout/1",
+  "date": "2026-07-29",
+  "branch": "stereo",
+  "starting_head": "2555754863fd45935a7e68c8c067c56936ffdde2",
+  "package_version": "1.6.1b1",
+  "mechanism_schema": "2.0.0-draft1",
+  "programme": {
+    "sprints_complete": 14,
+    "requirements_traced": 14
+  },
+  "tests": {
+    "passed": 4055,
+    "skipped": 31,
+    "subtests_passed": 179
+  },
+  "corpora": {
+    "baseline_positive": 80,
+    "baseline_negative": 8,
+    "migration_comparisons": 62,
+    "migration_agreements": 58,
+    "migration_registered_differences": 4,
+    "migration_unexpected": 0,
+    "coupling_positive": 4,
+    "coupling_negative": 4,
+    "electrocyclic_positive": 4,
+    "electrocyclic_negative": 3
+  },
+  "checksums": {
+    "stereo.json": "99c7794d16eb6e07504fa6987915e6d384f253a8b6878e51345129a40c851426",
+    "stereo_couplings.json": "65da38b2d6c299c5bfc91acd7a1b7157eb3777de8e67c965abd87e5356ff4bb1",
+    "electrocyclic_machinery.json": "91ed84a5819d606979531d541e4f746993ff6ca85217ed6098cf4af30e11b6c3",
+    "stereo_branch_coverage.json": "48fc08ace7ddbe86a9a080bb67720ac00e7c7ea3a4741d70dad8cad9e7bd27cb",
+    "stereo_rxn_validation.json": "4e886e8ffd8957a15475fe22656766679d179d9588d5b091fe189dcae4b8de4f",
+    "main.pdf": "6923b08ec047ba9914bd687d753a2d1d5bc52c0e075d48aa0b6e4874801e5a85",
+    "si.pdf": "30a40d1c2efda569dee8e4c1a518e935b1d90b1c48d2266378f1bd0b6b867b43",
+    "cover_letter.pdf": "77974959fa08fd8eb3a0840ba208d8b7a4dc33daff23e1bcb15d646a994b61fb"
+  },
+  "paper": {
+    "template": "achemso",
+    "journal": "jcisd8",
+    "page_size": "letter",
+    "main_pages": 25,
+    "si_pages": 11,
+    "cover_letter_pages": 2,
+    "fonts_embedded": true,
+    "raster_images": 0,
+    "overfull_boxes": 0,
+    "undefined_references": 0,
+    "undefined_citations": 0
+  },
+  "gates": {
+    "complete_suite": "PASS",
+    "lint": "PASS",
+    "compile": "PASS",
+    "schemas": "PASS",
+    "module_size": "PASS",
+    "offline_sphinx": "PASS",
+    "local_links": "PASS",
+    "clean_diff": "PASS",
+    "acs_main": "PASS",
+    "acs_si": "PASS",
+    "acs_cover_letter": "PASS"
+  },
+  "external_actions_authorized": false
+}

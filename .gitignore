@@ -41,7 +41,7 @@ libsynkit_distance_*.json
 !Data/Mech/stereo.json
 !Data/Schema/
 !Data/Schema/attribute_propagation_v1_5.json
-!/tools/python_file_size_baseline.json
+!/scripts/python_file_size_baseline.json
 !Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
 
 # Lewis benchmark inputs and reviewed evidence
@@ -68,6 +68,11 @@ libsynkit_distance_*.json
 !Experiment/Stereo/Data/manifest.json
 !Experiment/Stereo/Data/Perception/full_detection_report.json
 !Experiment/Stereo/Data/Perception/perception_conformance_cases.json
+
+# Historical reaction-stereo records consumed by experiment audits
+!Experiment/StereoReaction/evidence/stereo_rxn_closeout.json
+!Experiment/StereoReaction/evidence/stereo_rxn_validation.json
+!Experiment/Synister/requirements.txt
 
 # Large or reproducible data products
 /Data/Benchmark/*

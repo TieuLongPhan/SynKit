@@ -25,7 +25,8 @@ def negative():
 
 
 def test_all_frozen_negative_witnesses_are_full_typed_branch_exchanges():
-    records = json.loads((ROOT / "Experiment/Stereo/Data/Revision/PaperEvidence/chemical_negative_selection.json").read_text())["records"]
+    path = ROOT / "Experiment/Stereo/Data/Revision/PaperEvidence/chemical_negative_selection.json"
+    records = json.loads(path.read_text())["records"]
     assert len(records) == 48
     for record in records:
         _molecule, truth = replay_negative(record)

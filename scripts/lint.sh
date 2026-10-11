@@ -11,7 +11,7 @@ else
 fi
 "${PYTHON_BIN}" scripts/check_python_file_size.py
 "${PYTHON_BIN}" scripts/check_docstring_style.py
-flake8 "${paths[@]}" \
+"${PYTHON_BIN}" -m flake8 "${paths[@]}" \
   --count \
   --max-complexity=13 \
   --max-line-length=120 \

@@ -15,11 +15,11 @@ import sys
 sys.modules['resource'] = None
 from synkit.Chem.Mapper.exact import native_frontier, native_parallel
 from synkit.Chem.Mapper import native_analysis
-from scripts import run_synister_global_shells, run_synister_alternative_its
+from Experiment.Synister import run_global_shells, run_alternative_its
 assert native_frontier.resource is native_parallel.resource is None
 for configure in (
-    run_synister_global_shells._configure_memory_limit,
-    run_synister_alternative_its._configure_memory_limit,
+    run_global_shells._configure_memory_limit,
+    run_alternative_its._configure_memory_limit,
 ):
     try:
         configure(1)

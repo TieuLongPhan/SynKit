@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import sys
 from collections import Counter
 from itertools import combinations, permutations
 from pathlib import Path
@@ -19,7 +20,10 @@ import networkx as nx
 import numpy as np
 from matplotlib.patches import Rectangle
 
-from plot_synister_figures import (
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from Experiment.Synister.plot_figures import (
     BLUE,
     HAIR,
     MUTED,
@@ -28,10 +32,9 @@ from plot_synister_figures import (
     _panel_badge,
     write_palette,
 )
-from summarize_synister_evidence import _verified_records
-from synister_diagrams import draw_toy, draw_hydrogen, draw_workflow
+from Experiment.Synister.summarize_evidence import _verified_records
+from Experiment.Synister.diagrams import draw_toy, draw_hydrogen, draw_workflow
 
-ROOT = Path(__file__).resolve().parents[1]
 PAPER = ROOT / "paper/synister"
 FIGURES = PAPER / "figures"
 SOURCES = FIGURES / "source_data"
@@ -350,7 +353,7 @@ def main() -> None:
         "schema_version": 1,
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "drawing_sha256": hashlib.sha256(
-            (ROOT / "scripts/synister_diagrams.py").read_bytes()
+            (ROOT / "Experiment/Synister/diagrams.py").read_bytes()
         ).hexdigest(),
         "drawing_style_sha256": hashlib.sha256(
             (FIGURES / "figure_style.tex").read_bytes()

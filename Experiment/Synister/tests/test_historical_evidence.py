@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.run_synister_alternative_its import _payload_sha256
-from scripts.summarize_synister_evidence import summarize
+from Experiment.Synister.run_alternative_its import _payload_sha256
+from Experiment.Synister.summarize_evidence import summarize
 
 ROOT = Path(__file__).resolve().parents[3]
 

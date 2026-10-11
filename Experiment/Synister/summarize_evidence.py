@@ -1,4 +1,4 @@
-"""Verify and summarize a Synister global-shell campaign directory."""
+"""Verify and summarize a global-shell mapping campaign."""
 
 from __future__ import annotations
 

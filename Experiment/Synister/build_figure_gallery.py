@@ -4,9 +4,9 @@ from pathlib import Path
 import shutil
 import subprocess
 
-import fitz
+import pymupdf
 
-PAPER = Path(__file__).resolve().parents[1] / "paper/synister"
+PAPER = Path(__file__).resolve().parents[2] / "paper/synister"
 NAMES = (
     "workflow",
     "worked_unmapped",
@@ -63,9 +63,9 @@ def main():
         if result.returncode:
             raise RuntimeError((build / f"{name}.log").read_text()[-5000:])
         shutil.copy2(build / f"{name}.pdf", PAPER / "figures" / f"{name}.pdf")
-    with fitz.open() as gallery:
+    with pymupdf.open() as gallery:
         for name in NAMES:
-            with fitz.open(PAPER / "figures" / f"{name}.pdf") as figure:
+            with pymupdf.open(PAPER / "figures" / f"{name}.pdf") as figure:
                 gallery.insert_pdf(figure)
         gallery.save(PAPER / "figure_gallery.pdf", garbage=4, deflate=True)
     print(f"Wrote {len(NAMES)} vector figures and paper/synister/figure_gallery.pdf")

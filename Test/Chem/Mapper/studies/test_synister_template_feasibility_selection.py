@@ -1,6 +1,6 @@
 import csv
 
-from scripts.select_synister_template_feasibility import select
+from Experiment.Synister.select_template_feasibility import select
 
 
 def _write(path, headers, rows):

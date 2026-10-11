@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Reproduce and draw the genuinely unmapped FlowER 84:1 worked example.
+"""Reproduce and draw the unmapped FlowER 84:1 worked example.
 
 Normal builds verify and draw the frozen record. --recompute repeats both
-Synister searches and an independent exhaustive oracle from unmapped SMILES.
+mapper searches and an independent exhaustive oracle from unmapped SMILES.
 --dataset additionally checks those endpoints against the original FlowER row.
 No reference atom mapping is supplied to either search or the oracle.
 """
@@ -24,7 +24,7 @@ import networkx as nx
 import numpy as np
 from rdkit import Chem, rdBase
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from synkit.Chem.Mapper.analysis import _property_vectors  # noqa: E402
@@ -300,7 +300,7 @@ def read_record():
     return payload
 
 
-from synister_diagrams import draw_input, draw_classes  # noqa: E402
+from Experiment.Synister.diagrams import draw_input, draw_classes  # noqa: E402
 
 
 def main():

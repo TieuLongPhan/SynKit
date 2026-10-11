@@ -1,6 +1,6 @@
 import csv
 
-from scripts.audit_synister_flower_overlap import audit
+from Experiment.Synister.audit_flower_overlap import audit
 
 
 def _write(path, headers, rows):

@@ -10,14 +10,17 @@ from itertools import combinations, permutations, product
 import hashlib
 import json
 from pathlib import Path
+import sys
 
 import networkx as nx
 import numpy as np
 
-from plot_synister_worked_example import read_record
-from synister_diagrams import Canvas, graph, shift
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 
-ROOT = Path(__file__).resolve().parents[1]
+from Experiment.Synister.plot_worked_example import read_record
+from Experiment.Synister.diagrams import Canvas, graph, shift
+
 PAPER = ROOT / "paper/synister"
 
 
@@ -417,7 +420,7 @@ def main():
             str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in (
                 Path(__file__),
-                ROOT / "scripts/synister_diagrams.py",
+                ROOT / "Experiment/Synister/diagrams.py",
                 PAPER / "figures/figure_style.tex",
             )
         },

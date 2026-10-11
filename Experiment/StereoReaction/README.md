@@ -23,6 +23,9 @@ whole-molecule chirality.
   inventories, migration comparisons, source hashes and raw outputs.
 - `witness_basis_audit.py` enumerates the six native finite frame models and
   checks the normalizer criterion and basis-aware production replay.
+- `evidence/` retains the historical reaction-stereo closeout and bounded
+  validation records used by the audits. Their contents and checksums are
+  preserved from the original runs.
 
 The MechanismBench files retain their canonical paths because they are frozen,
 checksum-bound evidence shared with the mechanism experiments. They are linked

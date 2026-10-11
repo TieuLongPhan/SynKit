@@ -3,8 +3,8 @@ import json
 
 import pytest
 
-from scripts.summarize_synister_evidence import _payload_sha256, summarize
-from scripts.verify_synister_evidence import audit_campaign
+from Experiment.Synister.summarize_evidence import _payload_sha256, summarize
+from Experiment.Synister.verify_evidence import audit_campaign
 
 
 def _sign(payload, digest_field):

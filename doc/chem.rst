@@ -807,7 +807,7 @@ Build the optional engine from a checkout or installed package:
    python -m synkit.Chem.Mapper.exact.native.build --output-dir /tmp/synkit-native
 
 The command prints the library path and records source, compiler, flags,
-and binary hashes beside it. ``scripts/build_synister_native.py`` remains
+and binary hashes beside it. ``Experiment/Synister/build_native.py`` remains
 a compatible checkout entry point.
 
 Tests follow the same component layout under ``Test/Chem/Mapper/``:
@@ -898,7 +898,7 @@ either a supplied reference-distance shell, a globally minimal shell, or both.
 The FlowER cohort is not distributed with SynKit; an explicit CSV with
 ``source_line``, ``reaction_id``, and ``mapped_reaction`` columns is required::
 
-   python scripts/run_synister_global_shells.py \
+   python Experiment/Synister/run_global_shells.py \
        --dataset /path/to/flower_test_10000_v252.csv.gz \
        --output Experiment/Synister/benchmark_results/synister_global_shells_v4 \
        --mode both --time-limit-per-shell 300 --memory-limit-gib 6
@@ -915,7 +915,7 @@ Complete records include labeled and verified-subgroup mapping multiplicities,
 mapping Hartley entropy, exact canonical ITS/template richness, reaction-centre
 intersection/union/frequencies, and post-search reference-class checks. Verify
 case digests and regenerate censored manuscript statistics with
-``scripts/summarize_synister_evidence.py``.
+``Experiment/Synister/summarize_evidence.py``.
 
 Reaction utilities
 ------------------

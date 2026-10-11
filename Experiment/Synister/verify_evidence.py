@@ -1,7 +1,7 @@
-"""Verify the frozen Synister evidence campaigns and their promoted counts.
+"""Verify frozen mapping campaigns and their reported counts.
 
 The verifier intentionally checks a small, reviewable set of manuscript-facing
-counts after ``summarize_synister_evidence`` has verified every case digest and
+counts after ``summarize_evidence`` has verified every case digest and
 manifest binding.  It does not replace either immutable campaign record.
 """
 
@@ -12,11 +12,11 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.summarize_synister_evidence import summarize
+from Experiment.Synister.summarize_evidence import summarize
 
 # These values are restricted to claims C03 and C04 in the claim ledger.  They
 # deliberately omit timings and other machine-dependent descriptive fields.
