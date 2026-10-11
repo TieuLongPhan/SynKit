@@ -4,7 +4,6 @@ import argparse
 from collections import Counter
 import json
 from pathlib import Path
-import resource
 import time
 
 import networkx as nx
@@ -13,6 +12,7 @@ from Experiment.Stereo.Canonicalization.exact_code_store import ExactCodeStore
 from Experiment.Stereo.Canonicalization.independent_model import assignment_key, formal_states, to_descriptor, transport
 from Experiment.Stereo.Canonicalization.independent_orbits import reference_partition
 from Experiment.Stereo.Canonicalization.independent_runner import _code
+from Experiment.Stereo.Canonicalization.runtime import peak_rss_mib
 from Experiment.Stereo.ChemicalValidation.annotation import (
     COORDINATION_MANIFEST, NEGATIVE_MANIFEST, _assignment, state_from_wire,
 )
@@ -115,7 +115,7 @@ def _evaluate_coordination(record, source, graph, store):
         started = time.monotonic()
         observed[name] = store.intern(_code(working, values, {"atom_color": "color", "bond_color": "color"}, 5))
         timings[name] = time.monotonic() - started
-        if resource.getrusage(resource.RUSAGE_SELF).ru_maxrss > 1024 * 1024:
+        if peak_rss_mib() > 1024:
             raise MemoryError("chemical_evaluation_process_peak_rss_limit:1024MiB")
     observed_relation = "achiral" if observed["source"] == observed["coordinate_mirror"] else "chiral"
     digests = {name: store.index_digest(identifier) for name, identifier in observed.items()}

@@ -1,2 +1,0 @@
-# Optional PDF gallery tooling; install SynKit before running these experiments.
-PyMuPDF>=1.24.3

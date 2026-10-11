@@ -13,7 +13,6 @@ from itertools import product
 import json
 import os
 from pathlib import Path
-import resource
 import time
 
 import networkx as nx
@@ -28,6 +27,7 @@ from Experiment.Stereo.Canonicalization.independent_model import (
 from Experiment.Stereo.Canonicalization.independent_orbits import color_signature, reference_partition
 from Experiment.Stereo.Canonicalization.performance import distribution, hardware
 from Experiment.Stereo.Canonicalization.performance_cases import state_from_json
+from Experiment.Stereo.Canonicalization.runtime import peak_rss_mib
 from Experiment.Stereo.provenance import capture_source, finish_source, sha256
 from synkit.Graph.Stereo import (
     StereographMirrorStatus, canonicalize_configured_registry,
@@ -240,10 +240,10 @@ def run(args):
                            "worker_processes": 1, "method_order": "alternated by repetition",
                            "native_thread_environment": {key: os.environ.get(key, "unset") for key in (
                                "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS")},
-                           "memory_scope": "whole study ru_maxrss; not isolated per pipeline",
+                           "memory_scope": "whole study process peak RSS; not isolated per pipeline",
                            "chemical_holdout": False},
               "records": records, "summary": summary, "boundary_examples": boundaries,
-              "process_peak_rss_mib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024,
+              "process_peak_rss_mib": peak_rss_mib(),
               "passed": boundaries["passed"] and all(row["partition_passed"] for row in records),
               "claim_boundary": ("An empirical crossover is measured; it is not assumed. "
                                  "Unresolved inputs get no identity group.")}

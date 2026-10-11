@@ -34,6 +34,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+test = ["flake8", "pytest", "psutil>=5.9,<8"]
 milp = ["pulp"]
 all = ["torch>=2.2.0", "sympy>=1.13.1", "pulp"]
 docs = [

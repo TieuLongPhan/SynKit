@@ -72,7 +72,6 @@ libsynkit_distance_*.json
 # Historical reaction-stereo records consumed by experiment audits
 !Experiment/StereoReaction/evidence/stereo_rxn_closeout.json
 !Experiment/StereoReaction/evidence/stereo_rxn_validation.json
-!Experiment/Synister/requirements.txt
 
 # Large or reproducible data products
 /Data/Benchmark/*
@@ -125,6 +124,5 @@ test_run.py
 test_syn.py
 test_syn_reactor.py
 
-# Historical Synister benchmark outputs and frozen source copies stay local.
-/Experiment/Synister/benchmark_results/
+# Local benchmark outputs and frozen source copies stay local.
 /benchmark_results/

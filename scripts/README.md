@@ -18,5 +18,5 @@ bash scripts/lint.sh
 bash scripts/pytest.sh
 ```
 
-Mapping campaigns, dataset selection, benchmarks, and figure programs live in
-[Experiment/Synister](../Experiment/Synister/README.md).
+Mapping campaigns, dataset selection, benchmarks, and figure programs moved to
+the sibling repository at `../Synister/synkit/Experiment/Synister/`.

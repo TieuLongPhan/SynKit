@@ -1,11 +1,7 @@
 import itertools
 from collections import Counter
-import gzip
-import json
 
-import pytest
 
-from Experiment.Synister import run_global_shells as campaign
 from synkit.Chem.Mapper import (
     GlobalShellConfig,
     analyze_reference_blinded_global_shell,
@@ -195,132 +191,6 @@ def test_zero_time_limit_is_explicitly_incomplete():
     assert result.status == "timeout"
     assert result.representative_solution_count == 0
     assert result.reference_is_global_minimum_proven is False
-
-
-def test_campaign_case_contains_blind_results_without_raw_reference_mapping():
-    options = _campaign_options()
-    record = campaign._run_case(_campaign_row(1), options)
-
-    assert "reference_mapping" not in record
-    assert set(record["shells"]) == {"reference_cd", "minimal"}
-    assert all(shell["complete"] for shell in record["shells"].values())
-    assert all(shell["structure"]["complete"] for shell in record["shells"].values())
-    assert all(
-        shell["backend_statistics"]["seed"]["available"]
-        for shell in record["shells"].values()
-    )
-
-
-def _campaign_options():
-    return {
-        "heavy_only": True,
-        "blind_seed": "campaign-test",
-        "binary": True,
-        "time_limit_per_shell": 5,
-        "max_bijections": None,
-        "max_mappings": 100,
-        "tolerance": 1e-9,
-        "symmetry_pruning": True,
-        "backend": "auto",
-        "max_edit_support_pairs": 50_000,
-        "use_slap_seed": True,
-        "max_symmetry_automorphisms": 256,
-        "symmetry_timeout_seconds": 0.25,
-        "symmetry_max_search_nodes": 10_000,
-        "structure_analysis": True,
-        "template_radius": 1,
-        "structure_timeout_seconds": 0.25,
-        "structure_max_search_nodes": 100_000,
-        "mode": "both",
-        "campaign_manifest_sha256": "test-manifest",
-    }
-
-
-def _campaign_row(source_line):
-    reaction_id = f"example:{source_line}"
-    reaction = "[CH3:1][CH2:2][OH:3]>>[CH3:1][CH2:2][OH:3]"
-    return {
-        "source_line": str(source_line),
-        "reaction_id": reaction_id,
-        "mapped_reaction": f"{reaction}|{reaction_id}",
-    }
-
-
-@pytest.mark.skipif(
-    campaign.resource is None or not hasattr(campaign.resource, "RLIMIT_AS"),
-    reason="campaign workers require Unix address-space limits",
-)
-def test_campaign_parallel_workers_return_complete_unique_records():
-    records = list(
-        campaign._parallel_case_records(
-            [_campaign_row(1), _campaign_row(2)],
-            _campaign_options(),
-            workers=2,
-            memory_limit_gib=4,
-        )
-    )
-
-    assert {record["source_line"] for record in records} == {1, 2}
-    assert all(record["record_sha256"] for record in records)
-    assert all(
-        shell["complete"] for record in records for shell in record["shells"].values()
-    )
-
-
-def test_campaign_main_writes_progress_and_digest_checked_summary(
-    tmp_path,
-    monkeypatch,
-    capsys,
-):
-    dataset = tmp_path / "one_case.csv.gz"
-    output = tmp_path / "campaign"
-    with gzip.open(dataset, "wt", encoding="utf-8", newline="") as stream:
-        stream.write("source_line,reaction_id,mapped_reaction\n")
-        stream.write(
-            "1,example:1," "[CH3:1][CH2:2][OH:3]>>[CH3:1][CH2:2][OH:3]|example:1\n"
-        )
-    monkeypatch.setattr(campaign, "_configure_memory_limit", lambda value: 0)
-    monkeypatch.setattr(campaign, "_memory_limit_bytes", lambda value: 0)
-
-    assert (
-        campaign.main(
-            [
-                "--dataset",
-                str(dataset),
-                "--output",
-                str(output),
-                "--max-cases",
-                "1",
-                "--workers",
-                "1",
-                "--time-limit-per-shell",
-                "5",
-                "--max-mappings",
-                "100",
-                "--binary",
-            ]
-        )
-        == 0
-    )
-
-    events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
-    assert events[1]["completed_this_run"] == 1
-    assert events[1]["remaining_this_run"] == 0
-    summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
-    assert summary["case_records"] == 1
-    assert summary["error_records"] == 0
-
-    case_path = output / "cases" / "line_1.json.gz"
-    with gzip.open(case_path, "rt", encoding="ascii") as stream:
-        tampered = json.load(stream)
-    tampered["reaction_id"] = "tampered"
-    with gzip.open(case_path, "wt", encoding="ascii") as stream:
-        json.dump(tampered, stream)
-    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
-    campaign._write_summary(output, manifest)
-    rejected = json.loads((output / "summary.json").read_text(encoding="utf-8"))
-    assert rejected["case_records"] == 0
-    assert rejected["error_records"] == 1
 
 
 def test_internal_transport_fingerprint_preserves_relabeling_and_unary_properties():

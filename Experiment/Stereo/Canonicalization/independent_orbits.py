@@ -12,12 +12,11 @@ from enum import Enum
 from itertools import product
 from math import prod
 from pathlib import Path
-import resource
-import signal
 import sys
 import time
 
 from Experiment.Stereo.Canonicalization.independent_graph import typed_automorphisms
+from Experiment.Stereo.Canonicalization.runtime import peak_rss_mib, wall_time_limit
 
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
@@ -79,8 +78,7 @@ def color_signature(value):
 def _limits(deadline, max_rss_mb):
     if time.monotonic() > deadline:
         raise OracleIncomplete("oracle_timeout")
-    # Linux ru_maxrss includes native process memory and is expressed in KiB.
-    if resource.getrusage(resource.RUSAGE_SELF).ru_maxrss > max_rss_mb * 1024:
+    if peak_rss_mib() > max_rss_mb:
         raise OracleIncomplete("oracle_process_peak_rss_limit")
 
 
@@ -286,7 +284,7 @@ def _reference_partition(graph, choices, *, atom_color=ATOM_KEYS, bond_color=BON
 
 
 def reference_partition(graph, choices, **options):
-    """Enforce the wall budget even if constitutional map enumeration stalls."""
+    """Apply cooperative deadlines and platform-supported wall interruption."""
     method = options.pop("method", "exhaustive_constitutional_automorphisms")
     if method == "direct_single_carrier_transport":
         from Experiment.Stereo.Canonicalization.independent_transport import reference_partition as implementation
@@ -300,24 +298,15 @@ def reference_partition(graph, choices, **options):
                 "method": method, "reason": "oracle_timeout", "seconds": 0,
                 "budget": {"reference_timeout_seconds": seconds}}
 
-    def expired(_signum, _frame):
-        raise OracleIncomplete("oracle_timeout")
-
-    previous_handler = signal.signal(signal.SIGALRM, expired)
-    previous_timer = signal.setitimer(signal.ITIMER_REAL, seconds)
     started = time.monotonic()
     try:
-        return {"method": method, **implementation(graph, choices, **options)}
+        with wall_time_limit(seconds, OracleIncomplete("oracle_timeout")):
+            result = implementation(graph, choices, **options)
+        return {"method": method, **result}
     except OracleIncomplete as error:
         return {"schema": "synkit.independent-assignment-orbits/1", "status": "oracle_incomplete",
                 "method": method, "reason": str(error), "seconds": time.monotonic() - started,
                 "budget": {"reference_timeout_seconds": seconds}}
-    finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
-        if previous_timer[0] > 0:
-            remaining = max(0.000001, previous_timer[0] - (time.monotonic() - started))
-            signal.setitimer(signal.ITIMER_REAL, remaining, previous_timer[1])
 
 
 def partition_agreement(reference, assignments, labels):

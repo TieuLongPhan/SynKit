@@ -67,8 +67,8 @@ jobs:
           conda activate synkit-ci
           bash scripts/pytest.sh
 
-  synister-contracts:
-    name: Synister enumeration and evaluation contracts
+  mapper-contracts:
+    name: Mapper contracts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,21 +79,10 @@ jobs:
       - name: Install SynKit and test tools
         run: python -m pip install -e . pytest
       - name: Run deterministic contracts without research datasets
-        run: |
-          python -m pytest -q \
-            Experiment/Synister/tests/test_identifiability.py \
-            Experiment/Synister/tests/test_annotation_evaluation.py \
-            Experiment/Synister/tests/test_cohort_bounds.py \
-            Experiment/Synister/tests/test_numerical_scope.py \
-            Experiment/Synister/tests/test_support_orbits.py \
-            Experiment/Synister/tests/test_prediction_adapter.py \
-            Experiment/Synister/tests/test_callback_failure_contract.py \
-            Experiment/Synister/tests/test_symmetry_output_cap.py \
-            Experiment/Synister/tests/test_random_oracles.py \
-            Experiment/Synister/tests/test_seed_output_recovery.py
+        run: python -m pytest -q Test/Chem/Mapper/studies/contracts
 
-  synister-native:
-    name: Synister optional C++ kernel and installed wheel
+  mapper-native:
+    name: Mapper C++ kernel and wheel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -109,7 +98,7 @@ jobs:
         run: |
           python -m build --sdist --wheel
           python scripts/check_package_artifacts.py dist --mapper-smoke
-          python -m synkit.Chem.Mapper.exact.native_build --output-dir /tmp/synister-native
+          python -m synkit.Chem.Mapper.exact.native_build --output-dir /tmp/synkit-native
       - name: Run bounded native exactness and disk controls
         run: |
           python -m pytest -q \

@@ -1,7 +1,7 @@
 """Controlled, isolated configured-graph costs with explicit censoring.
 
 Each case/repetition/output mode runs in a fresh worker. Full code equality
-uses a bounded disk store; hashes remain indices. Linux native memory includes
+uses a bounded disk store; hashes remain indices. Native process memory includes
 the interpreter and imported libraries. Search, witness output and packaging
 are measured separately, following the frozen study design.
 """
@@ -12,7 +12,6 @@ import json
 import os
 from pathlib import Path
 import platform
-import resource
 import statistics
 import subprocess
 import sys
@@ -26,6 +25,9 @@ from Experiment.Stereo.Canonicalization.exact_code_store import ExactCodeStore
 from Experiment.Stereo.Canonicalization.independent_model import to_descriptor
 from Experiment.Stereo.Canonicalization.independent_orbits import _selector, color_signature
 from Experiment.Stereo.Canonicalization.performance_cases import cases, selection_metadata, state_from_json
+from Experiment.Stereo.Canonicalization.runtime import (
+    load_average, peak_rss_mib, process_cpu_seconds, process_rss_mib,
+)
 from Experiment.Stereo.provenance import ROOT, capture_source, finish_source, sha256
 from synkit.Graph.Canon.exact import ExactColoredGraphCanonicalizer
 from synkit.Graph.Stereo import (
@@ -197,32 +199,24 @@ def worker(args):
         result = measure(specification, args.mode, args.worker_seconds)
     except Exception as error:
         result = {"status": "error", "error": f"{type(error).__name__}: {error}"}
-    usage = resource.getrusage(resource.RUSAGE_SELF)
+    usage = os.times()
     result.update({"worker_operation_seconds": time.perf_counter() - started,
                    "worker_operation_cpu_seconds": time.process_time() - started_cpu,
-                   "worker_cpu_user_seconds": usage.ru_utime,
-                   "worker_cpu_system_seconds": usage.ru_stime,
-                   "worker_cpu_total_seconds": usage.ru_utime + usage.ru_stime,
-                   "worker_peak_rss_mib": usage.ru_maxrss / 1024})
+                   "worker_cpu_user_seconds": usage.user,
+                   "worker_cpu_system_seconds": usage.system,
+                   "worker_cpu_total_seconds": usage.user + usage.system,
+                   "worker_peak_rss_mib": peak_rss_mib()})
     print(json.dumps({"event": "result", "metrics": result}), flush=True)
     return 0
 
 
 def _rss(pid):
-    try:
-        lines = Path(f"/proc/{pid}/status").read_text().splitlines()
-    except (FileNotFoundError, ProcessLookupError):
-        return 0
-    return max((int(line.split()[1]) / 1024 for line in lines if line.startswith(("VmRSS:", "VmHWM:"))), default=0)
+    return process_rss_mib(pid)
 
 
 def _process_cpu_seconds(pid):
-    """Observe Linux process CPU, including startup, before a censored worker exits."""
-    try:
-        fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
-    except (FileNotFoundError, ProcessLookupError):
-        return 0.0
-    return (int(fields[11]) + int(fields[12])) / os.sysconf("SC_CLK_TCK")
+    """Observe process CPU, including startup, before a censored worker exits."""
+    return process_cpu_seconds(pid)
 
 
 def isolated(specification, mode, seconds, max_rss_mib, environment, work):
@@ -232,7 +226,7 @@ def isolated(specification, mode, seconds, max_rss_mib, environment, work):
     argv = [sys.executable, "-m", "Experiment.Stereo.Canonicalization.performance", "--worker", str(input_path),
             "--mode", mode, "--worker-seconds", str(seconds)]
     started, observed, observed_cpu, interruption = time.monotonic(), 0.0, 0.0, None
-    load_before = os.getloadavg()
+    load_before = load_average()
     with output_path.open("w") as output, error_path.open("w") as errors:
         with subprocess.Popen(argv, cwd=ROOT, env=environment, stdout=output, stderr=errors) as process:
             while process.poll() is None:
@@ -269,7 +263,7 @@ def isolated(specification, mode, seconds, max_rss_mib, environment, work):
         result["stderr_tail"] = error_path.read_text()[-2000:]
     return {**result, "parent_observed_peak_rss_mib": observed, "worker_returncode": returncode,
             "parent_observed_cpu_seconds": observed_cpu,
-            "host_load_average_before": load_before, "host_load_average_after": os.getloadavg(),
+            "host_load_average_before": load_before, "host_load_average_after": load_average(),
             "worker_wall_seconds": time.monotonic() - started, "budget_seconds": seconds,
             "budget_peak_rss_mib": max_rss_mib, "rss_monitor_interval_seconds": 0.05}
 
@@ -305,11 +299,14 @@ def summarize(records):
 
 
 def hardware():
-    cpu_lines = Path("/proc/cpuinfo").read_text().splitlines()
-    model = next((line.split(":", 1)[1].strip() for line in cpu_lines if line.startswith("model name")), "unknown")
+    cpu_info = Path("/proc/cpuinfo")
+    cpu_lines = cpu_info.read_text().splitlines() if cpu_info.exists() else ()
+    model = next((line.split(":", 1)[1].strip() for line in cpu_lines if line.startswith("model name")),
+                 platform.processor() or "unknown")
     return {"platform": platform.platform(), "cpu_model": model, "logical_cpu_count": os.cpu_count(),
-            "cpu_affinity": sorted(os.sched_getaffinity(0)), "load_average_at_report": os.getloadavg(),
-            "native_memory_scope": "Linux process RSS/HWM, including native allocations and imported libraries"}
+            "cpu_affinity": sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None,
+            "load_average_at_report": load_average(),
+            "native_memory_scope": "process RSS/peak RSS, including native allocations and imported libraries"}
 
 
 def run(args):

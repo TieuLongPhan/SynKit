@@ -8,8 +8,6 @@ import json
 from math import prod
 from pathlib import Path
 import platform
-import resource
-import signal
 import subprocess
 import time
 
@@ -17,6 +15,7 @@ import networkx as nx
 
 from Experiment.Stereo.Canonicalization.independent_fixtures import Fixture, fixtures
 from Experiment.Stereo.Canonicalization.exact_code_store import ExactCodeStore
+from Experiment.Stereo.Canonicalization.runtime import peak_rss_mib, wall_time_limit
 from Experiment.Stereo.Canonicalization.independent_model import (
     formal_states, from_descriptor, to_descriptor, transport,
 )
@@ -26,30 +25,11 @@ from Experiment.Stereo.Canonicalization.independent_orbits import (
 )
 
 
-class TimeLimit:
-    """POSIX wall-clock boundary around each exact production computation."""
-
-    def __init__(self, seconds):
-        self.seconds = seconds
-
-    def __enter__(self):
-        self.previous = signal.signal(signal.SIGALRM, self.expired)
-        signal.setitimer(signal.ITIMER_REAL, self.seconds)
-
-    def __exit__(self, *_error):
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, self.previous)
-
-    @staticmethod
-    def expired(_signal, _frame):
-        raise TimeoutError("exact_computation_timeout")
-
-
 def _code(graph, descriptors, options, timeout_seconds):
     """Production result: a full exact code, not its finite digest."""
     from synkit.Graph.Stereo import canonicalize_configured_stereograph
 
-    with TimeLimit(timeout_seconds):
+    with wall_time_limit(timeout_seconds, TimeoutError("exact_computation_timeout")):
         result = canonicalize_configured_stereograph(
             graph, descriptors, enumerate_automorphism_group=False, **options,
         )
@@ -75,7 +55,7 @@ def _production_assignments(fixture, choices, reference, options, production_tim
                 mirror_id = store.intern(_code(fixture.graph, mirrored, options, production_timeout))
                 moved = tuple(to_descriptor(transport(state, mapping)) for state in states)
                 relabeled_id = store.intern(_code(renamed, moved, options, production_timeout))
-                if resource.getrusage(resource.RUSAGE_SELF).ru_maxrss > 1024 * 1024:
+                if peak_rss_mib() > 1024:
                     raise MemoryError("production_process_peak_rss_limit:1024MiB")
                 observed.append(identifier)
                 mirrors.append(mirror_id)
@@ -125,7 +105,7 @@ def audit_fixture(item):
         "production_partition": partition_from_labels(reference["assignments"], observed) if complete else None,
         "certificate_sha256_indices": indices,
         "temporary_full_certificate_store_bytes": disk_size,
-        "process_peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+        "process_peak_rss_kib": peak_rss_mib() * 1024,
         "seconds": time.monotonic() - started,
     })
     print(json.dumps({"case": fixture.name, "status": record["status"],

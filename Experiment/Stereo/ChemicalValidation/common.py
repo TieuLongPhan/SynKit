@@ -4,12 +4,13 @@ from contextlib import contextmanager
 import hashlib
 from pathlib import Path
 import platform
-import signal
 import subprocess
 
 import networkx as nx
 import numpy as np
 import rdkit
+
+from Experiment.Stereo.Canonicalization.runtime import wall_time_limit
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -30,23 +31,9 @@ def provenance():
 
 @contextmanager
 def wall_limit(seconds):
-    """Restore an enclosing POSIX alarm after a bounded chemical operation."""
-    import time
-
-    def expired(_number, _frame):
-        raise TimeoutError("chemical_validation_wall_limit")
-
-    started = time.monotonic()
-    previous_handler = signal.signal(signal.SIGALRM, expired)
-    previous_timer = signal.setitimer(signal.ITIMER_REAL, seconds)
-    try:
+    """Bound chemical operations with deadlines and available POSIX alarms."""
+    with wall_time_limit(seconds, TimeoutError("chemical_validation_wall_limit")):
         yield
-    finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
-        if previous_timer[0] > 0:
-            signal.setitimer(signal.ITIMER_REAL, max(0.000001, previous_timer[0] - (time.monotonic() - started)),
-                             previous_timer[1])
 
 
 def replay_typed_map(source, target, mapping):

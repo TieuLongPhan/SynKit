@@ -8,25 +8,14 @@ from types import SimpleNamespace
 from synkit.Chem.Mapper.exact import native_parallel
 
 
-def test_mapper_and_campaign_imports_without_unix_resource():
+def test_mapper_imports_without_unix_resource():
     root = Path(__file__).resolve().parents[4]
     script = """
 import sys
 sys.modules['resource'] = None
 from synkit.Chem.Mapper.exact import native_frontier, native_parallel
 from synkit.Chem.Mapper import native_analysis
-from Experiment.Synister import run_global_shells, run_alternative_its
 assert native_frontier.resource is native_parallel.resource is None
-for configure in (
-    run_global_shells._configure_memory_limit,
-    run_alternative_its._configure_memory_limit,
-):
-    try:
-        configure(1)
-    except RuntimeError as error:
-        assert 'Unix address-space resource limits' in str(error)
-    else:
-        raise AssertionError('campaign claimed an unavailable memory limit')
 """
     result = subprocess.run(
         [sys.executable, "-c", script], cwd=root, capture_output=True, text=True

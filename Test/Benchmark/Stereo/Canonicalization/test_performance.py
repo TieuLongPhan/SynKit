@@ -95,6 +95,13 @@ def test_real_worker_records_cpu_and_wall_costs_with_host_contention_visible(tmp
     assert len(result["host_load_average_before"]) == len(result["host_load_average_after"]) == 3
 
 
+def test_parent_native_memory_budget_interrupts_a_worker(tmp_path):
+    result = isolated(_case("tetrahedral:distinct"), "generators", 10, 0, dict(os.environ), tmp_path)
+    assert result["status"] == "rss_limit"
+    assert result["parent_observed_peak_rss_mib"] > 0
+    assert "canonical_code" not in result
+
+
 def test_worker_output_cap_cannot_turn_a_partial_json_record_into_identity(tmp_path, monkeypatch):
     monkeypatch.setattr(performance, "MAX_WORKER_OUTPUT_BYTES", 128)
     result = isolated(_case("tetrahedral:distinct"), "generators", 10, 1024, dict(os.environ), tmp_path)

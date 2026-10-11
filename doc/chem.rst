@@ -807,8 +807,7 @@ Build the optional engine from a checkout or installed package:
    python -m synkit.Chem.Mapper.exact.native.build --output-dir /tmp/synkit-native
 
 The command prints the library path and records source, compiler, flags,
-and binary hashes beside it. ``Experiment/Synister/build_native.py`` remains
-a compatible checkout entry point.
+and binary hashes beside it.
 
 Tests follow the same component layout under ``Test/Chem/Mapper/``:
 ``api/``, ``chem/``, ``graph/``, ``slap/``, ``exact/``, ``io/``, and
@@ -895,6 +894,9 @@ Reference-blinded mapping campaign
 The resumable mapping runner independently permutes reactant and product atom
 orders, uses a reference-free SLAP candidate only as an incumbent, and queries
 either a supplied reference-distance shell, a globally minimal shell, or both.
+The experiment workspace moved to the sibling Synister repository at
+``../Synister/synkit/``. Run these commands from that workspace with SynKit
+installed in the active environment.
 The FlowER cohort is not distributed with SynKit; an explicit CSV with
 ``source_line``, ``reaction_id``, and ``mapped_reaction`` columns is required::
 
