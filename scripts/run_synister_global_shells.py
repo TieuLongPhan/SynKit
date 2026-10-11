@@ -1,6 +1,6 @@
-"""Run reference-blinded global Synister shell experiments on FlowER rows.
+"""Search global mapping-distance shells with held-out FlowER references.
 
-The dataset must be supplied explicitly.  For ``reference_cd`` mode, only the
+The caller supplies the dataset. For ``reference_cd`` mode, only the
 held-out reference's scalar chemical distance defines the global shell; the
 mapping is revealed after enumeration.  For ``minimal`` mode, both mapping and
 distance remain hidden until the global optimizer shell has been explored.
@@ -79,13 +79,13 @@ def _sha256_file(path: Path) -> str:
 def _implementation_sha256() -> str:
     paths = (
         Path(__file__).resolve(),
-        ROOT / "synkit/Chem/Mapper/analysis.py",
-        ROOT / "synkit/Chem/Mapper/spectrum.py",
+        ROOT / "synkit/Chem/Mapper/reporting/analysis.py",
+        ROOT / "synkit/Chem/Mapper/reporting/spectrum.py",
         ROOT / "synkit/Chem/Mapper/chem/blind.py",
-        ROOT / "synkit/Chem/Mapper/exact/distance.py",
-        ROOT / "synkit/Chem/Mapper/exact/distance_bounds.py",
-        ROOT / "synkit/Chem/Mapper/exact/distance_records.py",
-        ROOT / "synkit/Chem/Mapper/exact/distance_verify.py",
+        ROOT / "synkit/Chem/Mapper/exact/distance_search/search.py",
+        ROOT / "synkit/Chem/Mapper/exact/distance_search/bounds.py",
+        ROOT / "synkit/Chem/Mapper/exact/distance_search/records.py",
+        ROOT / "synkit/Chem/Mapper/exact/distance_search/verify.py",
         ROOT / "synkit/Chem/Mapper/exact/symmetry.py",
         ROOT / "synkit/Chem/Mapper/exact/edit_support.py",
         ROOT / "synkit/Chem/Mapper/exact/hybrid.py",

@@ -1,42 +1,46 @@
 """
-mapper.exact — exact kernel solvers, enumeration, and optimality certificates.
+Exact mapping methods, enumeration, and optimality certificates.
+
+Full-space search and kernel refinement are distinct workflows. PABS
+(Propagation and Assignment-Bounded Search) selects Python propagation or
+optional C++ full-space search. The kernel solvers optimize a reduced
+uncertainty region supplied by the SLAP workflow. A LAP (linear assignment
+problem) provides a bound or a matching step in several of these methods.
 
 Submodules
 ----------
-kernel
-    :class:`Kernel` dataclass and helpers to extract the uncertainty region
-    from SLAP results and stitch a sub-mapping back into a full mapping.
-branching
-    Orbital-branching DFS solver (:func:`solve_kernel`) and block-decomposed
-    variant (:func:`solve_kernel_blockwise`).
-exhaustive
-    Standalone exhaustive DFS mapper (:class:`ExactMapper`) for small graphs.
-milp
-    MILP/QAP formulation solved with PuLP/CBC (:func:`solve_kernel_milp`).
-enumerate
-    Symmetry-distinct enumeration of all exact optima (:func:`enumerate_kernel_optima`).
-certificate
-    Optimality certificates (:class:`Certificate`, :func:`certify_result`).
-distance
-    Complete atom-compatible enumeration at a global minimum or exact CD.
 search
     PABS public interface with explicit Python or C++ backend selection.
-propagation, propagation_search
-    Python reversible-domain search and adaptive assignment bounds.
-native_search
-    Labeled C++ shells and minimum proof under one shared deadline.
-native_build
-    Explicit C++17 compilation of the adjacent ``native_distance.cpp`` source.
-native_candidates, native_frontier, native_parallel
-    Python bindings for native candidate enumeration, resumable subtrees,
-    and parallel orbit search. Native execution requires a library path.
+distance_search
+    Full atom-compatible distance enumeration, replay certificates, admissible
+    bounds, and the standalone small-graph exhaustive mapper.
+kernel_solvers
+    WL/SLAP uncertainty-kernel extraction, orbital branching, optional MILP,
+    and enumeration within the supplied kernel restrictions.
+pabs
+    Python reversible-domain propagation search and residual cost spectra.
+native
+    Optional C++ search, canonicalization, orbit scheduling, and explicit
+    compilation of the adjacent ``native_distance.cpp`` source. Execution
+    requires a supplied library path.
+assignment
+    Shared LAP domains, incremental solves, and integer primal-dual proofs.
+seeds
+    Feasible-incumbent heuristics; these do not establish optimality.
+hybrid, edit_support
+    Exact-backend selection and binary edit-support enumeration.
+core, hydrogen, symmetry, certificate
+    Reference-component reduction, hydrogen lifting, permutation-group helpers,
+    and optimality-gap reporting.
+
+Historical flat modules remain aliases to these canonical implementations.
 """
 
-from .kernel import Kernel, extract_kernel, apply_kernel_solution
-from .branching import KernelSolution, solve_kernel, solve_kernel_blockwise
-from .exhaustive import ExactResult, ExactMapper
+from .kernel_solvers.kernel import Kernel, extract_kernel, apply_kernel_solution
+from .kernel_solvers.branching import KernelSolution, solve_kernel, solve_kernel_blockwise
+from .distance_search.exhaustive import ExactResult, ExactMapper
 from .certificate import Certificate, certify_result, certify_results_exact
-from .enumerate import (
+from .kernel_solvers.enumerate import (
     EnumerationResult,
     canonical_mapping_key,
     canonical_partial_mapping_key,
@@ -44,7 +48,7 @@ from .enumerate import (
     enumerate_kernel_optima,
     enumerate_symmetry_distinct_optima,
 )
-from .distance import (
+from .distance_search.search import (
     CertificateVerificationError,
     DistanceEnumerationCertificate,
     DistanceEnumerationResult,
@@ -73,9 +77,16 @@ from .hybrid import (
     HybridBackendDecision,
     enumerate_hybrid_distance_mappings,
 )
-from .propagation import PropagationConfig, enumerate_synister_cp_mappings
+from .pabs.propagation import PropagationConfig, enumerate_synister_cp_mappings
 from .search import enumerate_pabs_mappings
-from .multi_shell import enumerate_pabs_shells
+from .pabs.multi_shell import enumerate_pabs_shells
+
+from .._compat import (
+    EXACT_MODULE_ALIASES as _EXACT_MODULE_ALIASES,
+    register_module_aliases as _register_module_aliases,
+)
+
+_register_module_aliases(__name__, _EXACT_MODULE_ALIASES)
 
 __all__ = [
     # kernel

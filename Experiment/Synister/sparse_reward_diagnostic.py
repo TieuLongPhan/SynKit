@@ -92,8 +92,8 @@ def run(output, seconds):
     output.mkdir(parents=True, exist_ok=False)
     sources = [
         Path(__file__),
-        root / "synkit/Chem/Mapper/exact/sparse_reward_bound.py",
-        root / "synkit/Chem/Mapper/exact/incremental_assignment.py",
+        root / "synkit/Chem/Mapper/exact/pabs/sparse_reward_bound.py",
+        root / "synkit/Chem/Mapper/exact/assignment/incremental_assignment.py",
     ]
     for path in sources:
         target = output / "frozen_source" / path.relative_to(root)

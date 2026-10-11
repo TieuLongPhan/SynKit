@@ -31,6 +31,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+milp = ["pulp"]
 all = ["numpy>=2.2.0", "torch>=2.2.0", "sympy>=1.13.1"]
 docs = [
   # Core Sphinx
@@ -66,7 +67,7 @@ packages = ["synkit"]
 core-metadata-version = "2.4"
 
 [tool.hatch.build.targets.wheel.force-include]
-"synkit/Chem/Mapper/exact/native_distance.cpp" = "synkit/Chem/Mapper/exact/native_distance.cpp"
+"synkit/Chem/Mapper/exact/native/native_distance.cpp" = "synkit/Chem/Mapper/exact/native/native_distance.cpp"
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
 "synkit/CRN/Benchmark/data/kegg_modules.json" = "synkit/CRN/Benchmark/data/kegg_modules.json"
@@ -82,7 +83,7 @@ include = [
 ]
 
 [tool.hatch.build.targets.sdist.force-include]
-"synkit/Chem/Mapper/exact/native_distance.cpp" = "synkit/Chem/Mapper/exact/native_distance.cpp"
+"synkit/Chem/Mapper/exact/native/native_distance.cpp" = "synkit/Chem/Mapper/exact/native/native_distance.cpp"
 "synkit/Data/aldol.json.gz" = "synkit/Data/aldol.json.gz"
 "synkit/Data/paracetamol.json.gz" = "synkit/Data/paracetamol.json.gz"
 "synkit/CRN/Benchmark/data/kegg_modules.json" = "synkit/CRN/Benchmark/data/kegg_modules.json"

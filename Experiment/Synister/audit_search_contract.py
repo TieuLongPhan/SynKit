@@ -39,6 +39,18 @@ SOURCE_PATHS = (
     'Experiment/Synister/audit_search_contract.py',
 )
 
+# SOURCE_PATHS binds archived evidence; current runs bind the reorganized source.
+CURRENT_SOURCE_PATHS = (
+    'synkit/Chem/Mapper/exact/distance_search/search.py',
+    'synkit/Chem/Mapper/exact/distance_search/bounds.py',
+    'synkit/Chem/Mapper/exact/assignment/assignment_certificate.py',
+    'synkit/Chem/Mapper/exact/symmetry.py',
+    'synkit/Chem/Mapper/graph/automorphism.py',
+    'synkit/Chem/Mapper/slap/lap.py',
+    'Experiment/Synister/all_distance_oracle.py',
+    'Experiment/Synister/audit_search_contract.py',
+)
+
 
 def cases():
     rng = random.Random(2026092026)
@@ -200,7 +212,7 @@ def run(output):
     endpoint = Endpoint((6,)*5, (0,)*5, (0,)*5, ((0, 1, 2),))
     rows.append(prefix_checks('attained_zero_rows', endpoint, endpoint))
     queries, settings = query_checks(), cyclic_settings()
-    sources = {path: (ROOT/path).read_text() for path in SOURCE_PATHS}
+    sources = {path: (ROOT/path).read_text() for path in CURRENT_SOURCE_PATHS}
     documents = {'cases.json': rows, 'queries.json': queries, 'sources.json': sources}
     for name, value in documents.items():
         (output/name).write_text(json.dumps(value, indent=2, allow_nan=False)+'\n')

@@ -1,4 +1,9 @@
-"""Reaction-SMILES interface for exact PABS mapping and double-orbit classes."""
+"""Reaction-SMILES interface for full-space exact mapping and symmetry classes.
+
+``map_reaction`` defaults to Python propagation and assignment-bounded search
+(PABS). It does not run SLAP or extract a reduced uncertainty kernel. The
+optional C++ backend performs a separate full-space integer-shell search.
+"""
 
 from __future__ import annotations
 
@@ -13,11 +18,11 @@ import numpy as np
 from rdkit import Chem
 
 from .exact.hydrogen import enumerate_minimal_hydrogen_transfers
-from .exact.propagation import PropagationConfig
+from .exact.pabs.propagation import PropagationConfig
 from .exact.search import enumerate_pabs_mappings
 from .graph.labeled_graph import LabeledGraph
 from .slap.lap import _adjacency_and_elements
-from .spectrum import _attributed_its_graph, _exact_code
+from .reporting.spectrum import _attributed_its_graph, _exact_code
 
 
 @dataclass(frozen=True)
@@ -235,6 +240,13 @@ def map_reaction(  # noqa: C901
 ):
     """Return symmetry-distinct mapped reactions from unmapped reaction SMILES.
 
+    ``backend='python'`` uses exact propagation and linear-assignment bounds,
+    called PABS (Propagation and Assignment-Bounded Search) by this package.
+    ``backend='cpp'`` uses the optional compiled full-space search. This entry
+    point does not run the SLAP heuristic or extract its uncertainty kernel.
+    It searches compatible assignments and then classifies the resulting ITSs.
+    Inspect ``complete`` because deadlines or output limits can interrupt it.
+
     Hydrogen modes: ``heavy`` searches heavy bonds; ``explicit`` searches all
     H bonds jointly; ``compressed`` returns minimum-H lifts conditional on each
     selected heavy mapping (not a global full-H optimum). ``objective='lewis'``
@@ -253,6 +265,44 @@ def map_reaction(  # noqa: C901
     automorphism action beta*f*alpha^-1. Incomplete canonicalization never merges
     unverified classes. The deadline is shared by search, H lifting and dedup.
     """
+    return _map_reaction_with_search(
+        reaction,
+        search_function=enumerate_pabs_mappings,
+        backend=backend,
+        library_path=library_path,
+        CD=CD,
+        hydrogen=hydrogen,
+        objective=objective,
+        balance=balance,
+        binary=binary,
+        time_limit_seconds=time_limit_seconds,
+        max_mappings=max_mappings,
+        max_bijections=max_bijections,
+        max_hydrogen_plans=max_hydrogen_plans,
+        classification_max_search_nodes=classification_max_search_nodes,
+        search_config=search_config,
+    )
+
+
+def _map_reaction_with_search(  # noqa: C901
+    reaction,
+    *,
+    search_function,
+    backend="python",
+    library_path=None,
+    CD="minimal",
+    hydrogen="heavy",
+    objective="bond",
+    balance="strict",
+    binary=False,
+    time_limit_seconds=10.0,
+    max_mappings=100_000,
+    max_bijections=1_000_000,
+    max_hydrogen_plans=10_000,
+    classification_max_search_nodes=100_000,
+    search_config=None,
+):
+    """Share parsing, hydrogen lifting, rendering and classification across solvers."""
     started = time.perf_counter()
     if hydrogen not in {"heavy", "explicit", "compressed"}:
         raise ValueError("hydrogen must be 'heavy', 'explicit', or 'compressed'")
@@ -392,7 +442,7 @@ def map_reaction(  # noqa: C901
             classify(mols, graphs, mapping, cost)
 
     search_options = {} if search_config is None else {"config": search_config}
-    search = enumerate_pabs_mappings(
+    search = search_function(
         graphs,
         backend=backend,
         library_path=library_path,

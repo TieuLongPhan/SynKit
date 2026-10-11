@@ -1,5 +1,12 @@
 """
-mapper.slap — sequential LAP engine and LAP-based utilities.
+Sequential linear-assignment (SLAP) matching and LAP-based utilities.
+
+LAP means linear assignment problem: match reactant atoms to product atoms
+using a matrix of pair costs. SLAP combines successive LAP decisions with
+WL graph-label refinement to construct heuristic graph mappings. It is the
+default solver used by ``AAMapper.map_smiles``. The utility functions here
+also serve exact solvers; importing a LAP helper does not select the SLAP
+matching workflow.
 
 Submodules
 ----------

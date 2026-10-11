@@ -1,4 +1,4 @@
-"""Auditable exact-backend selection without changing shell semantics."""
+"""Choose an exact solver for a distance shell and record the selection."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from typing import Literal
 import numpy as np
 
 from ..slap.lap import _adjacency_and_elements
-from .distance import enumerate_distance_mappings, normalize_distance_target
-from .distance_records import DistanceEnumerationResult
+from .distance_search.search import enumerate_distance_mappings, normalize_distance_target
+from .distance_search.records import DistanceEnumerationResult
 from .edit_support import (
     BinaryEditBudget,
     binary_edit_budget,

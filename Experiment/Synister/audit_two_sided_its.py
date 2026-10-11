@@ -79,7 +79,7 @@ def audit():
     records = [check_case(*case) for case in cases()]
     paths = [Path(__file__), Path('Experiment/Synister/structural_oracle.py'),
              Path('Experiment/Synister/all_distance_oracle.py'),
-             Path('synkit/Chem/Mapper/identifiability.py')]
+             Path('synkit/Chem/Mapper/validation/identifiability.py')]
     return {'schema': 'synister.two-sided-its-control.v1', 'all_passed': True,
             'scope': __doc__, 'cases': records,
             'comparisons': sum(r['isomorphism_comparisons'] for r in records),

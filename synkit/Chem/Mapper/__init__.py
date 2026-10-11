@@ -2,15 +2,29 @@
 synkit.Chem.Mapper
 ==================
 
-Atom-to-atom mapping (AAM) with exact minimum or selected chemical distance.
-The reaction-SMILES entry point is :func:`map_reaction`; graph inputs use
-:func:`enumerate_pabs_mappings`. PABS (Propagation and Assignment-Bounded
-Search) offers explicit Python and C++ backends. The Python implementation
-uses reversible graph-assignment search; the optional C++ kernel performs
-integer shell search. Neither PABS backend invokes MILP.
+Atom-to-atom mapping offers several explicit workflows:
 
-The approximate Weisfeiler-Lehman/SLAP mapper :class:`AAMapper` and the
-kernel MILP solver remain available through their established interfaces.
+* ``Mapper(method='propagate').map(...)`` provides one interface and result
+  type for eight named methods. ``Mapper.methods()`` lists their names.
+* ``map_reaction(...)`` defaults to full-space Python exact propagation search.
+  ``backend='cpp'`` selects the optional compiled integer-shell search.
+* ``AAMapper().map_smiles(...)`` defaults to the approximate WL/SLAP mapper.
+* ``AAMapper().map_smiles(..., enumerate_exact=True)`` runs SLAP followed by
+  exact refinement of a reduced uncertainty kernel.
+* ``AAMapper().map_smiles(..., certify='exact')`` requests optional kernel MILP
+  certification of the SLAP results.
+* ``AAMapper().enumerate_smiles(...)`` or ``map_smiles(..., CD=...)`` runs the
+  established full-distance search; SLAP may provide a seed for a minimum query.
+
+PABS means Propagation and Assignment-Bounded Search. It is the package's
+descriptive name for the exact interface used by ``map_reaction`` and
+``enumerate_pabs_mappings``. Its Python solver combines one-to-one domain
+propagation with LAP bounds; its C++ backend uses a separate traversal.
+LAP means linear assignment problem. SLAP uses sequential LAP decisions for
+heuristic matching. A kernel is the reduced subproblem extracted from SLAP
+results for optional refinement; optimality within it is scoped to its fixed
+assignments and candidate domains. The PABS routes search without extracting
+this uncertainty kernel or invoking its MILP solver.
 
 Research basis
 --------------
@@ -21,14 +35,14 @@ DOI: 10.26434/chemrxiv-2025-hthwn
 
 Quick start
 -----------
->>> from synkit.Chem.Mapper import map_reaction
->>> result = map_reaction("CO>>CO", CD="minimal", time_limit_seconds=10)
+>>> from synkit.Chem.Mapper import Mapper
+>>> result = Mapper(method="propagate").map("CO>>CO")
 >>> result.complete, result.minimum_cost
 (True, 0.0)
 
 Several inequivalent symmetry classes can share a minimum. Inspect
 ``result.mapped_reactions`` and ``result.complete`` separately. For the native
-backend, explicitly build a library with ``exact.native_build.build_native``
+backend, explicitly build a library with ``exact.native.build.build_native``
 and pass ``backend="cpp", library_path=library`` to the same interface.
 
 Package layout
@@ -40,12 +54,11 @@ Package layout
     Sequential-LAP engine (:class:`GraphMatcher`) and LAP utilities
     (chemical distance, Gilmore-Lawler lower bound).
 :mod:`synkit.Chem.Mapper.exact`
-    PABS graph search, kernelization, MILP/QAP solver, orbital branching,
-    exhaustive DFS, symmetry-distinct enumeration and certificates.
-    Optional C++ source lives in ``exact/native_distance.cpp``; explicit
-    compilation is provided by ``exact.native_build`` and Python bindings
-    by ``exact.native_candidates`` and the other ``exact.native_*`` modules.
-    ``enumerate_pabs_mappings`` selects Python or C++ through one interface.
+    Distinct exact methods live in ``distance_search/``, ``kernel_solvers/``,
+    ``pabs/``, and ``native/``. Shared LAP proofs live in ``assignment/`` and
+    feasible-incumbent heuristics in ``seeds/``. ``enumerate_pabs_mappings``
+    selects Python or C++ through one interface. The C++ source and explicit
+    builder are adjacent in ``exact/native/``.
 :mod:`synkit.Chem.Mapper.reaction_search`
     Unmapped reaction SMILES, exact symmetry class representatives,
     explicit or compressed hydrogen, and optional missing-atom padding.
@@ -53,36 +66,42 @@ Package layout
     RDKit SMILES I/O and ITS-based deduplication / electron-balance checks.
 :mod:`synkit.Chem.Mapper.io`
     Index-mapping-string helpers.
-:mod:`synkit.Chem.Mapper.aam_validator`
-    AAM validation against ground-truth mapped reaction SMILES.
-:mod:`synkit.Chem.Mapper.analysis`, :mod:`synkit.Chem.Mapper.alternatives`
-    Reference-blinded shells and exact ITS class exports.
-:mod:`synkit.Chem.Mapper.native_analysis`
-    Explicit native search with two-sided orbit aggregation.
-:mod:`synkit.Chem.Mapper.prediction_adapter`, :mod:`synkit.Chem.Mapper.template_adapter`
+:mod:`synkit.Chem.Mapper.validation`
+    AAM validation, identifiability, and bond/annotation/cohort evaluation.
+:mod:`synkit.Chem.Mapper.reporting`
+    Reference-blinded shell analysis, ITS spectra, structural alternatives,
+    and native two-sided orbit reports.
+:mod:`synkit.Chem.Mapper.adapters`
     Prediction seeds, validated class correspondences, and executable rules.
+
+Historical flat module imports remain aliases to the same implementation
+objects. See ``README.rst`` beside this module for method scopes and examples.
 
 Public API
 ----------
 """
 
+from ._compat import (
+    MAPPER_MODULE_ALIASES as _MAPPER_MODULE_ALIASES,
+    register_module_aliases as _register_module_aliases,
+)
 from .graph.labeled_graph import LabeledGraph
 from .slap.sequential import GraphMatcher
 from .chem.aam import AAMapper
 from .chem.blind import BlindedReactionProblem, blinded_mapped_reaction_problem
-from .aam_validator import AAMValidator
-from .analysis import (
+from .validation.aam_validator import AAMValidator
+from .reporting.analysis import (
     GlobalShellAnalysisResult,
     GlobalShellConfig,
     ReactionCenterSpectrum,
     analyze_reference_blinded_global_shell,
 )
-from .spectrum import (
+from .reporting.spectrum import (
     ExactStructureSpectrum,
     ExactStructureSpectrumAccumulator,
     exact_its_and_template_codes,
 )
-from .alternatives import (
+from .reporting.alternatives import (
     AlternativeTarget,
     ExactITSAlternative,
     ExactITSAlternativeResult,
@@ -91,7 +110,7 @@ from .alternatives import (
     enumerate_exact_its_alternatives,
     enumerate_mapped_reaction_its_alternatives,
 )
-from .template_adapter import (
+from .adapters.template import (
     ClassCorrespondence,
     class_correspondence_from_export,
     SourceReplayResult,
@@ -103,7 +122,7 @@ from .template_adapter import (
     replay_executable_rule_on_source,
     score_product_recovery,
 )
-from .exact.distance import (
+from .exact.distance_search.search import (
     CertificateVerificationError,
     DistanceEnumerationCertificate,
     DistanceEnumerationResult,
@@ -132,9 +151,10 @@ from .exact.hybrid import (
     HybridBackendDecision,
     enumerate_hybrid_distance_mappings,
 )
-from .exact.propagation import PropagationConfig, enumerate_synister_cp_mappings
+from .exact.pabs.propagation import PropagationConfig, enumerate_synister_cp_mappings
 from .exact.search import enumerate_pabs_mappings
 from .reaction_search import ReactionMapping, ReactionMappingResult, map_reaction
+from .mapper import Mapper, MappingResult
 
 RESEARCH_BASIS_TITLE = (
     "General and scalable atom-to-atom mapping via "
@@ -145,6 +165,8 @@ RESEARCH_BASIS_URL = f"https://doi.org/{RESEARCH_BASIS_DOI}"
 RESEARCH_BASIS_AUTHORS = "Shin-ichi Koda and Shinji Saito"
 
 __all__ = [
+    "Mapper",
+    "MappingResult",
     "LabeledGraph",
     "GraphMatcher",
     "AAMapper",
@@ -205,3 +227,6 @@ __all__ = [
     "RESEARCH_BASIS_URL",
     "RESEARCH_BASIS_AUTHORS",
 ]
+
+# Preserve flat imports while keeping implementation files in focused packages.
+_register_module_aliases(__name__, _MAPPER_MODULE_ALIASES)

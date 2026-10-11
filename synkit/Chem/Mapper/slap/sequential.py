@@ -10,7 +10,12 @@ from ..graph.synkit_adapter import canonical_graph_hash, stable_int_token
 
 
 class GraphMatcher:
-    """WL-partitioned sequential LAP matcher."""
+    """WL-partitioned sequential linear-assignment (SLAP) matcher.
+
+    Uses graph-label refinement and successive LAP decisions to construct
+    heuristic mappings. This is the default matching engine of ``AAMapper``;
+    it does not itself solve a reduced uncertainty kernel or run PABS.
+    """
 
     _INF_INT = 100000
     _AUT_DEDUP_MAX_NODES = 20
@@ -43,7 +48,7 @@ class GraphMatcher:
         self.minval = self._INF_INT
 
     def get_maps(self, lgp, break_sym_targets=None, interactive=False, base=None):
-        """Find minimum-cost mapping states."""
+        """Find the best scored mapping states reached by WL/SLAP matching."""
         self.reset()
         interactive = bool(interactive and break_sym_targets is not None)
         self._keep_lap_sols = break_sym_targets is not None
@@ -144,7 +149,7 @@ class GraphMatcher:
             if len(initial_pair[0].labels) > self._AUT_DEDUP_MAX_NODES:
                 return False
 
-            from ..exact.enumerate import (
+            from ..exact.kernel_solvers.enumerate import (
                 _automorphism_permutations,
                 canonical_partial_mapping_key,
             )

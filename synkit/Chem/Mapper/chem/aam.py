@@ -1,3 +1,5 @@
+"""Reaction-SMILES SLAP mapping with optional kernel refinement or distance search."""
+
 from ..slap.sequential import GraphMatcher
 from ..exact.certificate import certify_result, certify_results_exact
 from .smiles import (
@@ -67,7 +69,15 @@ def _effective_hcount_weight(rxn_smiles, hcount_weight, hcount_mode):
 
 
 class AAMapper(GraphMatcher):
-    """Reaction-SMILES AAM mapper."""
+    """Reaction-SMILES frontend whose default mapper is WL/SLAP.
+
+    ``map_smiles`` uses approximate sequential linear assignment by default.
+    ``enumerate_exact=True`` refines a reduced uncertainty kernel after SLAP;
+    ``certify='exact'`` requests optional kernel MILP certification.
+    ``enumerate_smiles`` or a supplied ``CD`` selects full-distance exact
+    enumeration. Its minimum query can use SLAP only to construct a seed.
+    For the Python/C++ propagation-search interface, use ``map_reaction``.
+    """
 
     def __init__(
         self,
@@ -127,7 +137,15 @@ class AAMapper(GraphMatcher):
         atom_profile_pruning=True,
         seed_center_order=True,
     ):
-        """Map reaction SMILES; results contain mapped SMILES and exact ``cd``.
+        """Map reaction SMILES with SLAP or explicitly selected exact search.
+
+        With ``CD=None`` and ``enumerate_exact=False`` (the defaults), WL/SLAP
+        performs approximate sequential linear assignment. ``cd`` is an exact
+        score of the returned mapping, not by itself a proof of optimality.
+        ``enumerate_exact=True`` runs SLAP and then exact branch-and-bound on
+        its reduced uncertainty kernel; optimality is within that kernel's
+        fixed assignments and candidate domains. ``certify='exact'`` requests
+        optional MILP certification of the kernel, with a LAP fallback.
 
         Set ``CD='minimal'`` to enumerate every globally minimal labeled atom
         mapping, or set ``CD`` to a non-negative number (for example ``CD=8``)
@@ -144,6 +162,9 @@ class AAMapper(GraphMatcher):
         the enumeration result without retaining every mapping in memory.
         For a numeric shell, ``compute_minimum_cost=False`` avoids a separate
         global-minimum pass when that metadata is not required.
+        The ``CD`` route calls ``enumerate_distance_mappings``. For a minimum
+        query, SLAP may supply a feasible seed; it does not restrict this full
+        search to the SLAP kernel. Returned SMILES are stored in ``results``.
         """
 
         if not HAS_RDKIT:
@@ -210,8 +231,8 @@ class AAMapper(GraphMatcher):
         self.get_maps(lgp, break_sym_targets=targets, interactive=interactive, base=1)
 
         if enumerate_exact:
-            from ..exact.kernel import extract_kernel
-            from ..exact.enumerate import (
+            from ..exact.kernel_solvers.kernel import extract_kernel
+            from ..exact.kernel_solvers.enumerate import (
                 annotate_hcount_scores,
                 complete_mapping,
                 enumerate_kernel_optima,
@@ -417,8 +438,12 @@ class AAMapper(GraphMatcher):
     def enumerate_smiles(self, rxn_smiles, CD="minimal", **kwargs):
         """Enumerate a complete exact-CD shell and return its search record.
 
-        This is the explicit counterpart to :meth:`map_smiles`. It also
-        populates :attr:`results` with mapped reaction SMILES.
+        Uses ``enumerate_distance_mappings`` over the full compatible assignment
+        space. For ``CD='minimal'``, SLAP may supply an initial feasible mapping;
+        the final exact solver searches beyond that seed. No uncertainty kernel
+        is extracted. This route is separate from ``map_reaction``'s PABS
+        interface. It also populates :attr:`results` with mapped reaction SMILES.
+        Inspect ``complete`` on the returned record before claiming a full shell.
         """
         if "enumerate_exact" in kwargs:
             raise TypeError("enumerate_smiles does not accept enumerate_exact")
@@ -453,8 +478,8 @@ class AAMapper(GraphMatcher):
         certify,
     ):
         from ..exact.certificate import Certificate
-        from ..exact.distance import enumerate_distance_mappings
-        from ..exact.enumeration_result import mapping_to_lgp
+        from ..exact.distance_search.search import enumerate_distance_mappings
+        from ..exact.kernel_solvers.enumeration_result import mapping_to_lgp
         from ..slap.lap import recover_mapping
 
         initial_mapping = None
@@ -596,7 +621,7 @@ class AAMapper(GraphMatcher):
 
         for r in self.results:
             if graph_add_hs:
-                from ..exact.enumerate import complete_mapping
+                from ..exact.kernel_solvers.enumerate import complete_mapping
                 from ..slap.lap import recover_mapping
 
                 mapping = complete_mapping(

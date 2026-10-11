@@ -51,8 +51,10 @@ def _assert_member_suffixes(members: set[str], artifact: Path) -> None:
     required = (
         ["synkit/__init__.py"]
         + [
+            "synkit/Chem/Mapper/mapper.py",
             "synkit/Chem/Mapper/exact/native_build.py",
-            "synkit/Chem/Mapper/exact/native_distance.cpp",
+            "synkit/Chem/Mapper/exact/native/build.py",
+            "synkit/Chem/Mapper/exact/native/native_distance.cpp",
         ]
         + [f"synkit/Data/{filename}" for filename in DATA_FILES]
         + [f"synkit/{package}/{filename}" for package, filename in PACKAGE_DATA]
@@ -129,6 +131,7 @@ print("synkit %s: wheel import and data files verified" % synkit.__version__)
         subprocess.run([str(python), "-c", code], check=True, cwd=root)
         if mapper_smoke:
             mapper_code = f"""
+from importlib import import_module
 from pathlib import Path
 import synkit.Chem.Mapper as mapper
 from synkit.Chem.Mapper.exact import native_build
@@ -137,7 +140,30 @@ assert callable(mapper.class_correspondence_from_export)
 assert Path(native_build.__file__).with_name('native_distance.cpp').is_file()
 library = native_build.build_native(Path({str(root)!r}) / 'native')
 assert library.is_file() and library.with_suffix('.json').is_file()
-print('installed mapper and packaged native builder verified')
+for old, new in (
+    ('analysis', 'reporting.analysis'),
+    ('exact.distance', 'exact.distance_search.search'),
+    ('exact.native_build', 'exact.native.build'),
+):
+    implementation = import_module('synkit.Chem.Mapper.' + new)
+    assert import_module('synkit.Chem.Mapper.' + old) is implementation
+    assert import_module('synkit.Chem.Reaction.Mapper.' + old) is implementation
+python_result = mapper.map_reaction('CO>>CO', time_limit_seconds=10)
+cpp_result = mapper.map_reaction(
+    'CO>>CO', backend='cpp', library_path=library, time_limit_seconds=10
+)
+assert python_result.complete and cpp_result.complete
+assert python_result.minimum_cost == cpp_result.minimum_cost == 0
+assert python_result.mapped_reactions == cpp_result.mapped_reactions
+uniform = mapper.Mapper().map('CO>>CO')
+native_uniform = mapper.Mapper('native', library_path=library).map('CO>>CO')
+assert uniform.method == 'propagate' and uniform.search_scope == 'full_space'
+assert uniform.complete and uniform.optimality_proven
+assert native_uniform.complete and native_uniform.optimality_proven
+assert uniform.mapped_reactions == native_uniform.mapped_reactions == python_result.mapped_reactions
+assert import_module('synkit.Chem.Reaction.Mapper').Mapper is mapper.Mapper
+assert len(mapper.Mapper.methods()) == 8
+print('installed mapper, compatibility imports, and Python/C++ search verified')
 """
             subprocess.run([str(python), "-c", mapper_code], check=True, cwd=root)
 

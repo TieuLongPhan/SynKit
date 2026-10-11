@@ -1,6 +1,6 @@
 """Export exact ITS-class representatives for mapped reactions.
 
-The input dataset is explicit and is never copied into the output. Each query
+The caller supplies the input dataset. Each query
 enumerates a global exact-CD or globally minimal shell. A reference seed can
 change the incumbent and traversal order, but never the candidate space. The
 result exports every observed ITS class plus its non-reference subset, allowing
@@ -68,13 +68,13 @@ def _sha256_file(path: Path) -> str:
 def _implementation_sha256() -> str:
     paths = (
         Path(__file__).resolve(),
-        ROOT / "synkit/Chem/Mapper/alternatives.py",
-        ROOT / "synkit/Chem/Mapper/analysis.py",
-        ROOT / "synkit/Chem/Mapper/spectrum.py",
+        ROOT / "synkit/Chem/Mapper/reporting/alternatives.py",
+        ROOT / "synkit/Chem/Mapper/reporting/analysis.py",
+        ROOT / "synkit/Chem/Mapper/reporting/spectrum.py",
         ROOT / "synkit/Chem/Mapper/chem/blind.py",
-        ROOT / "synkit/Chem/Mapper/exact/distance.py",
-        ROOT / "synkit/Chem/Mapper/exact/distance_bounds.py",
-        ROOT / "synkit/Chem/Mapper/exact/distance_records.py",
+        ROOT / "synkit/Chem/Mapper/exact/distance_search/search.py",
+        ROOT / "synkit/Chem/Mapper/exact/distance_search/bounds.py",
+        ROOT / "synkit/Chem/Mapper/exact/distance_search/records.py",
         ROOT / "synkit/Chem/Mapper/exact/edit_support.py",
         ROOT / "synkit/Chem/Mapper/exact/hybrid.py",
         ROOT / "synkit/Chem/Mapper/exact/symmetry.py",

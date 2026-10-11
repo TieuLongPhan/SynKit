@@ -7,8 +7,8 @@ The ``synkit.Chem`` module provides utilities for **reaction SMILES processing**
 covering atom-map canonicalization, atom-map equivalence validation, and configurable
 SMILES standardization. These tools are designed to make reactions comparable across
 datasets and pipelines by enforcing consistent labeling and normalized string forms.
-For unmapped reactions, see :ref:`atom-to-atom-mapping` for the WL/SLAP-based
-``AAMapper`` workflow and a complete runnable example.
+For unmapped reactions, see :ref:`atom-to-atom-mapping` for the uniform
+``Mapper(method=...)`` interface, method scopes, and runnable examples.
 
 Whole-molecule chirality
 ------------------------
@@ -399,12 +399,194 @@ general public functional-group label.
 Atom-to-atom mapping
 --------------------
 
-``synkit.Chem.Mapper`` provides the current atom-to-atom mapping
-(AAM) workflow. ``AAMapper`` combines WL label refinement with sequential
-linear-assignment matching (SLAP). It can optionally enumerate
-symmetry-distinct exact optima, attach a certificate, and prefer
-electron-balanced mapped reactions. The mapper replaces the former
-``wl_mapper`` module; import from the package-level API shown below.
+Use :class:`synkit.Chem.Mapper.Mapper` to select a mapping method through
+one interface. It accepts unmapped reaction SMILES or a pair of
+:class:`synkit.Chem.Mapper.LabeledGraph` objects and always returns
+:class:`synkit.Chem.Mapper.MappingResult`.
+
+.. code-block:: python
+   :caption: Map an unmapped reaction through the uniform adapter
+
+   from synkit.Chem.Mapper import Mapper
+
+   mapper = Mapper(method="propagate")
+   result = mapper.map("CCO>>CC=O")
+
+   print(result.mapped_reactions)
+   print(result.minimum_cost)  # 1.0 with weighted bonds and heavy atoms
+   print(result.search_scope, result.optimality_proven, result.complete)
+   # full_space True True
+
+``propagate`` is the default method. Weighted bonds and heavy atoms are the
+default representation; ``binary=True`` scores bond presence instead of bond
+order. Constructor options are reusable defaults. Options passed to
+``map(...)`` override them for that call, so a mapper can be reused without
+changing its defaults. ``Mapper.methods()`` returns these eight names:
+
+.. list-table:: Mapping methods
+   :header-rows: 1
+   :widths: 15 36 23 26
+
+   * - Method
+     - Implementation
+     - Search scope
+     - Query and output
+   * - ``slap``
+     - WL refinement and sequential linear assignment
+     - Heuristic candidates
+     - Best candidates reached; no minimum proof
+   * - ``kernel``
+     - SLAP followed by kernel branch-and-bound
+     - Restricted uncertainty kernel
+     - Kernel minimum representatives
+   * - ``milp``
+     - SLAP followed by kernel MILP using PuLP/CBC
+     - Restricted uncertainty kernel
+     - One kernel optimum
+   * - ``distance``
+     - Assignment branch-and-bound
+     - Full compatible assignment space
+     - Minimum or numeric CD shell
+   * - ``propagate``
+     - Python domain propagation and assignment bounds
+     - Full compatible assignment space
+     - Minimum or numeric CD shell
+   * - ``native``
+     - Optional C++ integer-shell traversal
+     - Full compatible assignment space
+     - Minimum or numeric CD shell
+   * - ``edits``
+     - Binary bond-edit-support enumeration
+     - Full compatible assignment space
+     - Numeric CD shell with ``binary=True``
+   * - ``exhaustive``
+     - Independent small-graph exhaustive DFS
+     - Full compatible assignment space
+     - One global optimum
+
+Interpreting results
+~~~~~~~~~~~~~~~~~~~~
+
+``mappings[i][j]`` gives the product atom index assigned to reactant atom
+``j`` in result ``i``. ``distances`` contains the corresponding scored costs.
+For SMILES input, mappings and ``mapped_reactions`` retain symmetry class
+representatives. Graph input returns the solver's mappings and leaves
+``mapped_reactions`` empty. Graphs must be symmetric and loop-free, with
+equal atom-type inventories; input graphs are copied before matching.
+
+``method`` records the requested method and ``search_scope`` distinguishes
+``heuristic``, ``reduced_kernel``, and ``full_space``. ``minimum_cost`` and
+``optimality_proven`` refer to that scope and the declared objective.
+An exact kernel minimum is conditional on its fixed assignments and candidate
+domains. SLAP reports ``minimum_cost=None`` and ``optimality_proven=False``.
+Numeric shell queries do not run a minimum proof and also leave
+``minimum_cost`` unset.
+
+``complete`` reports whether enumeration and chemical classification finished.
+``slap`` returns ``complete=False`` with ``incomplete_reason='heuristic'``.
+``milp`` and ``exhaustive`` return one optimum and report ``complete=False``
+with ``incomplete_reason='optimum_only'`` when it is proven. A deadline or
+output limit can interrupt enumeration after a minimum has been proven;
+inspect proof status and completion separately.
+
+``search_result`` preserves the original solver records and statistics.
+For SMILES input, ``reaction_result`` supplies hydrogen, balance, objective,
+agent, and classification metadata. For compressed H, ``minimum_cost`` is
+the heavy-bond minimum; returned distances include conditional H lifts.
+Inspect ``reaction_result.minimum_cost_scope`` for that distinction.
+``as_dict()`` exports result metadata without solver internals.
+
+Queries and resource limits
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``distance``, ``propagate`` and ``native`` accept ``CD='minimal'`` or a finite,
+non-negative numeric CD shell. ``edits`` requires numeric CD and binary bonds:
+
+.. code-block:: python
+   :caption: Enumerate a selected binary distance shell
+
+   from synkit.Chem.Mapper import Mapper
+
+   shell = Mapper(method="edits", binary=True).map("CCC>>CCC", CD=2)
+   print(shell.mapped_reactions, shell.complete)
+
+``slap``, ``kernel``, ``milp`` and ``exhaustive`` accept only ``CD='minimal'``.
+Unsupported method options raise an error.
+
+.. list-table:: Default limits in the uniform adapter
+   :header-rows: 1
+   :widths: 32 18 20 30
+
+   * - Methods
+     - Deadline
+     - Mapping limit
+     - Admission cap
+   * - ``distance``, ``propagate``, ``native``
+     - 10 seconds
+     - 100,000
+     - 1,000,000 compatible bijections
+   * - ``edits``
+     - 10 seconds
+     - 100,000
+     - 50,000 support pairs
+   * - ``slap``, ``kernel``, ``milp``, ``exhaustive``
+     - Unsupported
+     - Unsupported
+     - Unsupported
+
+Use ``time_limit_seconds``, ``max_mappings``, ``max_bijections`` or
+``max_edit_support_pairs`` where supported; ``None`` disables a supported
+limit. The admission cap is checked before search. Reaction deadlines are
+shared by search, hydrogen lifting and classification. A limit cannot be
+passed to a method that does not support it.
+
+Native search requires a library built with ``build_native`` and a C++17 compiler for
+the build step:
+
+.. code-block:: python
+   :caption: Build and select the optional native method
+
+   from synkit.Chem.Mapper import Mapper
+   from synkit.Chem.Mapper.exact.native.build import build_native
+
+   library = build_native("/tmp/synkit-native")
+   result = Mapper(method="native", library_path=library).map("CO>>CO")
+   print(result.mapped_reactions, result.complete)
+
+For kernel MILP solving, install the optional dependency:
+
+.. code-block:: console
+
+   python -m pip install "synkit[milp]"
+
+``search_config`` accepts ``PropagationConfig`` for ``propagate`` only.
+Specialized certificate, symmetry, and streaming controls remain available
+through the existing solver APIs described below. The source guide at
+``synkit/Chem/Mapper/README.rst`` documents implementation responsibilities.
+
+Established mapper APIs
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The established reaction-SMILES frontends also remain available.
+``map_reaction(...)`` defaults to full-space exact Python propagation search;
+``backend="cpp"`` selects the optional C++ full-space solver.
+``AAMapper().map_smiles(...)`` defaults to approximate WL refinement and
+sequential linear-assignment matching (SLAP). Select the entry point according
+to the workflow you need.
+
+LAP means linear assignment problem, a matching subproblem used as a building
+block. SLAP uses successive LAP decisions to construct heuristic mappings.
+PABS means Propagation and Assignment-Bounded Search, this package's descriptive
+name for the exact-search interface used by ``map_reaction``. A kernel is a
+reduced uncertainty problem extracted from supplied SLAP results, with fixed
+assignments and candidate domains; an exact solver can refine that problem.
+
+On ``AAMapper``, ``enumerate_exact=True`` selects SLAP followed by exact kernel
+refinement; ``certify="exact"`` requests optional kernel MILP certification.
+``enumerate_smiles`` or a supplied ``CD`` selects full-distance exact search,
+where SLAP may supply a seed for a minimum query. An exact kernel optimum is
+scoped to the supplied restrictions. A complete full-space search establishes
+the global result under the declared distance objective.
 
 .. code-block:: python
    :caption: Map an unmapped reaction SMILES
@@ -425,7 +607,8 @@ electron-balanced mapped reactions. The mapper replaces the former
 ``mapper.results`` is a list of mapping records. Each record includes the
 mapped reaction in ``smiles``, the mapped ITS form in ``its_smiles``, and the
 chemical-distance score ``cd``. Request ``enumerate_exact=True`` when a
-reaction centre is symmetric and all distinct optimal mappings are needed;
+reaction centre is symmetric and distinct optima within the supplied kernel
+are needed;
 ``certify=True`` attaches corresponding certificate metadata.
 
 For a complete search over every atom-compatible assignment, use
@@ -540,21 +723,23 @@ symmetry-quotient requests stay on assignment branch-and-bound. The returned
 ``backend`` and ``backend_statistics`` fields record the decision and never
 change the requested output scope.
 
-Synister-CP propagation search
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Python exact propagation search
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``enumerate_synister_cp_mappings`` is an opt-in Python engine with its own
-search traversal. It propagates cost-filtered assignment domains, removes
-edges unsupported by any perfect matching, and reuses repaired integer
+``enumerate_pabs_mappings(..., backend="python")`` selects the same Python
+engine used by ``map_reaction`` by default. It propagates cost-filtered
+assignment domains, removes edges unsupported by any perfect matching, and
+reuses repaired integer
 assignment certificates for adaptive bounds. The legacy
 ``enumerate_distance_mappings`` API remains available.
 
 .. code-block:: python
 
-   from synkit.Chem.Mapper import enumerate_synister_cp_mappings
+   from synkit.Chem.Mapper import enumerate_pabs_mappings
 
-   result = enumerate_synister_cp_mappings(
-       [reactant_graph, product_graph], CD="minimal", binary=False,
+   result = enumerate_pabs_mappings(
+       [reactant_graph, product_graph], backend="python", CD="minimal",
+       binary=False,
        initial_mapping=feasible_seed, symmetry_pruning=True,
        expand_symmetry=True, time_limit_seconds=60,
    )
@@ -586,19 +771,32 @@ Completion and proved minimum are separate fields;
 an interrupted enumeration can retain a proved minimum and partial output.
 
 Mapper source layout and optional C++ search
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Mapper's Python source is organized into ``chem/`` (SMILES and chemical
-checks), ``graph/`` (graph representation and symmetry), ``slap/``
-(approximate assignment), ``exact/`` (exact search and certificates), and
-``io/`` (mapping serialization). The package-level API also exposes shell
-analysis, ITS classification, and prediction/template adapters.
+Mapper's Python source separates mapping methods from their consumers.
+``chem/``, ``graph/``, ``slap/``, and ``io/`` provide chemical conversion,
+graph representation, approximate assignment, and mapping serialization.
+``reporting/`` contains shell analysis, ITS spectra, and structural alternatives;
+``validation/`` contains AAM checks and annotation evaluation;
+``adapters/`` handles prediction seeds and executable templates.
+
+Inside ``exact/``, ``distance_search/`` contains full-space distance enumeration,
+``kernel_solvers/`` contains exact refinement of a supplied WL/SLAP uncertainty
+kernel, ``pabs/`` contains Python propagation search, and ``native/`` contains
+the optional C++ implementation and its bindings. ``assignment/`` provides
+shared LAP domains and proofs; ``seeds/`` provides feasible-incumbent heuristics.
+Kernel optimality applies to the supplied restrictions; a complete full-space
+search establishes the global result under its declared distance objective.
+The source guide at ``synkit/Chem/Mapper/README.rst`` compares the entry points.
+
+Package-level imports and historical flat module imports continue to work.
+New implementation code uses the grouped canonical paths.
 
 The existing C++17 source is
-``synkit/Chem/Mapper/exact/native_distance.cpp``. It implements native
+``synkit/Chem/Mapper/exact/native/native_distance.cpp``. It implements native
 atom-assignment search, distance-bound pruning, symmetry handling, and
 resumable subtree enumeration. Python loads the compiled shared library
-through ``ctypes`` in ``exact/native_candidates.py``; ``native_analysis.py``
+through ``ctypes`` in ``exact/native/candidates.py``; ``reporting/native_analysis.py``
 coordinates native shell analysis. Native execution is explicit and requires
 a library path. ``enumerate_distance_mappings`` runs the Python engine.
 
@@ -606,7 +804,7 @@ Build the optional engine from a checkout or installed package:
 
 .. code-block:: console
 
-   python -m synkit.Chem.Mapper.exact.native_build --output-dir /tmp/synkit-native
+   python -m synkit.Chem.Mapper.exact.native.build --output-dir /tmp/synkit-native
 
 The command prints the library path and records source, compiler, flags,
 and binary hashes beside it. ``scripts/build_synister_native.py`` remains
@@ -691,10 +889,10 @@ for unbalanced atom maps.
    validator = AAMValidator(strip_unbalanced_maps=True)
    equivalent = validator.smiles_check(candidate, reference, check_method="ITS")
 
-Reference-blinded Synister campaign
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Reference-blinded mapping campaign
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The resumable Synister runner independently permutes reactant and product atom
+The resumable mapping runner independently permutes reactant and product atom
 orders, uses a reference-free SLAP candidate only as an incumbent, and queries
 either a supplied reference-distance shell, a globally minimal shell, or both.
 The FlowER cohort is not distributed with SynKit; an explicit CSV with
@@ -740,18 +938,19 @@ See Also
 - :doc:`Synthesis <synthesis>` — applying templates after mapping or rule extraction
 
 PABS exact mapping backends
---------------------------
+---------------------------
 
-PABS (Propagation and Assignment-Bounded Search) is a descriptive working name
-for the exact graph-assignment search interface. The Python implementation
-uses reversible domains and assignment bounds; the C++ implementation uses the
-existing integer shell kernel with a distinct traversal. Both search mappings,
-without invoking MILP. The established Synister APIs remain available.
+PABS (Propagation and Assignment-Bounded Search) is this package's descriptive
+name for the exact graph-assignment search interface. The default Python solver
+uses reversible one-to-one assignment domains and LAP lower bounds; the C++
+implementation uses integer-shell search with a distinct traversal. Both
+search compatible assignments without extracting the reduced SLAP uncertainty
+kernel or invoking its MILP solver. Historical API names remain supported.
 
 .. code-block:: python
 
    from synkit.Chem.Mapper import enumerate_pabs_mappings
-   from synkit.Chem.Mapper.exact.native_build import build_native
+   from synkit.Chem.Mapper.exact.native.build import build_native
 
    result = enumerate_pabs_mappings(lgp, backend="python", CD="minimal")
    library = build_native("/tmp/synkit-native")  # requires a C++17 compiler
@@ -764,9 +963,9 @@ without invoking MILP. The established Synister APIs remain available.
        compute_minimum_cost=False, time_limit_seconds=10,
    )
 
-The C++ source is ``synkit/Chem/Mapper/exact/native_distance.cpp``; Python
-bindings and shell orchestration remain in ``exact/native_candidates.py`` and
-``exact/native_search.py``. Builds are explicit, hashed and accompanied by a
+The C++ source is ``synkit/Chem/Mapper/exact/native/native_distance.cpp``; Python
+bindings and shell runners live in ``exact/native/candidates.py`` and
+``exact/native/search.py``. Builds are explicit, hashed and accompanied by a
 compiler/source manifest. C++ never silently falls back to Python.
 
 The shared options include binary or weighted distance, minimum or numeric CD,
@@ -795,7 +994,7 @@ structure; the C++ choice needs an explicitly built library.
 
    from synkit.Chem.Mapper import map_reaction
    from synkit.Chem.Mapper import PropagationConfig
-   from synkit.Chem.Mapper.exact.native_build import build_native
+   from synkit.Chem.Mapper.exact.native.build import build_native
 
    result = map_reaction("CCC>>CCC", hydrogen="heavy")
    print(result.mapped_reactions)

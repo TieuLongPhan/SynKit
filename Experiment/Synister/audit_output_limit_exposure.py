@@ -53,7 +53,7 @@ def diagnose(directories):
             'current_defect_reproduced': any(row['false_completion'] for row in examples),
             'studies': studies,
             'source_sha256': {path: sha256((ROOT/path).read_bytes()).hexdigest() for path in
-                              ('synkit/Chem/Mapper/exact/distance.py',
+                              ('synkit/Chem/Mapper/exact/distance_search/search.py',
                                'Experiment/Synister/audit_output_limit_exposure.py')}}
 
 

@@ -107,8 +107,8 @@ def certify_results_exact(results, binary):
     if not results:
         return
 
-    from .kernel import extract_kernel
-    from .milp import solve_kernel_milp, HAS_PULP
+    from .kernel_solvers.kernel import extract_kernel
+    from .kernel_solvers.milp import solve_kernel_milp, HAS_PULP
 
     if not HAS_PULP:
         for r in results:

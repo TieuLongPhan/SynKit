@@ -30,4 +30,12 @@ for _module_info in pkgutil.walk_packages(
     if _suffix.count(".") == 1:
         globals()[_suffix[1:]] = _module
 
+# Include flat compatibility aliases that no longer have their own source file.
+for _canonical_name, _module in list(sys.modules.items()):
+    if _canonical_name.startswith(f"{_mapper.__name__}."):
+        _suffix = _canonical_name.removeprefix(_mapper.__name__)
+        sys.modules[f"{__name__}{_suffix}"] = _module
+        if _suffix.count(".") == 1:
+            globals()[_suffix[1:]] = _module
+
 del _canonical_name, _mapper, _module, _module_info, _suffix
