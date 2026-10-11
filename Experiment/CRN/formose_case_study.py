@@ -6,7 +6,7 @@ glycolaldehyde) and four rules --- aldol addition, retro-aldol cleavage, and
 reversible keto--enol tautomerization --- then analyses the resulting network
 with the same stack applied to curated pathways.
 
-The headline check is that the single conservation law of the iteration-4
+The primary check is that the single conservation law of the iteration-4
 network assigns each species a coefficient equal to its carbon count. Carbon
 conservation is therefore *recovered* from network structure: no atom count,
 molecular formula, or chemical annotation enters the structural computation.
@@ -39,6 +39,8 @@ from synkit.CRN import (  # noqa: E402
     conserved_moieties,
     crnt_summary,
     find_siphons,
+    find_t_semiflows,
+    find_traps,
     integer_conservation_laws,
     siphon_persistence_details,
 )
@@ -161,6 +163,8 @@ def formose_report(iterations: Sequence[int], *, analyse_at: int) -> Dict[str, A
         }
 
     siphon_seconds, siphons, _ = timed(lambda: find_siphons(crn))
+    trap_seconds, traps, _ = timed(lambda: find_traps(crn))
+    t_semiflow_seconds, t_semiflows, _ = timed(lambda: find_t_semiflows(crn))
     persistence_seconds, persistence, _ = timed(
         lambda: siphon_persistence_details(crn).persistence_ok
     )
@@ -175,6 +179,8 @@ def formose_report(iterations: Sequence[int], *, analyse_at: int) -> Dict[str, A
         "deficiency_identity_holds": report.deficiency
         == report.n_complexes - report.n_linkage_classes - report.rank,
         "single_conservation_law": len(laws) == 1,
+        "single_minimal_p_semiflow": len(moieties) == 1,
+        "two_minimal_siphons": siphons is not None and len(siphons) == 2,
         "conservation_law_is_carbon_count": bool(
             carbon_law and carbon_law["coefficient_equals_carbon_count"]
         ),
@@ -207,8 +213,19 @@ def formose_report(iterations: Sequence[int], *, analyse_at: int) -> Dict[str, A
             "reversible": report.is_reversible,
             "n_conservation_laws": len(laws),
             "n_conserved_moieties": len(moieties),
+            "n_minimal_p_semiflows": len(moieties),
+            "n_minimal_t_semiflows": (
+                None if t_semiflows is None else int(t_semiflows.shape[1])
+            ),
+            "right_nullity": report.n_reactions - report.rank,
             "n_minimal_siphons": None if siphons is None else len(siphons),
+            "minimal_siphons": (
+                None if siphons is None else [sorted(group) for group in siphons]
+            ),
             "siphon_seconds": siphon_seconds,
+            "n_minimal_traps": None if traps is None else len(traps),
+            "trap_seconds": trap_seconds,
+            "t_semiflow_seconds": t_semiflow_seconds,
             "persistent": persistence,
             "persistence_seconds": persistence_seconds,
         },

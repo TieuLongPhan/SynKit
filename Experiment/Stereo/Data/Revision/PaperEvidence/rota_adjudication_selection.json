@@ -1,0 +1,2008 @@
+{
+  "schema": "synkit.prospective-rota-candidate-adjudication/1",
+  "frozen_utc": "2026-10-03T08:20:16.527007+00:00",
+  "historical_candidate_report": "Experiment/Stereo/Data/Perception/full_detection_report.json",
+  "candidate_report_sha256": "40762d6efa7d99d0727b999c027e28e6c1328e9553ab37489676011003a003ae",
+  "source_candidate_count": 1562,
+  "selected_count": 60,
+  "selection": "Round-robin across source annotation category, atom-count bins <=25/26..50/>50, and independent radius-two branch-signature tie proxy. Within each stratum sort the declared salted SHA256 of source ID and locus. No confirmed/rejected status used.",
+  "indexing": {
+    "record_ids": "one based",
+    "source_row_zero_based": "record ordinal minus one",
+    "locus_atoms": "zero based in source parser ordering"
+  },
+  "symmetry_proxy_boundary": "Radius-two ties are sampling strata only, not proofs of constitutional symmetry or stereogenicity.",
+  "truth_contract": "Independently assess typed constitutional carrier support and configuration distinction; archive exact ligand-exchange witnesses or exhaustive bounded map evidence. Experimental persistence requires separate published barrier/time evidence; otherwise unresolved for stability.",
+  "review_blinding": "Algorithm statuses omitted from the review sheet. Automated prospective selection from historical development candidates, not an untouched holdout or completed independent human chemical review.",
+  "pool_strata": {
+    "Allene-like structure|medium|radius_two_tie": 4,
+    "Allene-like structure|small|radius_two_distinct": 1,
+    "Allene-like structure|small|radius_two_tie": 5,
+    "Biaryl structure|large|radius_two_distinct": 133,
+    "Biaryl structure|large|radius_two_tie": 294,
+    "Biaryl structure|medium|radius_two_distinct": 240,
+    "Biaryl structure|medium|radius_two_tie": 295,
+    "Biaryl structure|small|radius_two_distinct": 55,
+    "Chiral atom pair|medium|radius_two_distinct": 9,
+    "Chiral atom pair|small|radius_two_distinct": 4,
+    "Heterobiaryl (C-B)|large|radius_two_distinct": 6,
+    "Heterobiaryl (C-B)|large|radius_two_tie": 2,
+    "Heterobiaryl (C-B)|medium|radius_two_distinct": 281,
+    "Heterobiaryl (C-B)|medium|radius_two_tie": 85,
+    "Heterobiaryl (C-C)|medium|radius_two_distinct": 6,
+    "Heterobiaryl (C-C)|medium|radius_two_tie": 4,
+    "Heterobiaryl (C-N)|medium|radius_two_distinct": 13,
+    "Heterobiaryl (C-N)|medium|radius_two_tie": 15,
+    "Heterobiaryl (C-N)|small|radius_two_distinct": 1,
+    "Heterobiaryl (C-N)|small|radius_two_tie": 3,
+    "Nonbiaryl|medium|radius_two_distinct": 73,
+    "Nonbiaryl|medium|radius_two_tie": 10,
+    "Nonbiaryl|small|radius_two_distinct": 11,
+    "Nonbiaryl|small|radius_two_tie": 2,
+    "Spiral atom and chain|medium|radius_two_tie": 3,
+    "Spiral atom and chain|small|radius_two_tie": 7
+  },
+  "sample_strata": {
+    "Allene-like structure|medium|radius_two_tie": 3,
+    "Allene-like structure|small|radius_two_distinct": 1,
+    "Allene-like structure|small|radius_two_tie": 3,
+    "Biaryl structure|large|radius_two_distinct": 3,
+    "Biaryl structure|large|radius_two_tie": 3,
+    "Biaryl structure|medium|radius_two_distinct": 3,
+    "Biaryl structure|medium|radius_two_tie": 3,
+    "Biaryl structure|small|radius_two_distinct": 3,
+    "Chiral atom pair|medium|radius_two_distinct": 3,
+    "Chiral atom pair|small|radius_two_distinct": 3,
+    "Heterobiaryl (C-B)|large|radius_two_distinct": 3,
+    "Heterobiaryl (C-B)|large|radius_two_tie": 2,
+    "Heterobiaryl (C-B)|medium|radius_two_distinct": 2,
+    "Heterobiaryl (C-B)|medium|radius_two_tie": 2,
+    "Heterobiaryl (C-C)|medium|radius_two_distinct": 2,
+    "Heterobiaryl (C-C)|medium|radius_two_tie": 2,
+    "Heterobiaryl (C-N)|medium|radius_two_distinct": 2,
+    "Heterobiaryl (C-N)|medium|radius_two_tie": 2,
+    "Heterobiaryl (C-N)|small|radius_two_distinct": 1,
+    "Heterobiaryl (C-N)|small|radius_two_tie": 2,
+    "Nonbiaryl|medium|radius_two_distinct": 2,
+    "Nonbiaryl|medium|radius_two_tie": 2,
+    "Nonbiaryl|small|radius_two_distinct": 2,
+    "Nonbiaryl|small|radius_two_tie": 2,
+    "Spiral atom and chain|medium|radius_two_tie": 2,
+    "Spiral atom and chain|small|radius_two_tie": 2
+  },
+  "records": [
+    {
+      "source_id": "RotA-0130",
+      "source_row_zero_based": 129,
+      "locus": "1-2",
+      "atom_count": 37,
+      "source_category": "Allene-like structure",
+      "smiles": "C(=C([C]1[CH][CH][CH][CH]1)c1ccccc1)=C([C]1[CH][CH][CH][CH]1)c1ccccc1.[CH]1[CH][CH][CH][CH]1.[CH]1[CH][CH][CH][CH]1.[Fe].[Fe]",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              1,
+              2
+            ],
+            "terminal_frames": [
+              [
+                0,
+                7
+              ],
+              [
+                3,
+                6
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Allene-like structure|medium|radius_two_tie",
+      "selection_order": "442aa845c64441f3efd6a82cb809cc455c758a88f06ce2dd8104be70a38e330c",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0022",
+      "source_row_zero_based": 21,
+      "locus": "8-10",
+      "atom_count": 16,
+      "source_category": "Allene-like structure",
+      "smiles": "CCOC(=O)CC=C=C(C)C1=CCCCC1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              10,
+              8
+            ],
+            "terminal_frames": [
+              [
+                11,
+                15
+              ],
+              [
+                7,
+                9
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Allene-like structure|small|radius_two_distinct",
+      "selection_order": "d5ef7ccf561e19038984ef7364751011b5c34c15af33ee09ab7637da89277130",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0018",
+      "source_row_zero_based": 17,
+      "locus": "6-7",
+      "atom_count": 17,
+      "source_category": "Allene-like structure",
+      "smiles": "CC(=O)CC=C=C(c1ccccc1)C(C)(C)C",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              6,
+              7
+            ],
+            "terminal_frames": [
+              [
+                13,
+                5
+              ],
+              [
+                12,
+                8
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Allene-like structure|small|radius_two_tie",
+      "selection_order": "11d73a456f608d20b6a878bc5d25a044869319124d6abd1b0dbb1cfb86141edc",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0263",
+      "source_row_zero_based": 262,
+      "locus": "4-19",
+      "atom_count": 52,
+      "source_category": "Biaryl structure",
+      "smiles": "C1CCC2=C3C4=C5CCCCC5=CC(=C4OP(=O)(OC3=C(C=C2C1)C6=CC=CC7=CC=CC=C76)NS(=O)(=O)C(F)(F)F)C8=CC=CC9=CC=CC=C98",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              19,
+              4
+            ],
+            "terminal_frames": [
+              [
+                18,
+                20
+              ],
+              [
+                3,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|large|radius_two_distinct",
+      "selection_order": "037c61f2b8af8f9bc8455ea284dd50cba8d5d3068149b534fe3ef92e15251a14",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0250",
+      "source_row_zero_based": 249,
+      "locus": "13-43",
+      "atom_count": 61,
+      "source_category": "Biaryl structure",
+      "smiles": "C1CCC2=C3C4=C5CCCCC5=CC(=C4OP(=O)(OC3=C(C=C2C1)C6=CC(=CC(=C6)C7=CC=CC=C7)C8=CC=CC=C8)O)C9=CC(=CC(=C9)C1=CC=CC=C1)C1=CC=CC=C1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              13,
+              43
+            ],
+            "terminal_frames": [
+              [
+                12,
+                14
+              ],
+              [
+                44,
+                48
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|large|radius_two_tie",
+      "selection_order": "00aa2776bde38e1e9c742a8c567e96e76f365fbb0ada768171e62287c16dda59",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0209",
+      "source_row_zero_based": 208,
+      "locus": "7-26",
+      "atom_count": 45,
+      "source_category": "Biaryl structure",
+      "smiles": "C1=CC=C(C=C1)C2=C3C4=C(C=C5C=CC6=CC=CC=C6C5=C4OP(=O)(OC3=C7C(=C2)C=CC8=CC=CC=C87)O)C9=CC=CC=C9",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              26,
+              7
+            ],
+            "terminal_frames": [
+              [
+                25,
+                27
+              ],
+              [
+                6,
+                8
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|medium|radius_two_distinct",
+      "selection_order": "00be3c5a7e67b9b35855cd8334398315a15b35ff321df1f0122b3fad00027f5b",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0445",
+      "source_row_zero_based": 444,
+      "locus": "23-24",
+      "atom_count": 48,
+      "source_category": "Biaryl structure",
+      "smiles": "CC1(C)Oc2ccc(P(c3ccccc3)c3ccccc3)c(-c3c(P(c4ccccc4)c4ccccc4)ccc4c3OC(C)(C)O4)c2O1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              23,
+              24
+            ],
+            "terminal_frames": [
+              [
+                22,
+                37
+              ],
+              [
+                25,
+                31
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|medium|radius_two_tie",
+      "selection_order": "008cf25c0dcc1cd4dd253f56a5becc9e35106f4c7e3a31d98ef69170d3ec267a",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0189",
+      "source_row_zero_based": 188,
+      "locus": "8-9",
+      "atom_count": 24,
+      "source_category": "Biaryl structure",
+      "smiles": "C1=CC=C2C(=C1)C=CC3=C2C4=C(C=CC5=CC=CC=C54)OP(O3)Cl",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              8,
+              9
+            ],
+            "terminal_frames": [
+              [
+                22,
+                7
+              ],
+              [
+                10,
+                3
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|small|radius_two_distinct",
+      "selection_order": "0aecb27e68a18deba25ef04b0790f9fd62006720da42682092cdae6e551b2726",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0206",
+      "source_row_zero_based": 205,
+      "locus": "35-36",
+      "atom_count": 49,
+      "source_category": "Chiral atom pair",
+      "smiles": "C[C@H](C[C@@H](C)OP1N([C@H]2CCCC[C@@H]2N1C3=CC=CC=C3)C4=CC=CC=C4)OP5N([C@H]6CCCC[C@@H]6N5C7=CC=CC=C7)C8=CC=CC=C8",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              35,
+              36
+            ],
+            "terminal_frames": [
+              [
+                30,
+                34
+              ],
+              [
+                28,
+                37
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Chiral atom pair|medium|radius_two_distinct",
+      "selection_order": "08e27612d9fc894e73b0aff56c19ac20577f21420813ba5242944b208d85502a",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0302",
+      "source_row_zero_based": 301,
+      "locus": "7-15",
+      "atom_count": 17,
+      "source_category": "Chiral atom pair",
+      "smiles": "C1CCN2C[C@@H]3C[C@@H](CN4CCCC[C@@H]34)[C@@H]2C1",
+      "input_supports": [],
+      "stratum": "Chiral atom pair|small|radius_two_distinct",
+      "selection_order": "736b40aabbe06797f5265973dccbda2e4a37c4e5b2ca31c0b2472a85db2e5d27",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0498",
+      "source_row_zero_based": 497,
+      "locus": "8-9",
+      "atom_count": 52,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "Cc1nc(-c2cccc(-c3nc(C)c4c(c3B3C=Cc5ccccc5N3C(C)C)COC4)c2)c(B2C=Cc3ccccc3N2C(C)C)c2c1COC2",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              8,
+              9
+            ],
+            "terminal_frames": [
+              [
+                32,
+                7
+              ],
+              [
+                10,
+                15
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|large|radius_two_distinct",
+      "selection_order": "575c1217fd3b94935099dda430117656ed6ffdf0963f8bb4265b4197142f0fc0",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0498",
+      "source_row_zero_based": 497,
+      "locus": "25-26",
+      "atom_count": 52,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "Cc1nc(-c2cccc(-c3nc(C)c4c(c3B3C=Cc5ccccc5N3C(C)C)COC4)c2)c(B2C=Cc3ccccc3N2C(C)C)c2c1COC2",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              25,
+              26
+            ],
+            "terminal_frames": [
+              [
+                16,
+                24
+              ],
+              [
+                27,
+                28
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|large|radius_two_tie",
+      "selection_order": "0c8afc8f588a7c5e6f28179579f648c1f4c80a0865683ea4d50239a6de3bc855",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0533",
+      "source_row_zero_based": 532,
+      "locus": "4-38",
+      "atom_count": 39,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "CC1=CC=C2C(=C1)NB(C1=C(C)C=C(O)C(N3NC(=O)N(C4=CC=CC=C4)C3=O)=C1C)C1=C(C)C=C(C)C=C21",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              38,
+              4
+            ],
+            "terminal_frames": [
+              [
+                31,
+                37
+              ],
+              [
+                3,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|medium|radius_two_distinct",
+      "selection_order": "036ae656603ae37586439f9069eb9293d8eaceba07dd7202eca33e20f3aed3eb",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0533",
+      "source_row_zero_based": 532,
+      "locus": "20-21",
+      "atom_count": 39,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "CC1=CC=C2C(=C1)NB(C1=C(C)C=C(O)C(N3NC(=O)N(C4=CC=CC=C4)C3=O)=C1C)C1=C(C)C=C(C)C=C21",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              20,
+              21
+            ],
+            "terminal_frames": [
+              [
+                18,
+                27
+              ],
+              [
+                22,
+                26
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|medium|radius_two_tie",
+      "selection_order": "021c70b019125f9f38e95b5546beb9de227d0bd17342d398b0004e91798ae157",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0154",
+      "source_row_zero_based": 153,
+      "locus": "31-32",
+      "atom_count": 36,
+      "source_category": "Heterobiaryl (C-C)",
+      "smiles": "COC(=O)c1c(C)nc(C)c(C(=O)O[C@H]2CCN(Cc3ccccc3)C2)c1-c1cccc([N+](=O)[O-])c1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              31,
+              32
+            ],
+            "terminal_frames": [
+              [
+                30,
+                35
+              ],
+              [
+                33,
+                34
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-C)|medium|radius_two_distinct",
+      "selection_order": "109364726c0f22657a87e1da45d5c9d35ccf396178a45c28937e4d7f102eb5c0",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0131",
+      "source_row_zero_based": 130,
+      "locus": "17-18",
+      "atom_count": 34,
+      "source_category": "Heterobiaryl (C-C)",
+      "smiles": "CC(C)N1CCC[N+](Cc2ccccc2)=C1c1c(-c2ccccc2)nn(-c2ccccc2)c1[O-]",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              17,
+              18
+            ],
+            "terminal_frames": [
+              [
+                16,
+                24
+              ],
+              [
+                19,
+                23
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-C)|medium|radius_two_tie",
+      "selection_order": "221ee1f1c1be162100322a40fabf31817171f5051d8de96f98e217e36588f7fc",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0083",
+      "source_row_zero_based": 82,
+      "locus": "2-4",
+      "atom_count": 27,
+      "source_category": "Heterobiaryl (C-N)",
+      "smiles": "COC(=O)c1ccccc1-n1c2nc(=O)n(C)c(=O)c-2nc2ccccc21",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              2,
+              4
+            ],
+            "terminal_frames": [
+              [
+                1,
+                3
+              ],
+              [
+                5,
+                9
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-N)|medium|radius_two_distinct",
+      "selection_order": "02ea495221bcf94546774222dc458dce783d341fd41ff5e2cce61d7e714e4957",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0462",
+      "source_row_zero_based": 461,
+      "locus": "2-4",
+      "atom_count": 34,
+      "source_category": "Heterobiaryl (C-N)",
+      "smiles": "COC(=O)c1ccc(-c2ccc(-n3c(C)cc(Sc4ccccc4)c3C)c(C(C)(C)C)c2)cc1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              2,
+              4
+            ],
+            "terminal_frames": [
+              [
+                1,
+                3
+              ],
+              [
+                33,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-N)|medium|radius_two_tie",
+      "selection_order": "2df3d7b1f10036d3d3de7d3a4c820c4aa86260a58aac349e4ed114502b1fe2e6",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0082",
+      "source_row_zero_based": 81,
+      "locus": "9-17",
+      "atom_count": 25,
+      "source_category": "Heterobiaryl (C-N)",
+      "smiles": "CCc1ccccc1-n1c2nc(=O)n(C)c(=O)c-2nc2ccccc21",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              17,
+              9
+            ],
+            "terminal_frames": [
+              [
+                15,
+                18
+              ],
+              [
+                10,
+                8
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-N)|small|radius_two_distinct",
+      "selection_order": "169a6b48b0d25bc2297d2a10c37f62b6012fceaa69a5bbd7186f20095cce9cfa",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0044",
+      "source_row_zero_based": 43,
+      "locus": "8-9",
+      "atom_count": 16,
+      "source_category": "Heterobiaryl (C-N)",
+      "smiles": "Cc1ccccc1-n1c(C(C)C)csc1=O",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              8,
+              9
+            ],
+            "terminal_frames": [
+              [
+                12,
+                7
+              ],
+              [
+                10,
+                11
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-N)|small|radius_two_tie",
+      "selection_order": "49e110f48abe9f587271dfe5424eb5744bdbc4e73e0602320384e142352bb7e9",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0583",
+      "source_row_zero_based": 582,
+      "locus": "2-4",
+      "atom_count": 27,
+      "source_category": "Nonbiaryl",
+      "smiles": "COC(=O)C1=C(/C(=C\\C2=CC=CC=C2)CCC2=CC=CC=C2)C(C)=CC=C1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              2,
+              4
+            ],
+            "terminal_frames": [
+              [
+                1,
+                3
+              ],
+              [
+                26,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|medium|radius_two_distinct",
+      "selection_order": "0078cf44faf0e761491d545af52c19548d8382ce196629fca700fb99451af663",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0607",
+      "source_row_zero_based": 606,
+      "locus": "20-22",
+      "atom_count": 27,
+      "source_category": "Nonbiaryl",
+      "smiles": "CCCCC/C(=C/C1=CC=CC=C1)C1=C(C)C=CC=C1C(=O)N1CCCC1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              20,
+              22
+            ],
+            "terminal_frames": [
+              [
+                19,
+                21
+              ],
+              [
+                23,
+                26
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|medium|radius_two_tie",
+      "selection_order": "1a3899f8a07bc2e48d3791afebfd577b9557443e938d662174072e053184e42e",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0562",
+      "source_row_zero_based": 561,
+      "locus": "14-15",
+      "atom_count": 24,
+      "source_category": "Nonbiaryl",
+      "smiles": "CCCCC/C(=C/C1=CC=CC=C1)C1=C(C(=O)OC)C=CC=C1C",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              14,
+              15
+            ],
+            "terminal_frames": [
+              [
+                13,
+                19
+              ],
+              [
+                16,
+                17
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|small|radius_two_distinct",
+      "selection_order": "039508611392582b1f9866658b586f195d85bac834d66d7fbf1435085275007e",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0582",
+      "source_row_zero_based": 581,
+      "locus": "6-14",
+      "atom_count": 22,
+      "source_category": "Nonbiaryl",
+      "smiles": "COC(=O)C1=C(/C(=C\\C2=CC=CC=C2)C2CC2)C(C)=CC=C1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              14,
+              6
+            ],
+            "terminal_frames": [
+              [
+                15,
+                16
+              ],
+              [
+                5,
+                7
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|small|radius_two_tie",
+      "selection_order": "7fa4afd4363ac950e4cc9a9646fd6af0c757a4052c9c8483edf7037986f43ef2",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0648",
+      "source_row_zero_based": 647,
+      "locus": "9",
+      "atom_count": 32,
+      "source_category": "Spiral atom and chain",
+      "smiles": "NC(=O)C1=C(OC2(O)CC3(CC(O)(NC4=NC=CC(N5CC(F)(F)C5)=N4)C3)C2)N=CC=C1",
+      "input_supports": [],
+      "stratum": "Spiral atom and chain|medium|radius_two_tie",
+      "selection_order": "10d92030093b8bcd2c4c2533167d3e18ff5b97dd18252b864d62ea981f59afb6",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0643",
+      "source_row_zero_based": 642,
+      "locus": "9",
+      "atom_count": 21,
+      "source_category": "Spiral atom and chain",
+      "smiles": "O=C(O)C1(C(F)(F)F)CC2(C1)CC(C(=O)O)(C(F)(F)F)C2",
+      "input_supports": [],
+      "stratum": "Spiral atom and chain|small|radius_two_tie",
+      "selection_order": "301d4cf09b3f832446c2129909f342ff746b56d1bb1d0e38abd208b05cfc9ed0",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0130",
+      "source_row_zero_based": 129,
+      "locus": "1-7",
+      "atom_count": 37,
+      "source_category": "Allene-like structure",
+      "smiles": "C(=C([C]1[CH][CH][CH][CH]1)c1ccccc1)=C([C]1[CH][CH][CH][CH]1)c1ccccc1.[CH]1[CH][CH][CH][CH]1.[CH]1[CH][CH][CH][CH]1.[Fe].[Fe]",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              1,
+              7
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                12,
+                8
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Allene-like structure|medium|radius_two_tie",
+      "selection_order": "46c716ece5ff55ec504f65a921bc7d7f6cb8af5779c917c72ebbd843660ab3f2",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0027",
+      "source_row_zero_based": 26,
+      "locus": "8-10",
+      "atom_count": 16,
+      "source_category": "Allene-like structure",
+      "smiles": "CCOC(=O)CC=C=C(C)c1ccccc1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              10,
+              8
+            ],
+            "terminal_frames": [
+              [
+                11,
+                15
+              ],
+              [
+                7,
+                9
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Allene-like structure|small|radius_two_tie",
+      "selection_order": "47069211f6b6680338bb9df3293ebaf34299beaa19f65045123fb2de00623dbe",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0276",
+      "source_row_zero_based": 275,
+      "locus": "33-34",
+      "atom_count": 52,
+      "source_category": "Biaryl structure",
+      "smiles": "C1=CC=C2C=C(C=CC2=C1)C3=CC4=CC=CC=C4C5=C3OP(=O)(OC6=C5C7=CC=CC=C7C=C6C8=CC9=CC=CC=C9C=C8)NS(=O)(=O)C(F)(F)F",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              33,
+              34
+            ],
+            "terminal_frames": [
+              [
+                24,
+                32
+              ],
+              [
+                35,
+                43
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|large|radius_two_distinct",
+      "selection_order": "05faa8c5eb328532b9ab512555acf4452a3167969628c8ed0e370080ded5c2d4",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0288",
+      "source_row_zero_based": 287,
+      "locus": "6-12",
+      "atom_count": 62,
+      "source_category": "Biaryl structure",
+      "smiles": "CC(C)C1=CC(=C(C(=C1)C(C)C)C2=CC3=CC=CC=C3C4=C2OP(=O)(OC5=C4C6=CC=CC=C6C=C5C7=C(C=C(C=C7C(C)C)C(C)C)C(C)C)NS(=O)(=O)C(F)(F)F)C(C)C",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              12,
+              6
+            ],
+            "terminal_frames": [
+              [
+                13,
+                21
+              ],
+              [
+                5,
+                7
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|large|radius_two_tie",
+      "selection_order": "020818dff2112d4f898e1dd656fc7fec5ceec951ba9ccb5b8c256416b3e8e2e3",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0213",
+      "source_row_zero_based": 212,
+      "locus": "14-15",
+      "atom_count": 37,
+      "source_category": "Biaryl structure",
+      "smiles": "C1=CC=C(C=C1)C2=CC3=CC=CC=C3C4=C2OP(=O)(OC5=C4C6=CC=CC=C6C=C5C7=CC=CC=C7)O",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              14,
+              15
+            ],
+            "terminal_frames": [
+              [
+                13,
+                21
+              ],
+              [
+                16,
+                6
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|medium|radius_two_distinct",
+      "selection_order": "00f6e1535f8a619c69fb611e46b86f0090b5c6f6a958eb7b981fb1ddba995ed3",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0246",
+      "source_row_zero_based": 245,
+      "locus": "20-24",
+      "atom_count": 45,
+      "source_category": "Biaryl structure",
+      "smiles": "C1CCC2=C3C4=C5CCCCC5=CC(=C4OP(=O)(OC3=C(C=C2C1)C6=CC=C(C=C6)C(F)(F)F)O)C7=CC=C(C=C7)C(F)(F)F",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              20,
+              24
+            ],
+            "terminal_frames": [
+              [
+                19,
+                21
+              ],
+              [
+                25,
+                29
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|medium|radius_two_tie",
+      "selection_order": "0142b67415ec13beb35d0f9c4139cae9ad7b057bd90560aa43fecbe9916c2bc0",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0006",
+      "source_row_zero_based": 5,
+      "locus": "8-9",
+      "atom_count": 18,
+      "source_category": "Biaryl structure",
+      "smiles": "C1=Cc2cccc3c2-c2c(cccc2C1)C=CC3",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              8,
+              9
+            ],
+            "terminal_frames": [
+              [
+                13,
+                7
+              ],
+              [
+                10,
+                15
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|small|radius_two_distinct",
+      "selection_order": "0d57a226ffb68ab4827113a13f92ef818bb141dd541555f2506fc3c8322d6379",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0155",
+      "source_row_zero_based": 154,
+      "locus": "11-15",
+      "atom_count": 36,
+      "source_category": "Chiral atom pair",
+      "smiles": "c1ccc(P(c2ccccc2)[C@H]2CCC[C@H]2[C@@H]2CCC[C@@H]2P(c2ccccc2)c2ccccc2)cc1",
+      "input_supports": [],
+      "stratum": "Chiral atom pair|medium|radius_two_distinct",
+      "selection_order": "0aa6d58ba7b290675abd082fca2e68436e3aa4b38c07643b64e772cd1031b52a",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0256",
+      "source_row_zero_based": 255,
+      "locus": "7-8",
+      "atom_count": 12,
+      "source_category": "Chiral atom pair",
+      "smiles": "C1CC[C@H]2[C@@H](C1)C[C@H](N2)C(=O)O",
+      "input_supports": [],
+      "stratum": "Chiral atom pair|small|radius_two_distinct",
+      "selection_order": "7fe669d897a484fe9a3007b557f0e3cf3abdb20872ced487cfe13441e5a63200",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0498",
+      "source_row_zero_based": 497,
+      "locus": "3-4",
+      "atom_count": 52,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "Cc1nc(-c2cccc(-c3nc(C)c4c(c3B3C=Cc5ccccc5N3C(C)C)COC4)c2)c(B2C=Cc3ccccc3N2C(C)C)c2c1COC2",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              3,
+              4
+            ],
+            "terminal_frames": [
+              [
+                2,
+                33
+              ],
+              [
+                32,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|large|radius_two_distinct",
+      "selection_order": "63bdfb8907b0d57578ab8eb4998893978d3f1256bc48c8942890689eda6954a1",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0498",
+      "source_row_zero_based": 497,
+      "locus": "43-44",
+      "atom_count": 52,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "Cc1nc(-c2cccc(-c3nc(C)c4c(c3B3C=Cc5ccccc5N3C(C)C)COC4)c2)c(B2C=Cc3ccccc3N2C(C)C)c2c1COC2",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              43,
+              44
+            ],
+            "terminal_frames": [
+              [
+                34,
+                42
+              ],
+              [
+                45,
+                46
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|large|radius_two_tie",
+      "selection_order": "46fc1009ec4bd18604ac5eb583496257e3695234122f1ecfec8eac3ca3e9daf0",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0544",
+      "source_row_zero_based": 543,
+      "locus": "20-21",
+      "atom_count": 39,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "CC1=CC(N2C(=O)NN(C3=C(C)C(B4NC5=CC=CC=C5C5=CC(C)=CC(C)=C45)=C(C)C=C3O)C2=O)=CC=C1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              20,
+              21
+            ],
+            "terminal_frames": [
+              [
+                15,
+                19
+              ],
+              [
+                22,
+                28
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|medium|radius_two_distinct",
+      "selection_order": "052d25b2babdeac215a1ef0b90e023fe40f77606c21a74009ef57f15c6f7dd0e",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0560",
+      "source_row_zero_based": 559,
+      "locus": "28-29",
+      "atom_count": 40,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "CCC1=C(B2NC3=CC=CC=C3C3=CC(C)=CC(C)=C23)C(CC)=C(N2NC(=O)N(C3CCCCC3)C2=O)C(O)=C1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              28,
+              29
+            ],
+            "terminal_frames": [
+              [
+                26,
+                35
+              ],
+              [
+                30,
+                34
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|medium|radius_two_tie",
+      "selection_order": "041d66e0371161ed3ac78710fec99a2df6b14582fad16a00d7e426be7740d199",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0131",
+      "source_row_zero_based": 130,
+      "locus": "3-15",
+      "atom_count": 34,
+      "source_category": "Heterobiaryl (C-C)",
+      "smiles": "CC(C)N1CCC[N+](Cc2ccccc2)=C1c1c(-c2ccccc2)nn(-c2ccccc2)c1[O-]",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              15,
+              3
+            ],
+            "terminal_frames": [
+              [
+                16,
+                7
+              ],
+              [
+                1,
+                4
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-C)|medium|radius_two_distinct",
+      "selection_order": "1101a53f0a25dd3d292e0981b16fcfe513df0fa2ba772175b48533c3197975da",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0132",
+      "source_row_zero_based": 131,
+      "locus": "1-3",
+      "atom_count": 26,
+      "source_category": "Heterobiaryl (C-C)",
+      "smiles": "CC(C)N1CCC[N+](Cc2ccccc2)=C1C1=C([S-])CC(C)(C)CC1=O",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              1,
+              3
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                15,
+                4
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-C)|medium|radius_two_tie",
+      "selection_order": "45967af6796b0e6c83d1f84305beaf16a42f425455e1b2588ec75851b254f38b",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0083",
+      "source_row_zero_based": 82,
+      "locus": "11-19",
+      "atom_count": 27,
+      "source_category": "Heterobiaryl (C-N)",
+      "smiles": "COC(=O)c1ccccc1-n1c2nc(=O)n(C)c(=O)c-2nc2ccccc21",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              11,
+              19
+            ],
+            "terminal_frames": [
+              [
+                10,
+                12
+              ],
+              [
+                17,
+                20
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-N)|medium|radius_two_distinct",
+      "selection_order": "088163477b1a5a869f9f982e70c9a7983f975de26e2c962ea101e5a088d46970",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0466",
+      "source_row_zero_based": 465,
+      "locus": "17-18",
+      "atom_count": 32,
+      "source_category": "Heterobiaryl (C-N)",
+      "smiles": "Cc1cc(Sc2ccccc2)c(C)n1-c1ccc(-c2cc(Cl)cc(Cl)c2)cc1C(C)(C)C",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              17,
+              18
+            ],
+            "terminal_frames": [
+              [
+                16,
+                26
+              ],
+              [
+                19,
+                25
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-N)|medium|radius_two_tie",
+      "selection_order": "342cb45717e3d82ced812c9c7e03eba9a3e82ad99f6532ddc7d4a4f73bec99cd",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0146",
+      "source_row_zero_based": 145,
+      "locus": "1-3",
+      "atom_count": 19,
+      "source_category": "Heterobiaryl (C-N)",
+      "smiles": "CN(C)c1cccc(-n2c(C(C)(C)C)csc2=S)c1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              1,
+              3
+            ],
+            "terminal_frames": [
+              [
+                0,
+                2
+              ],
+              [
+                18,
+                4
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-N)|small|radius_two_tie",
+      "selection_order": "9a556dd68b78b74e3338c6244e4d6e97246e16150c19fc99bfe37ed3bcf8c2bf",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0622",
+      "source_row_zero_based": 621,
+      "locus": "27-28",
+      "atom_count": 41,
+      "source_category": "Nonbiaryl",
+      "smiles": "CCC1=CC=C(OCCC/C(=C/C2=CC=CC=C2)C2=C3C=CC=CC3=CC=C2C(=O)OCC2=CC=C(Cl)C=C2)C=C1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              27,
+              28
+            ],
+            "terminal_frames": [
+              [
+                18,
+                26
+              ],
+              [
+                29,
+                30
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|medium|radius_two_distinct",
+      "selection_order": "0877dbeaad5addd44ec3c8c525553e844a7a9bd1a822a471477f1ed5321e3f80",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0640",
+      "source_row_zero_based": 639,
+      "locus": "15-17",
+      "atom_count": 31,
+      "source_category": "Nonbiaryl",
+      "smiles": "CCCCC/C(=C/C1=CC=CC=C1)C1=C(C(=O)C2=CC=CC=C2)C=CC2=CC=CC=C12",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              15,
+              17
+            ],
+            "terminal_frames": [
+              [
+                14,
+                16
+              ],
+              [
+                18,
+                22
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|medium|radius_two_tie",
+      "selection_order": "2aaf2a1d1357f6b0299786faaf540713403c6a1ea799eb4340785d3f86ba40a1",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0582",
+      "source_row_zero_based": 581,
+      "locus": "2-4",
+      "atom_count": 22,
+      "source_category": "Nonbiaryl",
+      "smiles": "COC(=O)C1=C(/C(=C\\C2=CC=CC=C2)C2CC2)C(C)=CC=C1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              2,
+              4
+            ],
+            "terminal_frames": [
+              [
+                1,
+                3
+              ],
+              [
+                21,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|small|radius_two_distinct",
+      "selection_order": "0e4d96dee8b572a090584c1cae4047931b57f6c5e9d71d30a6a49f4ccad97469",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0135",
+      "source_row_zero_based": 134,
+      "locus": "16-17",
+      "atom_count": 23,
+      "source_category": "Nonbiaryl",
+      "smiles": "CC(=O)/C(C1=[N+](Cc2ccccc2)CCCN1C(C)C)=C(\\C)[S-]",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              16,
+              17
+            ],
+            "terminal_frames": [
+              [
+                15,
+                4
+              ],
+              [
+                18,
+                19
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Nonbiaryl|small|radius_two_tie",
+      "selection_order": "b0652be78eff6648b20dfcbcbc2d713f697d5e023b26a4b63520cb3ac9389437",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0649",
+      "source_row_zero_based": 648,
+      "locus": "15",
+      "atom_count": 33,
+      "source_category": "Spiral atom and chain",
+      "smiles": "NC(=O)C1(C(=O)NC(CO)(CO)CO)CC2(C1)CC(C(N)=O)(C(=O)NC(CO)(CO)CO)C2",
+      "input_supports": [],
+      "stratum": "Spiral atom and chain|medium|radius_two_tie",
+      "selection_order": "a943126bc9012004c4bc521efdb5216974378086ffa0509c57a05f57fe10854f",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0650",
+      "source_row_zero_based": 649,
+      "locus": "10",
+      "atom_count": 23,
+      "source_category": "Spiral atom and chain",
+      "smiles": "CS(=O)(=O)OCC1(CO)CC2(C1)CC(CO)(COS(C)(=O)=O)C2",
+      "input_supports": [],
+      "stratum": "Spiral atom and chain|small|radius_two_tie",
+      "selection_order": "4e7d9d1318037289271422c8174a4c7ad9de4612cc58f23e027beee0c6452a84",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0130",
+      "source_row_zero_based": 129,
+      "locus": "13-19",
+      "atom_count": 37,
+      "source_category": "Allene-like structure",
+      "smiles": "C(=C([C]1[CH][CH][CH][CH]1)c1ccccc1)=C([C]1[CH][CH][CH][CH]1)c1ccccc1.[CH]1[CH][CH][CH][CH]1.[CH]1[CH][CH][CH][CH]1.[Fe].[Fe]",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              13,
+              19
+            ],
+            "terminal_frames": [
+              [
+                0,
+                14
+              ],
+              [
+                20,
+                24
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Allene-like structure|medium|radius_two_tie",
+      "selection_order": "715cddda998a49b069b1015702861b78ad68f523b02174ce1d8754d40abbffda",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0020",
+      "source_row_zero_based": 19,
+      "locus": "9-11",
+      "atom_count": 17,
+      "source_category": "Allene-like structure",
+      "smiles": "CCOC(=O)CC(C)=C=C(C)c1ccccc1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              11,
+              9
+            ],
+            "terminal_frames": [
+              [
+                12,
+                16
+              ],
+              [
+                10,
+                8
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Allene-like structure|small|radius_two_tie",
+      "selection_order": "6893558a263249169070538e22a9be7317e49b3cb143b5dcd5d0dee49dd89151",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0291",
+      "source_row_zero_based": 290,
+      "locus": "13-22",
+      "atom_count": 61,
+      "source_category": "Biaryl structure",
+      "smiles": "CN1C2=C(C3=CC=CC=C3C=C2)C4=C(C=CC5=CC=CC=C54)N(P1(=O)N(C)CCCCCN(C)P6(=O)N(C7=C(C8=CC=CC=C8C=C7)C9=C(N6C)C=CC1=CC=CC=C19)C)C",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              13,
+              22
+            ],
+            "terminal_frames": [
+              [
+                12,
+                14
+              ],
+              [
+                23,
+                60
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|large|radius_two_distinct",
+      "selection_order": "0bed9cbdcedf7db77f4e91a37c96b8eed26b583aa4d6270fe89f25c73c33d1e2",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0437",
+      "source_row_zero_based": 436,
+      "locus": "69-70",
+      "atom_count": 78,
+      "source_category": "Biaryl structure",
+      "smiles": "COc1cccc(P(c2cc(C(C)C)c(N(C)C)c(C(C)C)c2)c2cc(C(C)C)c(N(C)C)c(C(C)C)c2)c1-c1c(OC)cccc1P(c1cc(C(C)C)c(N(C)C)c(C(C)C)c1)c1cc(C(C)C)c(N(C)C)c(C(C)C)c1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              69,
+              70
+            ],
+            "terminal_frames": [
+              [
+                65,
+                73
+              ],
+              [
+                71,
+                72
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|large|radius_two_tie",
+      "selection_order": "022d7cdc62b9983bdfb293cf1e3086920342adeaf5d2a80e5f06b6a362edf679",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0091",
+      "source_row_zero_based": 90,
+      "locus": "23-24",
+      "atom_count": 39,
+      "source_category": "Biaryl structure",
+      "smiles": "CC(C)(C)C(=O)N1CCOCCOc2ccc3ccccc3c2-c2c(ccc3ccccc23)OCCOCC1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              23,
+              24
+            ],
+            "terminal_frames": [
+              [
+                22,
+                32
+              ],
+              [
+                25,
+                33
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|medium|radius_two_distinct",
+      "selection_order": "024180b1ad4674a57910a13acd099fdcd9ada70951673133abbdb56cfebba68d",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0426",
+      "source_row_zero_based": 425,
+      "locus": "6-7",
+      "atom_count": 30,
+      "source_category": "Biaryl structure",
+      "smiles": "COc1cccc(P(C(C)C)C(C)C)c1-c1c(OC)cccc1P(C(C)C)C(C)C",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              6,
+              7
+            ],
+            "terminal_frames": [
+              [
+                14,
+                5
+              ],
+              [
+                11,
+                8
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|medium|radius_two_tie",
+      "selection_order": "01ca2d25f334f9e55fd5bc3e736f8d33fc74fb2986728d48ac0e88391547930b",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0037",
+      "source_row_zero_based": 36,
+      "locus": "4-13",
+      "atom_count": 25,
+      "source_category": "Biaryl structure",
+      "smiles": "O=P1(O)Oc2ccc3ccccc3c2-c2c(ccc3ccccc23)O1",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              13,
+              4
+            ],
+            "terminal_frames": [
+              [
+                12,
+                14
+              ],
+              [
+                3,
+                5
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Biaryl structure|small|radius_two_distinct",
+      "selection_order": "0e2eec0ec160bc242e3c3cba2206bf029232b7f0d32b6c7dcb4ba58f614e9181",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0206",
+      "source_row_zero_based": 205,
+      "locus": "7-8",
+      "atom_count": 49,
+      "source_category": "Chiral atom pair",
+      "smiles": "C[C@H](C[C@@H](C)OP1N([C@H]2CCCC[C@@H]2N1C3=CC=CC=C3)C4=CC=CC=C4)OP5N([C@H]6CCCC[C@@H]6N5C7=CC=CC=C7)C8=CC=CC=C8",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              7,
+              8
+            ],
+            "terminal_frames": [
+              [
+                21,
+                6
+              ],
+              [
+                13,
+                9
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Chiral atom pair|medium|radius_two_distinct",
+      "selection_order": "17ce2676b39e8a6bf1ded9349a4ec8712e7a1d7774904296ae02fc96fd140668",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0256",
+      "source_row_zero_based": 255,
+      "locus": "3-8",
+      "atom_count": 12,
+      "source_category": "Chiral atom pair",
+      "smiles": "C1CC[C@H]2[C@@H](C1)C[C@H](N2)C(=O)O",
+      "input_supports": [],
+      "stratum": "Chiral atom pair|small|radius_two_distinct",
+      "selection_order": "9184e0b77b24e92ac4630320cdef19cf96f3d876d2385b4e4d44868fdaadf66e",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    },
+    {
+      "source_id": "RotA-0498",
+      "source_row_zero_based": 497,
+      "locus": "16-25",
+      "atom_count": 52,
+      "source_category": "Heterobiaryl (C-B)",
+      "smiles": "Cc1nc(-c2cccc(-c3nc(C)c4c(c3B3C=Cc5ccccc5N3C(C)C)COC4)c2)c(B2C=Cc3ccccc3N2C(C)C)c2c1COC2",
+      "input_supports": [
+        {
+          "family": "atrop_axis",
+          "support": {
+            "kind": "axis",
+            "path": [
+              16,
+              25
+            ],
+            "terminal_frames": [
+              [
+                15,
+                17
+              ],
+              [
+                24,
+                26
+              ]
+            ]
+          }
+        }
+      ],
+      "stratum": "Heterobiaryl (C-B)|large|radius_two_distinct",
+      "selection_order": "8d8af153b7ec9bc16a1582f47284b35ec4f18b454beca340669242e228611461",
+      "annotation_status": "unreviewed",
+      "annotation_basis": null,
+      "algorithm_confirmed_rejected_status_withheld": true
+    }
+  ],
+  "adjudication_complete": false
+}

@@ -2,13 +2,11 @@
 """Measure how the SynKit CRN analysis stack scales with network size.
 
 Sweeps synthetic network families of increasing size and times each analysis.
-Networks are generated from a fixed seed, so a run is reproducible; timings are
-of course machine-dependent, which is why the environment block is recorded.
+Networks are generated from a fixed seed. Reports include the runtime
+environment because wall-clock timings are machine-dependent.
 
-The point of the sweep is to locate each analysis's practical ceiling rather
-than to claim a complexity bound. Minimal-siphon enumeration is the analysis
-whose ceiling moved most relative to exhaustive subset search; exact minimal
-semiflow computation is the one that dominates at large sizes.
+The sweep locates practical runtime limits for the selected network families;
+it does not establish complexity bounds.
 
 Emits schema ``synkit.crn-scaling/1``.
 
@@ -83,8 +81,9 @@ def scaling_report(
     rows = [record.to_dict() for record in records]
 
     errored = [row for row in rows if row["error"]]
+    timed_out = [row for row in rows if row.get("timed_out")]
     checks = {
-        "every_measurement_completed": not errored,
+        "no_algorithm_errors": not errored,
         "every_task_ran_at_the_smallest_size": all(
             any(
                 row["task"] == task and row["size"] == min(sizes)
@@ -113,6 +112,7 @@ def scaling_report(
         },
         "checks": checks,
         "errors": errored,
+        "timeouts": timed_out,
         "measurements": rows,
     }
 

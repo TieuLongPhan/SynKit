@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Analyse cached KEGG metabolic modules end to end.
 
-Pushes four KEGG modules of central carbon metabolism through the whole chain:
+Processes four KEGG modules of central carbon metabolism through:
 retrieval and parsing, canonical representation, stoichiometry and CRNT,
 conserved moieties, minimal siphons, structural persistence, and exact flux
 realizability with a firing certificate.
@@ -12,8 +12,8 @@ deliberately with ``refresh_kegg_cache.py`` and re-run the test suite, since
 several tests assert specific metabolites and conservation laws.
 
 Currency metabolites (ATP/ADP/AMP, NAD(P)(H), water, phosphate, protons) are
-removed by default: leaving them in makes every siphon and most semiflows
-describe cofactor recycling rather than the pathway's carbon skeleton.
+removed by default so siphons and semiflows describe the module rather than
+global cofactor recycling.
 
 Emits schema ``synkit.crn-kegg/1``.
 

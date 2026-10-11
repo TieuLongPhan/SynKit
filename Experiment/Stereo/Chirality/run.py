@@ -64,7 +64,12 @@ def main() -> int:
             "seconds": report["timing"]["total_seconds"],
         }
     else:
+        from Experiment.Stereo.provenance import capture_source, finish_source
+
+        source = capture_source()
         report = benchmark_stereoisomer_relations()
+        report["provenance"] = finish_source(source)
+        report["provenance"]["input_representation"] = "Cases encoded in checksummed experiment Python source."
         default_output = CHIRALITY_DATA_ROOT / "stereoisomer_relation_report.json"
         summary = {
             **report["totals"],

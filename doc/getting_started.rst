@@ -18,6 +18,7 @@ Scope
 SynKit is a modular toolkit for **reaction informatics** and **graph-first chemistry**:
 
 - reaction / AAM canonicalization
+- atom mapping with a uniform ``Mapper(method=...)`` interface
 - balance checks and standardization
 - graph construction (ITS/MTG), hashing, and matching
 - reaction rules (compose / apply / modify)
@@ -44,6 +45,21 @@ Install
          docker run --rm tieulongphan/synkit:latest \
            python -c "import importlib.metadata as m; print(m.version('synkit'))"
 
+SynKit requires Python 3.11 or later. Install optional general dependencies,
+including the kernel MILP solver, with ``python -m pip install 'synkit[all]'``.
+For the MILP solver alone, use ``python -m pip install 'synkit[milp]'``.
+
+For development, create and activate the project environment from the
+repository root:
+
+.. code-block:: bash
+
+   conda env create -f environment.yml
+   conda activate synkit
+
+The environment installs SynKit in editable mode, documentation dependencies,
+and the lint, test, and package build tools.
+
 Verify the installation
 -----------------------
 
@@ -56,8 +72,48 @@ A printed version confirms that the package is importable.
 Quick tour
 ----------
 
-The following example constructs a small CRN and converts it to a NetworkX
-digraph:
+Map an unmapped reaction
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from synkit.Chem.Mapper import Mapper
+
+   result = Mapper(method="propagate").map("CCO>>CC=O")
+   print(result.mapped_reactions)
+   print(result.minimum_cost, result.optimality_proven, result.complete)
+   # 1.0 True True
+
+``propagate`` is the default method. The :ref:`atom-to-atom-mapping` guide
+compares all eight methods and explains their search scopes, result fields,
+hydrogen modes, and resource limits.
+
+Inspect changed bonds
+~~~~~~~~~~~~~~~~~~~~~
+
+Convert an atom-mapped substitution into an imaginary transition-state graph:
+
+.. code-block:: python
+
+   from synkit.IO import rsmi_to_its
+
+   reaction = "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]"
+   its = rsmi_to_its(reaction, core=False, format="tuple")
+   changed_bonds = [
+       (source, target, data["order"])
+       for source, target, data in its.edges(data=True)
+       if data["order"][0] != data["order"][1]
+   ]
+   print(changed_bonds)
+
+The broken C-Br bond has order pair ``(1.0, 0.0)`` and the formed C-O bond
+has ``(0.0, 1.0)``. Continue with the :doc:`graph`, :doc:`rule`, and
+:doc:`synthesis` guides.
+
+Build a reaction network
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Construct a small CRN and convert it to a NetworkX digraph:
 
 .. code-block:: python
 
@@ -70,6 +126,35 @@ digraph:
 
    graph = crn.to_digraph()
    print(graph.number_of_nodes(), graph.number_of_edges())
+
+For an offline biochemical example, load the cached KEGG glycolysis module,
+compute CRNT and Petri-net structure, obtain a replayable pathway certificate,
+and export the network through SBML:
+
+.. code-block:: python
+
+   from pathlib import Path
+
+   from synkit.CRN import crnt_summary, conserved_moieties, find_siphons, write_sbml
+   from synkit.CRN.Benchmark import build_kegg_crn, check_glycolysis_flux
+
+   crn = build_kegg_crn("M00001")
+   summary = crnt_summary(crn)
+   assert (summary.n_species, summary.n_reactions, summary.deficiency) == (14, 15, 1)
+   assert len(conserved_moieties(crn)) == 3
+   assert len(find_siphons(crn)) == 3
+
+   outcome = check_glycolysis_flux()
+   assert outcome["status"] == "realizable"
+   assert outcome["explored_states"] == 30
+   assert len(outcome["certificate"]) == 15
+
+   write_sbml(crn, Path("glycolysis.xml"))
+
+The `executable glycolysis notebook
+<https://github.com/TieuLongPhan/SynKit/blob/main/Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb>`_
+explains and independently replays the certificate. See :doc:`crn` for the
+network API and benchmark workflow.
 
 Next steps
 ----------
@@ -93,7 +178,7 @@ Next steps
       :link: chem
       :link-type: doc
 
-      Standardization, balance checking, AAM validation.
+      Atom mapping, standardization, balance checking, AAM validation.
 
 Support
 -------

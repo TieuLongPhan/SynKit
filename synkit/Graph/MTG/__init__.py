@@ -15,9 +15,11 @@ from .process import (
     RuleOccurrence,
 )
 from .series_parallel import SeriesParallelDecomposition, detect_series_parallel
+from .inventory import StockBound, StockWitness, minimum_initial_stock
 from .history import (
     ABSENT,
     CarrierState,
+    ConfigurationCut,
     EdgeLineage,
     HistoryError,
     HistoryIssue,
@@ -28,13 +30,54 @@ from .history import (
     OccurrenceMTGAlternative,
     OccurrenceMTGFamily,
 )
+from .gluing import (
+    CrossIndependenceWitness,
+    GluingError,
+    GluingIssueCode,
+    HistoryComposition,
+    HistoryEmbedding,
+    PortGluing,
+    compose_histories,
+)
+from .queries import cooccurrence_configuration
+from .local import (
+    CoordinateCut,
+    GroundedLocalEvent,
+    LocalCoordinateHistory,
+    LocalEventRecord,
+    LocalHistoryError,
+    build_local_coordinate_history,
+)
+from .observation import (
+    ObservationCut,
+    ObservationProjection,
+    build_observation_projection,
+)
+from .realization import CoordinateRealization, realize_coordinate_history
 
 __all__ = [
+    "CoordinateRealization",
+    "realize_coordinate_history",
+    "ObservationCut",
+    "ObservationProjection",
+    "build_observation_projection",
+    "CoordinateCut",
+    "GroundedLocalEvent",
+    "LocalCoordinateHistory",
+    "LocalEventRecord",
+    "LocalHistoryError",
+    "build_local_coordinate_history",
     "ChoiceWitness",
     "ABSENT",
     "CarrierState",
+    "ConfigurationCut",
+    "CrossIndependenceWitness",
     "EdgeLineage",
     "HistoryError",
+    "GluingError",
+    "GluingIssueCode",
+    "HistoryComposition",
+    "HistoryEmbedding",
     "HistoryIssue",
     "HistoryIssueCode",
     "HistoryReplay",
@@ -52,7 +95,13 @@ __all__ = [
     "ProcessError",
     "ProcessIssue",
     "ProcessIssueCode",
+    "PortGluing",
     "RuleOccurrence",
     "SeriesParallelDecomposition",
+    "StockBound",
+    "StockWitness",
     "detect_series_parallel",
+    "compose_histories",
+    "cooccurrence_configuration",
+    "minimum_initial_stock",
 ]

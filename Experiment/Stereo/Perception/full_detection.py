@@ -36,6 +36,8 @@ from Experiment.Stereo.datasets import (  # noqa: E402
 from Experiment.Stereo.Perception.family_executors import (  # noqa: E402
     neutralize_rdkit_configuration,
 )
+from Experiment.Stereo.Perception.corpus_overlap import structure_keys  # noqa: E402
+from Experiment.Stereo.cip_sources import source_metadata  # noqa: E402
 from synkit.Chem.Molecule.stereo_perception import (  # noqa: E402
     PotentialStereoElement,
     StereoCarrierStatus,
@@ -602,9 +604,7 @@ def _benchmark_acs(
             results.append({"id": row["ID"], "parse_failure": True})
             continue
         neutral = neutralize_rdkit_configuration(molecule)
-        constitution_keys.append(
-            Chem.MolToSmiles(neutral, canonical=True, isomericSmiles=False)
-        )
+        constitution_keys.append(structure_keys(row["Input SMILES"])[1])
         reference = _acs_reference_loci(reference_molecule)
         try:
             elements, invariant, issues = _detect(
@@ -849,8 +849,15 @@ def _rota_predicted_loci(
     molecule: Chem.Mol,
     elements: Iterable[PotentialStereoElement],
     chiral_type: str,
+    *,
+    require_confirmed_support: bool = False,
 ) -> set[str]:
-    """Project typed carriers onto each RotA annotation convention."""
+    """Project carriers; geometry-only spiro candidates cannot gain confirmation.
+
+    Confirmed spiro projections require confirmed tetrahedral supports at the
+    declared center or both chain terminals. Broad geometry remains separate;
+    coupled global spiro geometry without those supports is not certified here.
+    """
     values = tuple(elements)
     if chiral_type == "Chiral atom pair":
         centers = {
@@ -864,6 +871,12 @@ def _rota_predicted_loci(
             if bond.GetBeginAtomIdx() in centers and bond.GetEndAtomIdx() in centers
         }
     if chiral_type == "Spiral atom and chain":
+        confirmed_centers = {
+            element.support.center
+            for element in values
+            if element.element_type is StereoElementType.TETRAHEDRAL
+            and element.carrier_status is StereoCarrierStatus.CONFIRMED
+        }
         rings = tuple(frozenset(ring) for ring in molecule.GetRingInfo().AtomRings())
         centers = {
             atom.GetIdx()
@@ -877,6 +890,8 @@ def _rota_predicted_loci(
                 if right_position > position
             )
         }
+        if require_confirmed_support:
+            centers &= confirmed_centers
         chain_edges = {
             tuple(sorted((left, right)))
             for ring in rings
@@ -899,7 +914,9 @@ def _rota_predicted_loci(
             terminals = sorted(
                 center for center in component if chain_graph.degree(center) == 1
             )
-            if len(terminals) == 2:
+            if len(terminals) == 2 and (
+                not require_confirmed_support or set(terminals) <= confirmed_centers
+            ):
                 chain_pairs.add(tuple(terminals))
         return {
             *(_pair_text((center,)) for center in centers),
@@ -940,6 +957,7 @@ def _rota_projection_issues(
             renumbered,
             source,
             chiral_type,
+            require_confirmed_support=mode == "confirmed",
         )
         issues.extend(
             f"{mode}_projection_missing:{value}"
@@ -967,9 +985,7 @@ def _benchmark_rota(
             results.append({"id": identifier, "parse_failure": True})
             continue
         neutral = neutralize_rdkit_configuration(molecule)
-        constitution_keys.append(
-            Chem.MolToSmiles(neutral, canonical=True, isomericSmiles=False)
-        )
+        constitution_keys.append(structure_keys(row["SMILES"])[1])
         reference = {_pair_text(pair) for pair in literal_eval(row["label"])}
         reference_paths = {
             _path_text(path) for path in literal_eval(row["label_expanded"])
@@ -1021,6 +1037,7 @@ def _benchmark_rota(
             neutral,
             confirmed_elements,
             row["chiral_type"],
+            require_confirmed_support=True,
         )
         retained_pairs = _rota_predicted_loci(
             molecule,
@@ -1031,6 +1048,7 @@ def _benchmark_rota(
             molecule,
             retained_confirmed_elements,
             row["chiral_type"],
+            require_confirmed_support=True,
         )
         if invariant is not None:
             projection_issues = _rota_projection_issues(
@@ -1413,9 +1431,7 @@ def _benchmark_cip(
             results.append({"id": identifier, "parse_failure": True})
             continue
         neutral = neutralize_rdkit_configuration(molecule)
-        constitution_keys.append(
-            Chem.MolToSmiles(neutral, canonical=True, isomericSmiles=False)
-        )
+        constitution_keys.append(structure_keys(smiles)[1])
         reference = sorted(_cip_reference_positions(row))
         reference_upper, reference_lower = _cip_reference_positions_by_case(row)
         try:
@@ -1582,7 +1598,7 @@ def _benchmark_cip(
             ],
             "case_timeout_seconds": timeout_seconds,
             "audited_sha256": CIP_SHA256,
-            "structures_vendored": False,
+            **source_metadata(path),
             "dataset_reference_positions": all_reference,
             "broad": _set_score(
                 valid,
@@ -1754,6 +1770,14 @@ def benchmark_full_detection(
             "rota_rows": 650,
             "cip_rows": 300,
             "unique_configuration_neutral_constitutions": len(all_keys),
+            "constitution_identity_contract": {
+                "configuration": "erased",
+                "atom_maps": "erased",
+                "isotopes_charges_hydrogen_counts_aromaticity": "retained",
+                "normalization": "standard RDKit parsing and RemoveHs",
+                "resonance_normalization": False,
+                "shared_key_constructor": "Experiment.Stereo.Perception.corpus_overlap.structure_keys",
+            },
             "acs_cip_shared_ids": len(overlap),
             "acs_cip_identical_smiles": exact_overlap,
             "pooled_accuracy_reported": False,
@@ -1774,6 +1798,8 @@ def benchmark_full_detection(
 
 
 def main() -> int:
+    from Experiment.Stereo.provenance import capture_source, finish_source
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cip-path", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=DEFAULT_REPORT)
@@ -1781,11 +1807,14 @@ def main() -> int:
     parser.add_argument("--case-timeout-seconds", type=float, default=30.0)
     arguments = parser.parse_args()
     RDLogger.DisableLog("rdApp.*")
+    from Experiment.Stereo.Chirality.published import DATASET
+    source = capture_source((DATASET, ROTA, arguments.cip_path))
     report = benchmark_full_detection(
         arguments.cip_path,
         check_renumbering=not arguments.skip_renumbering,
         timeout_seconds=arguments.case_timeout_seconds,
     )
+    report["provenance"] = finish_source(source)
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n",

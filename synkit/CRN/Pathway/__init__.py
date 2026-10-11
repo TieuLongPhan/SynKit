@@ -33,6 +33,9 @@ from .reachability import (
 from .realizability import (
     PathwayRealizability,
     RealizabilityConfig,
+    RealizabilityResult,
+    RealizabilitySearchLimit,
+    RealizabilityStatus,
     RealizabilitySummary,
     run_realizability_from_syncrn,
     syncrn_to_pr_inputs,
@@ -55,6 +58,9 @@ __all__ = [
     # realizability
     "PathwayRealizability",
     "RealizabilityConfig",
+    "RealizabilityResult",
+    "RealizabilitySearchLimit",
+    "RealizabilityStatus",
     "RealizabilitySummary",
     "run_realizability_from_syncrn",
     "syncrn_to_pr_inputs",

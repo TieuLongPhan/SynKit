@@ -55,17 +55,16 @@ def test_configured_schema_name_is_a_compatibility_alias() -> None:
     assert CONFIGURED_STEREOGRAPH_SCHEMA == STEREOGRAPH_SCHEMA
 
 
-def test_existing_chiral_certificate_is_definitive_with_unresolved_amine() -> None:
+def test_strict_assessment_refuses_unresolved_amine() -> None:
     molecule = Chem.MolFromSmiles("FC(CN1[C@@H](C2=CC=CS2)CCC1)(F)F")
     assert molecule is not None
 
     result = classify_rdkit_configured_stereograph_mirror(molecule)
 
-    assert result.status is StereographMirrorStatus.CHIRAL
-    assert result.is_definitive
+    assert result.status is StereographMirrorStatus.INCOMPLETE
+    assert not result.is_definitive
     assert result.incomplete_loci == ("tetrahedral:3",)
-    assert result.original is not None and result.mirror is not None
-    assert "monotone_chiral_mirror_proof" in result.method
+    assert result.original is None and result.mirror is None
     assert result.method.endswith(":chemical")
 
 
@@ -396,7 +395,8 @@ def test_rdkit_coordination_entry_point_survives_atom_renumbering(
 
     observed = canonicalize_rdkit_configured_stereograph(renumbered)
 
-    assert observed.schema == CONFIGURED_STEREOGRAPH_SCHEMA
+    assert observed.schema == "synkit.rdkit-stereograph/1"
+    assert observed.identity_profile == "lewis_state"
     assert observed.canonical_code == expected.canonical_code
 
 

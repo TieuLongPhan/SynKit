@@ -15,8 +15,7 @@ the **deficiency** is
     \\delta = n - l - s
 
 and is always non-negative. It measures how far the network's reaction vectors
-are from being independent given its complex-graph structure, and it is the
-first number a CRNT reviewer looks for.
+are from being independent given its complex-graph structure.
 
 Two theorems are implemented on top of it:
 

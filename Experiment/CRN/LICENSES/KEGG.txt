@@ -1,0 +1,15 @@
+KEGG-derived cache notice
+=========================
+
+The file ``synkit/CRN/Benchmark/data/kegg_modules.json`` contains records
+derived from the Kyoto Encyclopedia of Genes and Genomes (KEGG), retrieved on
+the date recorded inside that file. KEGG is copyright Kanehisa Laboratories.
+
+This cache is not covered by SynKit's MIT licence. KEGG's current terms state
+that academic users may use the KEGG website and that non-academic use requires
+a commercial licence. See: https://www.kegg.jp/kegg/legal.html
+
+Release maintainers must confirm that their intended redistribution of this
+cache is authorized under the applicable KEGG terms. If it is not, the cache
+must be excluded from the release and users must retrieve the source records
+under their own authorized access.

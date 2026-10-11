@@ -18,7 +18,7 @@ from .descriptors import (
     parse_virtual_reference,
     virtual_reference,
 )
-from .orbits import StereoRelation, StereoRelationKind
+from .orbits import Permutation, StereoRelation, StereoRelationKind
 
 _ATOM_STEREO_TYPES = (
     TetrahedralStereo,
@@ -561,6 +561,41 @@ class StereoChange:
             )
         return orbit_change
 
+    def _permutation_for_substrate(
+        self, descriptor: StereoValue, permutation: Permutation
+    ) -> Permutation:
+        """Express a specified endpoint witness in the matched frame basis.
+
+        :param descriptor: Specified input descriptor at the validated guard locus.
+        :param permutation: Concrete endpoint witness stored by this change.
+        :return: Rebased witness, or the same intrinsically defined operation.
+        :raises StereoAlignmentError: Input references or a different guard orbit
+            do not determine the operation's basis.
+        """
+        source_relation = self.before.relation_to(descriptor)
+        if source_relation.witness is None:
+            raise StereoAlignmentError(
+                "STEREO_ALIGNMENT_INCOMPATIBLE_REFERENCES",
+                "The substrate frame cannot be aligned to the rule guard frame.",
+            )
+        if source_relation.kind is StereoRelationKind.EQUIVALENT:
+            # Tuple actions are pullbacks. If u' = gamma.apply(u), the
+            # same operation in the new basis has slot image
+            # gamma^-1 o pi o gamma; its product differs only by gamma.
+            basis = source_relation.witness.permutation
+            return basis.inverse().then(permutation).then(basis)
+        group = self.before.configuration.definition.preserving_group
+        if any(
+            permutation.inverse().then(element).then(permutation) not in group
+            for element in group.elements
+        ):
+            raise StereoAlignmentError(
+                "STEREO_RELATION_AMBIGUOUS_BASIS",
+                "A non-normalizing witness requires a substrate in the "
+                "rule guard's configuration orbit.",
+            )
+        return permutation
+
     def _apply_orbit_to(self, descriptor: StereoValue) -> StereoValue | None:
         if self.before is None:
             return self.after
@@ -598,13 +633,16 @@ class StereoChange:
                 "STEREO_RELATION_NOT_REPLAYABLE",
                 "The substrate has no transportable relation to the rule guard.",
             )
-        aligned = descriptor.replace_references(dict(self.reference_mapping))
-        frame = self.relation.witness.apply(aligned.configuration.frame)
         unspecified = (
             descriptor.parity is None
             or self.after.parity is None
             or self.relation.kind is StereoRelationKind.UNSPECIFIED
         )
+        permutation = self.relation.witness.permutation
+        if not unspecified:
+            permutation = self._permutation_for_substrate(descriptor, permutation)
+        aligned = descriptor.replace_references(dict(self.reference_mapping))
+        frame = permutation.apply(aligned.configuration.frame)
         return _descriptor_from_configuration(
             self.after,
             frame,

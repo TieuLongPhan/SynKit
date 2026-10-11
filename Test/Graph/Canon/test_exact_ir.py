@@ -430,3 +430,101 @@ def test_generic_kernel_has_no_chemistry_or_crn_dependency() -> None:
     assert "synkit.Chem" not in source
     assert "synkit.Graph.Stereo" not in source
     assert "synkit.CRN" not in source
+
+
+def test_incomplete_search_retains_only_verified_symmetry_evidence():
+    graph = nx.cycle_graph(12)
+    result = ExactColoredGraphCanonicalizer(
+        graph, prune_automorphisms=True, enumerate_automorphism_group=False
+    ).search(max_search_nodes=4)
+    assert isinstance(result, IncompleteCanonicalResult)
+    assert not result.complete and not result.exact
+    assert len(result.automorphisms) > 1
+    assert not hasattr(result, "canonical_code")
+    for witness in result.automorphisms:
+        mapping = witness.as_dict()
+        assert set(mapping) == set(graph)
+        assert set(mapping.values()) == set(graph)
+        assert all(graph.has_edge(mapping[u], mapping[v]) for u, v in graph.edges)
+    with pytest.raises(CanonicalSearchIncomplete):
+        result.require_complete()
+
+
+def test_canonical_stabilizer_skips_composition_for_an_already_fixed_point(monkeypatch):
+    canonicalizer = ExactColoredGraphCanonicalizer(nx.path_graph(4))
+    generator = {0: 0, 1: 2, 2: 1, 3: 3}
+
+    def unexpected(*args):
+        raise AssertionError("No composition is needed for a fixed point.")
+
+    monkeypatch.setattr(canonicalizer, "_compose_mappings", unexpected)
+    assert canonicalizer._point_stabilizer_generators((generator,), 0) == (generator,)
+
+
+@pytest.mark.parametrize("stabilizer_work_limit", [0, 4096])
+def test_seeded_pruning_matches_exhaustive_small_graphs_and_relabelings(
+    monkeypatch, stabilizer_work_limit,
+):
+    """Seeding and sparse stabilizer filtering preserve the exact certificate."""
+    monkeypatch.setattr(exact_module, "_STABILIZER_WORK_LIMIT", stabilizer_work_limit)
+    graphs = [graph for graph in nx.graph_atlas_g() if len(graph) <= 5]
+    for graph in graphs:
+        nx.set_node_attributes(graph, "atom", "color")
+        nx.set_edge_attributes(graph, 1.5, "color")
+        expected = ExactColoredGraphCanonicalizer(graph).canonicalize()
+        for candidate in (
+            graph,
+            nx.relabel_nodes(graph, {node: f"v:{17 - node}" for node in graph}),
+        ):
+            actual = ExactColoredGraphCanonicalizer(
+                candidate, prune_automorphisms=True,
+                enumerate_automorphism_group=False,
+            ).canonicalize()
+            assert actual.canonical_code == expected.canonical_code
+
+
+def test_seeded_directed_twins_preserve_incoming_edges_loops_and_colors():
+    graph = nx.DiGraph()
+    graph.add_nodes_from(range(5), color="atom")
+    graph.add_edges_from([(0, 1), (0, 2), (1, 3), (2, 3)], color=1.5)
+    variants = [graph.copy()]
+    graph.add_edge(4, 1, color=2.0)
+    variants.append(graph.copy())
+    graph.add_edge(1, 1, color=0.5)
+    variants.append(graph.copy())
+    graph.nodes[2]["color"] = "different"
+    variants.append(graph.copy())
+    for candidate in variants:
+        expected = ExactColoredGraphCanonicalizer(candidate).canonicalize()
+        actual = ExactColoredGraphCanonicalizer(
+            candidate, prune_automorphisms=True
+        ).canonicalize()
+        assert actual.canonical_code == expected.canonical_code
+        expected_group = {
+            tuple(mapping[node] for node in candidate)
+            for mapping in nx.algorithms.isomorphism.DiGraphMatcher(
+                candidate, candidate,
+                node_match=lambda a, b: a["color"] == b["color"],
+                edge_match=lambda a, b: a["color"] == b["color"],
+            ).isomorphisms_iter()
+        }
+        actual_group = {
+            tuple(witness.as_dict()[node] for node in candidate)
+            for witness in actual.automorphisms
+        }
+        assert actual_group == expected_group
+
+
+def test_twin_seeding_reduces_search_without_changing_the_certificate(monkeypatch):
+    graph = nx.star_graph(12)
+    candidate = ExactColoredGraphCanonicalizer(
+        graph, prune_automorphisms=True, enumerate_automorphism_group=False
+    ).canonicalize()
+    monkeypatch.setattr(
+        ExactColoredGraphCanonicalizer, "_seed_twin_generators", lambda *args: None
+    )
+    control = ExactColoredGraphCanonicalizer(
+        graph, prune_automorphisms=True, enumerate_automorphism_group=False
+    ).canonicalize()
+    assert candidate.canonical_code == control.canonical_code
+    assert candidate.statistics.visited_nodes < control.statistics.visited_nodes

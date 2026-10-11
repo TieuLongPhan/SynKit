@@ -470,6 +470,10 @@ def test_rdkit_atrop_survives_clearing_application_and_renumbering(cxsmiles):
         in {Chem.BondStereo.STEREOATROPCW, Chem.BondStereo.STEREOATROPCCW}
     )
 
+    # CXSMILES also encodes the atropisomer through a neighboring wedge.
+    # Newer RDKit releases reassign the axis from that direction flag.
+    for value in mol.GetBonds():
+        value.SetBondDir(Chem.BondDir.NONE)
     bond.SetStereo(Chem.BondStereo.STEREONONE)
     assert descriptors_from_rdkit(mol) == {}
     apply_stereo_to_rdkit(mol, expected.values())

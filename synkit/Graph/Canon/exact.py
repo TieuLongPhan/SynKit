@@ -157,6 +157,7 @@ class IncompleteCanonicalResult:
     statistics: CanonicalSearchStatistics
     complete: bool = False
     exact: bool = False
+    automorphisms: tuple[AutomorphismWitness, ...] = ()
 
     def require_complete(self) -> ExactCanonicalResult:
         """Refuse promotion of bounded-search evidence to canonical identity."""
@@ -184,6 +185,7 @@ class _SearchState:
     equal_orders: list[tuple[Hashable, ...]] = field(default_factory=list)
     generators: list[dict[Hashable, Hashable]] = field(default_factory=list)
     generator_signatures: set[tuple[Hashable, ...]] = field(default_factory=set)
+    generator_supports: list[tuple[tuple[Hashable, Hashable], ...]] = field(default_factory=list)
     stabilizer_cache: dict[
         tuple[int, tuple[Hashable, ...]],
         tuple[dict[Hashable, Hashable], ...],
@@ -520,6 +522,36 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
         state.generator_signatures.add(signature)
         state.generators.append(mapping)
 
+    def _seed_twin_generators(self, state: _SearchState) -> None:
+        """Seed verified swaps of identically colored nonadjacent twins.
+
+        Exact incoming and outgoing neighborhoods define candidates, including
+        for directed graphs. Every swap is checked before it can prune search.
+        Adjacent swaps generate each twin cell without expanding its group.
+        """
+        groups = {}
+        for node in self._nodes:
+            if self._stop_reason(state, 0) is not None:
+                return
+            signature = (
+                self._node_colors[node],
+                frozenset(self._outgoing[node]),
+                frozenset(self._incoming[node]),
+            )
+            groups.setdefault(signature, []).append(node)
+        for nodes in groups.values():
+            for left, right in zip(nodes, nodes[1:]):
+                if len(state.generators) >= 256 or self._stop_reason(state, 0):
+                    return
+                mapping = self._identity_mapping()
+                mapping[left], mapping[right] = right, left
+                if not self._is_automorphism(mapping):
+                    continue
+                signature = self._mapping_signature(mapping)
+                if signature not in state.generator_signatures:
+                    state.generator_signatures.add(signature)
+                    state.generators.append(mapping)
+
     def _identity_mapping(self) -> dict[Hashable, Hashable]:
         return {node: node for node in self._nodes}
 
@@ -567,6 +599,8 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
         seeds = self._deduplicate_mappings(generators)
         if not seeds:
             return ()
+        if all(generator[point] == point for generator in seeds):
+            return seeds
 
         identity = self._identity_mapping()
         transversals = {point: identity}
@@ -584,6 +618,10 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
                 )
                 pending.append(image)
 
+        inverses = {
+            image: self._inverse_mapping(transport)
+            for image, transport in transversals.items()
+        }
         stabilizer_generators = []
         for current, current_transversal in transversals.items():
             for generator in seeds:
@@ -593,7 +631,7 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
                         current_transversal,
                         generator,
                     ),
-                    self._inverse_mapping(transversals[image]),
+                    inverses[image],
                 )
                 stabilizer_generators.append(schreier)
         return self._deduplicate_mappings(stabilizer_generators)
@@ -606,6 +644,8 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
         """Return generators for the subgroup fixing every point in ``fixed``."""
         stabilizers = self._deduplicate_mappings(generators)
         for point in fixed:
+            if all(generator[point] == point for generator in stabilizers):
+                continue
             stabilizers = self._point_stabilizer_generators(stabilizers, point)
             if not stabilizers:
                 break
@@ -630,18 +670,25 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
         cell_index: Mapping[Hashable, int],
     ) -> tuple[dict[Hashable, Hashable], ...]:
         """Choose exact stabilizer generators without excessive group overhead."""
-        direct = tuple(
-            mapping
-            for mapping in state.generators
-            if self._stabilizes_partition(mapping, cell_index)
-        )
         estimated_work = (
             len(self._nodes) * max(1, len(state.generators)) * max(1, len(fixed))
         )
         # Schreier generators save search only while their construction remains
         # cheaper than direct filtering of the verified generators.
         if estimated_work > _STABILIZER_WORK_LIMIT:
-            return direct
+            # Root generators are immutable after registration. Checking only
+            # their moved points avoids rescanning fixed atoms at each node.
+            for mapping in state.generators[len(state.generator_supports):]:
+                state.generator_supports.append(tuple(
+                    (node, image) for node, image in mapping.items()
+                    if node != image
+                ))
+            return tuple(
+                mapping for mapping, support in zip(
+                    state.generators, state.generator_supports
+                )
+                if all(cell_index[node] == cell_index[image] for node, image in support)
+            )
         subgroup = self._cached_stabilizer_generators(state, fixed)
         return tuple(
             mapping
@@ -719,12 +766,16 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
             cell_index,
             target,
         )
+        generation = -1
+        stabilizers = ()
         for _trace, _position, chosen, child_refined in ordered_children:
-            stabilizers = self._pruning_generators(
-                state,
-                fixed,
-                partition_cells,
-            )
+            if generation != len(state.generators):
+                stabilizers = self._pruning_generators(
+                    state,
+                    fixed,
+                    partition_cells,
+                )
+                generation = len(state.generators)
             if self._orbit_already_explored(
                 chosen,
                 explored,
@@ -876,6 +927,7 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
             max_depth,
         )
         if self._prune_automorphisms:
+            self._seed_twin_generators(state)
             self._visit_partition_pruned(self._initial_partition(), 0, state)
         else:
             self._visit_partition(self._initial_partition(), 0, state)
@@ -886,9 +938,20 @@ class ExactColoredGraphCanonicalizer(ExactRefinementMixin):
             elapsed_seconds=perf_counter() - started,
         )
         if state.termination_reason is not None:
+            # Verified automorphisms remain valid even when canonicality
+            # was not proved. Preserve this subgroup without exposing a code.
+            witnesses = (
+                self._generator_witnesses(
+                    state.best_order if state.best_order is not None else self._nodes,
+                    state.equal_orders[:32] if state.best_order is not None else [],
+                    state.generators[:256],
+                )
+                if self._prune_automorphisms else ()
+            )
             return IncompleteCanonicalResult(
                 state.termination_reason,
                 statistics,
+                automorphisms=witnesses,
             )
         if state.best_key is None or state.best_order is None:
             raise RuntimeError("Complete canonical search produced no leaf.")

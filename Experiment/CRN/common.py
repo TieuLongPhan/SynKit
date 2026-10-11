@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -34,17 +35,47 @@ def environment() -> Dict[str, Any]:
     """
     import networkx as nx
     import numpy as np
+    import scipy
+    from rdkit import rdBase
 
     import synkit
+
+    def _git(*arguments: str) -> Optional[str]:
+        """Return stripped Git output, or ``None`` when unavailable.
+
+        :param arguments: Git command arguments.
+        :type arguments: str
+        :return: Command output or ``None``.
+        :rtype: Optional[str]
+        """
+        try:
+            result = subprocess.run(
+                ["git", *arguments],
+                cwd=REPOSITORY_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except (OSError, subprocess.CalledProcessError):
+            return None
+        return result.stdout.strip()
+
+    commit = _git("rev-parse", "HEAD")
+    status = _git("status", "--porcelain")
 
     return {
         "synkit": getattr(synkit, "__version__", "unknown"),
         "python": platform.python_version(),
         "numpy": np.__version__,
+        "scipy": scipy.__version__,
         "networkx": nx.__version__,
+        "rdkit": rdBase.rdkitVersion,
         "platform": platform.platform(),
         "machine": platform.machine(),
+        "processor": platform.processor() or None,
         "cpu_count": os.cpu_count(),
+        "git_commit": commit,
+        "git_dirty": None if status is None else bool(status),
     }
 
 

@@ -1,0 +1,34 @@
+{
+  "output": "/tmp/synkit-stereo-clean-release-full/local_rota.json",
+  "seconds": 619.3878698339686,
+  "summary": {
+    "canonical_classes_observed": 2039,
+    "canonicalizations_completed": 17088,
+    "carrier_accuracy": 1.0,
+    "carriers": 1286,
+    "carriers_failed": 0,
+    "carriers_passed": 1286,
+    "complete": true,
+    "families": {
+      "atrop_bond": 750,
+      "cumulene_axis": 15,
+      "planar_bond": 96,
+      "tetrahedral": 425
+    },
+    "formal_class_separation_passed": 753,
+    "global_symmetry_quotients": 533,
+    "independent_oracles_complete": true,
+    "parse_failures": 0,
+    "raw_local_permutations_checked": 17088,
+    "raw_local_permutations_expected": 17088,
+    "record_statuses": {
+      "no_stereo_carrier": 33,
+      "passed": 617
+    },
+    "records_evaluated": 650,
+    "records_with_carriers": 617,
+    "theoretical_configuration_classes": 2572
+  },
+  "table": "/tmp/synkit-stereo-clean-release-full/local_rota.csv",
+  "task": "rota"
+}

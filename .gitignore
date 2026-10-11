@@ -16,12 +16,16 @@ venv/
 /dist/
 /docs/
 *.egg-info/
+# Optional Mapper kernel artifacts are rebuilt from the shipped C++ source.
+libsynkit_distance_*.so
+libsynkit_distance_*.json
 
 # Generated logs, reports, notebooks, and data files
 *.log
 *.pdf
 *.rdf
 *.ipynb
+!Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb
 *.csv
 *.json
 *.json.gz
@@ -29,7 +33,7 @@ venv/
 *.txt
 
 # Package resources and repository evidence retained despite the broad rules
-!LICENSES/*.txt
+!Experiment/CRN/LICENSES/*.txt
 !synkit/CRN/Benchmark/data/kegg_modules.json
 !Data/Conformance/stereomolgraph_graph_conformance.json
 !Data/Mech/polar.json
@@ -37,7 +41,7 @@ venv/
 !Data/Mech/stereo.json
 !Data/Schema/
 !Data/Schema/attribute_propagation_v1_5.json
-!/tools/python_file_size_baseline.json
+!/scripts/python_file_size_baseline.json
 !Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
 
 # Lewis benchmark inputs and reviewed evidence
@@ -64,6 +68,10 @@ venv/
 !Experiment/Stereo/Data/manifest.json
 !Experiment/Stereo/Data/Perception/full_detection_report.json
 !Experiment/Stereo/Data/Perception/perception_conformance_cases.json
+
+# Historical reaction-stereo records consumed by experiment audits
+!Experiment/StereoReaction/evidence/stereo_rxn_closeout.json
+!Experiment/StereoReaction/evidence/stereo_rxn_validation.json
 
 # Large or reproducible data products
 /Data/Benchmark/*
@@ -99,7 +107,8 @@ venv/
 /crn/
 /debug/
 /dev/
-/paper/*
+# Manuscripts, evidence, figures, and local cleanup archives
+/paper/
 /sprint/
 /synkit/Graph/dev/
 
@@ -114,3 +123,6 @@ test_partial.py
 test_run.py
 test_syn.py
 test_syn_reactor.py
+
+# Local benchmark outputs and frozen source copies stay local.
+/benchmark_results/

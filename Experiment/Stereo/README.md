@@ -8,15 +8,130 @@ Experiment/Stereo/
 ├── Canonicalization/  representation invariance and exact certificates
 ├── Chirality/         whole-molecule mirror identity and pair relations
 ├── Perception/        carrier detection and local CIP-label assignment
+├── ChemicalValidation/ independently frozen sourced geometry and symmetry
 ├── Diagnostics/       cross-backend comparisons; not headline accuracy
 ├── Data/              sources, licenses, frozen reports, and result tables
 ├── datasets.py        shared integrity-checked dataset loading
-└── benchmark.sh       single complete benchmark entry point
+├── reproduce.py       bounded/full/explicit raw-stress protocols
+└── benchmark.sh       historical long pipeline (includes expensive raw stress)
 ```
+
+## Data used by the paper
+
+`paper/stereo_graph/results/manifest.json` selects the reports behind every
+number in the manuscript. Only these `Data/Revision` directories are kept:
+
+| Directory | Role |
+| --- | --- |
+| `CleanReleaseFull/` | The full run from a clean checkout; source of 34 of the 37 selected reports and of the cost and registration plots |
+| `PaperEvidence/` | Chemical selection manifests, RDKit representation fixtures, environment locks and the archived earlier paper revisions |
+| `Protocols/` | Topology-completion report selected by the manifest |
+| `CIPPublished/` | Publisher CIP inputs read by `cip_sources.py` |
+| `Chemical/`, `Performance/`, `ProtocolReconciled/`, `Historical/` | Reports read by `chemical_results.py` and by `Test/Benchmark/Stereo` |
+
+Intermediate reruns that the final run superseded (`Bounded*`,
+`ArchiveReaderBounded`, `CleanReleaseBounded`, `ProtocolIsotopeCorrected`,
+`PublisherCoordinates` and the earlier `Revision/Canonicalization` reports)
+were removed from the working tree. They remain in Git history at commit
+`8faacf2a`.
+
+## Revision reproduction
+
+The current revision entry point defaults to bounded correctness validation:
+
+```bash
+python -m Experiment.Stereo.reproduce --tier bounded --jobs 2 \
+  --output-dir Experiment/Stereo/Data/Revision/Bounded
+```
+
+The full implemented protocol suite requires the checksum-pinned external CIP
+inputs. It writes fresh reports without overwriting the retained development
+reports:
+
+```bash
+python -m Experiment.Stereo.reproduce --tier full --jobs 2 \
+  --cip-path /tmp/cip-validation-suite-compounds.smi \
+  --coordinate-path /tmp/cip-validation-suite-compounds-3d.sdf \
+  --output-dir Experiment/Stereo/Data/Revision/Full
+```
+
+This suite covers the independent catalogue, revised local/formal global gates,
+three separate ACS procedures, two naming inputs, overlap and maintained
+perception protocols, controlled performance, registration, sourced chemical
+annotation and evaluation, and the frozen RotA structural annotation and
+production comparison.
+Stage manifests retain commands, checksums, source hashes, refusals and elapsed
+time. A failed required stage exits unsuccessfully; a stage timeout terminates
+its worker process group. `--stage-timeout` bounds each stage, not the entire
+suite. Results from a truncated suite are explicitly incomplete.
+
+Use `--tier protocols` with the same pinned inputs to regenerate only the
+six perception reports and relation matrix. This tier retains renumbering
+checks and records each report's full Python source hashes. External input
+files are checksummed before execution and must remain unchanged. Write
+outputs outside the checkout when a clean working-tree record is needed.
+
+Raw B and raw C/VS146 stress are separately selected with `--tier raw-stress
+--allow-expensive-raw`. They are absent from the default and full tiers. The
+historical `benchmark.sh` still includes those expensive final stages and is
+retained for replay of the old protocol.
+
+Current naming reports use `synkit.cip-native-validation/4`: SMILES-only and
+family-conditioned coordinate-assisted results are different protocols. The
+SMILES RDKit comparator is matched to the former. The latter includes a
+separate RDKit result derived from the same SDF, with exact unanimous atom
+transport and its own limitations; its family-projection policy still differs.
+All emitted, correct, wrong and missing labels and exact-record denominators
+are retained. This is local naming validation, not molecular chirality accuracy.
+
+`manuscript_tables.py` reads a checksummed manifest with explicit report scopes
+and expectations, refuses inconsistent required correctness or denominators,
+and writes a JSON/CSV numerical ledger and TeX macros. Historical figures are
+not automatically promoted to current values.
+
+## Sourced chemical validation
+
+`ChemicalValidation/annotation.py` verifies unchanged MACE XYZ bytes, source
+donor-slot conventions, tetrahedral tags and coordinate witnesses. It derives
+the proper octahedral poses independently and constructs complete bounded
+configuration partitions. The annotation artifact is frozen before production
+codes are evaluated. `ChemicalValidation/evaluate.py` independently replays
+those partitions, compares complete certificate bytes for the sourced states,
+coordinate and production mirrors, and atom renumberings, and tests all 48
+sourced structural negatives against replayed constitutional witnesses.
+
+```bash
+python -m Experiment.Stereo.ChemicalValidation.annotation \
+  --output Experiment/Stereo/Data/Revision/Chemical/independent_annotation.json
+python -m Experiment.Stereo.ChemicalValidation.evaluate \
+  --annotation Experiment/Stereo/Data/Revision/Chemical/independent_annotation.json \
+  --output Experiment/Stereo/Data/Revision/Chemical/production_validation.json
+python -m Experiment.Stereo.ChemicalValidation.rota_annotation \
+  --output Experiment/Stereo/Data/Revision/Chemical/rota_structural_annotation.json
+python -m Experiment.Stereo.ChemicalValidation.rota_evaluate \
+  --annotation Experiment/Stereo/Data/Revision/Chemical/rota_structural_annotation.json \
+  --output Experiment/Stereo/Data/Revision/Chemical/rota_production_validation.json
+```
+
+The 40 coordination inputs cover 20 constitutions. Two exceed the frozen
+geometric distortion limit; all 38 certified inputs and all 48 sourced
+negatives pass the initial production comparison. These are source-generated
+initial configurations and structural symmetry controls, without experimental
+stability labels. The separate 60-case RotA annotation covers axis supports,
+adjacent tetrahedral pairs and spiro centers. It records aromatic ring-edge
+supports separately from ordinary single-bond axes and keeps terminal ligand
+equivalence separate from global configured orientation. These are automated
+structural checks of a development sample, not independent human adjudication
+or a new chemical holdout.
 
 ## Benchmark matrix
 
-| Track | Question | Current evidence | Claim boundary |
+The quantities below describe retained historical reports. They are being
+reproduced under the revised contracts; their invariance and multiplicity gates
+alone do not establish soundness of the complete global partition. New local
+and global reports use schema revision 2 and require the independent oracle.
+
+| Track | Question | Historical report evidence | Claim boundary |
 | --- | --- | --- | --- |
 | Configuration-free local canonicalization | Do all raw local orders collapse to the exact formal quotient? | 66,468/66,468 representations and 3,476/3,476 carriers over 1,218 rows | One carrier at a time on a fixed constitution |
 | Mixed-family global A/B/C | Do simultaneous carrier configurations compose under whole-graph symmetry? | Formal A/B/C 2,160/2,160; raw A 2,048/2,048; zero failures/timeouts | Full raw B and raw C/VS146 run as final stress stages |
@@ -41,8 +156,54 @@ cost. The protocol therefore:
    and multi-element scenarios;
 5. records exhaustive and sampled tiers separately.
 
-This is stronger and more interpretable than calling a small random corpus
-“global exhaustive.”
+These tests address representation invariance. The independent orbit protocol
+below checks separation and the exact quotient under constitutional symmetry.
+
+## Independent assignment partitions
+
+`Canonicalization/independent_orbits.py` derives local rotations from geometry,
+enumerates attributed constitutional automorphisms preserving a frozen carrier
+inventory, and constructs global assignment orbits directly. It compares whole
+partitions with production certificates and checks mirrors and atom renumbering.
+Every merged assignment retains an explicit atom map. The reference model does
+not call production canonical forms, shape tables, stereo equality, encoders or
+transport methods. Constructors and raw input fields are shared as adapters.
+
+The catalogue contains 33 constructed fixtures with 279 assignments and the 30
+public formal A/B/C cases with 2,160 assignments. It includes all eleven configured
+families, coupled frameworks, carrier exchange, virtual ports, and path/plane
+symmetry. These are prospective mathematical checks conditional on the declared
+inventory; they do not validate carrier perception or create a chemical holdout.
+
+Run the bounded pilot with five cases and all seven mutation controls:
+
+```bash
+python Experiment/Stereo/Canonicalization/independent_orbits.py \
+  --case tetrahedral:distinct \
+  --case tetrahedral:two:meso \
+  --case planar_bond:distinct \
+  --case framework:coupled:opposite \
+  --case mixed:tetrahedral+octahedral:distinct \
+  --output Experiment/Stereo/Data/Canonicalization/Independent/pilot.json
+```
+
+Run the full declared catalogue:
+
+```bash
+python Experiment/Stereo/Canonicalization/independent_orbits.py \
+  --include-public-abc --cip-path /path/to/audited/compounds.smi --jobs 2 \
+  --output Experiment/Stereo/Data/Canonicalization/Independent/full_report.json
+```
+
+Reference caps are 1,024 assignments, 50,000 constitutional automorphisms and
+10 seconds per reference case. Each production certificate has a separate
+5-second default limit. An incomplete oracle never passes. Production peak RSS
+is checked against 1 GiB between computations; a native call can temporarily
+overshoot. Full certificates are interned in a temporary SQLite store using
+full-byte equality, including when indexing hashes collide. This avoids retaining
+several copies of large certificates in memory. Reported hashes are indices.
+The command fails if a partition, mirror, renumbering or mutation gate fails,
+or if its inspected sources change during execution.
 
 ## Additional stereo work worth keeping
 

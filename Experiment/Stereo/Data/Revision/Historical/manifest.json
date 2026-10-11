@@ -1,0 +1,7 @@
+{
+  "schema": "synkit.cip-native-validation/2",
+  "source": "Experiment/Stereo/Data/Perception/cip_native_report.json",
+  "preserved_at": "Experiment/Stereo/Data/Revision/Historical/cip_smiles_schema2.json",
+  "sha256": "f240945118dbd41062951d0d6224075f2a78d6bdc7587087202ca246baf26907",
+  "protocol": "SMILES-only; no coordinates; historical schema 2"
+}

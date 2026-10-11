@@ -1,0 +1,24 @@
+{
+  "output": "/tmp/synkit-stereo-protocol-reconciliation/relations.json",
+  "summary": {
+    "accuracy": 1.0,
+    "cases": 9,
+    "correct": 9,
+    "expected_relations": {
+      "constitutionally_different": 1,
+      "diastereomers": 3,
+      "enantiomers": 2,
+      "identical": 2,
+      "incomplete": 1
+    },
+    "observed_relations": {
+      "constitutionally_different": 1,
+      "diastereomers": 3,
+      "enantiomers": 2,
+      "identical": 2,
+      "incomplete": 1
+    },
+    "seconds": 0.4109532630536705
+  },
+  "task": "relations"
+}

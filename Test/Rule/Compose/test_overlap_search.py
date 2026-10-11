@@ -70,6 +70,45 @@ def _update_two(
     )
 
 
+def test_aligned_span_identity_is_validated_without_general_search(monkeypatch):
+    from synkit.Rule.Compose.search import find_rule_span_isomorphism
+
+    rule = _update_two((0, 1), (0, 1))
+
+    def unexpected_search(*args, **kwargs):
+        raise AssertionError("An exact checked identity does not require search.")
+
+    monkeypatch.setattr(nx.algorithms.isomorphism, "GraphMatcher", unexpected_search)
+    witness = find_rule_span_isomorphism(rule, rule)
+    assert witness is not None and witness.replay()
+    assert dict(witness.left_map) == {0: 0, 1: 1}
+
+
+def test_same_carriers_with_different_labels_use_nonidentity_fallback():
+    from synkit.Rule.Compose.search import find_rule_span_isomorphism
+
+    first = _llg([(0, 0), (1, 1)])
+    second = _llg([(0, 1), (1, 0)])
+    a = RuleSpan.from_mapping(first, first, {0: 0, 1: 1})
+    b = RuleSpan.from_mapping(second, second, {0: 0, 1: 1})
+    witness = find_rule_span_isomorphism(a, b)
+    assert witness is not None and witness.replay()
+    assert dict(witness.left_map) == {0: 1, 1: 0}
+
+
+def test_identity_candidate_does_not_hide_different_endpoint_values():
+    a = _update_one(0, 0)
+    b = RuleSpan.from_mapping(_llg([(0, 0)]), _llg([(0, 2)]), {0: 0})
+    assert not rule_spans_isomorphic(a, b)
+
+
+def test_identity_candidate_does_not_hide_different_preservation_arms():
+    endpoint = _llg([(0, 0), (1, 1)])
+    a = RuleSpan.from_mapping(endpoint, endpoint, {0: 0, 1: 1})
+    b = RuleSpan.from_mapping(endpoint, endpoint, {0: 1, 1: 0})
+    assert not rule_spans_isomorphic(a, b)
+
+
 def test_repeated_component_witnesses_survive_exact_quotienting() -> None:
     first = _identity_two((1, 2), (10, 20))
     second = _update_one("a", "b")
@@ -201,8 +240,8 @@ def test_composition_refusals_are_retained_with_their_failed_premise() -> None:
 
     result = search_compositions(first, second)
 
-    assert result.raw_overlap_count == 5
-    assert result.accepted_count + len(result.rejected) == 5
+    assert result.raw_overlap_count == 7
+    assert result.accepted_count + len(result.rejected) == 7
     assert result.rejected
     assert {rejection.issues[0].code for rejection in result.rejected} == {
         CompositionIssueCode.PULLBACK_COMPLEMENT

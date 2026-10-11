@@ -11,7 +11,7 @@ else
 fi
 "${PYTHON_BIN}" scripts/check_python_file_size.py
 "${PYTHON_BIN}" scripts/check_docstring_style.py
-flake8 "${paths[@]}" \
+"${PYTHON_BIN}" -m flake8 "${paths[@]}" \
   --count \
   --max-complexity=13 \
   --max-line-length=120 \
@@ -19,7 +19,6 @@ flake8 "${paths[@]}" \
   --per-file-ignores="\
 __init__.py:F401,F403,\
 synkit/Chem/Reaction/explicit_h_audit.py:C901,\
-synkit/Chem/Reaction/Mapper/wl_mapper.py:C901,\
 synkit/Graph/FG/detector.py:C901,\
 synkit/Graph/Feature/Descriptors/topology.py:C901,E501,\
 synkit/Graph/ITS/its_destruction.py:C901,\

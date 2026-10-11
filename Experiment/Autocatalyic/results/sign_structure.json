@@ -1,0 +1,1306 @@
+{
+  "supports": {
+    "constructive": [
+      {
+        "modules": [],
+        "bits": "0000",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "heteroligation"
+        ],
+        "bits": "0001",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "homoligation"
+        ],
+        "bits": "0010",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "0011",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "mismatched"
+        ],
+        "bits": "0100",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "mismatched",
+          "heteroligation"
+        ],
+        "bits": "0101",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "mismatched",
+          "homoligation"
+        ],
+        "bits": "0110",
+        "productive_core_count": 1,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "DD"
+        ],
+        "closure_channels": [
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f"
+        ],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.40115280212017473,
+            0.09988466658079218,
+            0.09988466658079218,
+            0.09976946617956022,
+            0.0,
+            0.0,
+            0.09976946617956022
+          ],
+          "alpha_even": -0.09970698393437506,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": 0.016102123688145703,
+          "negative_couplings": {
+            "cross": [],
+            "within": [],
+            "shared": [
+              [
+                "LL",
+                "P",
+                -0.30011546659077515
+              ]
+            ]
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "mismatched",
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "0111",
+        "productive_core_count": 1,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "LD",
+          "DL",
+          "DD"
+        ],
+        "closure_channels": [
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f",
+          "hetero_LD_f",
+          "hetero_DL_f"
+        ],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "matched"
+        ],
+        "bits": "1000",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "matched",
+          "heteroligation"
+        ],
+        "bits": "1001",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "matched",
+          "homoligation"
+        ],
+        "bits": "1010",
+        "productive_core_count": 2,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "homo_D_f"
+        ],
+        "passes_phenotype": true,
+        "racemate": {
+          "state": [
+            0.09407466741768089,
+            0.1275553450868175,
+            0.1275553450868175,
+            0.162703660602171,
+            0.0,
+            0.0,
+            0.162703660602171
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": 0.01306281546868078,
+          "alpha_pair_sum": 0.01306281546868078,
+          "negative_couplings": {
+            "cross": [],
+            "within": [],
+            "shared": [
+              [
+                "LL",
+                "P",
+                -0.27839734190043813
+              ]
+            ]
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "1011",
+        "productive_core_count": 2,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "LD",
+          "DL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "homo_D_f",
+          "hetero_LD_f",
+          "hetero_DL_f"
+        ],
+        "passes_phenotype": true,
+        "racemate": {
+          "state": [
+            0.40053202474242017,
+            0.04997581173832633,
+            0.04997581173832633,
+            0.02497581758904636,
+            0.09990327035618544,
+            0.09990327035618544,
+            0.02497581758904636
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": 0.1602524159319146,
+          "alpha_pair_sum": 0.008212867304393301,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.39980649390661066
+              ]
+            ],
+            "within": [],
+            "shared": [
+              [
+                "LL",
+                "P",
+                -1.2000967998751106
+              ]
+            ]
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched"
+        ],
+        "bits": "1100",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched",
+          "heteroligation"
+        ],
+        "bits": "1101",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": null
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched",
+          "homoligation"
+        ],
+        "bits": "1110",
+        "productive_core_count": 3,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f"
+        ],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.07528203502330189,
+            0.1290874723149726,
+            0.1290874723149726,
+            0.1666357550866882,
+            0.0,
+            0.0,
+            0.1666357550866882
+          ],
+          "alpha_even": -0.09999999999999999,
+          "alpha_odd": -0.027745244204691225,
+          "alpha_pair_sum": 0.012749224179085347,
+          "negative_couplings": {
+            "cross": [],
+            "within": [],
+            "shared": [
+              [
+                "LL",
+                "P",
+                -0.2774668511255706
+              ]
+            ]
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched",
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "1111",
+        "productive_core_count": 3,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "LD",
+          "DL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f",
+          "hetero_LD_f",
+          "hetero_DL_f"
+        ],
+        "passes_phenotype": true,
+        "racemate": {
+          "state": [
+            0.3169028633030486,
+            0.05365565346566993,
+            0.05365565346566993,
+            0.028789291488280574,
+            0.1151571659531223,
+            0.1151571659531223,
+            0.028789291488280574
+          ],
+          "alpha_even": -0.09999999999999996,
+          "alpha_odd": 0.08882825824498411,
+          "alpha_pair_sum": 0.007716645828362623,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.42924522772535945
+              ]
+            ],
+            "within": [],
+            "shared": [
+              [
+                "LL",
+                "P",
+                -1.1863736503814697
+              ]
+            ]
+          },
+          "cooperative": false
+        }
+      }
+    ],
+    "destructive": [
+      {
+        "modules": [],
+        "bits": "0000",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": true
+        }
+      },
+      {
+        "modules": [
+          "heteroligation"
+        ],
+        "bits": "0001",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.07305360962780952,
+            0.07305360962780952,
+            0.0,
+            0.21347319518609534,
+            0.21347319518609534,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.09999999999999998,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.5844288770224761
+              ]
+            ],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "homoligation"
+        ],
+        "bits": "0010",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            1.1102230246251565e-16,
+            0.1350781059358212,
+            0.1350781059358212,
+            0.18246094703208937,
+            0.0,
+            0.0,
+            0.18246094703208937
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": true
+        }
+      },
+      {
+        "modules": [
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "0011",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.06588723439378913,
+            0.06588723439378913,
+            0.04341127656062109,
+            0.17364510624248436,
+            0.17364510624248436,
+            0.04341127656062109
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.527097875150313
+              ]
+            ],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "mismatched"
+        ],
+        "bits": "0100",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "DD",
+                "L",
+                -40.0
+              ]
+            ],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "mismatched",
+          "heteroligation"
+        ],
+        "bits": "0101",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.07305360962780952,
+            0.07305360962780952,
+            0.0,
+            0.21347319518609534,
+            0.21347319518609534,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.09999999999999998,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.5844288770224761
+              ],
+              [
+                "DD",
+                "L",
+                -5.844288770224761
+              ]
+            ],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "mismatched",
+          "homoligation"
+        ],
+        "bits": "0110",
+        "productive_core_count": 1,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "DD"
+        ],
+        "closure_channels": [
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f"
+        ],
+        "passes_phenotype": true,
+        "racemate": {
+          "state": [
+            0.8523728215261238,
+            0.04069383123130287,
+            0.04069383123130287,
+            0.01655987900281761,
+            0.0,
+            0.0,
+            0.01655987900281761
+          ],
+          "alpha_even": -0.09999999999999999,
+          "alpha_odd": 0.029528602982974522,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "DD",
+                "L",
+                -2.5736082412833308
+              ]
+            ],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "mismatched",
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "0111",
+        "productive_core_count": 1,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "LD",
+          "DL",
+          "DD"
+        ],
+        "closure_channels": [
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f",
+          "hetero_LD_f",
+          "hetero_DL_f"
+        ],
+        "passes_phenotype": true,
+        "racemate": {
+          "state": [
+            0.6555047354253866,
+            0.036802826733046023,
+            0.036802826733046023,
+            0.01354448055542607,
+            0.05417792222170428,
+            0.05417792222170428,
+            0.01354448055542607
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": 0.030812920203104527,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.2944226138643682
+              ],
+              [
+                "DD",
+                "L",
+                -2.4198223503033724
+              ]
+            ],
+            "within": [],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched"
+        ],
+        "bits": "1000",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [],
+            "within": [
+              [
+                "LL",
+                "L",
+                -5.0
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "heteroligation"
+        ],
+        "bits": "1001",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.07305360962780952,
+            0.07305360962780952,
+            0.0,
+            0.21347319518609534,
+            0.21347319518609534,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.09999999999999998,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.5844288770224761
+              ]
+            ],
+            "within": [
+              [
+                "LL",
+                "L",
+                -0.7305360962780951
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "homoligation"
+        ],
+        "bits": "1010",
+        "productive_core_count": 2,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "homo_D_f"
+        ],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.6549625471250222,
+            0.07118178789081872,
+            0.07118178789081872,
+            0.05066846927333507,
+            0.0,
+            0.0,
+            0.05066846927333507
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [],
+            "within": [
+              [
+                "LL",
+                "L",
+                -0.6463216241956851
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "1011",
+        "productive_core_count": 2,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "LD",
+          "DL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "homo_D_f",
+          "hetero_LD_f",
+          "hetero_DL_f"
+        ],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.30210307226463906,
+            0.05428308897718476,
+            0.05428308897718476,
+            0.029466537489049573,
+            0.11786614995619829,
+            0.11786614995619829,
+            0.029466537489049573
+          ],
+          "alpha_even": -0.09999999999999992,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.43426471181747806
+              ]
+            ],
+            "within": [
+              [
+                "LL",
+                "L",
+                -0.5126205825453837
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched"
+        ],
+        "bits": "1100",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.1,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "DD",
+                "L",
+                -40.0
+              ]
+            ],
+            "within": [
+              [
+                "LL",
+                "L",
+                -5.0
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched",
+          "heteroligation"
+        ],
+        "bits": "1101",
+        "productive_core_count": 0,
+        "closure_species": [],
+        "closure_channels": [],
+        "passes_phenotype": false,
+        "racemate": {
+          "state": [
+            0.0,
+            0.07305360962780952,
+            0.07305360962780952,
+            0.0,
+            0.21347319518609534,
+            0.21347319518609534,
+            0.0
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": -0.09999999999999998,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.5844288770224761
+              ],
+              [
+                "DD",
+                "L",
+                -5.844288770224761
+              ]
+            ],
+            "within": [
+              [
+                "LL",
+                "L",
+                -0.7305360962780951
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched",
+          "homoligation"
+        ],
+        "bits": "1110",
+        "productive_core_count": 3,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f"
+        ],
+        "passes_phenotype": true,
+        "racemate": {
+          "state": [
+            0.8592223901839613,
+            0.03937732710668382,
+            0.03937732710668382,
+            0.015505738900667762,
+            0.0,
+            0.0,
+            0.015505738900667762
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": 0.002512238401238945,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "DD",
+                "L",
+                -2.4628082563875364
+              ]
+            ],
+            "within": [
+              [
+                "LL",
+                "L",
+                -0.30785103204844205
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      },
+      {
+        "modules": [
+          "matched",
+          "mismatched",
+          "homoligation",
+          "heteroligation"
+        ],
+        "bits": "1111",
+        "productive_core_count": 3,
+        "closure_species": [
+          "L",
+          "D",
+          "LL",
+          "LD",
+          "DL",
+          "DD"
+        ],
+        "closure_channels": [
+          "matched_L_f",
+          "matched_L_b",
+          "mismatched_L_f",
+          "mismatched_L_b",
+          "homo_L_f",
+          "matched_D_f",
+          "matched_D_b",
+          "mismatched_D_f",
+          "mismatched_D_b",
+          "homo_D_f",
+          "hetero_LD_f",
+          "hetero_DL_f"
+        ],
+        "passes_phenotype": true,
+        "racemate": {
+          "state": [
+            0.6718237198128718,
+            0.035815210411507634,
+            0.035815210411507634,
+            0.012827292968205648,
+            0.05130917187282259,
+            0.05130917187282259,
+            0.012827292968205648
+          ],
+          "alpha_even": -0.1,
+          "alpha_odd": 0.004077965984284268,
+          "alpha_pair_sum": -0.1,
+          "negative_couplings": {
+            "cross": [
+              [
+                "D",
+                "L",
+                -0.28652168329206107
+              ],
+              [
+                "DD",
+                "L",
+                -2.3277578570703135
+              ]
+            ],
+            "within": [
+              [
+                "LL",
+                "L",
+                -0.2909697321337892
+              ]
+            ],
+            "shared": []
+          },
+          "cooperative": false
+        }
+      }
+    ]
+  },
+  "controls": {
+    "control_a": {
+      "closure": [
+        [
+          "L",
+          "D"
+        ],
+        [
+          "growth_L",
+          "quadratic_L",
+          "growth_D",
+          "quadratic_D"
+        ]
+      ],
+      "racemate": {
+        "state": [
+          1.618033988749895,
+          1.618033988749895
+        ],
+        "alpha_even": -2.23606797749979,
+        "alpha_odd": -2.23606797749979,
+        "alpha_pair_sum": -2.23606797749979,
+        "negative_couplings": {
+          "cross": [],
+          "within": [],
+          "shared": []
+        },
+        "cooperative": true
+      }
+    },
+    "control_b_eps_0": {
+      "closure": [
+        [],
+        []
+      ],
+      "racemate": {
+        "state": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "alpha_even": -2.3944487245360104,
+        "alpha_odd": 0.08276253029821978,
+        "alpha_pair_sum": -2.3944487245360104,
+        "negative_couplings": {
+          "cross": [
+            [
+              "V",
+              "L",
+              -6.0
+            ]
+          ],
+          "within": [],
+          "shared": []
+        },
+        "cooperative": false
+      }
+    },
+    "control_b_eps_0.001": {
+      "closure": [
+        [
+          "L",
+          "D",
+          "U",
+          "V"
+        ],
+        [
+          "ligation_L",
+          "destruction_L",
+          "restoration_L",
+          "ligation_D",
+          "destruction_D",
+          "restoration_D"
+        ]
+      ],
+      "racemate": {
+        "state": [
+          1.0000434803978824,
+          1.0000434803978824,
+          1.0000869626863098,
+          1.0000869626863098
+        ],
+        "alpha_even": -2.394181581990277,
+        "alpha_odd": 0.08262199118402558,
+        "alpha_pair_sum": -2.394181581990277,
+        "negative_couplings": {
+          "cross": [
+            [
+              "V",
+              "L",
+              -5.999260882387294
+            ]
+          ],
+          "within": [],
+          "shared": []
+        },
+        "cooperative": false
+      }
+    },
+    "destructive_parent_zero_reverse": {
+      "closure": [
+        [],
+        []
+      ],
+      "racemate": {
+        "state": [
+          0.7021355082649101,
+          0.033914296327640946,
+          0.033914296327640946,
+          0.011501794953990402,
+          0.046007179815961606,
+          0.046007179815961606,
+          0.011501794953990402
+        ],
+        "alpha_even": -0.1,
+        "alpha_odd": 0.024329498132166838,
+        "alpha_pair_sum": -0.1,
+        "negative_couplings": {
+          "cross": [
+            [
+              "D",
+              "L",
+              -0.27131437062112757
+            ],
+            [
+              "DD",
+              "L",
+              -2.7131437062112758
+            ]
+          ],
+          "within": [
+            [
+              "LL",
+              "L",
+              -0.33914296327640947
+            ]
+          ],
+          "shared": []
+        },
+        "cooperative": false
+      }
+    }
+  },
+  "supports_with_empty_closure": 20,
+  "supports_without_core": 20,
+  "route_legend": {
+    "c": "negative cross-enantiomer entry of B",
+    "w": "negative off-diagonal entry of A",
+    "s": "negative coupling through a mirror-fixed species"
+  }
+}

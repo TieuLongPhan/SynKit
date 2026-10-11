@@ -1,0 +1,39 @@
+{
+  "output": "/tmp/synkit-stereo-clean-release-full/local_internal.json",
+  "seconds": 21.235357694909908,
+  "summary": {
+    "canonical_classes_observed": 67,
+    "canonicalizations_completed": 940,
+    "carrier_accuracy": 1.0,
+    "carriers": 10,
+    "carriers_failed": 0,
+    "carriers_passed": 10,
+    "complete": true,
+    "families": {
+      "atrop_bond": 1,
+      "cumulene_axis": 1,
+      "extended_cis_trans": 1,
+      "helical": 1,
+      "octahedral": 1,
+      "planar_bond": 1,
+      "planar_chirality": 1,
+      "square_planar": 1,
+      "tetrahedral": 1,
+      "trigonal_bipyramidal": 1
+    },
+    "formal_class_separation_passed": 10,
+    "global_symmetry_quotients": 0,
+    "independent_oracles_complete": true,
+    "parse_failures": 0,
+    "raw_local_permutations_checked": 940,
+    "raw_local_permutations_expected": 940,
+    "record_statuses": {
+      "passed": 10
+    },
+    "records_evaluated": 10,
+    "records_with_carriers": 10,
+    "theoretical_configuration_classes": 67
+  },
+  "table": "/tmp/synkit-stereo-clean-release-full/local_internal.csv",
+  "task": "internal"
+}

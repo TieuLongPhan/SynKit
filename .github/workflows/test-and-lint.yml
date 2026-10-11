@@ -2,7 +2,7 @@ name: Test, lint, and packages
 
 on:
   push:
-    branches: ["main", "staging", "mech", "stereo", "lwg", "mtg"]
+    branches: ["main", "staging", "mech", "stereo", "mapper", "mtg"]
   pull_request:
     branches: ["main"]
 
@@ -31,6 +31,21 @@ jobs:
           channels: conda-forge
           use-mamba: true
 
+      - name: Locate pip cache
+        id: pip-cache
+        shell: bash -l {0}
+        run: |
+          conda activate synkit-ci
+          echo "dir=$(python -m pip cache dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Python packages
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: pip-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
+          restore-keys: |
+            pip-${{ runner.os }}-${{ matrix.python-version }}-
+
       - name: Install project and test tools
         shell: bash -l {0}
         run: |
@@ -51,6 +66,30 @@ jobs:
         run: |
           conda activate synkit-ci
           bash scripts/pytest.sh
+
+  mapper-native:
+    name: Mapper C++ kernel and wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install build tools and declared dependencies
+        run: |
+          g++ --version
+          python -m pip install . build pytest
+      - name: Build distributions and verify the installed kernel builder
+        run: |
+          python -m build --sdist --wheel
+          python scripts/check_package_artifacts.py dist --mapper-smoke
+          python -m synkit.Chem.Mapper.exact.native_build --output-dir /tmp/synkit-native
+      - name: Run bounded native exactness and disk controls
+        run: |
+          python -m pytest -q \
+            Test/Chem/Mapper/exact/test_native_minimum_shells.py \
+            Test/Chem/Mapper/exact/test_disk_frontier.py
 
   coverage:
     name: Coverage

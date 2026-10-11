@@ -9,7 +9,13 @@ from typing import Any, Hashable, Iterable, Mapping
 
 import networkx as nx
 
-from synkit.Graph.Morphism import LewisLabelledGraph
+from synkit.Graph.Morphism import (
+    LLGError,
+    LabelSchema,
+    LewisLabelledGraph,
+    derive_electron_labeled_graph,
+    is_electron_schema,
+)
 from synkit.Rule.Apply import DPOError, RuleSpan
 
 from .process import (
@@ -35,6 +41,8 @@ class HistoryIssueCode(str, Enum):
     FLOW_LOOKUP = "HISTORY_FLOW_LOOKUP"
     LINEAGE_CONFLICT = "HISTORY_LINEAGE_CONFLICT"
     INVALID_EXTENSION = "HISTORY_INVALID_EXTENSION"
+    INVALID_CONFIGURATION = "HISTORY_INVALID_CONFIGURATION"
+    INVALID_STATE = "HISTORY_INVALID_STATE"
     INACTIVE_INPUT = "HISTORY_INACTIVE_INPUT"
     ACTIVE_OUTPUT = "HISTORY_ACTIVE_OUTPUT"
     OUTER_RULE = "HISTORY_OUTER_RULE"
@@ -81,6 +89,52 @@ class EdgeLineage:
     lineage_id: str
     endpoints: frozenset[str]
     members: tuple[EdgeCarrier, ...]
+
+
+@dataclass(frozen=True)
+class ConfigurationCut:
+    """One order ideal with decoded state and supplied carrier correspondence.
+
+    ``world`` uses persistent node-lineage IDs. Node and edge states retain the
+    currently active material/carrier, including explicit absence. No schedule
+    is selected and no linear extension is enumerated.
+    """
+
+    process_id: str
+    executed_events: frozenset[str]
+    active_material_ids: frozenset[str]
+    world: LewisLabelledGraph
+    node_states: tuple[tuple[NodeLineage, CarrierState], ...]
+    edge_states: tuple[tuple[EdgeLineage, CarrierState], ...]
+
+    def lineage_graph(self, *, include_absent: bool = True) -> nx.MultiGraph:
+        """Return lineage observations, optionally including absent carriers.
+
+        :param include_absent: Retain absent historical node and edge lineages.
+        :return: Fresh graph with one ``state`` observation per retained lineage.
+        """
+        graph = nx.MultiGraph()
+        graph.graph.update(
+            process_id=self.process_id,
+            executed_events=self.executed_events,
+            active_material_ids=self.active_material_ids,
+            projection="configuration",
+        )
+        for lineage, state in self.node_states:
+            if state.present or include_absent:
+                graph.add_node(lineage.lineage_id, members=lineage.members, state=state)
+        for lineage, state in self.edge_states:
+            if state.present or include_absent:
+                left, right = tuple(lineage.endpoints)
+                graph.add_edge(
+                    left,
+                    right,
+                    key=lineage.lineage_id,
+                    lineage_id=lineage.lineage_id,
+                    members=lineage.members,
+                    state=state,
+                )
+        return graph
 
 
 @dataclass(frozen=True)
@@ -232,10 +286,38 @@ class OccurrenceMTG:
     causal_pairs: tuple[tuple[str, str], ...]
     node_lineages: tuple[NodeLineage, ...]
     edge_lineages: tuple[EdgeLineage, ...]
+    empty_schema: LabelSchema | None = None
 
     @classmethod
-    def from_process(cls, process: OccurrenceProcess) -> "OccurrenceMTG":
+    def empty(
+        cls, schema: LabelSchema, *, process_id: str = "empty"
+    ) -> "OccurrenceMTG":
+        """Return the empty history, typed by its graph schema.
+
+        :param schema: Schema for the empty boundary worlds.
+        :param process_id: Identity of this empty occurrence history.
+        :return: Typed monoidal unit with no events or material copies.
+        """
+        return cls(process_id, (), (), (), (), (), (), schema)
+
+    @property
+    def schema(self) -> LabelSchema:
+        """Return the common material schema or the declared empty schema."""
+        if self.materials:
+            return self.materials[0].value.schema
+        if self.empty_schema is not None:
+            return self.empty_schema
+        raise HistoryError(
+            HistoryIssue(HistoryIssueCode.EMPTY, "An empty history needs a schema.")
+        )
+
+    @classmethod
+    def from_process(
+        cls, process: OccurrenceProcess, *, empty_schema: LabelSchema | None = None
+    ) -> "OccurrenceMTG":
         if not process.materials:
+            if not process.events and empty_schema is not None:
+                return cls.empty(empty_schema, process_id=process.process_id)
             raise HistoryError(
                 HistoryIssue(
                     HistoryIssueCode.EMPTY,
@@ -289,6 +371,25 @@ class OccurrenceMTG:
 
     def replay(self) -> HistoryReplay:
         issues = []
+        schemas_valid = (
+            len({m.value.schema for m in self.materials}) == 1
+            and self.empty_schema is None
+            if self.materials
+            else self.empty_schema is not None and not self.events
+        )
+        if not schemas_valid:
+            return HistoryReplay(
+                False,
+                (
+                    HistoryIssue(
+                        HistoryIssueCode.SCHEMA_MISMATCH,
+                        "A history requires materials under one schema.",
+                    ),
+                ),
+            )
+        state_issues = self._material_state_issues()
+        if state_issues:
+            return HistoryReplay(False, state_issues)
         try:
             process = self.to_process()
         except ProcessError as error:
@@ -330,7 +431,165 @@ class OccurrenceMTG:
                     "Causal dependencies changed during reconstruction.",
                 )
             )
+        if observed_nodes == expected_nodes and observed_edges == expected_edges:
+            issues.extend(self._lineage_issues())
         return HistoryReplay(not issues, tuple(issues))
+
+    def _material_state_issues(self) -> tuple[HistoryIssue, ...]:
+        if not is_electron_schema(self.schema):
+            return ()
+        issues = []
+        for material in self.materials:
+            try:
+                derive_electron_labeled_graph(material.value.to_networkx())
+            except LLGError as error:
+                issues.append(
+                    HistoryIssue(
+                        HistoryIssueCode.INVALID_STATE,
+                        "A material's derived electron state disagrees with its authoritative coordinates.",
+                        {
+                            "material": material.occurrence_id,
+                            "issues": tuple(issue.to_dict() for issue in error.issues),
+                        },
+                    )
+                )
+        return tuple(issues)
+
+    def _lineage_issues(self) -> tuple[HistoryIssue, ...]:
+        expected_nodes, expected_edges = _lineages(self.materials, self.events)
+        expected_groups = {frozenset(n.members): n.lineage_id for n in expected_nodes}
+        node_groups = {frozenset(n.members) for n in self.node_lineages}
+        edge_groups = {frozenset(e.members) for e in self.edge_lineages}
+        if (
+            node_groups != set(expected_groups)
+            or len(node_groups) != len(self.node_lineages)
+            or len({n.lineage_id for n in self.node_lineages})
+            != len(self.node_lineages)
+            or edge_groups != {frozenset(e.members) for e in expected_edges}
+            or len(edge_groups) != len(self.edge_lineages)
+            or len({e.lineage_id for e in self.edge_lineages})
+            != len(self.edge_lineages)
+        ):
+            return (
+                HistoryIssue(
+                    HistoryIssueCode.ROUNDTRIP,
+                    "Lineage partitions or identifiers disagree with supplied preservation maps.",
+                ),
+            )
+        transported = {
+            n.lineage_id: expected_groups[frozenset(n.members)]
+            for n in self.node_lineages
+        }
+        endpoints = {frozenset(e.members): e.endpoints for e in expected_edges}
+        for edge in self.edge_lineages:
+            if (
+                not edge.endpoints <= set(transported)
+                or frozenset(transported[node] for node in edge.endpoints)
+                != endpoints[frozenset(edge.members)]
+            ):
+                return (
+                    HistoryIssue(
+                        HistoryIssueCode.ROUNDTRIP,
+                        "An edge lineage does not have its preserved carrier endpoints.",
+                        {"lineage": edge.lineage_id},
+                    ),
+                )
+        return ()
+
+    def configuration_cut(self, executed_events: Iterable[str]) -> ConfigurationCut:
+        """Decode a downward-closed event set without choosing a schedule.
+
+        :param executed_events: Set of completed event occurrence IDs.
+        :return: Decoded cut, active materials, and complete lineage observations.
+        :raises HistoryError: If the history is invalid or the set is not an ideal.
+        """
+        replay = self.replay()
+        if not replay.valid:
+            raise HistoryError(*replay.issues)
+        executed = frozenset(executed_events)
+        unknown = executed - set(self.event_by_id)
+        missing = {
+            first
+            for first, second in self.causal_pairs
+            if second in executed and first not in executed
+        }
+        if unknown or missing:
+            raise HistoryError(
+                HistoryIssue(
+                    HistoryIssueCode.INVALID_CONFIGURATION,
+                    "A configuration must be a downward-closed set of known event IDs.",
+                    {
+                        "unknown": tuple(sorted(unknown, key=repr)),
+                        "missing_predecessors": tuple(sorted(missing)),
+                    },
+                )
+            )
+        produced = {
+            b.material_id: e.occurrence_id for e in self.events for b in e.outputs
+        }
+        consumed = {
+            b.material_id: e.occurrence_id for e in self.events for b in e.inputs
+        }
+        active = frozenset(
+            m.occurrence_id
+            for m in self.materials
+            if (
+                m.occurrence_id not in produced or produced[m.occurrence_id] in executed
+            )
+            and (
+                m.occurrence_id not in consumed
+                or consumed[m.occurrence_id] not in executed
+            )
+        )
+        nodes = tuple((n, self._node_state(n, active)) for n in self.node_lineages)
+        edges = tuple((e, self._edge_state(e, active)) for e in self.edge_lineages)
+        world = self._decode_cut(nodes, edges)
+        return ConfigurationCut(self.process_id, executed, active, world, nodes, edges)
+
+    def _decode_cut(
+        self,
+        nodes: tuple[tuple[NodeLineage, CarrierState], ...],
+        edges: tuple[tuple[EdgeLineage, CarrierState], ...],
+    ) -> LewisLabelledGraph:
+        graph = nx.Graph()
+        materials = self.material_by_id
+        for lineage, state in nodes:
+            if state.present:
+                graph.add_node(
+                    lineage.lineage_id,
+                    **materials[state.material_id].value.node_labels(state.carrier),
+                )
+        for lineage, state in edges:
+            if not state.present:
+                continue
+            endpoints = tuple(lineage.endpoints)
+            if len(endpoints) != 2 or not set(endpoints) <= set(graph):
+                raise HistoryError(
+                    HistoryIssue(
+                        HistoryIssueCode.LINEAGE_CONFLICT,
+                        "An active edge lacks distinct active endpoints.",
+                    )
+                )
+            if graph.has_edge(*endpoints):
+                raise HistoryError(
+                    HistoryIssue(
+                        HistoryIssueCode.LINEAGE_CONFLICT,
+                        "Two active edge lineages occupy one simple bond.",
+                    )
+                )
+            graph.add_edge(
+                *endpoints,
+                **materials[state.material_id].value.edge_labels(state.carrier),
+            )
+        return LewisLabelledGraph.from_networkx(
+            (
+                derive_electron_labeled_graph(graph)
+                if is_electron_schema(self.schema)
+                else graph
+            ),
+            self.schema,
+            name=f"{self.process_id}:configuration",
+        )
 
     def _flow_roles(self) -> tuple[set[str], set[str]]:
         produced = {
@@ -437,6 +696,9 @@ class OccurrenceMTG:
 
     def full_history(self, extension: Iterable[str]) -> nx.MultiGraph:
         """Project all node/edge lineages over one certified linear extension."""
+        replay = self.replay()
+        if not replay.valid:
+            raise HistoryError(*replay.issues)
         order = tuple(extension)
         cuts = self._active_cuts(order)
         graph = nx.MultiGraph()
@@ -472,7 +734,7 @@ class OccurrenceMTG:
         return graph
 
     def _aggregate(self, material_ids: frozenset[str], name: str) -> LewisLabelledGraph:
-        schema = self.materials[0].value.schema
+        schema = self.schema
         graph = nx.Graph()
         for material_id in sorted(material_ids):
             material = self.material_by_id[material_id]
@@ -489,6 +751,9 @@ class OccurrenceMTG:
 
     def outer_rule(self) -> RuleSpan:
         """Return the initial-to-final transformation induced by carrier lineages."""
+        replay = self.replay()
+        if not replay.valid:
+            raise HistoryError(*replay.issues)
         left = self._aggregate(self.initial_material_ids, f"{self.process_id}:initial")
         right = self._aggregate(self.final_material_ids, f"{self.process_id}:final")
         preserved = {}
@@ -553,25 +818,26 @@ class OccurrenceMTG:
 
     def composed_change_graph(self) -> nx.MultiGraph:
         """Project only initial/final lineage states, analogous to a composed ITS."""
-        process = self.to_process()
-        extension = tuple(
-            nx.lexicographical_topological_sort(process.causal_graph, key=repr)
-        )
-        full = self.full_history(extension)
+        initial = self.configuration_cut(())
+        final = self.configuration_cut(self.event_by_id)
+        final_nodes = {n.lineage_id: state for n, state in final.node_states}
+        final_edges = {e.lineage_id: state for e, state in final.edge_states}
         result = nx.MultiGraph()
         result.graph.update(process_id=self.process_id, projection="composed")
-        for node, attrs in full.nodes(data=True):
-            history = attrs["history"]
-            result.add_node(node, left=history[0], right=history[-1])
-        for left, right, key, attrs in full.edges(keys=True, data=True):
-            history = attrs["history"]
-            if history[0].present or history[-1].present:
+        for lineage, state in initial.node_states:
+            result.add_node(
+                lineage.lineage_id, left=state, right=final_nodes[lineage.lineage_id]
+            )
+        for lineage, state in initial.edge_states:
+            final_state = final_edges[lineage.lineage_id]
+            if state.present or final_state.present:
+                left, right = tuple(lineage.endpoints)
                 result.add_edge(
                     left,
                     right,
-                    key=key,
-                    left=history[0],
-                    right=history[-1],
+                    key=lineage.lineage_id,
+                    left=state,
+                    right=final_state,
                 )
         return result
 
@@ -649,6 +915,7 @@ class OccurrenceMTGFamily:
 __all__ = [
     "ABSENT",
     "CarrierState",
+    "ConfigurationCut",
     "EdgeLineage",
     "HistoryError",
     "HistoryIssue",

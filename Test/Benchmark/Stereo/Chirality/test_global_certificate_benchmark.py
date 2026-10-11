@@ -9,7 +9,7 @@ from Experiment.Stereo.Chirality.global_stereo_performance import measure_case
 
 
 def test_global_certificate_protocol_is_separate_and_label_blind() -> None:
-    assert SCHEMA == "synkit.exact-plus-global-certificate-acs/1"
+    assert SCHEMA == "synkit.exact-plus-global-certificate-acs/2"
     records = {row["ID"]: row for row in load_dataset()}
 
     vs170 = classify_record(records["VS170"])

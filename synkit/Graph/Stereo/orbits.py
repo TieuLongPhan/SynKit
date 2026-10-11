@@ -46,7 +46,11 @@ class Permutation:
         return tuple(values[index] for index in self.image)
 
     def then(self, after: "Permutation") -> "Permutation":
-        """Return ``after ∘ self`` under :meth:`apply`."""
+        """Sequence tuple reorderings: ``after.apply(self.apply(values))``.
+
+        The resulting slot image is ``self ∘ after``. Slot-map composition
+        and composition of their tuple-reordering operators have opposite order.
+        """
         if self.degree != after.degree:
             raise ValueError("Only permutations of equal degree compose.")
         return Permutation(tuple(self.image[index] for index in after.image))

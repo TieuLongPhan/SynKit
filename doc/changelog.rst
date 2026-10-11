@@ -26,8 +26,54 @@ Implementation plan
      - Planned
      - Unified stereo-aware reaction, rewriting, and verification APIs.
 
-Unreleased
-----------
+Version 1.6.3
+-------------
+
+**Packaging and development**
+
+- Declared direct plotting, image, parallel-processing, and progress-bar
+  dependencies and set the pandas, scikit-learn, and Matplotlib minimum
+  versions for compatibility with NumPy 2.
+- Included PuLP in the ``all`` extra while retaining the focused ``milp`` extra.
+- Aligned the conda environment, pip requirements, and package metadata, and
+  made documentation use the source package's release version.
+
+**Atom-to-atom mapping**
+
+- Added ``Mapper(method=...).map(...)`` with eight methods and one result
+  interface that reports the mapping scope, optimality, and completeness.
+- Organized mapper internals into adapters, validation, reporting, and exact
+  solver packages while preserving the historical import paths.
+- Promoted the mapper from ``synkit.Chem.Reaction.Mapper`` to the peer package
+  ``synkit.Chem.Mapper``. The former namespace remains available as a
+  compatibility alias, including its lower-level submodules.
+- Added complete atom-compatible enumeration for ``CD="minimal"`` and any
+  finite non-negative exact CD, with explicit ``complete``, ``no_solutions``,
+  and ``timeout`` outcomes.
+- Added JSON-serializable exact-CD terminal-prefix certificates and an
+  independent verifier for input binding, exhaustive tree coverage, pruning
+  bounds, and selected-mapping digests.
+- Added memory-bounded product-automorphism orbital branching backed by
+  verified generators and prefix stabilizers. Symmetry-pruned subtrees carry
+  exact transporter witnesses in the exact-CD certificate.
+- Added replayable element-block assignment lower and upper bounds, seeded
+  two-pass shell search, streaming/count-only enumeration, and an auditable
+  binary edit-support/assignment hybrid selector.
+- Added an OOM-safe serial, reference-blinded campaign runner for supplied-CD
+  and globally minimal shells, with digest-bound resumable records and a
+  censored-statistics verifier.
+- Vectorized exact prefix-cost updates, added reference-free reaction-centre
+  ordering and admissible atom-profile filtering, and added duplicate-free
+  labeled expansion from a verified cyclic product-symmetry subgroup.
+- Added exact canonical ITS/template spectra and a second-pass implicit-H flow
+  enumerator with exact labeled-hydrogen multiplicities.
+- Added candidate-complete alternative-ITS generation at the reference CD,
+  any supplied numeric CD, or the proven global minimum. The API exports one
+  AAM per non-reference exact ITS class, discloses reference seeding as an
+  ordering/incumbent hint, and fails closed on shell or canonicalization caps.
+- Removed unsound fingerprint/orbit sorting from the older exhaustive and
+  uncertainty-kernel solvers; equal fingerprints or global orbit membership do
+  not prove that arbitrary atom transpositions are valid automorphisms.
 
 **CRN — correctness**
 

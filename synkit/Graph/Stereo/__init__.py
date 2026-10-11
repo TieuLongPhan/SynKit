@@ -186,6 +186,11 @@ from .pairwise import (
     classify_rdkit_stereoisomer_relation,
     classify_stereoisomer_relation,
 )
+from .rdkit_identity import (
+    RDKIT_IDENTITY_SCHEMA,
+    RESONANCE_FAMILY_SCHEMA,
+    ResonanceFamilyCanonicalResult,
+)
 from .enumeration import (
     FOCAL_STEREOGRAPH_SCHEMA,
     STEREO_ENUMERATION_SCHEMA,
@@ -353,6 +358,9 @@ __all__ = [
     "STEREOISOMER_RELATION_SCHEMA",
     "StereoisomerRelation",
     "StereoisomerRelationResult",
+    "RDKIT_IDENTITY_SCHEMA",
+    "RESONANCE_FAMILY_SCHEMA",
+    "ResonanceFamilyCanonicalResult",
     "classify_rdkit_stereoisomer_relation",
     "classify_stereoisomer_relation",
     "FOCAL_STEREOGRAPH_SCHEMA",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 import itertools
@@ -38,6 +39,100 @@ class RealizabilityConfig:
 
     max_states: int = 100_000
     max_depth: int = 10_000
+
+
+class RealizabilityStatus(str, Enum):
+    """Outcome of a bounded exact realizability search.
+
+    ``UNREALIZABLE`` is reserved for an exhaustively searched finite state
+    space. Reaching a state or depth budget produces ``INCONCLUSIVE`` instead,
+    so a resource limit cannot be mistaken for a mathematical negative.
+    """
+
+    REALIZABLE = "realizable"
+    UNREALIZABLE = "unrealizable"
+    INCONCLUSIVE = "inconclusive"
+
+
+@dataclass(frozen=True)
+class RealizabilityResult:
+    """Typed result of a realizability search.
+
+    :param status:
+        Certified search outcome.
+    :type status: RealizabilityStatus
+    :param certificate:
+        Realizing firing sequence when ``status`` is ``REALIZABLE``.
+    :type certificate: Optional[List[TransitionId]]
+    :param explored_states:
+        Number of Petri-net markings removed from the BFS queue.
+    :type explored_states: int
+    :param max_depth_reached:
+        Greatest firing-sequence depth among explored markings.
+    :type max_depth_reached: int
+    :param exhaustive:
+        Whether the reachable finite state space was exhausted.
+    :type exhaustive: bool
+    :param termination_reason:
+        One of ``certificate``, ``exhausted``, ``state_limit`` or
+        ``depth_limit``.
+    :type termination_reason: str
+    """
+
+    status: RealizabilityStatus
+    certificate: Optional[List[TransitionId]]
+    explored_states: int
+    max_depth_reached: int
+    exhaustive: bool
+    termination_reason: str
+
+    @property
+    def realizable(self) -> Optional[bool]:
+        """Return a tri-state Boolean view of the outcome.
+
+        :return:
+            ``True`` for a certificate, ``False`` for exhaustive failure and
+            ``None`` for a resource-limited search.
+        :rtype: Optional[bool]
+        """
+        if self.status is RealizabilityStatus.REALIZABLE:
+            return True
+        if self.status is RealizabilityStatus.UNREALIZABLE:
+            return False
+        return None
+
+    def to_dict(self) -> Dict[str, object]:
+        """Return a JSON-serializable representation.
+
+        :return:
+            Search outcome and audit metadata.
+        :rtype: Dict[str, object]
+        """
+        return {
+            "status": self.status.value,
+            "realizable": self.realizable,
+            "certificate": self.certificate,
+            "explored_states": self.explored_states,
+            "max_depth_reached": self.max_depth_reached,
+            "exhaustive": self.exhaustive,
+            "termination_reason": self.termination_reason,
+        }
+
+
+class RealizabilitySearchLimit(RuntimeError):
+    """Raised when the compatibility API reaches a search budget.
+
+    :param result:
+        Inconclusive detailed search result.
+    :type result: RealizabilityResult
+    """
+
+    def __init__(self, result: RealizabilityResult) -> None:
+        self.result = result
+        super().__init__(
+            "Realizability search is inconclusive: "
+            f"{result.termination_reason} after {result.explored_states} states"
+        )
 
 
 @dataclass
@@ -147,6 +242,7 @@ class PathwayRealizability:
         self._goal_exact: Dict[Place, int] = {}
         self._goal_atleast: Dict[Place, int] = {}
         self._certificate: Optional[List[TransitionId]] = None
+        self._last_result: Optional[RealizabilityResult] = None
         self._config = config or RealizabilityConfig()
 
     # ------------------------------------------------------------------
@@ -616,6 +712,16 @@ class PathwayRealizability:
         """
         return self._certificate
 
+    @property
+    def last_result(self) -> Optional[RealizabilityResult]:
+        """Return the most recent detailed realizability result.
+
+        :return:
+            Detailed result, or ``None`` before a search has run.
+        :rtype: Optional[RealizabilityResult]
+        """
+        return self._last_result
+
     def summary(self) -> RealizabilitySummary:
         """Return a compact summary of the current realizability instance.
 
@@ -668,16 +774,17 @@ class PathwayRealizability:
     # bounded BFS
     # ------------------------------------------------------------------
 
-    def is_realizable(
+    def realizability_result(
         self,
         max_states: Optional[int] = None,
         max_depth: Optional[int] = None,
-    ) -> Tuple[bool, Optional[List[TransitionId]]]:
-        """Test exact realizability by bounded breadth-first search.
+    ) -> RealizabilityResult:
+        """Return a typed result from bounded breadth-first search.
 
         The search explores reachable Petri-net markings while recording firing
-        sequences. A certificate is returned when a goal-satisfying marking is
-        found.
+        sequences. A found sequence is a replayable certificate. A negative is
+        returned only after exhaustive search; reaching a budget returns an
+        explicit ``INCONCLUSIVE`` outcome.
 
         :param max_states:
             Optional override for the maximum number of explored states.
@@ -686,57 +793,147 @@ class PathwayRealizability:
             Optional override for the maximum explored firing depth.
         :type max_depth: Optional[int]
         :return:
-            Pair ``(is_realizable, certificate)`` where ``certificate`` is a
-            realizing transition sequence if one is found.
-        :rtype: Tuple[bool, Optional[List[TransitionId]]]
+            Typed, auditable search result.
+        :rtype: RealizabilityResult
+
+        :raises ValueError:
+            If a search budget is outside its valid range.
 
         .. rubric:: Example
 
         .. code-block:: python
 
-            ok, cert = pr.is_realizable(max_states=50000, max_depth=2000)
-            print(ok)
-            print(cert)
+            result = pr.realizability_result(max_states=50000, max_depth=2000)
+            print(result.status)
+            print(result.certificate)
         """
         net = self.petri
         m0 = dict(self.initial_marking)
 
         max_states = max_states if max_states is not None else self._config.max_states
         max_depth = max_depth if max_depth is not None else self._config.max_depth
+        if max_states < 1:
+            raise ValueError("max_states must be at least 1")
+        if max_depth < 0:
+            raise ValueError("max_depth must be non-negative")
 
         if self._goal_reached(m0):
             self._certificate = []
-            return True, []
+            result = RealizabilityResult(
+                status=RealizabilityStatus.REALIZABLE,
+                certificate=[],
+                explored_states=0,
+                max_depth_reached=0,
+                exhaustive=False,
+                termination_reason="certificate",
+            )
+            self._last_result = result
+            return result
 
         start = net.marking_to_tuple(m0)
         q: deque[Tuple[Tuple[int, ...], List[TransitionId]]] = deque([(start, [])])
         visited = {start}
         states = 0
+        deepest = 0
+        depth_limited = False
 
         while q:
+            if states >= max_states:
+                result = RealizabilityResult(
+                    status=RealizabilityStatus.INCONCLUSIVE,
+                    certificate=None,
+                    explored_states=states,
+                    max_depth_reached=deepest,
+                    exhaustive=False,
+                    termination_reason="state_limit",
+                )
+                self._certificate = None
+                self._last_result = result
+                return result
+
             mtuple, seq = q.popleft()
             states += 1
-            if states > max_states:
-                break
-            if len(seq) > max_depth:
-                continue
+            deepest = max(deepest, len(seq))
 
             marking = net.tuple_to_marking(mtuple)
-            for tid in net.transition_order:
-                if not net.enabled(marking, tid):
-                    continue
+            enabled = [
+                tid for tid in net.transition_order if net.enabled(marking, tid)
+            ]
+            if len(seq) >= max_depth:
+                if enabled:
+                    depth_limited = True
+                continue
+
+            for tid in enabled:
                 new_mark = net.fire(marking, tid)
                 if self._goal_reached(new_mark):
                     seq2 = seq + [tid]
                     self._certificate = seq2
-                    return True, seq2
+                    result = RealizabilityResult(
+                        status=RealizabilityStatus.REALIZABLE,
+                        certificate=seq2,
+                        explored_states=states,
+                        max_depth_reached=max(deepest, len(seq2)),
+                        exhaustive=False,
+                        termination_reason="certificate",
+                    )
+                    self._last_result = result
+                    return result
                 new_tuple = net.marking_to_tuple(new_mark)
                 if new_tuple not in visited:
                     visited.add(new_tuple)
                     q.append((new_tuple, seq + [tid]))
 
         self._certificate = None
-        return False, None
+        if depth_limited:
+            status = RealizabilityStatus.INCONCLUSIVE
+            reason = "depth_limit"
+            exhaustive = False
+        else:
+            status = RealizabilityStatus.UNREALIZABLE
+            reason = "exhausted"
+            exhaustive = True
+        result = RealizabilityResult(
+            status=status,
+            certificate=None,
+            explored_states=states,
+            max_depth_reached=deepest,
+            exhaustive=exhaustive,
+            termination_reason=reason,
+        )
+        self._last_result = result
+        return result
+
+    def is_realizable(
+        self,
+        max_states: Optional[int] = None,
+        max_depth: Optional[int] = None,
+    ) -> Tuple[bool, Optional[List[TransitionId]]]:
+        """Return the legacy Boolean/certificate pair without silent cutoffs.
+
+        This compatibility method delegates to :meth:`realizability_result`.
+        It raises when the detailed result is inconclusive, preventing a state
+        or depth budget from being reported as non-realizability.
+
+        :param max_states:
+            Optional override for the maximum number of explored states.
+        :type max_states: Optional[int]
+        :param max_depth:
+            Optional override for the maximum explored firing depth.
+        :type max_depth: Optional[int]
+        :return:
+            Pair ``(is_realizable, certificate)`` for conclusive outcomes.
+        :rtype: Tuple[bool, Optional[List[TransitionId]]]
+        :raises RealizabilitySearchLimit:
+            If the bounded search is inconclusive.
+        """
+        result = self.realizability_result(
+            max_states=max_states,
+            max_depth=max_depth,
+        )
+        if result.status is RealizabilityStatus.INCONCLUSIVE:
+            raise RealizabilitySearchLimit(result)
+        return result.status is RealizabilityStatus.REALIZABLE, result.certificate
 
     # ------------------------------------------------------------------
     # König sufficient test
@@ -1071,7 +1268,9 @@ def run_realizability_from_syncrn(
     pr.build_petri_net_from_flow()
 
     konig_ok = pr.is_realizable_via_konig()
-    bfs_ok, cert = pr.is_realizable()
+    bfs_result = pr.realizability_result()
+    bfs_ok = bfs_result.realizable
+    cert = bfs_result.certificate
 
     if verbose:
         print("Active flow:")
@@ -1080,12 +1279,16 @@ def run_realizability_from_syncrn(
                 print(f"  {eid}: {val}")
         print("Initial marking:", dict(sorted(pr._provided_initial_marking.items())))
         print("König sufficient test:", konig_ok)
-        print("BFS realizable:", bfs_ok)
+        print("BFS status:", bfs_result.status.value)
         print("Firing certificate:", cert)
 
     info: Dict[str, object] = {
         "konig": konig_ok,
         "bfs": bfs_ok,
+        "bfs_result": bfs_result,
+        "bfs_status": bfs_result.status.value,
+        "bfs_exhaustive": bfs_result.exhaustive,
+        "bfs_explored_states": bfs_result.explored_states,
         "certificate": cert,
         "summary": pr.summary(),
     }

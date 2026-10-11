@@ -1,0 +1,7780 @@
+{
+  "schema": "synkit.registration-inputs/1",
+  "rows": [
+    {
+      "id": "registration:0000",
+      "expected_group": [
+        "tetrahedral:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          1000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          1003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          1006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          1009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          1012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          1012,
+          1000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          1012,
+          1003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          1012,
+          1006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          1012,
+          1009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            1012,
+            1009,
+            1006,
+            1003,
+            1000
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0001",
+      "expected_group": [
+        "tetrahedral:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          2000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          2003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          2006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          2009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          2012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          2012,
+          2000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          2012,
+          2003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          2012,
+          2006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          2012,
+          2009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            2012,
+            2009,
+            2006,
+            2000,
+            2003
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0002",
+      "expected_group": [
+        "planar_bond:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          3000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          3003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          3006,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          3009,
+          {
+            "color": "atom:0"
+          }
+        ],
+        [
+          3012,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          3015,
+          {
+            "color": "atom:2"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          3012,
+          3000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          3012,
+          3003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          3015,
+          3006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          3015,
+          3009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          3015,
+          3012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "planar_bond",
+          "atoms": [
+            3009,
+            3006,
+            3015,
+            3012,
+            3003,
+            3000
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0003",
+      "expected_group": [
+        "planar_bond:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          4000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          4003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          4006,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          4009,
+          {
+            "color": "atom:0"
+          }
+        ],
+        [
+          4012,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          4015,
+          {
+            "color": "atom:2"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          4012,
+          4000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          4012,
+          4003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          4015,
+          4006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          4015,
+          4009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          4015,
+          4012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "planar_bond",
+          "atoms": [
+            4009,
+            4006,
+            4015,
+            4012,
+            4000,
+            4003
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0004",
+      "expected_group": [
+        "square_planar:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          5000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          5003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          5006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          5009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          5012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          5012,
+          5000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          5012,
+          5003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          5012,
+          5006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          5012,
+          5009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "square_planar",
+          "atoms": [
+            5012,
+            5009,
+            5000,
+            5003,
+            5006
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0005",
+      "expected_group": [
+        "square_planar:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          6000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          6003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          6006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          6009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          6012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          6012,
+          6000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          6012,
+          6003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          6012,
+          6006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          6012,
+          6009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "square_planar",
+          "atoms": [
+            6012,
+            6009,
+            6003,
+            6000,
+            6006
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0006",
+      "expected_group": [
+        "square_planar:distinct",
+        2
+      ],
+      "nodes": [
+        [
+          7000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          7003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          7006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          7009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          7012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          7012,
+          7000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          7012,
+          7003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          7012,
+          7006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          7012,
+          7009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "square_planar",
+          "atoms": [
+            7012,
+            7009,
+            7000,
+            7006,
+            7003
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0007",
+      "expected_group": [
+        "trigonal_bipyramidal:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          8000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          8003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          8006,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          8009,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          8012,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          8015,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          8015,
+          8000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          8015,
+          8003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          8015,
+          8006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          8015,
+          8009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          8015,
+          8012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "trigonal_bipyramidal",
+          "atoms": [
+            8015,
+            8012,
+            8009,
+            8006,
+            8003,
+            8000
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0008",
+      "expected_group": [
+        "trigonal_bipyramidal:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          9000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          9003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          9006,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          9009,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          9012,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          9015,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          9015,
+          9000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          9015,
+          9003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          9015,
+          9006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          9015,
+          9009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          9015,
+          9012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "trigonal_bipyramidal",
+          "atoms": [
+            9015,
+            9012,
+            9009,
+            9006,
+            9000,
+            9003
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0009",
+      "expected_group": [
+        "octahedral:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          10000,
+          {
+            "color": "atom:6"
+          }
+        ],
+        [
+          10003,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          10006,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          10009,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          10012,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          10015,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          10018,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          10018,
+          10000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          10018,
+          10003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          10018,
+          10006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          10018,
+          10009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          10018,
+          10012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          10018,
+          10015,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "octahedral",
+          "atoms": [
+            10018,
+            10015,
+            10012,
+            10009,
+            10006,
+            10003,
+            10000
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0010",
+      "expected_group": [
+        "octahedral:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          11000,
+          {
+            "color": "atom:6"
+          }
+        ],
+        [
+          11003,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          11006,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          11009,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          11012,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          11015,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          11018,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          11018,
+          11000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          11018,
+          11003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          11018,
+          11006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          11018,
+          11009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          11018,
+          11012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          11018,
+          11015,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "octahedral",
+          "atoms": [
+            11018,
+            11015,
+            11012,
+            11009,
+            11006,
+            11000,
+            11003
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0011",
+      "expected_group": [
+        "tetrahedral:two:meso",
+        0
+      ],
+      "nodes": [
+        [
+          12000,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          12003,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          12006,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          12009,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          12012,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          12015,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          12018,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          12021,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          12018,
+          12000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          12018,
+          12003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          12018,
+          12006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          12021,
+          12009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          12021,
+          12012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          12021,
+          12015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          12021,
+          12018,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            12021,
+            12018,
+            12015,
+            12012,
+            12009
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            12018,
+            12021,
+            12006,
+            12003,
+            12000
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0012",
+      "expected_group": [
+        "tetrahedral:two:meso",
+        1
+      ],
+      "nodes": [
+        [
+          13000,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          13003,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          13006,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          13009,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          13012,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          13015,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          13018,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          13021,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          13018,
+          13000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          13018,
+          13003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          13018,
+          13006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          13021,
+          13009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          13021,
+          13012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          13021,
+          13015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          13021,
+          13018,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            13021,
+            13018,
+            13015,
+            13012,
+            13009
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            13018,
+            13021,
+            13006,
+            13000,
+            13003
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0013",
+      "expected_group": [
+        "tetrahedral:two:meso",
+        1
+      ],
+      "nodes": [
+        [
+          14000,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          14003,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          14006,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          14009,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          14012,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          14015,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          14018,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          14021,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          14018,
+          14000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          14018,
+          14003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          14018,
+          14006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          14021,
+          14009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          14021,
+          14012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          14021,
+          14015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          14021,
+          14018,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            14021,
+            14018,
+            14015,
+            14009,
+            14012
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            14018,
+            14021,
+            14006,
+            14003,
+            14000
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0014",
+      "expected_group": [
+        "tetrahedral:two:meso",
+        2
+      ],
+      "nodes": [
+        [
+          15000,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          15003,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          15006,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          15009,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          15012,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          15015,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          15018,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          15021,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          15018,
+          15000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          15018,
+          15003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          15018,
+          15006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          15021,
+          15009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          15021,
+          15012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          15021,
+          15015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          15021,
+          15018,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            15021,
+            15018,
+            15015,
+            15009,
+            15012
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            15018,
+            15021,
+            15006,
+            15000,
+            15003
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0015",
+      "expected_group": [
+        "mixed:tetrahedral+square_planar:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          16000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          16003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          16006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          16009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          16012,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          16015,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          16018,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          16021,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          16024,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          16027,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          16012,
+          16000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          16012,
+          16003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          16012,
+          16006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          16012,
+          16009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          16015,
+          16000,
+          {
+            "color": "connector"
+          }
+        ],
+        [
+          16027,
+          16015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          16027,
+          16018,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          16027,
+          16021,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          16027,
+          16024,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            16027,
+            16024,
+            16021,
+            16018,
+            16015
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "square_planar",
+          "atoms": [
+            16012,
+            16009,
+            16000,
+            16003,
+            16006
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0016",
+      "expected_group": [
+        "mixed:tetrahedral+square_planar:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          17000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          17003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          17006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          17009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          17012,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          17015,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          17018,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          17021,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          17024,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          17027,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          17012,
+          17000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          17012,
+          17003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          17012,
+          17006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          17012,
+          17009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          17015,
+          17000,
+          {
+            "color": "connector"
+          }
+        ],
+        [
+          17027,
+          17015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          17027,
+          17018,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          17027,
+          17021,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          17027,
+          17024,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            17027,
+            17024,
+            17021,
+            17018,
+            17015
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "square_planar",
+          "atoms": [
+            17012,
+            17009,
+            17003,
+            17000,
+            17006
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0017",
+      "expected_group": [
+        "tetrahedral:distinct:H",
+        0
+      ],
+      "nodes": [
+        [
+          18000,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          18003,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          18006,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          18009,
+          {
+            "color": "center",
+            "hcount": 1
+          }
+        ]
+      ],
+      "edges": [
+        [
+          18009,
+          18000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          18009,
+          18003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          18009,
+          18006,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            18009,
+            18006,
+            18003,
+            "@H:18009",
+            18000
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0018",
+      "expected_group": [
+        "tetrahedral:distinct:H",
+        1
+      ],
+      "nodes": [
+        [
+          19000,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          19003,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          19006,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          19009,
+          {
+            "color": "center",
+            "hcount": 1
+          }
+        ]
+      ],
+      "edges": [
+        [
+          19009,
+          19000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          19009,
+          19003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          19009,
+          19006,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            19009,
+            19006,
+            19003,
+            19000,
+            "@H:19009"
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0019",
+      "expected_group": [
+        "tetrahedral:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          20000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          20003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          20006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          20009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          20012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          20012,
+          20000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          20012,
+          20003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          20012,
+          20006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          20012,
+          20009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            20012,
+            20009,
+            20003,
+            20000,
+            20006
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0020",
+      "expected_group": [
+        "tetrahedral:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          21000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          21003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          21006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          21009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          21012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          21012,
+          21000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          21012,
+          21003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          21012,
+          21006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          21012,
+          21009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            21012,
+            21009,
+            21000,
+            21003,
+            21006
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0021",
+      "expected_group": [
+        "planar_bond:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          22000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          22003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          22006,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          22009,
+          {
+            "color": "atom:0"
+          }
+        ],
+        [
+          22012,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          22015,
+          {
+            "color": "atom:2"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          22012,
+          22000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          22012,
+          22003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          22015,
+          22006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          22015,
+          22009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          22015,
+          22012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "planar_bond",
+          "atoms": [
+            22006,
+            22009,
+            22015,
+            22012,
+            22000,
+            22003
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0022",
+      "expected_group": [
+        "planar_bond:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          23000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          23003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          23006,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          23009,
+          {
+            "color": "atom:0"
+          }
+        ],
+        [
+          23012,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          23015,
+          {
+            "color": "atom:2"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          23012,
+          23000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          23012,
+          23003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          23015,
+          23006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          23015,
+          23009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          23015,
+          23012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "planar_bond",
+          "atoms": [
+            23006,
+            23009,
+            23015,
+            23012,
+            23003,
+            23000
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0023",
+      "expected_group": [
+        "square_planar:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          24000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          24003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          24006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          24009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          24012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          24012,
+          24000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          24012,
+          24003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          24012,
+          24006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          24012,
+          24009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "square_planar",
+          "atoms": [
+            24012,
+            24006,
+            24009,
+            24000,
+            24003
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0024",
+      "expected_group": [
+        "square_planar:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          25000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          25003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          25006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          25009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          25012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          25012,
+          25000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          25012,
+          25003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          25012,
+          25006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          25012,
+          25009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "square_planar",
+          "atoms": [
+            25012,
+            25006,
+            25009,
+            25003,
+            25000
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0025",
+      "expected_group": [
+        "square_planar:distinct",
+        2
+      ],
+      "nodes": [
+        [
+          26000,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          26003,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          26006,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          26009,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          26012,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          26012,
+          26000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          26012,
+          26003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          26012,
+          26006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          26012,
+          26009,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "square_planar",
+          "atoms": [
+            26012,
+            26003,
+            26009,
+            26000,
+            26006
+          ],
+          "parity": 0,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0026",
+      "expected_group": [
+        "trigonal_bipyramidal:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          27000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          27003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          27006,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          27009,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          27012,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          27015,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          27015,
+          27000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          27015,
+          27003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          27015,
+          27006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          27015,
+          27009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          27015,
+          27012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "trigonal_bipyramidal",
+          "atoms": [
+            27015,
+            27012,
+            27009,
+            27003,
+            27000,
+            27006
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0027",
+      "expected_group": [
+        "trigonal_bipyramidal:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          28000,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          28003,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          28006,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          28009,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          28012,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          28015,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          28015,
+          28000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          28015,
+          28003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          28015,
+          28006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          28015,
+          28009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          28015,
+          28012,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "trigonal_bipyramidal",
+          "atoms": [
+            28015,
+            28012,
+            28009,
+            28000,
+            28003,
+            28006
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0028",
+      "expected_group": [
+        "octahedral:distinct",
+        0
+      ],
+      "nodes": [
+        [
+          29000,
+          {
+            "color": "atom:6"
+          }
+        ],
+        [
+          29003,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          29006,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          29009,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          29012,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          29015,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          29018,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          29018,
+          29000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          29018,
+          29003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          29018,
+          29006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          29018,
+          29009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          29018,
+          29012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          29018,
+          29015,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "octahedral",
+          "atoms": [
+            29018,
+            29015,
+            29012,
+            29006,
+            29003,
+            29000,
+            29009
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0029",
+      "expected_group": [
+        "octahedral:distinct",
+        1
+      ],
+      "nodes": [
+        [
+          30000,
+          {
+            "color": "atom:6"
+          }
+        ],
+        [
+          30003,
+          {
+            "color": "atom:5"
+          }
+        ],
+        [
+          30006,
+          {
+            "color": "atom:4"
+          }
+        ],
+        [
+          30009,
+          {
+            "color": "atom:3"
+          }
+        ],
+        [
+          30012,
+          {
+            "color": "atom:2"
+          }
+        ],
+        [
+          30015,
+          {
+            "color": "atom:1"
+          }
+        ],
+        [
+          30018,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          30018,
+          30000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          30018,
+          30003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          30018,
+          30006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          30018,
+          30009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          30018,
+          30012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          30018,
+          30015,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "octahedral",
+          "atoms": [
+            30018,
+            30015,
+            30012,
+            30006,
+            30000,
+            30003,
+            30009
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0030",
+      "expected_group": [
+        "tetrahedral:two:meso",
+        0
+      ],
+      "nodes": [
+        [
+          31000,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          31003,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          31006,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          31009,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          31012,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          31015,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          31018,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          31021,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          31018,
+          31000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          31018,
+          31003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          31018,
+          31006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          31021,
+          31009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          31021,
+          31012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          31021,
+          31015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          31021,
+          31018,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            31021,
+            31018,
+            31012,
+            31009,
+            31015
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            31018,
+            31021,
+            31003,
+            31000,
+            31006
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    },
+    {
+      "id": "registration:0031",
+      "expected_group": [
+        "tetrahedral:two:meso",
+        1
+      ],
+      "nodes": [
+        [
+          32000,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          32003,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          32006,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          32009,
+          {
+            "color": "D"
+          }
+        ],
+        [
+          32012,
+          {
+            "color": "B"
+          }
+        ],
+        [
+          32015,
+          {
+            "color": "A"
+          }
+        ],
+        [
+          32018,
+          {
+            "color": "center"
+          }
+        ],
+        [
+          32021,
+          {
+            "color": "center"
+          }
+        ]
+      ],
+      "edges": [
+        [
+          32018,
+          32000,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          32018,
+          32003,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          32018,
+          32006,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          32021,
+          32009,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          32021,
+          32012,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          32021,
+          32015,
+          {
+            "color": "bond"
+          }
+        ],
+        [
+          32021,
+          32018,
+          {
+            "color": "bond"
+          }
+        ]
+      ],
+      "states": [
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            32021,
+            32018,
+            32012,
+            32009,
+            32015
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        },
+        {
+          "family": "tetrahedral",
+          "atoms": [
+            32018,
+            32021,
+            32000,
+            32003,
+            32006
+          ],
+          "parity": 1,
+          "path": [],
+          "cyclic": false,
+          "pilot": null,
+          "coupling_id": null,
+          "support": [],
+          "frames": []
+        }
+      ],
+      "transformations": "proper local frame, atom renumbering, reverse insertion order"
+    }
+  ],
+  "independent_reference": [
+    {
+      "basis": "tetrahedral:distinct",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0
+          ],
+          [
+            1
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0
+            ]
+          ],
+          [
+            [
+              1
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0
+            ],
+            "target_assignment": [
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              1
+            ],
+            "target_assignment": [
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 1,
+        "inventory_preserving_automorphisms": 1,
+        "formal_local_class_counts": [
+          2
+        ],
+        "mirror_assignment_images": [
+          [
+            1
+          ],
+          [
+            0
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            1,
+            0
+          ],
+          "mirror_fixed_classes": [],
+          "enantiomer_pairs": [
+            [
+              0,
+              1
+            ]
+          ]
+        },
+        "composition": {
+          "map_pairs": 1,
+          "state_checks": 2,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 2,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.0017300130566582084
+      },
+      "selected_assignments": [
+        [
+          0
+        ],
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "basis": "planar_bond:distinct",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0
+          ],
+          [
+            1
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0
+            ]
+          ],
+          [
+            [
+              1
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0
+            ],
+            "target_assignment": [
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              1
+            ],
+            "target_assignment": [
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 1,
+        "inventory_preserving_automorphisms": 1,
+        "formal_local_class_counts": [
+          2
+        ],
+        "mirror_assignment_images": [
+          [
+            0
+          ],
+          [
+            1
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            0,
+            1
+          ],
+          "mirror_fixed_classes": [
+            0,
+            1
+          ],
+          "enantiomer_pairs": []
+        },
+        "composition": {
+          "map_pairs": 1,
+          "state_checks": 2,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 2,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.0009921570308506489
+      },
+      "selected_assignments": [
+        [
+          0
+        ],
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "basis": "square_planar:distinct",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0
+            ]
+          ],
+          [
+            [
+              1
+            ]
+          ],
+          [
+            [
+              2
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0
+            ],
+            "target_assignment": [
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              1
+            ],
+            "target_assignment": [
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              2
+            ],
+            "target_assignment": [
+              2
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 1,
+        "inventory_preserving_automorphisms": 1,
+        "formal_local_class_counts": [
+          3
+        ],
+        "mirror_assignment_images": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            0,
+            1,
+            2
+          ],
+          "mirror_fixed_classes": [
+            0,
+            1,
+            2
+          ],
+          "enantiomer_pairs": []
+        },
+        "composition": {
+          "map_pairs": 1,
+          "state_checks": 3,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 3,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.0009310160530731082
+      },
+      "selected_assignments": [
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "basis": "trigonal_bipyramidal:distinct",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            3
+          ],
+          [
+            4
+          ],
+          [
+            5
+          ],
+          [
+            6
+          ],
+          [
+            7
+          ],
+          [
+            8
+          ],
+          [
+            9
+          ],
+          [
+            10
+          ],
+          [
+            11
+          ],
+          [
+            12
+          ],
+          [
+            13
+          ],
+          [
+            14
+          ],
+          [
+            15
+          ],
+          [
+            16
+          ],
+          [
+            17
+          ],
+          [
+            18
+          ],
+          [
+            19
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0
+            ]
+          ],
+          [
+            [
+              1
+            ]
+          ],
+          [
+            [
+              2
+            ]
+          ],
+          [
+            [
+              3
+            ]
+          ],
+          [
+            [
+              4
+            ]
+          ],
+          [
+            [
+              5
+            ]
+          ],
+          [
+            [
+              6
+            ]
+          ],
+          [
+            [
+              7
+            ]
+          ],
+          [
+            [
+              8
+            ]
+          ],
+          [
+            [
+              9
+            ]
+          ],
+          [
+            [
+              10
+            ]
+          ],
+          [
+            [
+              11
+            ]
+          ],
+          [
+            [
+              12
+            ]
+          ],
+          [
+            [
+              13
+            ]
+          ],
+          [
+            [
+              14
+            ]
+          ],
+          [
+            [
+              15
+            ]
+          ],
+          [
+            [
+              16
+            ]
+          ],
+          [
+            [
+              17
+            ]
+          ],
+          [
+            [
+              18
+            ]
+          ],
+          [
+            [
+              19
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0
+            ],
+            "target_assignment": [
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              1
+            ],
+            "target_assignment": [
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              2
+            ],
+            "target_assignment": [
+              2
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              3
+            ],
+            "target_assignment": [
+              3
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              4
+            ],
+            "target_assignment": [
+              4
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              5
+            ],
+            "target_assignment": [
+              5
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              6
+            ],
+            "target_assignment": [
+              6
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              7
+            ],
+            "target_assignment": [
+              7
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              8
+            ],
+            "target_assignment": [
+              8
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              9
+            ],
+            "target_assignment": [
+              9
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              10
+            ],
+            "target_assignment": [
+              10
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              11
+            ],
+            "target_assignment": [
+              11
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              12
+            ],
+            "target_assignment": [
+              12
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              13
+            ],
+            "target_assignment": [
+              13
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              14
+            ],
+            "target_assignment": [
+              14
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              15
+            ],
+            "target_assignment": [
+              15
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              16
+            ],
+            "target_assignment": [
+              16
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              17
+            ],
+            "target_assignment": [
+              17
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              18
+            ],
+            "target_assignment": [
+              18
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              19
+            ],
+            "target_assignment": [
+              19
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 1,
+        "inventory_preserving_automorphisms": 1,
+        "formal_local_class_counts": [
+          20
+        ],
+        "mirror_assignment_images": [
+          [
+            1
+          ],
+          [
+            0
+          ],
+          [
+            3
+          ],
+          [
+            2
+          ],
+          [
+            5
+          ],
+          [
+            4
+          ],
+          [
+            7
+          ],
+          [
+            6
+          ],
+          [
+            9
+          ],
+          [
+            8
+          ],
+          [
+            11
+          ],
+          [
+            10
+          ],
+          [
+            13
+          ],
+          [
+            12
+          ],
+          [
+            15
+          ],
+          [
+            14
+          ],
+          [
+            17
+          ],
+          [
+            16
+          ],
+          [
+            19
+          ],
+          [
+            18
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            1,
+            0,
+            3,
+            2,
+            5,
+            4,
+            7,
+            6,
+            9,
+            8,
+            11,
+            10,
+            13,
+            12,
+            15,
+            14,
+            17,
+            16,
+            19,
+            18
+          ],
+          "mirror_fixed_classes": [],
+          "enantiomer_pairs": [
+            [
+              0,
+              1
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              6,
+              7
+            ],
+            [
+              8,
+              9
+            ],
+            [
+              10,
+              11
+            ],
+            [
+              12,
+              13
+            ],
+            [
+              14,
+              15
+            ],
+            [
+              16,
+              17
+            ],
+            [
+              18,
+              19
+            ]
+          ]
+        },
+        "composition": {
+          "map_pairs": 1,
+          "state_checks": 20,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 20,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.003032059990800917
+      },
+      "selected_assignments": [
+        [
+          0
+        ],
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "basis": "octahedral:distinct",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            3
+          ],
+          [
+            4
+          ],
+          [
+            5
+          ],
+          [
+            6
+          ],
+          [
+            7
+          ],
+          [
+            8
+          ],
+          [
+            9
+          ],
+          [
+            10
+          ],
+          [
+            11
+          ],
+          [
+            12
+          ],
+          [
+            13
+          ],
+          [
+            14
+          ],
+          [
+            15
+          ],
+          [
+            16
+          ],
+          [
+            17
+          ],
+          [
+            18
+          ],
+          [
+            19
+          ],
+          [
+            20
+          ],
+          [
+            21
+          ],
+          [
+            22
+          ],
+          [
+            23
+          ],
+          [
+            24
+          ],
+          [
+            25
+          ],
+          [
+            26
+          ],
+          [
+            27
+          ],
+          [
+            28
+          ],
+          [
+            29
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0
+            ]
+          ],
+          [
+            [
+              1
+            ]
+          ],
+          [
+            [
+              2
+            ]
+          ],
+          [
+            [
+              3
+            ]
+          ],
+          [
+            [
+              4
+            ]
+          ],
+          [
+            [
+              5
+            ]
+          ],
+          [
+            [
+              6
+            ]
+          ],
+          [
+            [
+              7
+            ]
+          ],
+          [
+            [
+              8
+            ]
+          ],
+          [
+            [
+              9
+            ]
+          ],
+          [
+            [
+              10
+            ]
+          ],
+          [
+            [
+              11
+            ]
+          ],
+          [
+            [
+              12
+            ]
+          ],
+          [
+            [
+              13
+            ]
+          ],
+          [
+            [
+              14
+            ]
+          ],
+          [
+            [
+              15
+            ]
+          ],
+          [
+            [
+              16
+            ]
+          ],
+          [
+            [
+              17
+            ]
+          ],
+          [
+            [
+              18
+            ]
+          ],
+          [
+            [
+              19
+            ]
+          ],
+          [
+            [
+              20
+            ]
+          ],
+          [
+            [
+              21
+            ]
+          ],
+          [
+            [
+              22
+            ]
+          ],
+          [
+            [
+              23
+            ]
+          ],
+          [
+            [
+              24
+            ]
+          ],
+          [
+            [
+              25
+            ]
+          ],
+          [
+            [
+              26
+            ]
+          ],
+          [
+            [
+              27
+            ]
+          ],
+          [
+            [
+              28
+            ]
+          ],
+          [
+            [
+              29
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0
+            ],
+            "target_assignment": [
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              1
+            ],
+            "target_assignment": [
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              2
+            ],
+            "target_assignment": [
+              2
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              3
+            ],
+            "target_assignment": [
+              3
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              4
+            ],
+            "target_assignment": [
+              4
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              5
+            ],
+            "target_assignment": [
+              5
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              6
+            ],
+            "target_assignment": [
+              6
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              7
+            ],
+            "target_assignment": [
+              7
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              8
+            ],
+            "target_assignment": [
+              8
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              9
+            ],
+            "target_assignment": [
+              9
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              10
+            ],
+            "target_assignment": [
+              10
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              11
+            ],
+            "target_assignment": [
+              11
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              12
+            ],
+            "target_assignment": [
+              12
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              13
+            ],
+            "target_assignment": [
+              13
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              14
+            ],
+            "target_assignment": [
+              14
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              15
+            ],
+            "target_assignment": [
+              15
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              16
+            ],
+            "target_assignment": [
+              16
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              17
+            ],
+            "target_assignment": [
+              17
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              18
+            ],
+            "target_assignment": [
+              18
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              19
+            ],
+            "target_assignment": [
+              19
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              20
+            ],
+            "target_assignment": [
+              20
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              21
+            ],
+            "target_assignment": [
+              21
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              22
+            ],
+            "target_assignment": [
+              22
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              23
+            ],
+            "target_assignment": [
+              23
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              24
+            ],
+            "target_assignment": [
+              24
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              25
+            ],
+            "target_assignment": [
+              25
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              26
+            ],
+            "target_assignment": [
+              26
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              27
+            ],
+            "target_assignment": [
+              27
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              28
+            ],
+            "target_assignment": [
+              28
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              29
+            ],
+            "target_assignment": [
+              29
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 1,
+        "inventory_preserving_automorphisms": 1,
+        "formal_local_class_counts": [
+          30
+        ],
+        "mirror_assignment_images": [
+          [
+            5
+          ],
+          [
+            3
+          ],
+          [
+            4
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            0
+          ],
+          [
+            11
+          ],
+          [
+            9
+          ],
+          [
+            10
+          ],
+          [
+            7
+          ],
+          [
+            8
+          ],
+          [
+            6
+          ],
+          [
+            17
+          ],
+          [
+            15
+          ],
+          [
+            16
+          ],
+          [
+            13
+          ],
+          [
+            14
+          ],
+          [
+            12
+          ],
+          [
+            23
+          ],
+          [
+            21
+          ],
+          [
+            22
+          ],
+          [
+            19
+          ],
+          [
+            20
+          ],
+          [
+            18
+          ],
+          [
+            29
+          ],
+          [
+            27
+          ],
+          [
+            28
+          ],
+          [
+            25
+          ],
+          [
+            26
+          ],
+          [
+            24
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            5,
+            3,
+            4,
+            1,
+            2,
+            0,
+            11,
+            9,
+            10,
+            7,
+            8,
+            6,
+            17,
+            15,
+            16,
+            13,
+            14,
+            12,
+            23,
+            21,
+            22,
+            19,
+            20,
+            18,
+            29,
+            27,
+            28,
+            25,
+            26,
+            24
+          ],
+          "mirror_fixed_classes": [],
+          "enantiomer_pairs": [
+            [
+              0,
+              5
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              6,
+              11
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              8,
+              10
+            ],
+            [
+              12,
+              17
+            ],
+            [
+              13,
+              15
+            ],
+            [
+              14,
+              16
+            ],
+            [
+              18,
+              23
+            ],
+            [
+              19,
+              21
+            ],
+            [
+              20,
+              22
+            ],
+            [
+              24,
+              29
+            ],
+            [
+              25,
+              27
+            ],
+            [
+              26,
+              28
+            ]
+          ]
+        },
+        "composition": {
+          "map_pairs": 1,
+          "state_checks": 30,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 30,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.028243110980838537
+      },
+      "selected_assignments": [
+        [
+          0
+        ],
+        [
+          1
+        ]
+      ]
+    },
+    {
+      "basis": "tetrahedral:two:meso",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              1
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0,
+              0
+            ],
+            "target_assignment": [
+              0,
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                7
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          },
+          {
+            "source_assignment": [
+              0,
+              1
+            ],
+            "target_assignment": [
+              0,
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                7
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          },
+          {
+            "source_assignment": [
+              0,
+              1
+            ],
+            "target_assignment": [
+              1,
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                5
+              ],
+              [
+                3,
+                6
+              ],
+              [
+                4,
+                7
+              ],
+              [
+                5,
+                2
+              ],
+              [
+                6,
+                3
+              ],
+              [
+                7,
+                4
+              ]
+            ],
+            "carrier_permutation": [
+              1,
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              1,
+              1
+            ],
+            "target_assignment": [
+              1,
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                5,
+                5
+              ],
+              [
+                6,
+                6
+              ],
+              [
+                7,
+                7
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 2,
+        "inventory_preserving_automorphisms": 2,
+        "formal_local_class_counts": [
+          2,
+          2
+        ],
+        "mirror_assignment_images": [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            2,
+            1,
+            0
+          ],
+          "mirror_fixed_classes": [
+            1
+          ],
+          "enantiomer_pairs": [
+            [
+              0,
+              2
+            ]
+          ]
+        },
+        "composition": {
+          "map_pairs": 4,
+          "state_checks": 16,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 8,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.0021718019852414727
+      },
+      "selected_assignments": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "basis": "mixed:tetrahedral+square_planar:distinct",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0,
+              0
+            ]
+          ],
+          [
+            [
+              0,
+              1
+            ]
+          ],
+          [
+            [
+              0,
+              2
+            ]
+          ],
+          [
+            [
+              1,
+              0
+            ]
+          ],
+          [
+            [
+              1,
+              1
+            ]
+          ],
+          [
+            [
+              1,
+              2
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0,
+              0
+            ],
+            "target_assignment": [
+              0,
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                101,
+                101
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                104,
+                104
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          },
+          {
+            "source_assignment": [
+              0,
+              1
+            ],
+            "target_assignment": [
+              0,
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                101,
+                101
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                104,
+                104
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          },
+          {
+            "source_assignment": [
+              0,
+              2
+            ],
+            "target_assignment": [
+              0,
+              2
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                101,
+                101
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                104,
+                104
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          },
+          {
+            "source_assignment": [
+              1,
+              0
+            ],
+            "target_assignment": [
+              1,
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                101,
+                101
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                104,
+                104
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          },
+          {
+            "source_assignment": [
+              1,
+              1
+            ],
+            "target_assignment": [
+              1,
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                101,
+                101
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                104,
+                104
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          },
+          {
+            "source_assignment": [
+              1,
+              2
+            ],
+            "target_assignment": [
+              1,
+              2
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ],
+              [
+                4,
+                4
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                101,
+                101
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                104,
+                104
+              ]
+            ],
+            "carrier_permutation": [
+              0,
+              1
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 2,
+        "inventory_preserving_automorphisms": 1,
+        "formal_local_class_counts": [
+          2,
+          3
+        ],
+        "mirror_assignment_images": [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            3,
+            4,
+            5,
+            0,
+            1,
+            2
+          ],
+          "mirror_fixed_classes": [],
+          "enantiomer_pairs": [
+            [
+              0,
+              3
+            ],
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              5
+            ]
+          ]
+        },
+        "composition": {
+          "map_pairs": 1,
+          "state_checks": 5,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 5,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.0021178690949454904
+      },
+      "selected_assignments": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "basis": "tetrahedral:distinct:H",
+      "reference": {
+        "method": "exhaustive_constitutional_automorphisms",
+        "schema": "synkit.independent-assignment-orbits/1",
+        "status": "complete",
+        "assignments": [
+          [
+            0
+          ],
+          [
+            1
+          ]
+        ],
+        "partition": [
+          [
+            [
+              0
+            ]
+          ],
+          [
+            [
+              1
+            ]
+          ]
+        ],
+        "merge_witnesses": [
+          {
+            "source_assignment": [
+              0
+            ],
+            "target_assignment": [
+              0
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          },
+          {
+            "source_assignment": [
+              1
+            ],
+            "target_assignment": [
+              1
+            ],
+            "atom_mapping": [
+              [
+                0,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                3,
+                3
+              ]
+            ],
+            "carrier_permutation": [
+              0
+            ]
+          }
+        ],
+        "constitutional_automorphisms": 1,
+        "inventory_preserving_automorphisms": 1,
+        "formal_local_class_counts": [
+          2
+        ],
+        "mirror_assignment_images": [
+          [
+            1
+          ],
+          [
+            0
+          ]
+        ],
+        "mirror_classes": {
+          "class_images": [
+            1,
+            0
+          ],
+          "mirror_fixed_classes": [],
+          "enantiomer_pairs": [
+            [
+              0,
+              1
+            ]
+          ]
+        },
+        "composition": {
+          "map_pairs": 1,
+          "state_checks": 2,
+          "failures": 0,
+          "map_pair_selection": "first 32 automorphisms in deterministic enumeration order"
+        },
+        "mirror_commutation": {
+          "state_checks": 2,
+          "failures": 0
+        },
+        "budget": {
+          "max_assignments": 1024,
+          "max_constitutional_automorphisms": 50000,
+          "reference_timeout_seconds": 10.0,
+          "max_process_peak_rss_mb": 1024
+        },
+        "seconds": 0.0010221939301118255
+      },
+      "selected_assignments": [
+        [
+          0
+        ],
+        [
+          1
+        ]
+      ]
+    }
+  ],
+  "sizes": [
+    32
+  ]
+}

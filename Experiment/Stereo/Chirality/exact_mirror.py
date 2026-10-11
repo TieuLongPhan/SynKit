@@ -22,6 +22,7 @@ from Experiment.Stereo.Chirality.published import (  # noqa: E402
     EXPECTED_SHA256,
     load_dataset,
 )
+from Experiment.Stereo.provenance import capture_source, finish_source  # noqa: E402
 from synkit.Graph.Stereo import (  # noqa: E402
     MirrorIdentityProfile,
     classify_rdkit_stereograph_mirror,
@@ -82,6 +83,7 @@ def benchmark_exact_acs_chirality(
     case_timeout_seconds: float = 5.0,
     identity_profile: MirrorIdentityProfile = "chemical",
 ) -> dict[str, Any]:
+    source = capture_source()
     rows = load_dataset(path)
     records = []
     durations = []
@@ -165,6 +167,20 @@ def benchmark_exact_acs_chirality(
     durations_ms = [duration / 1_000_000 for duration in durations]
     return {
         "schema": "synkit.exact-acs-mirror-benchmark/3",
+        "provenance": finish_source(source),
+        "input_contract": {
+            "structural_input": (
+                "pinned source-declared SMILES; explicit tetrahedral tags restored after sanitization"
+            ),
+            "external_orientation": False,
+            "topology_completion": False,
+            "global_necessary_chirality_evidence": False,
+            "require_complete": False,
+            "manual_labels_used_for_prediction": False,
+            "interpretation": (
+                "configured-representation identity, not completeness of physical stereochemical annotation"
+            ),
+        },
         "dataset": {
             "records": len(rows),
             "audited_sha256": EXPECTED_SHA256,

@@ -30,7 +30,12 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from Experiment.CRN import biomodels, formose_case_study, kegg_case_study  # noqa: E402
+from Experiment.CRN import (  # noqa: E402
+    biomodels,
+    external_crnt4sbml,
+    formose_case_study,
+)
+from Experiment.CRN import kegg_case_study  # noqa: E402
 from Experiment.CRN import scaling, validation  # noqa: E402
 from Experiment.CRN.common import write_report  # noqa: E402
 
@@ -74,7 +79,7 @@ def _run(
         "name": name,
         "status": status,
         "checks": report.get("checks", {}),
-        "path": None if path is None else str(path),
+        "path": None if path is None else path.name,
     }
 
 
@@ -101,6 +106,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--with-biomodels",
         action="store_true",
         help="also run the BioModels probe (downloads on first run)",
+    )
+    parser.add_argument(
+        "--crnt4sbml-python",
+        type=Path,
+        help=(
+            "also cross-check the validation set with the supplied isolated "
+            "CRNT4SBML Python executable"
+        ),
     )
     parser.add_argument(
         "--summary",
@@ -153,6 +166,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 "biomodels",
                 lambda: biomodels.biomodels_report(
                     biomodels.DEFAULT_MODELS, offline=False, budget=120.0
+                ),
+                arguments.output_dir,
+            )
+        )
+
+    if arguments.crnt4sbml_python is not None:
+        studies.append(
+            _run(
+                "external-crnt4sbml",
+                lambda: external_crnt4sbml.external_report(
+                    arguments.crnt4sbml_python
                 ),
                 arguments.output_dir,
             )

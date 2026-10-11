@@ -2,6 +2,7 @@
 
 import json
 
+import networkx as nx
 import pytest
 from rdkit import Chem
 
@@ -14,6 +15,7 @@ from synkit.Graph.Stereo import (
     PathStereoSupport,
     SUPPORTED_STEREO_DESCRIPTOR_CLASSES,
     StereoRelationKind,
+    canonicalize_configured_stereograph,
     descriptor_id,
     stereo_from_dict,
 )
@@ -51,6 +53,25 @@ def test_cyclic_rotation_and_reversal_are_identity_preserving() -> None:
     assert seed == rotated == reversed_cycle
     assert len({hash(seed), hash(rotated), hash(reversed_cycle)}) == 1
     assert descriptor_id(seed).startswith("cycle:")
+
+
+@pytest.mark.parametrize("parity", (1, True, 1.0, -1, -1.0))
+def test_accepted_signed_values_have_one_wire_type_and_one_global_identity(parity) -> None:
+    """Numeric aliases cannot introduce additional helical configuration colors."""
+    descriptor = _helix(parity)
+    signed = _helix(1 if parity > 0 else -1)
+    assert type(descriptor.parity) is int
+    assert type(descriptor.to_dict()["parity"]) is int
+    assert descriptor.same_configuration(signed)
+    graph = nx.path_graph(descriptor.path)
+    nx.set_node_attributes(graph, {node: str(node) for node in graph}, "color")
+    observed = canonicalize_configured_stereograph(
+        graph, (descriptor,), atom_color="color", enumerate_automorphism_group=False,
+    )
+    expected = canonicalize_configured_stereograph(
+        graph, (signed,), atom_color="color", enumerate_automorphism_group=False,
+    )
+    assert observed.canonical_code == expected.canonical_code
 
 
 def test_mirror_inversion_changes_only_fixed_helical_configuration() -> None:

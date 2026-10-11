@@ -1,0 +1,188 @@
+[
+  {
+    "model": "control_b",
+    "standard_rtol": 2e-09,
+    "standard_atol": 2e-12,
+    "tighter_rtol": 1e-10,
+    "tighter_atol": 1e-13,
+    "endpoint_max_abs_difference": 4.440892098500626e-16,
+    "ee_monomer_difference": 1.1102230246251565e-16,
+    "tighter_endpoint": {
+      "state": [
+        1.5088928650484275,
+        0.5696274301303805,
+        2.2767576781940515,
+        0.3244754091569415
+      ],
+      "residual_inf": 6.661338147750939e-16,
+      "alpha_full": -0.15280622184346812,
+      "eigenvalues_full": [
+        [
+          -16.99100205332841,
+          0.0
+        ],
+        [
+          -8.766627093588337,
+          0.0
+        ],
+        [
+          -2.0110443360609573,
+          0.0
+        ],
+        [
+          -0.15280622184346812,
+          0.0
+        ]
+      ],
+      "min_concentration": 0.3244754091569415,
+      "trajectory_min_concentration": 0.32447540915401174,
+      "refinement_distance": 2.220446049250313e-16,
+      "solver_success": true,
+      "root_success": true,
+      "root_message": "The solution converged.",
+      "horizon": 4000.0,
+      "metrics": {
+        "ee_monomer": 0.4518913946121682,
+        "monomer_concentration": 2.0785202951788078,
+        "ee_homodimer": 0.7505218500143129,
+        "ee_residues": 0.6652711130599823,
+        "peptide_residue_outflow": 5.202466174701986,
+        "model_residue_inventory": 7.280986469880793
+      }
+    }
+  },
+  {
+    "model": "constructive",
+    "standard_rtol": 2e-09,
+    "standard_atol": 2e-12,
+    "tighter_rtol": 1e-10,
+    "tighter_atol": 1e-13,
+    "endpoint_max_abs_difference": 1.734723475976807e-18,
+    "ee_monomer_difference": 0.0,
+    "tighter_endpoint": {
+      "state": [
+        0.11944498232114688,
+        0.14011965358612954,
+        0.014665917196273486,
+        0.19633517321096947,
+        0.08219932948258805,
+        0.08219932948258805,
+        0.0021508912720795037
+      ],
+      "residual_inf": 1.5612511283791264e-17,
+      "alpha_full": -0.08890202330184088,
+      "eigenvalues_full": [
+        [
+          -0.1,
+          0.0
+        ],
+        [
+          -0.1,
+          0.0
+        ],
+        [
+          -1.5636280934063302,
+          0.0
+        ],
+        [
+          -0.8966355991120887,
+          0.0
+        ],
+        [
+          -0.4600271027981251,
+          0.0
+        ],
+        [
+          -0.08890202330184088,
+          0.0
+        ],
+        [
+          -0.09999999999999971,
+          0.0
+        ]
+      ],
+      "min_concentration": 0.0021508912720795037,
+      "trajectory_min_concentration": 0.002150891272009333,
+      "refinement_distance": 1.942890293094024e-16,
+      "solver_success": true,
+      "root_success": true,
+      "root_message": "The solution converged.",
+      "horizon": 4000.0,
+      "metrics": {
+        "ee_monomer": 0.8105002020260559,
+        "monomer_concentration": 0.15478557078240304,
+        "ee_homodimer": 0.978327029883116,
+        "ee_residues": 0.5835209498005857,
+        "peptide_residue_outflow": 0.07257694468964501,
+        "model_residue_inventory": 0.8805550176788532
+      }
+    }
+  },
+  {
+    "model": "destructive",
+    "standard_rtol": 2e-09,
+    "standard_atol": 2e-12,
+    "tighter_rtol": 1e-10,
+    "tighter_atol": 1e-13,
+    "endpoint_max_abs_difference": 1.1102230246251565e-16,
+    "ee_monomer_difference": 2.220446049250313e-16,
+    "tighter_endpoint": {
+      "state": [
+        0.6712302934418031,
+        0.04568708442402014,
+        0.027254201096644008,
+        0.020873096831675438,
+        0.04980659945646388,
+        0.04980659945646388,
+        0.007427914774163113
+      ],
+      "residual_inf": 2.7755575615628914e-17,
+      "alpha_full": -0.007980114766210826,
+      "eigenvalues_full": [
+        [
+          -0.1,
+          0.0
+        ],
+        [
+          -0.1,
+          0.0
+        ],
+        [
+          -2.3699164561390766,
+          0.0
+        ],
+        [
+          -1.2565768814022333,
+          0.0
+        ],
+        [
+          -0.213383928911171,
+          0.0
+        ],
+        [
+          -0.007980114766210826,
+          0.0
+        ],
+        [
+          -0.10000000000000014,
+          0.0
+        ]
+      ],
+      "min_concentration": 0.007427914774163113,
+      "trajectory_min_concentration": 0.007427914774137864,
+      "refinement_distance": 4.28129753871076e-15,
+      "solver_success": true,
+      "root_success": true,
+      "root_message": "The solution converged.",
+      "horizon": 7356.608690610661,
+      "metrics": {
+        "ee_monomer": 0.2527085065172608,
+        "monomer_concentration": 0.07294128552066415,
+        "ee_homodimer": 0.4750777903196421,
+        "ee_residues": 0.13785712776544376,
+        "peptide_residue_outflow": 0.025582842103753264,
+        "model_residue_inventory": 0.32876970655819676
+      }
+    }
+  }
+]

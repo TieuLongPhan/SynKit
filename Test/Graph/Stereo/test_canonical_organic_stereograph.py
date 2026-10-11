@@ -285,7 +285,8 @@ def test_rdkit_e_and_z_receive_distinct_exact_codes() -> None:
     z_result = canonicalize_rdkit_stereograph(z_molecule)
 
     assert e_result.canonical_code != z_result.canonical_code
-    assert e_result.schema == z_result.schema == STEREOGRAPH_SCHEMA
+    assert e_result.schema == z_result.schema == "synkit.rdkit-stereograph/1"
+    assert e_result.identity_profile == z_result.identity_profile == "lewis_state"
 
 
 def test_rdkit_planar_code_survives_atom_renumbering() -> None:

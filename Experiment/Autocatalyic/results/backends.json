@@ -1,0 +1,1281 @@
+{
+  "revisions": {
+    "Bi.R.Ne": "24df5995c6ff6c6256488cb1d8dd39a988ff1d0a",
+    "MRChordlessCircuits": "bb88c55b91b9ba2a96efcf60131ef72aca3c099b"
+  },
+  "networks": {
+    "control_a": {
+      "species": [
+        "L",
+        "D"
+      ],
+      "reactions": [
+        "growth_L",
+        "quadratic_L",
+        "growth_D",
+        "quadratic_D"
+      ],
+      "lp_cores": [
+        [
+          [
+            "D"
+          ],
+          [
+            "growth_D"
+          ]
+        ],
+        [
+          [
+            "L"
+          ],
+          [
+            "growth_L"
+          ]
+        ]
+      ],
+      "autogatito": {
+        "status": "completed",
+        "cores": [
+          [
+            [
+              "D"
+            ],
+            [
+              "growth_D"
+            ]
+          ],
+          [
+            [
+              "L"
+            ],
+            [
+              "growth_L"
+            ]
+          ]
+        ]
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "growth_D"
+            ],
+            "species": [
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "growth_L"
+            ],
+            "species": [
+              "L"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 2,
+        "nonautocatalytic_count": 0
+      },
+      "birne_internal_autocatalytic": [
+        [
+          [
+            "D"
+          ],
+          [
+            "growth_D"
+          ]
+        ],
+        [
+          [
+            "L"
+          ],
+          [
+            "growth_L"
+          ]
+        ]
+      ],
+      "birne_equals_lp": true
+    },
+    "control_b": {
+      "species": [
+        "L",
+        "D",
+        "U",
+        "V"
+      ],
+      "reactions": [
+        "ligation_L",
+        "destruction_L",
+        "ligation_D",
+        "destruction_D"
+      ],
+      "lp_cores": [],
+      "autogatito": {
+        "status": "completed",
+        "cores": []
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "ligation_L",
+              "destruction_L",
+              "ligation_D",
+              "destruction_D"
+            ],
+            "species": [
+              "L",
+              "V",
+              "D",
+              "U"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 0,
+        "nonautocatalytic_count": 1
+      },
+      "birne_internal_autocatalytic": [],
+      "birne_equals_lp": true
+    },
+    "control_b_reverse": {
+      "species": [
+        "L",
+        "D",
+        "U",
+        "V"
+      ],
+      "reactions": [
+        "ligation_L",
+        "destruction_L",
+        "restoration_L",
+        "ligation_D",
+        "destruction_D",
+        "restoration_D"
+      ],
+      "lp_cores": [
+        [
+          [
+            "D",
+            "L",
+            "U",
+            "V"
+          ],
+          [
+            "ligation_D",
+            "ligation_L",
+            "restoration_D",
+            "restoration_L"
+          ]
+        ]
+      ],
+      "autogatito": {
+        "status": "completed",
+        "cores": [
+          [
+            [
+              "D",
+              "L",
+              "U",
+              "V"
+            ],
+            [
+              "ligation_D",
+              "ligation_L",
+              "restoration_D",
+              "restoration_L"
+            ]
+          ]
+        ]
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "restoration_D",
+              "ligation_L",
+              "restoration_L",
+              "ligation_D"
+            ],
+            "species": [
+              "U",
+              "L",
+              "V",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "destruction_D",
+              "ligation_L",
+              "destruction_L",
+              "ligation_D"
+            ],
+            "species": [
+              "U",
+              "L",
+              "V",
+              "D"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 1,
+        "nonautocatalytic_count": 1
+      },
+      "birne_internal_autocatalytic": [
+        [
+          [
+            "D",
+            "L",
+            "U",
+            "V"
+          ],
+          [
+            "ligation_D",
+            "ligation_L",
+            "restoration_D",
+            "restoration_L"
+          ]
+        ]
+      ],
+      "birne_equals_lp": true
+    },
+    "constructive_1010": {
+      "species": [
+        "P",
+        "L",
+        "D",
+        "LL",
+        "DD"
+      ],
+      "reactions": [
+        "matched_L_f",
+        "matched_L_b",
+        "homo_L_f",
+        "matched_D_f",
+        "matched_D_b",
+        "homo_D_f"
+      ],
+      "lp_cores": [
+        [
+          [
+            "D",
+            "DD"
+          ],
+          [
+            "homo_D_f",
+            "matched_D_f"
+          ]
+        ],
+        [
+          [
+            "L",
+            "LL"
+          ],
+          [
+            "homo_L_f",
+            "matched_L_f"
+          ]
+        ]
+      ],
+      "autogatito": {
+        "status": "completed",
+        "cores": [
+          [
+            [
+              "D",
+              "DD"
+            ],
+            [
+              "homo_D_f",
+              "matched_D_f"
+            ]
+          ],
+          [
+            [
+              "L",
+              "LL"
+            ],
+            [
+              "homo_L_f",
+              "matched_L_f"
+            ]
+          ]
+        ]
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "homo_D_f",
+              "matched_D_f"
+            ],
+            "species": [
+              "D",
+              "DD"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "matched_L_f",
+              "homo_L_f"
+            ],
+            "species": [
+              "LL",
+              "L"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 2,
+        "nonautocatalytic_count": 0
+      },
+      "birne_internal_autocatalytic": [
+        [
+          [
+            "D",
+            "DD"
+          ],
+          [
+            "homo_D_f",
+            "matched_D_f"
+          ]
+        ],
+        [
+          [
+            "L",
+            "LL"
+          ],
+          [
+            "homo_L_f",
+            "matched_L_f"
+          ]
+        ]
+      ],
+      "birne_equals_lp": true
+    },
+    "destructive_0110": {
+      "species": [
+        "P",
+        "L",
+        "D",
+        "LL",
+        "DD"
+      ],
+      "reactions": [
+        "mismatched_L_f",
+        "mismatched_L_b",
+        "homo_L_f",
+        "mismatched_D_f",
+        "mismatched_D_b",
+        "homo_D_f"
+      ],
+      "lp_cores": [
+        [
+          [
+            "D",
+            "DD",
+            "L",
+            "LL"
+          ],
+          [
+            "homo_D_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "mismatched_L_f"
+          ]
+        ]
+      ],
+      "autogatito": {
+        "status": "completed",
+        "cores": [
+          [
+            [
+              "D",
+              "DD",
+              "L",
+              "LL"
+            ],
+            [
+              "homo_D_f",
+              "homo_L_f",
+              "mismatched_D_f",
+              "mismatched_L_f"
+            ]
+          ]
+        ]
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_D_b",
+              "mismatched_L_f",
+              "homo_L_f"
+            ],
+            "species": [
+              "LL",
+              "P",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_D_f",
+              "homo_D_f",
+              "mismatched_L_b"
+            ],
+            "species": [
+              "P",
+              "D",
+              "DD"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_D_b",
+              "homo_D_f",
+              "mismatched_L_b",
+              "homo_L_f"
+            ],
+            "species": [
+              "LL",
+              "D",
+              "DD",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_D_f",
+              "homo_D_f",
+              "mismatched_L_f",
+              "homo_L_f"
+            ],
+            "species": [
+              "LL",
+              "D",
+              "DD",
+              "L"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 3,
+        "nonautocatalytic_count": 1
+      },
+      "birne_internal_autocatalytic": [
+        [
+          [
+            "D",
+            "DD",
+            "L",
+            "LL"
+          ],
+          [
+            "homo_D_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "mismatched_L_f"
+          ]
+        ]
+      ],
+      "birne_equals_lp": true
+    },
+    "destructive_zero_reverse": {
+      "species": [
+        "P",
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "reactions": [
+        "matched_L_b",
+        "mismatched_L_b",
+        "homo_L_f",
+        "matched_D_b",
+        "mismatched_D_b",
+        "homo_D_f",
+        "hetero_LD_f",
+        "hetero_DL_f"
+      ],
+      "lp_cores": [],
+      "autogatito": {
+        "status": "completed",
+        "cores": []
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_D_f",
+              "hetero_DL_f"
+            ],
+            "species": [
+              "DD",
+              "D",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "hetero_LD_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_D_f",
+              "hetero_LD_f"
+            ],
+            "species": [
+              "DD",
+              "D",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "hetero_DL_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_L_f",
+              "mismatched_D_b",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 0,
+        "nonautocatalytic_count": 5
+      },
+      "birne_internal_autocatalytic": [],
+      "birne_equals_lp": true
+    },
+    "constructive_full": {
+      "species": [
+        "P",
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "reactions": [
+        "matched_L_f",
+        "matched_L_b",
+        "mismatched_L_f",
+        "mismatched_L_b",
+        "homo_L_f",
+        "matched_D_f",
+        "matched_D_b",
+        "mismatched_D_f",
+        "mismatched_D_b",
+        "homo_D_f",
+        "hetero_LD_f",
+        "hetero_DL_f"
+      ],
+      "lp_cores": [
+        [
+          [
+            "D",
+            "DD"
+          ],
+          [
+            "homo_D_f",
+            "matched_D_f"
+          ]
+        ],
+        [
+          [
+            "D",
+            "DD",
+            "L",
+            "LL"
+          ],
+          [
+            "homo_D_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "mismatched_L_f"
+          ]
+        ],
+        [
+          [
+            "L",
+            "LL"
+          ],
+          [
+            "homo_L_f",
+            "matched_L_f"
+          ]
+        ]
+      ],
+      "autogatito": {
+        "status": "completed",
+        "cores": [
+          [
+            [
+              "D",
+              "DD"
+            ],
+            [
+              "homo_D_f",
+              "matched_D_f"
+            ]
+          ],
+          [
+            [
+              "D",
+              "DD",
+              "L",
+              "LL"
+            ],
+            [
+              "homo_D_f",
+              "homo_L_f",
+              "mismatched_D_f",
+              "mismatched_L_f"
+            ]
+          ],
+          [
+            [
+              "L",
+              "LL"
+            ],
+            [
+              "homo_L_f",
+              "matched_L_f"
+            ]
+          ]
+        ]
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "matched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "homo_L_f",
+              "matched_L_f"
+            ],
+            "species": [
+              "L",
+              "LL"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_f",
+              "homo_L_f",
+              "mismatched_D_b"
+            ],
+            "species": [
+              "P",
+              "L",
+              "LL"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "matched_L_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "P"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "hetero_LD_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_b",
+              "mismatched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "P",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "hetero_DL_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_b",
+              "matched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "P",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_D_f",
+              "hetero_LD_f"
+            ],
+            "species": [
+              "DD",
+              "D",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_D_f",
+              "hetero_DL_f"
+            ],
+            "species": [
+              "DD",
+              "D",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_f",
+              "homo_L_f",
+              "mismatched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_L_f",
+              "mismatched_D_b",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 7,
+        "nonautocatalytic_count": 5
+      },
+      "birne_internal_autocatalytic": [
+        [
+          [
+            "D",
+            "DD"
+          ],
+          [
+            "homo_D_f",
+            "matched_D_f"
+          ]
+        ],
+        [
+          [
+            "D",
+            "DD",
+            "L",
+            "LL"
+          ],
+          [
+            "homo_D_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "mismatched_L_f"
+          ]
+        ],
+        [
+          [
+            "L",
+            "LL"
+          ],
+          [
+            "homo_L_f",
+            "matched_L_f"
+          ]
+        ]
+      ],
+      "birne_equals_lp": true
+    },
+    "destructive_full": {
+      "species": [
+        "P",
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "reactions": [
+        "matched_L_f",
+        "matched_L_b",
+        "mismatched_L_f",
+        "mismatched_L_b",
+        "homo_L_f",
+        "matched_D_f",
+        "matched_D_b",
+        "mismatched_D_f",
+        "mismatched_D_b",
+        "homo_D_f",
+        "hetero_LD_f",
+        "hetero_DL_f"
+      ],
+      "lp_cores": [
+        [
+          [
+            "D",
+            "DD"
+          ],
+          [
+            "homo_D_f",
+            "matched_D_f"
+          ]
+        ],
+        [
+          [
+            "D",
+            "DD",
+            "L",
+            "LL"
+          ],
+          [
+            "homo_D_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "mismatched_L_f"
+          ]
+        ],
+        [
+          [
+            "L",
+            "LL"
+          ],
+          [
+            "homo_L_f",
+            "matched_L_f"
+          ]
+        ]
+      ],
+      "autogatito": {
+        "status": "completed",
+        "cores": [
+          [
+            [
+              "D",
+              "DD"
+            ],
+            [
+              "homo_D_f",
+              "matched_D_f"
+            ]
+          ],
+          [
+            [
+              "D",
+              "DD",
+              "L",
+              "LL"
+            ],
+            [
+              "homo_D_f",
+              "homo_L_f",
+              "mismatched_D_f",
+              "mismatched_L_f"
+            ]
+          ],
+          [
+            [
+              "L",
+              "LL"
+            ],
+            [
+              "homo_L_f",
+              "matched_L_f"
+            ]
+          ]
+        ]
+      },
+      "autogatito_equals_lp": true,
+      "birne": {
+        "status": "completed",
+        "consistent": true,
+        "nondegenerate": true,
+        "admits_stability": true,
+        "admits_multistationarity": true,
+        "unstable_cores": [
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "homo_L_f",
+              "matched_L_f"
+            ],
+            "species": [
+              "L",
+              "LL"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "matched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_D_f",
+              "hetero_DL_f"
+            ],
+            "species": [
+              "DD",
+              "D",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "hetero_LD_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_f",
+              "homo_L_f",
+              "mismatched_D_b"
+            ],
+            "species": [
+              "P",
+              "L",
+              "LL"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_b",
+              "mismatched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "P",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_D_f",
+              "hetero_LD_f"
+            ],
+            "species": [
+              "DD",
+              "D",
+              "L"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "hetero_DL_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "homo_L_f",
+              "mismatched_D_b",
+              "matched_L_f"
+            ],
+            "species": [
+              "L",
+              "LL",
+              "P"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_b",
+              "matched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "P",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": false,
+            "reactions": [
+              "mismatched_L_b",
+              "homo_L_f",
+              "mismatched_D_b",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          },
+          {
+            "autocatalytic": true,
+            "reactions": [
+              "mismatched_L_f",
+              "homo_L_f",
+              "mismatched_D_f",
+              "homo_D_f"
+            ],
+            "species": [
+              "DD",
+              "L",
+              "LL",
+              "D"
+            ],
+            "oscillatory": false
+          }
+        ],
+        "autocatalytic_count": 7,
+        "nonautocatalytic_count": 5
+      },
+      "birne_internal_autocatalytic": [
+        [
+          [
+            "D",
+            "DD"
+          ],
+          [
+            "homo_D_f",
+            "matched_D_f"
+          ]
+        ],
+        [
+          [
+            "D",
+            "DD",
+            "L",
+            "LL"
+          ],
+          [
+            "homo_D_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "mismatched_L_f"
+          ]
+        ],
+        [
+          [
+            "L",
+            "LL"
+          ],
+          [
+            "homo_L_f",
+            "matched_L_f"
+          ]
+        ]
+      ],
+      "birne_equals_lp": true
+    }
+  }
+}

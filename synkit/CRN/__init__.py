@@ -98,6 +98,9 @@ from .Pathway import (
     PathwayFinder,
     PathwayReachability,
     PathwayRealizability,
+    RealizabilityResult,
+    RealizabilitySearchLimit,
+    RealizabilityStatus,
 )
 from .Symmetry import (
     CRNCanonicalizer,
@@ -178,6 +181,9 @@ __all__ = [
     "PathwayReachability",
     "PathwayRealizability",
     "PathwayFinder",
+    "RealizabilityResult",
+    "RealizabilitySearchLimit",
+    "RealizabilityStatus",
     # symmetry
     "CRNCanonicalizer",
     "CRNIsomorphism",

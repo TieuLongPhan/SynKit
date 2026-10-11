@@ -50,7 +50,8 @@ def test_interface_is_partially_labeled_and_allows_endpoint_state_change() -> No
     right = _llg({10: 1})
     rule = RuleSpan.from_mapping(left, right, {1: 10}, name="state-change")
 
-    assert rule.interface.schema.node_state == ()
+    assert rule.interface.partial
+    assert rule.interface.schema == rule.left.schema
     assert rule.left_arm.mapping == {0: 1}
     assert rule.right_arm.mapping == {0: 10}
 
@@ -243,12 +244,28 @@ def test_closed_imbalance_fails_and_open_token_is_exact() -> None:
     assert rule.resource_delta.electron_delta == 1.0
 
 
+def test_closed_inventory_counts_unexpanded_hydrogens_as_material() -> None:
+    left = _electron_llg({1: ("C", 2, 0, 1, 4)})
+    right = _electron_llg({10: ("C", 3, 0, 0, 4)})
+    # Both represented electron inventories equal six, but one proton enters.
+    with pytest.raises(DPOError) as error:
+        RuleSpan.from_mapping(left, right, {1: 10}, boundary=SystemBoundary.CLOSED)
+    assert error.value.issues[0].code is DPOIssueCode.CLOSED_MATERIAL
+    token = EnvironmentToken("proton input", (("H", 1),), 0)
+    rule = RuleSpan.from_mapping(
+        left, right, {1: 10}, boundary=SystemBoundary.OPEN, environment=token
+    )
+    assert rule.resource_delta.element_delta == (("H", 1),)
+    assert rule.resource_delta.electron_delta == 0
+
+
 def test_tuple_its_adapter_builds_a_span_not_a_paired_label_rule() -> None:
     its = rsmi_to_its("[CH3:1][OH:2]>>[CH2:1]=[O:2]", format="tuple")
     rule = rule_from_its(its, electron_complete=True)
 
     assert rule.left.schema is ELECTRON_LLG_SCHEMA
-    assert rule.interface.schema.node_state == ()
+    assert rule.interface.partial
+    assert rule.interface.schema == rule.left.schema
     assert set(rule.left_arm.mapping.values()) == set(rule.left.node_ids)
     assert set(rule.right_arm.mapping.values()) == set(rule.right.node_ids)
 
@@ -260,5 +277,6 @@ def test_synrule_adapter_uses_explicit_endpoint_span() -> None:
     rule = rule_from_synrule(synrule)
 
     assert rule.name == "rule"
-    assert rule.interface.schema.node_state == ()
+    assert rule.interface.partial
+    assert rule.interface.schema == rule.left.schema
     assert rule.left.schema.name == "chemical-common/1"

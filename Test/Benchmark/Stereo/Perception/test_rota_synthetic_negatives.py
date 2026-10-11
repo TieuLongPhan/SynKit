@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 from rdkit import Chem
@@ -14,6 +15,7 @@ from Experiment.Stereo.Perception.rota_synthetic_negatives import (
 )
 from synkit.Chem.Molecule.stereo_perception import (
     StereoElementType,
+    _constitutional_graph,
     detect_potential_stereo_elements,
 )
 
@@ -44,11 +46,23 @@ def _axes(molecule: Chem.Mol) -> set[tuple[str, tuple[int, ...], str]]:
     }
 
 
-def test_frozen_synthetic_negative_report_is_exactly_reproducible() -> None:
+def _witness_verdicts(report: dict) -> dict:
+    """Compare witness existence independently of VF2 enumeration order."""
+    normalized = deepcopy(report)
+    for record in normalized["records"]:
+        for axis in record["axes"]:
+            axis["symmetry_witnesses"] = [
+                witness is not None for witness in axis["symmetry_witnesses"]
+            ]
+    return normalized
+
+
+def test_frozen_synthetic_negative_verdicts_are_reproducible() -> None:
     observed = build_report()
     frozen = json.loads(FROZEN.read_text(encoding="utf-8"))
 
-    assert observed == frozen
+    # Multiple automorphisms can certify the same terminal symmetry.
+    assert _witness_verdicts(observed) == _witness_verdicts(frozen)
     assert observed["schema"] == SCHEMA
     assert observed["summary"] == {
         "records": 24,
@@ -65,8 +79,11 @@ def test_every_candidate_negative_contains_an_axis_fixed_witness() -> None:
         if record["proof_kind"] != "axis_fixed_automorphism":
             assert record["axes"] == []
             continue
+        molecule = Chem.MolFromSmiles(record["smiles"])
+        assert molecule is not None
         for axis in record["axes"]:
             path = set(axis["path"])
+            graph = _constitutional_graph(molecule, axis["path"][0])
             witnessed_frames = [
                 (frame, witness)
                 for frame, witness in zip(
@@ -81,7 +98,22 @@ def test_every_candidate_negative_contains_an_axis_fixed_witness() -> None:
                 mapping = dict(witness)
                 assert all(mapping[atom] == atom for atom in path)
                 assert mapping[frame[0]] == frame[1]
-                assert len(set(mapping.values())) == len(mapping)
+                assert len(mapping) == len(witness)
+                assert set(mapping) == set(mapping.values()) == set(graph)
+                for atom, image in mapping.items():
+                    assert graph.nodes[atom] == graph.nodes[image]
+                mapped_edges = {
+                    frozenset((mapping[left], mapping[right]))
+                    for left, right in graph.edges
+                }
+                assert mapped_edges == {
+                    frozenset((left, right)) for left, right in graph.edges
+                }
+                for left, right in graph.edges:
+                    assert (
+                        graph.edges[left, right]
+                        == graph.edges[mapping[left], mapping[right]]
+                    )
 
 
 def test_synthetic_negative_verdict_is_atom_renumbering_invariant() -> None:

@@ -1,0 +1,40 @@
+{
+  "budgets": {
+    "assignment_count": 2,
+    "branch_count": 2,
+    "cpu_seconds": 15.0,
+    "max_rss_mib": 768.0,
+    "proof_bytes": 65536,
+    "wall_seconds": 15.0
+  },
+  "checks": {
+    "assignment_count": true,
+    "branch_count": true,
+    "cpu_seconds": true,
+    "deterministic_digest": true,
+    "max_rss_mib": true,
+    "proof_bytes": true,
+    "wall_seconds": true
+  },
+  "environment": {
+    "cpu_count": 22,
+    "machine": "x86_64",
+    "platform": "Linux-6.19.14-108.fc42.x86_64-x86_64-with-glibc2.41",
+    "python": "3.11.0",
+    "rdkit": "2025.09.3"
+  },
+  "observed": {
+    "assignment_count": 1,
+    "branch_count": 1,
+    "cpu_seconds": 0.421893,
+    "max_rss_mib": 105.961,
+    "proof_bytes": 784,
+    "wall_seconds": 0.425024
+  },
+  "schema": "synkit.stereo-rxn-validation/1",
+  "status": "PASS",
+  "workload": {
+    "graph_sidecar_round_trips": 250,
+    "wire_round_trips": 2500
+  }
+}

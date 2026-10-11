@@ -1,1 +1,7 @@
 *.json text eol=lf
+Experiment/Stereo/Data/Revision/Chemical/MACE/*.xyz -text whitespace=cr-at-eol
+Experiment/Stereo/Data/Revision/CIPPublished/compounds.smi -text
+Experiment/Stereo/Data/Revision/CIPPublished/compounds_3d.sdf -text whitespace=-blank-at-eol,-blank-at-eof
+Experiment/Stereo/Data/Revision/CleanReleaseFull/execution/** -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+# Retain the existing drawing source exactly as supplied in the checked ZIP.
+paper/stereo_graph/fig/descriptor_examples.tex whitespace=-blank-at-eol

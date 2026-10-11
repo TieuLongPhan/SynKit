@@ -1,12 +1,8 @@
 """Scaling benchmark for the :mod:`synkit.CRN` analysis stack.
 
-Measures wall-clock time of each analysis against network size, over families
-of synthetic networks whose size is a single parameter. The point is to show
-where the practical ceiling of each analysis lies, since the analyses have very
-different complexity: stoichiometric rank and conservation laws are polynomial,
-minimal semiflows and canonicalization are worst-case exponential in theory but
-tractable on the sparse networks chemistry produces, and minimal-siphon
-enumeration is the one that used to be the wall.
+Measures wall-clock time against network size for parameterized synthetic
+network families. The results locate practical runtime limits for the selected
+families; they do not establish asymptotic complexity.
 
 Network families
 ----------------
@@ -16,13 +12,13 @@ Network families
     linear metabolic pathway.
 ``reversible_chain``
     The same chain with every reaction reversed as well. Weakly reversible, so
-    every analysis has to do real work rather than bail out early.
+    exercises analyses that can terminate early on non-reversible networks.
 ``cycle``
     A closed chain ``S0 -> ... -> Sn -> S0``, which is weakly reversible and has
     a single conservation law.
 ``random_sparse``
     Random bimolecular reactions at a fixed reaction-to-species ratio. The
-    hardest of the four, and the closest to a rule-expanded network.
+    densest of the four benchmark families.
 
 .. rubric:: Example
 
@@ -39,6 +35,7 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass
+from multiprocessing import get_all_start_methods, get_context
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from ..Petrinet.structure import find_siphons
@@ -305,6 +302,10 @@ class ScalingRecord:
     :param error:
         Exception text when the task raised.
     :type error: Optional[str]
+
+    :param timed_out:
+        Whether the task was terminated at the measurement budget.
+    :type timed_out: bool
     """
 
     family: str
@@ -315,6 +316,7 @@ class ScalingRecord:
     seconds: Optional[float] = None
     result: Any = None
     error: Optional[str] = None
+    timed_out: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         """Return the record as a serializable mapping.
@@ -331,19 +333,17 @@ class ScalingRecord:
             "seconds": self.seconds,
             "result": self.result,
             "error": self.error,
+            "timed_out": self.timed_out,
         }
 
 
-def _time_task(
+def _time_task_worker(
     task: Callable[[SynCRN], Any],
     crn: SynCRN,
-    *,
     repeats: int,
-) -> Tuple[Optional[float], Any, Optional[str]]:
-    """Time one task, reporting the best of ``repeats`` runs.
-
-    The best rather than the mean, because the slow runs measure the machine's
-    other work rather than the algorithm.
+    connection: Any,
+) -> None:
+    """Execute a timed task in a process that the parent can terminate.
 
     :param task: Callable to time.
     :type task: Callable[[SynCRN], Any]
@@ -351,9 +351,67 @@ def _time_task(
     :type crn: SynCRN
     :param repeats: Number of repeats.
     :type repeats: int
-    :return: Tuple ``(seconds, result, error)``.
-    :rtype: Tuple[Optional[float], Any, Optional[str]]
+    :param connection: One-way multiprocessing connection.
+    :type connection: Any
     """
+    best: Optional[float] = None
+    result: Any = None
+    try:
+        for _ in range(max(1, repeats)):
+            started = time.perf_counter()
+            result = task(crn)
+            elapsed = time.perf_counter() - started
+            best = elapsed if best is None else min(best, elapsed)
+        connection.send((best, result, None))
+    except Exception as exc:  # pragma: no cover - returned to parent
+        connection.send((None, None, f"{type(exc).__name__}: {exc}"))
+    finally:
+        connection.close()
+
+
+def _time_task(
+    task: Callable[[SynCRN], Any],
+    crn: SynCRN,
+    *,
+    repeats: int,
+    time_budget: Optional[float],
+) -> Tuple[Optional[float], Any, Optional[str], bool]:
+    """Time one task and report the minimum of ``repeats`` runs.
+
+    :param task: Callable to time.
+    :type task: Callable[[SynCRN], Any]
+    :param crn: Network to pass to the task.
+    :type crn: SynCRN
+    :param repeats: Number of repeats.
+    :type repeats: int
+    :param time_budget: Hard wall-clock budget, or ``None`` for no limit.
+    :type time_budget: Optional[float]
+    :return: Tuple ``(seconds, result, error, timed_out)``.
+    :rtype: Tuple[Optional[float], Any, Optional[str], bool]
+    """
+    if time_budget is not None:
+        start_method = "fork" if "fork" in get_all_start_methods() else "spawn"
+        context = get_context(start_method)
+        receiver, sender = context.Pipe(duplex=False)
+        process = context.Process(
+            target=_time_task_worker,
+            args=(task, crn, repeats, sender),
+        )
+        process.start()
+        sender.close()
+        process.join(max(0.0, time_budget))
+        if process.is_alive():
+            process.terminate()
+            process.join()
+            receiver.close()
+            return None, None, None, True
+        if receiver.poll():
+            seconds, result, error = receiver.recv()
+            receiver.close()
+            return seconds, result, error, False
+        receiver.close()
+        return None, None, f"worker exited with code {process.exitcode}", False
+
     best: Optional[float] = None
     result: Any = None
 
@@ -362,11 +420,11 @@ def _time_task(
         try:
             result = task(crn)
         except Exception as exc:  # pragma: no cover - reported, not raised
-            return None, None, f"{type(exc).__name__}: {exc}"
+            return None, None, f"{type(exc).__name__}: {exc}", False
         elapsed = time.perf_counter() - started
         best = elapsed if best is None else min(best, elapsed)
 
-    return best, result, None
+    return best, result, None, False
 
 
 def run_scaling_benchmark(
@@ -381,8 +439,8 @@ def run_scaling_benchmark(
 ) -> List[ScalingRecord]:
     """Time each analysis across network families and sizes.
 
-    Once a task exceeds ``time_budget`` on some size of a family, it is skipped
-    for every larger size of that family, so one slow analysis cannot make the
+    A task is terminated when it reaches ``time_budget`` and is skipped for
+    every larger size of that family, so one slow analysis cannot make the
     whole run open-ended.
 
     :param sizes:
@@ -445,8 +503,11 @@ def run_scaling_benchmark(
                 if (family, task) in exhausted:
                     continue
 
-                seconds, result, error = _time_task(
-                    TASKS[task], crn, repeats=repeats
+                seconds, result, error, timed_out = _time_task(
+                    TASKS[task],
+                    crn,
+                    repeats=repeats,
+                    time_budget=time_budget,
                 )
                 records.append(
                     ScalingRecord(
@@ -458,15 +519,13 @@ def run_scaling_benchmark(
                         seconds=seconds,
                         result=result,
                         error=error,
+                        timed_out=timed_out,
                     )
                 )
 
-                over_budget = (
-                    time_budget is not None
-                    and seconds is not None
-                    and seconds > time_budget
-                )
-                if error is not None or over_budget:
+                if error is not None:
+                    exhausted.add((family, task))
+                if timed_out:
                     exhausted.add((family, task))
 
     return records

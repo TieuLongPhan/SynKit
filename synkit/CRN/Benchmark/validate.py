@@ -3,10 +3,8 @@
 This is the reproducible form of the paper's validation table: every benchmark
 network is analysed, every asserted quantity is compared with the expected
 value, and every quantity is additionally recomputed by an independent route
-from :mod:`synkit.CRN.Benchmark.crosschecks`. A run that reports
-``all_passed`` therefore establishes two things at once — that the package
-reproduces the expected verdicts, and that it agrees with a second, disjoint
-computation of the same numbers.
+from :mod:`synkit.CRN.Benchmark.crosschecks`. ``all_passed`` requires agreement
+with both the expected verdicts and the independent computations.
 
 .. rubric:: Example
 

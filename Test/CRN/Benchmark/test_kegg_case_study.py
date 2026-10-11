@@ -1,7 +1,6 @@
 """The KEGG case study, asserted as a test.
 
-The cached modules make this reproducible offline: no KEGG request is made, so
-the numbers here are the same ones the paper reports.
+The cached modules allow the test to run without a KEGG request.
 """
 
 import unittest
@@ -186,6 +185,9 @@ class TestGlycolysisFluxRealizability(unittest.TestCase):
     def test_the_canonical_flux_is_realizable_from_one_glucose(self):
         result = check_glycolysis_flux()
         self.assertTrue(result["realizable"])
+        self.assertEqual(result["status"], "realizable")
+        self.assertEqual(result["termination_reason"], "certificate")
+        self.assertGreater(result["explored_states"], 0)
         self.assertIsNotNone(result["certificate"])
 
     def test_the_certificate_fires_each_reaction_the_requested_number_of_times(self):
@@ -203,6 +205,8 @@ class TestGlycolysisFluxRealizability(unittest.TestCase):
         # Firing the lower half without ever making a triose cannot work.
         result = check_glycolysis_flux(flux={"R00200": 1}, initial_glucose=1)
         self.assertFalse(result["realizable"])
+        self.assertEqual(result["status"], "unrealizable")
+        self.assertTrue(result["exhaustive"])
 
 
 class TestCaseStudyReport(unittest.TestCase):

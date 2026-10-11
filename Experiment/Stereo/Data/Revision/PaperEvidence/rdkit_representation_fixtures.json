@@ -1,0 +1,90 @@
+{
+  "schema": "synkit.rdkit-representation-fixtures/1",
+  "source": {
+    "url": "https://raw.githubusercontent.com/rdkit/rdkit/Release_2026_03_1/Docs/Book/RDKit_Book.rst",
+    "release_tag": "Release_2026_03_1",
+    "sha256": "d2d7a27847a37f6fc85af65f8f51f596bc5625fe138041c8a26b46f8ee091a9d",
+    "section": "Support for non-tetrahedral atomic stereochemistry / SMILES notation",
+    "access_date": "2026-10-03"
+  },
+  "scope": "Documented finite-frame SMILES encodings, with distinct ligand references. Formal representation probes; no experimental geometry, stability or general toolkit proof.",
+  "groups": [
+    {
+      "family": "square_planar",
+      "tag_prefix": "SP",
+      "state_count": 3,
+      "ordered_ligand_template": "C[Pt@SP{}](F)(Cl)[H]",
+      "equivalent_documented_encodings": [
+        "C[Pt@SP1](F)(Cl)[H]",
+        "C[Pt@SP2](Cl)(F)[H]",
+        "C[Pt@SP3](F)([H])Cl"
+      ]
+    },
+    {
+      "family": "trigonal_bipyramidal",
+      "tag_prefix": "TB",
+      "state_count": 20,
+      "ordered_ligand_template": "S[As@TB{}](F)(Cl)(Br)N",
+      "equivalent_documented_encodings": [
+        "S[As@TB1](F)(Cl)(Br)N",
+        "S[As@TB2](F)(Br)(Cl)N",
+        "S[As@TB3](F)(Cl)(N)Br",
+        "S[As@TB4](F)(Br)(N)Cl",
+        "S[As@TB5](F)(N)(Cl)Br",
+        "S[As@TB6](F)(N)(Br)Cl",
+        "S[As@TB7](N)(F)(Cl)Br",
+        "S[As@TB8](N)(F)(Br)Cl",
+        "F[As@TB9](S)(Cl)(Br)N",
+        "F[As@TB11](S)(Br)(Cl)N",
+        "F[As@TB10](S)(Cl)(N)Br",
+        "F[As@TB12](S)(Br)(N)Cl",
+        "F[As@TB13](S)(N)(Cl)Br",
+        "F[As@TB14](S)(N)(Br)Cl",
+        "F[As@TB15](Cl)(S)(Br)N",
+        "F[As@TB20](Br)(S)(Cl)N",
+        "F[As@TB16](Cl)(S)(N)Br",
+        "F[As@TB19](Br)(S)(N)Cl",
+        "F[As@TB17](Cl)(Br)(S)N",
+        "F[As@TB18](Br)(Cl)(S)N"
+      ]
+    },
+    {
+      "family": "octahedral",
+      "tag_prefix": "OH",
+      "state_count": 30,
+      "ordered_ligand_template": "O[Co@OH{}](Cl)(C)(N)(F)P",
+      "equivalent_documented_encodings": [
+        "O[Co@OH1](Cl)(C)(N)(F)P",
+        "O[Co@OH2](Cl)(F)(N)(C)P",
+        "O[Co@OH3](Cl)(C)(N)(P)F",
+        "O[Co@OH16](Cl)(F)(N)(P)C",
+        "O[Co@OH6](Cl)(C)(P)(N)F",
+        "O[Co@OH18](Cl)(F)(P)(N)C",
+        "O[Co@OH19](Cl)(P)(C)(N)F",
+        "O[Co@OH24](Cl)(P)(F)(N)C",
+        "O[Co@OH25](P)(Cl)(C)(N)F",
+        "O[Co@OH30](P)(Cl)(F)(N)C",
+        "O[Co@OH4](Cl)(C)(F)(N)P",
+        "O[Co@OH14](Cl)(F)(C)(N)P",
+        "O[Co@OH5](Cl)(C)(F)(P)N",
+        "O[Co@OH15](Cl)(F)(C)(P)N",
+        "O[Co@OH7](Cl)(C)(P)(F)N",
+        "O[Co@OH17](Cl)(F)(P)(C)N",
+        "O[Co@OH20](Cl)(P)(C)(F)N",
+        "O[Co@OH23](Cl)(P)(F)(C)N",
+        "O[Co@OH26](P)(Cl)(C)(F)N",
+        "O[Co@OH29](P)(Cl)(F)(C)N",
+        "O[Co@OH10](Cl)(N)(F)(C)P",
+        "O[Co@OH8](Cl)(N)(C)(F)P",
+        "O[Co@OH11](Cl)(N)(F)(P)C",
+        "O[Co@OH9](Cl)(N)(C)(P)F",
+        "O[Co@OH13](Cl)(N)(P)(F)C",
+        "O[Co@OH12](Cl)(N)(P)(C)F",
+        "O[Co@OH22](Cl)(P)(N)(F)C",
+        "O[Co@OH21](Cl)(P)(N)(C)F",
+        "O[Co@OH28](P)(Cl)(N)(F)C",
+        "O[Co@OH27](P)(Cl)(N)(C)F"
+      ]
+    }
+  ]
+}

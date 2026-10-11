@@ -50,6 +50,7 @@ from .descriptors import (
     virtual_reference,
 )
 from .extended_descriptors import HelicalStereo, PlanarChiralityStereo
+from .global_stereo import FrameworkStereo
 from .orbits import SHAPE_DEFINITIONS, StereoSpecification
 
 FOCAL_STEREOGRAPH_SCHEMA = "synkit.focal-stereograph/1"
@@ -211,6 +212,8 @@ def local_configuration_classes(
     """Return every local configuration class for one declared support."""
     if not isinstance(descriptor, CONFIGURED_DESCRIPTOR_TYPES):
         raise TypeError("Unsupported configured stereo descriptor.")
+    if isinstance(descriptor, FrameworkStereo):
+        raise TypeError("Local configuration enumeration does not support framework stereo.")
     return _shape_candidates(descriptor)
 
 
@@ -266,6 +269,8 @@ def focal_stereo_evidence(
     items = tuple(sorted(registry.items()))
     if any(not isinstance(value, CONFIGURED_DESCRIPTOR_TYPES) for _, value in items):
         raise TypeError("Focal evidence requires configured-catalogue descriptors.")
+    if any(isinstance(value, FrameworkStereo) for _, value in items):
+        raise TypeError("Focal evidence does not support framework stereo.")
     index = _focal_index(items, focal_identifier)
     omitted = tuple(
         position
@@ -341,6 +346,8 @@ def enumerate_stereograph_assignments(
     items = tuple(sorted(registry.items()))
     if any(not isinstance(value, CONFIGURED_DESCRIPTOR_TYPES) for _, value in items):
         raise TypeError("Enumeration requires configured-catalogue descriptors.")
+    if any(isinstance(value, FrameworkStereo) for _, value in items):
+        raise TypeError("Assignment enumeration does not support framework stereo.")
     unresolved = tuple(
         key
         for key, value in items

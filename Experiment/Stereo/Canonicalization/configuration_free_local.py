@@ -35,11 +35,19 @@ from Experiment.Stereo.Canonicalization.global_local import (  # noqa: E402
 from Experiment.Stereo.Canonicalization.local_permutations import (  # noqa: E402
     all_local_arrangements,
 )
+from Experiment.Stereo.Canonicalization.independent_model import (  # noqa: E402
+    from_descriptor, raw_representation_key, raw_states, state_key,
+)
+from Experiment.Stereo.Canonicalization.independent_orbits import (  # noqa: E402
+    ATOM_KEYS, BOND_KEYS, partition_agreement, reference_partition,
+)
+from Experiment.Stereo.Canonicalization.exact_code_store import ExactCodeStore  # noqa: E402
 from Experiment.Stereo.Chirality.published import (  # noqa: E402
     DATASET as ACS_DATASET,
     EXPECTED_SHA256 as ACS_SHA256,
     load_dataset,
 )
+from Experiment.Stereo.provenance import capture_source, finish_source  # noqa: E402
 from Experiment.Stereo.datasets import (  # noqa: E402
     CIP_SHA256,
     ROTA,
@@ -74,6 +82,7 @@ from synkit.Graph.Stereo.enumeration import (  # noqa: E402
 )
 
 _TASKS = ("internal", "acs", "cip", "rota")
+_REFERENCE_METHODS = ("direct_single_carrier_transport", "exhaustive_constitutional_automorphisms")
 _TABLE_FIELDS = (
     "source",
     "record_id",
@@ -89,6 +98,8 @@ _TABLE_FIELDS = (
     "representation_invariance_passed",
     "formal_class_separation_passed",
     "global_symmetry_quotient",
+    "independent_partition_passed",
+    "raw_inventory_exhaustive",
     "passed",
     "seconds",
     "issues",
@@ -194,11 +205,20 @@ def _canonicalize(
             f"{type(error).__name__}: {error}",
             time.perf_counter() - started,
         )
-    return result.canonical_digest, None, time.perf_counter() - started
+    if not result.complete or not result.exact:
+        return None, "non_exact_or_incomplete_result", time.perf_counter() - started
+    return result.canonical_code, None, time.perf_counter() - started
 
 
-def _carrier_result(
+def _carrier_result(**options) -> dict[str, Any]:
+    """Compare full certificates with bounded storage throughout one carrier."""
+    with ExactCodeStore() as store:
+        return _carrier_result_exact(code_store=store, **options)
+
+
+def _carrier_result_exact(
     *,
+    code_store: ExactCodeStore,
     source: str,
     record_id: str,
     carrier_id: str,
@@ -207,21 +227,33 @@ def _carrier_result(
     seed: Any,
     timeout_seconds: float,
     internal_colors: bool = False,
+    reference_method: str = _REFERENCE_METHODS[0],
 ) -> dict[str, Any]:
     """Evaluate every raw ordering and its theoretical local orbit."""
     started = time.perf_counter()
     arrangements = all_local_arrangements(seed)
     theoretical: dict[str, list[Any]] = defaultdict(list)
     for arrangement in arrangements:
-        theoretical[repr(arrangement.canonical_form())].append(arrangement)
+        theoretical[repr(state_key(from_descriptor(arrangement)))].append(arrangement)
+
+    raw_expected = {raw_representation_key(value) for value in raw_states(from_descriptor(seed))}
+    raw_actual = {raw_representation_key(from_descriptor(value)) for value in arrangements}
+    raw_exhaustive = raw_actual == raw_expected and len(raw_actual) == len(arrangements)
+    choices = (tuple(theoretical[key][0] for key in sorted(theoretical)),)
+    reference = reference_partition(
+        graph, choices, atom_color="color" if internal_colors else ATOM_KEYS,
+        bond_color="color" if internal_colors else BOND_KEYS, timeout_seconds=timeout_seconds,
+        method=reference_method,
+    )
 
     class_results = []
-    all_digests: list[str] = []
+    class_codes = []
+    all_digests: list[int] = []
     all_issues: list[str] = []
     checked = 0
     for class_index, class_key in enumerate(sorted(theoretical)):
         descriptors = theoretical[class_key]
-        digests: list[str] = []
+        digests: list[int] = []
         issues: list[str] = []
         class_seconds = 0.0
         for descriptor in descriptors:
@@ -236,8 +268,9 @@ def _carrier_result(
             if issue is not None or digest is None:
                 issues.append(issue or "missing_result")
             else:
-                digests.append(digest)
+                digests.append(code_store.intern(digest))
         distinct = sorted(set(digests))
+        class_codes.append(distinct[0] if len(distinct) == 1 else None)
         collapsed = (
             not issues and len(digests) == len(descriptors) and len(distinct) == 1
         )
@@ -246,7 +279,7 @@ def _carrier_result(
                 "theoretical_class_index": class_index,
                 "raw_permutation_multiplicity": len(descriptors),
                 "canonicalizations_completed": len(digests),
-                "canonical_digests": distinct,
+                "canonical_digests": [code_store.index_digest(code) for code in distinct],
                 "collapsed_within_theoretical_class": collapsed,
                 "seconds": class_seconds,
                 "issues": issues,
@@ -268,20 +301,25 @@ def _carrier_result(
         and invariant
         and len(
             {
-                result["canonical_digests"][0]
-                for result in class_results
-                if result["canonical_digests"]
+                code for code in class_codes if code is not None
             }
         )
         == theoretical_count
     )
     quotient = complete and invariant and 0 < observed < theoretical_count
-    passed = complete and invariant and 0 < observed <= theoretical_count
+    formal_assignments = tuple((index,) for index in range(len(class_codes)))
+    independent_passed = partition_agreement(reference, formal_assignments, class_codes)
+    passed = complete and invariant and raw_exhaustive and independent_passed
     issues = list(all_issues)
     if complete and not invariant:
         issues.append("within_theoretical_class_did_not_collapse")
     if observed > theoretical_count:
         issues.append("more_canonical_classes_than_theoretical_classes")
+    if not raw_exhaustive:
+        issues.append("raw_inventory_not_independently_exhaustive")
+    if not independent_passed:
+        failure = "independent_partition_disagreement" if reference["status"] == "complete" else "oracle_incomplete"
+        issues.append(failure)
     return {
         "source": source,
         "record_id": record_id,
@@ -299,6 +337,9 @@ def _carrier_result(
         "representation_invariance_passed": invariant,
         "formal_class_separation_passed": separated,
         "global_symmetry_quotient": quotient,
+        "independent_partition_passed": independent_passed,
+        "raw_inventory_exhaustive": raw_exhaustive,
+        "independent_reference": reference,
         "passed": passed,
         "seconds": time.perf_counter() - started,
         "issues": issues,
@@ -307,9 +348,10 @@ def _carrier_result(
 
 
 def _molecular_record(
-    item: tuple[str, str, str, float],
+    item: tuple,
 ) -> dict[str, Any]:
-    source, record_id, smiles, timeout_seconds = item
+    source, record_id, smiles, timeout_seconds = item[:4]
+    reference_method = item[4] if len(item) == 5 else _REFERENCE_METHODS[0]
     RDLogger.DisableLog("rdApp.*")
     started = time.perf_counter()
     molecule = Chem.MolFromSmiles(smiles)
@@ -359,6 +401,7 @@ def _molecular_record(
                 graph=graph,
                 seed=seed,
                 timeout_seconds=timeout_seconds,
+                reference_method=reference_method,
             )
         )
     passed = not perception_issues and all(carrier["passed"] for carrier in carriers)
@@ -381,7 +424,7 @@ def _molecular_record(
 
 
 def _run_molecular_records(
-    items: list[tuple[str, str, str, float]],
+    items: list[tuple],
     *,
     jobs: int,
 ) -> list[dict[str, Any]]:
@@ -397,6 +440,7 @@ def _internal_records(
     record_ids: tuple[str, ...],
     limit: int | None,
     timeout_seconds: float,
+    reference_method: str = _REFERENCE_METHODS[0],
 ) -> list[dict[str, Any]]:
     fixtures = _fixture_catalog()
     known = {fixture.family for fixture in fixtures}
@@ -425,6 +469,7 @@ def _internal_records(
             seed=fixture.seed,
             timeout_seconds=timeout_seconds,
             internal_colors=True,
+            reference_method=reference_method,
         )
         records.append(
             {
@@ -492,7 +537,11 @@ def benchmark(
     limit: int | None = None,
     jobs: int = 1,
     timeout_seconds: float = 10.0,
+    reference_method: str = _REFERENCE_METHODS[0],
 ) -> dict[str, Any]:
+    if reference_method not in _REFERENCE_METHODS:
+        raise ValueError(f"Unknown reference method: {reference_method}")
+    source_provenance = capture_source()
     started = time.perf_counter()
     if task == "internal":
         records = _internal_records(
@@ -500,6 +549,7 @@ def benchmark(
             record_ids=record_ids,
             limit=limit,
             timeout_seconds=timeout_seconds,
+            reference_method=reference_method,
         )
         dataset = {"records_available": len(_fixture_catalog())}
     else:
@@ -514,7 +564,7 @@ def benchmark(
         if missing:
             raise ValueError(f"Unknown record identifiers: {missing}")
         selected = [
-            (task, record_id, smiles, timeout_seconds)
+            (task, record_id, smiles, timeout_seconds, reference_method)
             for record_id, smiles in rows
             if not record_ids or record_id in record_ids
         ]
@@ -526,7 +576,8 @@ def benchmark(
     completed = sum(carrier["canonicalizations_completed"] for carrier in carriers)
     dataset["records_selected"] = len(records)
     return {
-        "schema": "synkit.configuration-free-local-canonicalization/1",
+        "schema": "synkit.configuration-free-local-canonicalization/2",
+        "provenance": finish_source(source_provenance),
         "task": task,
         "environment": {
             "python": sys.version.split()[0],
@@ -542,7 +593,17 @@ def benchmark(
             "other_carrier_configurations": "omitted",
             "joint_carrier_cartesian_product": False,
             "raw_local_permutations": "exhaustive",
-            "theoretical_classes": "local_descriptor_group_orbits",
+            "theoretical_classes": "independent_geometry_rotation_orbits",
+            "global_partition_truth": reference_method,
+            "reference_timeout_seconds_per_carrier": timeout_seconds,
+            "reference_process_peak_rss_mb": 1024,
+            "reference_count_limit": 50000,
+            "reference_count_limit_scope": (
+                "each of frame_bindings, isomorphism_queries, isomorphism_map_proposals"
+                if reference_method == _REFERENCE_METHODS[0] else "constitutional_automorphisms"
+            ),
+            "identity_comparison": "full_exact_codes; digests_are_indices_only",
+            "oracle_incomplete_is_pass": False,
             "timeout_seconds_per_canonicalization": timeout_seconds,
             "worker_processes": jobs,
         },
@@ -579,6 +640,9 @@ def benchmark(
                 carrier["global_symmetry_quotient"] for carrier in carriers
             ),
             "complete": completed == expected,
+            "independent_oracles_complete": all(
+                carrier["independent_reference"]["status"] == "complete" for carrier in carriers
+            ),
             "carrier_accuracy": (
                 sum(carrier["passed"] for carrier in carriers) / len(carriers)
                 if carriers
@@ -600,7 +664,7 @@ def benchmark(
 def _write_table(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=_TABLE_FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=_TABLE_FIELDS, lineterminator="\n")
         writer.writeheader()
         for record in report["records"]:
             for carrier in record["carriers"]:
@@ -626,6 +690,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--timeout", type=float, default=10.0)
+    parser.add_argument("--reference-method", choices=_REFERENCE_METHODS, default=_REFERENCE_METHODS[0])
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--table", type=Path, required=True)
     return parser
@@ -651,6 +716,7 @@ def main() -> int:
             limit=arguments.limit,
             jobs=arguments.jobs,
             timeout_seconds=arguments.timeout,
+            reference_method=arguments.reference_method,
         )
     except ValueError as error:
         parser.error(str(error))
@@ -673,7 +739,9 @@ def main() -> int:
             sort_keys=True,
         )
     )
-    return 0 if not report["summary"]["carriers_failed"] else 1
+    summary = report["summary"]
+    complete = summary["complete"] and summary["independent_oracles_complete"]
+    return 0 if complete and not summary["carriers_failed"] and not summary["parse_failures"] else 1
 
 
 if __name__ == "__main__":

@@ -52,9 +52,9 @@
       "id": "cip_validation_suite",
       "records": 300,
       "task": "local_cip_descriptor_assignment",
-      "path": null,
-      "vendored": false,
-      "license": null,
+      "path": "Experiment/Stereo/Data/Revision/CIPPublished/compounds.smi",
+      "vendored": true,
+      "license": "CC BY-NC 4.0",
       "protocols": {
         "native_local_cip_label_assignment": true,
         "configuration_neutral_stereo_element_audit": true,
@@ -76,7 +76,10 @@
       "diagnostics": {
         "supplied_stereo_binary": true,
         "stereo_stripped_four_state": true
-      }
+      },
+      "coordinate_path": "Experiment/Stereo/Data/Revision/CIPPublished/compounds_3d.sdf",
+      "coordinate_sha256": "afc874e693a64211d4278952009f5b982fe66adcf712a65c252a86ae297e1ba6",
+      "source_doi": "10.1021/acs.jcim.8b00324.s001"
     }
   ],
   "designed_datasets": {

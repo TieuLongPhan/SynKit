@@ -1,0 +1,196 @@
+{
+  "files": [
+    {
+      "id": 12802589,
+      "name": "ci8b00324_si_001.zip",
+      "size": 238142,
+      "is_link_only": false,
+      "download_url": "https://ndownloader.figshare.com/files/12802589",
+      "supplied_md5": "c84384b7af9b71e0bf218aa84a33f7d2",
+      "computed_md5": "c84384b7af9b71e0bf218aa84a33f7d2",
+      "mimetype": "application/zip"
+    }
+  ],
+  "folder_structure": {},
+  "authors": [
+    {
+      "id": 2006161,
+      "full_name": "Robert M. Hanson",
+      "first_name": "Robert M.",
+      "last_name": "Hanson",
+      "is_active": false,
+      "url_name": "_",
+      "orcid_id": ""
+    },
+    {
+      "id": 5277623,
+      "full_name": "Sophia Musacchio",
+      "first_name": "Sophia",
+      "last_name": "Musacchio",
+      "is_active": false,
+      "url_name": "_",
+      "orcid_id": ""
+    },
+    {
+      "id": 5641340,
+      "full_name": "John W. Mayfield",
+      "first_name": "John W.",
+      "last_name": "Mayfield",
+      "is_active": false,
+      "url_name": "_",
+      "orcid_id": ""
+    },
+    {
+      "id": 5641343,
+      "full_name": "Mikko\nJ. Vainio",
+      "first_name": "Mikko\nJ.",
+      "last_name": "Vainio",
+      "is_active": false,
+      "url_name": "_",
+      "orcid_id": ""
+    },
+    {
+      "id": 390746,
+      "full_name": "Andrey Yerin",
+      "first_name": "Andrey",
+      "last_name": "Yerin",
+      "is_active": false,
+      "url_name": "_",
+      "orcid_id": ""
+    },
+    {
+      "id": 2290570,
+      "full_name": "Dmitry Redkin",
+      "first_name": "Dmitry",
+      "last_name": "Redkin",
+      "is_active": false,
+      "url_name": "_",
+      "orcid_id": ""
+    }
+  ],
+  "custom_fields": [],
+  "figshare_url": "https://acs.figshare.com/articles/dataset/Algorithmic_Analysis_of_Cahn_Ingold_Prelog_Rules_of_Stereochemistry_Proposals_for_Revised_Rules_and_a_Guide_for_Machine_Implementation/6979904",
+  "download_disabled": false,
+  "description": "The most recent version of the Cahn\u2013Ingold\u2013Prelog\nrules for the determination of stereodescriptors as described in <i>Nomenclature of Organic Chemistry: IUPAC Recommendations and Preferred\nNames 2013</i> (the \u201cBlue Book\u201d; Favre and Powell.\nRoyal Society of Chemistry, 2014; http://dx.doi.org/10.1039/9781849733069) were analyzed by an international team of cheminformatics software\ndevelopers. Algorithms for machine implementation were designed, tested,\nand cross-validated. Deficiencies in Sequence Rules 1b and 2 were\nfound, and proposed language for their modification is presented.\nA concise definition of an additional rule (\u201cRule 6\u201d,\nbelow) is proposed, which succinctly covers several cases only tangentially\nmentioned in the 2013 recommendations. Each rule is discussed from\nthe perspective of machine implementation. The four resultant implementations\nare supported by a 300-compound validation suite in both 2D and 3D\nstructure data file (SDF) format as well as SMILES (https://cipvalidationsuite.github.io/ValidationSuite). The validation suites include all significant examples in Chapter\n9 of the Blue Book, as well as several additional structures that\nhighlight more complex aspects of the rules not addressed or not clearly\nanalyzed in that work. These additional structures support a case\nfor the need for modifications to the Sequence Rules.",
+  "funding": null,
+  "funding_list": [],
+  "version": 1,
+  "status": "public",
+  "size": 238142,
+  "created_date": "2018-08-17T14:49:17Z",
+  "modified_date": "2023-06-04T06:26:30Z",
+  "is_public": true,
+  "is_confidential": false,
+  "is_metadata_record": false,
+  "confidential_reason": "",
+  "metadata_reason": "",
+  "license": {
+    "value": 10,
+    "name": "CC BY-NC 4.0",
+    "url": "https://creativecommons.org/licenses/by-nc/4.0/"
+  },
+  "tags": [
+    "SMILES",
+    "Preferred Names 2013",
+    "Sequence Rules 1 b",
+    "Cahn",
+    "3 D structure data",
+    "IUPAC",
+    "http",
+    "machine implementation",
+    "cheminformatics software developers",
+    "300- compound validation suite",
+    "modification",
+    "SDF"
+  ],
+  "keywords": [
+    "SMILES",
+    "Preferred Names 2013",
+    "Sequence Rules 1 b",
+    "Cahn",
+    "3 D structure data",
+    "IUPAC",
+    "http",
+    "machine implementation",
+    "cheminformatics software developers",
+    "300- compound validation suite",
+    "modification",
+    "SDF"
+  ],
+  "categories": [
+    {
+      "id": 146,
+      "title": "Space Science",
+      "parent_id": 43,
+      "path": "",
+      "source_id": "",
+      "taxonomy_id": 10
+    },
+    {
+      "id": 873,
+      "title": "Chemical Sciences not elsewhere classified",
+      "parent_id": 38,
+      "path": "",
+      "source_id": "",
+      "taxonomy_id": 10
+    },
+    {
+      "id": 734,
+      "title": "Biological Sciences not elsewhere classified",
+      "parent_id": 48,
+      "path": "",
+      "source_id": "",
+      "taxonomy_id": 10
+    },
+    {
+      "id": 931,
+      "title": "Information Systems not elsewhere classified",
+      "parent_id": 52,
+      "path": "",
+      "source_id": "",
+      "taxonomy_id": 10
+    }
+  ],
+  "references": [
+    "https://doi.org/10.1021/acs.jcim.8b00324"
+  ],
+  "has_linked_file": false,
+  "citation": "Hanson, Robert M.; Musacchio, Sophia; Mayfield, John W.; Vainio, Mikko\nJ.; Yerin, Andrey; Redkin, Dmitry (2018). Algorithmic Analysis of Cahn\u2013Ingold\u2013Prelog\nRules of Stereochemistry: Proposals for Revised Rules and a Guide\nfor Machine Implementation. ACS Publications. Dataset. https://doi.org/10.1021/acs.jcim.8b00324.s001",
+  "related_materials": [
+    {
+      "id": 41442482,
+      "identifier": "10.1021/acs.jcim.8b00324",
+      "title": "Algorithmic Analysis of Cahn\u2013Ingold\u2013Prelog\nRules of Stereochemistry: Proposals for Revised Rules and a Guide\nfor Machine Implementation",
+      "relation": "IsSupplementTo",
+      "identifier_type": "DOI",
+      "is_linkout": true,
+      "link": "https://doi.org/10.1021/acs.jcim.8b00324"
+    }
+  ],
+  "is_embargoed": false,
+  "embargo_date": null,
+  "embargo_type": null,
+  "embargo_title": "",
+  "embargo_reason": "",
+  "embargo_options": [],
+  "id": 6979904,
+  "title": "Algorithmic Analysis of Cahn\u2013Ingold\u2013Prelog\nRules of Stereochemistry: Proposals for Revised Rules and a Guide\nfor Machine Implementation",
+  "doi": "10.1021/acs.jcim.8b00324.s001",
+  "handle": "",
+  "url": "https://api.figshare.com/v2/articles/6979904",
+  "published_date": "2018-07-30T00:00:00Z",
+  "thumb": "",
+  "defined_type": 3,
+  "defined_type_name": "dataset",
+  "group_id": 2409,
+  "url_private_api": "https://api.figshare.com/v2/account/articles/6979904",
+  "url_public_api": "https://api.figshare.com/v2/articles/6979904",
+  "url_private_html": "https://figshare.com/account/articles/6979904",
+  "url_public_html": "https://acs.figshare.com/articles/dataset/Algorithmic_Analysis_of_Cahn_Ingold_Prelog_Rules_of_Stereochemistry_Proposals_for_Revised_Rules_and_a_Guide_for_Machine_Implementation/6979904",
+  "timeline": {
+    "posted": "2018-07-30T00:00:00",
+    "firstOnline": "2018-08-17"
+  },
+  "resource_title": "Algorithmic Analysis of Cahn\u2013Ingold\u2013Prelog\nRules of Stereochemistry: Proposals for Revised Rules and a Guide\nfor Machine Implementation",
+  "resource_doi": "10.1021/acs.jcim.8b00324"
+}

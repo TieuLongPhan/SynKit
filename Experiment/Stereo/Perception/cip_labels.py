@@ -22,10 +22,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from Experiment.Stereo.datasets import (  # noqa: E402
-    CIP_3D_SHA256,
     CIP_SHA256,
     load_cip,
 )
+from Experiment.Stereo.cip_sources import (  # noqa: E402
+    ACCEPTED_3D_SHA256, provenance_inputs, source_metadata,
+)
+from Experiment.Stereo.provenance import capture_source, finish_source  # noqa: E402
 from synkit.Chem.Molecule.coordinate_stereo import (  # noqa: E402
     atrop_stereo_from_geometry,
     cumulene_axis_stereo_from_geometry,
@@ -59,6 +62,61 @@ from synkit.Chem.Molecule.stereo_perception import (  # noqa: E402
 
 _LABEL_PATTERN = re.compile(r"^(\d+)([A-Za-z]+)$")
 _EXTENDED_UNSUPPORTED = frozenset({"TH3", "TH5"})
+_MAX_TRANSPORT_MATCHES = 10000
+
+
+class CoordinateTransportLimitError(RuntimeError):
+    """Exact constitutional transport was refused before claiming consensus."""
+
+    status = "unresolved_coordinate_transport"
+
+    def __init__(self, limit: int) -> None:
+        self.limit = limit
+        super().__init__(f"Constitutional transport exceeds the {limit}-map limit.")
+
+
+def _constitutional_matches(molecule: Chem.Mol, coordinate: Chem.Mol):
+    """Return exhaustive full-constitution maps, or explicitly refuse.
+
+    Ask for one map beyond the budget so a result at the budget itself can
+    still be known to be exhaustive.  RDKit substructure matching alone is
+    weaker than the declared isotope/charge/hydrogen identity contract.
+    """
+    if molecule.GetNumAtoms() != coordinate.GetNumAtoms():
+        return ()
+    matches = coordinate.GetSubstructMatches(
+        molecule,
+        uniquify=False,
+        useChirality=False,
+        maxMatches=_MAX_TRANSPORT_MATCHES + 1,
+    )
+    if len(matches) > _MAX_TRANSPORT_MATCHES:
+        raise CoordinateTransportLimitError(_MAX_TRANSPORT_MATCHES)
+
+    def atom_key(atom):
+        return (
+            atom.GetAtomicNum(), atom.GetIsotope(), atom.GetFormalCharge(),
+            atom.GetTotalNumHs(), atom.GetNumRadicalElectrons(), atom.GetIsAromatic(),
+        )
+
+    def exact(match):
+        if any(
+            atom_key(atom) != atom_key(coordinate.GetAtomWithIdx(match[atom.GetIdx()]))
+            for atom in molecule.GetAtoms()
+        ):
+            return False
+        return all(
+            (other := coordinate.GetBondBetweenAtoms(
+                match[bond.GetBeginAtomIdx()], match[bond.GetEndAtomIdx()]
+            )) is not None
+            and other.GetBondType() == bond.GetBondType()
+            and other.GetIsAromatic() == bond.GetIsAromatic()
+            for bond in molecule.GetBonds()
+        ) and molecule.GetNumBonds() == coordinate.GetNumBonds()
+
+    return tuple(match for match in matches if exact(match))
+
+
 _REVIEWED_MISMATCH_CAUSES = {
     "VS014": "label_projection_defect",
     "VS032": "ranking_defect",
@@ -75,6 +133,7 @@ _REVIEWED_MISMATCH_CAUSES = {
 }
 _LIMITATION_PRIORITY = (
     "unsupported_class",
+    "unresolved_coordinate_transport",
     "ranking_defect",
     "missing_orientation_evidence",
     "label_projection_defect",
@@ -239,7 +298,7 @@ def _record_result(
 
 def _load_coordinate_molecules(path: Path) -> dict[str, Chem.Mol]:
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    if digest != CIP_3D_SHA256:
+    if digest not in ACCEPTED_3D_SHA256:
         raise ValueError(f"Unexpected CIP 3D Validation Suite SHA-256: {digest}")
     supplier = Chem.SDMolSupplier(
         str(path),
@@ -282,12 +341,7 @@ def _coordinate_atrop_descriptors(
         )
     except ValueError:
         return ()
-    matches = coordinate.GetSubstructMatches(
-        molecule,
-        uniquify=False,
-        useChirality=False,
-        maxMatches=10000,
-    )
+    matches = _constitutional_matches(molecule, coordinate)
     candidates = {
         source.relabel(
             {
@@ -309,12 +363,7 @@ def _transport_unique_registry(
     source_values = tuple(sources)
     if not source_values:
         return ()
-    matches = coordinate.GetSubstructMatches(
-        molecule,
-        uniquify=False,
-        useChirality=False,
-        maxMatches=10000,
-    )
+    matches = _constitutional_matches(molecule, coordinate)
     registries = tuple(
         tuple(
             source.relabel(
@@ -433,12 +482,7 @@ def _coordinate_path_descriptors(
         requested.add(StereoElementType.CUMULENE_AXIS)
     if not requested:
         return ()
-    matches = coordinate.GetSubstructMatches(
-        molecule,
-        uniquify=False,
-        useChirality=False,
-        maxMatches=10000,
-    )
+    matches = _constitutional_matches(molecule, coordinate)
     if not matches:
         return ()
     target_to_source = {
@@ -504,6 +548,8 @@ def _score_records(results: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "expected_labels": expected,
         "predicted_labels": predicted,
         "true_positive_labels": true_positive,
+        "wrong_labels": predicted - true_positive,
+        "missing_labels": expected - true_positive,
         "micro_label_recall": _safe_ratio(true_positive, expected),
         "micro_label_precision": _safe_ratio(true_positive, predicted),
     }
@@ -522,19 +568,53 @@ def _category_scores(results: Iterable[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _rdkit_coordinate_result(record, molecule, coordinate):
+    """Score labels from the same SDF, accepting only unanimous exact transports."""
+    expected = sorted(set(record["recommended_labels"]))
+    result = {"id": str(record["ID"]), "expected": expected, "predicted": [],
+              "exact": False, "status": "missing_coordinate_record"}
+    if coordinate is None:
+        return result
+    try:
+        matches = _constitutional_matches(molecule, coordinate)
+        if not matches:
+            return {**result, "status": "constitution_mismatch"}
+        working = Chem.Mol(coordinate)
+        Chem.AssignStereochemistryFrom3D(working, replaceExistingTags=True)
+        source_labels = _rdkit_labels(working)
+        transported = set()
+        for match in matches:
+            inverse = {source + 1: target + 1 for target, source in enumerate(match)}
+            transported.add(tuple(sorted(
+                f"{inverse[position]}{label}" for position, label in map(_label_parts, source_labels)
+            )))
+        if len(transported) != 1:
+            return {**result, "status": "ambiguous_coordinate_transport"}
+        predicted = list(next(iter(transported)))
+        return {**result, "predicted": predicted, "exact": expected == predicted,
+                "status": "evaluated", "constitutional_maps": len(matches)}
+    except CoordinateTransportLimitError as error:
+        return {**result, "status": error.status, "reason": str(error)}
+    except (RuntimeError, ValueError) as error:
+        return {**result, "status": "coordinate_assignment_error", "reason": str(error)}
+
+
 def benchmark_cip_native(
     path: Path,
     *,
     coordinate_path: Path | None = None,
 ) -> dict[str, Any]:
     """Evaluate exact local label sets and type every non-exact record."""
+    source = capture_source(provenance_inputs(path, coordinate_path))
     records = load_cip(path)
     coordinate_molecules = (
         {} if coordinate_path is None else _load_coordinate_molecules(coordinate_path)
     )
     results = []
     rdkit_results = []
+    rdkit_coordinate_results = []
     parse_failures = []
+    transport_refusals = []
     started = time.perf_counter()
     for record in records:
         molecule = Chem.MolFromSmiles(str(record["SMILES"]))
@@ -542,22 +622,34 @@ def benchmark_cip_native(
             parse_failures.append(str(record["ID"]))
             continue
         coordinate = coordinate_molecules.get(str(record["ID"]))
-        additional = _coordinate_atrop_descriptors(
-            record,
-            molecule,
-            coordinate,
-        ) + _coordinate_path_descriptors(
-            record,
-            molecule,
-            coordinate,
-        )
-        results.append(
-            _record_result(
-                record,
-                molecule,
-                additional_descriptors=additional,
+        refusal = None
+        try:
+            additional = _coordinate_atrop_descriptors(
+                record, molecule, coordinate,
+            ) + _coordinate_path_descriptors(
+                record, molecule, coordinate,
             )
+        except CoordinateTransportLimitError as error:
+            additional = ()
+            refusal = {
+                "id": str(record["ID"]), "status": error.status,
+                "match_limit": error.limit, "reason": str(error),
+            }
+            transport_refusals.append(refusal)
+        result = _record_result(
+            record, molecule, additional_descriptors=additional,
         )
+        result["coordinate_record_available"] = coordinate is not None
+        result["coordinate_descriptors_added"] = len(additional)
+        result["coordinate_families_added"] = sorted({type(item).__name__ for item in additional})
+        if refusal is not None:
+            result["coordinate_transport"] = refusal
+            if not result["exact"]:
+                result["limitations"] = sorted({*result["limitations"], refusal["status"]})
+                result["primary_limitation"] = next(
+                    item for item in _LIMITATION_PRIORITY if item in result["limitations"]
+                )
+        results.append(result)
         expected = sorted(set(record["recommended_labels"]))
         rdkit_predicted = sorted(_rdkit_labels(molecule))
         rdkit_results.append(
@@ -568,6 +660,8 @@ def benchmark_cip_native(
                 "exact": expected == rdkit_predicted,
             }
         )
+        if coordinate_path is not None:
+            rdkit_coordinate_results.append(_rdkit_coordinate_result(record, molecule, coordinate))
     seconds = time.perf_counter() - started
     nonexact = [item for item in results if not item["exact"]]
     limitations = Counter(
@@ -581,14 +675,28 @@ def benchmark_cip_native(
         for _ in range(count)
     )
     return {
-        "schema": "synkit.cip-native-validation/3",
+        "schema": "synkit.cip-native-validation/4",
+        "provenance": finish_source(source),
+        "protocol": "coordinate_assisted_family_conditioned" if coordinate_path else "smiles_only",
+        "input_contract": {
+            "structural_input": "pinned SMILES",
+            "orientation_input": "pinned SDF where exact transport is unanimous" if coordinate_path else "SMILES tags",
+            "externally_supplied_family_categories": bool(coordinate_path),
+            "family_category_use": (
+                "select AT/HE/CT4/CT/TH3/TH5 coordinate projections" if coordinate_path else "scoring strata only"
+            ),
+            "target_handedness_labels_used_for_prediction": False,
+            "coordinate_atom_transport_limit": _MAX_TRANSPORT_MATCHES,
+            "hydrogen_policy": "RDKit sanitized molecules; SDF removeHs=True; full atom/H attributes checked",
+        },
         "dataset": {
             "records": len(records),
             "audited_sha256": CIP_SHA256,
-            "structures_vendored": False,
+            **source_metadata(path),
             "coordinate_sha256": (
-                CIP_3D_SHA256 if coordinate_path is not None else None
+                hashlib.sha256(coordinate_path.read_bytes()).hexdigest() if coordinate_path is not None else None
             ),
+            "coordinate_source": source_metadata(coordinate_path, coordinates=True),
         },
         "environment": {
             "python": sys.version.split()[0],
@@ -604,15 +712,39 @@ def benchmark_cip_native(
             "and projects local label sets"
         ),
         "parse_failures": parse_failures,
+        "coverage": {
+            "input_records": len(records), "parsed_records": len(results),
+            "excluded_record_ids": parse_failures,
+            "coordinate_records_available": sum(item["coordinate_record_available"] for item in results),
+            "records_with_coordinate_descriptors": sum(bool(item["coordinate_descriptors_added"]) for item in results),
+            "coordinate_transport_refusals": len(transport_refusals),
+        },
+        "coordinate_transport_refusals": transport_refusals,
         "overall": _score_records(results),
         "by_stereo_unit": _category_scores(results),
         "comparators": {
             "rdkit": {
                 **_score_records(rdkit_results),
                 "method": "rdCIPLabeler.AssignCIPLabels",
+                "input_protocol": "smiles_only",
+                "matched_orientation_input": coordinate_path is None,
+                "records": rdkit_results,
                 "disagreement_ids": [
                     item["id"] for item in rdkit_results if not item["exact"]
                 ],
+            },
+            "rdkit_coordinate": {
+                "applicable": coordinate_path is not None,
+                **_score_records(rdkit_coordinate_results),
+                "method": (
+                    "AssignStereochemistryFrom3D then rdCIPLabeler.AssignCIPLabels; unanimous exact atom transports"
+                ),
+                "input_protocol": "same_pinned_sdf" if coordinate_path else None,
+                "matched_coordinate_availability": coordinate_path is not None,
+                "same_family_projection_policy": False,
+                "status_counts": dict(sorted(Counter(item["status"] for item in rdkit_coordinate_results).items())),
+                "disagreement_ids": [item["id"] for item in rdkit_coordinate_results if not item["exact"]],
+                "records": rdkit_coordinate_results,
             },
             "stereomolgraph": {
                 "applicable": False,
@@ -626,6 +758,7 @@ def benchmark_cip_native(
         },
         "exact_ids": [item["id"] for item in results if item["exact"]],
         "nonexact_records": nonexact,
+        "records": results,
         "seconds": seconds,
         "mean_ms_per_input": 1000.0 * seconds / len(records),
         "claim_boundary": (
@@ -648,8 +781,12 @@ def main() -> int:
     )
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if arguments.output is not None:
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
         arguments.output.write_text(rendered, encoding="utf-8")
-    print(rendered, end="")
+        print(json.dumps({"output": str(arguments.output), "protocol": report["protocol"],
+                          "overall": report["overall"]}))
+    else:
+        print(rendered, end="")
     return 0
 
 
