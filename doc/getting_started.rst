@@ -45,9 +45,20 @@ Install
          docker run --rm tieulongphan/synkit:latest \
            python -c "import importlib.metadata as m; print(m.version('synkit'))"
 
-SynKit requires Python 3.11 or later. Install optional general dependencies
-with ``python -m pip install 'synkit[all]'``. The kernel MILP method has a
-separate optional dependency: ``python -m pip install 'synkit[milp]'``.
+SynKit requires Python 3.11 or later. Install optional general dependencies,
+including the kernel MILP solver, with ``python -m pip install 'synkit[all]'``.
+For the MILP solver alone, use ``python -m pip install 'synkit[milp]'``.
+
+For development, create and activate the project environment from the
+repository root:
+
+.. code-block:: bash
+
+   conda env create -f environment.yml
+   conda activate synkit
+
+The environment installs SynKit in editable mode, documentation dependencies,
+and the lint, test, and package build tools.
 
 Verify the installation
 -----------------------

@@ -1,6 +1,6 @@
 package:
   name: synkit
-  version: "1.6.2"
+  version: "1.6.3"
 
 source:
   path: ..
@@ -16,11 +16,11 @@ requirements:
   host:
     - python >=3.11,<3.13
     - pip
-    - hatchling               # PEP517 build backend
+    - hatchling >=1.27.0       # PEP517 build backend
   run:
     - python >=3.11,<3.13
-    - scikit-learn >=1.4.0
-    - pandas >=1.5.3
+    - scikit-learn >=1.4.2
+    - pandas >=2.2.2
     - rdkit >=2025.3.1
     - networkx >=3.3
     - scipy >=1.14.0
@@ -29,6 +29,10 @@ requirements:
     - regex >=2024.11.6
     - numpy >=2.2.0
     - sympy >=1.13.1
+    - joblib >=1.2.0
+    - matplotlib-base >=3.9
+    - pillow
+    - tqdm
 
 about:
   home:        https://github.com/TieuLongPhan/SynKit

@@ -3,13 +3,9 @@
 from __future__ import annotations
 
 import os
-import re
-import subprocess
 import sys
 from datetime import datetime
-from importlib.metadata import PackageNotFoundError, version as _get_version
 from pathlib import Path
-from typing import Optional
 
 # ---------------------------------------------------------------------
 # Path setup
@@ -21,60 +17,12 @@ REPO_ROOT = HERE.parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, os.path.abspath(".."))
 
+from synkit.version import __version__
+
 
 # ---------------------------------------------------------------------
 # Helpers: release/version resolution
 # ---------------------------------------------------------------------
-def _git_describe(repo_root: Path) -> Optional[str]:
-    """
-    Try to derive a version-like string from git tags.
-
-    :param repo_root: Repository root containing the .git directory.
-    :type repo_root: Path
-    :return: A tag/describe string if git is available, otherwise None.
-    :rtype: Optional[str]
-    """
-    cmds = [
-        ["git", "describe", "--tags", "--abbrev=0"],
-        ["git", "describe", "--tags", "--always"],
-    ]
-    for cmd in cmds:
-        try:
-            out = subprocess.check_output(
-                cmd,
-                cwd=str(repo_root),
-                stderr=subprocess.DEVNULL,
-            )
-            s = out.decode("utf-8", errors="replace").strip()
-            if s:
-                return s
-        except Exception:
-            continue
-    return None
-
-
-def _normalize_release(s: str) -> str:
-    """Normalize common tag strings into a PEP 440-ish release string.
-
-    .. rubric:: Examples
-
-    ``v1.2.3`` becomes ``1.2.3``; ``1.2.3-4-g<sha>`` becomes ``1.2.3``.
-
-    :param s: Raw version string from package metadata or git.
-    :type s: str
-    :return: Normalized release string.
-    :rtype: str
-    """
-    s = s.strip()
-    if s.startswith("v"):
-        s = s[1:]
-
-    m = re.match(r"^(\d+\.\d+\.\d+(?:[a-zA-Z0-9\.]*)?)", s)
-    if m:
-        return m.group(1)
-    return s
-
-
 def _major_minor(release: str) -> str:
     """
     Derive major.minor from a release string.
@@ -97,13 +45,7 @@ project = "synkit"
 author = "SynKit contributors"
 copyright = f"{datetime.now().year}, {author}"
 
-try:
-    release = _get_version("synkit")
-except PackageNotFoundError:
-    git_rel = _git_describe(REPO_ROOT)
-    release = _normalize_release(git_rel) if git_rel else "1.1.1"
-else:
-    release = _normalize_release(release)
+release = __version__
 
 version = _major_minor(release)
 

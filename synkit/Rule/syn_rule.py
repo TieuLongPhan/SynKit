@@ -83,11 +83,11 @@ class SynRule:
     :param stereo_outcomes: Explicit product-branch declarations keyed by descriptor target. A
                             ``RACEMIC`` outcome uses the stored product descriptor as a reference
                             orientation and makes application emit it and its inverse.
-    :type stereo_outcomes: mapping, optional
+    :type stereo_outcomes: typing.Mapping or None
     :param stereo_couplings: Coupled rule operations keyed by their central bond target. A vicinal
                              addition may be declared compactly as ``{"bond:2-3": "ANTI"}``;
                              centers and delivered ligands are inferred from the structural edit.
-    :type stereo_couplings: mapping, optional
+    :type stereo_couplings: typing.Mapping or None
 
     :ivar rc: Wrapped reaction‐centre graph.
     :vartype rc: SynGraph

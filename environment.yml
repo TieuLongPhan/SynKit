@@ -1,4 +1,4 @@
-name: synkit-env
+name: synkit
 channels:
   - conda-forge
 dependencies:
@@ -6,4 +6,8 @@ dependencies:
   - pip
   - flake8
   - pytest
-  - scipy>=1.14.0
+  - pip:
+      - -e .[docs]
+      - sympy>=1.13.3
+      - build
+      - twine

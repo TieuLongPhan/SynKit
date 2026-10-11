@@ -1,38 +1,41 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "synkit"
-version = "1.6.2"
+version = "1.6.3"
 description = "Utility for reaction modeling using graph grammar"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 license-files = ["LICENSE", "synkit/Graph/Stereo/LICENSES/*"]
 authors = [
   { name = "Tieu Long Phan", email = "tieu@bioinf.uni-leipzig.de" }
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
 dependencies = [
   "numpy>=2.2.0",
-  "scikit-learn>=1.4.0",
-  "pandas>=1.5.3",
+  "scikit-learn>=1.4.2",
+  "pandas>=2.2.2",
   "rdkit>=2025.3.1",
   "networkx>=3.3",
   "scipy>=1.14.0",
   "seaborn>=0.13.2",
   "requests>=2.32.3",
   "regex>=2024.11.6",
+  "joblib>=1.2.0",
+  "matplotlib>=3.9",
+  "pillow",
+  "tqdm",
 ]
 
 [project.optional-dependencies]
 milp = ["pulp"]
-all = ["numpy>=2.2.0", "torch>=2.2.0", "sympy>=1.13.1"]
+all = ["torch>=2.2.0", "sympy>=1.13.1", "pulp"]
 docs = [
   # Core Sphinx
   "sphinx>=6.0",

@@ -2,7 +2,7 @@ name: Test, lint, and packages
 
 on:
   push:
-    branches: ["main", "staging", "mech", "stereo", "lwg", "mtg"]
+    branches: ["main", "staging", "mech", "stereo", "mapper", "mtg"]
   pull_request:
     branches: ["main"]
 

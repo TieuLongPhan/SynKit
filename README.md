@@ -28,28 +28,32 @@ dependencies, and Docker installation.
 
 ## Documentation
 
-- [Getting Started](doc/getting_started.rst)
-- [Chemistry and atom mapping](doc/chem.rst#atom-to-atom-mapping)
-- [Graphs](doc/graph.rst), [reaction rules](doc/rule.rst), and
-  [synthesis](doc/synthesis.rst)
-- [Chemical reaction networks](doc/crn.rst)
-- [Documentation website](https://tieulongphan.github.io/SynKit/) and
-  [API reference](https://tieulongphan.github.io/SynKit/api/index.html)
+- [Documentation](https://tieulongphan.github.io/SynKit/)
+- [API reference](https://tieulongphan.github.io/SynKit/api/index.html)
+- [Issue tracker](https://github.com/TieuLongPhan/SynKit/issues)
 - [Changelog](doc/changelog.rst)
 
 ## Publications
 
+- [Lewis-labeled graphs: curly arrows and fishhooks as executable electron
+  transfers](https://arxiv.org/abs/2607.26088), submitted (2026).
 - [SynKit: A Graph-Based Python Framework for Rule-Based Reaction Modeling and
   Analysis](https://pubs.acs.org/doi/full/10.1021/acs.jcim.5c02123), *Journal
   of Chemical Information and Modeling* (2025).
-- [Lewis-labeled graphs: curly arrows and fishhooks as executable electron
-  transfers](https://arxiv.org/abs/2607.26088), submitted (2026).
 
 ## Contributing
 
-Open an [issue](https://github.com/TieuLongPhan/SynKit/issues) or a pull request.
-Before submitting code, run `bash scripts/lint.sh` and `bash scripts/pytest.sh`.
-Contact: [tieu@bioinf.uni-leipzig.de](mailto:tieu@bioinf.uni-leipzig.de).
+Contributions and bug reports are welcome. Create a branch from the current
+mainline, make a focused change, and run the repository checks before opening
+a pull request:
+
+```bash
+git switch -c feature/short-description
+bash scripts/lint.sh
+bash scripts/pytest.sh
+```
+
+Questions can be sent to [tieu@bioinf.uni-leipzig.de](mailto:tieu@bioinf.uni-leipzig.de).
 
 ## Contributors
 
@@ -58,9 +62,12 @@ Contact: [tieu@bioinf.uni-leipzig.de](mailto:tieu@bioinf.uni-leipzig.de).
 - [Phuoc-Chung Nguyen Van](https://github.com/phuocchung123)
 - [Tuyet-Minh Phan](https://github.com/tuyetminhphan)
 
-## License and funding
+## License
 
-Distributed under the MIT License; see [LICENSE](LICENSE).
+SynKit is distributed under the MIT License. See [LICENSE](LICENSE).
 
-Funded by the European Union's Horizon Europe Doctoral Network programme,
-Marie Skłodowska-Curie grant No. 101072930 ([TACsy](https://tacsy.eu/)).
+## Acknowledgments
+
+This project received funding from the European Union’s Horizon Europe
+Doctoral Network programme under Marie Skłodowska-Curie grant agreement
+No. 101072930 ([TACsy](https://tacsy.eu/)).

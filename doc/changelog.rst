@@ -26,11 +26,24 @@ Implementation plan
      - Planned
      - Unified stereo-aware reaction, rewriting, and verification APIs.
 
-Unreleased
-----------
+Version 1.6.3
+-------------
+
+**Packaging and development**
+
+- Declared direct plotting, image, parallel-processing, and progress-bar
+  dependencies and set the pandas, scikit-learn, and Matplotlib minimum
+  versions for compatibility with NumPy 2.
+- Included PuLP in the ``all`` extra while retaining the focused ``milp`` extra.
+- Aligned the conda environment, pip requirements, and package metadata, and
+  made documentation use the source package's release version.
 
 **Atom-to-atom mapping**
 
+- Added ``Mapper(method=...).map(...)`` with eight methods and one result
+  interface that reports the mapping scope, optimality, and completeness.
+- Organized mapper internals into adapters, validation, reporting, and exact
+  solver packages while preserving the historical import paths.
 - Promoted the mapper from ``synkit.Chem.Reaction.Mapper`` to the peer package
   ``synkit.Chem.Mapper``. The former namespace remains available as a
   compatibility alias, including its lower-level submodules.
