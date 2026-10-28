@@ -227,12 +227,12 @@ the configured extended locus is covered by authorized evidence.
 Call ``classify_molecular_chirality(..., require_specified=True)`` when a
 binary-only consumer should reject every underspecified input.
 
-External molecule-stereo datasets are registered under
-``Experiment/Stereo/Data`` with task and license metadata. The ACS 258-case set
+Molecule-stereo dataset registrations, task and license metadata, and
+experimental data are maintained locally until release. The ACS 258-case set
 supports both binary supplied-stereo and four-state stereo-stripped protocols.
 ChiralFinder RotA is instead a positive axial-locus dataset, and the CIP
 Validation Suite is a local descriptor-assignment suite; neither contributes
-to global chiral/achiral accuracy. RotA is vendored under MIT. The CIP fixture
+to global chiral/achiral accuracy. RotA uses the MIT license. The CIP fixture
 remains external-only because its repository did not provide a redistribution
 license at the audited revision. At the pinned 300-record revision, SynKit's
 independent incremental label layer, with the pinned 3D orientation input,

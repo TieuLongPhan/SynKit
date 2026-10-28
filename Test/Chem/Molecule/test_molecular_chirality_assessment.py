@@ -10,9 +10,6 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Experiment.Stereo.Chirality.published import (  # noqa: E402
-    load_dataset,
-)
 from synkit.Chem.Molecule.chirality import (  # noqa: E402
     MolecularChirality,
     MolecularChiralityOutcome,
@@ -20,6 +17,15 @@ from synkit.Chem.Molecule.chirality import (  # noqa: E402
     assess_molecular_chirality,
     classify_molecular_chirality,
 )
+
+
+@pytest.fixture
+def published_dataset():
+    published = pytest.importorskip(
+        "Experiment.Stereo.Chirality.published",
+        reason="unreleased stereo experiment is unavailable",
+    )
+    return published.load_dataset()
 
 
 def test_strict_binary_mode_rejects_unassigned_stereo() -> None:
@@ -97,8 +103,10 @@ def test_exhaustive_supported_completions_prove_necessary_outcomes(
     assert assessment.is_definitive
 
 
-def test_stereo_free_constitution_can_be_configuration_dependent() -> None:
-    rows = {row["ID"]: row for row in load_dataset()}
+def test_stereo_free_constitution_can_be_configuration_dependent(
+    published_dataset,
+) -> None:
+    rows = {row["ID"]: row for row in published_dataset}
     molecule = Chem.MolFromSmiles(rows["VS196"]["Input SMILES"])
     assert molecule is not None
     Chem.RemoveStereochemistry(molecule)
@@ -201,6 +209,7 @@ def test_automorphism_parity_can_prove_a_one_sided_population() -> None:
     ],
 )
 def test_large_acs_populations_are_definitive_without_raw_exhaustion(
+    published_dataset,
     identifier: str,
     outcome: MolecularChiralityOutcome,
     observed: tuple[MolecularChirality, ...],
@@ -208,7 +217,7 @@ def test_large_acs_populations_are_definitive_without_raw_exhaustion(
     enumeration_complete: bool,
     decision_method: str,
 ) -> None:
-    rows = {row["ID"]: row for row in load_dataset()}
+    rows = {row["ID"]: row for row in published_dataset}
     molecule = Chem.MolFromSmiles(rows[identifier]["Input SMILES"])
     assert molecule is not None
     Chem.RemoveStereochemistry(molecule)
