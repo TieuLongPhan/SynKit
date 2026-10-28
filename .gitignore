@@ -126,3 +126,10 @@ test_syn_reactor.py
 
 # Local benchmark outputs and frozen source copies stay local.
 /benchmark_results/
+
+# Keep unreleased experiments local; publish only CRN and Lewis until release.
+/Experiment/*
+!/Experiment/CRN/
+!/Experiment/Lewis/
+!/Experiment/README.md
+!/Experiment/__init__.py

@@ -1,7 +1,0 @@
-# Environment used for this pilot; does not replace the repository environment.
-# Python 3.12.12
-numpy==2.4.4
-scipy==1.17.0
-matplotlib==3.10.8
-networkx==3.6.1
-pytest==9.1.1

@@ -9,10 +9,9 @@ output contract, and interpretation boundary in its local README.
 - [CRN](CRN/README.md): chemical reaction network validation, scaling, and the
   KEGG, formose, and BioModels case studies.
 - [Lewis](Lewis/README.md): Lewis-state conversion and rule-replay studies.
-- [MTG](MTG/README.md): native rule composition and mechanistic transition
-  graph validation.
-- [RBL](RBL/README.md): paired radical-based linking reconstruction benchmark.
-- [Stereo](Stereo/README.md): molecular stereochemistry experiments.
+
+Only CRN and Lewis are currently included in the public repository. Other
+experiment directories remain local and ignored by Git until release.
 
 Generated outputs should remain reproducible from tracked code and documented
 inputs. Large or restricted source datasets are not redistributed unless their

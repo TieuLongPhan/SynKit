@@ -1,8 +1,0 @@
-These 40 XYZ files are selected without changing their contents from the complete MACE computational dataset.
-Authors: Evgeny Pidko and Ivan Chernyshov (2024).
-Dataset version: https://doi.org/10.4121/539c7137-c285-4543-be11-e230a4fca8b7.v1
-Related paper: https://doi.org/10.1021/acs.jctc.3c01313
-License at the downloaded 4TU source: Creative Commons Attribution 4.0 International, https://creativecommons.org/licenses/by/4.0/
-The source archive is preserved by checksum in chemical_coordination_selection.json. Selection is the only change.
-Donor isotope annotations in XYZ metadata are source coordination-slot labels and must not be interpreted as physical isotopes.
-These coordinates are generated structures, not experimental configurational-stability measurements.

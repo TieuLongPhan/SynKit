@@ -135,11 +135,12 @@ def test_optional_pinned_upstream_replay_matches_the_permanent_report():
     if not (repository / "src" / "stereomolgraph").is_dir():
         pytest.skip("pinned StereoMolGraph checkout is unavailable")
 
-    from Experiment.Stereo.Diagnostics.stereomolgraph_conformance import (
-        run_conformance,
+    conformance = pytest.importorskip(
+        "Experiment.Stereo.Diagnostics.stereomolgraph_conformance",
+        reason="unreleased stereo experiment is unavailable",
     )
 
-    observed = run_conformance(repository)
+    observed = conformance.run_conformance(repository)
 
     assert observed["observed_commit"] == REPORT["observed_commit"]
     assert observed["status"] == "PASS"
