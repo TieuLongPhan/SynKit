@@ -32,10 +32,6 @@ returning a certificate. Generic ports are limited to eligible peripheral
 references and require explicit domains when class or corpus generalization is
 requested.
 
-.. literalinclude:: ../Experiment/StereoReaction/workflows.py
-   :language: python
-   :pyobject: exact_and_generic_rules
-
 ``SynReactor`` exposes four stereo modes:
 
 ``ignore``
@@ -59,10 +55,6 @@ An outcome expands one configured product descriptor. A coupling represents a
 single correlated event, so two vicinal centers produce two paired face
 branches rather than a four-way Cartesian product.
 
-.. literalinclude:: ../Experiment/StereoReaction/workflows.py
-   :language: python
-   :pyobject: branching_and_coupling
-
 Composition and fusion evidence
 -------------------------------
 
@@ -72,10 +64,6 @@ mismatch, conflicting populations/couplings, or broken-then-formed information
 loss refuses. Verified graph fusion uses ``synkit.fusion-proof/2`` and binds
 the entire serialized document with a digest; readers recheck every local
 stereo witness.
-
-.. literalinclude:: ../Experiment/StereoReaction/workflows.py
-   :language: python
-   :pyobject: composition_and_interchange
 
 Mechanism replay and the Figure 11 rule
 ---------------------------------------
@@ -103,10 +91,6 @@ conrotatory and disrotatory motion, respectively; photochemical activation
 reverses that matrix. SynKit verifies this supplied Woodward--Hoffmann context.
 It does not select the pathway, predict activation conditions, or estimate
 torquoselectivity.
-
-.. literalinclude:: ../Experiment/StereoReaction/workflows.py
-   :language: python
-   :pyobject: electrocyclic_figure_11
 
 Interchange
 -----------

@@ -12,10 +12,6 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Experiment.Stereo.Chirality.published import (  # noqa: E402
-    DATASET,
-    load_dataset,
-)
 from synkit.Chem.Molecule.chirality import (  # noqa: E402
     MolecularChirality,
     PotentialStereoLocusType,
@@ -43,8 +39,17 @@ REPORT = (
 )
 
 
-def test_published_chirality_fixture_is_exact_and_attributed() -> None:
-    rows = load_dataset(DATASET)
+@pytest.fixture
+def published_dataset():
+    published = pytest.importorskip(
+        "Experiment.Stereo.Chirality.published",
+        reason="unreleased stereo experiment is unavailable",
+    )
+    return published.load_dataset(published.DATASET)
+
+
+def test_published_chirality_fixture_is_exact_and_attributed(published_dataset) -> None:
+    rows = published_dataset
     metadata = json.loads(METADATA.read_text(encoding="utf-8"))
 
     assert metadata["records"] == len(rows) == 258
@@ -57,8 +62,10 @@ def test_published_chirality_fixture_is_exact_and_attributed() -> None:
     assert all(row["manual"] == row["StereoMolGraph"] for row in rows)
 
 
-def test_classifier_handles_local_global_and_resonance_symmetry_cases() -> None:
-    rows = {row["ID"]: row for row in load_dataset(DATASET)}
+def test_classifier_handles_local_global_and_resonance_symmetry_cases(
+    published_dataset,
+) -> None:
+    rows = {row["ID"]: row for row in published_dataset}
     expected = {
         "VS001": "Achiral",
         "VS014": "Chiral",
@@ -79,8 +86,8 @@ def test_classifier_handles_local_global_and_resonance_symmetry_cases() -> None:
         assert is_molecular_chiral(molecule) is (prediction == "Chiral")
 
 
-def test_stereo_complete_probes_explain_globally_chiral_cage() -> None:
-    rows = {row["ID"]: row for row in load_dataset(DATASET)}
+def test_stereo_complete_probes_explain_globally_chiral_cage(published_dataset) -> None:
+    rows = {row["ID"]: row for row in published_dataset}
     molecule = Chem.MolFromSmiles(rows["VS280"]["Input SMILES"])
     assert molecule is not None
 
@@ -158,10 +165,10 @@ def test_potential_locus_detection_is_deterministic_and_non_mutating() -> None:
     assert Chem.MolToSmiles(molecule, canonical=False, isomericSmiles=True) == before
 
 
-def test_removing_stereo_flags_makes_chiral_and_achiral_inputs_indistinguishable() -> (
-    None
-):
-    rows = {row["ID"]: row for row in load_dataset(DATASET)}
+def test_removing_stereo_flags_makes_chiral_and_achiral_inputs_indistinguishable(
+    published_dataset,
+) -> None:
+    rows = {row["ID"]: row for row in published_dataset}
     achiral = Chem.MolFromSmiles(rows["VS196"]["Input SMILES"])
     chiral = Chem.MolFromSmiles(rows["VS197"]["Input SMILES"])
     assert achiral is not None and chiral is not None

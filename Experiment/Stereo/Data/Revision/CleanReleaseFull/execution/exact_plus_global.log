@@ -1,7 +1,0 @@
-{
-  "correct": 257,
-  "disagreement_ids": [
-    "VS170"
-  ],
-  "output": "/tmp/synkit-stereo-clean-release-full/exact_plus_global.json"
-}
