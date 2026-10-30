@@ -17,7 +17,7 @@ mechanism.
 
 ## Installation
 
-Requires Python 3.11 or later.
+Requires Python 3.10 or later.
 
 ```bash
 python -m pip install synkit
@@ -25,6 +25,35 @@ python -m pip install synkit
 
 See [Getting Started](doc/getting_started.rst) for examples, optional
 dependencies, and Docker installation.
+
+Platform wheels include the C++ PABS–SLAP atom mapper. It searches heavy-atom
+classes with hydrogen changes included in the Lewis score:
+
+```python
+from synkit.Chem.Mapper import map_reaction_implicit
+
+result = map_reaction_implicit("CCO>>COC", time_limit_seconds=10)
+print(result.minimum_cost, result.complete)
+print(result.mapped_reactions)
+```
+
+See [Atom mapping](doc/mapper.rst) for exact-CD enumeration, solver selection
+and custom builds. Older releases may require an explicit native build.
+
+The same wheel also bundles exact CRN analysis and the graph canonicalization
+backend used by native stereograph analysis. Select native CRN analysis with:
+
+```python
+from synkit.CRN import SynCRN, crnt_summary, native_backend
+
+model = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
+with native_backend():
+    print(crnt_summary(model).to_dict())
+```
+
+Platform wheels need no local compiler or Boost installation. Source builders
+can compile all native components together using the
+[shared build instructions](scripts/README.md#native-builds).
 
 ## Documentation
 

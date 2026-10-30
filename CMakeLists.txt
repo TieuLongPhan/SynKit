@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.20)
+project(synkit_native VERSION 0.1.0 LANGUAGES C CXX)
+
+option(SYNKIT_BUILD_MAPPER "Build the atom mapper and its solver backends" ON)
+option(SYNKIT_BUILD_CRN "Build exact chemical reaction network analysis" ON)
+option(SYNKIT_BUILD_CANON "Build graph and stereograph canonicalization" ON)
+option(SYNKIT_NATIVE_WHEEL "Install native libraries into their Python packages" OFF)
+
+if(SYNKIT_NATIVE_WHEEL)
+  set(SYNKIT_MAPPER_WHEEL ON CACHE BOOL "Install mapper into the wheel" FORCE)
+  set(SYNKIT_CANON_WHEEL ON CACHE BOOL "Install canonicalization into the wheel" FORCE)
+endif()
+
+enable_testing()
+if(SYNKIT_BUILD_MAPPER)
+  add_subdirectory(synkit/Chem/Mapper/solvers/native/cpp mapper)
+endif()
+if(SYNKIT_BUILD_CRN)
+  add_subdirectory(synkit/CRN/cpp crn)
+endif()
+if(SYNKIT_BUILD_CANON)
+  add_subdirectory(synkit/Graph/Canon/cpp canon)
+endif()

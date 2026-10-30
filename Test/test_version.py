@@ -1,7 +1,11 @@
 """Release-version consistency tests."""
 
 from pathlib import Path
-import tomllib
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 import synkit
 

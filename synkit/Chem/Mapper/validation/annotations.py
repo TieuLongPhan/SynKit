@@ -11,7 +11,7 @@ from numbers import Integral
 from .bonds import IncompleteSymmetry, ScoreWitness, bond_f1
 from .identifiability import extract_label
 from .orbits import SupportOrbitEvaluator
-from ..slap.lap import _adjacency_and_elements
+from ..solvers.slap.lap import _adjacency_and_elements
 from ..reporting.spectrum import exact_its_and_template_codes
 
 

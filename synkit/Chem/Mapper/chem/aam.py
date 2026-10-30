@@ -1,7 +1,7 @@
 """Reaction-SMILES SLAP mapping with optional kernel refinement or distance search."""
 
-from ..slap.sequential import GraphMatcher
-from ..exact.certificate import certify_result, certify_results_exact
+from ..solvers.slap.sequential import GraphMatcher
+from ..solvers.exact.certificate import certify_result, certify_results_exact
 from .smiles import (
     HAS_RDKIT,
     smiles2lgp,
@@ -231,8 +231,8 @@ class AAMapper(GraphMatcher):
         self.get_maps(lgp, break_sym_targets=targets, interactive=interactive, base=1)
 
         if enumerate_exact:
-            from ..exact.kernel_solvers.kernel import extract_kernel
-            from ..exact.kernel_solvers.enumerate import (
+            from ..solvers.exact.kernel_solvers.kernel import extract_kernel
+            from ..solvers.exact.kernel_solvers.enumerate import (
                 annotate_hcount_scores,
                 complete_mapping,
                 enumerate_kernel_optima,
@@ -240,8 +240,8 @@ class AAMapper(GraphMatcher):
                 improve_results_by_pair_swaps,
                 improve_results_by_hcount_permutations,
             )
-            from ..exact.certificate import Certificate
-            from ..slap.lap import recover_mapping
+            from ..solvers.exact.certificate import Certificate
+            from ..solvers.slap.lap import recover_mapping
 
             self.results = improve_results_by_pair_swaps(
                 lgp,
@@ -477,10 +477,10 @@ class AAMapper(GraphMatcher):
         electron_balance,
         certify,
     ):
-        from ..exact.certificate import Certificate
-        from ..exact.distance_search.search import enumerate_distance_mappings
-        from ..exact.kernel_solvers.enumeration_result import mapping_to_lgp
-        from ..slap.lap import recover_mapping
+        from ..solvers.exact.certificate import Certificate
+        from ..solvers.exact.distance_search.search import enumerate_distance_mappings
+        from ..solvers.exact.kernel_solvers.enumeration_result import mapping_to_lgp
+        from ..solvers.slap.lap import recover_mapping
 
         initial_mapping = None
         if isinstance(CD, str) and CD.lower() == "minimal":
@@ -621,8 +621,8 @@ class AAMapper(GraphMatcher):
 
         for r in self.results:
             if graph_add_hs:
-                from ..exact.kernel_solvers.enumerate import complete_mapping
-                from ..slap.lap import recover_mapping
+                from ..solvers.exact.kernel_solvers.enumerate import complete_mapping
+                from ..solvers.slap.lap import recover_mapping
 
                 mapping = complete_mapping(
                     lgp,

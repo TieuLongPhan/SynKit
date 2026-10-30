@@ -201,3 +201,25 @@ __all__ = [
     "read_sbml",
     "write_sbml",
 ]
+
+from .analysis import AnalysisResult, CRNAnalysis, Scenario
+
+__all__ += ["AnalysisResult", "CRNAnalysis", "Scenario"]
+from .native import build_native, bundled_native_library, enumerate_structural_sets
+
+__all__ += ["build_native", "bundled_native_library", "enumerate_structural_sets"]
+
+from .native import enumerate_semiflows
+from .Petrinet.minimal_semiflows import SemiflowSearchLimit
+
+__all__ += ["enumerate_semiflows", "SemiflowSearchLimit"]
+
+from .backend import native_backend
+from .native_analysis import NativeSearchLimit, matrix_analysis
+
+__all__ += ["native_backend", "NativeSearchLimit", "matrix_analysis"]
+
+from .backend import python_backend
+from .native_analysis import graph_symmetry, qualitative_path
+
+__all__ += ["python_backend", "graph_symmetry", "qualitative_path"]

@@ -60,3 +60,7 @@ __all__ = [
     "syncrn_from_kegg_equations",
     "syncrn_from_kegg_module",
 ]
+
+from .cache import build_cached_kegg_crn, load_kegg_cache
+
+__all__ += ["build_cached_kegg_crn", "load_kegg_cache"]

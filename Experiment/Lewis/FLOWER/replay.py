@@ -133,7 +133,7 @@ def read_row_numbers(path: Path) -> set[int]:
 
 
 def case_identity(batch: Path, row_number: int) -> dict[str, Any]:
-    """Return portable provenance for one row, including aggregate bug logs."""
+    """Return the batch filename and row identifier used in per-batch and aggregate logs."""
     batch_file = batch.name
     return {
         "case_id": f"{batch_file}:{row_number}",

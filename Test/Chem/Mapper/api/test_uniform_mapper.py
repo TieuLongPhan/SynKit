@@ -45,7 +45,7 @@ def test_all_methods_share_chemistry_and_preserve_isotopes(method, native_librar
     options = {"library_path": native_library} if method == "native" else {}
     if method == "edits":
         options.update(CD=0, binary=True)
-    result = Mapper(method, **options).map(reaction)
+    result = Mapper(method, objective="bond", **options).map(reaction)
     assert result.mapped_reactions
     assert result.distances == ((0.0,) if method == "edits" else (1.0,))
     sides = result.mapped_reactions[0].split(">>")
@@ -72,7 +72,7 @@ def test_full_space_minimum_matches_independent_permutations(method, native_libr
         )
     )
     options = {"library_path": native_library} if method == "native" else {}
-    result = Mapper(method, **options).map("CCO>>COC")
+    result = Mapper(method, objective="bond", **options).map("CCO>>COC")
     assert result.minimum_cost == expected == 2
     assert result.optimality_proven and result.search_scope == "full_space"
 
@@ -86,11 +86,13 @@ def test_numeric_shells_have_labeled_graph_maps_and_smiles_classes(
     mols, _ = _parse("CCC>>CCC", "heavy")
     graphs = _graphs(mols, "strict", "bond")
     graph_result = mapper.map(graphs)
-    result = mapper.map("CCC>>CCC")
+    result = mapper.map("CCC>>CCC", objective="bond")
     assert graph_result.complete and result.complete
-    assert (
-        len(graph_result.mappings) == result.reaction_result.labeled_mapping_count == 4
-    )
+    assert len(graph_result.mappings) == 4
+    if method == "native":
+        assert result.reaction_result.labeled_mapping_count is None
+    else:
+        assert result.reaction_result.labeled_mapping_count == 4
     assert len(result.mapped_reactions) == 1
     assert result.distances == (2.0,)
     assert result.minimum_cost is None and not result.optimality_proven
@@ -101,7 +103,7 @@ def test_deadlines_and_output_caps_never_claim_complete(method, native_library):
     options = {"library_path": native_library} if method == "native" else {}
     if method == "edits":
         options.update(CD=0, binary=True)
-    mapper = Mapper(method, **options)
+    mapper = Mapper(method, objective="bond", **options)
     timed = mapper.map("CCC>>CCC", time_limit_seconds=0)
     assert not timed.complete and timed.minimum_cost is None
     assert timed.incomplete_reason
@@ -120,7 +122,7 @@ def test_unbounded_methods_reject_unsupported_limits(method, option):
 
 
 def test_reusable_defaults_are_overridden_for_one_call():
-    mapper = Mapper(binary=True)
+    mapper = Mapper(binary=True, objective="bond")
     assert mapper.method == "propagate" and len(mapper.methods()) == 8
     assert mapper.map("CCO>>CC=O").minimum_cost == 0
     assert mapper.map("CCO>>CC=O", binary=False).minimum_cost == 1
@@ -152,7 +154,9 @@ def test_shared_dummy_lewis_and_compressed_hydrogen_semantics(method):
     )
     assert result.distances == (2.0,)
     assert len(result.reaction_result.reactions[0].reactant_only_maps) == 1
-    compressed = Mapper(method).map("CO>>[CH2-][OH2+]", hydrogen="compressed")
+    compressed = Mapper(method).map(
+        "CO>>[CH2-][OH2+]", objective="bond", hydrogen="compressed"
+    )
     assert compressed.distances == (2.0,)
     assert compressed.minimum_cost == (None if method == "slap" else 0)
     assert compressed.reaction_result.minimum_cost_scope == "heavy_bond_distance"
@@ -164,7 +168,6 @@ def test_shared_dummy_lewis_and_compressed_hydrogen_semantics(method):
         ("edits", {}, "numeric CD"),
         ("edits", {"CD": 0}, "binary=True"),
         ("kernel", {"CD": 2}, "CD='minimal'"),
-        ("native", {}, "library_path"),
         ("propagate", {"library_path": "unused"}, "method='native'"),
         ("slap", {"search_config": PropagationConfig()}, "method='propagate'"),
         ("distance", {"max_edit_support_pairs": 10}, "method='edits'"),
@@ -179,7 +182,7 @@ def test_invalid_methods_options_and_graph_contract():
     with pytest.raises(ValueError, match="choose from"):
         Mapper("unknown")
     with pytest.raises(TypeError, match="Unknown Mapper option"):
-        Mapper(backend="cpp")
+        Mapper(unsupported_option=True)
     graph = LabeledGraph({0: {}}, [6])
     with pytest.raises(ValueError, match="require reaction SMILES"):
         Mapper().map((graph, graph), hydrogen="explicit")
@@ -189,3 +192,15 @@ def test_invalid_methods_options_and_graph_contract():
         Mapper().map((LabeledGraph({0: {1: 1}, 1: {}}, [6, 6]),) * 2)
     with pytest.raises(ValueError, match="atom-type"):
         Mapper().map((graph, LabeledGraph({0: {}}, [8])))
+
+
+@pytest.mark.parametrize("method", ["propagate", "native"])
+def test_reaction_mapping_defaults_to_lewis_with_explicit_h(method, native_library):
+    options = {"library_path": native_library} if method == "native" else {}
+    result = Mapper(method, **options).map("N.Cl>>[NH4+].[Cl-]")
+    assert result.complete and result.optimality_proven
+    assert result.minimum_cost == 4
+    assert result.reaction_result.hydrogen == "explicit"
+    assert result.reaction_result.objective == (
+        "lewis_bond_plus_nonbonding_electron_distance"
+    )

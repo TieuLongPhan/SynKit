@@ -38,11 +38,11 @@ reactions accepted by the published analysis:
   (anchor-relabeling NetworkX), reproducing the six columns of Table 2.
 
 The active environment runs HExtend and `RB-nx`. The launcher uses the `aam`
-Conda environment for the two GranMapache backends; override it with
+Conda environment for the two GranMapache backends. Override it with
 `--gmapache-env NAME` if needed.
 
 Method A and Method B are not aliases for PartialAAMs' GM, RB1, and RB2. Those
-methods complete partial atom maps and belong to `partial_expand`; they are not
+methods complete partial atom maps and belong to `partial_expand`. They are not
 part of this hydrogen-extension runtime comparison.
 
 The five source records rejected by the reference filters are retained in

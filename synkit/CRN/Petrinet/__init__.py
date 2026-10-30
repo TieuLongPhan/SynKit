@@ -33,6 +33,7 @@ from .net import (
     extract_syncrn_incidence,
 )
 from .minimal_semiflows import (
+    SemiflowSearchLimit,
     is_semiflow,
     minimal_semiflow_supports,
     minimal_semiflows,
@@ -72,6 +73,7 @@ __all__ = [
     "find_t_semiflows",
     "semiflow_supports",
     "minimal_semiflows",
+    "SemiflowSearchLimit",
     "minimal_semiflow_supports",
     "is_semiflow",
     "left_kernel_basis",

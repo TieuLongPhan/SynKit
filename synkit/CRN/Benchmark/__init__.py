@@ -1,91 +1,30 @@
-"""Benchmark, validation and case-study material for :mod:`synkit.CRN`.
+"""Deprecated checkout-only research imports.
 
-The package includes:
-
-- **A validation set** (:mod:`~synkit.CRN.Benchmark.networks`,
-  :mod:`~synkit.CRN.Benchmark.validate`) — literature and regression networks
-  with the structural verdicts they must reproduce, each quantity additionally
-  recomputed by an independent route from
-  :mod:`~synkit.CRN.Benchmark.crosschecks`.
-- **A scaling benchmark** (:mod:`~synkit.CRN.Benchmark.scaling`) — wall-clock
-  timings of the analysis stack against network size.
-- **A metabolic case study** (:mod:`~synkit.CRN.Benchmark.kegg`) — cached KEGG
-  modules processed from pathway retrieval through
-  conservation laws, persistence and flux realizability.
-
-.. rubric:: Example
-
-.. code-block:: python
-
-    from synkit.CRN.Benchmark import run_validation, validation_table
-
-    print(validation_table(run_validation()))
+Implementations live in Experiment.CRN.benchmarks.
+This namespace remains temporarily for existing notebooks and manuscript code.
+Runtime CRN analysis never imports it. New code should use the experiment paths.
 """
 
-from __future__ import annotations
-
-from .networks import (
-    BENCHMARK_NETWORKS,
-    BenchmarkNetwork,
-    get_network,
-    network_names,
-)
-from .crosschecks import (
-    brute_force_siphons,
-    check_conservation_laws,
-    check_semiflows,
-    deficiency_by_rank_identity,
-    persistence_by_brute_force,
-    rank_by_svd,
-)
-from .scaling import (
-    NETWORK_FAMILIES,
-    ScalingRecord,
-    TASKS,
-    generate_network,
-    run_scaling_benchmark,
-    scaling_table,
-)
-from .kegg import (
-    CASE_STUDY_MODULES,
-    GLYCOLYSIS_FLUX,
-    KeggModuleAnalysis,
-    analyze_kegg_module,
-    build_kegg_crn,
-    check_glycolysis_flux,
-    kegg_case_study_report,
-    load_kegg_cache,
-    module_ids,
-)
-from .validate import (
-    NetworkValidation,
-    ValidationReport,
-    run_validation,
-    validate_network,
-    validation_table,
-)
+from importlib import import_module
+import warnings
 
 __all__ = [
-    # networks
     "BENCHMARK_NETWORKS",
     "BenchmarkNetwork",
     "get_network",
     "network_names",
-    # independent cross-checks
     "brute_force_siphons",
     "check_conservation_laws",
     "check_semiflows",
     "deficiency_by_rank_identity",
     "persistence_by_brute_force",
     "rank_by_svd",
-    # scaling benchmark
     "NETWORK_FAMILIES",
     "ScalingRecord",
     "TASKS",
     "generate_network",
     "run_scaling_benchmark",
     "scaling_table",
-    # KEGG case study
     "CASE_STUDY_MODULES",
     "GLYCOLYSIS_FLUX",
     "KeggModuleAnalysis",
@@ -95,10 +34,20 @@ __all__ = [
     "kegg_case_study_report",
     "load_kegg_cache",
     "module_ids",
-    # validation
     "NetworkValidation",
     "ValidationReport",
     "run_validation",
     "validate_network",
     "validation_table",
 ]
+
+
+def __getattr__(name):
+    if name not in __all__:
+        raise AttributeError(name)
+    warnings.warn(
+        "synkit.CRN.Benchmark moved to Experiment.CRN.benchmarks; research helpers require a source checkout",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return getattr(import_module("Experiment.CRN.benchmarks"), name)

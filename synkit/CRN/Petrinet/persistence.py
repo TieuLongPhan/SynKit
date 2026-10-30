@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Set
+from typing import Any, List, Set, Optional
+
+import numpy as np
+from .siphon_search import SiphonSearchLimit, DEFAULT_MAX_NODES
 from .semiflows import find_p_semiflows, stoichiometric_matrix
 from .structure import find_siphons
 
@@ -10,10 +13,12 @@ from .structure import find_siphons
 class PersistenceCheckResult:
     """Structured result of the siphon-based persistence sufficient test."""
 
-    persistence_ok: bool
+    persistence_ok: Optional[bool]
     siphons: List[Set[str]]
     semiflow_supports: List[Set[str]]
     uncovered_siphons: List[Set[str]]
+    complete: bool = True
+    termination_reason: str = "complete"
 
 
 def siphon_persistence_condition(
@@ -21,7 +26,7 @@ def siphon_persistence_condition(
     *,
     rtol: float = 1e-12,
     max_siphon_size: int | None = None,
-) -> bool:
+) -> Optional[bool]:
     """
     Check the Angeli–De Leenheer–Sontag siphon/P-semiflow sufficient condition.
 
@@ -41,11 +46,24 @@ def siphon_persistence_details(
     rtol: float = 1e-12,
     max_siphon_size: int | None = None,
     support_tol: float = 1e-8,
+    max_nodes: int = DEFAULT_MAX_NODES,
+    p_semiflows: Any = None,
+    _complete_siphons: Any = None,
 ) -> PersistenceCheckResult:
     """
     Return detailed information for the siphon-based persistence test.
     """
-    siphons = find_siphons(crn, max_size=max_siphon_size, names="id")
+    try:
+        # Enumerate all sizes: a size filter is not a proof of complete coverage.
+        siphons = (
+            find_siphons(crn, names="id", max_nodes=max_nodes, strict_limit=True)
+            if _complete_siphons is None
+            else [set(s) for s in _complete_siphons]
+        )
+    except SiphonSearchLimit:
+        return PersistenceCheckResult(None, [], [], [], False, "node_limit")
+    if max_siphon_size is not None and any(len(s) > max_siphon_size for s in siphons):
+        return PersistenceCheckResult(None, siphons, [], [], False, "size_limit")
     if not siphons:
         return PersistenceCheckResult(True, [], [], [])
 
@@ -54,7 +72,11 @@ def siphon_persistence_details(
     # supports are exactly what the Angeli-De Leenheer-Sontag condition needs.
     # A real kernel basis would not do: its vectors can be mixed-sign and its
     # supports depend on the arbitrary choice of basis.
-    y = find_p_semiflows(crn, rtol=rtol)
+    y = (
+        find_p_semiflows(crn, rtol=rtol)
+        if p_semiflows is None
+        else np.asarray(p_semiflows)
+    )
     if y.size == 0:
         return PersistenceCheckResult(False, siphons, [], list(siphons))
 

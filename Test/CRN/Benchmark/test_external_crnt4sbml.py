@@ -2,7 +2,7 @@
 
 import unittest
 
-from Experiment.CRN.external_crnt4sbml import SHARED_FIELDS, compare_payload
+from Experiment.CRN.studies.external_crnt4sbml import SHARED_FIELDS, compare_payload
 
 
 class TestExternalComparison(unittest.TestCase):

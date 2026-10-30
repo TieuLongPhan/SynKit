@@ -155,6 +155,27 @@ def find_siphons(
     :return: Inclusion-minimal siphons.
     :rtype: List[Set[str]]
     """
+    from ..backend import resolve_backend
+
+    backend, library = resolve_backend()
+    if backend == "cpp":
+        from ..native import enumerate_structural_sets
+        from .siphon_search import SiphonSearchLimit
+
+        net = _as_petri(crn)
+        result = enumerate_structural_sets(
+            net, kind="siphon", backend="cpp", library_path=library, max_nodes=max_nodes
+        )
+        if not result.complete:
+            error = SiphonSearchLimit(result.termination_reason)
+            error.result = result
+            raise error
+        sets_ = [
+            set(group)
+            for group in result.value["sets"]
+            if max_size is None or len(group) <= max_size
+        ]
+        return _render_place_sets(net, sets_, names=names)
     net = _as_petri(crn)
     sets_ = minimal_siphons(
         net,
@@ -198,6 +219,27 @@ def find_traps(
     :return: Inclusion-minimal traps.
     :rtype: List[Set[str]]
     """
+    from ..backend import resolve_backend
+
+    backend, library = resolve_backend()
+    if backend == "cpp":
+        from ..native import enumerate_structural_sets
+        from .siphon_search import SiphonSearchLimit
+
+        net = _as_petri(crn)
+        result = enumerate_structural_sets(
+            net, kind="trap", backend="cpp", library_path=library, max_nodes=max_nodes
+        )
+        if not result.complete:
+            error = SiphonSearchLimit(result.termination_reason)
+            error.result = result
+            raise error
+        sets_ = [
+            set(group)
+            for group in result.value["sets"]
+            if max_size is None or len(group) <= max_size
+        ]
+        return _render_place_sets(net, sets_, names=names)
     net = _as_petri(crn)
     sets_ = minimal_traps(
         net,

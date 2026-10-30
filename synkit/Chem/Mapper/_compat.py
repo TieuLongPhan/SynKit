@@ -5,6 +5,8 @@ identity across old and new imports. Internal code uses canonical paths.
 """
 
 from importlib import import_module
+from importlib.abc import Loader, MetaPathFinder
+from importlib.util import find_spec, spec_from_loader
 import sys
 
 
@@ -66,6 +68,57 @@ EXACT_MODULE_ALIASES = {
     "orbit_aggregation": "native.orbit_aggregation",
     "disk_frontier": "native.disk_frontier",
 }
+
+
+_SOLVER_PREFIXES = {
+    f"{namespace}.{old}": f"synkit.Chem.Mapper.solvers.{new}"
+    for namespace in ("synkit.Chem.Mapper", "synkit.Chem.Reaction.Mapper")
+    for old, new in (("exact", "exact"), ("slap", "slap"), ("_native", "native"))
+}
+
+
+class _SolverAliasLoader(Loader):
+    """Resolve a historical solver module without creating a second implementation."""
+
+    def __init__(self, canonical_name):
+        self.canonical_name = canonical_name
+
+    def create_module(self, spec):
+        return None
+
+    def exec_module(self, module):
+        sys.modules[module.__spec__.name] = import_module(self.canonical_name)
+
+    def get_code(self, fullname):
+        # runpy requests code without importing the alias. Call the canonical
+        # builder's main directly so its relative imports keep their new base.
+        if self.canonical_name.endswith((".build", ".native_build", ".reaction_build")):
+            source = f"from importlib import import_module\nimport_module({self.canonical_name!r}).main()\n"
+        else:
+            source = f"import runpy\nrunpy.run_module({self.canonical_name!r}, run_name='__main__')\n"
+        return compile(source, f"<compatibility {fullname}>", "exec")
+
+
+class _SolverAliasFinder(MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        for old, canonical in _SOLVER_PREFIXES.items():
+            if fullname == old or fullname.startswith(old + "."):
+                name = canonical + fullname[len(old):]
+                original = find_spec(name)
+                if original is None:
+                    return None
+                return spec_from_loader(
+                    fullname, _SolverAliasLoader(name),
+                    origin=original.origin,
+                    is_package=original.submodule_search_locations is not None,
+                )
+        return None
+
+
+def install_solver_aliases():
+    """Keep old solver imports and build commands working after the source move."""
+    if not any(isinstance(finder, _SolverAliasFinder) for finder in sys.meta_path):
+        sys.meta_path.insert(0, _SolverAliasFinder())
 
 
 def register_module_aliases(package_name, aliases):

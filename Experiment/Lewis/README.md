@@ -1,19 +1,19 @@
 # Lewis benchmark experiments
 
-This directory contains executable Lewis-structure benchmarks and retained
+This directory contains Lewis-structure benchmarks and retained
 benchmark data. Unit and regression tests are stored under `Test`.
 
 ## Layout
 
-- `Data` contains the shared input corpora and their provenance registry.
+- `Data` contains the shared input corpora and their source registry.
 - `partial_expand`: minimal partial atom-mapping expansion and reproducible
   reaction-level runtime metadata for current LWG, RB1, RB2, and GM.
 - `hydrogen_expand`: single-process comparison of legacy/new HExtend against
-  executable hydrogen-extension Method A/B references.
+  hydrogen-extension Method A/B implementations.
 - `rule_replay`: forward/backward graph-rule replay for the tuple and
   `typesGH` representations, with retained case evidence.
 - `FLOWER`: the portable 425,517-reaction full-corpus replay payload and its
-  resource-configurable bidirectional launcher.
+  bidirectional launcher with process and timeout controls.
 - `mech_path`: reviewed MechanismBench partitions, corpus-reconstruction audit
   failures, and the evidence runner.
 

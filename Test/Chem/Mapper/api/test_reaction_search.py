@@ -16,7 +16,9 @@ def test_unmapped_input_has_one_class_per_symmetric_mapping(
     native_library, backend, hydrogen
 ):
     options = {"library_path": native_library} if backend == "cpp" else {}
-    result = map_reaction("CO>>CO", backend=backend, hydrogen=hydrogen, **options)
+    result = map_reaction(
+        "CO>>CO", objective="bond", backend=backend, hydrogen=hydrogen, **options
+    )
     assert result.complete and result.minimum_cost == 0
     assert len(result.reactions) == 1
     assert result.as_dict()["objective"] == result.objective
@@ -30,12 +32,12 @@ def test_unmapped_input_has_one_class_per_symmetric_mapping(
 
 
 def test_existing_maps_are_not_constraints_and_agents_are_retained():
-    a = map_reaction("[CH3:42][CH2:9][CH3:5]>O>CCC")
-    b = map_reaction("CCC>>CCC")
+    a = map_reaction("[CH3:42][CH2:9][CH3:5]>O>CCC", objective="bond")
+    b = map_reaction("CCC>>CCC", objective="bond")
     assert a.mapped_reactions == b.mapped_reactions
     assert a.agents == "O"
     assert a.labeled_mapping_count == 2 and len(a.reactions) == 1
-    numeric = map_reaction("CCC>>CCC", CD=2)
+    numeric = map_reaction("CCC>>CCC", CD=2, objective="bond")
     assert numeric.complete and numeric.minimum_cost is None
     assert numeric.labeled_mapping_count == 4 and len(numeric.reactions) == 1
 
@@ -117,13 +119,17 @@ def test_explicit_h_minimum_is_global_over_element_compatible_bijections():
             graphs[0].labels[i] == graphs[1].labels[j] for i, j in enumerate(mapping)
         )
     )
-    result = map_reaction("CO>>C=O", hydrogen="explicit", balance="dummy")
+    result = map_reaction(
+        "CO>>C=O", objective="bond", hydrogen="explicit", balance="dummy"
+    )
     assert result.complete and result.minimum_cost == expected
     assert result.objective == "explicit_h_bond_distance"
 
 
 def test_compressed_lifts_are_conditional_and_charge_changes_are_retained():
-    result = map_reaction("CO>>[CH2-][OH2+]", hydrogen="compressed")
+    result = map_reaction(
+        "CO>>[CH2-][OH2+]", objective="bond", hydrogen="compressed"
+    )
     assert result.complete
     assert result.objective == "heavy_cd_with_conditional_minimum_h_lifts"
     assert result.minimum_cost == 0
@@ -139,10 +145,10 @@ def test_timeout_cap_and_invalid_modes_are_explicit():
     assert not result.complete and not result.search_complete
     for reaction, options in [
         ("C>>CO", {}),
-        ("C>>C", {"objective": "lewis"}),
+        ("C>>C", {"objective": "lewis", "hydrogen": "heavy"}),
         ("C>>C", {"hydrogen": "bad"}),
         ("bad", {}),
-        ("[2H]O>>[2H]O", {"hydrogen": "compressed"}),
+        ("[2H]O>>[2H]O", {"objective": "bond", "hydrogen": "compressed"}),
     ]:
         with pytest.raises(ValueError):
             map_reaction(reaction, **options)
@@ -158,3 +164,21 @@ def test_classification_timeout_never_claims_complete(monkeypatch):
     assert result.search_complete and not result.classification_complete
     assert not result.complete and result.mapped_reactions == ()
     assert result.incomplete_reason == "classification:test_limit"
+
+
+def test_default_lewis_distance_includes_lone_pair_transfer_and_explicit_h():
+    result = map_reaction("N.Cl>>[NH4+].[Cl-]")
+    assert result.complete and result.minimum_cost == 4
+    assert result.hydrogen == "explicit"
+    assert result.objective == "lewis_bond_plus_nonbonding_electron_distance"
+    bond_only = map_reaction(
+        "N.Cl>>[NH4+].[Cl-]", objective="bond", hydrogen="explicit"
+    )
+    assert bond_only.complete and bond_only.minimum_cost == 2
+
+
+def test_selecting_bond_distance_keeps_its_heavy_atom_default():
+    result = map_reaction("CCO>>CC=O", objective="bond")
+    assert result.complete and result.minimum_cost == 1
+    assert result.hydrogen == "heavy"
+    assert result.objective == "heavy_bond_distance"

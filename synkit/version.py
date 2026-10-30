@@ -2,7 +2,11 @@
 
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-import tomllib
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 try:
     # A source checkout can coexist with an older installed distribution.

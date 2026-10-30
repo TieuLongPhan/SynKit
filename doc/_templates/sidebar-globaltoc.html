@@ -1,9 +1,9 @@
 {# doc/_templates/sidebar-globaltoc.html #}
 {%- set _nav = toctree(
-    maxdepth=1,
+    maxdepth=2,
     collapse=False,
     includehidden=True,
-    titles_only=False
+    titles_only=True
 ) -%}
 
 {%- if _nav %}
@@ -30,19 +30,4 @@
   </div>
 </div>
 
-<script>
-(function () {
-  var btn = document.querySelector(".sk-globaltoc__toggle");
-  var body = document.getElementById("sk-globaltoc-tree");
-  if (!btn || !body) return;
-
-  btn.addEventListener("click", function () {
-    var expanded = btn.getAttribute("aria-expanded") === "true";
-    btn.setAttribute("aria-expanded", expanded ? "false" : "true");
-    body.style.display = expanded ? "none" : "";
-    var chev = btn.querySelector(".sk-globaltoc__chev");
-    if (chev) chev.textContent = expanded ? "▸" : "▾";
-  });
-})();
-</script>
 {%- endif %}

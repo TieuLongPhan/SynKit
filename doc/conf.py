@@ -118,6 +118,9 @@ html_favicon = "_static/favicon.svg"
 
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+html_js_files = ["navigation.js"]
+pygments_style = "friendly"
+pygments_dark_style = "native"
 
 html_context = {
     "github_user": "TieuLongPhan",

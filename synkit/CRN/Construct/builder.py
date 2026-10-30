@@ -28,6 +28,7 @@ class CRNExpand:
     implicit_temp: bool = False
     strategy: Optional[str] = None
     keep_aam: bool = True
+    rule_backend: str = "synreactor"
 
     max_components: int = 3
     use_frontier: bool = True
@@ -67,6 +68,10 @@ class CRNExpand:
     derivations: DerivationLog = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        if self.rule_backend not in {"synreactor", "rdkit"}:
+            raise ValueError("rule_backend must be synreactor or rdkit")
+        if self.rule_backend == "rdkit" and self.keep_aam:
+            raise ValueError("RDKit CRN construction requires keep_aam=False")
         if self.max_components < 1:
             raise ValueError("max_components must be >= 1")
         self.state = DerivationState()
@@ -377,16 +382,21 @@ class CRNExpand:
         parallel: bool,
         max_workers: Optional[int],
     ) -> List[Tuple[int, Tuple[str, ...], List[str]]]:
+        runner = apply_rule_worker
+        if self.rule_backend == "rdkit":
+            from .rdkit_worker import apply_rdkit_rule_worker
+
+            runner = apply_rdkit_rule_worker
         results: List[Tuple[int, Tuple[str, ...], List[str]]] = []
 
         if parallel and len(tasks) > 1:
             with ProcessPoolExecutor(max_workers=max_workers) as ex:
-                for idx, mix_keys, products_list in ex.map(apply_rule_worker, tasks):
+                for idx, mix_keys, products_list in ex.map(runner, tasks):
                     results.append((idx, mix_keys, products_list))
             return results
 
         for t in tasks:
-            results.append(apply_rule_worker(t))
+            results.append(runner(t))
         return results
 
     def _integrate_results(

@@ -238,8 +238,7 @@ def _make_internal_id_maps(
             node: str(i) for i, node in enumerate(species_nodes, start=1)
         }
         reaction_node_to_id = {
-            node: str(offset + i)
-            for i, node in enumerate(reaction_nodes, start=1)
+            node: str(offset + i) for i, node in enumerate(reaction_nodes, start=1)
         }
         return species_node_to_id, reaction_node_to_id
 
@@ -336,7 +335,12 @@ def _collect_reaction_sides_from_graph(
 
         sid = species_node_to_id[u]
         attrs = dict(eattrs)
-        stoich = int(attrs.get("stoich", 1))
+        raw_stoich = attrs.get("stoich", 1)
+        if not float(raw_stoich).is_integer():
+            raise ValueError(
+                "Discrete CRN coefficients must be integral; normalize rational stoichiometry explicitly"
+            )
+        stoich = int(raw_stoich)
         if stoich <= 0:
             raise ValueError(f"Invalid stoich={stoich} on edge ({u!r}, {rnode!r})")
 
@@ -359,7 +363,12 @@ def _collect_reaction_sides_from_graph(
 
         sid = species_node_to_id[v]
         attrs = dict(eattrs)
-        stoich = int(attrs.get("stoich", 1))
+        raw_stoich = attrs.get("stoich", 1)
+        if not float(raw_stoich).is_integer():
+            raise ValueError(
+                "Discrete CRN coefficients must be integral; normalize rational stoichiometry explicitly"
+            )
+        stoich = int(raw_stoich)
         if stoich <= 0:
             raise ValueError(f"Invalid stoich={stoich} on edge ({rnode!r}, {v!r})")
 
@@ -532,9 +541,7 @@ def _build_reaction_from_graph_node(
     return Reaction(
         id=rid,
         source_node_id=rattrs.get("source_node_id", rnode),
-        source_kind=str(
-            rattrs.get("source_kind", rattrs.get("kind", "reaction"))
-        ),
+        source_kind=str(rattrs.get("source_kind", rattrs.get("kind", "reaction"))),
         lhs=lhs,
         rhs=rhs,
         label=rattrs.get("label", rid),

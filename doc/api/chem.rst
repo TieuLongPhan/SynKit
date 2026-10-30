@@ -49,6 +49,12 @@ Reaction
 Atom-to-atom mapping
 ---------------------
 
+See :doc:`../mapper` for installation and examples. Platform wheels provide
+the C++ PABS library with SLAP starting mappings used by ``Mapper("native")`` and
+``map_reaction_implicit`` without an explicit library path.
+
+.. autofunction:: synkit.Chem.Mapper.map_reaction_implicit
+
 Use :class:`synkit.Chem.Mapper.Mapper` for uniform method selection through
 ``Mapper(method='propagate').map(reaction_or_graph_pair)``. Its eight names are
 ``slap``, ``kernel``, ``milp``, ``distance``, ``propagate``, ``native``, ``edits``
@@ -57,27 +63,27 @@ reports the chosen method, search scope, proof status and completion.
 See :ref:`atom-to-atom-mapping` for method comparisons, runnable examples,
 result semantics, and supported resource limits.
 
-Use :func:`synkit.Chem.Mapper.map_reaction` for the established exact reaction-SMILES API
+Use :func:`synkit.Chem.Mapper.map_reaction` for the exact Python reaction-SMILES API
 or :class:`synkit.Chem.Mapper.AAMapper` for the WL/SLAP workflow. ``map_reaction``
 defaults to Python propagation and assignment-bounded search (PABS).
 ``AAMapper.map_smiles`` defaults to heuristic sequential linear assignment
-(SLAP); ``enumerate_exact=True`` adds refinement of a reduced uncertainty
+(SLAP). ``enumerate_exact=True`` adds refinement of a reduced uncertainty
 kernel, and ``certify="exact"`` requests optional kernel MILP certification.
 ``AAMapper.enumerate_smiles`` selects the full-distance solver, with an optional
 SLAP seed for a minimum query. Kernel optimality is scoped to its supplied
 fixed assignments and candidate domains. Exact methods
 are grouped under ``exact.distance_search``, ``exact.kernel_solvers``,
-``exact.pabs``, and ``exact.native``; their package-level entry points remain
-available from ``synkit.Chem.Mapper.exact``. Analysis, validation, and adapters
+``exact.pabs``, and ``exact.native``. Their package-level entry points remain
+available from ``synkit.Chem.Mapper.solvers.exact``. Analysis, validation, and adapters
 live in ``reporting``, ``validation``, and ``adapters`` respectively.
 
 .. automodule:: synkit.Chem.Mapper.mapper
    :members:
 
-.. automodule:: synkit.Chem.Mapper.exact.search
+.. automodule:: synkit.Chem.Mapper.solvers.exact.search
    :members:
 
-.. automodule:: synkit.Chem.Mapper.exact.native.search
+.. automodule:: synkit.Chem.Mapper.solvers.exact.native.search
    :members:
 
 .. automodule:: synkit.Chem.Mapper.reaction_search
@@ -95,23 +101,23 @@ live in ``reporting``, ``validation``, and ``adapters`` respectively.
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Mapper.slap.sequential
+.. automodule:: synkit.Chem.Mapper.solvers.slap.sequential
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Mapper.exact.distance_search.search
+.. automodule:: synkit.Chem.Mapper.solvers.exact.distance_search.search
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Mapper.exact.pabs.propagation
+.. automodule:: synkit.Chem.Mapper.solvers.exact.pabs.propagation
    :members:
    :undoc-members:
 
-.. automodule:: synkit.Chem.Mapper.exact.hybrid
+.. automodule:: synkit.Chem.Mapper.solvers.exact.hybrid
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Mapper.exact.edit_support
+.. automodule:: synkit.Chem.Mapper.solvers.exact.edit_support
    :members:
    :show-inheritance:
 
@@ -139,10 +145,10 @@ live in ``reporting``, ``validation``, and ``adapters`` respectively.
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.Chem.Mapper.exact.native.build
+.. automodule:: synkit.Chem.Mapper.solvers.exact.native.build
    :members: build_native
 
-.. automodule:: synkit.Chem.Mapper.exact.native.candidates
+.. automodule:: synkit.Chem.Mapper.solvers.exact.native.candidates
    :members: enumerate_native_candidates
 
 Molecule

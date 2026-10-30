@@ -14,7 +14,7 @@ from rdkit import Chem
 
 from ..validation.bonds import _graph
 from ..validation.identifiability import extract_label, parse_reaction
-from ..slap.sequential import GraphMatcher
+from ..solvers.slap.sequential import GraphMatcher
 
 
 def unmapped_input(reaction: str) -> str:

@@ -1,0 +1,367 @@
+{
+  "schema": "synkit.crn-glycolysis-input/1",
+  "description": "Extended glycolysis with explicit cofactors and directed reverse reactions. Symbolic species and reaction labels are stable route selectors.",
+  "source": {
+    "dataset": "Curated KEGG hsa00010 extraction",
+    "snapshot_sha256": "542ac16122249f6e79af4be931d283f5ce5faf02fb9b988d18d379453d2316eb",
+    "scope": "Directed stoichiometric structure; annotations do not validate chemistry."
+  },
+  "equations": {
+    "r1": "A+B>>C+D",
+    "r2": "E>>B+F",
+    "r3": "C+G>>A+H",
+    "r4": "I>>J",
+    "r5": "J+K+L>>M+N+O",
+    "r6": "J+K+P>>M+Q+O",
+    "r7": "H>>I+J",
+    "r8": "A+M>>C+R",
+    "r9": "R>>E",
+    "r10": "C+S>>A+T",
+    "r11": "U+S>>V+T",
+    "r12": "A+G>>W+H",
+    "r13": "J+F+X+X>>R+O+O+Y+Y",
+    "r14": "S+A>>T+W",
+    "r15": "T>>G",
+    "r16": "C+Z>>A+B+AA",
+    "r17": "AB+Z>>AC+B+AA",
+    "r18": "B+F>>E",
+    "r19": "AD+Z>>AE+B+AA",
+    "r20": "H+F>>G+K",
+    "r21": "J>>I",
+    "r22": "M+N+O>>J+K+L",
+    "r23": "M+Q+O>>J+K+P",
+    "r24": "I+J>>H",
+    "r25": "C+R>>A+M",
+    "r26": "E>>R",
+    "r27": "D+AF>>AG+AA",
+    "r28": "D+AH+L>>AI+AA+N+O",
+    "r29": "D+AH+P>>AI+AA+Q+O",
+    "r30": "X+X+D+AH>>Y+Y+AI+AA+O+O",
+    "r31": "AH+AJ>>AI+AK",
+    "r32": "AG+AL>>AJ+AF",
+    "r33": "AK+L>>AL+N+O",
+    "r34": "D+AH+AM>>AI+AA+AN"
+  },
+  "species": {
+    "A": {
+      "names": [
+        "ADP"
+      ],
+      "kegg_ids": [
+        "C00008"
+      ]
+    },
+    "B": {
+      "names": [
+        "Phosphoenolpyruvate"
+      ],
+      "kegg_ids": [
+        "C00074"
+      ]
+    },
+    "C": {
+      "names": [
+        "ATP"
+      ],
+      "kegg_ids": [
+        "C00002"
+      ]
+    },
+    "D": {
+      "names": [
+        "Pyruvate"
+      ],
+      "kegg_ids": [
+        "C00022"
+      ]
+    },
+    "E": {
+      "names": [
+        "2-Phospho-D-glycerate"
+      ],
+      "kegg_ids": [
+        "C00631"
+      ]
+    },
+    "F": {
+      "names": [
+        "H2O"
+      ],
+      "kegg_ids": [
+        "C00001"
+      ]
+    },
+    "G": {
+      "names": [
+        "D-Fructose 6-phosphate"
+      ],
+      "kegg_ids": [
+        "C00085"
+      ]
+    },
+    "H": {
+      "names": [
+        "D-Fructose 1,6-bisphosphate"
+      ],
+      "kegg_ids": [
+        "C00354"
+      ]
+    },
+    "I": {
+      "names": [
+        "Glycerone phosphate"
+      ],
+      "kegg_ids": [
+        "C00111"
+      ]
+    },
+    "J": {
+      "names": [
+        "D-Glyceraldehyde 3-phosphate"
+      ],
+      "kegg_ids": [
+        "C00118"
+      ]
+    },
+    "K": {
+      "names": [
+        "Orthophosphate"
+      ],
+      "kegg_ids": [
+        "C00009"
+      ]
+    },
+    "L": {
+      "names": [
+        "NAD+"
+      ],
+      "kegg_ids": [
+        "C00003"
+      ]
+    },
+    "M": {
+      "names": [
+        "3-Phospho-D-glyceroyl phosphate"
+      ],
+      "kegg_ids": [
+        "C00236"
+      ]
+    },
+    "N": {
+      "names": [
+        "NADH"
+      ],
+      "kegg_ids": [
+        "C00004"
+      ]
+    },
+    "O": {
+      "names": [
+        "H+"
+      ],
+      "kegg_ids": [
+        "C00080"
+      ]
+    },
+    "P": {
+      "names": [
+        "NADP+"
+      ],
+      "kegg_ids": [
+        "C00006"
+      ]
+    },
+    "Q": {
+      "names": [
+        "NADPH"
+      ],
+      "kegg_ids": [
+        "C00005"
+      ]
+    },
+    "R": {
+      "names": [
+        "3-Phospho-D-glycerate"
+      ],
+      "kegg_ids": [
+        "C00197"
+      ]
+    },
+    "S": {
+      "names": [
+        "alpha-D-Glucose"
+      ],
+      "kegg_ids": [
+        "C00267"
+      ]
+    },
+    "T": {
+      "names": [
+        "alpha-D-Glucose 6-phosphate"
+      ],
+      "kegg_ids": [
+        "C00668"
+      ]
+    },
+    "U": {
+      "names": [
+        "Polyphosphate"
+      ],
+      "kegg_ids": [
+        "C00404"
+      ]
+    },
+    "V": {
+      "names": [
+        "Polyphosphate fragment"
+      ],
+      "kegg_ids": [
+        "C99999"
+      ]
+    },
+    "W": {
+      "names": [
+        "AMP"
+      ],
+      "kegg_ids": [
+        "C00020"
+      ]
+    },
+    "X": {
+      "names": [
+        "Oxidized ferredoxin"
+      ],
+      "kegg_ids": [
+        "C00139"
+      ]
+    },
+    "Y": {
+      "names": [
+        "Reduced ferredoxin"
+      ],
+      "kegg_ids": [
+        "C00138"
+      ]
+    },
+    "Z": {
+      "names": [
+        "Oxaloacetate"
+      ],
+      "kegg_ids": [
+        "C00036"
+      ]
+    },
+    "AA": {
+      "names": [
+        "CO2"
+      ],
+      "kegg_ids": [
+        "C00011"
+      ]
+    },
+    "AB": {
+      "names": [
+        "GTP"
+      ],
+      "kegg_ids": [
+        "C00044"
+      ]
+    },
+    "AC": {
+      "names": [
+        "GDP"
+      ],
+      "kegg_ids": [
+        "C00035"
+      ]
+    },
+    "AD": {
+      "names": [
+        "ITP"
+      ],
+      "kegg_ids": [
+        "C00081"
+      ]
+    },
+    "AE": {
+      "names": [
+        "IDP"
+      ],
+      "kegg_ids": [
+        "C00104"
+      ]
+    },
+    "AF": {
+      "names": [
+        "Thiamin diphosphate"
+      ],
+      "kegg_ids": [
+        "C00068"
+      ]
+    },
+    "AG": {
+      "names": [
+        "2-(alpha-Hydroxyethyl)thiamine diphosphate"
+      ],
+      "kegg_ids": [
+        "C05125"
+      ]
+    },
+    "AH": {
+      "names": [
+        "CoA"
+      ],
+      "kegg_ids": [
+        "C00010"
+      ]
+    },
+    "AI": {
+      "names": [
+        "Acetyl-CoA"
+      ],
+      "kegg_ids": [
+        "C00024"
+      ]
+    },
+    "AJ": {
+      "names": [
+        "[Dihydrolipoyllysine-residue acetyltransferase] S-acetyldihydrolipoyllysine"
+      ],
+      "kegg_ids": [
+        "C16255"
+      ]
+    },
+    "AK": {
+      "names": [
+        "Enzyme N6-(dihydrolipoyl)lysine"
+      ],
+      "kegg_ids": [
+        "C15973"
+      ]
+    },
+    "AL": {
+      "names": [
+        "Enzyme N6-(lipoyl)lysine"
+      ],
+      "kegg_ids": [
+        "C15972"
+      ]
+    },
+    "AM": {
+      "names": [
+        "Oxidized flavodoxin"
+      ],
+      "kegg_ids": [
+        "C02869"
+      ]
+    },
+    "AN": {
+      "names": [
+        "Reduced flavodoxin"
+      ],
+      "kegg_ids": [
+        "C02745"
+      ]
+    }
+  }
+}

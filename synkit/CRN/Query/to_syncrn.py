@@ -189,13 +189,9 @@ def syncrn_from_kegg_equations(
             direction=direction,
         )
         for compound_id, coefficient in lhs.items():
-            graph.add_edge(
-                compound_id, node_id, role="reactant", stoich=coefficient
-            )
+            graph.add_edge(compound_id, node_id, role="reactant", stoich=coefficient)
         for compound_id, coefficient in rhs.items():
-            graph.add_edge(
-                node_id, compound_id, role="product", stoich=coefficient
-            )
+            graph.add_edge(node_id, compound_id, role="product", stoich=coefficient)
 
     for kegg_id, equation in equations.items():
         if not equation:
@@ -237,7 +233,7 @@ def syncrn_from_kegg_module(
 
     This performs live KEGG REST requests. For a reproducible, offline network
     use :func:`syncrn_from_kegg_equations` with cached equations — see
-    :mod:`synkit.CRN.Benchmark.kegg`.
+    :mod:`synkit.CRN.Query.cache`.
 
     :param module_id:
         KEGG module identifier such as ``"M00001"``.

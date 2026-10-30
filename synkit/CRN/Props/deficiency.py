@@ -63,6 +63,8 @@ import numpy as np
 from .helper import _as_graph, _species_and_rule_order
 from .stoich import build_S_minus_plus
 
+from .stoich import _reuse_matrices
+
 __all__ = [
     "Complex",
     "CRNTSummary",
@@ -314,7 +316,10 @@ def _exact_rank(rows: Sequence[Sequence[Any]]) -> int:
         Exact rank.
     :rtype: int
     """
-    work = [[Fraction(str(v)) if not isinstance(v, int) else Fraction(v) for v in row] for row in rows]
+    work = [
+        [Fraction(str(v)) if not isinstance(v, int) else Fraction(v) for v in row]
+        for row in rows
+    ]
     if not work or not work[0]:
         return 0
 
@@ -563,9 +568,7 @@ def linkage_class_deficiencies(crn: Any) -> List[int]:
     for j, (src, _dst) in enumerate(arrows):
         per_class[member_of[src]].append(vectors[j])
 
-    return [
-        len(comp) - 1 - _exact_rank(rows) for comp, rows in zip(classes, per_class)
-    ]
+    return [len(comp) - 1 - _exact_rank(rows) for comp, rows in zip(classes, per_class)]
 
 
 # ---------------------------------------------------------------------------
@@ -616,6 +619,10 @@ def deficiency_zero_verdict(crn: Any) -> Dict[str, Any]:
     delta = deficiency(crn)
     weakly_reversible = is_weakly_reversible(crn)
 
+    return _deficiency_zero_values(delta, weakly_reversible)
+
+
+def _deficiency_zero_values(delta, weakly_reversible):
     if delta != 0:
         return {
             "applicable": False,
@@ -708,6 +715,10 @@ def deficiency_one_verdict(crn: Any) -> Dict[str, Any]:
         members = set(comp)
         terminal_counts.append(sum(1 for t in terminal if set(t) <= members))
 
+    return _deficiency_one_values(delta, per_class, weakly_reversible, terminal_counts)
+
+
+def _deficiency_one_values(delta, per_class, weakly_reversible, terminal_counts):
     hypotheses = {
         "all_linkage_deficiencies_at_most_one": all(d <= 1 for d in per_class),
         "deficiencies_sum_to_total": sum(per_class) == delta,
@@ -829,6 +840,7 @@ class CRNTSummary:
     complexes: List[str] = field(default_factory=list)
 
     @classmethod
+    @_reuse_matrices
     def from_crn(cls, crn: Any) -> "CRNTSummary":
         """Build a CRNT summary for a network.
 
@@ -850,9 +862,7 @@ class CRNTSummary:
             n_reactions=len(arrows),
             n_complexes=len(order),
             n_linkage_classes=len(classes),
-            n_terminal_strong_linkage_classes=len(
-                terminal_strong_linkage_classes(crn)
-            ),
+            n_terminal_strong_linkage_classes=len(terminal_strong_linkage_classes(crn)),
             rank=rank,
             deficiency=len(order) - len(classes) - rank,
             linkage_class_deficiencies=linkage_class_deficiencies(crn),
@@ -911,7 +921,9 @@ class CRNTSummary:
         return "\n".join(lines)
 
 
-def crnt_summary(crn: Any) -> CRNTSummary:
+def crnt_summary(
+    crn: Any, *, backend="auto", library_path=None, time_limit=30.0
+) -> CRNTSummary:
     """Compute the full structural CRNT report for a network.
 
     :param crn:
@@ -929,4 +941,13 @@ def crnt_summary(crn: Any) -> CRNTSummary:
         crn = SynCRN.from_reaction_strings(["A>>B", "B>>A", "B>>C", "C>>B"])
         print(crnt_summary(crn))
     """
+    from ..backend import resolve_backend
+
+    backend, library_path = resolve_backend(backend, library_path)
+    if backend == "cpp":
+        from ..native_analysis import crnt_summary_native
+
+        return crnt_summary_native(
+            crn, library_path=library_path, time_limit=time_limit
+        )
     return CRNTSummary.from_crn(crn)

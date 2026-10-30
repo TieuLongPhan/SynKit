@@ -5,21 +5,22 @@ from __future__ import annotations
 import time
 from collections import Counter
 from dataclasses import dataclass
+from numbers import Integral
 
 import numpy as np
 
-from .exact.distance_search.exhaustive import ExactMapper
-from .exact.distance_search.records import normalize_distance_target
-from .exact.distance_search.search import enumerate_distance_mappings
-from .exact.hybrid import enumerate_hybrid_distance_mappings
-from .exact.kernel_solvers.enumerate import enumerate_kernel_optima
-from .exact.kernel_solvers.kernel import apply_kernel_solution, extract_kernel
-from .exact.kernel_solvers.milp import solve_kernel_milp
-from .exact.search import enumerate_pabs_mappings
+from .solvers.exact.distance_search.exhaustive import ExactMapper
+from .solvers.exact.distance_search.records import normalize_distance_target
+from .solvers.exact.distance_search.search import enumerate_distance_mappings
+from .solvers.exact.hybrid import enumerate_hybrid_distance_mappings
+from .solvers.exact.kernel_solvers.enumerate import enumerate_kernel_optima
+from .solvers.exact.kernel_solvers.kernel import apply_kernel_solution, extract_kernel
+from .solvers.exact.kernel_solvers.milp import solve_kernel_milp
+from .solvers.exact.search import enumerate_pabs_mappings
 from .graph.labeled_graph import LabeledGraph
 from .reaction_search import ReactionMappingResult, _map_reaction_with_search
-from .slap.lap import _adjacency_and_elements, chemical_distance, recover_mapping
-from .slap.sequential import GraphMatcher
+from .solvers.slap.lap import _adjacency_and_elements, chemical_distance, recover_mapping
+from .solvers.slap.sequential import GraphMatcher
 
 _SCOPES = {
     "slap": "heuristic",
@@ -40,16 +41,22 @@ _REACTION_OPTIONS = {
     "classification_max_search_nodes",
 }
 _DEFAULTS = {
+    "backend": None,
     "CD": "minimal",
+    "CD_mode": "exact",
     "binary": False,
-    "hydrogen": "heavy",
-    "objective": "bond",
+    "hydrogen": None,
+    "objective": "lewis",
     "balance": "strict",
     "max_hydrogen_plans": 10_000,
     "classification_max_search_nodes": 100_000,
     "library_path": None,
     "search_config": None,
     "max_edit_support_pairs": 50_000,
+    "max_lap_fingerprints": 10_000,
+    "solver": "pabs",
+    "allowed_domains": None,
+    "hydrogen_quotient": False,
 }
 _OPTION_NAMES = _DEFAULTS.keys() | {
     "time_limit_seconds",
@@ -127,6 +134,18 @@ class _SearchOutcome:
     selected_mapping_count: int
     raw_result: object
 
+    @property
+    def backend_statistics(self):
+        return getattr(self.raw_result, "backend_statistics", None)
+
+    @property
+    def selected_labeled_mapping_count(self):
+        return getattr(
+            self.raw_result,
+            "selected_labeled_mapping_count",
+            self.selected_mapping_count,
+        )
+
 
 def _prepare_graphs(data):
     if (
@@ -168,16 +187,73 @@ def _prepare_graphs(data):
 
 def _check_method_options(method, config, requested):
     """Reject queries and limits unsupported by the selected method."""
+    backend = config["backend"]
+    if {"solver", "allowed_domains", "hydrogen_quotient"} & requested.keys():
+        if method != "native":
+            raise ValueError(
+                "solver, allowed_domains and hydrogen_quotient require method='native'"
+            )
+        from .solvers.native.runtime import BACKENDS
+
+        if config["solver"] not in BACKENDS:
+            raise ValueError(f"Unknown native solver: {config['solver']}")
+        if config["allowed_domains"] is not None and config["solver"] not in {
+            "kbb",
+            "kmilp",
+        }:
+            raise ValueError("allowed_domains requires solver='kbb' or 'kmilp'")
+        if not isinstance(config["hydrogen_quotient"], bool):
+            raise TypeError("hydrogen_quotient must be boolean")
+        if config["hydrogen_quotient"] and config["solver"] in {
+            "kbb",
+            "kmilp",
+            "slap",
+            "edit",
+        }:
+            raise ValueError(
+                "hydrogen_quotient requires a full-space weighted exact solver"
+            )
+    if backend not in {"python", "cpp"}:
+        raise ValueError(
+            "backend must be 'python', 'cpp', or None for automatic selection"
+        )
+    native_slap = method == "slap" and backend == "cpp"
+    if method == "native" and backend != "cpp":
+        raise ValueError("method='native' requires backend='cpp'")
+    if backend == "cpp" and method not in {"native", "slap"}:
+        raise ValueError(
+            "backend='cpp' currently supports method='slap' or method='native'"
+        )
+    if config["CD_mode"] not in {"exact", "at_most"}:
+        raise ValueError("CD_mode must be 'exact' or 'at_most'")
+    if config["CD_mode"] == "at_most" and (
+        method != "native" or config["CD"] == "minimal"
+    ):
+        raise ValueError("CD_mode='at_most' requires method='native' and numeric CD")
     if method not in _ENUMERATORS:
         if config["CD"] != "minimal":
             raise ValueError(f"method='{method}' only supports CD='minimal'")
         for name in ("time_limit_seconds", "max_mappings", "max_bijections"):
+            if native_slap and name != "max_bijections":
+                continue
             if config[name] is not None:
                 raise ValueError(f"method='{method}' does not support {name}")
-    if method != "native" and config["library_path"] is not None:
-        raise ValueError("library_path requires method='native'")
-    if method == "native" and config["library_path"] is None:
-        raise ValueError("method='native' requires a library_path from build_native")
+    if method != "native" and not native_slap and config["library_path"] is not None:
+        raise ValueError(
+            "library_path requires method='native' or method='slap', backend='cpp'"
+        )
+    if (method == "native" or native_slap) and config["library_path"] is None:
+        from .solvers.native.runtime import resolve_library_path
+
+        config["library_path"] = resolve_library_path()
+    if "max_lap_fingerprints" in requested and method != "slap":
+        raise ValueError("max_lap_fingerprints requires method='slap'")
+    if method == "slap" and (
+        isinstance(config["max_lap_fingerprints"], bool)
+        or not isinstance(config["max_lap_fingerprints"], Integral)
+        or not 1 <= config["max_lap_fingerprints"] < 2**31
+    ):
+        raise ValueError("max_lap_fingerprints must be a positive C ABI integer")
     if method != "propagate" and config["search_config"] is not None:
         raise ValueError("search_config requires method='propagate'")
     if method != "edits" and "max_edit_support_pairs" in requested:
@@ -197,18 +273,22 @@ class Mapper:
     ``kernel`` enumerates optima in a SLAP-derived restricted problem; ``milp``
     solves that problem for one optimum using optional PuLP/CBC. ``distance``
     and ``propagate`` enumerate full-space minimum or numeric CD shells.
-    ``native`` requires a ``library_path`` from ``build_native``. ``edits`` requires
+    ``native`` loads the bundled wheel library or an explicit ``library_path``.
+    ``edits`` requires
     numeric ``CD`` and ``binary=True``. ``exhaustive`` returns one global optimum
     and is intended for small graphs.
 
     Constructor options become defaults; options passed to :meth:`map` override
-    them for that call. All methods use weighted bonds and heavy atoms by
-    default. Graph input must be symmetric and loop-free, with equal atom-type
-    inventories. Inputs are copied before matching.
+    them for that call. Reaction input defaults to Lewis CD with explicit H;
+    ``objective='bond'`` selects the previous heavy-atom bond-only default.
+    Graph input uses its supplied weighted bonds and must be symmetric and
+    loop-free, with equal atom-type inventories. Inputs are copied before matching.
 
     Enumeration methods default to a 10-second shared deadline and 100,000
-    mappings. Assignment enumerators also cap the assignment space at 1,000,000
-    bijections. SLAP, kernel, MILP and exhaustive methods have no deadline or
+    mappings. Assignment enumerators cap graph input at 1,000,000 bijections;
+    reaction input has no default factorial admission cap. An explicit
+    ``max_bijections`` limits either input. SLAP, kernel, MILP and exhaustive
+    methods have no deadline or
     output-cap support; supplying these limits raises an error. Existing solver
     APIs remain available for their specialized options.
     """
@@ -228,6 +308,20 @@ class Mapper:
         return tuple(_SCOPES)
 
     @staticmethod
+    def native_methods(*, available_only=False, library_path=None) -> tuple[str, ...]:
+        """Native solver names for ``Mapper('native', solver=..., ...)``.
+
+        Availability depends on the explicitly supplied library's capabilities;
+        optional SDKs and restricted-domain methods retain their own scope.
+        ``available_only=True`` inspects the explicit or bundled library.
+        """
+        from .solvers.native.runtime import BACKENDS, available_native_methods
+
+        if available_only:
+            return available_native_methods(library_path)
+        return tuple(BACKENDS)
+
+    @staticmethod
     def _check_option_names(options):
         unknown = options.keys() - _OPTION_NAMES
         if unknown:
@@ -241,8 +335,14 @@ class Mapper:
         enumerators accept ``max_bijections``. Reaction inputs also accept
         ``hydrogen``, ``objective``, ``balance``, ``max_hydrogen_plans``, and
         ``classification_max_search_nodes``, as documented by ``map_reaction``.
+        ``CD_mode='at_most'`` selects distance <= numeric CD for native search;
+        the default ``'exact'`` selects exactly CD. With CD omitted, exact
+        enumerators return every minimum-distance class for reaction input.
         ``search_config`` is propagation-only; ``library_path`` is native-only;
         ``max_edit_support_pairs`` limits the edit-support method.
+        ``backend='cpp'`` also selects opt-in deterministic weighted SLAP with
+        a library built by ``_native.build.build_mapper_native``. Its search
+        remains heuristic; exact chemistry/classification is shared.
         """
         self._check_option_names(options)
         requested = self._options | options
@@ -250,27 +350,50 @@ class Mapper:
         if method not in _SCOPES:
             raise ValueError(f"Unknown mapping method {method!r}")
         enumerating = method in _ENUMERATORS
+        backend = requested.get("backend")
+        if backend is None:
+            backend = "cpp" if method == "native" else "python"
+        native_slap = method == "slap" and backend == "cpp"
+        reaction_input = isinstance(data, str)
         config = (
             _DEFAULTS
             | {
-                "time_limit_seconds": 10.0 if enumerating else None,
-                "max_mappings": 100_000 if enumerating else None,
+                "time_limit_seconds": 10.0 if enumerating or native_slap else None,
+                "max_mappings": 100_000 if enumerating or native_slap else None,
                 "max_bijections": (
-                    1_000_000 if method in {"distance", "propagate", "native"} else None
+                    1_000_000
+                    if not reaction_input
+                    and method in {"distance", "propagate", "native"}
+                    else None
                 ),
             }
             | requested
+            | {"backend": backend}
         )
         config["CD"] = normalize_distance_target(config["CD"])
         if not isinstance(config["binary"], bool):
             raise TypeError("binary must be boolean")
         _check_method_options(method, config, requested)
-        reaction_input = isinstance(data, str)
         if not reaction_input and requested.keys() & _REACTION_OPTIONS:
             raise ValueError(
                 "Hydrogen, objective, balance and classification options require reaction SMILES"
             )
         started = time.perf_counter()
+        shared_core = False
+        if method == "native":
+            from .solvers.native.runtime import has_core
+
+            shared_core = has_core(str(config["library_path"]))
+            if not shared_core and config["solver"] != "pabs":
+                raise ValueError("solver requires a library from build_mapper_native")
+        native_classes = shared_core
+        scope = (
+            "reduced_kernel"
+            if method == "native" and config["solver"] in {"kbb", "kmilp"}
+            else "heuristic"
+            if method == "native" and config["solver"] == "slap"
+            else _SCOPES[method]
+        )
         if reaction_input:
 
             def search(graphs, **query):
@@ -279,16 +402,25 @@ class Mapper:
                     config | {"time_limit_seconds": query["time_limit_seconds"]},
                     mapping_callback=query["mapping_callback"],
                     collect_mappings=False,
+                    native_symmetry=query.get("symmetry", False),
+                    node_properties=query.get("node_properties", ()),
+                    native_classifier=query.get("_native_classifier"),
+                    native_class_registry=query.get("_native_class_registry"),
                 )
 
             reaction = _map_reaction_with_search(
                 data,
                 search_function=search,
+                backend=backend,
+                native_classification_library=config["library_path"]
+                if native_classes
+                else None,
                 **{name: config[name] for name in _REACTION_OPTIONS},
                 **{
                     name: config[name]
                     for name in (
                         "CD",
+                        "CD_mode",
                         "binary",
                         "time_limit_seconds",
                         "max_mappings",
@@ -301,7 +433,7 @@ class Mapper:
             outcome = reaction.search_result
             return MappingResult(
                 method,
-                _SCOPES[method],
+                scope,
                 tuple(item.mapping for item in reaction.reactions),
                 tuple(item.distance for item in reaction.reactions),
                 outcome.minimum_cost,
@@ -315,7 +447,7 @@ class Mapper:
         outcome = self._solve(data, config)
         return MappingResult(
             method,
-            _SCOPES[method],
+            scope,
             tuple(tuple(mapping) for mapping in outcome.mappings),
             tuple(outcome.distances),
             outcome.minimum_cost,
@@ -326,7 +458,17 @@ class Mapper:
             outcome.raw_result,
         )
 
-    def _enumerate_graphs(self, graphs, options, mapping_callback, collect_mappings):
+    def _enumerate_graphs(
+        self,
+        graphs,
+        options,
+        mapping_callback,
+        collect_mappings,
+        native_symmetry=False,
+        node_properties=(),
+        native_classifier=None,
+        native_class_registry=None,
+    ):
         """Adapt distance-shell enumerators to the common result fields."""
         method = self.method
         query = {
@@ -356,6 +498,50 @@ class Mapper:
         else:
             if options["search_config"] is not None:
                 query["config"] = options["search_config"]
+            if method == "native":
+                query.update(
+                    CD_mode=options["CD_mode"],
+                    symmetry=native_symmetry and options["solver"] in {"pabs", "cpabs"},
+                    node_properties=node_properties,
+                )
+                from .solvers.native.runtime import has_core
+
+                if has_core(str(options["library_path"])):
+                    from .solvers.native.core import enumerate_core_mappings
+
+                    enumerate_native = enumerate_core_mappings
+                    additional = {"allowed_domains": options["allowed_domains"]}
+                    if options["hydrogen_quotient"]:
+                        from .solvers.native.hydrogen import enumerate_hydrogen_mappings
+
+                        enumerate_native = enumerate_hydrogen_mappings
+                        additional = {
+                            "max_transport_plans": options["max_hydrogen_plans"],
+                            "max_canonical_nodes": options[
+                                "classification_max_search_nodes"
+                            ],
+                        }
+
+                    result = enumerate_native(
+                        graphs,
+                        backend=options["solver"],
+                        library_path=options["library_path"],
+                        **additional,
+                        _native_classifier=native_classifier,
+                        _native_class_registry=native_class_registry,
+                        **query,
+                    )
+                    return _SearchOutcome(
+                        result.mappings,
+                        result.distances,
+                        result.minimum_cost,
+                        result.minimum_cost is not None,
+                        result.complete,
+                        result.truncation_reason,
+                        result.backend,
+                        result.selected_mapping_count,
+                        result,
+                    )
             result = enumerate_pabs_mappings(
                 graphs,
                 backend="cpp" if method == "native" else "python",
@@ -374,12 +560,55 @@ class Mapper:
             result,
         )
 
-    def _solve(self, data, options, *, mapping_callback=None, collect_mappings=True):
+    def _solve(
+        self,
+        data,
+        options,
+        *,
+        mapping_callback=None,
+        collect_mappings=True,
+        native_symmetry=False,
+        node_properties=(),
+        native_classifier=None,
+        native_class_registry=None,
+    ):
         graphs = _prepare_graphs(data)
         method, binary = self.method, options["binary"]
         if method in _ENUMERATORS:
             return self._enumerate_graphs(
-                graphs, options, mapping_callback, collect_mappings
+                graphs,
+                options,
+                mapping_callback,
+                collect_mappings,
+                native_symmetry,
+                node_properties,
+                native_classifier,
+                native_class_registry,
+            )
+
+        if method == "slap" and options["backend"] == "cpp":
+            from .solvers.native.slap import solve_slap
+
+            raw = solve_slap(
+                graphs,
+                library_path=options["library_path"],
+                binary=binary,
+                max_lap_fingerprints=options["max_lap_fingerprints"],
+                time_limit_seconds=options["time_limit_seconds"],
+                max_mappings=options["max_mappings"],
+                collect_mappings=collect_mappings,
+                mapping_callback=mapping_callback,
+            )
+            return _SearchOutcome(
+                raw.mappings,
+                raw.distances,
+                None,
+                False,
+                False,
+                raw.truncation_reason or "heuristic",
+                raw.backend,
+                raw.selected_mapping_count,
+                raw,
             )
 
         if method == "exhaustive":
@@ -394,7 +623,10 @@ class Mapper:
                 "optimum_only",
             )
         else:
-            matcher = GraphMatcher(binary=binary)
+            matcher = GraphMatcher(
+                binary=binary,
+                max_lap_fingerprints=options["max_lap_fingerprints"],
+            )
             matcher.get_maps(
                 graphs, break_sym_targets=list(range(len(graphs[0].labels)))
             )
@@ -418,8 +650,9 @@ class Mapper:
                         apply_kernel_solution(kernel, sub) for sub in raw.sub_mappings
                     ]
                     proven = bool(raw.proven_optimal and mappings)
-                    complete, reason = False, (
-                        "optimum_only" if proven else "optimum_unproven"
+                    complete, reason = (
+                        False,
+                        ("optimum_only" if proven else "optimum_unproven"),
                     )
         distances = []
         for mapping in mappings:

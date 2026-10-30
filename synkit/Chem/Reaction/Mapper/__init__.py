@@ -17,6 +17,9 @@ from synkit.Chem.Mapper import *  # noqa: F401,F403
 __all__ = _mapper.__all__
 __path__ = _mapper.__path__
 
+for _solver_name in ("exact", "slap", "_native"):
+    globals()[_solver_name] = getattr(_mapper, _solver_name)
+
 # Bind every canonical mapper module to its historical name. Besides keeping
 # deep imports working, this ensures classes imported through old and new
 # paths have the same identity.
@@ -38,4 +41,4 @@ for _canonical_name, _module in list(sys.modules.items()):
         if _suffix.count(".") == 1:
             globals()[_suffix[1:]] = _module
 
-del _canonical_name, _mapper, _module, _module_info, _suffix
+del _canonical_name, _mapper, _module, _module_info, _suffix, _solver_name

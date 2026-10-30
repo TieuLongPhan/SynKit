@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build and validate package
+  source:
+    name: Build source distribution
     runs-on: ubuntu-latest
 
     steps:
@@ -53,16 +53,127 @@ jobs:
           print(f"Release tag matches project version: {project_version}")
           PY
 
-      - name: Build source and wheel distributions
-        run: python -m build --sdist --wheel
+      - name: Build source distribution
+        run: python -m build --sdist
 
       - name: Check package metadata and contents
         run: |
           python -m twine check dist/*
-          python scripts/check_package_artifacts.py dist
 
       - name: Upload distribution artifacts
         uses: actions/upload-artifact@v4
+        with:
+          name: synkit-build-source
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  wheels:
+    name: Native wheel (${{ matrix.os }}, ${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: x86_64
+          - os: ubuntu-24.04-arm
+            arch: aarch64
+          - os: macos-15-intel
+            arch: x86_64
+          - os: macos-15
+            arch: arm64
+          - os: windows-latest
+            arch: AMD64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verify native macOS runner architecture
+        if: runner.os == 'macOS'
+        shell: python
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          import os
+          import platform
+          import subprocess
+
+          expected = os.environ['EXPECTED_ARCH']
+          actual = platform.machine()
+          assert actual == expected, (actual, expected)
+          print(platform.platform())
+          subprocess.run(['xcrun', '--show-sdk-version'], check=True)
+      - name: Install wheel builder
+        run: python -m pip install cibuildwheel==4.3.5
+      - name: Build, repair and test installed wheels
+        run: python -m cibuildwheel --output-dir dist
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+          # The C ABI library is shared across supported Python versions. Build
+          # under 3.10 and test the reused wheel under 3.11 through 3.13 as well.
+          CIBW_BUILD: 'cp310-* cp311-* cp312-* cp313-*'
+          CIBW_SKIP: '*-musllinux_*'
+          CIBW_TEST_COMMAND: 'python {project}/scripts/smoke_native_wheel.py'
+          CIBW_BEFORE_ALL_LINUX: 'yum install -y boost-devel'
+          CIBW_BEFORE_ALL_MACOS: 'brew install boost'
+          CIBW_BEFORE_ALL_WINDOWS: 'C:/vcpkg/vcpkg.exe install boost-multiprecision:x64-windows boost-rational:x64-windows --x-install-root=C:/synkit-boost'
+          CIBW_ENVIRONMENT_WINDOWS: 'BOOST_INCLUDE_DIR=C:/synkit-boost/x64-windows/include'
+          CMAKE_BUILD_PARALLEL_LEVEL: '2'
+          MACOSX_DEPLOYMENT_TARGET: '11.0'
+      - name: Verify repaired macOS wheel architectures
+        if: runner.os == 'macOS'
+        shell: python
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          import os
+          from pathlib import Path
+          import subprocess
+          import tempfile
+          import zipfile
+
+          expected = os.environ['EXPECTED_ARCH']
+          wheels = list(Path('dist').glob('*.whl'))
+          assert wheels, 'No repaired wheels produced'
+          for wheel in wheels:
+              assert wheel.name.endswith(f'_{expected}.whl'), wheel
+              with tempfile.TemporaryDirectory() as folder, zipfile.ZipFile(wheel) as archive:
+                  libraries = [name for name in archive.namelist() if name.endswith('.dylib')]
+                  assert len(libraries) >= 3, (wheel, libraries)
+                  for name in libraries:
+                      library = Path(archive.extract(name, folder))
+                      architectures = subprocess.check_output(
+                          ['lipo', '-archs', str(library)], text=True
+                      ).split()
+                      assert architectures == [expected], (name, architectures, expected)
+                      print(f'{wheel.name}: {name}: {expected}')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synkit-build-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/*.whl
+          if-no-files-found: error
+          retention-days: 7
+
+  validate:
+    name: Validate release distributions
+    needs: [source, wheels]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: synkit-build-*
+          merge-multiple: true
+          path: dist/
+      - run: python -m pip install twine
+      - run: python -m twine check dist/*
+      - run: python scripts/check_package_artifacts.py dist --archives-only
+      - uses: actions/upload-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
@@ -71,7 +182,7 @@ jobs:
 
   publish:
     name: Publish package to PyPI
-    needs: build
+    needs: validate
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
 

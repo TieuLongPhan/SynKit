@@ -1,0 +1,50 @@
+{
+  "description": "Expected bytes for the predeclared BioModels interoperability sample. XML inputs are cached separately.",
+  "models": {
+    "BIOMD0000000001": {
+      "bytes": 50538,
+      "sha256": "407fccc883f80e6d120e34d8b0810a206a5cc6535a26d4574611504e683beb08"
+    },
+    "BIOMD0000000010": {
+      "bytes": 29295,
+      "sha256": "906964e07ffd570ad94a03c1222e230b54b913cd536b008392bfb6155930a966"
+    },
+    "BIOMD0000000019": {
+      "bytes": 153594,
+      "sha256": "541c2a16196dfcd0649df14cff51fb80fc4157bad041c562b17679552baeff48"
+    },
+    "BIOMD0000000051": {
+      "bytes": 125408,
+      "sha256": "167e78583aa85b49c0e283543f5c80e826a16d23cc06bb34e60c6dfbeb67f3fc"
+    },
+    "BIOMD0000000064": {
+      "bytes": 103423,
+      "sha256": "d6a75df939d6707fdb904b44c1f530c8dc3600fd44267ff8e8f38dac560b4361"
+    },
+    "BIOMD0000000108": {
+      "bytes": 28014,
+      "sha256": "759eeb87fbf2fb97d3017770246d77b76d54aacd612f492557419786f0d4b274"
+    },
+    "BIOMD0000000175": {
+      "bytes": 227645,
+      "sha256": "e909b41c2c629cc7a287b5e7fa55c0881b549583f84891877eb811bdea493c6e"
+    },
+    "BIOMD0000000255": {
+      "bytes": 1126800,
+      "sha256": "03aebed53a9331903ccd6b73d0a60c2c588a9bd829ccbf7cb1d7ead785baa457"
+    },
+    "BIOMD0000000404": {
+      "bytes": 136641,
+      "sha256": "ec4a211cfc5aefa6a7264523b6208caccd6229f8162db9dfbf0250fe48a93075"
+    },
+    "BIOMD0000000562": {
+      "bytes": 43033,
+      "sha256": "29f773166873fc7441a9241e139adf6a8262a000e8a3eb16cb2b7cb9c425c45d"
+    },
+    "BIOMD0000000637": {
+      "bytes": 131400,
+      "sha256": "c16855da7b78f12b161e125af43c93bc77f9a2d86d9c1ef3aac698c20f2f792a"
+    }
+  },
+  "schema": "synkit.crn-biomodels-inputs/1"
+}
