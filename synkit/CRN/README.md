@@ -115,6 +115,10 @@ hashes, compiler versions, capabilities and library integrity metadata. CMake
 builds also record the Boost version. Explicit development builds fingerprint
 the Boost header tree and configured toolchain. Installed wheels verify library
 bytes against the wheel's final `RECORD`, including changes made by wheel repair.
+Native Conda packages verify the installed library hashes recorded in
+`conda-meta`, including prefix relocation and code signing performed by Conda
+or Mamba. These packages include the same three native libraries and need no
+compiler or Boost headers at runtime.
 
 Source native builds require CMake 3.20 or newer, a C++17 compiler, and installed
 Boost headers. The builder checks standard include locations, `BOOST_INCLUDE_DIR`, and existing

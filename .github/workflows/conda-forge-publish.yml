@@ -8,90 +8,302 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: conda-publish-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  release-check:
+    name: Check release version and Anaconda authentication
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install release check tools
+        run: python -m pip install packaging pyyaml anaconda-client
+      - name: Check project, recipe and release versions
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import tomllib
+          import yaml
+          from packaging.version import Version
+
+          project = tomllib.loads(Path("pyproject.toml").read_text())
+          version = Version(project["project"]["version"])
+          lines = Path("recipe/meta.yaml").read_text().splitlines()
+          start = lines.index("package:")
+          package_lines = []
+          for line in lines[start:]:
+              if package_lines and line and not line[0].isspace():
+                  break
+              package_lines.append(line)
+          package = yaml.safe_load("\n".join(package_lines))["package"]
+          if package["name"] != "synkit" or Version(str(package["version"])) != version:
+              raise SystemExit("Conda recipe and pyproject.toml versions must match")
+          tag = os.environ.get("RELEASE_TAG")
+          if tag and Version(tag.removeprefix("v")) != version:
+              raise SystemExit(f"Release tag {tag} does not match project version {version}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+              handle.write(f"version={version}\n")
+          print(f"Project and Conda recipe version: {version}")
+          PY
+      - name: Check Anaconda token without uploading
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          from binstar_client.utils import get_server_api
+
+          token = os.environ.get("ANACONDA_TOKEN")
+          if token:
+              try:
+                  identity = get_server_api(token=token).user()
+              except Exception as error:
+                  raise SystemExit(f"Anaconda token authentication failed: {type(error).__name__}") from None
+              if not identity.get("login"):
+                  raise SystemExit("Anaconda token did not authenticate an account")
+              print(f"Authenticated Anaconda account: {identity['login']}")
+          elif os.environ["GITHUB_EVENT_NAME"] == "release":
+              raise SystemExit("ANACONDA_TOKEN is required for release publication")
+          else:
+              print("No Anaconda token supplied; manual native package validation continues")
+          PY
+
   build-check:
-    name: Check conda build on ${{ matrix.os }} with Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: Native Conda ${{ matrix.platform.subdir }}, Python ${{ matrix.python-version }}
+    needs: release-check
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.11", "3.12"]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniconda-version: "latest"
-          channels: conda-forge
-          activate-environment: conda-build
-          python-version: ${{ matrix.python-version }}
-
-      - name: Build conda package
+        platform:
+          - os: ubuntu-24.04
+            subdir: linux-64
+            arch: x86_64
+          - os: ubuntu-24.04-arm
+            subdir: linux-aarch64
+            arch: aarch64
+          - os: macos-15-intel
+            subdir: osx-64
+            arch: x86_64
+          - os: macos-15
+            subdir: osx-arm64
+            arch: arm64
+          - os: windows-2022
+            subdir: win-64
+            arch: AMD64
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    env:
+      SYNKIT_VERSION: ${{ needs.release-check.outputs.version }}
+      SYNKIT_PYTHON: ${{ matrix.python-version }}
+      SYNKIT_CONDA_SUBDIR: ${{ matrix.platform.subdir }}
+      SYNKIT_ARCH: ${{ matrix.platform.arch }}
+      CMAKE_BUILD_PARALLEL_LEVEL: "2"
+    defaults:
+      run:
         shell: bash -l {0}
-        run: |
-          conda activate conda-build
-          conda install -y -c conda-forge 'conda-build>=3.21'
-          conda-build recipe --output-folder ./conda-bld
-
-  release-package:
-    name: Build release conda artifact
-    needs: build-check
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Miniconda
+      - uses: actions/checkout@v4
+      - name: Set up Conda build tools
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniconda-version: "latest"
           channels: conda-forge
+          channel-priority: strict
           activate-environment: conda-build
           python-version: "3.12"
-
-      - name: Build conda package
-        shell: bash -l {0}
+      - name: Install Conda builder
         run: |
           conda activate conda-build
-          conda install -y -c conda-forge 'conda-build>=3.21'
-          conda-build recipe --output-folder ./conda-bld
+          conda install --yes --override-channels -c conda-forge "conda-build>=25.1" conda-package-handling
+      - name: Verify native build platform
+        run: |
+          conda activate conda-build
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import platform
+          import subprocess
 
-      - name: Upload conda package
+          subdir = json.loads(subprocess.check_output(["conda", "info", "--json"], text=True))["subdir"]
+          if subdir != os.environ["SYNKIT_CONDA_SUBDIR"] or platform.machine() != os.environ["SYNKIT_ARCH"]:
+              raise SystemExit(f"Unexpected native build platform: {subdir}, {platform.machine()}")
+          with open(os.environ["GITHUB_ENV"], "a") as handle:
+              for variable, folder in (("SYNKIT_CONDA_OUTPUT", "synkit-conda-output"),
+                                       ("SYNKIT_CONDA_VALIDATED", "synkit-conda-validated")):
+                  handle.write(f"{variable}={Path(os.environ['RUNNER_TEMP']) / folder}\n")
+          print(f"Building {subdir} package for Python {os.environ['SYNKIT_PYTHON']}")
+          PY
+      - name: Build and test the requested Python variant
+        run: |
+          conda activate conda-build
+          conda-build recipe --python "$SYNKIT_PYTHON" \
+            --override-channels -c conda-forge --no-anaconda-upload \
+            --croot "$RUNNER_TEMP/synkit-conda-build" --output-folder "$SYNKIT_CONDA_OUTPUT"
+      - name: Validate native package metadata and retain the tested artifact
+        run: |
+          conda activate conda-build
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import tempfile
+          from conda.models.match_spec import MatchSpec
+          from conda.models.version import VersionSpec
+          from conda_package_handling.api import extract
+
+          output = Path(os.environ["SYNKIT_CONDA_OUTPUT"])
+          packages = sorted(output.rglob("synkit-*.conda")) + sorted(output.rglob("synkit-*.tar.bz2"))
+          if len(packages) != 1:
+              raise SystemExit(f"Expected one tested SynKit variant, found {packages}")
+          package = packages[0]
+          expected_subdir = os.environ["SYNKIT_CONDA_SUBDIR"]
+          expected_python = os.environ["SYNKIT_PYTHON"]
+          with tempfile.TemporaryDirectory(prefix="synkit-conda-inspect-") as folder:
+              extract(str(package), dest_dir=folder)
+              root = Path(folder)
+              metadata = json.loads((root / "info/index.json").read_text())
+              if (metadata["name"] != "synkit" or metadata["version"] != os.environ["SYNKIT_VERSION"]
+                      or metadata.get("subdir") != expected_subdir or metadata.get("noarch")):
+                  raise SystemExit(f"Unexpected native package metadata: {metadata}")
+              specs = [MatchSpec(value) for value in metadata["depends"]]
+              python_ranges = [VersionSpec(spec.get_raw_value("version") or "*")
+                               for spec in specs if spec.name == "python"]
+              if not python_ranges:
+                  raise SystemExit("Native Conda package has no Python dependency")
+              for minor in range(9, 15):
+                  version = f"3.{minor}"
+                  matches = all(spec.match(version + ".99") for spec in python_ranges)
+                  if matches != (version == expected_python):
+                      raise SystemExit(f"Python dependency does not pin the {expected_python} minor variant")
+              files = (root / "info/files").read_text().splitlines()
+              suffix = ".dll" if expected_subdir == "win-64" else ".dylib" if expected_subdir.startswith("osx-") else ".so"
+              libraries = {}
+              for component, directory in {
+                  "mapper": "synkit/Chem/Mapper/solvers/native/lib/",
+                  "crn": "synkit/CRN/lib/",
+                  "canon": "synkit/Graph/Canon/_native/lib/",
+              }.items():
+                  paths = [name for name in files if directory in name.replace("\\", "/") and name.endswith(suffix)]
+                  if len(paths) != 1 or not (root / paths[0]).is_file():
+                      raise SystemExit(f"Missing or ambiguous native {component} library: {paths}")
+                  libraries[component] = paths[0]
+          destination = Path(os.environ["SYNKIT_CONDA_VALIDATED"])
+          target = destination / expected_subdir / package.name
+          target.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copy2(package, target)
+          manifest = {
+              "subdir": expected_subdir, "python": expected_python,
+              "version": metadata["version"], "file": target.relative_to(destination).as_posix(),
+              "sha256": hashlib.sha256(target.read_bytes()).hexdigest(), "native_libraries": libraries,
+          }
+          (destination / f"validation-{expected_subdir}-py{expected_python}.json").write_text(
+              json.dumps(manifest, indent=2) + "\n"
+          )
+          print(json.dumps(manifest, indent=2))
+          PY
+      - name: Upload the built and tested native package
         uses: actions/upload-artifact@v4
         with:
-          name: conda-release-package
-          path: |
-            conda-bld/**/*.conda
-            conda-bld/**/*.tar.bz2
+          name: synkit-conda-build-${{ matrix.platform.subdir }}-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/synkit-conda-validated/
           if-no-files-found: error
+          retention-days: 7
+
+  release-package:
+    name: Assemble the validated native Conda packages
+    needs: [release-check, build-check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: synkit-conda-build-*
+          merge-multiple: true
+          path: conda-packages
+      - name: Verify the complete platform and Python artifact matrix
+        env:
+          SYNKIT_VERSION: ${{ needs.release-check.outputs.version }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("conda-packages").resolve()
+          expected = {(subdir, version)
+                      for subdir in ("linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64")
+                      for version in ("3.10", "3.11", "3.12", "3.13")}
+          observed, recorded_files = set(), set()
+          for path in root.glob("validation-*.json"):
+              manifest = json.loads(path.read_text())
+              key = manifest["subdir"], manifest["python"]
+              package = (root / manifest["file"]).resolve()
+              if key not in expected or key in observed or not package.is_relative_to(root):
+                  raise SystemExit(f"Unexpected or duplicate artifact record: {path}")
+              if (manifest["version"] != os.environ["SYNKIT_VERSION"] or not package.is_file()
+                      or hashlib.sha256(package.read_bytes()).hexdigest() != manifest["sha256"]):
+                  raise SystemExit(f"Artifact version or checksum mismatch: {path}")
+              observed.add(key)
+              recorded_files.add(package)
+          packages = set(root.rglob("*.conda")) | set(root.rglob("*.tar.bz2"))
+          if observed != expected or packages != recorded_files or len(packages) != 20:
+              raise SystemExit(f"Incomplete native artifact matrix: {sorted(expected - observed)}")
+          print(f"Validated all {len(packages)} native platform/Python packages without rebuilding")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synkit-conda-release-packages
+          path: conda-packages/
+          if-no-files-found: error
+          retention-days: 7
 
   publish:
-    name: Publish release to Anaconda.org
+    name: Publish the validated packages to Anaconda.org
     needs: release-package
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
-      - name: Download conda packages
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          name: conda-release-package
+          name: synkit-conda-release-packages
           path: conda-packages
-
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - name: Install Anaconda client
         run: python -m pip install --upgrade anaconda-client
-
-      - name: Upload to the SynKit owner channel
+      - name: Upload the tested packages to the SynKit owner channel
         env:
           ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
         run: |
-          find conda-packages -type f \( -name "*.conda" -o -name "*.tar.bz2" \) -print0 |
-            xargs -0 -n 1 anaconda -t "$ANACONDA_TOKEN" upload \
-              --user tieulongphan --label main --no-progress
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+
+          root = Path("conda-packages")
+          packages = sorted(root.rglob("*.conda")) + sorted(root.rglob("*.tar.bz2"))
+          if len(packages) != 20:
+              raise SystemExit("Expected the complete set of 20 validated native Conda packages")
+          for package in packages:
+              result = subprocess.run([
+                  "anaconda", "-t", os.environ["ANACONDA_TOKEN"], "upload",
+                  "--user", "tieulongphan", "--label", "main", "--no-progress", str(package),
+              ])
+              if result.returncode:
+                  raise SystemExit(f"Anaconda upload failed for {package.name} (exit {result.returncode})")
+          PY

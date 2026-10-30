@@ -55,8 +55,10 @@ def native_wheel_record(monkeypatch):
         )
         monkeypatch.setattr(_native, "__file__", str(package / "_native.py"))
         monkeypatch.setattr(_native, "distribution", lambda name: installed)
+        _native._conda_record_digest.cache_clear()
         _native._wheel_record_digest.cache_clear()
         return entry, installed
 
     yield register
+    _native._conda_record_digest.cache_clear()
     _native._wheel_record_digest.cache_clear()

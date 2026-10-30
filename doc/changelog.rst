@@ -34,6 +34,10 @@ Version 1.6.5
 - Support Python 3.10–3.13 on Linux, macOS, and Windows, including Intel and
   Apple Silicon macOS wheels.
 - Verify installed native libraries against the wheel's final checksums.
+- Build platform-specific Conda packages with the three native backends and
+  verify their installed hashes after Conda prefix relocation.
+- Validate Docker images on Linux AMD64 and ARM64 before publishing the tested
+  images, with no build tools required in the runtime image.
 - Use CMake for explicit CRN source builds, with verified caches and optional
   structural-only builds that do not require Boost.
 - Keep experiment READMEs local and regression tests under ``Test``.

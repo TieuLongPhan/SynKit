@@ -6,19 +6,29 @@ source:
   path: ..
 
 build:
-  noarch: python
   number: 0
+  skip: true  # [py < 310 or py >= 314]
+  script_env:
+    - CMAKE_GENERATOR=Ninja
+    - CMAKE_BUILD_PARALLEL_LEVEL=2
   script:
-    # pip will invoke Hatchling to build and install the wheel, including data files
-    - "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv"
+    - "{{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv"
 
 requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
+    - cmake >=3.20
+    - ninja
+    - patchelf  # [linux]
   host:
-    - python >=3.11,<3.13
+    - python
     - pip
-    - hatchling >=1.27.0       # PEP517 build backend
+    - hatchling >=1.27.0
+    - libboost-headers
   run:
-    - python >=3.11,<3.13
+    - {{ pin_compatible('python', min_pin='x.x', max_pin='x.x') }}
     - scikit-learn >=1.4.2
     - pandas >=2.2.2
     - rdkit >=2025.3.1
@@ -33,11 +43,29 @@ requirements:
     - matplotlib-base >=3.9
     - pillow
     - tqdm
+    - tomli >=2.0  # [py < 311]
+    - typing_extensions >=4.4  # [py < 311]
+
+test:
+  source_files:
+    - scripts/smoke_native_wheel.py
+  imports:
+    - synkit
+    - synkit.Chem.Mapper
+    - synkit.CRN
+    - synkit.Graph.Canon
+    - synkit.Graph.Stereo
+  commands:
+    - "python -c \"import os, synkit; assert synkit.__version__ == os.environ['PKG_VERSION']\""
+    - "python scripts/smoke_native_wheel.py"
 
 about:
   home:        https://github.com/TieuLongPhan/SynKit
-  license:     MIT
-  license_file: LICENSE
+  license:     MIT AND Apache-2.0
+  license_file:
+    - LICENSE
+    - synkit/Chem/Mapper/solvers/native/cpp/src/symmetry/vendor/nauty/COPYRIGHT
+    - synkit/Chem/Mapper/solvers/native/cpp/src/symmetry/vendor/nauty/LICENSE-2.0.txt
   summary:     Utility for reaction modeling using graph grammar
 
 extra:

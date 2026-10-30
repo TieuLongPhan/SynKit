@@ -9,7 +9,8 @@ activated. They use `python`, or the interpreter selected by `PYTHON`.
 - `check_package_artifacts.py`: inspect the wheel and source archive, then
   verify the installed wheel. `--native-smoke` checks mapping, CRN analysis,
   and graph/stereograph canonicalization without a compiler.
-- `smoke_native_wheel.py`: the installed-wheel check used by the release workflow.
+- `smoke_native_wheel.py`: the installed-package check shared by PyPI, Conda,
+  and Docker validation.
 
 ## Native builds
 
@@ -41,6 +42,31 @@ python scripts/check_package_artifacts.py dist --native-smoke
 ```
 
 `--mapper-smoke` remains an alias for `--native-smoke`.
+
+## Release channels
+
+Publishing a GitHub release triggers the PyPI, Conda, and Docker workflows.
+The release tag must match `pyproject.toml`, for example `v1.6.5`. Each workflow
+builds the three C++ backends through the shared CMake project and tests the
+installed package before publishing its artifacts.
+
+- PyPI builds platform wheels for Linux, macOS, and Windows and checks them
+  with Python 3.10–3.13.
+- Conda builds a native package for each supported platform and Python minor
+  version. Dependencies come from conda-forge; packages are published to the
+  `tieulongphan` channel. Conda and Mamba may rewrite library paths during
+  installation, so native integrity checks use their final installed-file
+  hashes in `conda-meta`.
+- Docker builds native Linux AMD64 and ARM64 images. The runtime image contains
+  the compiled libraries without compilers, CMake, or Boost headers. The
+  release workflow publishes the exact tested images and combines their
+  platform manifests.
+
+Manual workflow runs validate the artifacts without publishing. The Conda
+workflow checks `ANACONDA_TOKEN`, and Docker checks its Docker Hub login, when
+those credentials are available. Release publication
+uses that secret for Anaconda.org, `DOCKERHUB_USER` and `DOCKERHUB_TOKEN` for
+Docker Hub, and the existing `pypi` trusted-publishing environment for PyPI.
 
 `check_python_file_size.py`, `python_file_size_baseline.json`, and
 `check_docstring_style.py` support the lint command.

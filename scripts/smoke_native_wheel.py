@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the installed binary wheel without a compiler or source checkout."""
+"""Exercise the installed native package without a compiler or source checkout."""
 
 from __future__ import annotations
 
@@ -129,7 +129,7 @@ def main():
     project = Path(__file__).resolve().parents[1]
     package = Path(synkit.__file__).resolve().parent
     if package.is_relative_to(project / "synkit"):
-        raise RuntimeError("Wheel smoke test imported the source checkout")
+        raise RuntimeError("Native package smoke test imported the source checkout")
     crn = check_crn_wheel(package)
     canon = check_canon_wheel(package)
     library = resolve_library_path()
