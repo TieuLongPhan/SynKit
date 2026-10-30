@@ -131,7 +131,7 @@ def test_compiled_source_snapshot_matches_manifest(library):
     )
     with tarfile.open(archive) as bundle:
         for name, expected in saved["configuration"]["sources"].items():
-            member = bundle.extractfile("Mapper/solvers/native/cpp/" + name)
+            member = bundle.extractfile("Mapper/solvers/native/cpp/" + Path(name).as_posix())
             assert member and hashlib.sha256(member.read()).hexdigest() == expected
         member = bundle.extractfile("Mapper/solvers/exact/native/native_distance.cpp")
         assert (
