@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(synkit_crn VERSION 0.1.0 LANGUAGES CXX)
+project(synkit_crn VERSION 1.6.5 LANGUAGES CXX)
 
 option(SYNKIT_CRN_EXACT "Build exact Boost-backed CRN analysis" ON)
 if(SYNKIT_CRN_EXACT)

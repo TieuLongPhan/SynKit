@@ -26,6 +26,18 @@ Implementation plan
      - Planned
      - Unified stereo-aware reaction, rewriting, and verification APIs.
 
+Version 1.6.5
+-------------
+
+- Bundle the C++ atom mapper, exact CRN analysis, and graph canonicalization
+  libraries in platform wheels built through one CMake project.
+- Support Python 3.10–3.13 on Linux, macOS, and Windows, including Intel and
+  Apple Silicon macOS wheels.
+- Verify installed native libraries against the wheel's final checksums.
+- Use CMake for explicit CRN source builds, with verified caches and optional
+  structural-only builds that do not require Boost.
+- Keep experiment READMEs local and regression tests under ``Test``.
+
 Version 1.6.3
 -------------
 

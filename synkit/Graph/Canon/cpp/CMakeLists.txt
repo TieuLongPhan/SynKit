@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(synkit_canon VERSION 0.1.0 LANGUAGES CXX)
+project(synkit_canon VERSION 1.6.5 LANGUAGES CXX)
 add_library(synkit_canon SHARED src/canonical.cpp)
 target_compile_definitions(synkit_canon PRIVATE SYNKIT_CANON_BUILD)
 target_compile_features(synkit_canon PUBLIC cxx_std_17)

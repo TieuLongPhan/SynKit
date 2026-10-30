@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from scripts import check_package_artifacts
+from synkit import __version__
 from synkit.Chem.Mapper._native.build import _ortools_libraries, build_mapper_native
 
 
@@ -88,9 +89,10 @@ def test_distribution_cannot_omit_native_support_files(tmp_path, monkeypatch, om
 
 @pytest.mark.parametrize("omitted", check_package_artifacts.GUIDE_DOCS)
 def test_source_distribution_cannot_omit_mapper_documentation(omitted):
-    members = {"synkit-1.6.3/" + name for name in check_package_artifacts.GUIDE_DOCS}
+    prefix = f"synkit-{__version__}/"
+    members = {prefix + name for name in check_package_artifacts.GUIDE_DOCS}
     artifact = Path("test.tar.gz")
     check_package_artifacts._assert_source_documentation(members, artifact)
-    members.remove("synkit-1.6.3/" + omitted)
+    members.remove(prefix + omitted)
     with pytest.raises(RuntimeError, match=re.escape(omitted)):
         check_package_artifacts._assert_source_documentation(members, artifact)

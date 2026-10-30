@@ -20,4 +20,4 @@ except (KeyError, OSError, tomllib.TOMLDecodeError):
     try:
         __version__ = version("synkit")
     except PackageNotFoundError:
-        __version__ = "1.6.3"
+        __version__ = "1.6.5"

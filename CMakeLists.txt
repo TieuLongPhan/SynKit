@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(synkit_native VERSION 0.1.0 LANGUAGES C CXX)
+project(synkit_native VERSION 1.6.5 LANGUAGES C CXX)
 
 option(SYNKIT_BUILD_MAPPER "Build the atom mapper and its solver backends" ON)
 option(SYNKIT_BUILD_CRN "Build exact chemical reaction network analysis" ON)

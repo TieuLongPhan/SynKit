@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(synkit_mapper VERSION 0.1.0 LANGUAGES C CXX)
+project(synkit_mapper VERSION 1.6.5 LANGUAGES C CXX)
 
 add_library(synkit_mapper SHARED
   src/slap.cpp src/core/dispatch.cpp src/core/pmcd_witness.cpp
