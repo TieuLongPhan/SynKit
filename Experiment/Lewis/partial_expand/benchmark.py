@@ -13,8 +13,12 @@ import platform
 import signal
 import sys
 import time
-import tomllib
 from typing import Any, Callable
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 from rdkit import Chem, RDLogger
 
