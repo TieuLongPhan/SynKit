@@ -136,7 +136,8 @@ jobs:
           import platform
           import subprocess
 
-          subdir = json.loads(subprocess.check_output(["conda", "info", "--json"], text=True))["subdir"]
+          info = json.loads(subprocess.check_output(["conda", "info", "--json"], text=True))
+          subdir = info.get("subdir") or info.get("platform")
           if subdir != os.environ["SYNKIT_CONDA_SUBDIR"] or platform.machine() != os.environ["SYNKIT_ARCH"]:
               raise SystemExit(f"Unexpected native build platform: {subdir}, {platform.machine()}")
           with open(os.environ["GITHUB_ENV"], "a") as handle:
