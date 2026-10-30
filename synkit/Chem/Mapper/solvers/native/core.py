@@ -34,7 +34,8 @@ def _ids(values, registry):
     return np.asarray([registry.setdefault(value, len(registry)) for value in values], dtype=np.int32)
 
 
-def enumerate_core_mappings(
+# Validation, native buffers and callbacks belong to the same solve lifetime.
+def enumerate_core_mappings(  # noqa: C901
     lgp,
     *,
     library_path=None,

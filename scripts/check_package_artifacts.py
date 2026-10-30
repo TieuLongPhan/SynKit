@@ -97,6 +97,8 @@ def _assert_member_suffixes(members: set[str], artifact: Path) -> None:
     required = (
         ["synkit/__init__.py"]
         + [
+            "synkit/CRN/_build.py",
+            "synkit/CRN/_native_build.py",
             "synkit/Chem/Mapper/mapper.py",
             "synkit/Chem/Mapper/solvers/exact/native_build.py",
             "synkit/Chem/Mapper/solvers/exact/native/build.py",

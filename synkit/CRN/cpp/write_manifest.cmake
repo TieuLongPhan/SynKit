@@ -1,9 +1,15 @@
 # A CMake-built CRN library has the same sidecar contract as build_native().
 file(READ "${BUILD_METADATA}" metadata)
 string(JSON metadata SET "${metadata}" abi 1)
-string(JSON metadata SET "${metadata}" semiflows_abi 1)
-string(JSON metadata SET "${metadata}" capabilities
-  "[\"closure\",\"structural_sets\",\"structural_unlimited\",\"exhaustive_siphons\",\"exact_semiflows\",\"exact_algebra\",\"crnt\",\"pathway\",\"symmetry\"]")
+if(EXACT_ENABLED)
+  string(JSON metadata SET "${metadata}" semiflows_abi 1)
+  string(JSON metadata SET "${metadata}" capabilities
+    "[\"closure\",\"structural_sets\",\"structural_unlimited\",\"exhaustive_siphons\",\"exact_semiflows\",\"exact_algebra\",\"crnt\",\"pathway\",\"symmetry\"]")
+else()
+  string(JSON metadata SET "${metadata}" semiflows_abi null)
+  string(JSON metadata SET "${metadata}" capabilities
+    "[\"closure\",\"structural_sets\",\"structural_unlimited\",\"exhaustive_siphons\"]")
+endif()
 string(JSON metadata SET "${metadata}" source_sha256 "{}")
 file(GLOB sources
   "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.h"

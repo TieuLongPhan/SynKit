@@ -8,102 +8,18 @@ import ctypes
 import hashlib
 import json
 from pathlib import Path
-import subprocess
-import sys
 from time import monotonic
 import numpy as np
 from .analysis import AnalysisResult
 from .Petrinet.net import PetriNet
 
 
-from ._build import CAPABILITIES, boost_include as _boost_include
+from ._build import boost_include
+from . import _native_build
 
-
-def build_native(
-    output_dir, compiler="c++", *, boost_include_dir=None, with_semiflows=None
-):
-    """Build the exact C++17 backend; auto-detect installed Boost headers.
-
-    Set with_semiflows=True to require exact enumeration support, or False to
-    build the standard-library-only structural backend. Nothing is downloaded.
-    """
-    import shlex
-    import tempfile
-
-    source_dir = Path(__file__).parent / "cpp"
-    sources = [source_dir / "closure.cpp", source_dir / "structural.cpp"]
-    flags = ["-std=c++17", "-O3", "-shared", "-fPIC"]
-    boost = _boost_include(boost_include_dir)
-    if with_semiflows is True and boost is None:
-        raise RuntimeError(
-            "Exact native semiflows require Boost.Multiprecision headers; supply boost_include_dir or BOOST_INCLUDE_DIR"
-        )
-    enabled = with_semiflows is not False and boost is not None
-    if enabled:
-        sources += [
-            source_dir / name
-            for name in ("semiflows.cpp", "algebra.cpp", "pathway.cpp", "symmetry.cpp")
-        ]
-        flags += ["-I", str(boost)]
-    version = subprocess.check_output([compiler, "--version"], text=True)
-    # Hash the compiler-reported transitive header dependencies as well as sources.
-    dependencies = {}
-    for source in sources:
-        listing = subprocess.check_output(
-            [
-                compiler,
-                "-MM",
-                "-std=c++17",
-                *(["-I", str(boost)] if enabled else []),
-                str(source),
-            ],
-            text=True,
-        )
-        for filename in shlex.split(listing.replace("\\\n", " ").split(":", 1)[1]):
-            path = Path(filename)
-            dependencies[str(path.resolve())] = hashlib.sha256(
-                path.read_bytes()
-            ).hexdigest()
-    capabilities = list(CAPABILITIES if enabled else CAPABILITIES[:4])
-    digest = hashlib.sha256(
-        json.dumps(
-            [dependencies, flags, version, sys.platform, capabilities], sort_keys=True
-        ).encode()
-    ).hexdigest()
-    output = Path(output_dir)
-    output.mkdir(parents=True, exist_ok=True)
-    suffix = ".dylib" if sys.platform == "darwin" else ".so"
-    library = output / ("libsynkit_crn_" + digest[:16] + suffix)
-    manifest_path = library.with_suffix(".json")
-    if library.exists():
-        manifest = json.loads(manifest_path.read_text())
-        if (
-            hashlib.sha256(library.read_bytes()).hexdigest()
-            != manifest["library_sha256"]
-        ):
-            raise RuntimeError("Existing immutable CRN library checksum mismatch")
-        return library
-    with tempfile.TemporaryDirectory(prefix="crn-build-", dir=output) as temp:
-        temporary = Path(temp) / library.name
-        subprocess.run(
-            [compiler, *flags, *map(str, sources), "-o", str(temporary)], check=True
-        )
-        manifest = {
-            "abi": 1,
-            "semiflows_abi": 1 if enabled else None,
-            "capabilities": capabilities,
-            "source_sha256": {
-                p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sources
-            },
-            "dependencies_sha256": dependencies,
-            "build_sha256": digest,
-            "compiler": version,
-            "flags": flags,
-            "library_sha256": hashlib.sha256(temporary.read_bytes()).hexdigest(),
-        }
-        temporary.replace(library)
-        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
-    return library
+# Retain the private discovery alias used by existing source-checkout tools.
+_boost_include = boost_include
+build_native = _native_build.build_native
 
 
 def bundled_native_library():
@@ -321,18 +237,35 @@ def enumerate_structural_sets(
             max_results=max_results,
         )
 
+    return _enumerate_structural_python(
+        places,
+        trigger,
+        required,
+        time_limit=time_limit,
+        max_nodes=max_nodes,
+        max_results=max_results,
+    )
+
+
+def _structural_closure(allowed, trigger, required):
+    current = np.zeros(trigger.shape[1], dtype=np.uint64)
+    for i in allowed:
+        current[i // 64] |= np.uint64(1 << (i % 64))
+    changed = True
+    while changed:
+        changed = False
+        for t in range(trigger.shape[0]):
+            if np.any(trigger[t] & current) and not np.any(required[t] & current):
+                current &= ~trigger[t]
+                changed = True
+    return frozenset(i for i in allowed if int(current[i // 64]) & (1 << (i % 64)))
+
+
+def _enumerate_structural_python(
+    places, trigger, required, *, time_limit, max_nodes, max_results
+):
     def closure(allowed):
-        current = np.zeros(words, dtype=np.uint64)
-        for i in allowed:
-            current[i // 64] |= np.uint64(1 << (i % 64))
-        changed = True
-        while changed:
-            changed = False
-            for t in range(len(transitions)):
-                if np.any(trigger[t] & current) and not np.any(required[t] & current):
-                    current &= ~trigger[t]
-                    changed = True
-        return frozenset(i for i in allowed if int(current[i // 64]) & (1 << (i % 64)))
+        return _structural_closure(allowed, trigger, required)
 
     started = monotonic()
     root = closure(frozenset(range(len(places))))
@@ -368,8 +301,8 @@ def enumerate_structural_sets(
     results = [s for s in results if not any(t < s for t in results)]
     value = {
         "sets": sorted([sorted(places[i] for i in s) for s in results]),
-        "backend": backend,
-        "closure_backend": backend,
+        "backend": "python",
+        "closure_backend": "python",
         "enumeration_backend": "python",
         "closure_evaluations": nodes,
         "seconds": monotonic() - started,

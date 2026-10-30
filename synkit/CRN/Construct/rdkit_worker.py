@@ -15,6 +15,18 @@ def _reaction(template):
     return reaction
 
 
+def _canonical_product(outcome, explicit_h):
+    parts = []
+    for molecule in outcome:
+        Chem.SanitizeMol(molecule)
+        if not explicit_h:
+            molecule = Chem.RemoveHs(molecule)
+        for atom in molecule.GetAtoms():
+            atom.SetAtomMapNum(0)
+        parts.append(Chem.MolToSmiles(molecule, canonical=True))
+    return ".".join(sorted(parts))
+
+
 def apply_rdkit_rule_worker(args):
     """Apply templates in RDKit's native matcher; return canonical unmapped products.
 
@@ -47,18 +59,10 @@ def apply_rdkit_rule_worker(args):
         if len(outcomes) >= 10000:
             raise RuntimeError("RDKit reaction product limit reached")
         for outcome in outcomes:
-            parts = []
             try:
-                for molecule in outcome:
-                    Chem.SanitizeMol(molecule)
-                    if not explicit_h:
-                        molecule = Chem.RemoveHs(molecule)
-                    for atom in molecule.GetAtoms():
-                        atom.SetAtomMapNum(0)
-                    parts.append(Chem.MolToSmiles(molecule, canonical=True))
+                product = _canonical_product(outcome, explicit_h)
             except (ValueError, RuntimeError):
                 continue
-            product = ".".join(sorted(parts))
             if product not in seen:
                 seen.add(product)
                 results.append(product)

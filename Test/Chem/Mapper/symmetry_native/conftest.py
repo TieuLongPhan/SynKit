@@ -10,9 +10,9 @@ import pytest
 
 @pytest.fixture(scope="session")
 def symmetry_library(tmp_path_factory):
-    compiler = shutil.which("g++")
-    if compiler is None:
-        pytest.skip("C++17 compiler unavailable")
+    cmake = shutil.which("cmake")
+    if cmake is None:
+        pytest.skip("CMake unavailable for the isolated C++17 symmetry fixture")
     root = Path(__file__).resolve().parents[4]
     cpp = root / "synkit/Chem/Mapper/solvers/native/cpp"
     destination = tmp_path_factory.mktemp("native-symmetry")
@@ -54,38 +54,49 @@ extern "C" void synkit_mapper_cancel_request(void *p) {
 }
 extern "C" void synkit_mapper_cancel_free(void *p) {delete static_cast<synkit_mapper::Cancellation*>(p);}
 """)
-    library = destination / "libsymmetry_test.so"
-    subprocess.run(
-        [
-            compiler,
-            "-std=c++17",
-            "-O2",
-            "-Wall",
-            "-Wextra",
-            "-pedantic",
-            "-fPIC",
-            "-shared",
-            "-I",
-            str(cpp / "include"),
-            str(shim),
-            str(cpp / "src/symmetry/classification.cpp"),
-            str(cpp / "src/symmetry/classification_pipeline.cpp"),
-            str(cpp / "src/symmetry/cpabs.cpp"),
-            str(cpp / "src/pabs/bridge.cpp"),
-            str(cpp / "src/pabs/sparse_embedding.cpp"),
-            str(cpp / "src/core/pmcd_witness.cpp"),
-            str(cpp / "src/symmetry/edge_deck.cpp"),
-            str(cpp / "src/slap.cpp"),
-            str(cpp / "src/astar/bound.cpp"),
-            str(cpp / "src/astar/astar.cpp"),
-            str(cpp / "src/assignment/abb.cpp"),
-            str(cpp / "src/hydrogen/hydrogen.cpp"),
-            "-o",
-            str(library),
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    (destination / "CMakeLists.txt").write_text("""
+cmake_minimum_required(VERSION 3.16)
+project(synkit_symmetry_test LANGUAGES CXX)
+add_library(symmetry_test SHARED
+  shim.cpp
+  "${MAPPER_CPP}/src/symmetry/classification.cpp"
+  "${MAPPER_CPP}/src/symmetry/classification_pipeline.cpp"
+  "${MAPPER_CPP}/src/symmetry/cpabs.cpp"
+  "${MAPPER_CPP}/src/pabs/bridge.cpp"
+  "${MAPPER_CPP}/src/pabs/sparse_embedding.cpp"
+  "${MAPPER_CPP}/src/core/pmcd_witness.cpp"
+  "${MAPPER_CPP}/src/symmetry/edge_deck.cpp"
+  "${MAPPER_CPP}/src/slap.cpp"
+  "${MAPPER_CPP}/src/astar/bound.cpp"
+  "${MAPPER_CPP}/src/astar/astar.cpp"
+  "${MAPPER_CPP}/src/assignment/abb.cpp"
+  "${MAPPER_CPP}/src/hydrogen/hydrogen.cpp")
+target_include_directories(symmetry_test PRIVATE "${MAPPER_CPP}/include")
+target_compile_features(symmetry_test PRIVATE cxx_std_17)
+set_target_properties(symmetry_test PROPERTIES
+  CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON WINDOWS_EXPORT_ALL_SYMBOLS ON)
+if(MSVC)
+  target_compile_options(symmetry_test PRIVATE /W4)
+  set_property(TARGET symmetry_test PROPERTY MSVC_RUNTIME_LIBRARY
+    "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else()
+  target_compile_options(symmetry_test PRIVATE -Wall -Wextra -Wpedantic)
+  if(MINGW)
+    target_link_options(symmetry_test PRIVATE -static -static-libgcc -static-libstdc++)
+  endif()
+endif()
+file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/$<CONFIG>/symmetry-library.txt"
+  CONTENT "$<TARGET_FILE:symmetry_test>")
+""")
+    build = destination / "build"
+    commands = [
+        [cmake, "-S", str(destination), "-B", str(build),
+         "-DCMAKE_BUILD_TYPE=Release", f"-DMAPPER_CPP={cpp.as_posix()}"],
+        [cmake, "--build", str(build), "--config", "Release", "--parallel", "2"],
+    ]
+    for command in commands:
+        subprocess.run(command, check=True, capture_output=True, text=True)
+    # CMake supplies the platform suffix and the generator's configuration path.
+    library = Path((build / "Release/symmetry-library.txt").read_text().strip())
     ct.CDLL(str(library))
     return library

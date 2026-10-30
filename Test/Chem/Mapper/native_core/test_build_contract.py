@@ -61,6 +61,8 @@ def test_distribution_cannot_omit_native_support_files(tmp_path, monkeypatch, om
         (native / name).write_text("required source or license\n")
     members = {
         "synkit/__init__.py",
+        "synkit/CRN/_build.py",
+        "synkit/CRN/_native_build.py",
         "synkit/Chem/Mapper/mapper.py",
         "synkit/Chem/Mapper/solvers/exact/native_build.py",
         "synkit/Chem/Mapper/solvers/exact/native/build.py",

@@ -70,8 +70,8 @@ with native_backend():
 ```
 
 For source development, the top-level CMake project builds all SynKit native
-components together. The explicit `build_native` helper remains available for
-focused CRN builds with a GCC/Clang-compatible compiler:
+components together. The explicit `build_native` helper uses the same CRN
+CMake target for focused builds with GCC, Clang, or MSVC:
 
 ```python
 from synkit.CRN import (build_native, conserved_moieties, enumerate_semiflows,
@@ -113,11 +113,11 @@ it retains Python. `backend='python'` selects the reference implementation.
 Importing never compiles or downloads anything. Build manifests record source
 hashes, compiler versions, capabilities and library integrity metadata. CMake
 builds also record the Boost version. Explicit development builds fingerprint
-the transitive header dependencies. Installed wheels verify library bytes
-against the wheel's final `RECORD`, including any changes made by wheel repair.
+the Boost header tree and configured toolchain. Installed wheels verify library
+bytes against the wheel's final `RECORD`, including changes made by wheel repair.
 
-Source native builds require a C++17 compiler and installed Boost headers. The
-builder checks standard include locations, `BOOST_INCLUDE_DIR`, and existing
+Source native builds require CMake 3.20 or newer, a C++17 compiler, and installed
+Boost headers. The builder checks standard include locations, `BOOST_INCLUDE_DIR`, and existing
 Conda header caches. Use `boost_include_dir='/path/to/include'` for an explicit
 location. `with_semiflows=False` builds native structural enumeration using only
 the C++ standard library; `with_semiflows=True` fails clearly if headers are absent.

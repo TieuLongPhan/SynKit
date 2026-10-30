@@ -1,8 +1,6 @@
 """Regression contracts for the biochemical analysis workflow (offline)."""
 
 import itertools
-import tempfile
-from pathlib import Path
 import numpy as np
 import pytest
 from synkit.CRN import (
@@ -85,7 +83,14 @@ def test_exact_precheck():
 
 
 def test_metadata_roundtrip():
-    source = '<sbml><model><listOfSpecies><species id="A" compartment="outside" boundaryCondition="true" initialConcentration="2.5"/><species id="B" compartment="cell"/></listOfSpecies><listOfReactions><reaction id="r"><listOfReactants><speciesReference species="A"/></listOfReactants><listOfProducts><speciesReference species="B"/></listOfProducts></reaction></listOfReactions></model></sbml>'
+    source = (
+        '<sbml><model><listOfSpecies><species id="A" compartment="outside" '
+        'boundaryCondition="true" initialConcentration="2.5"/>'
+        '<species id="B" compartment="cell"/></listOfSpecies><listOfReactions>'
+        '<reaction id="r"><listOfReactants><speciesReference species="A"/>'
+        '</listOfReactants><listOfProducts><speciesReference species="B"/>'
+        '</listOfProducts></reaction></listOfReactions></model></sbml>'
+    )
     c = crn_from_sbml(source)
     out = crn_from_sbml(crn_to_sbml(c))
     attrs = next(s.source_attrs for s in out.species.values() if s.label == "A")
@@ -153,7 +158,13 @@ def test_unannotated_graph_direction_and_cache_lifetime():
 
 
 def test_nonintegral_sbml_rejected():
-    source = '<sbml><model><listOfSpecies><species id="A"/><species id="B"/></listOfSpecies><listOfReactions><reaction id="r"><listOfReactants><speciesReference species="A" stoichiometry="1.5"/></listOfReactants><listOfProducts><speciesReference species="B"/></listOfProducts></reaction></listOfReactions></model></sbml>'
+    source = (
+        '<sbml><model><listOfSpecies><species id="A"/><species id="B"/>'
+        '</listOfSpecies><listOfReactions><reaction id="r"><listOfReactants>'
+        '<speciesReference species="A" stoichiometry="1.5"/></listOfReactants>'
+        '<listOfProducts><speciesReference species="B"/></listOfProducts>'
+        '</reaction></listOfReactions></model></sbml>'
+    )
     with pytest.raises(ValueError, match="integral"):
         crn_from_sbml(source)
 

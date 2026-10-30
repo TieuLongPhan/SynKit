@@ -5,7 +5,8 @@ import sys
 import warnings
 
 warnings.warn(
-    "synkit.CRN.Benchmark.networks moved to Experiment.CRN.benchmarks.networks; research helpers require a source checkout",
+    "synkit.CRN.Benchmark.networks moved to Experiment.CRN.benchmarks.networks; "
+    "research helpers require a source checkout",
     DeprecationWarning,
     stacklevel=2,
 )

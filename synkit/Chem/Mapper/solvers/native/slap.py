@@ -87,7 +87,8 @@ class NativeSlapResult:
         return self.selected_mapping_count
 
 
-def solve_slap(
+# Array ownership and output callbacks must span the complete native solve.
+def solve_slap(  # noqa: C901
     lgp,
     *,
     library_path,

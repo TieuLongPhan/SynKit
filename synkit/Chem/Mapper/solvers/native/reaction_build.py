@@ -29,7 +29,8 @@ class NativeReactionBuild:
     manifest: Path
 
 
-def build_reaction_native(
+# SDK discovery, optional adapters and artifact checks form one isolated build.
+def build_reaction_native(  # noqa: C901
     output_dir,
     *,
     rdkit_dir,

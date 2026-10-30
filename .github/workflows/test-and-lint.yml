@@ -10,6 +10,19 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install lint tools
+        run: python -m pip install flake8
+      - name: Lint source and tests
+        run: bash scripts/lint.sh
+
   test-lint:
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
     strategy:
@@ -50,14 +63,34 @@ jobs:
         shell: bash -l {0}
         run: |
           conda activate synkit-ci
+          conda install --yes --channel conda-forge cmake libboost-headers
           python -m pip install --upgrade pip
           python -m pip install -e '.[test]' sympy
 
-      - name: Lint
+      - name: Verify native test prerequisites
         shell: bash -l {0}
         run: |
           conda activate synkit-ci
-          bash scripts/lint.sh
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          import subprocess
+          import tempfile
+          from synkit.CRN._build import boost_include
+
+          cmake = shutil.which("cmake")
+          assert cmake is not None, "Native tests require CMake"
+          boost = boost_include()
+          assert boost is not None, "Exact CRN tests require installed Boost headers"
+          print(f"Native CRN tests use Boost headers from {boost}")
+          # Configuring lets CMake discover Xcode/MSVC without assuming that
+          # a particular compiler executable is present on the shell's PATH.
+          with tempfile.TemporaryDirectory(prefix="synkit-native-prerequisites-") as folder:
+              subprocess.run([
+                  cmake, "-S", str(Path("synkit/CRN/cpp").resolve()), "-B", folder,
+                  "-DSYNKIT_CRN_EXACT=ON", "-DSYNKIT_CRN_BOOST_INCLUDE_DIR=" + str(boost),
+              ], check=True)
+          PY
 
       - name: Test
         shell: bash -l {0}
@@ -101,8 +134,10 @@ jobs:
           cache: pip
       - name: Install project and coverage tools
         run: |
+          sudo apt-get update
+          sudo apt-get install -y libboost-dev
           python -m pip install --upgrade pip
-          python -m pip install -e '.[test]' sympy pytest-cov
+          python -m pip install -e '.[test]' sympy pytest-cov cmake
       - name: Measure test coverage
         run: |
           python -m pytest Test/ --cov=synkit --cov-report=term-missing --cov-report=xml

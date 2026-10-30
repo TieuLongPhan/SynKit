@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from fractions import Fraction
+from functools import wraps
 from math import gcd
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -734,9 +736,6 @@ def summary(crn: Any) -> StoichSummary:
 
 # This cache exists only during one summary calculation; mutable models are never
 # cached across calls or shared between threads/tasks.
-from contextvars import ContextVar
-from functools import wraps
-
 _MATRIX_CONTEXT = ContextVar("crn_matrix_context", default=None)
 
 

@@ -40,7 +40,8 @@ def _electrons(atom):
     return 2 * MolToGraph.estimate_lone_pairs(atom) + atom.GetNumRadicalElectrons()
 
 
-def prepare_implicit_problem(reaction, *, balance="dummy"):
+# Model guards and reduction offsets must remain paired with their endpoint data.
+def prepare_implicit_problem(reaction, *, balance="dummy"):  # noqa: C901
     """Return ``(heavy_graphs, offset2, metadata)`` for a mapless reaction.
 
     Native proof costs for these graphs are in CD units; add offset2/2 once to

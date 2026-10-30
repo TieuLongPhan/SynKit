@@ -296,7 +296,8 @@ def enumerate_hydrogen_transfers(
     )
 
 
-def enumerate_hydrogen_mappings(
+# Reduction, lifting and fallback preserve one deadline and enumeration contract.
+def enumerate_hydrogen_mappings(  # noqa: C901
     lgp,
     *,
     library_path,

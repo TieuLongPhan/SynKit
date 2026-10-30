@@ -1,8 +1,6 @@
 """Native CRN enumeration: independent small-cone oracle and exact witnesses."""
 
 from itertools import combinations
-from math import gcd
-from functools import reduce
 import numpy as np
 import pytest
 from synkit.CRN import (

@@ -26,7 +26,8 @@ from synkit.Graph.Canon.exact import _encode_color
 class UncachedReferenceClassifier(NativeITSBatchClassifier):
     MAX_VERTICES = 256
 
-    def __init__(
+    # Preserve this frozen oracle independently of production palette helpers.
+    def __init__(  # noqa: C901
         self,
         reactant,
         product,

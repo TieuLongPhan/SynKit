@@ -85,7 +85,8 @@ def _verify(path):
         )
 
 
-def build_mapper_native(
+# Platform, SDK and optional-solver branches form one explicit build transaction.
+def build_mapper_native(  # noqa: C901
     output_dir,
     compiler="g++",
     *,

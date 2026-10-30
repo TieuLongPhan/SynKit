@@ -5,7 +5,8 @@ import sys
 import warnings
 
 warnings.warn(
-    "synkit.CRN.Benchmark.scaling moved to Experiment.CRN.benchmarks.scaling; research helpers require a source checkout",
+    "synkit.CRN.Benchmark.scaling moved to Experiment.CRN.benchmarks.scaling; "
+    "research helpers require a source checkout",
     DeprecationWarning,
     stacklevel=2,
 )

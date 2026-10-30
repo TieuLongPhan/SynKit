@@ -26,7 +26,8 @@ from .candidates import NativeEnumerationStop
 from .search import enumerate_cpp_mappings
 
 
-def _quotient_graph(graph):
+# Each unsupported hydrogen state needs a distinct, stable fallback reason.
+def _quotient_graph(graph):  # noqa: C901
     """Return a cost-preserving reduced graph and original-index H groups."""
     hydrogen = [i for i, label in enumerate(graph.labels) if label[0] == 1]
     if not hydrogen:
@@ -79,7 +80,8 @@ def _quotient_graph(graph):
     return (reduced, heavy, groups, reservoir), None
 
 
-def map_reaction_hydrogen_quotient(
+# Quotient search and explicit-H fallback must share the remaining deadline.
+def map_reaction_hydrogen_quotient(  # noqa: C901
     reaction,
     *,
     library_path,

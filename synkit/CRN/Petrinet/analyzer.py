@@ -8,11 +8,14 @@ import numpy as np
 from .net import PetriNet
 from .persistence import (
     PersistenceCheckResult,
-    siphon_persistence_condition,
+    siphon_persistence_condition as _siphon_persistence_condition,
     siphon_persistence_details,
 )
 from .semiflows import find_p_semiflows, find_t_semiflows, stoichiometric_matrix
 from .structure import find_siphons, find_traps
+
+# Preserve the historical module-level re-export.
+siphon_persistence_condition = _siphon_persistence_condition
 
 
 @dataclass

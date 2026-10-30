@@ -211,7 +211,8 @@ class NativeITSBatchClassifier:
     this implementation supports at most 512 vertices.
     """
 
-    def __init__(
+    # Keep ABI validation, palettes and their ctypes buffer lifetimes together.
+    def __init__(  # noqa: C901
         self,
         reactant,
         product,

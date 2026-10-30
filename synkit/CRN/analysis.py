@@ -119,11 +119,9 @@ class CRNAnalysis:
             )
         return {k: int(v) for k, v in values.items() if v}
 
-    def audit(self):
-        """Cheap model diagnostics; chemical balance is unknown without structures."""
+    def _species_compositions(self):
         from rdkit import Chem
 
-        signatures, duplicates, empty, unbalanced, unknown = {}, [], [], [], []
         compositions = {}
         for sid, species in self._crn.species.items():
             formula = species.source_attrs.get("chemicalFormula")
@@ -145,6 +143,12 @@ class CRNAnalysis:
                     counts[atom.GetSymbol()] = counts.get(atom.GetSymbol(), 0) + 1
                 counts["charge"] = sum(a.GetFormalCharge() for a in mol.GetAtoms())
                 compositions[sid] = counts
+        return compositions
+
+    def audit(self):
+        """Cheap model diagnostics; chemical balance is unknown without structures."""
+        signatures, duplicates, empty, unbalanced, unknown = {}, [], [], [], []
+        compositions = self._species_compositions()
         involved = set()
         for rid, reaction in self._crn.reactions.items():
             sig = (

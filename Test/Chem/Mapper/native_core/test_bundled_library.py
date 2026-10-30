@@ -16,17 +16,20 @@ def test_missing_bundle_reports_build_instructions_without_compiling(tmp_path, m
 
 
 def test_bundled_core_supports_public_and_implicit_apis(
-    tmp_path, monkeypatch, mapper_core_library
+    tmp_path, monkeypatch, mapper_core_library, native_wheel_record
 ):
-    monkeypatch.setattr(runtime, "__file__", str(tmp_path / "runtime.py"))
-    directory = tmp_path / "lib"
-    directory.mkdir()
+    package = tmp_path / "synkit"
+    native_package = package / "Chem/Mapper/solvers/native"
+    monkeypatch.setattr(runtime, "__file__", str(native_package / "runtime.py"))
+    directory = native_package / "lib"
+    directory.mkdir(parents=True)
     name = (
         "synkit_mapper.dll" if sys.platform == "win32"
         else "libsynkit_mapper.dylib" if sys.platform == "darwin"
         else "libsynkit_mapper.so"
     )
     shutil.copyfile(mapper_core_library, directory / name)
+    native_wheel_record(directory / name, package)
     assert runtime.resolve_library_path() == directory / name
     available = Mapper.native_methods(available_only=True)
     assert {"slap", "pabs", "cpabs", "astar", "dfs", "sepdp"} <= set(available)

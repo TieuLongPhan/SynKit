@@ -260,7 +260,8 @@ def _empty_search(target, backend, reason=None, *, complete=False, unsupported=F
     )
 
 
-def map_reaction_implicit(
+# Preparation, native search and class rendering consume one shared deadline.
+def map_reaction_implicit(  # noqa: C901
     reaction,
     *,
     library_path=None,

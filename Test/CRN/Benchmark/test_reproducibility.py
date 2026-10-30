@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 
@@ -52,7 +51,10 @@ def test_runner_records_exceptions_and_incomplete_results(tmp_path):
         "unavailable input"
         in json.loads((tmp_path / "crn-broken.json").read_text())["error"]
     )
-    incomplete = lambda: {"schema": "example/1", "status": "PASS", "complete": False}
+
+    def incomplete():
+        return {"schema": "example/1", "status": "PASS", "complete": False}
+
     assert run_all._run("incomplete", incomplete, tmp_path)["status"] == "FAIL"
     assert (
         run_all._run("next", lambda: {"status": "PASS"}, tmp_path)["status"] == "PASS"

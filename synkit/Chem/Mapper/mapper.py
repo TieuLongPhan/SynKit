@@ -185,7 +185,8 @@ def _prepare_graphs(data):
     return graphs
 
 
-def _check_method_options(method, config, requested):
+# Keep the independent method/option compatibility checks together.
+def _check_method_options(method, config, requested):  # noqa: C901
     """Reject queries and limits unsupported by the selected method."""
     backend = config["backend"]
     if {"solver", "allowed_domains", "hydrogen_quotient"} & requested.keys():

@@ -5,5 +5,9 @@ from .runtime import CancellationToken, bundled_native_canon
 from .search import NativeCanonicalResult, canonicalize_native_graph
 
 __all__ = [
-    "build_native_canon", "bundled_native_canon", "CancellationToken", "NativeCanonicalResult", "canonicalize_native_graph",
+    "build_native_canon",
+    "bundled_native_canon",
+    "CancellationToken",
+    "NativeCanonicalResult",
+    "canonicalize_native_graph",
 ]

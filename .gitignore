@@ -142,5 +142,7 @@ test_syn_reactor.py
 /Experiment/*
 !/Experiment/CRN/
 !/Experiment/Lewis/
-!/Experiment/README.md
 !/Experiment/__init__.py
+
+# Experiment READMEs are local documentation, including nested directories.
+/Experiment/**/[Rr][Ee][Aa][Dd][Mm][Ee]*

@@ -288,7 +288,8 @@ def map_reaction(
     )
 
 
-def _map_reaction_with_search(
+# Parsing, callbacks and rendering share one search budget and result contract.
+def _map_reaction_with_search(  # noqa: C901
     reaction,
     *,
     search_function,

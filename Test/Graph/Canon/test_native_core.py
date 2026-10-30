@@ -15,7 +15,12 @@ import time
 import networkx as nx
 import pytest
 
-from synkit.Graph.Canon._native import CancellationToken, build_native_canon, bundled_native_canon, canonicalize_native_graph
+from synkit.Graph.Canon._native import (
+    CancellationToken,
+    build_native_canon,
+    bundled_native_canon,
+    canonicalize_native_graph,
+)
 from synkit.Graph.Canon._native.runtime import Request, load_library
 from synkit.Graph.Canon.exact import CanonicalSearchIncomplete, ExactColoredGraphCanonicalizer
 

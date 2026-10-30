@@ -59,7 +59,8 @@ class PMCDProofResult:
         return asdict(self)
 
 
-def _implicit_quotient_graphs(reaction, balance):
+# Keep hydrogen eligibility, balancing and anchor construction in one reduction.
+def _implicit_quotient_graphs(reaction, balance):  # noqa: C901
     """Read endpoint H counts and electron states without Chem.AddHs."""
     if not isinstance(reaction, str):
         raise TypeError("reaction must be reaction SMILES")

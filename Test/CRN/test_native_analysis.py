@@ -10,7 +10,11 @@ from synkit.CRN import (
     integer_conservation_laws,
     native_backend,
     PathwayRealizability,
+    crn_from_sbml,
+    enumerate_structural_sets,
+    siphon_persistence_details,
 )
+from synkit.CRN.backend import python_backend
 from synkit.CRN.native_analysis import (
     matrix_analysis,
     graph_symmetry,
@@ -24,7 +28,12 @@ from Experiment.CRN.benchmarks.crosschecks import brute_force_siphons
 from Experiment.CRN.studies.formose_case_study import expand
 
 
-def test_native_analysis_agrees_with_independent_references(exact_library):
+def _assert_agreement(checks):
+    failed = [name for name, passed in checks.items() if not passed]
+    assert not failed, "Native/reference disagreements: " + ", ".join(failed)
+
+
+def test_native_fixture_analysis_agrees_with_independent_references(exact_library):
     library = exact_library
     checks = {}
     for fixture in BENCHMARK_NETWORKS:
@@ -46,6 +55,12 @@ def test_native_analysis_agrees_with_independent_references(exact_library):
                 frozenset(source.get(s, s) for s in group)
                 for group in brute_force_siphons(c, max_species=14)
             }
+    _assert_agreement(checks)
+
+
+def test_native_matrix_analysis_agrees_with_independent_references(exact_library):
+    library = exact_library
+    checks = {}
     rng = np.random.default_rng(42)
     for i in range(30):
         s = rng.integers(-3, 4, size=(int(rng.integers(1, 6)), int(rng.integers(1, 6))))
@@ -53,12 +68,25 @@ def test_native_analysis_agrees_with_independent_references(exact_library):
         checks[f"algebra_{i}"] = got["left"] == _exact_null_space(
             s.T.tolist(), s.shape[0]
         ) and got["right"] == _exact_null_space(s.tolist(), s.shape[1])
-    from synkit.CRN import crn_from_sbml, siphon_persistence_details
+    _assert_agreement(checks)
 
-    xml = '<sbml><model><listOfSpecies><species id="A"/><species id="B"/></listOfSpecies><listOfReactions><reaction id="f"><listOfReactants><speciesReference species="A"/></listOfReactants><listOfProducts><speciesReference species="B"/></listOfProducts></reaction><reaction id="r"><listOfReactants><speciesReference species="B"/></listOfReactants><listOfProducts><speciesReference species="A"/></listOfProducts></reaction></listOfReactions></model></sbml>'
-    checks["sbml_persistence_coordinate_alignment"] = (
-        siphon_persistence_details(crn_from_sbml(xml)).persistence_ok is True
+
+def test_sbml_persistence_preserves_coordinate_alignment():
+    xml = (
+        '<sbml><model><listOfSpecies><species id="A"/><species id="B"/>'
+        '</listOfSpecies><listOfReactions><reaction id="f"><listOfReactants>'
+        '<speciesReference species="A"/></listOfReactants><listOfProducts>'
+        '<speciesReference species="B"/></listOfProducts></reaction>'
+        '<reaction id="r"><listOfReactants><speciesReference species="B"/>'
+        '</listOfReactants><listOfProducts><speciesReference species="A"/>'
+        '</listOfProducts></reaction></listOfReactions></model></sbml>'
     )
+    assert siphon_persistence_details(crn_from_sbml(xml)).persistence_ok is True
+
+
+def test_native_symmetry_and_pathways_agree_with_independent_references(exact_library):
+    library = exact_library
+    checks = {}
     cases = [
         ["A>>B", "B>>A"],
         ["A>>B", "B>>C", "C>>A"],
@@ -96,7 +124,12 @@ def test_native_analysis_agrees_with_independent_references(exact_library):
             checks[f"pathway_{i}_{len(marking)}"] = (
                 a.status == b.status and a.exhaustive == b.exhaustive
             )
-    from synkit.CRN.backend import python_backend
+    _assert_agreement(checks)
+
+
+def test_native_formose_agrees_with_independent_references(exact_library):
+    library = exact_library
+    checks = {}
 
     with python_backend():
         reference = expand(4)
@@ -148,13 +181,17 @@ def test_native_analysis_agrees_with_independent_references(exact_library):
             candidate = frozenset(subset)
             if not any(trap < candidate for trap in oracle) and is_trap(candidate):
                 oracle.add(candidate)
-    from synkit.CRN import enumerate_structural_sets
-
     traps = enumerate_structural_sets(formose, kind="trap", library_path=library)
     checks["formose_traps_match_exhaustive_residual_oracle"] = (
         traps.complete and {frozenset(group) for group in traps.value["sets"]} == oracle
     )
     checks["formose_28_minimal_traps"] = len(oracle) == 28
+    _assert_agreement(checks)
+
+
+def test_native_limits_and_positive_flux_bounds_are_sound(exact_library):
+    library = exact_library
+    checks = {}
     try:
         matrix_analysis(np.eye(10, dtype=int), library_path=library, time_limit=1e-12)
         checks["algebra_limit_explicit"] = False
@@ -172,5 +209,4 @@ def test_native_analysis_agrees_with_independent_references(exact_library):
         checks["positive_flux_bounds_sound"] = (
             is_consistent(SynCRN.from_reaction_strings(["A>>B", "2A>>2B"])) is False
         )
-    failed = [name for name, passed in checks.items() if not passed]
-    assert not failed, "Native/reference disagreements: " + ", ".join(failed)
+    _assert_agreement(checks)

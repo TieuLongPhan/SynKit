@@ -55,7 +55,8 @@ def _cap(value, name):
     return int(value)
 
 
-def map_reaction_native(
+# ABI option checks and hydrogen fallback share the native reaction deadline.
+def map_reaction_native(  # noqa: C901
     reaction,
     *,
     library_path,
