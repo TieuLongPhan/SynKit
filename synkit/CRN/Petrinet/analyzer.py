@@ -8,11 +8,14 @@ import numpy as np
 from .net import PetriNet
 from .persistence import (
     PersistenceCheckResult,
-    siphon_persistence_condition,
+    siphon_persistence_condition as _siphon_persistence_condition,
     siphon_persistence_details,
 )
 from .semiflows import find_p_semiflows, find_t_semiflows, stoichiometric_matrix
 from .structure import find_siphons, find_traps
+
+# Preserve the historical module-level re-export.
+siphon_persistence_condition = _siphon_persistence_condition
 
 
 @dataclass
@@ -97,6 +100,8 @@ class PetriAnalyzer:
         *,
         rtol: float = 1e-12,
         max_siphon_size: Optional[int] = None,
+        backend: str = "auto",
+        library_path=None,
     ) -> None:
         """
         Initialize the Petri analyzer.
@@ -117,6 +122,11 @@ class PetriAnalyzer:
         self._petri = crn if isinstance(crn, PetriNet) else PetriNet.from_syncrn(crn)
         self._rtol = float(rtol)
         self._max_siphon_size = max_siphon_size
+        from ..backend import resolve_backend
+
+        backend, library_path = resolve_backend(backend, library_path)
+        self._backend_options = {"backend": backend, "library_path": library_path}
+        self._siphon_ids = None
 
         self._p_semiflows: Optional[np.ndarray] = None
         self._t_semiflows: Optional[np.ndarray] = None
@@ -204,8 +214,12 @@ class PetriAnalyzer:
             print(analyzer.p_semiflows)
             print(analyzer.t_semiflows)
         """
-        self._p_semiflows = find_p_semiflows(self._crn, rtol=self._rtol)
-        self._t_semiflows = find_t_semiflows(self._crn, rtol=self._rtol)
+        self._p_semiflows = find_p_semiflows(
+            self._crn, rtol=self._rtol, **self._backend_options
+        )
+        self._t_semiflows = find_t_semiflows(
+            self._crn, rtol=self._rtol, **self._backend_options
+        )
         return self
 
     def compute_siphons_traps(self) -> "PetriAnalyzer":
@@ -223,12 +237,38 @@ class PetriAnalyzer:
             print(analyzer.siphons)
             print(analyzer.traps)
         """
-        self._siphons = find_siphons(
-            self._petri, max_size=self._max_siphon_size, names="label"
+        backend = self._backend_options["backend"]
+        use_cpp = backend == "cpp" or (
+            backend == "auto" and self._backend_options["library_path"] is not None
         )
-        self._traps = find_traps(
-            self._petri, max_size=self._max_siphon_size, names="label"
-        )
+        if use_cpp:
+            from ..native import enumerate_structural_sets
+            from .siphon_search import SiphonSearchLimit
+
+            groups = []
+            for kind in ("siphon", "trap"):
+                result = enumerate_structural_sets(
+                    self._petri, kind=kind, **self._backend_options
+                )
+                if not result.complete:
+                    error = SiphonSearchLimit(result.termination_reason)
+                    error.result = result
+                    raise error
+                groups.append([set(s) for s in result.value["sets"]])
+            self._siphon_ids, trap_ids = groups
+        else:
+            self._siphon_ids = find_siphons(self._petri, names="id", strict_limit=True)
+            trap_ids = find_traps(self._petri, names="id", strict_limit=True)
+
+        def rendered(groups):
+            return [
+                {self._petri.place_name(p) for p in group}
+                for group in groups
+                if self._max_siphon_size is None or len(group) <= self._max_siphon_size
+            ]
+
+        self._siphons = rendered(self._siphon_ids)
+        self._traps = rendered(trap_ids)
         return self
 
     def check_persistence(self) -> "PetriAnalyzer":
@@ -249,16 +289,20 @@ class PetriAnalyzer:
             print(analyzer.persistence_ok)
             print(analyzer.persistence_details)
         """
-        self._persistence_ok = siphon_persistence_condition(
-            self._crn,
-            rtol=self._rtol,
-            max_siphon_size=self._max_siphon_size,
-        )
+        if self._siphon_ids is None:
+            self.compute_siphons_traps()
+        if self._p_semiflows is None:
+            self._p_semiflows = find_p_semiflows(
+                self._crn, rtol=self._rtol, **self._backend_options
+            )
         self._persistence_details = siphon_persistence_details(
             self._crn,
             rtol=self._rtol,
             max_siphon_size=self._max_siphon_size,
+            p_semiflows=self._p_semiflows,
+            _complete_siphons=self._siphon_ids,
         )
+        self._persistence_ok = self._persistence_details.persistence_ok
         return self
 
     def compute_all(self) -> "PetriAnalyzer":

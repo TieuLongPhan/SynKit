@@ -41,6 +41,7 @@ import numpy as np
 
 __all__ = [
     "minimal_semiflows",
+    "SemiflowSearchLimit",
     "minimal_semiflow_supports",
     "is_semiflow",
 ]
@@ -205,10 +206,46 @@ def _farkas(matrix: List[List[Fraction]], n_vars: int) -> List[List[Fraction]]:
     return _keep_minimal_support([left for left, _ in rows])
 
 
+class SemiflowSearchLimit(RuntimeError):
+    """A bounded exact search stopped before its answer was complete."""
+
+    def __init__(self, result):
+        self.result = result
+        super().__init__(
+            f"Semiflow enumeration incomplete: {result.termination_reason}"
+        )
+
+
+def _integer_stoichiometry(stoich):
+    """Validate without converting integer input through a lossy float array."""
+    s = np.asarray(stoich)
+    if s.ndim != 2:
+        raise ValueError("stoich must be a 2-dimensional matrix")
+    integers = []
+    for value in s.flat:
+        try:
+            integer = int(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("Stoichiometry must contain finite integers") from exc
+        if integer != value:
+            raise ValueError(
+                "Minimal semiflows require an integer stoichiometric matrix"
+            )
+        if not -(2**63) <= integer < 2**63:
+            raise OverflowError(
+                "Input stoichiometry exceeds int64; exact conversion refused"
+            )
+        integers.append(integer)
+    return np.asarray(integers, dtype=np.int64).reshape(s.shape)
+
+
 def minimal_semiflows(
     stoich: np.ndarray,
     *,
     kind: str = "p",
+    backend: str = "auto",
+    library_path=None,
+    **native_options,
 ) -> List[List[int]]:
     """Compute minimal non-negative integer semiflows of a stoichiometric matrix.
 
@@ -254,25 +291,36 @@ def minimal_semiflows(
     if kind not in {"p", "t"}:
         raise ValueError("kind must be 'p' or 't'")
 
-    s = np.asarray(stoich)
-    if s.ndim != 2:
-        raise ValueError("stoich must be a 2-dimensional matrix")
+    from ..backend import resolve_backend
 
-    if s.size == 0:
-        return []
+    backend, library_path = resolve_backend(backend, library_path)
+    if backend not in {"auto", "python", "cpp"}:
+        raise ValueError("backend must be 'auto', 'python', or 'cpp'")
+    if backend == "cpp" or (backend == "auto" and library_path is not None):
+        from ..native import enumerate_semiflows
 
-    rounded = np.rint(np.asarray(s, dtype=float))
-    if not np.allclose(np.asarray(s, dtype=float), rounded, atol=1e-9):
-        raise ValueError(
-            "Minimal semiflows require an integer stoichiometric matrix; "
-            "got non-integer entries."
+        result = enumerate_semiflows(
+            stoich, kind=kind, library_path=library_path, **native_options
         )
-    s_int = rounded.astype(np.int64)
+        if not result.complete:
+            raise SemiflowSearchLimit(result)
+        return result.value["flows"]
+    if native_options:
+        raise ValueError(
+            "Search budgets require the native backend; use enumerate_semiflows for structured results"
+        )
+    s_int = _integer_stoichiometry(stoich)
+    if not s_int.size:
+        return []
 
     # Farkas eliminates the columns of `matrix`, so orient it such that the
     # rows are the variables we are solving for.
     matrix_np = s_int if kind == "p" else s_int.T
     n_vars = matrix_np.shape[0]
+    from ..Props._rank import full_row_rank_modular
+
+    if full_row_rank_modular(matrix_np):
+        return []
 
     matrix = [[Fraction(int(v)) for v in row] for row in matrix_np]
     generators = _farkas(matrix, n_vars)
@@ -335,12 +383,12 @@ def minimal_semiflow_supports(
                 f"labels has length {len(names)}, expected {width} for kind={kind!r}"
             )
 
-    return [
-        {names[i]: int(v) for i, v in enumerate(flow) if v != 0} for flow in flows
-    ]
+    return [{names[i]: int(v) for i, v in enumerate(flow) if v != 0} for flow in flows]
 
 
-def is_semiflow(stoich: np.ndarray, vector: Sequence[float], *, kind: str = "p") -> bool:
+def is_semiflow(
+    stoich: np.ndarray, vector: Sequence[float], *, kind: str = "p"
+) -> bool:
     """Check whether a vector is a genuine semiflow.
 
     A semiflow must be non-negative, non-zero, and in the appropriate kernel.

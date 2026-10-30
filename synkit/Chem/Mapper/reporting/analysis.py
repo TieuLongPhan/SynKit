@@ -14,10 +14,10 @@ from typing import Literal
 
 import numpy as np
 
-from ..exact.hybrid import enumerate_hybrid_distance_mappings
-from ..slap.lap import _adjacency_and_elements, chemical_distance
-from ..slap.lap import recover_mapping
-from ..slap.sequential import GraphMatcher
+from ..solvers.exact.hybrid import enumerate_hybrid_distance_mappings
+from ..solvers.slap.lap import _adjacency_and_elements, chemical_distance
+from ..solvers.slap.lap import recover_mapping
+from ..solvers.slap.sequential import GraphMatcher
 from .spectrum import (
     ExactStructureSpectrum,
     ExactStructureSpectrumAccumulator,
@@ -374,7 +374,7 @@ def _reference_free_slap_seed(lgp, binary, *, repair=False):  # noqa: C901
         matcher.get_maps(lgp)
         if not matcher.results:
             raise RuntimeError("SLAP produced no complete candidate")
-        from ..exact.kernel_solvers.enumerate import complete_mapping
+        from ..solvers.exact.kernel_solvers.enumerate import complete_mapping
 
         mapping = complete_mapping(
             lgp,
@@ -394,7 +394,7 @@ def _reference_free_slap_seed(lgp, binary, *, repair=False):  # noqa: C901
             repair_started = time.perf_counter()
             repair_statistics["attempted"] = True
             try:
-                from ..exact.kernel_solvers.enumerate import (
+                from ..solvers.exact.kernel_solvers.enumerate import (
                     _greedy_local_swap_descent,
                     _local_swap_pool,
                     _mismatch_scores,
@@ -415,8 +415,8 @@ def _reference_free_slap_seed(lgp, binary, *, repair=False):  # noqa: C901
                 if candidate_cost < cost:
                     mapping, cost = candidate, candidate_cost
                     repair_statistics["improved"] = True
-                from ..exact.seeds.seed import improve_seed_mapping
-                from ..slap.lap import _adjacency_and_elements
+                from ..solvers.exact.seeds.seed import improve_seed_mapping
+                from ..solvers.slap.lap import _adjacency_and_elements
 
                 _, elements = _adjacency_and_elements(lgp[0], binary)
                 _, product_elements = _adjacency_and_elements(lgp[1], binary)
@@ -428,7 +428,7 @@ def _reference_free_slap_seed(lgp, binary, *, repair=False):  # noqa: C901
                     mapping, cost = candidate, candidate_cost
                     repair_statistics["improved"] = True
                 repair_statistics["broad_descent"] = broad_statistics
-                from ..exact.seeds.seed_relaxation import refine_seed_mapping
+                from ..solvers.exact.seeds.seed_relaxation import refine_seed_mapping
 
                 candidate, relaxed_statistics = refine_seed_mapping(
                     reactant, product, elements, product_elements, mapping
@@ -444,7 +444,7 @@ def _reference_free_slap_seed(lgp, binary, *, repair=False):  # noqa: C901
                         repair_statistics["improved"] = True
                 repair_statistics["relaxation"] = relaxed_statistics
                 if cost > relaxed_statistics.get("profile_lower_bound", cost) + 1e-9:
-                    from ..exact.seeds.seed_fragments import improve_fragment_seed
+                    from ..solvers.exact.seeds.seed_fragments import improve_fragment_seed
 
                     candidate, fragment_statistics = improve_fragment_seed(
                         reactant, product, elements, product_elements, mapping

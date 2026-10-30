@@ -115,10 +115,10 @@ class TestSiphonPersistence(unittest.TestCase):
         for s in details.uncovered_siphons:
             self.assertIsInstance(s, set)
 
-    def test_max_siphon_size_can_change_result(self) -> None:
+    def test_max_siphon_size_reports_incomplete(self) -> None:
         """
         For A <-> B, the minimal siphon has size 2. Limiting max_siphon_size=1
-        suppresses it, so the function should vacuously return True.
+        cannot certify the condition and must report an incomplete result.
         """
         syn = SynCRN.from_reaction_strings(
             [
@@ -129,8 +129,10 @@ class TestSiphonPersistence(unittest.TestCase):
 
         details = siphon_persistence_details(syn, max_siphon_size=1)
 
-        self.assertTrue(details.persistence_ok)
-        self.assertEqual(details.siphons, [])
+        self.assertIsNone(details.persistence_ok)
+        self.assertFalse(details.complete)
+        self.assertEqual(details.termination_reason, "size_limit")
+        self.assertEqual({len(siphon) for siphon in details.siphons}, {2})
         self.assertEqual(details.semiflow_supports, [])
         self.assertEqual(details.uncovered_siphons, [])
 

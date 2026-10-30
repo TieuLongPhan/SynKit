@@ -1,0 +1,15 @@
+# Cached BioModels SBML files: downloaded on demand, not redistributed.
+# BioModels content carries its own terms of use.
+data/biomodels/
+
+# Generated evidence and executed notebooks are regenerated from source.
+results/
+notebooks/.ipynb_checkpoints/
+notebooks/*-executed.ipynb
+
+# Reviewed offline inputs belong to the research source tree.
+!data/kegg_modules.json
+!data/glycolysis_routes.json
+!data/biomodels_manifest.json
+!environments/crnt4sbml-requirements.txt
+!.gitignore

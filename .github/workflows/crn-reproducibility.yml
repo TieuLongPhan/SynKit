@@ -16,21 +16,30 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
+      - name: Install native analysis headers
+        run: sudo apt-get update && sudo apt-get install -y libboost-dev
       - name: Install project and notebook runner
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install --no-deps -e .
-          python -m pip install jupyter nbconvert
+          python -m pip install -e '.[test]' sympy nbconvert ipykernel
       - name: Run offline CRN evidence contracts
         run: |
-          python Experiment/CRN/validation.py --output /tmp/crn-validation.json
-          python Experiment/CRN/kegg_case_study.py --output /tmp/crn-kegg.json
-          python Experiment/CRN/paper_assets.py /tmp --output-dir /tmp/crn-tables --allow-missing
-          python Experiment/CRN/paper_assets.py /tmp --output-dir /tmp/crn-tables --allow-missing --check
-      - name: Execute the CRN quick-start notebook
+          python Experiment/CRN/run_all.py --quick --offline \
+            --output-dir /tmp/crn-results --summary /tmp/crn-results/summary.json
+          python Experiment/CRN/tools/check_reports.py /tmp/crn-results/summary.json
+      - name: Run CRN regression tests
+        run: python -m pytest Test/CRN -q
+      - name: Execute the glycolysis notebook
         run: |
-          jupyter nbconvert --to notebook --execute \
+          python -m nbconvert --to notebook --execute \
             Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb \
             --output /tmp/crn-glycolysis-executed.ipynb \
             --ExecutePreprocessor.timeout=180
+      - name: Upload CRN evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crn-evidence
+          path: |
+            /tmp/crn-results/
+            /tmp/crn-glycolysis-executed.ipynb

@@ -30,7 +30,11 @@ def _side_graph(
     endpoint_registry: Mapping[str, Any] | None = None,
 ) -> nx.Graph:
     """Parse one reaction side into SynKit's relative-stereo graph model."""
-    mol = Chem.MolFromSmiles(text)
+    # Participating hydrogens carry EPD atom references. RDKit's default parser
+    # removes them, breaking map-invariant event/trajectory comparison.
+    parameters = Chem.SmilesParserParams()
+    parameters.removeHs = False
+    mol = Chem.MolFromSmiles(text, parameters)
     if mol is None:
         raise ValueError(f"Cannot parse reaction side {text!r}.")
     graph = MolToGraph().transform(mol)

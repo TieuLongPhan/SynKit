@@ -488,7 +488,7 @@ class _NativeExactCodeBackend:
         self.calls = 0
 
     def code(self, graph, *, timeout_seconds, max_search_nodes):
-        from ..exact.native.canonical import native_canonical_code
+        from ..solvers.exact.native.canonical import native_canonical_code
 
         self.calls += 1
         try:

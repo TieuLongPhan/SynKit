@@ -1,42 +1,252 @@
-# .github/workflows/docker-publish.yml
-name: Publish SynKit Docker Package
+name: Build, test, and publish Docker images
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SYNKIT_DOCKER_IMAGE: tieulongphan/synkit
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-
+  metadata:
+    name: Validate Docker release version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Read project version and validate release tag
+        id: version
+        env:
+          RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import tomllib
 
-      - name: Set up QEMU (optional, for multi‑arch)
-        uses: docker/setup-qemu-action@v3
+          with open("pyproject.toml", "rb") as handle:
+              version = tomllib.load(handle)["project"]["version"]
+          assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9_.-]*", version), version
+          if os.environ["RELEASE_EVENT"] == "release":
+              assert os.environ["RELEASE_TAG"] in {version, "v" + version}, (
+                  os.environ["RELEASE_TAG"], version
+              )
+          with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+              handle.write(f"version={version}\n")
+          print(f"Docker images must contain SynKit {version}")
+          PY
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  build-test:
+    name: Native Docker image (${{ matrix.arch }})
+    needs: metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+            machine: x86_64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            machine: aarch64
+    runs-on: ${{ matrix.os }}
+    env:
+      SYNKIT_VERSION: ${{ needs.metadata.outputs.version }}
+      SYNKIT_ARCH: ${{ matrix.arch }}
+      SYNKIT_MACHINE: ${{ matrix.machine }}
+      SYNKIT_LOCAL_IMAGE: synkit:test-${{ github.sha }}-${{ matrix.arch }}
+      SYNKIT_DOCKER_CREDENTIALS_CONFIGURED: ${{ secrets.DOCKERHUB_USER != '' && secrets.DOCKERHUB_TOKEN != '' }}
+      DOCKER_BUILD_RECORD_UPLOAD: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native runner architecture
+        run: |
+          python3 - <<'PY'
+          import os
+          import platform
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+          assert platform.machine() == os.environ["SYNKIT_MACHINE"], platform.machine()
+          PY
+      - name: Require Docker Hub credentials for release publication
+        if: github.event_name == 'release' && env.SYNKIT_DOCKER_CREDENTIALS_CONFIGURED != 'true'
+        run: |
+          echo "::error::Release publication requires both DOCKERHUB_USER and DOCKERHUB_TOKEN secrets."
+          exit 1
+      - name: Validate Docker Hub login when credentials are configured
+        if: env.SYNKIT_DOCKER_CREDENTIALS_CONFIGURED == 'true'
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - name: Build and load the native image once
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            tieulongphan/synkit:${{ github.ref_name }}
-            tieulongphan/synkit:latest
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          push: false
+          provenance: false
+          tags: ${{ env.SYNKIT_LOCAL_IMAGE }}
+          labels: |
+            org.opencontainers.image.version=${{ needs.metadata.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+      - name: Verify installed version and compiler-free runtime
+        run: |
+          docker run --rm --network none -i \
+            -e SYNKIT_VERSION -e SYNKIT_MACHINE \
+            "$SYNKIT_LOCAL_IMAGE" python - <<'PY'
+          from importlib.metadata import version
+          import os
+          import platform
+          import shutil
+
+          assert version("synkit") == os.environ["SYNKIT_VERSION"]
+          assert platform.machine() == os.environ["SYNKIT_MACHINE"], platform.machine()
+          tools = ("cc", "c++", "gcc", "g++", "clang", "clang++", "cmake", "make", "ninja")
+          found = [tool for tool in tools if shutil.which(tool)]
+          assert not found, f"Build tools found in runtime image: {found}"
+          print(f"SynKit {version('synkit')}: native runtime without build tools")
+          PY
+      - name: Smoke-test all installed C++ backends
+        run: |
+          docker run --rm --network none \
+            --mount "type=bind,source=$GITHUB_WORKSPACE/scripts/smoke_native_wheel.py,target=/tmp/smoke_native_wheel.py,readonly" \
+            "$SYNKIT_LOCAL_IMAGE" python /tmp/smoke_native_wheel.py
+      - name: Save the tested image for release publication
+        if: github.event_name == 'release'
+        env:
+          SYNKIT_IMAGE_BUNDLE: ${{ runner.temp }}/synkit-docker-${{ matrix.arch }}
+        run: |
+          mkdir -p "$SYNKIT_IMAGE_BUNDLE"
+          docker image inspect "$SYNKIT_LOCAL_IMAGE" > "$SYNKIT_IMAGE_BUNDLE/inspect.json"
+          docker save "$SYNKIT_LOCAL_IMAGE" | gzip -1 > "$SYNKIT_IMAGE_BUNDLE/image.tar.gz"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          folder = Path(os.environ["SYNKIT_IMAGE_BUNDLE"])
+          image = json.loads((folder / "inspect.json").read_text())[0]
+          assert image["Os"] == "linux" and image["Architecture"] == os.environ["SYNKIT_ARCH"]
+          labels = image["Config"]["Labels"]
+          assert labels["org.opencontainers.image.version"] == os.environ["SYNKIT_VERSION"]
+          assert labels["org.opencontainers.image.revision"] == os.environ["GITHUB_SHA"]
+          digest = hashlib.sha256()
+          with (folder / "image.tar.gz").open("rb") as handle:
+              for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                  digest.update(chunk)
+          record = {
+              "image_id": image["Id"], "tag": os.environ["SYNKIT_LOCAL_IMAGE"],
+              "arch": os.environ["SYNKIT_ARCH"], "version": os.environ["SYNKIT_VERSION"],
+              "revision": os.environ["GITHUB_SHA"], "archive_sha256": digest.hexdigest(),
+          }
+          (folder / "tested-image.json").write_text(json.dumps(record, indent=2) + "\n")
+          (folder / "inspect.json").unlink()
+          PY
+      - name: Retain the exact tested image
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: synkit-docker-${{ matrix.arch }}
+          path: ${{ runner.temp }}/synkit-docker-${{ matrix.arch }}/
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+  publish:
+    name: Publish tested Docker images and multi-platform manifest
+    if: github.event_name == 'release'
+    needs: [metadata, build-test]
+    runs-on: ubuntu-24.04
+    env:
+      SYNKIT_VERSION: ${{ needs.metadata.outputs.version }}
+      SYNKIT_PRERELEASE: ${{ github.event.release.prerelease }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: synkit-docker-*
+          path: ${{ runner.temp }}/tested-images
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Publish the tested images without rebuilding
+        env:
+          SYNKIT_IMAGE_BUNDLES: ${{ runner.temp }}/tested-images
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+
+          repository = os.environ["SYNKIT_DOCKER_IMAGE"]
+          version = os.environ["SYNKIT_VERSION"]
+          revision = os.environ["GITHUB_SHA"]
+          tested_images = []
+          for arch in ("amd64", "arm64"):
+              folder = Path(os.environ["SYNKIT_IMAGE_BUNDLES"]) / f"synkit-docker-{arch}"
+              record = json.loads((folder / "tested-image.json").read_text())
+              assert (record["arch"], record["version"], record["revision"]) == (arch, version, revision)
+              assert record["tag"] == f"synkit:test-{revision}-{arch}"
+              assert re.fullmatch(r"sha256:[0-9a-f]{64}", record["image_id"])
+              archive = folder / "image.tar.gz"
+              digest = hashlib.sha256()
+              with archive.open("rb") as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                      digest.update(chunk)
+              assert digest.hexdigest() == record["archive_sha256"], archive
+              subprocess.run(["docker", "load", "--input", str(archive)], check=True)
+              image = json.loads(subprocess.check_output(
+                  ["docker", "image", "inspect", record["tag"]], text=True
+              ))[0]
+              assert image["Id"] == record["image_id"], "Tested image identity changed"
+              assert image["Os"] == "linux" and image["Architecture"] == arch
+              labels = image["Config"]["Labels"]
+              assert labels["org.opencontainers.image.version"] == version
+              assert labels["org.opencontainers.image.revision"] == revision
+              tested_images.append((arch, record["image_id"]))
+          references = []
+          for arch, tested_image_id in tested_images:
+              tag = f"{repository}:{version}-{arch}-{revision[:12]}"
+              subprocess.run(["docker", "tag", tested_image_id, tag], check=True)
+              subprocess.run(["docker", "push", tag], check=True)
+              pushed = json.loads(subprocess.check_output(
+                  ["docker", "image", "inspect", tag], text=True
+              ))[0]
+              assert pushed["Id"] == tested_image_id
+              reference = next(
+                  item for item in pushed["RepoDigests"]
+                  if item.split("@")[0] in {repository, "docker.io/" + repository}
+              )
+              assert re.fullmatch(r"sha256:[0-9a-f]{64}", reference.split("@")[1])
+              references.append(f"{repository}@{reference.split('@')[1]}")
+          command = ["docker", "buildx", "imagetools", "create",
+                     "--tag", f"{repository}:{version}", "--tag", f"{repository}:v{version}"]
+          if os.environ["SYNKIT_PRERELEASE"] != "true":
+              command.extend(["--tag", f"{repository}:latest"])
+          subprocess.run([*command, *references], check=True)
+          for reference in references:
+              print(f"Published tested image: {reference}")
+          PY

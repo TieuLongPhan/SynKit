@@ -63,7 +63,7 @@ def prepare_failure_shards(
     output_dir: Path,
     shard_count: int,
 ) -> dict[str, Any]:
-    """Write disjoint remaining-row shards with prefix provenance."""
+    """Write disjoint remaining-row shards and record the completed prefix for each."""
     if shard_count < 1:
         raise ValueError("Shard count must be positive")
     rows_dir = rows_dir.resolve()

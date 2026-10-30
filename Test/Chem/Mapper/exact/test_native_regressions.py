@@ -50,8 +50,19 @@ def test_native_signed_typed_orbits_against_raw_matrix_oracle(
 ):
     """Independent orbit keys use only explicit permutations and raw matrices."""
     from synkit.Chem.Mapper.analysis import GlobalShellConfig, _BlindShellObserver
+    from synkit.Chem.Mapper.exact import native_candidates
     from synkit.Chem.Mapper.exact.native_candidates import enumerate_native_candidates
     from synkit.Chem.Mapper.exact.orbit_aggregation import OrbitAccumulator
+
+    bounded_side_groups = native_candidates.bounded_automorphism_permutations
+
+    def side_groups_without_wall_deadline(*args, **kwargs):
+        # This six-vertex exhaustive correctness oracle must not depend on
+        # shared-runner wall-clock speed. Retain the permutation and node caps.
+        kwargs["timeout_seconds"] = float("inf")
+        return bounded_side_groups(*args, **kwargs)
+
+    monkeypatch.setattr(native_candidates, "bounded_automorphism_permutations", side_groups_without_wall_deadline)
 
     rng = np.random.default_rng(20260909 + seed)
     n = 6

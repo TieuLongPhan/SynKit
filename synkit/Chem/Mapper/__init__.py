@@ -4,10 +4,20 @@ synkit.Chem.Mapper
 
 Atom-to-atom mapping offers several explicit workflows:
 
+* Platform wheels include the shared C++ PABS–SLAP core. Custom builds use
+  ``_native.build.build_mapper_native``. The
+  ``map_reaction_implicit`` interface scores heavy-atom classes
+  with minimum implicit-H Lewis completion, without expanding hydrogen.
+  Optional OR-Tools builds add checked integer LP bounds; floating solver
+  status and heuristic proposals never establish optimality on their own.
 * ``Mapper(method='propagate').map(...)`` provides one interface and result
   type for eight named methods. ``Mapper.methods()`` lists their names.
 * ``map_reaction(...)`` defaults to full-space Python exact propagation search.
-  ``backend='cpp'`` selects the optional compiled integer-shell search.
+  ``backend='cpp'`` selects the optional compiled minimum and cost-range search.
+  Reaction SMILES use Lewis CD (bonds plus nonbonding-electron changes) and
+  explicit hydrogens by default. ``objective='bond'`` selects bond-only CD.
+  Omitting CD enumerates all minimum-distance classes; native search also
+  supports numeric ``CD_mode='at_most'`` for classes at distance <= CD.
 * ``AAMapper().map_smiles(...)`` defaults to the approximate WL/SLAP mapper.
 * ``AAMapper().map_smiles(..., enumerate_exact=True)`` runs SLAP followed by
   exact refinement of a reduced uncertainty kernel.
@@ -41,24 +51,29 @@ Quick start
 (True, 0.0)
 
 Several inequivalent symmetry classes can share a minimum. Inspect
-``result.mapped_reactions`` and ``result.complete`` separately. For the native
-backend, explicitly build a library with ``exact.native.build.build_native``
-and pass ``backend="cpp", library_path=library`` to the same interface.
+``result.mapped_reactions`` and ``result.complete`` separately.
+``Mapper("native")`` uses the bundled wheel library; an explicit
+``library_path`` selects a custom build. The older
+``solvers.exact.native.build.build_native`` ABI3-only builder remains supported.
 
 Package layout
 --------------
 :mod:`synkit.Chem.Mapper.graph`
     Labeled-graph data structure, WL/2-WL refinement, automorphisms,
     block-cut-tree decomposition.
-:mod:`synkit.Chem.Mapper.slap`
+:mod:`synkit.Chem.Mapper.solvers.slap`
     Sequential-LAP engine (:class:`GraphMatcher`) and LAP utilities
     (chemical distance, Gilmore-Lawler lower bound).
-:mod:`synkit.Chem.Mapper.exact`
+:mod:`synkit.Chem.Mapper.solvers.exact`
     Distinct exact methods live in ``distance_search/``, ``kernel_solvers/``,
     ``pabs/``, and ``native/``. Shared LAP proofs live in ``assignment/`` and
     feasible-incumbent heuristics in ``seeds/``. ``enumerate_pabs_mappings``
-    selects Python or C++ through one interface. The C++ source and explicit
-    builder are adjacent in ``exact/native/``.
+    selects Python or C++ through one interface. The legacy ABI3 source and
+    builder are adjacent in ``solvers/exact/native/``.
+:mod:`synkit.Chem.Mapper.solvers.native`
+    Thin bindings, explicit immutable builds and chemistry preparation for the
+    shared C++ core in ``solvers/native/cpp/``. Production builds omit internal oracle exports;
+    a separate ``test_hooks=True`` build enables mathematical tests.
 :mod:`synkit.Chem.Mapper.reaction_search`
     Unmapped reaction SMILES, exact symmetry class representatives,
     explicit or compressed hydrogen, and optional missing-atom padding.
@@ -83,13 +98,69 @@ Public API
 
 from ._compat import (
     MAPPER_MODULE_ALIASES as _MAPPER_MODULE_ALIASES,
-    register_module_aliases as _register_module_aliases,
 )
-from .graph.labeled_graph import LabeledGraph
-from .slap.sequential import GraphMatcher
+from ._compat import (
+    register_module_aliases as _register_module_aliases,
+    install_solver_aliases as _install_solver_aliases,
+)
+
+from .adapters.template import (
+    ClassCorrespondence,
+    ProductRecoveryScore,
+    SourceReplayResult,
+    class_correspondence_from_export,
+    correspondence_from_export,
+    executable_rule_from_correspondence,
+    mapped_reaction_from_correspondence,
+    prospective_products,
+    replay_executable_rule_on_source,
+    score_product_recovery,
+)
 from .chem.aam import AAMapper
 from .chem.blind import BlindedReactionProblem, blinded_mapped_reaction_problem
-from .validation.aam_validator import AAMValidator
+from .solvers.exact.core import (
+    ITSComponentReduction,
+    reduce_to_reference_its_components,
+)
+from .solvers.exact.distance_search.search import (
+    CertificateVerificationError,
+    DistanceEnumerationCertificate,
+    DistanceEnumerationResult,
+    ExactEnumerationLimitError,
+    enumerate_distance_mappings,
+    verify_distance_enumeration_certificate,
+)
+from .solvers.exact.edit_support import (
+    BinaryEditBudget,
+    BinaryEditSupportResult,
+    binary_edit_budget,
+    enumerate_binary_edit_support_mappings,
+)
+from .solvers.exact.hybrid import (
+    HybridBackend,
+    HybridBackendDecision,
+    enumerate_hybrid_distance_mappings,
+)
+from .solvers.exact.hydrogen import (
+    HydrogenEnumerationResult,
+    HydrogenTransferPlan,
+    enumerate_lgp_hydrogen_transfers,
+    enumerate_minimal_hydrogen_transfers,
+)
+from .solvers.exact.pabs.propagation import PropagationConfig, enumerate_synister_cp_mappings
+from .solvers.exact.search import enumerate_pabs_mappings
+from .graph.labeled_graph import LabeledGraph
+from .mapper import Mapper, MappingResult
+from .reaction_search import ReactionMapping, ReactionMappingResult, map_reaction
+from .reporting.alternatives import (
+    AlternativeTarget,
+    ExactITSAlternative,
+    ExactITSAlternativeResult,
+    MappedReactionITSAlternativeResult,
+    SeedMode,
+    enumerate_exact_its_alternatives,
+    enumerate_mapped_reaction_its_alternatives,
+)
 from .reporting.analysis import (
     GlobalShellAnalysisResult,
     GlobalShellConfig,
@@ -101,60 +172,10 @@ from .reporting.spectrum import (
     ExactStructureSpectrumAccumulator,
     exact_its_and_template_codes,
 )
-from .reporting.alternatives import (
-    AlternativeTarget,
-    ExactITSAlternative,
-    ExactITSAlternativeResult,
-    MappedReactionITSAlternativeResult,
-    SeedMode,
-    enumerate_exact_its_alternatives,
-    enumerate_mapped_reaction_its_alternatives,
-)
-from .adapters.template import (
-    ClassCorrespondence,
-    class_correspondence_from_export,
-    SourceReplayResult,
-    ProductRecoveryScore,
-    correspondence_from_export,
-    executable_rule_from_correspondence,
-    mapped_reaction_from_correspondence,
-    prospective_products,
-    replay_executable_rule_on_source,
-    score_product_recovery,
-)
-from .exact.distance_search.search import (
-    CertificateVerificationError,
-    DistanceEnumerationCertificate,
-    DistanceEnumerationResult,
-    ExactEnumerationLimitError,
-    enumerate_distance_mappings,
-    verify_distance_enumeration_certificate,
-)
-from .exact.core import (
-    ITSComponentReduction,
-    reduce_to_reference_its_components,
-)
-from .exact.hydrogen import (
-    HydrogenEnumerationResult,
-    HydrogenTransferPlan,
-    enumerate_lgp_hydrogen_transfers,
-    enumerate_minimal_hydrogen_transfers,
-)
-from .exact.edit_support import (
-    BinaryEditBudget,
-    BinaryEditSupportResult,
-    binary_edit_budget,
-    enumerate_binary_edit_support_mappings,
-)
-from .exact.hybrid import (
-    HybridBackend,
-    HybridBackendDecision,
-    enumerate_hybrid_distance_mappings,
-)
-from .exact.pabs.propagation import PropagationConfig, enumerate_synister_cp_mappings
-from .exact.search import enumerate_pabs_mappings
-from .reaction_search import ReactionMapping, ReactionMappingResult, map_reaction
-from .mapper import Mapper, MappingResult
+from .solvers.slap.sequential import GraphMatcher
+from .solvers.native.implicit import map_reaction_implicit
+from .validation.aam_validator import AAMValidator
+from .solvers import exact, native as _native, slap
 
 RESEARCH_BASIS_TITLE = (
     "General and scalable atom-to-atom mapping via "
@@ -165,68 +186,70 @@ RESEARCH_BASIS_URL = f"https://doi.org/{RESEARCH_BASIS_DOI}"
 RESEARCH_BASIS_AUTHORS = "Shin-ichi Koda and Shinji Saito"
 
 __all__ = [
-    "Mapper",
-    "MappingResult",
-    "LabeledGraph",
-    "GraphMatcher",
-    "AAMapper",
+    "RESEARCH_BASIS_AUTHORS",
+    "RESEARCH_BASIS_DOI",
+    "RESEARCH_BASIS_TITLE",
+    "RESEARCH_BASIS_URL",
     "AAMValidator",
-    "BlindedReactionProblem",
-    "blinded_mapped_reaction_problem",
-    "GlobalShellAnalysisResult",
-    "GlobalShellConfig",
-    "ReactionCenterSpectrum",
-    "analyze_reference_blinded_global_shell",
-    "ExactStructureSpectrum",
-    "ExactStructureSpectrumAccumulator",
-    "exact_its_and_template_codes",
+    "AAMapper",
     "AlternativeTarget",
-    "ExactITSAlternative",
-    "ExactITSAlternativeResult",
-    "MappedReactionITSAlternativeResult",
-    "SeedMode",
-    "enumerate_exact_its_alternatives",
-    "enumerate_mapped_reaction_its_alternatives",
-    "SourceReplayResult",
-    "ClassCorrespondence",
-    "class_correspondence_from_export",
-    "ProductRecoveryScore",
-    "correspondence_from_export",
-    "executable_rule_from_correspondence",
-    "mapped_reaction_from_correspondence",
-    "prospective_products",
-    "score_product_recovery",
-    "replay_executable_rule_on_source",
+    "BinaryEditBudget",
+    "BinaryEditSupportResult",
+    "BlindedReactionProblem",
     "CertificateVerificationError",
+    "ClassCorrespondence",
     "DistanceEnumerationCertificate",
     "DistanceEnumerationResult",
     "ExactEnumerationLimitError",
-    "enumerate_distance_mappings",
-    "verify_distance_enumeration_certificate",
-    "ITSComponentReduction",
-    "reduce_to_reference_its_components",
-    "HydrogenEnumerationResult",
-    "HydrogenTransferPlan",
-    "enumerate_lgp_hydrogen_transfers",
-    "enumerate_minimal_hydrogen_transfers",
-    "BinaryEditBudget",
-    "BinaryEditSupportResult",
-    "binary_edit_budget",
-    "enumerate_binary_edit_support_mappings",
+    "ExactITSAlternative",
+    "ExactITSAlternativeResult",
+    "ExactStructureSpectrum",
+    "ExactStructureSpectrumAccumulator",
+    "GlobalShellAnalysisResult",
+    "GlobalShellConfig",
+    "GraphMatcher",
     "HybridBackend",
     "HybridBackendDecision",
-    "enumerate_hybrid_distance_mappings",
+    "HydrogenEnumerationResult",
+    "HydrogenTransferPlan",
+    "ITSComponentReduction",
+    "LabeledGraph",
+    "MappedReactionITSAlternativeResult",
+    "Mapper",
+    "MappingResult",
+    "ProductRecoveryScore",
     "PropagationConfig",
-    "enumerate_synister_cp_mappings",
-    "enumerate_pabs_mappings",
+    "ReactionCenterSpectrum",
     "ReactionMapping",
     "ReactionMappingResult",
+    "SeedMode",
+    "SourceReplayResult",
+    "analyze_reference_blinded_global_shell",
+    "binary_edit_budget",
+    "blinded_mapped_reaction_problem",
+    "class_correspondence_from_export",
+    "correspondence_from_export",
+    "enumerate_binary_edit_support_mappings",
+    "enumerate_distance_mappings",
+    "enumerate_exact_its_alternatives",
+    "enumerate_hybrid_distance_mappings",
+    "enumerate_lgp_hydrogen_transfers",
+    "enumerate_mapped_reaction_its_alternatives",
+    "enumerate_minimal_hydrogen_transfers",
+    "enumerate_pabs_mappings",
+    "enumerate_synister_cp_mappings",
+    "exact_its_and_template_codes",
+    "executable_rule_from_correspondence",
     "map_reaction",
-    "RESEARCH_BASIS_TITLE",
-    "RESEARCH_BASIS_DOI",
-    "RESEARCH_BASIS_URL",
-    "RESEARCH_BASIS_AUTHORS",
+    "map_reaction_implicit",
+    "mapped_reaction_from_correspondence",
+    "prospective_products",
+    "reduce_to_reference_its_components",
+    "replay_executable_rule_on_source",
+    "score_product_recovery",
+    "verify_distance_enumeration_certificate",
 ]
 
 # Preserve flat imports while keeping implementation files in focused packages.
+_install_solver_aliases()
 _register_module_aliases(__name__, _MAPPER_MODULE_ALIASES)

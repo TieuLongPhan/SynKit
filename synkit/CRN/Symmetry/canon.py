@@ -412,4 +412,30 @@ def canonical(source: Any, **kwargs: Any) -> nx.DiGraph:
             include_stoich=True,
         )
     """
+    from ..backend import resolve_backend
+
+    backend, library = resolve_backend()
+    if backend == "cpp":
+        from ..native_analysis import graph_symmetry, NativeSearchLimit
+        from ..Structure import SynCRN
+
+        if (
+            kwargs.get("config", SymmetryConfig.topological())
+            != SymmetryConfig.topological()
+            or kwargs.get("include_rule", True) is False
+            or kwargs.get("include_stoich", True) is False
+        ):
+            raise NotImplementedError(
+                "Native canonicalization currently requires the complete topological reaction graph"
+            )
+        result = graph_symmetry(source, library_path=library)
+        if not result.complete:
+            raise NativeSearchLimit(result)
+        model = source if isinstance(source, SynCRN) else SynCRN.from_digraph(source)
+        graph = model.to_digraph(node_ids="internal")
+        return nx.relabel_nodes(
+            graph,
+            {v: i for i, v in enumerate(result.value["canonical_order"])},
+            copy=True,
+        )
     return CRNCanonicalizer(source, **kwargs).canonical_graph()

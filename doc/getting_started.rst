@@ -45,9 +45,13 @@ Install
          docker run --rm tieulongphan/synkit:latest \
            python -c "import importlib.metadata as m; print(m.version('synkit'))"
 
-SynKit requires Python 3.11 or later. Install optional general dependencies,
+SynKit requires Python 3.10 or later. Install optional general dependencies,
 including the kernel MILP solver, with ``python -m pip install 'synkit[all]'``.
 For the MILP solver alone, use ``python -m pip install 'synkit[milp]'``.
+
+Platform wheels include the C++ atom mapper. See :doc:`mapper` for native
+solver availability, hydrogen models and source builds. Optional Python
+extras do not enable the C++ solver SDKs.
 
 For development, create and activate the project environment from the
 repository root:
@@ -77,16 +81,15 @@ Map an unmapped reaction
 
 .. code-block:: python
 
-   from synkit.Chem.Mapper import Mapper
+   from synkit.Chem.Mapper import map_reaction_implicit
 
-   result = Mapper(method="propagate").map("CCO>>CC=O")
+   result = map_reaction_implicit("CCO>>COC", time_limit_seconds=10)
    print(result.mapped_reactions)
-   print(result.minimum_cost, result.optimality_proven, result.complete)
-   # 1.0 True True
+   print(result.minimum_cost, result.complete)
 
-``propagate`` is the default method. The :ref:`atom-to-atom-mapping` guide
-compares all eight methods and explains their search scopes, result fields,
-hydrogen modes, and resource limits.
+This uses C++ PABS with SLAP starting mappings and minimum implicit-H Lewis scoring. The
+:doc:`mapper` guide explains PMCD proofs, enumeration at a supplied CD,
+and the separate Python and explicit-H interfaces.
 
 Inspect changed bonds
 ~~~~~~~~~~~~~~~~~~~~~

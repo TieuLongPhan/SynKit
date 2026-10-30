@@ -11,6 +11,11 @@ import pytest
 @pytest.mark.parametrize(
     "historical, canonical",
     [
+        ("exact", "solvers.exact"),
+        ("exact.pabs.propagation", "solvers.exact.pabs.propagation"),
+        ("slap.sequential", "solvers.slap.sequential"),
+        ("_native.core", "solvers.native.core"),
+        ("_native.build", "solvers.native.build"),
         ("analysis", "reporting.analysis"),
         ("spectrum", "reporting.spectrum"),
         ("native_analysis", "reporting.native_analysis"),
@@ -58,7 +63,13 @@ def test_pickles_can_resolve_historical_class_references(historical, symbol):
         assert pickle.loads(global_reference) is expected
 
 
-@pytest.mark.parametrize("module", ["exact.native_build", "exact.native.build"])
+@pytest.mark.parametrize(
+    "module",
+    [
+        "exact.native_build", "exact.native.build", "solvers.exact.native.build",
+        "_native.build", "solvers.native.build",
+    ],
+)
 def test_old_and_grouped_native_build_commands_remain_runnable(module):
     completed = subprocess.run(
         [sys.executable, "-m", f"synkit.Chem.Mapper.{module}", "--help"],

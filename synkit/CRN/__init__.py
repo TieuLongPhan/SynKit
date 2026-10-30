@@ -112,6 +112,21 @@ from .Symmetry import (
 )
 from .Visualize import CRNStyle, CRNVis, draw_crn
 from .IO import crn_from_sbml, crn_to_sbml, read_sbml, write_sbml
+from .analysis import AnalysisResult, CRNAnalysis, Scenario
+from .native import (
+    build_native,
+    bundled_native_library,
+    enumerate_semiflows,
+    enumerate_structural_sets,
+)
+from .Petrinet.minimal_semiflows import SemiflowSearchLimit
+from .backend import native_backend, python_backend
+from .native_analysis import (
+    NativeSearchLimit,
+    graph_symmetry,
+    matrix_analysis,
+    qualitative_path,
+)
 
 __all__ = [
     # node-kind vocabulary
@@ -200,4 +215,19 @@ __all__ = [
     "crn_to_sbml",
     "read_sbml",
     "write_sbml",
+    # prepared analysis and native backends
+    "AnalysisResult",
+    "CRNAnalysis",
+    "Scenario",
+    "build_native",
+    "bundled_native_library",
+    "enumerate_structural_sets",
+    "enumerate_semiflows",
+    "SemiflowSearchLimit",
+    "native_backend",
+    "NativeSearchLimit",
+    "matrix_analysis",
+    "python_backend",
+    "graph_symmetry",
+    "qualitative_path",
 ]

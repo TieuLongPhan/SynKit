@@ -1,1 +1,1 @@
-"""Executable, non-test experiment packages."""
+"""Study and benchmark packages."""

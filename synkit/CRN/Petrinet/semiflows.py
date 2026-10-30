@@ -54,28 +54,9 @@ def _nullspace(a: np.ndarray, *, rtol: float = 1e-12) -> np.ndarray:
         ns = _nullspace(a)
         print(ns.shape)
     """
-    a = np.asarray(a, dtype=float)
-    if a.ndim != 2:
-        raise ValueError("Input matrix must be 2-dimensional")
+    from ..Props.stoich import _null_space
 
-    if a.shape[1] == 0:
-        return np.zeros((0, 0), dtype=float)
-
-    if a.shape[0] == 0:
-        return np.eye(a.shape[1], dtype=float)
-
-    _, s, vh = np.linalg.svd(a, full_matrices=True)
-
-    if s.size == 0:
-        return np.eye(a.shape[1], dtype=float)
-
-    tol = float(rtol) * max(a.shape) * float(np.max(s))
-    rank = int(np.sum(s > tol))
-    ns = vh[rank:].T.copy()
-
-    if ns.size == 0:
-        return np.zeros((a.shape[1], 0), dtype=float)
-    return ns
+    return _null_space(np.asarray(a, dtype=float), rtol=rtol)
 
 
 def _stoich_from_petri(net: PetriNet) -> Tuple[List[str], List[str], np.ndarray]:
@@ -170,7 +151,13 @@ def stoichiometric_matrix(crn: Any) -> Tuple[List[str], List[str], np.ndarray]:
     G = _as_graph(crn)
     species_order, reaction_order, _, _ = _species_and_rule_order(G)
     S = props_stoichiometric_matrix(crn)
-    return [str(x) for x in species_order], [str(x) for x in reaction_order], S
+    # Matrix rows follow source graph order, but Petri-net supports use canonical
+    # ids. Preserve row order while normalizing the names into one coordinate system.
+    return (
+        [str(G.nodes[x].get("syncrn_id", x)) for x in species_order],
+        [str(G.nodes[x].get("syncrn_id", x)) for x in reaction_order],
+        S,
+    )
 
 
 def left_kernel_basis(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
@@ -250,7 +237,7 @@ def right_kernel_basis(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
     return right_nullspace(crn, rtol=rtol)
 
 
-def _semiflow_matrix(crn: Any, *, kind: str) -> np.ndarray:
+def _semiflow_matrix(crn: Any, *, kind: str, **backend_options) -> np.ndarray:
     """Build the minimal-semiflow matrix for a CRN-like input.
 
     :param crn:
@@ -264,15 +251,16 @@ def _semiflow_matrix(crn: Any, *, kind: str) -> np.ndarray:
     :rtype: np.ndarray
     """
     _, _, s = stoichiometric_matrix(crn)
-    flows = minimal_semiflows(s, kind=kind)
+    flows = minimal_semiflows(s, kind=kind, **backend_options)
 
     width = s.shape[0] if kind == "p" else s.shape[1]
     if not flows:
         return np.zeros((width, 0), dtype=float)
-    return np.asarray(flows, dtype=float).T
+    dtype = object if any(abs(v) > 2**53 for row in flows for v in row) else float
+    return np.asarray(flows, dtype=dtype).T
 
 
-def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
+def find_p_semiflows(crn: Any, *, rtol: float = 1e-12, **backend_options) -> np.ndarray:
     """Compute minimal P-semiflows, also called place invariants.
 
     A P-semiflow is a vector ``y >= 0`` with ``y^T S = 0``; its support is a
@@ -309,10 +297,10 @@ def find_p_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
         #  [0. 1.]
         #  [0. 1.]]
     """
-    return _semiflow_matrix(crn, kind="p")
+    return _semiflow_matrix(crn, kind="p", **backend_options)
 
 
-def find_t_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
+def find_t_semiflows(crn: Any, *, rtol: float = 1e-12, **backend_options) -> np.ndarray:
     """Compute minimal T-semiflows, also called transition invariants.
 
     A T-semiflow is a vector ``x >= 0`` with ``S x = 0``; its support is a set
@@ -346,7 +334,7 @@ def find_t_semiflows(crn: Any, *, rtol: float = 1e-12) -> np.ndarray:
         # [[1.]
         #  [1.]]
     """
-    return _semiflow_matrix(crn, kind="t")
+    return _semiflow_matrix(crn, kind="t", **backend_options)
 
 
 def _select_semiflow_basis(

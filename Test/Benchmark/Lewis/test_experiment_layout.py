@@ -35,7 +35,8 @@ def test_data_are_collocated_without_python_modules() -> None:
         EXPERIMENT_ROOT / "rule_replay" / "Data",
         EXPERIMENT_ROOT / "mech_path" / "Data",
     )
-    assert all(path.is_dir() for path in data_directories)
+    # Generated result directories can be absent from a fresh checkout.
+    assert all(not path.exists() or path.is_dir() for path in data_directories)
     assert not any(any(path.rglob("*.py")) for path in data_directories)
     assert not (ROOT / "Data" / "Benchmark" / "Lewis").exists()
 

@@ -106,6 +106,8 @@ class CRNAutomorphism:
             Symmetry configuration. If omitted, semantic mode is used.
         :type config: Optional[SymmetryConfig]
         """
+        self._native_source = source
+        self._native_options = (include_rule, include_stoich)
         self.config, self.wl, self._engine = self._build_components(
             source,
             include_rule=include_rule,
@@ -360,6 +362,36 @@ class CRNAutomorphism:
             Automorphism summary result.
         :rtype: AutomorphismResult
         """
+        from ..backend import resolve_backend
+
+        backend, library = resolve_backend()
+        if backend == "cpp":
+            from ..native_analysis import graph_symmetry, NativeSearchLimit
+            from time import monotonic
+
+            if self.config != SymmetryConfig.topological() or not all(
+                self._native_options
+            ):
+                raise NotImplementedError(
+                    "Native automorphisms currently require topological semantics"
+                )
+            started = monotonic()
+            result = graph_symmetry(
+                self._native_source,
+                library_path=library,
+                time_limit=30.0 if timeout_sec is None else timeout_sec,
+                max_count=max_count,
+            )
+            if not result.complete:
+                raise NativeSearchLimit(result)
+            return AutomorphismResult(
+                graph_type="native_topological",
+                automorphism_count=result.value["automorphism_count"],
+                sample_mappings=[],
+                orbits=[set(group) for group in result.value["orbits"]],
+                elapsed_seconds=monotonic() - started,
+                stopped_early=False,
+            )
         return self._engine.automorphism_result(
             max_count=max_count, timeout_sec=timeout_sec
         )

@@ -30,8 +30,8 @@ LABELS = {
     "rb1": r"$\mathtt{RB1}$",
     "rb2": r"$\mathtt{RB2}$",
 }
-# Validated colourblind-safe categorical palette (Okabe--Ito); identity is also
-# carried by the direct method labels on every row.
+# Okabe--Ito categorical palette. Method labels on each row also identify
+# the plotted results.
 COLORS = {
     "synkit": "#0072B2",
     "gm": "#009E73",
@@ -43,7 +43,7 @@ RUNTIME_COLORS = {
     "rb2": "#F2A65A",
     "gm": "#E07B7B",
 }
-# Display order (fastest general expansion first); shared across both panels.
+# Display order (fastest general expansion first), shared across both panels.
 ORDER = ("synkit", "rb1", "rb2", "gm")
 INK = "#232323"
 MUTED = "#6B6B6B"
@@ -463,7 +463,7 @@ def _general_dot_panel(axis, samples: dict, label: str) -> None:
 
 
 def _coverage_bar_panel(axis, coverage: dict, label: str) -> None:
-    """Radical valid-completion coverage as bars; 100% General ITS reference."""
+    """Plot radical valid-completion coverage with a 100% General ITS reference."""
     _method_yaxis(axis, ORDER)
     base = 60.0
     for y, method in enumerate(ORDER):

@@ -63,6 +63,12 @@ Documentation quick links
 
       Reaction validation, AAM checks, balance and fingerprinting.
 
+   .. grid-item-card:: Atom mapping
+      :link: mapper
+      :link-type: doc
+
+      C++ PABS with SLAP, PMCD proofs and exact-CD enumeration.
+
    .. grid-item-card:: :octicon:`share-android` Graph Algorithms
       :link: graph
       :link-type: doc

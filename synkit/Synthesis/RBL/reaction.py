@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import copy
 from collections import Counter
-from typing import Any, Dict, List, Optional, Self, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 import networkx as nx
 
@@ -438,9 +443,7 @@ class RBLReactionMixin:
 
             its_back = self._safe_rsmi_to_its(rsmi_decorated)
             if its_back is not None:
-                application_provenance = its_graph.graph.get(
-                    "application_provenance"
-                )
+                application_provenance = its_graph.graph.get("application_provenance")
                 if application_provenance is not None:
                     its_back.graph["application_provenance"] = copy.deepcopy(
                         application_provenance

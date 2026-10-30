@@ -15,9 +15,9 @@ from typing import Literal
 
 from .analysis import GlobalShellConfig, _property_vectors, _reference_free_slap_seed
 from ..chem.blind import blinded_mapped_reaction_problem
-from ..exact.distance_search.records import DistanceTarget, normalize_distance_target
-from ..exact.hybrid import enumerate_hybrid_distance_mappings
-from ..slap.lap import _adjacency_and_elements, chemical_distance
+from ..solvers.exact.distance_search.records import DistanceTarget, normalize_distance_target
+from ..solvers.exact.hybrid import enumerate_hybrid_distance_mappings
+from ..solvers.slap.lap import _adjacency_and_elements, chemical_distance
 from .spectrum import _code_identifier, exact_its_and_template_codes
 
 AlternativeTarget = Literal["reference", "minimal"] | Real

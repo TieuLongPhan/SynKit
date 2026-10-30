@@ -2,7 +2,11 @@
 
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-import tomllib
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 try:
     # A source checkout can coexist with an older installed distribution.
@@ -16,4 +20,4 @@ except (KeyError, OSError, tomllib.TOMLDecodeError):
     try:
         __version__ = version("synkit")
     except PackageNotFoundError:
-        __version__ = "1.6.3"
+        __version__ = "1.6.5"

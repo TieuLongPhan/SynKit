@@ -778,6 +778,10 @@ class PathwayRealizability:
         self,
         max_states: Optional[int] = None,
         max_depth: Optional[int] = None,
+        *,
+        backend="auto",
+        library_path=None,
+        time_limit=30.0,
     ) -> RealizabilityResult:
         """Return a typed result from bounded breadth-first search.
 
@@ -807,6 +811,31 @@ class PathwayRealizability:
             print(result.status)
             print(result.certificate)
         """
+        from ..backend import resolve_backend
+
+        backend, library_path = resolve_backend(backend, library_path)
+        if backend == "cpp":
+            from ..native_analysis import petri_reachability
+
+            payload = petri_reachability(
+                self.petri,
+                self.initial_marking,
+                self.goal_exact,
+                self.goal_atleast,
+                library_path=library_path,
+                max_states=(
+                    self._config.max_states if max_states is None else max_states
+                ),
+                max_depth=self._config.max_depth if max_depth is None else max_depth,
+                time_limit=time_limit,
+            )
+            result = RealizabilityResult(
+                status=RealizabilityStatus(payload["status"]),
+                **{k: v for k, v in payload.items() if k != "status"},
+            )
+            self._last_result = result
+            self._certificate = result.certificate
+            return result
         net = self.petri
         m0 = dict(self.initial_marking)
 
@@ -856,9 +885,7 @@ class PathwayRealizability:
             deepest = max(deepest, len(seq))
 
             marking = net.tuple_to_marking(mtuple)
-            enabled = [
-                tid for tid in net.transition_order if net.enabled(marking, tid)
-            ]
+            enabled = [tid for tid in net.transition_order if net.enabled(marking, tid)]
             if len(seq) >= max_depth:
                 if enabled:
                     depth_limited = True

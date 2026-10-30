@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-"""Run every SynKit CRN experiment behind the manuscript, in order.
+"""Run SynKit CRN validation, scaling and case studies from cached inputs.
 
-Executes the validation set, the scaling sweep, the KEGG case study and the
-formose case study, and optionally the BioModels interoperability probe. Each
-study writes its own evidence file into the output directory; this driver
-reports a combined status and exits non-zero if any study fails.
-
-The BioModels probe is opt-in because its first run downloads from the EBI.
-Everything else is offline and deterministic.
+Includes representation, conservation and donor controls. BioModels and the
+isolated CRNT4SBML comparison are
+optional. Each study writes its own evidence file. Failures are recorded without
+discarding the remaining studies. Only the optional BioModels probe downloads
+missing inputs, unless the caller requires its local cache.
 
 .. rubric:: Example
 
@@ -20,8 +18,10 @@ Everything else is offline and deterministic.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence
@@ -30,16 +30,23 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from Experiment.CRN import (  # noqa: E402
+from Experiment.CRN.studies import (  # noqa: E402
     biomodels,
     external_crnt4sbml,
     formose_case_study,
+    glycolysis_donors,
+    representation,
+    supplementary,
 )
-from Experiment.CRN import kegg_case_study  # noqa: E402
-from Experiment.CRN import scaling, validation  # noqa: E402
-from Experiment.CRN.common import write_report  # noqa: E402
+from Experiment.CRN.studies import kegg_case_study  # noqa: E402
+from Experiment.CRN.studies import scaling, validation  # noqa: E402
+from Experiment.CRN.tools.common import (
+    environment,
+    source_hashes,
+    write_report,
+)  # noqa: E402
 
-#: Sizes used by ``--quick``, which keeps the whole sweep under a minute.
+#: Small scaling sizes for an execution check, not the default workload.
 QUICK_SIZES = (10, 20, 40)
 
 
@@ -60,7 +67,29 @@ def _run(
     :rtype: Dict[str, Any]
     """
     print(f"==> {name}", flush=True)
-    report = builder()
+    from synkit.CRN.backend import resolve_backend
+    from synkit.CRN import native_backend
+
+    try:
+        _, library = resolve_backend()
+        if library is None:
+            report = builder()
+        else:
+            with native_backend(library):
+                report = builder()
+        if (
+            report.get("status") != "PASS"
+            or report.get("complete") is False
+            or not all(value is True for value in report.get("checks", {}).values())
+        ):
+            report["status"] = "FAIL"
+    except Exception as exc:
+        report = {
+            "schema": "synkit.crn-study-error/1",
+            "status": "FAIL",
+            "checks": {"study_completed": False},
+            "error": f"{type(exc).__name__}: {exc}",
+        }
 
     path = None
     if output_dir is not None:
@@ -78,8 +107,13 @@ def _run(
     return {
         "name": name,
         "status": status,
+        "schema": report.get("schema"),
         "checks": report.get("checks", {}),
-        "path": None if path is None else path.name,
+        "error": report.get("error"),
+        "path": None if path is None else str(path.resolve()),
+        "sha256": (
+            None if path is None else hashlib.sha256(path.read_bytes()).hexdigest()
+        ),
     }
 
 
@@ -125,6 +159,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="keep the rule-expansion INFO logging from the formose study",
     )
+    parser.add_argument(
+        "--offline", action="store_true", help="require cached BioModels inputs"
+    )
     arguments = parser.parse_args(argv)
 
     if not arguments.verbose:
@@ -158,39 +195,78 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             lambda: formose_case_study.formose_report([1, 2, 3, 4], analyse_at=4),
             arguments.output_dir,
         ),
+        _run(
+            "representation",
+            lambda: representation.representation_report(
+                sizes=(4, 6) if arguments.quick else (10, 14, 18, 20),
+                repeats=3 if arguments.quick else 5,
+            ),
+            arguments.output_dir,
+        ),
+        _run("supplementary", supplementary.supplementary_report, arguments.output_dir),
+        _run("glycolysis-donors", glycolysis_donors.donor_report, arguments.output_dir),
     ]
+
+    omitted = {}
 
     if arguments.with_biomodels:
         studies.append(
             _run(
                 "biomodels",
                 lambda: biomodels.biomodels_report(
-                    biomodels.DEFAULT_MODELS, offline=False, budget=120.0
+                    biomodels.DEFAULT_MODELS, offline=arguments.offline, budget=120.0
                 ),
                 arguments.output_dir,
             )
+        )
+    else:
+        omitted["biomodels"] = (
+            "enable with --with-biomodels; requires cached XML or network"
         )
 
     if arguments.crnt4sbml_python is not None:
         studies.append(
             _run(
                 "external-crnt4sbml",
-                lambda: external_crnt4sbml.external_report(
-                    arguments.crnt4sbml_python
-                ),
+                lambda: external_crnt4sbml.external_report(arguments.crnt4sbml_python),
                 arguments.output_dir,
             )
         )
+    else:
+        omitted["external-crnt4sbml"] = (
+            "requires --crnt4sbml-python in an isolated environment"
+        )
+
+    if arguments.summary is not None:
+        for study in studies:
+            if study["path"] is not None:
+                study["path"] = os.path.relpath(
+                    study["path"], arguments.summary.resolve().parent
+                )
 
     summary = {
-        "schema": "synkit.crn-experiments/1",
-        "status": "PASS"
-        if all(s["status"] == "PASS" for s in studies)
-        else "FAIL",
+        "schema": "synkit.crn-experiments/2",
+        "status": "PASS" if all(s["status"] == "PASS" for s in studies) else "FAIL",
+        "complete": all(s["status"] == "PASS" for s in studies),
+        "profile": "quick" if arguments.quick else "default",
+        "all_studies_included": not omitted,
+        "omitted_studies": omitted,
+        "environment": environment(),
+        "source_sha256": source_hashes(),
+        "result_semantics": {
+            "structural_arithmetic": "exact integer and rational arithmetic",
+            "positive_discrete_decisions": "verified firing certificate",
+            "negative_discrete_decisions": "exhaustive finite search",
+            "timings_and_svd_reference": "numerical measurements",
+        },
         "studies": studies,
     }
     return write_report(summary, arguments.summary)
 
+
+from Experiment.CRN.tools.common import native_experiment
+
+main = native_experiment(main)
 
 if __name__ == "__main__":
     raise SystemExit(main())

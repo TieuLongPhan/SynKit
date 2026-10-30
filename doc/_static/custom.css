@@ -42,6 +42,13 @@
   margin-right: 0.6rem;
 }
 
+.bd-main,
+.bd-content,
+.bd-article-container,
+article.bd-article {
+  min-width: 0;
+}
+
 .bd-header {
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
@@ -236,7 +243,24 @@ pre.literal-block,
   border-radius: var(--sk-radius);
   padding: 0.9rem;
   overflow: auto;
-  background: rgba(15, 23, 42, 0.03);
+  max-width: 100%;
+  background: #f6f8fa;
+  color: #1f2328;
+}
+
+div.highlight {
+  max-width: 100%;
+  overflow-x: auto;
+  background: #f6f8fa;
+}
+
+html[data-theme="dark"] div.highlight,
+html[data-theme="dark"] div.highlight pre,
+html[data-theme="dark"] pre.literal-block,
+html[data-theme="dark"] .codehilite pre,
+html[data-theme="dark"] .bd-content pre {
+  background: #1d232c;
+  color: #e6edf3;
 }
 
 .admonition {
@@ -279,14 +303,6 @@ th, td {
    NOTE: Keep this small so it doesn't trigger on "almost desktop".
    ========================================================================= */
 @media (max-width: 700px) {
-  .bd-sidebar-primary,
-  .bd-sidebar-secondary {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-height: none !important;
-    position: static !important;
-  }
-
   .bd-content {
     padding: 0.5rem;
     margin-left: 0;
@@ -391,6 +407,39 @@ html[data-theme="dark"] .sk-globaltoc.card {
   opacity: 0.92;
 }
 
+.sk-globaltoc__body .sk-globaltoc__branch-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.18rem 0.35rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sk-globaltoc__body .sk-globaltoc__branch-toggle:hover,
+.sk-globaltoc__body .sk-globaltoc__branch-toggle:focus-visible {
+  background: rgba(31, 119, 180, 0.12);
+  outline: 2px solid var(--sk-accent);
+  outline-offset: 1px;
+}
+
+.sk-globaltoc__body .current > .sk-globaltoc__branch-toggle {
+  color: var(--sk-accent);
+  font-weight: 650;
+}
+
+.sk-globaltoc__body[hidden],
+.sk-globaltoc__body [hidden] {
+  display: none !important;
+}
+
 .sk-globaltoc__body a:hover,
 .sk-globaltoc__body a:focus {
   background: rgba(31, 119, 180, 0.08);
@@ -407,6 +456,12 @@ html[data-theme="dark"] .sk-globaltoc.card {
 }
 
 /* Make deep nesting slightly smaller/denser */
+.sk-globaltoc__body ul ul {
+  margin: 0.15rem 0 0.4rem 0.4rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--pst-color-border, rgba(127, 127, 127, 0.3));
+}
+
 .sk-globaltoc__body ul ul a {
   padding-left: 0.5rem;
   font-size: 0.95em;

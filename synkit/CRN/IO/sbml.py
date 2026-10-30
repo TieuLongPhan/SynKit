@@ -269,6 +269,17 @@ def _species_element(
             "constant": "false",
         },
     )
+    for key in (
+        "compartment",
+        "boundaryCondition",
+        "constant",
+        "initialAmount",
+        "initialConcentration",
+        "substanceUnits",
+        "hasOnlySubstanceUnits",
+    ):
+        if key in species.source_attrs:
+            element.set(key, str(species.source_attrs[key]))
     if species.label is not None:
         element.set("name", str(species.label))
 
@@ -436,6 +447,14 @@ def crn_to_sbml(
         {"id": compartment_sid, "spatialDimensions": "3", "constant": "true"},
     )
 
+    for name in sorted(
+        {
+            sp.source_attrs.get("compartment", compartment_sid)
+            for sp in crn.species.values()
+        }
+        - {compartment_sid}
+    ):
+        ET.SubElement(compartments, "compartment", {"id": name, "constant": "true"})
     species_sids: Dict[str, str] = {}
     if crn.species:
         listing = ET.SubElement(model, "listOfSpecies")
@@ -564,6 +583,24 @@ def _read_species(
             "label": element.get("name") or sid,
             "smiles": annotation.get("smiles"),
             "sbml_id": sid,
+            **{
+                _localname(key): value
+                for key, value in element.attrib.items()
+                if _localname(key) in {"chemicalFormula", "charge"}
+            },
+            **{
+                key: element.get(key)
+                for key in (
+                    "compartment",
+                    "boundaryCondition",
+                    "constant",
+                    "initialAmount",
+                    "initialConcentration",
+                    "substanceUnits",
+                    "hasOnlySubstanceUnits",
+                )
+                if element.get(key) is not None
+            },
             "source_node_id": annotation.get("sourceNodeId", sid),
         }
 
@@ -802,6 +839,7 @@ def crn_from_sbml(
 
         extra: Dict[str, Any] = {
             "sbml_id": rid,
+            "sbml_reversible": reversible,
             "source_node_id": annotation.get("sourceNodeId", rid),
         }
         if annotation.get("sourceKind"):

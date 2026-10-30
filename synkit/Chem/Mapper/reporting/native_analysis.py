@@ -19,9 +19,9 @@ from .analysis import (
     _property_vectors,
     _reference_free_slap_seed,
 )
-from ..exact.native.frontier import frontier_orbit_search
-from ..exact.native.parallel import parallel_orbit_search
-from ..slap.lap import _adjacency_and_elements, chemical_distance
+from ..solvers.exact.native.frontier import frontier_orbit_search
+from ..solvers.exact.native.parallel import parallel_orbit_search
+from ..solvers.slap.lap import _adjacency_and_elements, chemical_distance
 
 
 def _attain_native_profile_bound(
@@ -36,8 +36,8 @@ def _attain_native_profile_bound(
     deadline,
 ):
     """Try one exact lower-bound witness; absence is not a minimum proof."""
-    from ..exact.distance_search.bounds import atom_profile_costs, blocked_assignment_extreme
-    from ..exact.native.candidates import (
+    from ..solvers.exact.distance_search.bounds import atom_profile_costs, blocked_assignment_extreme
+    from ..solvers.exact.native.candidates import (
         enumerate_native_candidates,
         NativeEnumerationStop,
     )
@@ -119,7 +119,7 @@ def _prove_native_seed_minimum(
     an interrupted shell proves nothing about that shell or higher ones.
     """
     from functools import reduce
-    from ..exact.native.candidates import (
+    from ..solvers.exact.native.candidates import (
         enumerate_native_candidates,
         NativeEnumerationStop,
     )
@@ -355,7 +355,7 @@ def analyze_reference_blinded_native_shell(  # noqa: C901
             seed, proof_stats = native_seed, native_proof
             minimum = target = native_proof["minimum_cost"]
     if target_mode == "minimal" and minimum is None:
-        from ..exact.distance_search.search import enumerate_distance_mappings
+        from ..solvers.exact.distance_search.search import enumerate_distance_mappings
 
         proof = enumerate_distance_mappings(
             lgp,

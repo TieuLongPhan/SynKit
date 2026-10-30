@@ -87,7 +87,7 @@ class FPCalculator:
         :type fp_type: str
         :param absolute: Whether to take absolute values of the fingerprint difference.
         :type absolute: bool
-        :return: The input dictionary with a new key `fp_{fp_type}` holding the fingerprint vector.
+        :return: The input dictionary with a new key named by `fp_type`, holding the fingerprint vector.
         :rtype: dict
         :raises ValueError: If `rsmi_key` is missing in `data_dict`.
         """

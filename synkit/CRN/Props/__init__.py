@@ -124,3 +124,7 @@ __all__ = [
     "symbolic_jacobian",
     "symbolic_reactivity_matrix",
 ]
+
+from .thermo import has_stoichiometric_dependencies
+
+__all__ += ["has_stoichiometric_dependencies"]

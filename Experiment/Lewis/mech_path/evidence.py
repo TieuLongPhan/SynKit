@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Collect reproducible Sprint 9 evidence from executable MechanismBench data."""
+"""Collect replay and timing evidence from MechanismBench data."""
 
 from __future__ import annotations
 

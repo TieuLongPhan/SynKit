@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Self, Union
+from typing import Any, Dict, Optional, Union
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 import networkx as nx
 

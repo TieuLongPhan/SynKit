@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.16)
+project(synkit_astar_standalone LANGUAGES CXX)
+
+add_executable(astar_graph astar_graph.cpp astar.cpp bound.cpp)
+target_compile_features(astar_graph PRIVATE cxx_std_17)
+target_include_directories(astar_graph PRIVATE ../../include)
+set_target_properties(astar_graph PROPERTIES CXX_EXTENSIONS OFF)
+if(MSVC)
+  target_compile_options(astar_graph PRIVATE /W4)
+else()
+  target_compile_options(astar_graph PRIVATE -Wall -Wextra -Wpedantic)
+endif()

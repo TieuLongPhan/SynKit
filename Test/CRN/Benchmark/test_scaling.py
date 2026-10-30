@@ -19,6 +19,16 @@ def _slow_rank(crn):
     return crn.n_species
 
 
+def _node_limited_rank(crn):
+    from synkit.CRN.Petrinet.siphon_search import SiphonSearchLimit
+
+    raise SiphonSearchLimit("test node limit")
+
+
+def _broken_rank(crn):
+    raise ValueError("test algorithm error")
+
+
 class TestNetworkFamilies(unittest.TestCase):
     def test_every_family_generates_a_network(self):
         for family in NETWORK_FAMILIES:
@@ -108,7 +118,10 @@ class TestRunScalingBenchmark(unittest.TestCase):
         TASKS["rank"] = _slow_rank
         started = time.perf_counter()
         try:
-            with patch("synkit.CRN.Benchmark.scaling.get_all_start_methods", return_value=["spawn"]):
+            with patch(
+                "synkit.CRN.Benchmark.scaling.get_all_start_methods",
+                return_value=["spawn"],
+            ):
                 records = run_scaling_benchmark(
                     sizes=(4,),
                     families=("chain",),
@@ -124,9 +137,14 @@ class TestRunScalingBenchmark(unittest.TestCase):
         self.assertIsNone(records[0].error)
 
     def test_spawned_task_returns_the_registered_result(self):
-        with patch("synkit.CRN.Benchmark.scaling.get_all_start_methods", return_value=["spawn"]):
+        with patch(
+            "synkit.CRN.Benchmark.scaling.get_all_start_methods", return_value=["spawn"]
+        ):
             records = run_scaling_benchmark(
-                sizes=(4,), families=("chain",), tasks=("rank",), time_budget=30.0,
+                sizes=(4,),
+                families=("chain",),
+                tasks=("rank",),
+                time_budget=30.0,
             )
         self.assertEqual(records[0].result, 4)
         self.assertFalse(records[0].timed_out)
@@ -140,6 +158,41 @@ class TestRunScalingBenchmark(unittest.TestCase):
         self.assertEqual(payload["family"], "chain")
         self.assertEqual(payload["task"], "rank")
         self.assertFalse(payload["timed_out"])
+
+    def test_node_limit_is_incomplete_and_has_no_completed_timing(self):
+        for budget in (None, 30.0):
+            with (
+                self.subTest(budget=budget),
+                patch.dict(TASKS, rank=_node_limited_rank),
+            ):
+                records = run_scaling_benchmark(
+                    sizes=(4, 6),
+                    families=("chain",),
+                    tasks=("rank",),
+                    time_budget=budget,
+                )
+                self.assertEqual(len(records), 1)
+                row = records[0].to_dict()
+                self.assertEqual(row["termination_reason"], "node_limit")
+                self.assertFalse(row["complete"])
+                self.assertFalse(row["timed_out"])
+                self.assertIsNone(row["seconds"])
+                self.assertIsNone(row["result"])
+                self.assertIsNone(row["error"])
+                self.assertGreaterEqual(row["elapsed_seconds"], 0)
+
+    def test_algorithm_errors_remain_errors(self):
+        for budget in (None, 30.0):
+            with self.subTest(budget=budget), patch.dict(TASKS, rank=_broken_rank):
+                record = run_scaling_benchmark(
+                    sizes=(4,),
+                    families=("chain",),
+                    tasks=("rank",),
+                    time_budget=budget,
+                )[0]
+                self.assertEqual(record.termination_reason, "error")
+                self.assertIn("ValueError", record.error)
+                self.assertFalse(record.timed_out)
 
 
 class TestScalingTable(unittest.TestCase):
@@ -168,3 +221,62 @@ class TestScalingTable(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_paper_scaling_rejects_incomplete_measurements():
+    from Experiment.CRN.studies.scaling import scaling_report
+
+    record = ScalingRecord(
+        family="chain",
+        size=4,
+        n_species=5,
+        n_reactions=4,
+        task="rank",
+        termination_reason="node_limit",
+    )
+    with (
+        patch(
+            "Experiment.CRN.studies.scaling.run_scaling_benchmark",
+            return_value=[record],
+        ),
+        patch("Experiment.CRN.studies.scaling.environment", return_value={}),
+    ):
+        report = scaling_report(
+            sizes=[4],
+            families=["chain"],
+            tasks=["rank"],
+            repeats=1,
+            seed=0,
+            time_budget=30,
+        )
+    assert report["status"] == "FAIL"
+    assert report["checks"]["all_measurements_complete"] is False
+
+
+def test_paper_biomodels_rejects_missing_enumerations():
+    from pathlib import Path
+    from Experiment.CRN.studies.biomodels import biomodels_report
+
+    record = dict(
+        model_id="test",
+        n_species=2,
+        n_reactions=1,
+        n_complexes=2,
+        n_linkage_classes=1,
+        rank=1,
+        deficiency=0,
+        roundtrip_ok=True,
+        n_conserved_moieties=1,
+        n_minimal_siphons=None,
+        persistent=None,
+    )
+    with (
+        patch(
+            "Experiment.CRN.studies.biomodels.fetch", return_value=Path("/tmp/test.xml")
+        ),
+        patch("Experiment.CRN.studies.biomodels.analyse", return_value=record),
+        patch("Experiment.CRN.studies.biomodels.environment", return_value={}),
+    ):
+        report = biomodels_report(["test"], offline=True, budget=30)
+    assert report["status"] == "FAIL"
+    assert report["checks"]["every_structural_analysis_complete"] is False

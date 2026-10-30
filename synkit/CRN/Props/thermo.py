@@ -192,7 +192,7 @@ def _find_positive_left_kernel_vector(
         c = np.zeros(n_species, dtype=float)
         A_eq = S.T
         b_eq = np.zeros(n_reactions, dtype=float)
-        bounds = [(eps, None) for _ in range(n_species)]
+        bounds = [(1.0, None) for _ in range(n_species)]
 
         res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
         if res.success and res.x is not None:
@@ -245,20 +245,9 @@ def left_nullspace_from_matrix(S: np.ndarray, *, rtol: float = 1e-12) -> np.ndar
         L = left_nullspace_from_matrix(S)
         print(L.shape)
     """
-    try:
-        from scipy.linalg import null_space as scipy_null_space  # type: ignore
+    from .stoich import _null_space
 
-        return scipy_null_space(S.T, rcond=rtol)
-    except Exception:
-        _u, s, vh = np.linalg.svd(S.T, full_matrices=True)
-        if s.size == 0:
-            return np.eye(S.shape[0])
-        tol = rtol * s[0]
-        rank = int((s > tol).sum())
-        ns = vh[rank:].T
-        if ns.size == 0:
-            return np.zeros((S.shape[0], 0))
-        return ns
+    return _null_space(np.asarray(S, dtype=float).T, rtol=rtol)
 
 
 def is_conservative(
@@ -307,6 +296,13 @@ def is_conservative(
         flag = is_conservative(hg)
         print("Conservative?", flag)
     """
+    from ..backend import resolve_backend
+
+    if resolve_backend()[0] == "cpp":
+        from ..native_analysis import positive_kernel
+
+        result = positive_kernel(crn, kind="p")
+        return result[0]
     S = stoichiometric_matrix(crn)
     flag, _m = _find_positive_left_kernel_vector(S, eps=eps, rtol=rtol)
     return flag
@@ -352,6 +348,13 @@ def compute_conservativity(
         if m is not None:
             print("Example law:", m)
     """
+    from ..backend import resolve_backend
+
+    if resolve_backend()[0] == "cpp":
+        from ..native_analysis import positive_kernel
+
+        result = positive_kernel(crn, kind="p")
+        return result
     S = stoichiometric_matrix(crn)
     return _find_positive_left_kernel_vector(S, eps=eps, rtol=rtol)
 
@@ -394,6 +397,13 @@ def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
         flag = is_consistent(hg)
         print("Consistent?", flag)
     """
+    from ..backend import resolve_backend
+
+    if resolve_backend()[0] == "cpp":
+        from ..native_analysis import positive_kernel
+
+        result = positive_kernel(crn, kind="t")
+        return result[0]
     S = stoichiometric_matrix(crn)
     n_species, n_reactions = S.shape
 
@@ -406,7 +416,7 @@ def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
         c = np.ones(n_reactions)
         A_eq = S
         b_eq = np.zeros(n_species)
-        bounds = [(eps, None) for _ in range(n_reactions)]
+        bounds = [(1.0, None) for _ in range(n_reactions)]
         res = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method="highs")
 
         if res.success and res.x is not None:
@@ -414,7 +424,7 @@ def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
             residual = S @ v
             max_v = float(np.max(np.abs(v))) or 1.0
             rel_err = np.linalg.norm(residual, ord=np.inf) / max_v
-            return bool(rel_err <= 1e-8)
+            return bool(rel_err <= 1e-8 and np.all(v >= 1.0 - 1e-7))
         return False
     except Exception:
         pass
@@ -442,7 +452,11 @@ def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
 def has_irreversible_futile_cycles(crn: Any, *, rtol: float = 1e-12) -> bool:
     """Check whether the network admits non-trivial steady-state flux modes.
 
-    This function tests whether the right kernel :math:`\\ker(S)` is
+    This function tests whether a nonnegative nonzero right-kernel vector exists.
+    This is a structural circulation test and does not establish Gibbs-energy
+    feasibility. The legacy function name is retained for compatibility.
+
+    Previously this tested whether the right kernel :math:`\\ker(S)` is
     non-trivial, i.e. whether there exists a nonzero vector :math:`v` such that
 
     .. math::
@@ -473,11 +487,29 @@ def has_irreversible_futile_cycles(crn: Any, *, rtol: float = 1e-12) -> bool:
         has_cycles = has_irreversible_futile_cycles(hg)
         print("Has futile-cycle-like modes?", has_cycles)
     """
-    V = right_nullspace(crn, rtol=rtol)
-    V = np.atleast_2d(V)
-    if V.size == 0:
+    from scipy.optimize import linprog
+
+    S = stoichiometric_matrix(crn)
+    if S.shape[1] == 0:
         return False
-    return V.shape[1] > 0
+    result = linprog(
+        np.zeros(S.shape[1]),
+        A_eq=np.vstack([S, np.ones((1, S.shape[1]))]),
+        b_eq=np.r_[np.zeros(S.shape[0]), 1.0],
+        bounds=(0, None),
+        method="highs",
+    )
+    return bool(
+        result.success
+        and result.x is not None
+        and np.min(result.x) >= -1e-9
+        and np.max(np.abs(S @ result.x), initial=0) < 1e-8
+    )
+
+
+def has_stoichiometric_dependencies(crn: Any, *, rtol: float = 1e-12) -> bool:
+    """Whether reaction vectors are linearly dependent, without sign constraints."""
+    return right_nullspace(crn, rtol=rtol).shape[1] > 0
 
 
 def compute_thermo_summary(

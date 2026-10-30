@@ -1,25 +1,29 @@
 # Build the package wheel.
-FROM python:3.11-slim AS builder
+FROM docker.io/library/python:3.11-slim AS builder
 
 # Install system build tools.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential \
+    && apt-get install -y --no-install-recommends build-essential libboost-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install the PEP 517 build toolchain.
 RUN pip install --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir build hatchling
+    && pip install --no-cache-dir build hatchling cmake
 
 WORKDIR /build
 
 # Copy package metadata and source.
-COPY pyproject.toml README.md LICENSE ./
+COPY pyproject.toml README.md LICENSE CMakeLists.txt hatch_build.py ./
 COPY synkit/ ./synkit
 
 RUN python -m build --wheel --no-isolation
 
 # Create the runtime image.
-FROM python:3.11-slim
+FROM docker.io/library/python:3.11-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/synkit
 

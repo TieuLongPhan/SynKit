@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from fractions import Fraction
+from functools import wraps
 from math import gcd
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -163,6 +165,9 @@ def build_S_minus_plus(
         contains product stoichiometries.
     :rtype: Tuple[List[Any], List[Any], np.ndarray, np.ndarray]
     """
+    cache = _MATRIX_CONTEXT.get()
+    if cache is not None and id(crn) in cache:
+        return cache[id(crn)][1]
     G = _as_graph(crn)
 
     species_order, rule_order, species_index, rule_index = _species_and_rule_order(G)
@@ -173,8 +178,15 @@ def build_S_minus_plus(
     S_minus = np.zeros((n_species, n_rules), dtype=float)
     S_plus = np.zeros((n_species, n_rules), dtype=float)
 
+    infer_roles = G.is_directed() and not any(
+        data.get("role") is not None for _, _, data in _iter_graph_edges_with_data(G)
+    )
     for u, v, data in _iter_graph_edges_with_data(G):
         role = _normalize_role(data.get("role"))
+        if role is None and data.get("role") is not None:
+            continue
+        if role is None and infer_roles:
+            role = "reactant" if _is_species_node(G.nodes[u]) else "product"
         if role is None:
             continue
 
@@ -189,7 +201,10 @@ def build_S_minus_plus(
 
         _accumulate_stoich_entry(S_minus, S_plus, i, j, role, coeff)
 
-    return species_order, rule_order, S_minus, S_plus
+    result = (species_order, rule_order, S_minus, S_plus)
+    if cache is not None:
+        cache[id(crn)] = (crn, result)
+    return result
 
 
 def build_S(crn: Any) -> Tuple[List[Any], List[Any], np.ndarray]:
@@ -219,7 +234,9 @@ def stoichiometric_matrix(crn: Any) -> np.ndarray:
     return S
 
 
-def stoichiometric_rank(crn: Any, *, tol: float = 1e-10) -> int:
+def stoichiometric_rank(
+    crn: Any, *, tol: float = 1e-10, backend="auto", library_path=None
+) -> int:
     """Compute the numerical rank of the stoichiometric matrix.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
@@ -229,6 +246,15 @@ def stoichiometric_rank(crn: Any, *, tol: float = 1e-10) -> int:
     :return: Rank of the stoichiometric matrix.
     :rtype: int
     """
+    from ..backend import resolve_backend
+
+    backend, library_path = resolve_backend(backend, library_path)
+    if backend == "cpp":
+        from ..native_analysis import matrix_analysis
+
+        return matrix_analysis(
+            stoichiometric_matrix(crn), library_path=library_path, kernels="none"
+        )["rank"]
     S = stoichiometric_matrix(crn)
     return int(np.linalg.matrix_rank(S, tol=tol))
 
@@ -357,66 +383,28 @@ def _lcm(a: int, b: int) -> int:
 
 
 def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[int]:
-    """Scale a floating vector to a minimal integer vector.
+    """Legacy approximate conversion; production invariants use exact elimination.
 
-    The routine first normalizes the vector, then attempts rational
-    reconstruction with bounded denominators. If that becomes unstable, a
-    rounded fallback is used.
-
-    :param vec: Input floating-point vector.
-    :type vec: np.ndarray
-    :param tol: Threshold below which entries are treated as zero.
-    :type tol: float
-    :return:
-        Integer vector reduced by the greatest common divisor of its entries.
-    :rtype: List[int]
+    Retained for callers of the historical private helper. There is no rounded
+    integer fallback: coefficients are reconstructed as bounded rationals.
     """
-    if np.all(np.abs(vec) <= tol):
-        return [0] * int(vec.size)
-
-    v = np.array(vec, dtype=float)
-    max_abs = float(np.max(np.abs(v)))
-    if max_abs <= tol:
-        return [0] * int(v.size)
-    v = v / max_abs
-
-    fracs: List[Fraction] = []
-    for x in v:
-        if abs(x) <= tol:
-            fracs.append(Fraction(0, 1))
-        else:
-            fracs.append(Fraction(float(x)).limit_denominator(10**6))
-
-    den_lcm = 1
-    for f in fracs:
-        den_lcm = _lcm(den_lcm, f.denominator)
-        if den_lcm > 10**6:
-            break
-
-    if den_lcm <= 10**6:
-        ints = [int(f.numerator * (den_lcm // f.denominator)) for f in fracs]
-    else:
-        scale = 10**3
-        ints = [int(round(float(x) * scale)) for x in v]
-
-    g = 0
-    for val in ints:
-        g = gcd(g, abs(val))
-
-    if g == 0:
-        nonzeros = [abs(float(x)) for x in v if abs(float(x)) > tol]
-        if not nonzeros:
-            return [0] * int(v.size)
-        scale = 1.0 / min(nonzeros)
-        ints = [int(round(float(x) * scale)) for x in v]
-        g = 0
-        for val in ints:
-            g = gcd(g, abs(val))
-        if g == 0:
-            g = 1
-
-    ints = [val // g for val in ints]
-    return ints
+    values = np.asarray(vec, dtype=float).reshape(-1)
+    if not np.all(np.isfinite(values)):
+        raise ValueError("Vector entries must be finite")
+    scale = np.max(np.abs(values), initial=0)
+    if scale <= tol:
+        return [0] * len(values)
+    fractions = [
+        (
+            Fraction(0)
+            if abs(v / scale) <= tol
+            else Fraction(float(v / scale)).limit_denominator(10**6)
+        )
+        for v in values
+    ]
+    result = _primitive_integer_vector(fractions)
+    sign = next((v for v in fractions if v), Fraction(0))
+    return [-v for v in result] if sign < 0 else result
 
 
 def _primitive_integer_vector(vec: Sequence[Fraction]) -> List[int]:
@@ -470,8 +458,10 @@ def _exact_null_space(rows: Sequence[Sequence[Any]], n_cols: int) -> List[List[i
         return []
 
     mat: List[List[Fraction]] = [
-        [Fraction(str(value)) if not isinstance(value, int) else Fraction(value)
-         for value in row]
+        [
+            Fraction(str(value)) if not isinstance(value, int) else Fraction(value)
+            for value in row
+        ]
         for row in rows
     ]
 
@@ -511,7 +501,9 @@ def _exact_null_space(rows: Sequence[Sequence[Any]], n_cols: int) -> List[List[i
     return basis
 
 
-def integer_conservation_laws(crn: Any, *, rtol: float = 1e-12) -> List[List[int]]:
+def integer_conservation_laws(
+    crn: Any, *, rtol: float = 1e-12, backend="auto", library_path=None, time_limit=30.0
+) -> List[List[int]]:
     """Return an exact integer basis for ``ker(S^T)``, the conservation laws.
 
     A conservation law is a vector ``y`` over species with ``y^T S = 0``: the
@@ -543,17 +535,33 @@ def integer_conservation_laws(crn: Any, *, rtol: float = 1e-12) -> List[List[int
         print(integer_conservation_laws(crn))
         # [[1, 1]]
     """
+    from ..backend import resolve_backend
+
+    backend, library_path = resolve_backend(backend, library_path)
+    if backend == "cpp":
+        from ..native_analysis import matrix_analysis
+
+        return matrix_analysis(
+            stoichiometric_matrix(crn),
+            library_path=library_path,
+            kernels="left",
+            time_limit=time_limit,
+        )["left"]
     S = stoichiometric_matrix(crn)
     if S.size == 0:
         return []
 
     n_species, _ = S.shape
-    rows = [[int(v) if float(v).is_integer() else float(v) for v in S[:, j]]
-            for j in range(S.shape[1])]
+    rows = [
+        [int(v) if float(v).is_integer() else float(v) for v in S[:, j]]
+        for j in range(S.shape[1])
+    ]
     return _exact_null_space(rows, n_species)
 
 
-def conserved_moieties(crn: Any) -> List[List[int]]:
+def conserved_moieties(
+    crn: Any, *, backend="auto", library_path=None, **native_options
+) -> List[List[int]]:
     """Return the minimal non-negative integer conservation laws.
 
     These are the P-semiflows of the network's Petri-net view: vectors ``y >= 0``
@@ -584,7 +592,9 @@ def conserved_moieties(crn: Any) -> List[List[int]]:
     S = stoichiometric_matrix(crn)
     if S.size == 0:
         return []
-    return minimal_semiflows(S, kind="p")
+    return minimal_semiflows(
+        S, kind="p", backend=backend, library_path=library_path, **native_options
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -722,3 +732,20 @@ def summary(crn: Any) -> StoichSummary:
     :rtype: StoichSummary
     """
     return StoichSummary.from_crn(crn)
+
+
+# This cache exists only during one summary calculation; mutable models are never
+# cached across calls or shared between threads/tasks.
+_MATRIX_CONTEXT = ContextVar("crn_matrix_context", default=None)
+
+
+def _reuse_matrices(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        token = _MATRIX_CONTEXT.set({})
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _MATRIX_CONTEXT.reset(token)
+
+    return wrapped

@@ -1,6 +1,6 @@
-"""Reproducible experiments behind the SynKit CRN manuscript.
+"""Reproducible chemical reaction network studies and benchmarks.
 
-Each module here is a runnable study that emits a JSON evidence file with a
-declared schema, and :mod:`Experiment.CRN.paper_assets` renders those files into
-the LaTeX tables used by ``paper/synkit_crn``.
+Study drivers live in :mod:`Experiment.CRN.studies`, fixtures and timing code
+in :mod:`Experiment.CRN.benchmarks`, and verification helpers in
+:mod:`Experiment.CRN.tools`. Run the studies with ``run_all.py``.
 """

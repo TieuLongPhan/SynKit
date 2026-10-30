@@ -35,7 +35,7 @@ def prepare_failure_rows(
     batches_dir: Path,
     output_dir: Path,
 ) -> dict[str, Any]:
-    """Write deterministic sparse-row files and their provenance manifest."""
+    """Write deterministic sparse-row files and a manifest of their source batches."""
     runs_dir = runs_dir.resolve()
     batches_dir = batches_dir.resolve()
     output_dir = output_dir.resolve()
