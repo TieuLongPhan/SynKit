@@ -1,0 +1,6 @@
+{
+  "zero_onset": 1.75,
+  "cores_zero": 3,
+  "cores_positive": 3,
+  "inactive_until": 1.25
+}

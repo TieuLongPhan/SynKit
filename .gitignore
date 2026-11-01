@@ -142,6 +142,9 @@ test_syn_reactor.py
 /Experiment/*
 !/Experiment/CRN/
 !/Experiment/Lewis/
+!/Experiment/Autocatalytic/
+# Third-party simulation code of Higgs and Blackmond (Zenodo), not redistributed.
+/Experiment/Autocatalytic/Homochiral/higgs2025/
 !/Experiment/__init__.py
 
 # Experiment READMEs are local documentation, including nested directories.

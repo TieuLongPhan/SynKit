@@ -1,0 +1,158 @@
+{
+  "seed": 1729,
+  "domains": {
+    "base": {
+      "k1": [
+        0.1,
+        100.0
+      ],
+      "k2": [
+        0.1,
+        100.0
+      ],
+      "a1": [
+        0.1,
+        10.0
+      ],
+      "a2": [
+        0.4,
+        40.0
+      ],
+      "phi": [
+        0.01,
+        1.0
+      ],
+      "kmon": [
+        0.0001,
+        0.1
+      ]
+    },
+    "extended": {
+      "k1": [
+        0.1,
+        100.0
+      ],
+      "k2": [
+        0.1,
+        100.0
+      ],
+      "a1": [
+        0.1,
+        10.0
+      ],
+      "a2": [
+        0.4,
+        40.0
+      ],
+      "phi": [
+        0.01,
+        1.0
+      ],
+      "kmon": [
+        0.0001,
+        0.1
+      ],
+      "u": [
+        0.0001,
+        0.1
+      ],
+      "kdim": [
+        0.0001,
+        1.0
+      ],
+      "kr": [
+        0.0001,
+        1.0
+      ]
+    }
+  },
+  "slowest_integrated_growth": 0.0001,
+  "records": {
+    "constructive": {
+      "mechanism": "constructive",
+      "samples": 2000,
+      "samples_with_unstable_support": 1459,
+      "unstable_by_support": {
+        "1010": 1236,
+        "1011": 1104,
+        "1110": 244,
+        "1111": 557
+      },
+      "minimal_by_support": {
+        "1010": 1236,
+        "1011": 223
+      },
+      "unresolved_quartic_evaluations": 0,
+      "unstable_supports_missing_required_modules": 0,
+      "nonlinear_outcomes": {
+        "confirmed": 1450,
+        "slow": 9
+      }
+    },
+    "destructive": {
+      "mechanism": "destructive",
+      "samples": 2000,
+      "samples_with_unstable_support": 482,
+      "unstable_by_support": {
+        "0110": 472,
+        "0111": 348,
+        "1110": 216,
+        "1111": 172
+      },
+      "minimal_by_support": {
+        "0110": 472,
+        "0111": 10
+      },
+      "unresolved_quartic_evaluations": 0,
+      "unstable_supports_missing_required_modules": 0,
+      "nonlinear_outcomes": {
+        "confirmed": 480,
+        "slow": 2
+      }
+    }
+  },
+  "extended_records": {
+    "constructive": {
+      "mechanism": "constructive",
+      "samples": 2000,
+      "samples_with_unstable_support": 1054,
+      "unstable_by_support": {
+        "1010": 674,
+        "1011": 979,
+        "1110": 151,
+        "1111": 455
+      },
+      "minimal_by_support": {
+        "1010": 674,
+        "1011": 380
+      },
+      "unresolved_quartic_evaluations": 0,
+      "unstable_supports_missing_required_modules": 0,
+      "nonlinear_outcomes": {
+        "confirmed": 1049,
+        "slow": 5
+      }
+    },
+    "destructive": {
+      "mechanism": "destructive",
+      "samples": 2000,
+      "samples_with_unstable_support": 403,
+      "unstable_by_support": {
+        "0110": 396,
+        "0111": 340,
+        "1110": 180,
+        "1111": 159
+      },
+      "minimal_by_support": {
+        "0110": 396,
+        "0111": 7
+      },
+      "unresolved_quartic_evaluations": 0,
+      "unstable_supports_missing_required_modules": 0,
+      "nonlinear_outcomes": {
+        "confirmed": 402,
+        "slow": 1
+      }
+    }
+  }
+}

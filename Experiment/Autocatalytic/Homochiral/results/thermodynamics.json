@@ -1,0 +1,32 @@
+{
+  "constructive": {
+    "wegscheider_residual": 1.7763568394002505e-15,
+    "reversible_pairs": 8,
+    "affinity_reference": 6.381178647664663,
+    "threshold_ratio": 1.7086723269742807,
+    "affinity_threshold": 7.371742446942448,
+    "largest_unstable_kdim": {
+      "value": 2.9144713318426683,
+      "ends_by": "no active racemate"
+    },
+    "largest_unstable_kmon": {
+      "value": 0.9,
+      "ends_by": "not reached"
+    }
+  },
+  "destructive": {
+    "wegscheider_residual": 8.881784197001252e-16,
+    "reversible_pairs": 8,
+    "affinity_reference": -1.673546876588333,
+    "threshold_ratio": 6.917182755847798,
+    "affinity_threshold": -1.7299725136589148,
+    "largest_unstable_kdim": {
+      "value": 5.0,
+      "ends_by": "not reached"
+    },
+    "largest_unstable_kmon": {
+      "value": 0.012204877239705673,
+      "ends_by": "odd sector stable"
+    }
+  }
+}

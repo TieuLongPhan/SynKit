@@ -1,0 +1,1891 @@
+[
+  {
+    "parameters": {
+      "mechanism": "destructive",
+      "u": 0.0,
+      "k1": 10.0,
+      "k2": 80.0,
+      "a1": 1.0,
+      "a2": 4.0,
+      "kmon": 0.0,
+      "kdim": 0.0,
+      "phi": 0.1,
+      "total_feed": 1.0,
+      "kr": 0.0
+    },
+    "structural": {
+      "cores": [],
+      "all_nonempty_support_pairs": 16065,
+      "well_formed_candidates_after_core_pruning": 1575,
+      "lp_calls": 0,
+      "core_supersets_pruned": 0,
+      "complete_over_declared_rows_and_channels": true,
+      "boundary_policy": [
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "method": "exhaustive supports; HiGHS feasibility and direct witness validation"
+    },
+    "racemate": {
+      "residual_inf": 2.3592239273284576e-16,
+      "alpha_even": -0.09999999999999999,
+      "alpha_odd": 0.02432949813216667,
+      "alpha_full": 0.024329498132166727,
+      "eigenvalues_even": [
+        [
+          -0.1,
+          0.0
+        ],
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          -0.230815166889633,
+          0.0
+        ],
+        [
+          -1.6826323055223216,
+          0.0
+        ]
+      ],
+      "eigenvalues_odd": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          0.02432949813216667,
+          0.0
+        ],
+        [
+          -1.3951482293018662,
+          0.0
+        ]
+      ],
+      "mirror_distance": 0.0,
+      "cross_block_norm": 2.4347545807142174e-16,
+      "mirror_commutator_norm": 0.0,
+      "state": [
+        0.7021355082649101,
+        0.033914296327640946,
+        0.033914296327640946,
+        0.011501794953990402,
+        0.046007179815961606,
+        0.046007179815961606,
+        0.011501794953990402
+      ],
+      "min_concentration": 0.011501794953990402
+    },
+    "paired": {
+      "perturbation_relative_amplitude": 0.0001,
+      "perturbation_absolute_amplitude": 2.1082737209605944e-06,
+      "initial_plus": [
+        0.7021355082649101,
+        0.03391640460136191,
+        0.03391218805391998,
+        0.011502945133485801,
+        0.046007179815961606,
+        0.046007179815961606,
+        0.011500644774495002
+      ],
+      "plus": {
+        "state": [
+          0.7144154971260609,
+          0.058426890335225856,
+          0.014923177808864735,
+          0.03413701514244508,
+          0.03487659493166464,
+          0.03487659493166464,
+          0.0022270123591499285
+        ],
+        "residual_inf": 1.3877787807814457e-17,
+        "alpha_full": -0.041651256403688365,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.392399066420026,
+            0.0
+          ],
+          [
+            -0.8931855718971664,
+            0.0
+          ],
+          [
+            -0.22572739815176038,
+            0.0
+          ],
+          [
+            -0.041651256403688365,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.0022270123591499285,
+        "trajectory_min_concentration": 0.002227012358542072,
+        "refinement_distance": 4.218847493575595e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": 0.5930970976182518,
+          "monomer_concentration": 0.07335006814409059,
+          "ee_homodimer": 0.8775156377245483,
+          "ee_residues": 0.3758037183842765,
+          "peptide_residue_outflow": 0.021223443472984858,
+          "model_residue_inventory": 0.28558450287393916
+        }
+      },
+      "minus": {
+        "state": [
+          0.7144154971260608,
+          0.014923177808864738,
+          0.05842689033522585,
+          0.00222701235914993,
+          0.034876594931664645,
+          0.034876594931664645,
+          0.034137015142445076
+        ],
+        "residual_inf": 1.3877787807814457e-17,
+        "alpha_full": -0.04165125640368825,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.04165125640368825,
+            0.0
+          ],
+          [
+            -0.22572739815176068,
+            0.0
+          ],
+          [
+            -0.893185571897165,
+            0.0
+          ],
+          [
+            -3.392399066420022,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.00222701235914993,
+        "trajectory_min_concentration": 0.0022270123585420715,
+        "refinement_distance": 4.3298697960381105e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": -0.5930970976182517,
+          "monomer_concentration": 0.07335006814409059,
+          "ee_homodimer": -0.877515637724548,
+          "ee_residues": -0.3758037183842763,
+          "peptide_residue_outflow": 0.02122344347298486,
+          "model_residue_inventory": 0.2855845028739392
+        }
+      },
+      "paired_trajectory_mirror_error": 4.762093497312492e-13,
+      "mirror_endpoint_error": 1.1102230246251565e-16
+    }
+  },
+  {
+    "parameters": {
+      "mechanism": "destructive",
+      "u": 0.0,
+      "k1": 10.0,
+      "k2": 80.0,
+      "a1": 1.0,
+      "a2": 4.0,
+      "kmon": 1e-08,
+      "kdim": 0.0,
+      "phi": 0.1,
+      "total_feed": 1.0,
+      "kr": 0.0
+    },
+    "structural": {
+      "cores": [
+        {
+          "species": [
+            "L",
+            "LL"
+          ],
+          "channels": [
+            "matched_L_f",
+            "homo_L_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "D",
+            "DD"
+          ],
+          "channels": [
+            "matched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "L",
+            "D",
+            "LL",
+            "DD"
+          ],
+          "channels": [
+            "mismatched_L_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "mismatched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              -2
+            ],
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0,
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "all_nonempty_support_pairs": 257985,
+      "well_formed_candidates_after_core_pruning": 14226,
+      "lp_calls": 3,
+      "core_supersets_pruned": 31997,
+      "complete_over_declared_rows_and_channels": true,
+      "boundary_policy": [
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "method": "exhaustive supports; HiGHS feasibility and direct witness validation"
+    },
+    "racemate": {
+      "residual_inf": 5.56776846849516e-14,
+      "alpha_even": -0.09999999999999999,
+      "alpha_odd": 0.02432947650398387,
+      "alpha_full": 0.02432947650398408,
+      "eigenvalues_even": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          -1.6826324975427733,
+          0.0
+        ],
+        [
+          -0.23081514724508484,
+          0.0
+        ],
+        [
+          -0.09999999999999999,
+          0.0
+        ]
+      ],
+      "eigenvalues_odd": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          0.02432947650398387,
+          0.0
+        ],
+        [
+          -1.395148329403227,
+          0.0
+        ]
+      ],
+      "mirror_distance": 0.0,
+      "cross_block_norm": 1.5670343309947338e-16,
+      "mirror_commutator_norm": 0.0,
+      "state": [
+        0.7021354791345167,
+        0.03391429819908637,
+        0.03391429819908637,
+        0.011501796223365529,
+        0.046007184893462116,
+        0.046007184893462116,
+        0.011501796223365529
+      ],
+      "min_concentration": 0.011501796223365529
+    },
+    "paired": {
+      "perturbation_relative_amplitude": 0.0001,
+      "perturbation_absolute_amplitude": 2.1082734705462066e-06,
+      "initial_plus": [
+        0.7021354791345167,
+        0.03391640647255691,
+        0.03391218992561582,
+        0.011502946402987865,
+        0.046007184893462116,
+        0.046007184893462116,
+        0.011500646043743193
+      ],
+      "plus": {
+        "state": [
+          0.7144154416970985,
+          0.05842688193790421,
+          0.014923187265205914,
+          0.03413700532985797,
+          0.03487661201925686,
+          0.03487661201925686,
+          0.0022270151815240394
+        ],
+        "residual_inf": 1.734723475976807e-18,
+        "alpha_full": -0.041651226197740615,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.3923983159421995,
+            0.0
+          ],
+          [
+            -0.8931857875767046,
+            0.0
+          ],
+          [
+            -0.22572737947267843,
+            0.0
+          ],
+          [
+            -0.041651226197740615,
+            0.0
+          ],
+          [
+            -0.09999999999999998,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.0022270151815240394,
+        "trajectory_min_concentration": 0.0022270151809162214,
+        "refinement_distance": 4.3298697960381105e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": 0.593096845651697,
+          "monomer_concentration": 0.07335006920311013,
+          "ee_homodimer": 0.8775154589505867,
+          "ee_residues": 0.375803494443613,
+          "peptide_residue_outflow": 0.021223448909979147,
+          "model_residue_inventory": 0.28558455830290164
+        }
+      },
+      "minus": {
+        "state": [
+          0.7144154416970985,
+          0.014923187265205912,
+          0.05842688193790421,
+          0.002227015181524039,
+          0.034876612019256854,
+          0.034876612019256854,
+          0.03413700532985797
+        ],
+        "residual_inf": 1.3877787807814457e-17,
+        "alpha_full": -0.0416512261977404,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.3923983159422004,
+            0.0
+          ],
+          [
+            -0.8931857875767061,
+            0.0
+          ],
+          [
+            -0.22572737947267765,
+            0.0
+          ],
+          [
+            -0.0416512261977404,
+            0.0
+          ],
+          [
+            -0.10000000000000006,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.002227015181524039,
+        "trajectory_min_concentration": 0.0022270151809162205,
+        "refinement_distance": 4.440892098500626e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": -0.593096845651697,
+          "monomer_concentration": 0.07335006920311013,
+          "ee_homodimer": -0.8775154589505867,
+          "ee_residues": -0.37580349444361316,
+          "peptide_residue_outflow": 0.021223448909979147,
+          "model_residue_inventory": 0.2855845583029015
+        }
+      },
+      "paired_trajectory_mirror_error": 2.8439750554554166e-13,
+      "mirror_endpoint_error": 6.938893903907228e-18
+    }
+  },
+  {
+    "parameters": {
+      "mechanism": "destructive",
+      "u": 0.0,
+      "k1": 10.0,
+      "k2": 80.0,
+      "a1": 1.0,
+      "a2": 4.0,
+      "kmon": 1e-06,
+      "kdim": 0.0,
+      "phi": 0.1,
+      "total_feed": 1.0,
+      "kr": 0.0
+    },
+    "structural": {
+      "cores": [
+        {
+          "species": [
+            "L",
+            "LL"
+          ],
+          "channels": [
+            "matched_L_f",
+            "homo_L_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "D",
+            "DD"
+          ],
+          "channels": [
+            "matched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "L",
+            "D",
+            "LL",
+            "DD"
+          ],
+          "channels": [
+            "mismatched_L_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "mismatched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              -2
+            ],
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0,
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "all_nonempty_support_pairs": 257985,
+      "well_formed_candidates_after_core_pruning": 14226,
+      "lp_calls": 3,
+      "core_supersets_pruned": 31997,
+      "complete_over_declared_rows_and_channels": true,
+      "boundary_policy": [
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "method": "exhaustive supports; HiGHS feasibility and direct witness validation"
+    },
+    "racemate": {
+      "residual_inf": 2.7755575615628914e-17,
+      "alpha_even": -0.09999999999999999,
+      "alpha_odd": 0.024327335326139288,
+      "alpha_full": 0.0243273353261396,
+      "eigenvalues_even": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          -1.6826515075567157,
+          0.0
+        ],
+        [
+          -0.23081320247146303,
+          0.0
+        ],
+        [
+          -0.10000000000000002,
+          0.0
+        ]
+      ],
+      "eigenvalues_odd": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          0.024327335326139288,
+          0.0
+        ],
+        [
+          -1.3951582394589574,
+          0.0
+        ]
+      ],
+      "mirror_distance": 0.0,
+      "cross_block_norm": 2.44679316751124e-16,
+      "mirror_commutator_norm": 0.0,
+      "state": [
+        0.7021325952239974,
+        0.03391448347183877,
+        0.03391448347183877,
+        0.011501921891616253,
+        0.04600768756646501,
+        0.04600768756646501,
+        0.011501921891616253
+      ],
+      "min_concentration": 0.011501921891616253
+    },
+    "paired": {
+      "perturbation_relative_amplitude": 0.0001,
+      "perturbation_absolute_amplitude": 2.108248679508055e-06,
+      "initial_plus": [
+        0.7021325952239974,
+        0.03391659172051828,
+        0.03391237522315926,
+        0.011503072083805415,
+        0.04600768756646501,
+        0.04600768756646501,
+        0.01150077169942709
+      ],
+      "plus": {
+        "state": [
+          0.7144099543568729,
+          0.058426050576390595,
+          0.014924123453923304,
+          0.03413603385954952,
+          0.0348783036690888,
+          0.0348783036690888,
+          0.002227294608679436
+        ],
+        "residual_inf": 1.3877787807814457e-17,
+        "alpha_full": -0.041648235764835895,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.3923240166153565,
+            0.0
+          ],
+          [
+            -0.8932071405131825,
+            0.0
+          ],
+          [
+            -0.22572553031056025,
+            0.0
+          ],
+          [
+            -0.041648235764835895,
+            0.0
+          ],
+          [
+            -0.09999999999999994,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.002227294608679436,
+        "trajectory_min_concentration": 0.0022272946080722856,
+        "refinement_distance": 4.3298697960381105e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": 0.5930719006132006,
+          "monomer_concentration": 0.0733501740303139,
+          "ee_homodimer": 0.8774977592810048,
+          "ee_residues": 0.3757813245294748,
+          "peptide_residue_outflow": 0.02122398716128131,
+          "model_residue_inventory": 0.285590045643127
+        }
+      },
+      "minus": {
+        "state": [
+          0.7144099543568729,
+          0.014924123453923308,
+          0.05842605057639059,
+          0.002227294608679438,
+          0.03487830366908881,
+          0.03487830366908881,
+          0.03413603385954951
+        ],
+        "residual_inf": 7.37257477290143e-18,
+        "alpha_full": -0.04164823576483601,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.3923240166153583,
+            0.0
+          ],
+          [
+            -0.8932071405131808,
+            0.0
+          ],
+          [
+            -0.22572553031056014,
+            0.0
+          ],
+          [
+            -0.04164823576483601,
+            0.0
+          ],
+          [
+            -0.09999999999999996,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.002227294608679438,
+        "trajectory_min_concentration": 0.002227294608072286,
+        "refinement_distance": 4.440892098500626e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": -0.5930719006132005,
+          "monomer_concentration": 0.0733501740303139,
+          "ee_homodimer": -0.8774977592810047,
+          "ee_residues": -0.3757813245294747,
+          "peptide_residue_outflow": 0.021223987161281314,
+          "model_residue_inventory": 0.28559004564312707
+        }
+      },
+      "paired_trajectory_mirror_error": 5.51537981952066e-13,
+      "mirror_endpoint_error": 1.3877787807814457e-17
+    }
+  },
+  {
+    "parameters": {
+      "mechanism": "destructive",
+      "u": 0.0,
+      "k1": 10.0,
+      "k2": 80.0,
+      "a1": 1.0,
+      "a2": 4.0,
+      "kmon": 0.0001,
+      "kdim": 0.0,
+      "phi": 0.1,
+      "total_feed": 1.0,
+      "kr": 0.0
+    },
+    "structural": {
+      "cores": [
+        {
+          "species": [
+            "L",
+            "LL"
+          ],
+          "channels": [
+            "matched_L_f",
+            "homo_L_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "D",
+            "DD"
+          ],
+          "channels": [
+            "matched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "L",
+            "D",
+            "LL",
+            "DD"
+          ],
+          "channels": [
+            "mismatched_L_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "mismatched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              -2
+            ],
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0,
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "all_nonempty_support_pairs": 257985,
+      "well_formed_candidates_after_core_pruning": 14226,
+      "lp_calls": 3,
+      "core_supersets_pruned": 31997,
+      "complete_over_declared_rows_and_channels": true,
+      "boundary_policy": [
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "method": "exhaustive supports; HiGHS feasibility and direct witness validation"
+    },
+    "racemate": {
+      "residual_inf": 2.42861286636753e-15,
+      "alpha_even": -0.09999999999999999,
+      "alpha_odd": 0.02411334729598469,
+      "alpha_full": 0.0241133472959845,
+      "eigenvalues_even": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          -1.6845529720954218,
+          0.0
+        ],
+        [
+          -0.23061909913324385,
+          0.0
+        ],
+        [
+          -0.09999999999999999,
+          0.0
+        ]
+      ],
+      "eigenvalues_odd": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          0.02411334729598469,
+          0.0
+        ],
+        [
+          -1.3961499266912978,
+          0.0
+        ]
+      ],
+      "mirror_distance": 0.0,
+      "cross_block_norm": 1.7159047944590854e-16,
+      "mirror_commutator_norm": 8.881784197001252e-16,
+      "state": [
+        0.7018440774309708,
+        0.0339330144330637,
+        0.0339330144330637,
+        0.011514494685145095,
+        0.04605797874058038,
+        0.04605797874058038,
+        0.011514494685145095
+      ],
+      "min_concentration": 0.011514494685145095
+    },
+    "paired": {
+      "perturbation_relative_amplitude": 0.0001,
+      "perturbation_absolute_amplitude": 2.105770002565248e-06,
+      "initial_plus": [
+        0.7018440774309708,
+        0.033935120203066264,
+        0.033930908663061136,
+        0.01151564613461361,
+        0.04605797874058038,
+        0.04605797874058038,
+        0.011513343235676581
+      ],
+      "plus": {
+        "state": [
+          0.7138624900828967,
+          0.05834264714274991,
+          0.015017852482419861,
+          0.034038644756234235,
+          0.0350472507289477,
+          0.0350472507289477,
+          0.002255358931837244
+        ],
+        "residual_inf": 1.3877787807814457e-17,
+        "alpha_full": -0.041348752437100414,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.38487384831566,
+            0.0
+          ],
+          [
+            -0.8953490883180194,
+            0.0
+          ],
+          [
+            -0.2255412843908858,
+            0.0
+          ],
+          [
+            -0.041348752437100414,
+            0.0
+          ],
+          [
+            -0.10000000000000003,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.002255358931837244,
+        "trajectory_min_concentration": 0.002255358931076982,
+        "refinement_distance": 3.219646771412954e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": 0.5905738767006085,
+          "monomer_concentration": 0.07336049962516977,
+          "ee_homodimer": 0.8757172699258583,
+          "ee_residues": 0.37356642385016686,
+          "peptide_residue_outflow": 0.021277701029193376,
+          "model_residue_inventory": 0.2861375099171035
+        }
+      },
+      "minus": {
+        "state": [
+          0.7138624900828965,
+          0.015017852482419854,
+          0.058342647142749914,
+          0.0022553589318372418,
+          0.03504725072894769,
+          0.03504725072894769,
+          0.03403864475623424
+        ],
+        "residual_inf": 9.540979117872439e-18,
+        "alpha_full": -0.04134875243710049,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.3848738483156593,
+            0.0
+          ],
+          [
+            -0.8953490883180221,
+            0.0
+          ],
+          [
+            -0.22554128439088586,
+            0.0
+          ],
+          [
+            -0.04134875243710049,
+            0.0
+          ],
+          [
+            -0.10000000000000007,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.0022553589318372418,
+        "trajectory_min_concentration": 0.002255358931076988,
+        "refinement_distance": 3.4416913763379853e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": -0.5905738767006087,
+          "monomer_concentration": 0.07336049962516977,
+          "ee_homodimer": -0.8757172699258587,
+          "ee_residues": -0.3735664238501671,
+          "peptide_residue_outflow": 0.021277701029193373,
+          "model_residue_inventory": 0.2861375099171035
+        }
+      },
+      "paired_trajectory_mirror_error": 5.687117443642364e-14,
+      "mirror_endpoint_error": 2.220446049250313e-16
+    }
+  },
+  {
+    "parameters": {
+      "mechanism": "destructive",
+      "u": 0.0,
+      "k1": 10.0,
+      "k2": 80.0,
+      "a1": 1.0,
+      "a2": 4.0,
+      "kmon": 0.001,
+      "kdim": 0.0,
+      "phi": 0.1,
+      "total_feed": 1.0,
+      "kr": 0.0
+    },
+    "structural": {
+      "cores": [
+        {
+          "species": [
+            "L",
+            "LL"
+          ],
+          "channels": [
+            "matched_L_f",
+            "homo_L_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "D",
+            "DD"
+          ],
+          "channels": [
+            "matched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "L",
+            "D",
+            "LL",
+            "DD"
+          ],
+          "channels": [
+            "mismatched_L_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "mismatched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              -2
+            ],
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0,
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "all_nonempty_support_pairs": 257985,
+      "well_formed_candidates_after_core_pruning": 14226,
+      "lp_calls": 3,
+      "core_supersets_pruned": 31997,
+      "complete_over_declared_rows_and_channels": true,
+      "boundary_policy": [
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "method": "exhaustive supports; HiGHS feasibility and direct witness validation"
+    },
+    "racemate": {
+      "residual_inf": 5.551115123125783e-17,
+      "alpha_even": -0.09999999999999999,
+      "alpha_odd": 0.022179856473739434,
+      "alpha_full": 0.02217985647373955,
+      "eigenvalues_even": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          -1.701880955901547,
+          0.0
+        ],
+        [
+          -0.22888828178609127,
+          0.0
+        ],
+        [
+          -0.1,
+          0.0
+        ]
+      ],
+      "eigenvalues_odd": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          0.022179856473739434,
+          0.0
+        ],
+        [
+          -1.4052269218608624,
+          0.0
+        ]
+      ],
+      "mirror_distance": 0.0,
+      "cross_block_norm": 1.9329220395402667e-16,
+      "mirror_commutator_norm": 0.0,
+      "state": [
+        0.6992097568156358,
+        0.03410180578850318,
+        0.03410180578850318,
+        0.01162933158036789,
+        0.04651732632147156,
+        0.04651732632147156,
+        0.01162933158036789
+      ],
+      "min_concentration": 0.01162933158036789
+    },
+    "paired": {
+      "perturbation_relative_amplitude": 0.0001,
+      "perturbation_absolute_amplitude": 2.083276868367329e-06,
+      "initial_plus": [
+        0.6992097568156358,
+        0.03410388906537155,
+        0.03409972251163481,
+        0.011630494513525927,
+        0.04651732632147156,
+        0.04651732632147156,
+        0.011628168647209855
+      ],
+      "plus": {
+        "state": [
+          0.7090002777466703,
+          0.0575595786960731,
+          0.015880661704110077,
+          0.03313105099669432,
+          0.03656336788413753,
+          0.03656336788413753,
+          0.0025219541616038833
+        ],
+        "residual_inf": 9.974659986866641e-18,
+        "alpha_full": -0.03858687316548609,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.315290530844717,
+            0.0
+          ],
+          [
+            -0.915457369922257,
+            0.0
+          ],
+          [
+            -0.22392734558082444,
+            0.0
+          ],
+          [
+            -0.03858687316548609,
+            0.0
+          ],
+          [
+            -0.09999999999999994,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.0025219541616038833,
+        "trajectory_min_concentration": 0.002521954160682933,
+        "refinement_distance": 1.2212453270876722e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": 0.5675215217822063,
+          "monomer_concentration": 0.07344024040018318,
+          "ee_homodimer": 0.8585278211243912,
+          "ee_residues": 0.3535986559209388,
+          "peptide_residue_outflow": 0.021755948185314653,
+          "model_residue_inventory": 0.2909997222533297
+        }
+      },
+      "minus": {
+        "state": [
+          0.7090002777466703,
+          0.015880661704110077,
+          0.057559578696073095,
+          0.0025219541616038838,
+          0.03656336788413753,
+          0.03656336788413753,
+          0.03313105099669431
+        ],
+        "residual_inf": 1.691355389077387e-17,
+        "alpha_full": -0.038586873165485924,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -3.315290530844715,
+            0.0
+          ],
+          [
+            -0.9154573699222578,
+            0.0
+          ],
+          [
+            -0.22392734558082453,
+            0.0
+          ],
+          [
+            -0.038586873165485924,
+            0.0
+          ],
+          [
+            -0.09999999999999998,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.0025219541616038838,
+        "trajectory_min_concentration": 0.002521954160682931,
+        "refinement_distance": 1.1102230246251565e-15,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 4000.0,
+        "metrics": {
+          "ee_monomer": -0.5675215217822064,
+          "monomer_concentration": 0.07344024040018317,
+          "ee_homodimer": -0.8585278211243912,
+          "ee_residues": -0.35359865592093875,
+          "peptide_residue_outflow": 0.021755948185314653,
+          "model_residue_inventory": 0.2909997222533297
+        }
+      },
+      "paired_trajectory_mirror_error": 4.460737335065801e-13,
+      "mirror_endpoint_error": 6.938893903907228e-18
+    }
+  },
+  {
+    "parameters": {
+      "mechanism": "destructive",
+      "u": 0.0,
+      "k1": 10.0,
+      "k2": 80.0,
+      "a1": 1.0,
+      "a2": 4.0,
+      "kmon": 0.01,
+      "kdim": 0.0,
+      "phi": 0.1,
+      "total_feed": 1.0,
+      "kr": 0.0
+    },
+    "structural": {
+      "cores": [
+        {
+          "species": [
+            "L",
+            "LL"
+          ],
+          "channels": [
+            "matched_L_f",
+            "homo_L_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "D",
+            "DD"
+          ],
+          "channels": [
+            "matched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "matched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "species": [
+            "L",
+            "D",
+            "LL",
+            "DD"
+          ],
+          "channels": [
+            "mismatched_L_f",
+            "homo_L_f",
+            "mismatched_D_f",
+            "homo_D_f"
+          ],
+          "modules": [
+            "homoligation",
+            "mismatched"
+          ],
+          "net_stoichiometry": [
+            [
+              1,
+              -2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              -2
+            ],
+            [
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ]
+          ],
+          "flux_witness": [
+            3.0,
+            1.0,
+            3.0,
+            1.0
+          ],
+          "production_witness": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "all_nonempty_support_pairs": 257985,
+      "well_formed_candidates_after_core_pruning": 14226,
+      "lp_calls": 3,
+      "core_supersets_pruned": 31997,
+      "complete_over_declared_rows_and_channels": true,
+      "boundary_policy": [
+        "L",
+        "D",
+        "LL",
+        "LD",
+        "DL",
+        "DD"
+      ],
+      "method": "exhaustive supports; HiGHS feasibility and direct witness validation"
+    },
+    "racemate": {
+      "residual_inf": 6.38378239159465e-16,
+      "alpha_even": -0.09999999999999999,
+      "alpha_odd": 0.004077965984284226,
+      "alpha_full": 0.0040779659842843435,
+      "eigenvalues_even": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          -1.879119105000577,
+          0.0
+        ],
+        [
+          -0.21473059771085531,
+          0.0
+        ],
+        [
+          -0.10000000000000002,
+          0.0
+        ]
+      ],
+      "eigenvalues_odd": [
+        [
+          -0.09999999999999999,
+          0.0
+        ],
+        [
+          0.004077965984284226,
+          0.0
+        ],
+        [
+          -1.501795174768823,
+          0.0
+        ]
+      ],
+      "mirror_distance": 0.0,
+      "cross_block_norm": 2.6033175393719956e-16,
+      "mirror_commutator_norm": 8.881784197001252e-16,
+      "state": [
+        0.6718237198128718,
+        0.035815210411507634,
+        0.035815210411507634,
+        0.012827292968205648,
+        0.05130917187282259,
+        0.05130917187282259,
+        0.012827292968205648
+      ],
+      "min_concentration": 0.012827292968205648
+    },
+    "paired": {
+      "perturbation_relative_amplitude": 0.0001,
+      "perturbation_absolute_amplitude": 1.863787125464438e-06,
+      "initial_plus": [
+        0.6718237198128718,
+        0.0358170741986331,
+        0.03581334662438217,
+        0.012828575697502469,
+        0.05130917187282259,
+        0.05130917187282259,
+        0.012826010238908827
+      ],
+      "plus": {
+        "state": [
+          0.6712302934418032,
+          0.04568708442402015,
+          0.027254201096643997,
+          0.020873096831675448,
+          0.049806599456463874,
+          0.049806599456463874,
+          0.007427914774163108
+        ],
+        "residual_inf": 7.806255641895632e-18,
+        "alpha_full": -0.007980114766210869,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -2.3699164561390784,
+            0.0
+          ],
+          [
+            -1.2565768814022324,
+            0.0
+          ],
+          [
+            -0.21338392891117092,
+            0.0
+          ],
+          [
+            -0.007980114766210869,
+            0.0
+          ],
+          [
+            -0.10000000000000006,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.007427914774163108,
+        "trajectory_min_concentration": 0.007427914773863079,
+        "refinement_distance": 6.886158310237533e-14,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 7356.608690610661,
+        "metrics": {
+          "ee_monomer": 0.252708506517261,
+          "monomer_concentration": 0.07294128552066415,
+          "ee_homodimer": 0.4750777903196426,
+          "ee_residues": 0.13785712776544393,
+          "peptide_residue_outflow": 0.025582842103753264,
+          "model_residue_inventory": 0.32876970655819676
+        }
+      },
+      "minus": {
+        "state": [
+          0.6712302934418033,
+          0.02725420109664404,
+          0.0456870844240201,
+          0.007427914774163132,
+          0.04980659945646389,
+          0.04980659945646389,
+          0.0208730968316754
+        ],
+        "residual_inf": 9.107298248878237e-18,
+        "alpha_full": -0.007980114766210978,
+        "eigenvalues_full": [
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -0.1,
+            0.0
+          ],
+          [
+            -2.369916456139074,
+            0.0
+          ],
+          [
+            -1.256576881402234,
+            0.0
+          ],
+          [
+            -0.21338392891117103,
+            0.0
+          ],
+          [
+            -0.007980114766210978,
+            0.0
+          ],
+          [
+            -0.10000000000000009,
+            0.0
+          ]
+        ],
+        "min_concentration": 0.007427914774163132,
+        "trajectory_min_concentration": 0.007427914773863074,
+        "refinement_distance": 6.888239978408706e-14,
+        "solver_success": true,
+        "root_success": true,
+        "root_message": "The solution converged.",
+        "horizon": 7356.608690610661,
+        "metrics": {
+          "ee_monomer": -0.2527085065172598,
+          "monomer_concentration": 0.07294128552066415,
+          "ee_homodimer": -0.47507779031964037,
+          "ee_residues": -0.1378571277654432,
+          "peptide_residue_outflow": 0.025582842103753268,
+          "model_residue_inventory": 0.32876970655819676
+        }
+      },
+      "paired_trajectory_mirror_error": 1.1803058530546195e-13,
+      "mirror_endpoint_error": 1.1102230246251565e-16
+    }
+  }
+]

@@ -1,0 +1,9 @@
+!.gitignore
+!*.json
+!*.csv
+!*.txt
+results/
+!results/
+!results/**
+__pycache__/
+.pytest_cache/
