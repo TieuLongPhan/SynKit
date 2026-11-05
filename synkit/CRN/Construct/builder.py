@@ -29,6 +29,17 @@ class CRNExpand:
     strategy: Optional[str] = None
     keep_aam: bool = True
     rule_backend: str = "synreactor"
+    #: Native expander executable for ``rule_backend="native"``; ``None`` uses
+    #: the task-local :func:`~synkit.CRN.Construct.native_expand.native_expander`.
+    native_expander: Optional[str] = None
+    #: Native hydrogen model: ``"explicit"`` matches hydrogen atoms as graph
+    #: vertices; ``"lewis"`` keeps hydrogens as per-atom count labels and
+    #: compiles mapped H moves into count deltas (heavy-atom matching).
+    hydrogen_model: str = "explicit"
+    #: Worker threads for native rule application within one step.
+    threads: int = 1
+    #: Wall-clock limit in seconds for a native expansion; ``None`` is unlimited.
+    time_limit: Optional[float] = None
 
     max_components: int = 3
     use_frontier: bool = True
@@ -68,10 +79,20 @@ class CRNExpand:
     derivations: DerivationLog = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        if self.rule_backend not in {"synreactor", "rdkit"}:
-            raise ValueError("rule_backend must be synreactor or rdkit")
-        if self.rule_backend == "rdkit" and self.keep_aam:
+        if self.rule_backend not in {"synreactor", "rdkit", "native"}:
+            raise ValueError("rule_backend must be synreactor, rdkit or native")
+        if self.rule_backend in {"rdkit", "native"} and self.keep_aam:
             raise ValueError("RDKit CRN construction requires keep_aam=False")
+        if self.rule_backend == "native" and (self.implicit_temp or self.strategy):
+            raise ValueError(
+                "Native CRN expansion does not support SynReactor-specific template strategies"
+            )
+        if self.hydrogen_model not in {"explicit", "lewis"}:
+            raise ValueError("hydrogen_model must be explicit or lewis")
+        if self.hydrogen_model == "lewis" and self.rule_backend != "native":
+            raise ValueError("hydrogen_model='lewis' requires rule_backend='native'")
+        if self.threads < 1:
+            raise ValueError("threads must be >= 1")
         if self.max_components < 1:
             raise ValueError("max_components must be >= 1")
         self.state = DerivationState()
@@ -90,6 +111,7 @@ class CRNExpand:
         self._seen_delta = set()
         self._rule_arity_cache = {}
         self._warned_no_rdkit = False
+        self.native_report: Optional[Dict[str, Any]] = None
         self.state.set_initial(pool_keys=set(), frontier_keys=set())
         self.derivations.clear()
 
@@ -272,6 +294,8 @@ class CRNExpand:
     ) -> nx.DiGraph:
         if reset:
             self.reset()
+        if self.rule_backend == "native":
+            return self._build_native(list(seeds))
 
         pool_keys, frontier_keys = self._init_pool(seeds)
         self.state.set_initial(pool_keys=pool_keys, frontier_keys=frontier_keys)
@@ -295,6 +319,99 @@ class CRNExpand:
             if self.use_frontier and not frontier_keys:
                 break
 
+        return self.graph
+
+    def _native_options(self) -> Dict[str, Any]:
+        return {
+            "repeats": int(self.repeats),
+            "explicit_h": bool(self.explicit_h),
+            "max_components": int(self.max_components),
+            "use_frontier": bool(self.use_frontier),
+            "max_mixtures_per_rule_step": int(self.max_mixtures_per_rule_step),
+            "max_tasks_per_step": int(self.max_tasks_per_step),
+            "allow_self_mixtures": bool(self.allow_self_mixtures),
+            "skip_no_change": bool(self.skip_no_change),
+            "allow_empty_side": bool(self.allow_empty_side),
+            "strip_spectators": bool(self.strip_spectators),
+            "dedup_delta": bool(self.dedup_delta),
+            "dedup_across_rules": bool(self.dedup_across_rules),
+            "threads": int(self.threads),
+            "hydrogen_model": self.hydrogen_model,
+            "time_limit": None if self.time_limit is None else float(self.time_limit),
+        }
+
+    def _build_native(self, seeds: List[str]) -> nx.DiGraph:
+        """Expand in the native controller and write its events to the graph.
+
+        Species identity comes from the native canonicalization, so the
+        returned keys are written verbatim and never re-standardized here.
+        """
+        from .native_expand import resolve_expander, run_native_expansion
+
+        executable = resolve_expander(self.native_expander)
+        if executable is None:
+            raise ValueError(
+                "rule_backend='native' requires native_expander or a "
+                "native_expander(...) context"
+            )
+        if not all(isinstance(rule, str) for rule in self.rules):
+            raise TypeError("Native CRN expansion requires reaction SMARTS strings")
+        arities = [self._infer_rule_arity(r, i) for i, r in enumerate(self.rules)]
+        result = run_native_expansion(
+            executable,
+            rules=list(self.rules),
+            arities=arities,
+            seeds=seeds,
+            options=self._native_options(),
+        )
+        if result["status"] != "complete":
+            raise RuntimeError(
+                f"Native CRN expansion stopped early: {result['stop_reason']}"
+            )
+        keys: List[str] = result["species"]
+        for key in keys:
+            self._smiles_cache[key] = key
+        for seed, key in zip(seeds, result["seed_keys"]):
+            self._smiles_cache[seed] = key
+
+        pool_keys, _ = self._init_pool(seeds)
+        for event in result["events"]:
+            step = int(event["step"])
+            rule_index = int(event["rule_index"])
+            reactant_ids = [self._species_index[keys[i]] for i in event["reactants"]]
+            product_smiles = [keys[i] for i in event["products"]]
+            eid = self._add_rxn_event_node(step=step, rule_index=rule_index)
+            self._add_reactant_edges(
+                reactant_ids=reactant_ids, eid=eid, step=step, rule_index=rule_index
+            )
+            self._add_product_edges(
+                product_smiles=product_smiles, eid=eid, step=step, rule_index=rule_index
+            )
+            self.derivations.append(
+                event_id=eid,
+                label=str(self.graph.nodes[eid].get("label")),
+                step=step,
+                rule_index=rule_index,
+                reactants=tuple(sorted(keys[i] for i in event["reactants"])),
+                products=tuple(sorted(product_smiles)),
+            )
+            self._update_pool_with_products(
+                products_std_all=[keys[i] for i in event["all_products"]],
+                pool_keys=pool_keys,
+                next_frontier=set(),
+            )
+        self.state.set_initial(
+            pool_keys=set(result["pool"]), frontier_keys=set(result["frontier"])
+        )
+        self.state.step = int(result["steps_run"])
+        self.native_report = {
+            name: result[name]
+            for name in (
+                "engine", "rdkit_version", "stop_reason", "steps_run",
+                "steps", "binding_tests", "hydrogen_model", "rules",
+            )
+        }
+        self.native_report["executable"] = str(executable)
         return self.graph
 
     def _init_pool(self, seeds: Iterable[str]) -> Tuple[Set[str], Set[str]]:

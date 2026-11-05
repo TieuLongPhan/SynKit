@@ -35,6 +35,7 @@ from Experiment.CRN.studies import (  # noqa: E402
     external_crnt4sbml,
     formose_case_study,
     glycolysis_donors,
+    hydrogen_accounting,
     representation,
     supplementary,
 )
@@ -206,6 +207,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         _run("supplementary", supplementary.supplementary_report, arguments.output_dir),
         _run("glycolysis-donors", glycolysis_donors.donor_report, arguments.output_dir),
     ]
+
+    from synkit.CRN.Construct.native_expand import resolve_expander
+
+    if resolve_expander() is not None:
+        studies.append(
+            _run("hydrogen", hydrogen_accounting.hydrogen_report, arguments.output_dir)
+        )
 
     omitted = {}
 

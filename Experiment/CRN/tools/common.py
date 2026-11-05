@@ -87,8 +87,21 @@ def environment() -> Dict[str, Any]:
     commit = _git("rev-parse", "HEAD")
     status = _git("status", "--porcelain")
 
+    from synkit.CRN.Construct.native_expand import expander_manifest, resolve_expander
+
+    expander = resolve_expander()
+    expander_record = None
+    if expander is not None:
+        manifest = expander_manifest(expander)
+        expander_record = {
+            "executable": str(expander),
+            "executable_sha256": manifest["executable_sha256"],
+            "build_sha256": manifest["build_sha256"],
+            "rdkit_cpp_version": manifest["rdkit_version"],
+        }
     return {
         "crn_backend": backend_metadata(),
+        "crn_expander": expander_record,
         "synkit": getattr(synkit, "__version__", "unknown"),
         "python": platform.python_version(),
         "numpy": np.__version__,
@@ -220,6 +233,17 @@ def native_experiment(function):
             default=Path("/tmp/synkit-crn-native"),
         )
         parser.add_argument("--boost-include-dir", type=Path)
+        parser.add_argument(
+            "--native-expander",
+            type=Path,
+            help="verified native rule-expansion executable",
+        )
+        parser.add_argument(
+            "--rdkit-dir",
+            type=Path,
+            default=_default_rdkit_sdk(),
+            help="RDKit C++ SDK used to build the native rule expander",
+        )
         supplied = args[0] if args else kwargs.get("argv")
         options, remaining = parser.parse_known_args(
             sys.argv[1:] if supplied is None else supplied
@@ -265,7 +289,32 @@ def native_experiment(function):
             raise RuntimeError(
                 "CRN experiments require a full native library; rebuild with build_native(..., with_semiflows=True)"
             )
+        expander = options.native_expander
+        if expander is None and options.rdkit_dir is not None:
+            from synkit.CRN.Construct import build_native_expander
+
+            expander = build_native_expander(
+                options.native_build_dir / "expander", rdkit_dir=options.rdkit_dir
+            )
         with native_backend(library):
-            return invoke()
+            if expander is None:
+                return invoke()
+            from synkit.CRN.Construct import native_expander
+
+            with native_expander(expander):
+                return invoke()
 
     return wrapped
+
+
+def _default_rdkit_sdk() -> Optional[Path]:
+    """Return a configured or cached RDKit C++ SDK prefix, if one exists."""
+    configured = os.environ.get("SYNKIT_RDKIT_CPP_DIR")
+    candidates = [Path(configured)] if configured else []
+    candidates += sorted(
+        (Path.home() / ".cache/synkit").glob("rdkit-cpp-*"), reverse=True
+    )
+    for candidate in candidates:
+        if (candidate / "include/rdkit/GraphMol/ChemReactions/Reaction.h").is_file():
+            return candidate
+    return None

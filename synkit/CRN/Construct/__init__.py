@@ -3,6 +3,11 @@ from .flattener import ReactionDeltaFlattener
 from .state import DerivationState
 from .strategy import ConstructionStrategy, FrontierStrategy
 from .derivation import DerivationRecord, DerivationLog
+from .native_expand import (
+    build_native_expander,
+    expander_manifest,
+    native_expander,
+)
 
 __all__ = [
     "CRNExpand",
@@ -13,4 +18,7 @@ __all__ = [
     "FrontierStrategy",
     "DerivationRecord",
     "DerivationLog",
+    "build_native_expander",
+    "expander_manifest",
+    "native_expander",
 ]

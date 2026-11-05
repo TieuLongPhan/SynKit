@@ -25,7 +25,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 if str(REPOSITORY_ROOT) not in sys.path:
@@ -92,21 +92,45 @@ def _matrix_species_smiles(crn: SynCRN) -> List[str]:
     return [lookup.get(str(node), str(node)) for node in order]
 
 
-def expand(repeats: int) -> SynCRN:
+def expand(repeats: int, record: Optional[Dict[str, Any]] = None) -> SynCRN:
     """Expand the formose network for a given number of iterations.
+
+    The native C++ controller is used when a native expander is active, with
+    hydrogens kept as Lewis-state count labels; the RDKit Python worker is used
+    under the C++ analysis backend otherwise.
 
     :param repeats: Number of rule-application iterations.
     :type repeats: int
+    :param record: Optional mapping that receives the expansion backend and
+        the native controller's per-step statistics.
+    :type record: Optional[Dict[str, Any]]
     :return: Resulting network.
     :rtype: SynCRN
     """
     from synkit.CRN.backend import resolve_backend
+    from synkit.CRN.Construct.native_expand import resolve_expander
 
-    rule_backend = "rdkit" if resolve_backend()[0] == "cpp" else "synreactor"
-    graph = CRNExpand(
-        rules=RULES, repeats=repeats, keep_aam=False, rule_backend=rule_backend
-    ).build(SEEDS)
-    return SynCRN.from_digraph(graph)
+    if resolve_expander() is not None:
+        rule_backend = "native"
+    elif resolve_backend()[0] == "cpp":
+        rule_backend = "rdkit"
+    else:
+        rule_backend = "synreactor"
+    builder = CRNExpand(
+        rules=RULES,
+        repeats=repeats,
+        keep_aam=False,
+        rule_backend=rule_backend,
+        hydrogen_model="lewis" if rule_backend == "native" else "explicit",
+    )
+    crn = SynCRN.from_digraph(builder.build(SEEDS))
+    if record is not None:
+        record.update(
+            rule_backend=rule_backend,
+            hydrogen_model=builder.hydrogen_model,
+            native=builder.native_report,
+        )
+    return crn
 
 
 def formose_report(iterations: Sequence[int], *, analyse_at: int) -> Dict[str, Any]:
@@ -122,7 +146,8 @@ def formose_report(iterations: Sequence[int], *, analyse_at: int) -> Dict[str, A
     growth = []
     networks: Dict[int, SynCRN] = {}
     for repeats in iterations:
-        seconds, crn, error = timed(lambda r=repeats: expand(r))
+        expansion: Dict[str, Any] = {}
+        seconds, crn, error = timed(lambda r=repeats: expand(r, expansion))
         if crn is None:
             growth.append({"iteration": repeats, "error": error})
             continue
@@ -133,6 +158,9 @@ def formose_report(iterations: Sequence[int], *, analyse_at: int) -> Dict[str, A
                 "n_species": crn.n_species,
                 "n_reactions": crn.n_reactions,
                 "seconds": seconds,
+                "rule_backend": expansion.get("rule_backend"),
+                "hydrogen_model": expansion.get("hydrogen_model"),
+                "native_steps": (expansion.get("native") or {}).get("steps"),
             }
         )
 
