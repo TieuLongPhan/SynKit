@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(synkit_partial VERSION 1.6.5 LANGUAGES CXX)
+project(synkit_partial VERSION 1.7.0 LANGUAGES CXX)
 add_library(synkit_partial SHARED src/partial.cpp)
 target_compile_features(synkit_partial PUBLIC cxx_std_17)
 target_compile_definitions(synkit_partial PRIVATE SYNKIT_PARTIAL_BUILD)

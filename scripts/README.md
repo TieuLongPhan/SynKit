@@ -1,22 +1,24 @@
 # Repository scripts
 
-Run these entry points from any working directory with the project environment
-activated. They use `python`, or the interpreter selected by `PYTHON`.
+The shell helpers work from any directory and use the active Python environment.
+Set `PYTHON` to select another interpreter.
 
-- `lint.sh`: source-size, Sphinx docstring style, and Flake8 checks.
-- `pytest.sh`: all library tests in `Test/`, or supplied pytest arguments.
-- `build_doc.sh`: strict Sphinx HTML build into `docs/`.
-- `check_package_artifacts.py`: inspect the wheel and source archive, then
-  verify the installed wheel. `--native-smoke` checks mapping, CRN analysis,
-  and graph/stereograph canonicalization without a compiler.
-- `smoke_native_wheel.py`: the installed-package check shared by PyPI, Conda,
-  and Docker validation.
+## Checks
+
+```bash
+bash scripts/lint.sh
+bash scripts/pytest.sh
+bash scripts/build_doc.sh
+```
+
+- `lint.sh` runs source-size, docstring and Flake8 checks.
+- `pytest.sh` runs `Test/` and available experiment test suites. Arguments are
+  passed to pytest, for example `bash scripts/pytest.sh Test/CRN -q`.
+- `build_doc.sh` builds the Sphinx documentation into `docs/` and fails on warnings.
 
 ## Native builds
 
-The top-level CMake project builds the three production libraries together:
-the atom mapper (including its solvers), exact CRN analysis, and graph
-canonicalization (also used by stereographs).
+Run these commands from the repository root:
 
 ```bash
 cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Release -DSYNKIT_NATIVE_WHEEL=ON
@@ -24,58 +26,33 @@ cmake --build build/native --config Release --parallel 2
 cmake --install build/native --config Release --prefix build/native-install
 ```
 
-The build needs CMake 3.20 or later, a C++17 compiler, and Boost headers for CRN analysis.
-Set `BOOST_INCLUDE_DIR` to the directory containing `boost/` if needed.
-`SYNKIT_BUILD_MAPPER`, `SYNKIT_BUILD_CRN`, and `SYNKIT_BUILD_CANON` can each be
-set to `OFF` for a focused developer build. Existing component builders remain
-available for that purpose.
+The CMake project builds the atom mapper, CRN analysis, graph canonicalization,
+and partial-rule application libraries. It requires CMake 3.20 or later, a C++17
+compiler, and Boost headers for exact CRN analysis. Set `BOOST_INCLUDE_DIR` if
+Boost is outside the compiler's search path.
 
-`python -m build` uses the same top-level CMake project once per wheel. It
-packages all three libraries and preserves their separate Python APIs and
-optional SDK settings. Platform-wheel users need no compiler, CMake, or Boost
-installation to run these backends. The release workflow repairs and checks
-the installed wheels on Linux, macOS, and Windows.
+Disable individual components with `SYNKIT_BUILD_MAPPER`, `SYNKIT_BUILD_CRN`,
+`SYNKIT_BUILD_CANON`, or `SYNKIT_BUILD_PARTIAL` set to `OFF`.
+
+## Packages
 
 ```bash
 python -m build
 python scripts/check_package_artifacts.py dist --native-smoke
 ```
 
-`--mapper-smoke` remains an alias for `--native-smoke`.
+`check_package_artifacts.py` checks wheel and source-archive contents, then
+installs the wheel in a temporary environment. `--native-smoke` also exercises
+the installed native backends. `--archives-only` skips installation.
+`smoke_native_wheel.py` provides the runtime checks used by release workflows.
 
 ## Release channels
 
-Publishing a GitHub release triggers the PyPI, Conda, and Docker workflows.
-The release tag must match `pyproject.toml`, for example `v1.6.5`. Each workflow
-builds the three C++ backends through the shared CMake project and tests the
-installed package before publishing its artifacts.
+A GitHub release triggers the PyPI, Conda, and Docker workflows. Its tag, such as
+`v1.7.0`, must match `pyproject.toml` and `recipe/meta.yaml`.
 
-- PyPI builds platform wheels for Linux, macOS, and Windows and checks them
-  with Python 3.10–3.13.
-- Conda builds a native package for each supported platform and Python minor
-  version. Dependencies come from conda-forge; packages are published to the
-  `tieulongphan` channel. Conda and Mamba may rewrite library paths during
-  installation, so native integrity checks use their final installed-file
-  hashes in `conda-meta`.
-- Docker builds native Linux AMD64 and ARM64 images. The runtime image contains
-  the compiled libraries without compilers, CMake, or Boost headers. The
-  release workflow publishes the exact tested images and combines their
-  platform manifests.
+- PyPI: platform wheels for Linux, macOS, and Windows.
+- Conda: native packages published to the `tieulongphan` channel.
+- Docker: Linux AMD64 and ARM64 images.
 
-Manual workflow runs validate the artifacts without publishing. The Conda
-workflow checks `ANACONDA_TOKEN`, and Docker checks its Docker Hub login, when
-those credentials are available. Release publication
-uses that secret for Anaconda.org, `DOCKERHUB_USER` and `DOCKERHUB_TOKEN` for
-Docker Hub, and the existing `pypi` trusted-publishing environment for PyPI.
-
-`check_python_file_size.py`, `python_file_size_baseline.json`, and
-`check_docstring_style.py` support the lint command.
-
-```bash
-conda activate synkit
-bash scripts/lint.sh
-bash scripts/pytest.sh
-```
-
-Mapping campaigns, dataset selection, benchmarks, and figure programs moved to
-the sibling repository at `../Synister/synkit/Experiment/Synister/`.
+Manual workflow runs build and validate artifacts without publishing.

@@ -338,7 +338,7 @@ LLG rewrite policy:
        rewriting; partial aromatic-system morphisms remain phase-sensitive.
 
 Typed wildcard and partial application
--------------------------------------
+--------------------------------------
 
 ``WildcardEngine`` provides injective typed atom/attachment-port matching and
 symbolic completion of missing rule components. The mathematical definition,

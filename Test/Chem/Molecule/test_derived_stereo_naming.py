@@ -10,6 +10,7 @@ from synkit.Chem.Molecule.derived_stereo_naming import (
     derive_rdkit_stereo_names,
 )
 from synkit.Graph.Stereo import (
+    STEREOGRAPH_SCHEMA,
     StereoAssignment,
     TetrahedralStereo,
     enumerate_rdkit_stereographs,
@@ -50,7 +51,7 @@ def test_naming_retains_the_exact_source_certificate(
     result = derive_rdkit_stereo_names(molecule, assignment)
 
     assert result.source_canonical_digest == assignment.canonical_digest
-    assert assignment.canonical_code.startswith("synkit.canonical-stereograph/2\n")
+    assert assignment.canonical_code.startswith(STEREOGRAPH_SCHEMA + "\n")
     assert assignment.registry_items == before
     assert result.to_dict()["source_canonical_digest"] == (assignment.canonical_digest)
 

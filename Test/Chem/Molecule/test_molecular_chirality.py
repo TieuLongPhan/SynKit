@@ -21,10 +21,9 @@ from synkit.Chem.Molecule.chirality import (  # noqa: E402
 )
 from synkit.Graph.Stereo import AxisStereoSupport  # noqa: E402
 
-from Experiment.Stereo.paths import SOURCES, ADDITIONAL
-
-METADATA = SOURCES / "acs/ci5c02523_si_002.metadata.json"
-REPORT = ADDITIONAL / "published_comparator.json"
+STEREO_DATA = ROOT / "Experiment/Stereo/data"
+METADATA = STEREO_DATA / "sources/acs/ci5c02523_si_002.metadata.json"
+REPORT = STEREO_DATA / "paper/additional/published_comparator.json"
 
 
 @pytest.fixture
