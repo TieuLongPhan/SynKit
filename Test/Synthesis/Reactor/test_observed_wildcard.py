@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from synkit.Rule import WildcardRuleExtractor, WildcardRuleExtractionError
-from synkit.Synthesis.Reactor import WildcardEngine, build_native_reactor
+from synkit.Synthesis.Reactor import WildcardEngine
 from synkit.Synthesis.Reactor.core.completion import validate_lewis_endpoints
 from Test.Synthesis.Reactor.helpers import canonical_fragments
 
@@ -14,8 +14,8 @@ CASES = json.loads((Path(__file__).parent / "fixtures/wildcard_observed_examples
 
 
 @pytest.fixture(scope="module")
-def native_library(tmp_path_factory):
-    return build_native_reactor(tmp_path_factory.mktemp("observed-native"))
+def native_library(reactor_native_library):
+    return reactor_native_library
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["id"])

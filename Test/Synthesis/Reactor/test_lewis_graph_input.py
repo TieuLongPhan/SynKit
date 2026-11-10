@@ -7,14 +7,14 @@ from rdkit import Chem
 from synkit.Graph.Morphism import ELECTRON_LLG_SCHEMA, LLGError, LewisLabelledGraph
 from synkit.IO import smiles_to_graph
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor import WildcardEngine, build_native_reactor
+from synkit.Synthesis.Reactor import WildcardEngine
 
 SN2 = "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]"
 
 
 @pytest.fixture(scope="module")
-def native_library(tmp_path_factory):
-    return str(build_native_reactor(tmp_path_factory.mktemp("lewis-input")))
+def native_library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 def chemical_endpoints(reactions):

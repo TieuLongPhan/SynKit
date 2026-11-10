@@ -16,6 +16,21 @@ bash scripts/build_doc.sh
   passed to pytest, for example `bash scripts/pytest.sh Test/CRN -q`.
 - `build_doc.sh` builds the Sphinx documentation into `docs/` and fails on warnings.
 
+Native runtime tests share one build per component. Reuse verified builds
+between local runs with:
+
+```bash
+SYNKIT_TEST_NATIVE_CACHE="$PWD/build/test-native-cache" bash scripts/pytest.sh
+```
+
+CI caches Conda downloads and these native outputs in addition to pip downloads.
+Native cache entries depend on the OS, architecture, Python, runner image,
+toolchain, dependencies and sources. Builders verify restored configurations,
+library hashes and ABIs. Build-integrity and concurrency tests keep fresh
+directories. Completed builds are saved even if a test fails; cancelled runs
+are not saved. A new push cancels an older test run on the same branch.
+The test log lists the fifteen slowest tests to guide further improvements.
+
 ## Native builds
 
 Run these commands from the repository root:

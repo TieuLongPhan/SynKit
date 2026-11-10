@@ -5,7 +5,6 @@ These are finite examples, not a proof of adhesivity of molecular graphs.
 """
 
 from copy import deepcopy
-from pathlib import Path
 
 import networkx as nx
 import pytest
@@ -14,7 +13,6 @@ from synkit.Rule import SynRule
 from synkit.Synthesis.Reactor import (
     WildcardCompletionError,
     WildcardEngine,
-    build_native_reactor,
 )
 from synkit.Synthesis.Reactor.core.completion import (
     complete_rule_host,
@@ -113,9 +111,8 @@ def test_completion_rejects_noninteger_or_negative_resources(value):
 
 
 @pytest.fixture(scope="module")
-def library():
-    root = Path(__file__).resolve().parents[3]
-    return str(build_native_reactor(root / "build/partial/test-native"))
+def library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 def private_records(graph, side, atoms=None, pairs=None):

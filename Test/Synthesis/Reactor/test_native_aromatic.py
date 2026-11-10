@@ -7,14 +7,14 @@ import pytest
 from rdkit import Chem
 
 from synkit.Rule import WildcardRuleExtractor
-from synkit.Synthesis.Reactor import WildcardEngine, build_native_reactor
+from synkit.Synthesis.Reactor import WildcardEngine
 
 CASES = json.loads((Path(__file__).parent / "fixtures/wildcard_aromatic_examples.json").read_text())["cases"]
 
 
 @pytest.fixture(scope="module")
-def native_library(tmp_path_factory):
-    return str(build_native_reactor(tmp_path_factory.mktemp("aromatic-native")))
+def native_library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 def identity(reaction):

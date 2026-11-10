@@ -6,7 +6,7 @@ import pytest
 from rdkit.Chem import rdChemReactions
 
 from synkit.CRN.Construct import CRNExpand
-from synkit.Synthesis.Reactor import NativeReactorUnsupportedError, build_native_reactor
+from synkit.Synthesis.Reactor import NativeReactorUnsupportedError
 
 FORMOSE = [
     "[C:1]([C:2]=[O:3])[H:4]>>[C:1]=[C:2][O:3][H:4]",
@@ -18,8 +18,8 @@ SEEDS = ["C=O", "OCC=O"]
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
-    return str(build_native_reactor(tmp_path_factory.mktemp("dpo-crn")))
+def library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 def build(library, *, backend="synreactor-cpp", depth=3, **options):

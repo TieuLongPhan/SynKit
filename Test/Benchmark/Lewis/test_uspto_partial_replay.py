@@ -9,14 +9,13 @@ from Experiment.Lewis.partial_replay import benchmark
 from Experiment.Lewis.partial_replay.benchmark import (
     canonical_fragments, contains_fragments, initialize, prepare, process, summarize,
 )
-from synkit.Synthesis.Reactor import build_native_reactor
 
 REACTION = "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]"
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
-    return str(build_native_reactor(tmp_path_factory.mktemp("uspto-partial-native")))
+def library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 def test_endpoint_comparison_is_a_multiset_and_retains_charge_and_isotopes():

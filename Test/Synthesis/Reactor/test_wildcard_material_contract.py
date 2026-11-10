@@ -5,12 +5,12 @@ import pytest
 
 from synkit.IO import smiles_to_graph
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor import WildcardEngine, build_native_reactor
+from synkit.Synthesis.Reactor import WildcardEngine
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
-    return str(build_native_reactor(tmp_path_factory.mktemp("material-contract")))
+def library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 @pytest.mark.parametrize("backend", ["python", "cpp"])

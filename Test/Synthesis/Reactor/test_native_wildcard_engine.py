@@ -14,17 +14,15 @@ from synkit.Synthesis.Reactor import (
     WildcardCompletionError,
     WildcardEngine,
     WildcardSearchLimitError,
-    build_native_reactor,
 )
 
-ROOT = Path(__file__).resolve().parents[3]
 CORPUS = json.loads((Path(__file__).parent / "fixtures/wildcard_conformance.json").read_text())
 SN2 = "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]"
 
 
 @pytest.fixture(scope="session")
-def native_reactor():
-    return str(build_native_reactor(ROOT / "build/partial/test-native"))
+def native_reactor(reactor_native_library):
+    return str(reactor_native_library)
 
 
 def identity(reaction):

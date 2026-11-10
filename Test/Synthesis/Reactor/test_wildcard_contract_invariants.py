@@ -7,15 +7,15 @@ import pytest
 from synkit.Graph.Morphism import WildcardConstraint
 from synkit.IO import rsmi_to_its
 from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor import WildcardEngine, build_native_reactor
+from synkit.Synthesis.Reactor import WildcardEngine
 from synkit.Synthesis.Reactor.matching.wildcard import validate_wildcard_rule
 
 IDENTITY = "[CH3:1][*:2]>>[CH3:1][*:2]"
 
 
 @pytest.fixture(scope="module")
-def native_library(tmp_path_factory):
-    return str(build_native_reactor(tmp_path_factory.mktemp("wildcard-invariants")))
+def native_library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 @pytest.mark.parametrize(

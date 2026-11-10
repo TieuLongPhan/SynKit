@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint
@@ -31,9 +35,23 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    env:
+      CONDA_PKGS_DIRS: ${{ github.workspace }}/build/conda-pkgs
+      SYNKIT_TEST_NATIVE_CACHE: ${{ github.workspace }}/build/test-native-cache
+      PYTEST_ADDOPTS: --durations=15
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache Conda packages
+        id: conda-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.CONDA_PKGS_DIRS }}
+          enableCrossOsArchive: true
+          key: conda-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-${{ hashFiles('environment.yml', 'pyproject.toml', '.github/workflows/test-and-lint.yml') }}
+          restore-keys: |
+            conda-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-
 
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
@@ -43,6 +61,7 @@ jobs:
           activate-environment: synkit-ci
           channels: conda-forge
           use-mamba: true
+          pkgs-dirs: ${{ env.CONDA_PKGS_DIRS }}
 
       - name: Locate pip cache
         id: pip-cache
@@ -55,9 +74,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
-          key: pip-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
+          key: pip-${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
           restore-keys: |
-            pip-${{ runner.os }}-${{ matrix.python-version }}-
+            pip-${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-
 
       - name: Install project and test tools
         shell: bash -l {0}
@@ -68,35 +87,81 @@ jobs:
           python -m pip install -e '.[test]' sympy
 
       - name: Verify native test prerequisites
+        id: native-tools
         shell: bash -l {0}
         run: |
           conda activate synkit-ci
           python - <<'PY'
+          import hashlib
+          import json
+          import os
           from pathlib import Path
+          import platform
           import shutil
-          import subprocess
+          import sys
           import tempfile
           from synkit.CRN._build import boost_include
+          from synkit.CRN._native_build import _boost_digest, _configure
 
           cmake = shutil.which("cmake")
           assert cmake is not None, "Native tests require CMake"
           boost = boost_include()
           assert boost is not None, "Exact CRN tests require installed Boost headers"
           print(f"Native CRN tests use Boost headers from {boost}")
-          # Configuring lets CMake discover Xcode/MSVC without assuming that
-          # a particular compiler executable is present on the shell's PATH.
           with tempfile.TemporaryDirectory(prefix="synkit-native-prerequisites-") as folder:
-              subprocess.run([
-                  cmake, "-S", str(Path("synkit/CRN/cpp").resolve()), "-B", folder,
-                  "-DSYNKIT_CRN_EXACT=ON", "-DSYNKIT_CRN_BOOST_INCLUDE_DIR=" + str(boost),
-              ], check=True)
+              toolchain = _configure(Path(folder), Path("synkit/CRN/cpp").resolve(), None, boost)
+          packages = [
+              {name: record.get(name) for name in ("name", "version", "build", "sha256")}
+              for path in sorted((Path(sys.prefix) / "conda-meta").glob("*.json"))
+              for record in [json.loads(path.read_text())]
+          ]
+          build_environment = {
+              name.upper(): value for name, value in os.environ.items()
+              if name.upper().startswith((
+                  "CMAKE_", "CXX", "CPP", "CFLAGS", "LDFLAGS", "VSCMD_",
+                  "VCTOOLS", "WINDOWSSDK", "UNIVERSALCRT", "UCRT",
+              ))
+              or name.upper() in {
+                  "CC", "CL", "_CL_", "INCLUDE", "LIB", "LIBPATH", "SDKROOT",
+                  "MACOSX_DEPLOYMENT_TARGET", "IMAGEOS", "IMAGEVERSION",
+              }
+          }
+          identity = {
+              "toolchain": toolchain, "boost": _boost_digest(boost), "packages": packages,
+              "environment": build_environment, "python": sys.version, "machine": platform.machine(),
+          }
+          key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"key={key}\n")
           PY
+
+      - name: Cache verified native test builds
+        id: native-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ${{ env.SYNKIT_TEST_NATIVE_CACHE }}
+          key: native-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.python-version }}-${{ steps.native-tools.outputs.key }}-${{ hashFiles('CMakeLists.txt', 'synkit/**/*.py', 'synkit/**/*.cpp', 'synkit/**/*.c', 'synkit/**/*.h', 'synkit/**/*.hpp', 'synkit/**/*.inc', 'synkit/**/*.cmake', 'synkit/**/CMakeLists.txt', 'Test/conftest.py', '.github/workflows/test-and-lint.yml') }}
 
       - name: Test
         shell: bash -l {0}
         run: |
           conda activate synkit-ci
           bash scripts/pytest.sh
+
+      - name: Save Conda downloads
+        if: ${{ !cancelled() && steps.conda-cache.outputs.cache-hit != 'true' && steps.conda-cache.outputs.cache-primary-key != '' }}
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ env.CONDA_PKGS_DIRS }}
+          enableCrossOsArchive: true
+          key: ${{ steps.conda-cache.outputs.cache-primary-key }}
+
+      - name: Save verified native test builds
+        if: ${{ !cancelled() && steps.native-cache.outputs.cache-hit != 'true' && steps.native-cache.outputs.cache-primary-key != '' }}
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ env.SYNKIT_TEST_NATIVE_CACHE }}
+          key: ${{ steps.native-cache.outputs.cache-primary-key }}
 
   mapper-native:
     name: Native C++ kernels and wheel

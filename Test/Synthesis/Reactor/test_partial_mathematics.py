@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from rdkit import Chem
 
-from synkit.Synthesis.Reactor import WildcardEngine, build_native_reactor
+from synkit.Synthesis.Reactor import WildcardEngine
 from synkit.Graph.Morphism.constraints import WildcardConstraint
 from synkit.Rule import SynRule
 
@@ -108,9 +108,8 @@ def outcome_identity(value):
 
 
 @pytest.fixture(scope="module")
-def library():
-    root = Path(__file__).resolve().parents[3]
-    return str(build_native_reactor(root / "build/partial/test-native"))
+def library(reactor_native_library):
+    return str(reactor_native_library)
 
 
 @pytest.mark.parametrize("case", EXAMPLES, ids=lambda case: case["id"])

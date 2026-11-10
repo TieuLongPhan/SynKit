@@ -7,7 +7,6 @@ from itertools import permutations, product
 import pytest
 from rdkit import Chem
 
-from synkit.Chem.Mapper._native.build import build_mapper_native
 from synkit.Chem.Mapper._native.implicit import (
     make_implicit_classifier,
     prepare_implicit_reaction,
@@ -18,10 +17,8 @@ from synkit.Chem.Mapper._native.runtime import CancellationToken
 
 
 @pytest.fixture(scope="module")
-def certificate_library(tmp_path_factory):
-    return os.environ.get("SYNKIT_CORE_LIBRARY") or build_mapper_native(
-        tmp_path_factory.mktemp("implicit-certificate")
-    )
+def certificate_library(request):
+    return os.environ.get("SYNKIT_CORE_LIBRARY") or request.getfixturevalue("mapper_core_library")
 
 
 def typed_maps(prepared):
