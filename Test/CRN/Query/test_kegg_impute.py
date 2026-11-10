@@ -50,9 +50,7 @@ class TestKEGGImputer(unittest.TestCase):
                 {"reaction": "C00002 => C00003", "smiles": None, "rule": None},
             ],
             "missing": {
-                "missing_compounds": [
-                    {"id": "C00002", "name": "Missing A", "reactions": ["R00001"]}
-                ],
+                "missing_compounds": [{"id": "C00002", "name": "Missing A", "reactions": ["R00001"]}],
                 "missing_compound_ids": ["C00002"],
                 "reactions_involving_missing": ["R00001"],
             },
@@ -122,9 +120,7 @@ class TestKEGGImputer(unittest.TestCase):
             {"id": "C00003", "smiles": "CCO"},
         ]
 
-        imputer._rebuild_reaction_fields(
-            reactions, molecules, {"R00001", "R_missing", "R00003"}
-        )
+        imputer._rebuild_reaction_fields(reactions, molecules, {"R00001", "R_missing", "R00003"})
 
         self.assertEqual(reactions[0]["smiles"], "O.C=C>>CCO")
         self.assertEqual(reactions[0]["rule"], "rule::O.C=C>>CCO")
@@ -136,9 +132,7 @@ class TestKEGGImputer(unittest.TestCase):
     def test_rebuild_reaction_fields_returns_early_when_no_impacted_ids(self):
         extractor = TrackingExtractor()
         imputer = KEGGImputer(extractor=extractor)
-        reactions = [
-            {"id": "R1", "reaction": "C00001 => C00002", "smiles": None, "rule": None}
-        ]
+        reactions = [{"id": "R1", "reaction": "C00001 => C00002", "smiles": None, "rule": None}]
         molecules = [{"id": "C00001", "smiles": "O"}, {"id": "C00002", "smiles": "N"}]
         imputer._rebuild_reaction_fields(reactions, molecules, set())
         self.assertEqual(extractor.atom_map_calls, [])
@@ -185,9 +179,7 @@ class TestKEGGImputer(unittest.TestCase):
         extractor = TrackingExtractor()
         imputer = KEGGImputer(extractor=extractor)
         module_data = self.make_module_data()
-        module_data["molecules"].append(
-            {"id": "C99999", "name": "Unknown", "smiles": None}
-        )
+        module_data["molecules"].append({"id": "C99999", "name": "Unknown", "smiles": None})
 
         updated = imputer.impute_module(
             module_data,
@@ -221,9 +213,7 @@ class TestKEGGImputer(unittest.TestCase):
                         }
                     ],
                     "missing": {
-                        "missing_compounds": [
-                            {"id": "C00005", "name": "A", "reactions": ["R10000"]}
-                        ],
+                        "missing_compounds": [{"id": "C00005", "name": "A", "reactions": ["R10000"]}],
                         "missing_compound_ids": ["C00005"],
                         "reactions_involving_missing": ["R10000"],
                     },
@@ -242,12 +232,8 @@ class TestKEGGImputer(unittest.TestCase):
             saved = json.loads(out.read_text(encoding="utf-8"))
             self.assertEqual(saved["missing"]["missing_compound_ids"], ["C00005"])
 
-        self.assertEqual(
-            updated["by_module"]["M1"]["missing"]["missing_compound_ids"], []
-        )
-        self.assertEqual(
-            updated["by_module"]["M2"]["missing"]["missing_compound_ids"], ["C00005"]
-        )
+        self.assertEqual(updated["by_module"]["M1"]["missing"]["missing_compound_ids"], [])
+        self.assertEqual(updated["by_module"]["M2"]["missing"]["missing_compound_ids"], ["C00005"])
         self.assertEqual(updated["missing"]["missing_compound_ids"], ["C00005"])
         self.assertEqual(updated["missing"]["reactions_involving_missing"], ["R10000"])
         self.assertEqual(len(extractor.saved_payloads), 3)

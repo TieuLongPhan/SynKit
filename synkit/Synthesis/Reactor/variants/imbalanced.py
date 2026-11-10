@@ -131,10 +131,7 @@ class ImbaEngine:
             wc = raw_smarts
             # Clean fragments if requested
         if self.clean_fragments:
-            self._results = [
-                clean_wc(s, invert=False, max_frag=self.max_frag, wild_card=True)
-                for s in wc
-            ]
+            self._results = [clean_wc(s, invert=False, max_frag=self.max_frag, wild_card=True) for s in wc]
         else:
             self._results = wc
 

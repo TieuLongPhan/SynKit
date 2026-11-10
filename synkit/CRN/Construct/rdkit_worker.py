@@ -35,9 +35,7 @@ def apply_rdkit_rule_worker(args):
     """
     index, rule, substrate, explicit_h, implicit_temp, strategy, keys = args
     if implicit_temp or strategy is not None:
-        raise ValueError(
-            "RDKit CRN input generation does not support SynReactor-specific template strategies"
-        )
+        raise ValueError("RDKit CRN input generation does not support SynReactor-specific template strategies")
     reaction = _reaction(rule)
     molecules = []
     for text in keys:
@@ -53,9 +51,7 @@ def apply_rdkit_rule_worker(args):
     results = []
     seen = set()
     for assignment in permutations(range(len(molecules))):
-        outcomes = reaction.RunReactants(
-            tuple(molecules[i] for i in assignment), maxProducts=10000
-        )
+        outcomes = reaction.RunReactants(tuple(molecules[i] for i in assignment), maxProducts=10000)
         if len(outcomes) >= 10000:
             raise RuntimeError("RDKit reaction product limit reached")
         for outcome in outcomes:

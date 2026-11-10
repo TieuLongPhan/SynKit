@@ -516,9 +516,7 @@ def has_stoichiometric_dependencies(crn: Any, *, rtol: float = 1e-12) -> bool:
     return right_nullspace(crn, rtol=rtol).shape[1] > 0
 
 
-def compute_thermo_summary(
-    crn: Any, *, rtol: float = 1e-12, eps: float = 1e-8
-) -> ThermoSummary:
+def compute_thermo_summary(crn: Any, *, rtol: float = 1e-12, eps: float = 1e-8) -> ThermoSummary:
     """Compute a composite :class:`ThermoSummary` describing key thermodynamic-like
     and structural stoichiometric properties of a chemical reaction network.
 

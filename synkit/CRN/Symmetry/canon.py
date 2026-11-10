@@ -145,9 +145,7 @@ class CRNCanonicalizer:
         """
         return self._engine
 
-    def canonical_result(
-        self, *, timeout_sec: Optional[float] = None
-    ) -> CanonicalResult:
+    def canonical_result(self, *, timeout_sec: Optional[float] = None) -> CanonicalResult:
         """Compute or retrieve the exact canonicalization result.
 
         This method delegates to the shared exact engine and returns the full
@@ -221,9 +219,7 @@ class CRNCanonicalizer:
         """
         return self.canonical_result(timeout_sec=timeout_sec).canonical_key
 
-    def has_nontrivial_automorphism(
-        self, *, timeout_sec: Optional[float] = 5.0
-    ) -> bool:
+    def has_nontrivial_automorphism(self, *, timeout_sec: Optional[float] = 5.0) -> bool:
         """Test whether the source has a nontrivial automorphism.
 
         A fast WL orbit partition is used as an early filter. If all WL orbits
@@ -247,12 +243,7 @@ class CRNCanonicalizer:
         """
         if all(len(cell) == 1 for cell in self.wl.orbits()):
             return False
-        return (
-            self._engine.run(
-                max_count=2, timeout_sec=timeout_sec, stop_after_two=True
-            ).automorphism_count
-            > 1
-        )
+        return self._engine.run(max_count=2, timeout_sec=timeout_sec, stop_after_two=True).automorphism_count > 1
 
     def automorphism_result(
         self,
@@ -275,9 +266,7 @@ class CRNCanonicalizer:
         :return:
             Exact automorphism analysis result from the engine.
         """
-        return self._engine.automorphism_result(
-            max_count=max_count, timeout_sec=timeout_sec
-        )
+        return self._engine.automorphism_result(max_count=max_count, timeout_sec=timeout_sec)
 
     def orbits(
         self,
@@ -307,9 +296,7 @@ class CRNCanonicalizer:
             for orbit in canon.orbits():
                 print(sorted(orbit))
         """
-        return list(
-            self._engine.run(max_count=max_count, timeout_sec=timeout_sec).orbits
-        )
+        return list(self._engine.run(max_count=max_count, timeout_sec=timeout_sec).orbits)
 
     def wl_orbits(self) -> List[Set[Any]]:
         """Return WL-refined approximate orbit classes.
@@ -420,8 +407,7 @@ def canonical(source: Any, **kwargs: Any) -> nx.DiGraph:
         from ..Structure import SynCRN
 
         if (
-            kwargs.get("config", SymmetryConfig.topological())
-            != SymmetryConfig.topological()
+            kwargs.get("config", SymmetryConfig.topological()) != SymmetryConfig.topological()
             or kwargs.get("include_rule", True) is False
             or kwargs.get("include_stoich", True) is False
         ):

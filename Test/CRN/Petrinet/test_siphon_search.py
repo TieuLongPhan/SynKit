@@ -7,6 +7,7 @@ import unittest
 from synkit.CRN.Petrinet import PetriNet
 from synkit.CRN.Petrinet.siphon_search import (
     SiphonSearchLimit,
+    SiphonSearchWarning,
     max_siphon_within,
     max_trap_within,
     minimal_siphons,
@@ -190,7 +191,8 @@ class TestSearchBehaviour(unittest.TestCase):
     def test_lenient_limit_returns_partial(self) -> None:
         """Without strict_limit the search degrades instead of raising."""
         net = _net(["A>>B", "B>>A", "C>>D", "D>>C"])
-        found = minimal_siphons(net, max_nodes=1, strict_limit=False)
+        with self.assertWarns(SiphonSearchWarning):
+            found = minimal_siphons(net, max_nodes=1, strict_limit=False)
 
         self.assertIsInstance(found, list)
 

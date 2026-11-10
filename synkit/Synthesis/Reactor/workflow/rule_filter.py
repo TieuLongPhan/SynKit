@@ -78,8 +78,7 @@ class RuleFilter:
 
         # Decompose patterns via ITS
         self._patterns = [
-            self._decompose_rule(r)[1] if self._invert else self._decompose_rule(r)[0]
-            for r in self._rules
+            self._decompose_rule(r)[1] if self._invert else self._decompose_rule(r)[0] for r in self._rules
         ]
 
         # Instantiate matcher based on engine
@@ -128,11 +127,7 @@ class RuleFilter:
         if self._engine == "sing":
             return bool(self._matcher.search(pattern, prune=True))
         if self._engine == "nx":
-            return bool(
-                self._matcher.subgraph_isomorphism(
-                    pattern, self._host, check_type="mono"
-                )
-            )
+            return bool(self._matcher.subgraph_isomorphism(pattern, self._host, check_type="mono"))
         raise ValueError(f"Unknown matching engine '{self._engine}'")
 
     @property

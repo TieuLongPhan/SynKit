@@ -18,9 +18,7 @@ def deduplicate_port_witness_mappings(
 ) -> List[MappingDict]:
     """Project existential stereo-port witnesses from accepted mappings."""
     structural_nodes = frozenset(structural_pattern)
-    if len(mappings) < 2 or not any(
-        set(mapping) - structural_nodes for mapping in mappings
-    ):
+    if len(mappings) < 2 or not any(set(mapping) - structural_nodes for mapping in mappings):
         return mappings
     seen = set()
     unique = []
@@ -64,9 +62,7 @@ def deduplicate_exact_pattern_mappings(
         return all(left.get(attr) == right.get(attr) for attr in edge_attrs)
 
     matcher_cls = (
-        nx.algorithms.isomorphism.DiGraphMatcher
-        if pattern.is_directed()
-        else nx.algorithms.isomorphism.GraphMatcher
+        nx.algorithms.isomorphism.DiGraphMatcher if pattern.is_directed() else nx.algorithms.isomorphism.GraphMatcher
     )
     matcher = matcher_cls(
         pattern,
@@ -84,10 +80,7 @@ def deduplicate_exact_pattern_mappings(
     unique = []
     for mapping in mappings:
         signature = min(
-            (
-                tuple(mapping[automorphism[node]] for node in pattern_nodes)
-                for automorphism in automorphisms
-            ),
+            (tuple(mapping[automorphism[node]] for node in pattern_nodes) for automorphism in automorphisms),
             key=repr,
         )
         if signature in seen:
@@ -109,9 +102,7 @@ def deduplicate_free_host_component_mappings(
     if len(mappings) < 2 or host.is_multigraph():
         return mappings
     component_nodes = list(
-        nx.weakly_connected_components(host)
-        if host.is_directed()
-        else nx.connected_components(host)
+        nx.weakly_connected_components(host) if host.is_directed() else nx.connected_components(host)
     )
     if len(component_nodes) < 2:
         return mappings
@@ -119,11 +110,7 @@ def deduplicate_free_host_component_mappings(
         range(len(component_nodes)),
         key=lambda index: (len(component_nodes[index]), -index),
     )
-    component_index = {
-        node: index
-        for index, component in enumerate(component_nodes)
-        for node in component
-    }
+    component_index = {node: index for index, component in enumerate(component_nodes) for node in component}
 
     def node_match(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
         return all(
@@ -133,15 +120,11 @@ def deduplicate_free_host_component_mappings(
         )
 
     def edge_match(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
-        return electron_aware_edge_match(
-            left, right, edge_attrs
-        ) and electron_aware_edge_match(right, left, edge_attrs)
+        return electron_aware_edge_match(left, right, edge_attrs) and electron_aware_edge_match(right, left, edge_attrs)
 
     automorphisms = {}
     matcher_cls = (
-        nx.algorithms.isomorphism.DiGraphMatcher
-        if host.is_directed()
-        else nx.algorithms.isomorphism.GraphMatcher
+        nx.algorithms.isomorphism.DiGraphMatcher if host.is_directed() else nx.algorithms.isomorphism.GraphMatcher
     )
     for index, nodes in enumerate(component_nodes):
         if index == anchor_index:
@@ -183,10 +166,7 @@ def deduplicate_free_host_component_mappings(
             variants = [
                 tuple(
                     sorted(
-                        (
-                            (pattern_node, automorphism[host_node])
-                            for pattern_node, host_node in placements
-                        ),
+                        ((pattern_node, automorphism[host_node]) for pattern_node, host_node in placements),
                         key=repr,
                     )
                 )
@@ -226,11 +206,7 @@ def deduplicate_pure_coupling_mappings(  # noqa: C901
         if isinstance(atom_map, int):
             pattern_by_map[atom_map] = node
 
-    dependencies = {
-        atom_map
-        for coupling in rule.stereo_couplings.values()
-        for atom_map in coupling.dependencies
-    }
+    dependencies = {atom_map for coupling in rule.stereo_couplings.values() for atom_map in coupling.dependencies}
     changed_maps = set()
     for left, right, attrs in rule.rc.raw.edges(data=True):
         order = attrs.get("order")
@@ -259,9 +235,7 @@ def deduplicate_pure_coupling_mappings(  # noqa: C901
         for node in ligands:
             coupling_roles[node].append((key, "ligand"))
     for node in decorated:
-        decorated.nodes[node]["_coupling_role"] = tuple(
-            sorted(coupling_roles.get(node, ()))
-        )
+        decorated.nodes[node]["_coupling_role"] = tuple(sorted(coupling_roles.get(node, ())))
 
     exact_node_attrs = [*node_attrs, "_coupling_role"]
 
@@ -297,9 +271,7 @@ def deduplicate_pure_coupling_mappings(  # noqa: C901
                     )
                     for center, ligand in zip(centers, ligands)
                 )
-                coupling_signature.append(
-                    (key, coupling.kind, coupling.relation, mapped_locus)
-                )
+                coupling_signature.append((key, coupling.kind, coupling.relation, mapped_locus))
             variants.append(tuple(coupling_signature))
         signature = min(variants, key=repr)
         if signature in seen:

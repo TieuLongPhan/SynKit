@@ -40,9 +40,7 @@ class TestSiphonTrapHelpers(unittest.TestCase):
         ]
         out = _minimal_sets(candidates)
 
-        self.assertEqual(
-            {frozenset(x) for x in out}, {frozenset({"A"}), frozenset({"C"})}
-        )
+        self.assertEqual({frozenset(x) for x in out}, {frozenset({"A"}), frozenset({"C"})})
 
     def test_render_place_sets_id(self) -> None:
         net = PetriNet()

@@ -41,9 +41,7 @@ def _natural_chunks(text: str) -> Tuple[Tuple[int, int, str], ...]:
     :rtype: Tuple[Tuple[int, int, str], ...]
     """
     return tuple(
-        (0, int(part), "") if part.isdigit() else (1, 0, part)
-        for part in _DIGIT_RUN_RE.split(text)
-        if part != ""
+        (0, int(part), "") if part.isdigit() else (1, 0, part) for part in _DIGIT_RUN_RE.split(text) if part != ""
     )
 
 
@@ -228,26 +226,16 @@ def _make_internal_id_maps(
         If ``id_style`` is not a recognised policy.
     """
     if id_style not in ID_STYLES:
-        raise ValueError(
-            f"id_style must be one of {sorted(ID_STYLES)}, got {id_style!r}"
-        )
+        raise ValueError(f"id_style must be one of {sorted(ID_STYLES)}, got {id_style!r}")
 
     if id_style == "numeric":
         offset = len(species_nodes)
-        species_node_to_id = {
-            node: str(i) for i, node in enumerate(species_nodes, start=1)
-        }
-        reaction_node_to_id = {
-            node: str(offset + i) for i, node in enumerate(reaction_nodes, start=1)
-        }
+        species_node_to_id = {node: str(i) for i, node in enumerate(species_nodes, start=1)}
+        reaction_node_to_id = {node: str(offset + i) for i, node in enumerate(reaction_nodes, start=1)}
         return species_node_to_id, reaction_node_to_id
 
-    species_node_to_id = {
-        node: f"{species_prefix}{i}" for i, node in enumerate(species_nodes, start=1)
-    }
-    reaction_node_to_id = {
-        node: f"{reaction_prefix}{i}" for i, node in enumerate(reaction_nodes, start=1)
-    }
+    species_node_to_id = {node: f"{species_prefix}{i}" for i, node in enumerate(species_nodes, start=1)}
+    reaction_node_to_id = {node: f"{reaction_prefix}{i}" for i, node in enumerate(reaction_nodes, start=1)}
     return species_node_to_id, reaction_node_to_id
 
 
@@ -328,8 +316,7 @@ def _collect_reaction_sides_from_graph(
         if u not in species_node_to_id:
             if strict:
                 raise ValueError(
-                    f"Incoming edge into reaction node {rnode!r} must come from "
-                    f"a species node, got {u!r}"
+                    f"Incoming edge into reaction node {rnode!r} must come from " f"a species node, got {u!r}"
                 )
             continue
 
@@ -337,9 +324,7 @@ def _collect_reaction_sides_from_graph(
         attrs = dict(eattrs)
         raw_stoich = attrs.get("stoich", 1)
         if not float(raw_stoich).is_integer():
-            raise ValueError(
-                "Discrete CRN coefficients must be integral; normalize rational stoichiometry explicitly"
-            )
+            raise ValueError("Discrete CRN coefficients must be integral; normalize rational stoichiometry explicitly")
         stoich = int(raw_stoich)
         if stoich <= 0:
             raise ValueError(f"Invalid stoich={stoich} on edge ({u!r}, {rnode!r})")
@@ -355,19 +340,14 @@ def _collect_reaction_sides_from_graph(
     for _, v, eattrs in crn.out_edges(rnode, data=True):
         if v not in species_node_to_id:
             if strict:
-                raise ValueError(
-                    f"Outgoing edge from reaction node {rnode!r} must go to "
-                    f"a species node, got {v!r}"
-                )
+                raise ValueError(f"Outgoing edge from reaction node {rnode!r} must go to " f"a species node, got {v!r}")
             continue
 
         sid = species_node_to_id[v]
         attrs = dict(eattrs)
         raw_stoich = attrs.get("stoich", 1)
         if not float(raw_stoich).is_integer():
-            raise ValueError(
-                "Discrete CRN coefficients must be integral; normalize rational stoichiometry explicitly"
-            )
+            raise ValueError("Discrete CRN coefficients must be integral; normalize rational stoichiometry explicitly")
         stoich = int(raw_stoich)
         if stoich <= 0:
             raise ValueError(f"Invalid stoich={stoich} on edge ({rnode!r}, {v!r})")
@@ -460,11 +440,7 @@ def _get_or_create_rule_from_attrs(
             id=rule_id,
             rule_index=rattrs.get("rule_index"),
             rule_repr=rattrs.get("rule_repr"),
-            label=(
-                f"rule[{rattrs.get('rule_index')}]"
-                if rattrs.get("rule_index") is not None
-                else None
-            ),
+            label=(f"rule[{rattrs.get('rule_index')}]" if rattrs.get("rule_index") is not None else None),
         )
 
     return rule_key_to_id[rule_key]
@@ -521,13 +497,11 @@ def _build_reaction_from_graph_node(
     """
     rattrs = dict(crn.nodes[rnode])
 
-    lhs, rhs, reactant_edge_attrs, product_edge_attrs = (
-        _collect_reaction_sides_from_graph(
-            crn,
-            rnode=rnode,
-            species_node_to_id=species_node_to_id,
-            strict=strict,
-        )
+    lhs, rhs, reactant_edge_attrs, product_edge_attrs = _collect_reaction_sides_from_graph(
+        crn,
+        rnode=rnode,
+        species_node_to_id=species_node_to_id,
+        strict=strict,
     )
     _validate_nonempty_reaction_sides(rnode=rnode, lhs=lhs, rhs=rhs, strict=strict)
 

@@ -140,7 +140,7 @@ jobs:
           python -m pip install -e '.[test]' sympy pytest-cov cmake
       - name: Measure test coverage
         run: |
-          python -m pytest Test/ --cov=synkit --cov-report=term-missing --cov-report=xml
+          python -m pytest Test/ Experiment/CRN/tests --cov=synkit --cov-report=term-missing --cov-report=xml
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:

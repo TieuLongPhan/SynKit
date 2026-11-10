@@ -11,6 +11,8 @@ import json
 import hashlib
 import os
 import platform
+import re
+import shlex
 import subprocess
 import sys
 import time
@@ -29,21 +31,24 @@ def source_hashes() -> Dict[str, str]:
     """Fingerprint analysis sources and the reviewed fixture, excluding outputs."""
     files = []
     for directory in (
-        REPOSITORY_ROOT / "synkit/CRN",
+        REPOSITORY_ROOT / "synkit",
         REPOSITORY_ROOT / "Experiment/CRN",
     ):
         for path in directory.rglob("*"):
-            if not path.is_file() or path.suffix not in {".py", ".cpp", ".h", ".hpp"}:
+            if not path.is_file() or (
+                path.suffix not in {".py", ".cpp", ".h", ".hpp", ".cmake"} and path.name != "CMakeLists.txt"
+            ):
                 continue
             if "results" in path.relative_to(directory).parts:
                 continue
             files.append(path)
     files.extend(sorted(DATA_DIR.glob("*.json")))
+    files.extend(sorted(p for p in (DATA_DIR.parent / "environments").glob("*") if p.is_file()))
+    files.extend(
+        REPOSITORY_ROOT / name for name in ("pyproject.toml", "hatch_build.py", "CMakeLists.txt", ".gitignore")
+    )
     return {
-        str(path.relative_to(REPOSITORY_ROOT)): hashlib.sha256(
-            path.read_bytes()
-        ).hexdigest()
-        for path in sorted(files)
+        str(path.relative_to(REPOSITORY_ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(files)
     }
 
 
@@ -87,21 +92,60 @@ def environment() -> Dict[str, Any]:
     commit = _git("rev-parse", "HEAD")
     status = _git("status", "--porcelain")
 
+    def tool_version(command):
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=10, check=True)
+            return result.stdout.splitlines()[0]
+        except (OSError, subprocess.SubprocessError, IndexError):
+            return None
+
+    from synkit.CRN._build import boost_include
+
+    boost = boost_include()
+    boost_version = None
+    if boost is not None and (boost / "boost/version.hpp").is_file():
+        match = re.search(r'#define BOOST_LIB_VERSION "([^"]+)"', (boost / "boost/version.hpp").read_text())
+        boost_version = match[1].replace("_", ".") if match else None
+
     from synkit.CRN.Construct.native_expand import expander_manifest, resolve_expander
+    from synkit.CRN.Construct.native_dpo import (
+        dpo_expander_manifest,
+        resolve_native_dpo_expander,
+    )
 
     expander = resolve_expander()
     expander_record = None
     if expander is not None:
         manifest = expander_manifest(expander)
         expander_record = {
+            "engine": "synkit_crn_expand",
+            "reaction_engine": "RDKit reaction SMARTS",
             "executable": str(expander),
             "executable_sha256": manifest["executable_sha256"],
             "build_sha256": manifest["build_sha256"],
             "rdkit_cpp_version": manifest["rdkit_version"],
         }
+    dpo_expander = resolve_native_dpo_expander()
+    dpo_record = None
+    if dpo_expander is not None:
+        manifest = dpo_expander_manifest(dpo_expander)
+        dpo_record = {
+            "engine": "synkit_dpo_cpp",
+            "reaction_engine": "SynReactor DPO",
+            "controller": "cpp",
+            "kernel": "synkit_dpo_cpp",
+            "executable": str(dpo_expander),
+            "executable_sha256": manifest["executable_sha256"],
+            "build_sha256": manifest["build_sha256"],
+            "rdkit_cpp_version": manifest["rdkit_version"],
+            "kernel_library": manifest["kernel_library"],
+            "kernel_library_sha256": manifest["kernel_library_sha256"],
+            "kernel_abi": manifest["kernel_abi"],
+        }
     return {
         "crn_backend": backend_metadata(),
         "crn_expander": expander_record,
+        "crn_dpo_expander": dpo_record,
         "synkit": getattr(synkit, "__version__", "unknown"),
         "python": platform.python_version(),
         "numpy": np.__version__,
@@ -114,6 +158,11 @@ def environment() -> Dict[str, Any]:
         "cpu_count": os.cpu_count(),
         "git_commit": commit,
         "git_dirty": None if status is None else bool(status),
+        "compiler": tool_version([*shlex.split(os.environ.get("CXX", "c++")), "--version"]),
+        "cmake": tool_version(["cmake", "--version"]),
+        "boost": boost_version,
+        "boost_include": None if boost is None else str(boost),
+        "rdkit_sdk": None if _default_rdkit_sdk() is None else str(_default_rdkit_sdk()),
     }
 
 
@@ -178,7 +227,9 @@ def write_report(report: Dict[str, Any], output: Optional[Path]) -> int:
     :return: ``0`` when the report status is ``PASS``, otherwise ``1``.
     :rtype: int
     """
-    payload = json.dumps(report, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
+    from Experiment.CRN.tools.reports import result_payload
+
+    payload = json.dumps(result_payload(report), ensure_ascii=True, indent=2) + "\n"
     if output is None:
         print(payload, end="")
     else:
@@ -201,21 +252,20 @@ def load_report(path: Path, *, expected_schema: str) -> Dict[str, Any]:
     report = json.loads(path.read_text(encoding="utf-8"))
     schema = report.get("schema")
     if schema != expected_schema:
-        raise ValueError(
-            f"{path}: expected schema {expected_schema!r}, found {schema!r}"
-        )
+        raise ValueError(f"{path}: expected schema {expected_schema!r}, found {schema!r}")
     if report.get("status") != "PASS":
         raise ValueError(f"{path}: status is {report.get('status')!r}, not 'PASS'")
     return report
 
 
-def native_experiment(function):
+def native_experiment(function, *, expansion=False):
     """CLI production analyses default to a verified C++ backend.
 
     Reference calculations retain their independent implementations. Compilation
     happens only when an experiment is invoked, never during imports.
     """
     from functools import wraps
+    from contextlib import ExitStack
     import inspect
 
     @wraps(function)
@@ -236,18 +286,21 @@ def native_experiment(function):
         parser.add_argument(
             "--native-expander",
             type=Path,
-            help="verified native rule-expansion executable",
+            help="verified legacy RDKit C++ SMARTS expansion executable",
+        )
+        parser.add_argument(
+            "--native-dpo-expander",
+            type=Path,
+            help="verified SynReactor C++ DPO expansion executable",
         )
         parser.add_argument(
             "--rdkit-dir",
             type=Path,
             default=_default_rdkit_sdk(),
-            help="RDKit C++ SDK used to build the native rule expander",
+            help="RDKit C++ SDK used for molecular I/O in native expansion builds",
         )
         supplied = args[0] if args else kwargs.get("argv")
-        options, remaining = parser.parse_known_args(
-            sys.argv[1:] if supplied is None else supplied
-        )
+        options, remaining = parser.parse_known_args(sys.argv[1:] if supplied is None else supplied)
 
         def invoke():
             if "argv" in inspect.signature(function).parameters:
@@ -290,19 +343,28 @@ def native_experiment(function):
                 "CRN experiments require a full native library; rebuild with build_native(..., with_semiflows=True)"
             )
         expander = options.native_expander
-        if expander is None and options.rdkit_dir is not None:
+        if expansion and expander is None and options.rdkit_dir is not None:
             from synkit.CRN.Construct import build_native_expander
 
-            expander = build_native_expander(
-                options.native_build_dir / "expander", rdkit_dir=options.rdkit_dir
+            expander = build_native_expander(options.native_build_dir / "expander", rdkit_dir=options.rdkit_dir)
+        dpo_expander = options.native_dpo_expander
+        if expansion and dpo_expander is None and options.rdkit_dir is not None:
+            from synkit.CRN.Construct.native_dpo import build_native_dpo_expander
+
+            dpo_expander = build_native_dpo_expander(
+                options.native_build_dir / "dpo-expander", rdkit_dir=options.rdkit_dir
             )
-        with native_backend(library):
-            if expander is None:
-                return invoke()
+        with ExitStack() as contexts:
+            contexts.enter_context(native_backend(library))
             from synkit.CRN.Construct import native_expander
 
-            with native_expander(expander):
-                return invoke()
+            if expander is not None:
+                contexts.enter_context(native_expander(expander))
+            if dpo_expander is not None:
+                from synkit.CRN.Construct.native_dpo import native_dpo_expander
+
+                contexts.enter_context(native_dpo_expander(dpo_expander))
+            return invoke()
 
     return wrapped
 
@@ -311,9 +373,7 @@ def _default_rdkit_sdk() -> Optional[Path]:
     """Return a configured or cached RDKit C++ SDK prefix, if one exists."""
     configured = os.environ.get("SYNKIT_RDKIT_CPP_DIR")
     candidates = [Path(configured)] if configured else []
-    candidates += sorted(
-        (Path.home() / ".cache/synkit").glob("rdkit-cpp-*"), reverse=True
-    )
+    candidates += sorted((Path.home() / ".cache/synkit").glob("rdkit-cpp-*"), reverse=True)
     for candidate in candidates:
         if (candidate / "include/rdkit/GraphMol/ChemReactions/Reaction.h").is_file():
             return candidate

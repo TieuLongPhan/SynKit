@@ -23,6 +23,7 @@ from synkit.Graph.Mech.electron_accounting import refresh_electron_fields
 from .strategy import Strategy
 from . import product as _product_state
 from . import rewrite as _graph_rewrite
+from .completion import WildcardCompletionError
 from ..matching.mixin import ReactorMatchingMixin
 from ..output import deduplication as _deduplication
 from ..output import serialization as _serialization
@@ -125,6 +126,10 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         serializable results in their original order and reports omitted raw
         application indices.
     :type serialization_errors: str
+    :param wildcard_mode: ``"legacy"`` omits ordinary wildcard nodes during
+        matching. ``"typed"`` retains their injective atom/port predicates
+        and requires tuple rules; :class:`WildcardEngine` selects this mode.
+    :type wildcard_mode: str
     :param stereo_assignment_limit: Optional hard cap on admissible injective
         typed stereo-port assignments. Exceeding it raises instead of silently
         truncating the search.
@@ -171,11 +176,13 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     stereo_assignment_limit: int | None = None
     stereo_branch_limit: int | None = None
     serialization_errors: str = "raise"
+    wildcard_mode: str = "legacy"
 
     # Private caches – populated on demand -------------------------------
     _graph: SynGraph | None = field(init=False, default=None, repr=False)
     _rule: SynRule | None = field(init=False, default=None, repr=False)
     _mappings: List[MappingDict] | None = field(init=False, default=None, repr=False)
+    _matching_pattern_nodes: frozenset | None = field(init=False, default=None, repr=False)
     _its: List[nx.Graph] | None = field(init=False, default=None, repr=False)
     _smarts: List[str] | None = field(init=False, default=None, repr=False)
     _serialization_failure_indices: Tuple[int, ...] = field(
@@ -196,6 +203,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     )
     _flag_pattern_has_explicit_H: bool = field(init=False, default=False, repr=False)
     _stereo_branch_count: int = field(init=False, default=0, repr=False)
+    _partial_completion_failures: Tuple[dict, ...] = field(init=False, default=(), repr=False)
 
     def __post_init__(self) -> None:
         """Validate and enforce consistency of `explicit_h` and
@@ -203,39 +211,34 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
 
         :raises ValueError: If `explicit_h` is True while `implicit_temp` is False.
         """
+        if self.wildcard_mode not in {"legacy", "typed"}:
+            raise ValueError("wildcard_mode must be 'legacy' or 'typed'.")
+        if (
+            self.wildcard_mode == "typed"
+            and self.embed_threshold is not None
+            and (type(self.embed_threshold) is not int or self.embed_threshold < 0)
+        ):
+            raise ValueError("Typed embed_threshold must be a non-negative integer or None.")
         if self.implicit_temp and self.explicit_h:
-            raise ValueError(
-                "`explicit_h` cannot be True when `implicit_temp` is False."
-            )
+            raise ValueError("`explicit_h` cannot be True when `implicit_temp` is False.")
         if self.radical_policy not in {"strict", "lower_bound", "ignore"}:
-            raise ValueError(
-                "radical_policy must be 'strict', 'lower_bound', or 'ignore'."
-            )
+            raise ValueError("radical_policy must be 'strict', 'lower_bound', or 'ignore'.")
         if self.stereo_mode not in {"ignore", "require", "propagate", "strict"}:
-            raise ValueError(
-                "stereo_mode must be 'ignore', 'require', 'propagate', or 'strict'."
-            )
+            raise ValueError("stereo_mode must be 'ignore', 'require', 'propagate', or 'strict'.")
         if self.stereo_query_mode not in {"exact", "wildcard"}:
             raise ValueError("stereo_query_mode must be 'exact' or 'wildcard'.")
         if self.stereo_semantics not in {"orbit", "legacy", "compare"}:
-            raise ValueError(
-                "stereo_semantics must be 'orbit', 'legacy', or 'compare'."
-            )
+            raise ValueError("stereo_semantics must be 'orbit', 'legacy', or 'compare'.")
         if not isinstance(self.dedup_its, bool):
             raise TypeError("dedup_its must be a bool.")
         if self.product_deduplication not in {"structural", "deferred"}:
-            raise ValueError(
-                "product_deduplication must be 'structural' or 'deferred'."
-            )
+            raise ValueError("product_deduplication must be 'structural' or 'deferred'.")
         if self.product_deduplication == "deferred" and self.stereo_mode != "ignore":
-            raise ValueError(
-                "deferred product deduplication requires stereo_mode='ignore'."
-            )
+            raise ValueError("deferred product deduplication requires stereo_mode='ignore'.")
         if self.serialization_errors not in {"raise", "skip"}:
             raise ValueError("serialization_errors must be 'raise' or 'skip'.")
         if self.stereo_assignment_limit is not None and (
-            type(self.stereo_assignment_limit) is not int
-            or self.stereo_assignment_limit < 1
+            type(self.stereo_assignment_limit) is not int or self.stereo_assignment_limit < 1
         ):
             raise ValueError("stereo_assignment_limit must be a positive integer.")
         if self.stereo_branch_limit is not None and (
@@ -385,8 +388,28 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         :rtype: SynRule
         """
         if self._rule is None:
-            self._rule = self._wrap_template(self.template)
+            rule = self._wrap_template(self.template)
+            if self.wildcard_mode == "typed":
+                from ..matching.wildcard import has_isotope_labels, validate_wildcard_rule
+
+                if rule._format != "tuple":
+                    raise ValueError("Typed wildcard application requires a tuple-format rule.")
+                if has_isotope_labels(rule.rc.raw):
+                    raise ValueError("Isotope-aware typed wildcard application is not in this profile.")
+                validate_wildcard_rule(
+                    rule.left.raw, rule.right.raw, observation=rule.rc.raw.graph.get("endpoint_policy") == "observed"
+                )
+            self._rule = rule
         return self._rule
+
+    @property
+    def partial_completion_failures(self) -> Tuple[dict, ...]:
+        """Rejected proper-subset completions in the legacy observation profile.
+
+        A rejected extra subset must not discard valid applications. Full
+        input bindings, typed-profile failures and search limits still raise.
+        """
+        return tuple(dict(item) for item in self._partial_completion_failures)
 
     @property
     def its_list(self) -> List[nx.Graph]:
@@ -396,16 +419,21 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         if self._its is None:
             host_raw = self._matching_host_graph()
             rc_raw = self.rule.rc.raw
+            observation = rc_raw.graph.get("endpoint_policy") == "observed"
+            if observation:
+                from synkit.IO.chem_converter import _local_charge_model_consistent
+
+                unsupported = [n for n in host_raw if not _local_charge_model_consistent(host_raw, n)]
+                if unsupported:
+                    host_raw = host_raw.copy()
+                    for node in unsupported:
+                        host_raw.nodes[node]["charge_model_consistent"] = False
             pattern_explicit = self.rule.left.raw
             strategy = Strategy.from_string(self.strategy)
             relative_pi_edges = self._relative_pi_rewrite_edges(rc_raw)
-            electron_aware = self._is_electron_aware_template(rc_raw)
-            stereo_substitutions = self._typed_stereo_wildcard_substitutions(
-                pattern_explicit
-            )
-            certified_generic = bool(
-                self.rule.rc.raw.graph.get("generic_stereo_extraction")
-            )
+            electron_aware = self.wildcard_mode == "typed" or self._is_electron_aware_template(rc_raw)
+            stereo_substitutions = self._typed_stereo_wildcard_substitutions(pattern_explicit)
+            certified_generic = bool(self.rule.rc.raw.graph.get("generic_stereo_extraction"))
             application_mappings = self.mappings
             stereo_sensitive = bool(
                 self.rule.stereo_guards
@@ -447,37 +475,44 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     "Retained %d application(s) for exact endpoint certificates",
                     len(application_mappings),
                 )
-            rewrite_host, rewrite_host_prepared = (
-                _graph_rewrite._prepare_rewrite_batch_host(
-                    host_raw,
-                    application_mappings,
-                    rc_raw,
-                    self._flag_pattern_has_explicit_H,
-                    electron_aware,
-                    seed_structural_signatures=(
-                        self.dedup_its and self.product_deduplication == "structural"
-                    ),
-                )
+            rewrite_host, rewrite_host_prepared = _graph_rewrite._prepare_rewrite_batch_host(
+                host_raw,
+                application_mappings,
+                rc_raw,
+                self._flag_pattern_has_explicit_H,
+                electron_aware,
+                seed_structural_signatures=(self.dedup_its and self.product_deduplication == "structural"),
             )
-            self._its = []
+            built_its = []
+            completion_failures = []
+            first_completion_error = None
+            matching_input_nodes = self._matching_pattern_nodes
+            if matching_input_nodes is None:
+                matching_input_nodes = frozenset(pattern_explicit)
             expanded_host_cache: Dict[frozenset[Any], nx.Graph] = {}
             self._stereo_branch_count = 0
             raw_application_index = 0
             for mapping_index, m in enumerate(application_mappings):
+                if (
+                    self.wildcard_mode == "typed"
+                    and stereo_sensitive
+                    and any(
+                        node not in m and attrs.get("element") not in {"H", ("H", "H")}
+                        for node, attrs in rc_raw.nodes(data=True)
+                    )
+                ):
+                    raise WildcardCompletionError(
+                        "Symbolic completion with unbound heavy atoms and stereo metadata "
+                        "requires an explicit stereo boundary."
+                    )
                 retain_provenance = not self.dedup_its or certified_generic
                 mapping_provenance = (
-                    self._mapping_provenance(m, pattern_explicit, host_raw)
-                    if retain_provenance
-                    else ()
+                    self._mapping_provenance(m, pattern_explicit, host_raw) if retain_provenance else ()
                 )
                 port_assignment = tuple(
                     pair
                     for pair in mapping_provenance
-                    if pair[0]
-                    in {
-                        pattern_explicit.nodes[node].get("atom_map", node)
-                        for node in stereo_substitutions
-                    }
+                    if pair[0] in {pattern_explicit.nodes[node].get("atom_map", node) for node in stereo_substitutions}
                 )
                 stereo_proof = (
                     self._stereo_application_provenance(
@@ -489,35 +524,74 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     if certified_generic
                     else None
                 )
-                its_batch = _graph_rewrite._glue_graph(
-                    rewrite_host,
-                    rc_raw,
-                    m,
-                    self._flag_pattern_has_explicit_H,
-                    pattern_explicit,
-                    strategy,
-                    embed_threshold=self.embed_threshold,
-                    embed_pre_filter=False,
-                    relative_pi_edges=relative_pi_edges,
-                    restore_unmatched_explicit_h=not self.explicit_h,
-                    refresh_electrons=False,
-                    electron_aware=electron_aware,
-                    relative_match_resources=(
-                        frozenset({"radical"})
-                        if self.radical_policy == "lower_bound"
-                        else frozenset()
-                    ),
-                    anchor_explicit_embedding=self.dedup_its,
-                    host_prepared=rewrite_host_prepared,
-                    expanded_host_cache=expanded_host_cache,
-                    consume_prepared_host=(
-                        rewrite_host_prepared
-                        and mapping_index == len(application_mappings) - 1
-                    ),
-                )
+                try:
+                    its_batch = _graph_rewrite._glue_graph(
+                        rewrite_host,
+                        rc_raw,
+                        m,
+                        self._flag_pattern_has_explicit_H,
+                        pattern_explicit,
+                        strategy,
+                        embed_threshold=(self.embed_threshold if self.wildcard_mode == "legacy" else None),
+                        embed_pre_filter=False,
+                        relative_pi_edges=relative_pi_edges,
+                        restore_unmatched_explicit_h=not self.explicit_h,
+                        refresh_electrons=False,
+                        electron_aware=electron_aware,
+                        relative_match_resources=(
+                            frozenset({"radical"})
+                            if self.radical_policy == "lower_bound" or self.wildcard_mode == "typed"
+                            else frozenset()
+                        ),
+                        anchor_explicit_embedding=(self.dedup_its or self.wildcard_mode == "typed"),
+                        host_prepared=rewrite_host_prepared,
+                        expanded_host_cache=expanded_host_cache,
+                        consume_prepared_host=(
+                            rewrite_host_prepared and mapping_index == len(application_mappings) - 1
+                        ),
+                        wildcard_mode=self.wildcard_mode,
+                        partial_application=self.partial,
+                    )
+                except WildcardCompletionError as error:
+                    if not (
+                        self.partial
+                        and (self.wildcard_mode == "legacy" or observation)
+                        and matching_input_nodes - m.keys()
+                    ):
+                        raise
+                    first_completion_error = first_completion_error or error
+                    completion_failures.append(
+                        {
+                            "mapping_index": mapping_index,
+                            "mapping": self._mapping_provenance(m, pattern_explicit, host_raw),
+                            "error": str(error),
+                        }
+                    )
+                    continue
                 stereo_batch: List[nx.Graph] = []
                 for rewrite_index, candidate in enumerate(its_batch):
+                    if self.wildcard_mode == "typed":
+                        from .completion import validate_lewis_endpoints
+
+                        _product_state._refresh_product_electron_fields(candidate)
+                        try:
+                            validate_lewis_endpoints(candidate, rc_raw, observation=observation)
+                        except WildcardCompletionError as error:
+                            if not (observation and self.partial and matching_input_nodes - m.keys()):
+                                raise
+                            first_completion_error = first_completion_error or error
+                            completion_failures.append(
+                                {
+                                    "mapping_index": mapping_index,
+                                    "mapping": self._mapping_provenance(m, pattern_explicit, host_raw),
+                                    "error": str(error),
+                                }
+                            )
+                            continue
+                        candidate.graph["endpoint_policy"] = rc_raw.graph.get("endpoint_policy", "closed")
                     branches = self._apply_stereo_rule_metadata(candidate, host_raw, m)
+                    for branch in branches:
+                        branch.graph["wildcard_mode"] = self.wildcard_mode
                     if retain_provenance:
                         for stereo_branch_index, branch in enumerate(branches):
                             provenance = {
@@ -538,20 +612,22 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                                 }
                             raw_application_index += 1
                     stereo_batch.extend(branches)
-                self._its.extend(stereo_batch)
+                built_its.extend(stereo_batch)
+            self._partial_completion_failures = tuple(completion_failures)
+            if first_completion_error is not None and not built_its:
+                raise first_completion_error
             if self.explicit_h:
-                self._its = [self._explicit_h(g) for g in self._its]
-            self._its = [
-                its for its in self._its if self._validate_product_stereo_registry(its)
-            ]
+                built_its = [self._explicit_h(g) for g in built_its]
+            built_its = [its for its in built_its if self._validate_product_stereo_registry(its)]
             if self.dedup_its:
                 if self.product_deduplication == "structural":
-                    self._its = self._deduplicate_coupling_face_products(self._its)
-                    self._its = self._deduplicate_structural_its(self._its)
+                    built_its = self._deduplicate_coupling_face_products(built_its)
+                    built_its = self._deduplicate_structural_its(built_its)
                 else:
-                    self._its = self._finalize_product_electron_fields(self._its)
+                    built_its = self._finalize_product_electron_fields(built_its)
             else:
-                self._its = self._finalize_product_electron_fields(self._its)
+                built_its = self._finalize_product_electron_fields(built_its)
+            self._its = built_its
             log.debug("Built %d ITS graph(s)", len(self._its))
         return self._its
 
@@ -572,6 +648,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                 if (
                     not cache_supported
                     or self._flag_pattern_has_explicit_H
+                    or graph.graph.get("partial_completion")
                     or not graph.graph.get("electron_aware_rewrite", False)
                 ):
                     serialized.append(self._to_smarts(graph))
@@ -586,15 +663,14 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                 serialized.append(value)
                 if value is not None and cached_reactant is None:
                     reactant_cache[preserved] = value.partition(">>")[0]
-            failed = tuple(
-                index for index, value in enumerate(serialized) if value is None
-            )
-            self._serialization_failure_indices = failed if not self.dedup_its else ()
-            if not self.dedup_its and failed:
+            failed = tuple(index for index, value in enumerate(serialized) if value is None)
+            report_failures = not self.dedup_its or self.wildcard_mode == "typed"
+            self._serialization_failure_indices = failed if report_failures else ()
+            if report_failures and failed:
                 if self.serialization_errors == "raise":
+                    application_kind = "raw ITS" if not self.dedup_its else "typed ITS"
                     raise ValueError(
-                        "Could not serialize raw ITS application(s): "
-                        + ", ".join(map(str, failed))
+                        f"Could not serialize {application_kind} application(s): " + ", ".join(map(str, failed))
                     )
                 warnings.warn(
                     RawITSApplicationSerializationWarning(failed),
@@ -619,11 +695,12 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             if its.graph.get("electron_aware_rewrite", False):
                 mismatches = {}
                 for node, attrs in its.nodes(data=True):
+                    if not _product_state._product_value(attrs.get("present", True)):
+                        continue
                     charge_mismatch = attrs.get("charge_mismatch")
                     mismatch = (
                         charge_mismatch[1]
-                        if isinstance(charge_mismatch, tuple)
-                        and len(charge_mismatch) == 2
+                        if isinstance(charge_mismatch, tuple) and len(charge_mismatch) == 2
                         else charge_mismatch
                     )
                     if mismatch:
@@ -632,14 +709,12 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                         mismatches[node] = {
                             "charge": (
                                 template_charge[1]
-                                if isinstance(template_charge, tuple)
-                                and len(template_charge) == 2
+                                if isinstance(template_charge, tuple) and len(template_charge) == 2
                                 else template_charge
                             ),
                             "recomputed_charge": (
                                 recomputed_charge[1]
-                                if isinstance(recomputed_charge, tuple)
-                                and len(recomputed_charge) == 2
+                                if isinstance(recomputed_charge, tuple) and len(recomputed_charge) == 2
                                 else recomputed_charge
                             ),
                         }
@@ -657,9 +732,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             reports.append(
                 {
                     "index": index,
-                    "electron_aware_rewrite": bool(
-                        its.graph.get("electron_aware_rewrite", False)
-                    ),
+                    "electron_aware_rewrite": bool(its.graph.get("electron_aware_rewrite", False)),
                     "mismatch_count": len(mismatches),
                     "mismatches": mismatches,
                 }
@@ -680,19 +753,14 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
     # String‑likes ------------------------------------------------------
     # ------------------------------------------------------------------
     def __str__(self) -> str:  # pragma: no cover
-        return (
-            f"<SynReactor atoms={self.graph.raw.number_of_nodes()} "
-            f"mappings={self.mapping_count}>"
-        )
+        return f"<SynReactor atoms={self.graph.raw.number_of_nodes()} " f"mappings={self.mapping_count}>"
 
     __repr__ = __str__
 
     # ------------------------------------------------------------------
     # Public helper -----------------------------------------------------
     # ------------------------------------------------------------------
-    def help(
-        self, print_results=False
-    ) -> None:  # pragma: no cover – human‑oriented output
+    def help(self, print_results=False) -> None:  # pragma: no cover – human‑oriented output
         print("SynReactor")
         print("  Substrate :", self.substrate_smiles)
         print("  Template  :", self.rule)
@@ -715,9 +783,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
         if isinstance(obj, nx.Graph):
             return SynGraph(obj, self.canonicaliser or GraphCanonicaliser())
         if isinstance(obj, str):
-            graph = smiles_to_graph(
-                obj, use_index_as_atom_map=False, drop_non_aam=False
-            )
+            graph = smiles_to_graph(obj, use_index_as_atom_map=False, drop_non_aam=False)
             return SynGraph(graph, self.canonicaliser or GraphCanonicaliser())
         raise TypeError(f"Unsupported substrate type: {type(obj)}")
 
@@ -756,9 +822,7 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
                     "stereo_reverse_outcomes",
                 )
             )
-            audited_reverse = self.stereo_semantics != "orbit" and bool(
-                graph.graph.get("stereo_changes")
-            )
+            audited_reverse = self.stereo_semantics != "orbit" and bool(graph.graph.get("stereo_changes"))
             if rich_reverse or audited_reverse:
                 return SynRule(
                     graph,
@@ -898,59 +962,29 @@ class SynReactor(ReactorMatchingMixin, ReactorStereoMixin):
             anchor_explicit_embedding,
         )
 
-    _is_electron_aware_template = staticmethod(
-        _graph_rewrite._is_electron_aware_template
-    )
+    _is_electron_aware_template = staticmethod(_graph_rewrite._is_electron_aware_template)
     _merge_application_orbits = staticmethod(_deduplication._merge_application_orbits)
     _chemical_rewrite_role = staticmethod(_deduplication._chemical_rewrite_role)
-    _prepare_its_for_structural_cluster = staticmethod(
-        _structural_deduplication._prepare_its_for_structural_cluster
-    )
-    _cluster_structural_its = staticmethod(
-        _structural_deduplication._cluster_structural_its
-    )
-    _finalize_product_electron_fields = staticmethod(
-        _deduplication._finalize_product_electron_fields
-    )
-    _deduplicate_structural_its = staticmethod(
-        _deduplication._deduplicate_structural_its
-    )
-    _deduplicate_coupling_face_products = staticmethod(
-        _deduplication._deduplicate_coupling_face_products
-    )
-    _deduplicate_rewrite_equivalent_mappings = staticmethod(
-        _deduplication._deduplicate_rewrite_equivalent_mappings
-    )
+    _prepare_its_for_structural_cluster = staticmethod(_structural_deduplication._prepare_its_for_structural_cluster)
+    _cluster_structural_its = staticmethod(_structural_deduplication._cluster_structural_its)
+    _finalize_product_electron_fields = staticmethod(_deduplication._finalize_product_electron_fields)
+    _deduplicate_structural_its = staticmethod(_deduplication._deduplicate_structural_its)
+    _deduplicate_coupling_face_products = staticmethod(_deduplication._deduplicate_coupling_face_products)
+    _deduplicate_rewrite_equivalent_mappings = staticmethod(_deduplication._deduplicate_rewrite_equivalent_mappings)
     _components_are_equivalent = staticmethod(_deduplication._components_are_equivalent)
-    _pair_electron_aware_node_attrs = staticmethod(
-        _product_state._pair_electron_aware_node_attrs
-    )
+    _pair_electron_aware_node_attrs = staticmethod(_product_state._pair_electron_aware_node_attrs)
     _ensure_host_atom_maps = staticmethod(_product_state._ensure_host_atom_maps)
-    _refresh_product_electron_fields = staticmethod(
-        _product_state._refresh_product_electron_fields
-    )
-    _refresh_product_electron_fields_direct = staticmethod(
-        _product_state._refresh_product_electron_fields_direct
-    )
-    _product_kekule_phase_is_dirty = staticmethod(
-        _product_state._product_kekule_phase_is_dirty
-    )
-    _prepared_electron_product_graph = staticmethod(
-        _product_state._prepared_electron_product_graph
-    )
+    _refresh_product_electron_fields = staticmethod(_product_state._refresh_product_electron_fields)
+    _refresh_product_electron_fields_direct = staticmethod(_product_state._refresh_product_electron_fields_direct)
+    _product_kekule_phase_is_dirty = staticmethod(_product_state._product_kekule_phase_is_dirty)
+    _prepared_electron_product_graph = staticmethod(_product_state._prepared_electron_product_graph)
     _electron_product_charge = staticmethod(_product_state._electron_product_charge)
-    _reperceive_product_kekule_phase = staticmethod(
-        _product_state._reperceive_product_kekule_phase
-    )
-    _product_graph_for_diagnostics = staticmethod(
-        _product_state._product_graph_for_diagnostics
-    )
+    _reperceive_product_kekule_phase = staticmethod(_product_state._reperceive_product_kekule_phase)
+    _product_graph_for_diagnostics = staticmethod(_product_state._product_graph_for_diagnostics)
     _explicit_h = staticmethod(_serialization._explicit_h)
     _explicit_h_tuple = staticmethod(_serialization._explicit_h_tuple)
     _ensure_tuple_atom_maps = staticmethod(_serialization._ensure_tuple_atom_maps)
-    _tuple_preserved_hydrogen_maps = staticmethod(
-        _serialization._tuple_preserved_hydrogen_maps
-    )
+    _tuple_preserved_hydrogen_maps = staticmethod(_serialization._tuple_preserved_hydrogen_maps)
     _tuple_endpoint_graphs = staticmethod(_serialization._tuple_endpoint_graphs)
 
     @staticmethod

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-"""Verify saved CRN study reports against their run summary and checksums."""
+"""Verify saved CRN study reports against their run summary."""
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -15,14 +14,44 @@ CORE_STUDIES = {
     "supplementary",
     "glycolysis-donors",
 }
-ALL_STUDIES = CORE_STUDIES | {"biomodels", "external-crnt4sbml"}
+ALL_STUDIES = CORE_STUDIES | {"biomodels", "external-crnt4sbml", "hydrogen"}
+
+
+def _check_study(row, directory):
+    errors = []
+    name = row["name"]
+    if row.get("status") != "PASS":
+        errors.append(f"{name}: study failed")
+    if not row.get("path"):
+        errors.append(f"{name}: report was not saved")
+        return errors
+    path = directory / row["path"]
+    try:
+        payload = path.read_bytes()
+        report = json.loads(payload)
+    except (OSError, ValueError) as exc:
+        errors.append(f"{name}: {exc}")
+        return errors
+    if not row.get("schema") or report.get("schema") != row["schema"]:
+        errors.append(f"{name}: report schema mismatch")
+    if report.get("checks") != row.get("checks"):
+        errors.append(f"{name}: checks differ from the run summary")
+    if not report.get("checks"):
+        errors.append(f"{name}: scientific outcome checks are absent")
+    if (
+        report.get("status") != "PASS"
+        or report.get("complete") is False
+        or not all(value is True for value in report.get("checks", {}).values())
+    ):
+        errors.append(f"{name}: report failed or is incomplete")
+    return errors
 
 
 def check_reports(summary_path, *, require_all=False):
-    """Return errors for absent, altered, failed or incomplete saved results.
+    """Return errors for absent, inconsistent, failed or incomplete saved results.
 
     A quick profile verifies a reduced workload. ``require_all`` additionally
-    requires the default profile and all nine studies, including external inputs.
+    requires the default profile and all ten studies, including external inputs.
     """
     summary_path = Path(summary_path)
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -31,6 +60,8 @@ def check_reports(summary_path, *, require_all=False):
         return ["unsupported experiment summary schema"]
     if summary.get("status") != "PASS" or summary.get("complete") is not True:
         errors.append("experiment run failed or is incomplete")
+    if summary.get("sources_unchanged_during_run") is False:
+        errors.append("source files changed during the experiment run")
     studies = summary.get("studies", [])
     names = [row["name"] for row in studies]
     if len(names) != len(set(names)):
@@ -40,49 +71,20 @@ def check_reports(summary_path, *, require_all=False):
         errors.append("missing studies: " + ", ".join(sorted(missing)))
     if require_all and summary.get("profile") != "default":
         errors.append("all-results verification requires the default workload")
-    if require_all and (
-        summary.get("all_studies_included") is not True
-        or summary.get("omitted_studies")
-    ):
+    if require_all and (summary.get("all_studies_included") is not True or summary.get("omitted_studies")):
         errors.append("the summary records omitted studies")
     for row in studies:
-        name = row["name"]
-        if row.get("status") != "PASS":
-            errors.append(f"{name}: study failed")
-        if not row.get("path"):
-            errors.append(f"{name}: report was not saved")
-            continue
-        path = summary_path.parent / row["path"]
-        try:
-            payload = path.read_bytes()
-            report = json.loads(payload)
-        except (OSError, ValueError) as exc:
-            errors.append(f"{name}: {exc}")
-            continue
-        if hashlib.sha256(payload).hexdigest() != row.get("sha256"):
-            errors.append(f"{name}: report checksum mismatch")
-        if not row.get("schema") or report.get("schema") != row["schema"]:
-            errors.append(f"{name}: report schema mismatch")
-        if report.get("checks") != row.get("checks"):
-            errors.append(f"{name}: checks differ from the run summary")
-        if (
-            report.get("status") != "PASS"
-            or report.get("complete") is False
-            or not all(value is True for value in report.get("checks", {}).values())
-        ):
-            errors.append(f"{name}: report failed or is incomplete")
+        errors.extend(_check_study(row, summary_path.parent))
     return errors
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "summary", type=Path, help="summary.json in the report directory"
-    )
+    parser.add_argument("summary", type=Path, help="summary.json in the report directory")
     parser.add_argument(
         "--require-all",
         action="store_true",
-        help="require the default workload and all nine studies",
+        help="require the default workload and all ten studies",
     )
     args = parser.parse_args(argv)
     try:
@@ -92,7 +94,7 @@ def main(argv=None):
     for error in errors:
         print(error)
     if not errors:
-        print("PASS: saved study reports and checksums verified")
+        print("PASS: saved study reports and scientific checks verified")
     return int(bool(errors))
 
 

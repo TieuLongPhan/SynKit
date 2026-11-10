@@ -74,9 +74,15 @@ def _validate_synrule(rule: Any) -> None:
         sorted(
             {
                 repr(node)
-                for graph in (rule.left.raw, rule.right.raw)
+                for graph in (rule.rc.raw, rule.left.raw, rule.right.raw)
                 for node, attrs in graph.nodes(data=True)
-                if "wildcard_role" in attrs
+                if attrs.get("element") == "*"
+                or (
+                    isinstance(attrs.get("element"), (tuple, list))
+                    and "*" in attrs["element"]
+                )
+                or "wildcard_role" in attrs
+                or "_wildcard_constraint" in attrs
             }
         )
     )
@@ -84,7 +90,8 @@ def _validate_synrule(rule: Any) -> None:
         raise SynRuleCompositionError(
             SynRuleCompositionIssue(
                 SynRuleCompositionIssueCode.WILDCARD_UNSUPPORTED,
-                "The current LLG schema cannot erase typed-wildcard contracts.",
+                "Strict LLG composition requires grounded atoms; "
+                "wildcard predicates cannot be erased or treated as fixed element labels.",
                 {"nodes": wildcard_nodes},
             )
         )
@@ -101,7 +108,12 @@ def synrule_to_span(
     boundary: SystemBoundary | str = SystemBoundary.ABSTRACT,
     environment: EnvironmentToken | None = None,
 ) -> RuleSpan:
-    """Adapt a supported SynRule to a native DPO span without optional backends."""
+    """Adapt the stored absolute non-stereo representative to a DPO span.
+
+    Requires concrete atoms and ``implicit_h=False``. Saved resource baselines
+    are restored; this exact span does not represent every relative-demand
+    application admitted by Reactor.
+    """
     _validate_synrule(rule)
     return rule_from_synrule(
         rule,

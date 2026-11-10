@@ -83,10 +83,7 @@ def _digest(path) -> str:
 def _run(command: Sequence[str]) -> str:
     result = subprocess.run(list(command), capture_output=True, text=True)
     if result.returncode:
-        raise RuntimeError(
-            "Native CRN expander build failed:\n"
-            + (result.stdout + result.stderr)[-6000:]
-        )
+        raise RuntimeError("Native CRN expander build failed:\n" + (result.stdout + result.stderr)[-6000:])
     return result.stdout
 
 
@@ -137,15 +134,11 @@ def build_native_expander(
         "builder_sha256": _digest(__file__),
         "sources": sources,
         "rdkit_dir": str(sdk),
-        "sdk_inputs_sha256": hashlib.sha256(
-            json.dumps(_sdk_inputs(sdk), sort_keys=True).encode()
-        ).hexdigest(),
+        "sdk_inputs_sha256": hashlib.sha256(json.dumps(_sdk_inputs(sdk), sort_keys=True).encode()).hexdigest(),
         "compiler": compiler_path,
         "platform": sys.platform,
         "machine": platform.machine(),
-        "environment": {
-            name: os.environ.get(name) for name in ("CXX", "CXXFLAGS", "LDFLAGS")
-        },
+        "environment": {name: os.environ.get(name) for name in ("CXX", "CXXFLAGS", "LDFLAGS")},
     }
     key = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
     output = Path(output_dir).expanduser().resolve()
@@ -163,8 +156,13 @@ def build_native_expander(
             shutil.copy2(_SOURCE / name, snapshot / name)
         build = work / "build"
         command = [
-            cmake, "-S", str(snapshot), "-B", str(build),
-            "-DCMAKE_BUILD_TYPE=Release", f"-DCMAKE_PREFIX_PATH={sdk}",
+            cmake,
+            "-S",
+            str(snapshot),
+            "-B",
+            str(build),
+            "-DCMAKE_BUILD_TYPE=Release",
+            f"-DCMAKE_PREFIX_PATH={sdk}",
             f"-DCMAKE_BUILD_RPATH={sdk / 'lib'}",
         ]
         if compiler_path is not None:
@@ -230,9 +228,7 @@ def _invoke(executable: Path, request: Dict[str, Any]) -> Dict[str, Any]:
     try:
         payload = json.loads(result.stdout)
     except ValueError:
-        raise RuntimeError(
-            "Native CRN expander produced no result:\n" + result.stderr[-3000:]
-        ) from None
+        raise RuntimeError("Native CRN expander produced no result:\n" + result.stderr[-3000:]) from None
     return _check(payload, result.stderr)
 
 

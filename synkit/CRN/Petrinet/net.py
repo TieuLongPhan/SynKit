@@ -322,12 +322,8 @@ def _extract_from_syncrn_object(crn: Any) -> SynCRNIncidence:
         rid_s = str(rid)
         reaction_labels[rid_s] = str(getattr(rxn, "label", rid_s))
         reaction_source_node_ids[rid_s] = getattr(rxn, "source_node_id", rid)
-        pre[rid_s] = {
-            str(sid): int(coeff) for sid, coeff in getattr(rxn, "lhs", {}).items()
-        }
-        post[rid_s] = {
-            str(sid): int(coeff) for sid, coeff in getattr(rxn, "rhs", {}).items()
-        }
+        pre[rid_s] = {str(sid): int(coeff) for sid, coeff in getattr(rxn, "lhs", {}).items()}
+        post[rid_s] = {str(sid): int(coeff) for sid, coeff in getattr(rxn, "rhs", {}).items()}
 
     return SynCRNIncidence(
         species_order=species_order,
@@ -651,8 +647,7 @@ def extract_syncrn_incidence(crn: Any) -> SynCRNIncidence:
             return _extract_from_syncrn_digraph(g)
 
     raise TypeError(
-        "crn must be a SynCRN-like object with species/reactions or an nx.DiGraph "
-        "in SynCRN bipartite format"
+        "crn must be a SynCRN-like object with species/reactions or an nx.DiGraph " "in SynCRN bipartite format"
     )
 
 
@@ -749,9 +744,7 @@ class PetriNet:
                 source_reaction_id=rid,
             )
             if rid in incidence.reaction_source_node_ids:
-                net.transition_source_node_ids[rid] = (
-                    incidence.reaction_source_node_ids[rid]
-                )
+                net.transition_source_node_ids[rid] = incidence.reaction_source_node_ids[rid]
 
         return net
 
@@ -855,12 +848,8 @@ class PetriNet:
                 label="2A + B -> C",
             )
         """
-        clean_pre = {
-            str(p): _coerce_stoich(w) for p, w in pre.items() if _safe_int(w, 0) > 0
-        }
-        clean_post = {
-            str(p): _coerce_stoich(w) for p, w in post.items() if _safe_int(w, 0) > 0
-        }
+        clean_pre = {str(p): _coerce_stoich(w) for p, w in pre.items() if _safe_int(w, 0) > 0}
+        clean_post = {str(p): _coerce_stoich(w) for p, w in post.items() if _safe_int(w, 0) > 0}
 
         for p in set(clean_pre) | set(clean_post):
             self.add_place(p)
@@ -874,9 +863,7 @@ class PetriNet:
             pre=clean_pre,
             post=clean_post,
             label=None if label is None else str(label),
-            source_reaction_id=(
-                None if source_reaction_id is None else str(source_reaction_id)
-            ),
+            source_reaction_id=(None if source_reaction_id is None else str(source_reaction_id)),
             metadata=dict(metadata or {}),
         )
         if label is not None:
@@ -960,11 +947,7 @@ class PetriNet:
         :rtype: Dict[Place, int]
         """
         vals = list(values)
-        return {
-            p: int(vals[idx])
-            for p, idx in self._place_index.items()
-            if idx < len(vals) and int(vals[idx]) != 0
-        }
+        return {p: int(vals[idx]) for p, idx in self._place_index.items() if idx < len(vals) and int(vals[idx]) != 0}
 
     def place_name(self, p: Place) -> str:
         """Return the display label of a place if available.
@@ -1035,7 +1018,4 @@ class PetriNet:
             Readable Petri net summary.
         :rtype: str
         """
-        return (
-            f"PetriNet(n_places={len(self.places)}, "
-            f"n_transitions={len(self.transitions)})"
-        )
+        return f"PetriNet(n_places={len(self.places)}, " f"n_transitions={len(self.transitions)})"

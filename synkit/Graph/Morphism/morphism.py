@@ -1,4 +1,4 @@
-"""Immutable graph-morphism values and their composition laws."""
+"""Immutable graph embeddings with guarded constraint composition."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ class MorphismIssueCode(str, Enum):
     ENDPOINT_MISMATCH = "MORPHISM_ENDPOINT_MISMATCH"
     MISSING_INTERMEDIATE = "MORPHISM_MISSING_INTERMEDIATE"
     CONSTRAINT_CONTRADICTION = "MORPHISM_CONSTRAINT_CONTRADICTION"
+    CONSTRAINT_OUTSIDE_IMAGE = "MORPHISM_CONSTRAINT_OUTSIDE_IMAGE"
     OWNER_OUTSIDE_SOURCE = "MORPHISM_OWNER_OUTSIDE_SOURCE"
     OWNER_OUTSIDE_IMAGE = "MORPHISM_OWNER_OUTSIDE_IMAGE"
 
@@ -71,6 +72,11 @@ class GraphMorphism:
     ``target_nodes`` make totality and injectivity checkable without retaining
     mutable graph objects.  Public mappings are normalized to sorted tuples so
     instances remain immutable and hashable.
+
+    The wildcard environment records obligations on the whole source, so
+    composition must transport every obligation.  Constraint composition is
+    guarded: incompatible environments raise rather than form an arrow.  These
+    values alone do not specify a category of labelled graphs.
     """
 
     source: Hashable
@@ -152,8 +158,7 @@ class GraphMorphism:
         outside_owners = {
             constraint.owner
             for _, constraint in substitutions
-            if constraint.owner is not None
-            and constraint.owner not in self.source_nodes
+            if constraint.owner is not None and constraint.owner not in self.source_nodes
         }
         if outside_owners:
             issues.append(
@@ -197,7 +202,14 @@ class GraphMorphism:
         )
 
     def then(self, after: "GraphMorphism") -> "GraphMorphism":
-        """Return ``after ∘ self`` with normalized constraint intersection."""
+        """Compose embeddings while retaining every wildcard obligation.
+
+        Every substitution and owner in ``after`` must lie in this embedding's
+        image, where it can be pulled back and intersected with ``theta``.
+        Untransportable obligations and contradictory conjunctions raise.
+        This guard makes both definedness and successful results associative;
+        an unconstrained identity is neutral.
+        """
         if self.target != after.source or self.target_nodes != after.source_nodes:
             raise GraphMorphismError(
                 MorphismIssue(
@@ -212,6 +224,16 @@ class GraphMorphism:
 
         left_map = self.mapping
         right_map = after.mapping
+        right_theta = after.substitutions
+        outside_constraints = set(right_theta) - set(left_map.values())
+        if outside_constraints:
+            raise GraphMorphismError(
+                MorphismIssue(
+                    MorphismIssueCode.CONSTRAINT_OUTSIDE_IMAGE,
+                    "Wildcard obligations cannot be discarded outside the first image.",
+                    {"nodes": tuple(sorted(map(repr, outside_constraints)))},
+                )
+            )
         composed: dict[Hashable, Hashable] = {}
         for source_node, intermediate in left_map.items():
             if intermediate not in right_map:
@@ -225,17 +247,13 @@ class GraphMorphism:
             composed[source_node] = right_map[intermediate]
 
         left_theta = self.substitutions
-        right_theta = after.substitutions
         inverse_left = {target: source for source, target in self.f}
         composed_theta: dict[Hashable, WildcardConstraint] = {}
         for source_node, intermediate in left_map.items():
             left_constraint = left_theta.get(source_node)
             right_constraint = right_theta.get(intermediate)
             if right_constraint is not None:
-                if (
-                    right_constraint.owner is not None
-                    and right_constraint.owner not in inverse_left
-                ):
+                if right_constraint.owner is not None and right_constraint.owner not in inverse_left:
                     raise GraphMorphismError(
                         MorphismIssue(
                             MorphismIssueCode.OWNER_OUTSIDE_IMAGE,
@@ -295,13 +313,8 @@ class GraphMorphism:
             self.target if target is None else target,
             frozenset(source_labels.values()),
             frozenset(target_labels.values()),
-            tuple(
-                (source_labels[left], target_labels[right]) for left, right in self.f
-            ),
-            tuple(
-                (source_labels[node], constraint.relabel_owner(source_labels))
-                for node, constraint in self.theta
-            ),
+            tuple((source_labels[left], target_labels[right]) for left, right in self.f),
+            tuple((source_labels[node], constraint.relabel_owner(source_labels)) for node, constraint in self.theta),
         )
 
     def canonical_signature(self) -> tuple[Any, ...]:
@@ -313,12 +326,8 @@ class GraphMorphism:
         Sprint 15 can extend this with graph incidence when it constructs
         fusion diagrams.
         """
-        base_by_node: dict[Hashable, tuple[Any, ...] | None] = {
-            node: None for node in self.source_nodes
-        }
-        incoming: dict[Hashable, list[tuple[Any, ...]]] = {
-            node: [] for node in self.source_nodes
-        }
+        base_by_node: dict[Hashable, tuple[Any, ...] | None] = {node: None for node in self.source_nodes}
+        incoming: dict[Hashable, list[tuple[Any, ...]]] = {node: [] for node in self.source_nodes}
         for node, constraint in self.theta:
             values = list(constraint.normalized())
             values[6] = None

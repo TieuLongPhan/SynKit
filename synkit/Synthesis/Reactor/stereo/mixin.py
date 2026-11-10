@@ -53,8 +53,7 @@ class ReactorStereoMixin:
         for target, guard in self.rule.stereo_guards.items():
             effect = self.rule.stereo_effects.get(target)
             other_outputs = any(
-                key != target and change.after is not None
-                for key, change in self.rule.stereo_effects.items()
+                key != target and change.after is not None for key, change in self.rule.stereo_effects.items()
             )
             same_locus_output = (
                 effect is not None
@@ -62,9 +61,7 @@ class ReactorStereoMixin:
                 and type(guard) is type(effect.after)
                 and descriptor_id(effect.after) == target
             )
-            safe_destruction = (
-                effect is not None and effect.after is None and not other_outputs
-            )
+            safe_destruction = effect is not None and effect.after is None and not other_outputs
             if not same_locus_output and not safe_destruction:
                 exact_targets.add(target)
             elif other_outputs:
@@ -106,17 +103,11 @@ class ReactorStereoMixin:
 
         target = descriptor_id(before)
         candidate = reactant_registry.get(target)
-        linked_output = (
-            after is not None
-            and type(before) is type(after)
-            and descriptor_id(after) == target
-        )
+        linked_output = after is not None and type(before) is type(after) and descriptor_id(after) == target
 
         if candidate is None:
             unknown_before = self._unknown_stereo_orientation(before)
-            unknown_after = (
-                self._unknown_stereo_orientation(after) if linked_output else after
-            )
+            unknown_after = self._unknown_stereo_orientation(after) if linked_output else after
             return unknown_before, unknown_after
 
         if candidate.parity is None:
@@ -131,9 +122,7 @@ class ReactorStereoMixin:
                     else after
                 )
             except StereoAlignmentError:
-                propagated = (
-                    self._unknown_stereo_orientation(after) if linked_output else after
-                )
+                propagated = self._unknown_stereo_orientation(after) if linked_output else after
             return candidate, propagated
 
         expected = normalize_hydrogen_references(before, host)
@@ -156,9 +145,7 @@ class ReactorStereoMixin:
             except StereoAlignmentError:
                 pass
 
-        unknown_after = (
-            self._unknown_stereo_orientation(after) if linked_output else after
-        )
+        unknown_after = self._unknown_stereo_orientation(after) if linked_output else after
         return candidate, unknown_after
 
     @staticmethod
@@ -192,10 +179,7 @@ class ReactorStereoMixin:
             host_map = host.nodes[host_node].get("atom_map") or host_node
             if isinstance(pattern_map, int) and isinstance(host_map, int):
                 translation[pattern_map] = host_map
-        return tuple(
-            self.rule.stereo_couplings[key].relabel(translation)
-            for key in sorted(self.rule.stereo_couplings)
-        )
+        return tuple(self.rule.stereo_couplings[key].relabel(translation) for key in sorted(self.rule.stereo_couplings))
 
     @staticmethod
     def _coupling_planar_from_tetrahedral_input(
@@ -222,11 +206,7 @@ class ReactorStereoMixin:
             (left, right_center, left_ligand),
             (right, left_center, right_ligand),
         ):
-            references = [
-                reference
-                for reference in descriptor.atoms[1:]
-                if reference not in {other, ligand}
-            ]
+            references = [reference for reference in descriptor.atoms[1:] if reference not in {other, ligand}]
             if len(references) != 2:
                 return None
             remaining.append(tuple(sorted(references, key=repr)))
@@ -254,10 +234,7 @@ class ReactorStereoMixin:
             ),
         )
         for candidate in candidates:
-            if any(
-                pair[0] == left and pair[1] == right
-                for pair in coupling.tetrahedral_product_pairs(candidate)
-            ):
+            if any(pair[0] == left and pair[1] == right for pair in coupling.tetrahedral_product_pairs(candidate)):
                 return candidate
         return None
 
@@ -281,16 +258,11 @@ class ReactorStereoMixin:
                 right = by_map.get(coupling.centers[1])
                 pi_order = (
                     float(host.edges[left, right].get("pi_order", 0.0))
-                    if left is not None
-                    and right is not None
-                    and host.has_edge(left, right)
+                    if left is not None and right is not None and host.has_edge(left, right)
                     else 0.0
                 )
                 if pi_order < 2.0:
-                    if (
-                        not isinstance(descriptor, PlanarBondStereo)
-                        or descriptor.parity != 0
-                    ):
+                    if not isinstance(descriptor, PlanarBondStereo) or descriptor.parity != 0:
                         return False
                     allowed_targets.add(coupling.target)
             else:
@@ -307,13 +279,9 @@ class ReactorStereoMixin:
             return True
 
         mapped_nodes = set(mapping.values())
-        mapped_references = {
-            host.nodes[node].get("atom_map") or node for node in mapped_nodes
-        }
+        mapped_references = {host.nodes[node].get("atom_map") or node for node in mapped_nodes}
         scoped = {
-            descriptor_id(descriptor)
-            for descriptor in registry.values()
-            if descriptor.dependencies & mapped_references
+            descriptor_id(descriptor) for descriptor in registry.values() if descriptor.dependencies & mapped_references
         }
         translation = {}
         pattern = self.rule.left.raw
@@ -325,8 +293,7 @@ class ReactorStereoMixin:
             if isinstance(pattern_map, int) and isinstance(host_map, int):
                 translation[pattern_map] = host_map
         translated_guards = {
-            descriptor_id(descriptor.relabel(translation))
-            for descriptor in self.rule.stereo_guards.values()
+            descriptor_id(descriptor.relabel(translation)) for descriptor in self.rule.stereo_guards.values()
         }
         return scoped <= allowed_targets | translated_guards
 
@@ -382,14 +349,11 @@ class ReactorStereoMixin:
             molecule = GraphToMol().graph_to_mol(probe)
         except Exception:
             return None
-        atom_maps = {
-            atom.GetIdx(): atom.GetAtomMapNum() for atom in molecule.GetAtoms()
-        }
+        atom_maps = {atom.GetIdx(): atom.GetAtomMapNum() for atom in molecule.GetAtoms()}
         return {
             atom_maps[stereo.centeredOn]
             for stereo in Chem.FindPotentialStereo(molecule)
-            if stereo.type == Chem.StereoType.Atom_Tetrahedral
-            and atom_maps.get(stereo.centeredOn, 0) > 0
+            if stereo.type == Chem.StereoType.Atom_Tetrahedral and atom_maps.get(stereo.centeredOn, 0) > 0
         }
 
     def _apply_stereo_couplings(
@@ -415,9 +379,7 @@ class ReactorStereoMixin:
                 )
                 if planar_product is None:
                     return []
-                left_target, right_target = (
-                    f"atom:{center}" for center in coupling.centers
-                )
+                left_target, right_target = (f"atom:{center}" for center in coupling.centers)
                 next_states = []
                 for (
                     product_registry,
@@ -475,9 +437,7 @@ class ReactorStereoMixin:
                     registry = dict(product_registry)
                     changes = dict(relabeled_changes)
                     registry[coupling.target] = planar_product
-                    changes[coupling.target] = StereoChange(
-                        "FORMED", None, planar_product
-                    )
+                    changes[coupling.target] = StereoChange("FORMED", None, planar_product)
                     next_states.append(
                         (
                             registry,
@@ -504,20 +464,14 @@ class ReactorStereoMixin:
                 pairs = coupling.tetrahedral_product_pairs(planar_reactant)
                 if potential_tetrahedral is not None:
                     pairs = tuple(
-                        tuple(
-                            descriptor
-                            for descriptor in pair
-                            if descriptor.center in potential_tetrahedral
-                        )
+                        tuple(descriptor for descriptor in pair if descriptor.center in potential_tetrahedral)
                         for pair in pairs
                     )
                 if not any(pairs):
                     registry = dict(product_registry)
                     changes = dict(relabeled_changes)
                     registry.pop(coupling.target, None)
-                    changes[coupling.target] = StereoChange(
-                        "BROKEN", planar_reactant, None
-                    )
+                    changes[coupling.target] = StereoChange("BROKEN", planar_reactant, None)
                     next_states.append(
                         (
                             registry,
@@ -534,9 +488,7 @@ class ReactorStereoMixin:
                     changes = dict(relabeled_changes)
                     coupling_branches = dict(coupling_branch_metadata)
                     registry.pop(coupling.target, None)
-                    changes[coupling.target] = StereoChange(
-                        "BROKEN", planar_reactant, None
-                    )
+                    changes[coupling.target] = StereoChange("BROKEN", planar_reactant, None)
                     for descriptor in pair:
                         target = descriptor_id(descriptor)
                         registry[target] = descriptor
@@ -545,9 +497,7 @@ class ReactorStereoMixin:
                         "kind": coupling.kind,
                         "relation": coupling.relation,
                         "face_branch": face_index,
-                        "joint_targets": [
-                            descriptor_id(descriptor) for descriptor in pair
-                        ],
+                        "joint_targets": [descriptor_id(descriptor) for descriptor in pair],
                     }
                     next_states.append(
                         (
@@ -598,9 +548,7 @@ class ReactorStereoMixin:
 
         reactant_registry = dict(host.graph.get("stereo_descriptors", {}))
         transition_registry = {
-            descriptor_id(
-                change.transition.relabel(translation)
-            ): change.transition.relabel(translation)
+            descriptor_id(change.transition.relabel(translation)): change.transition.relabel(translation)
             for change in self.rule.stereo_effects.values()
             if change.transition is not None
         }
@@ -633,14 +581,8 @@ class ReactorStereoMixin:
                 host,
             )
             outcome = self.rule.stereo_outcomes.get(rule_key)
-            alternatives = (
-                outcome.alternatives(after)
-                if outcome is not None and after is not None
-                else (after,)
-            )
-            branch_weights = (
-                tuple(outcome.weights or ()) if outcome is not None else (1.0,)
-            )
+            alternatives = outcome.alternatives(after) if outcome is not None and after is not None else (after,)
+            branch_weights = tuple(outcome.weights or ()) if outcome is not None else (1.0,)
             next_states = []
             for (
                 product_registry,
@@ -649,9 +591,7 @@ class ReactorStereoMixin:
                 outcome_metadata,
                 coupling_branch_metadata,
             ) in states:
-                for branch_index, (alternative, weight) in enumerate(
-                    zip(alternatives, branch_weights)
-                ):
+                for branch_index, (alternative, weight) in enumerate(zip(alternatives, branch_weights)):
                     if float(weight) == 0.0:
                         continue
                     branch_registry = dict(product_registry)
@@ -720,9 +660,7 @@ class ReactorStereoMixin:
                 "product": product_registry,
             }
             if transition_registry:
-                branch.graph["stereo_descriptors"]["transition"] = dict(
-                    transition_registry
-                )
+                branch.graph["stereo_descriptors"]["transition"] = dict(transition_registry)
             branch.graph["stereo_changes"] = relabeled_changes
             branch.graph["stereo_outcomes"] = outcome_metadata
             branch.graph["stereo_couplings"] = relabeled_couplings
@@ -771,10 +709,6 @@ class ReactorStereoMixin:
             return False
         if invalid:
             layers = dict(layers)
-            layers["product"] = {
-                key: descriptor
-                for key, descriptor in product_registry.items()
-                if key not in invalid
-            }
+            layers["product"] = {key: descriptor for key, descriptor in product_registry.items() if key not in invalid}
             its.graph["stereo_descriptors"] = layers
         return True

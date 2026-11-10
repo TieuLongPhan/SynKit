@@ -19,6 +19,7 @@ from synkit.Synthesis.Reactor.output import deduplication, structural
         ("RuleFilter", "synkit.Synthesis.Reactor.workflow.rule_filter"),
         ("ImbaEngine", "synkit.Synthesis.Reactor.variants.imbalanced"),
         ("PartialEngine", "synkit.Synthesis.Reactor.variants.partial"),
+        ("WildcardEngine", "synkit.Synthesis.Reactor.variants.wildcard"),
     ],
 )
 def test_public_classes_have_one_canonical_implementation(

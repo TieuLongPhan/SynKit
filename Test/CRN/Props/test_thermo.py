@@ -5,10 +5,6 @@ import numpy as np
 
 from synkit.CRN.Props import thermo
 
-# ---------------------------------------------------------------------------
-# Helpers to build small test networks
-# ---------------------------------------------------------------------------
-
 
 def build_simple_A_to_B_graph() -> nx.DiGraph:
     """
@@ -231,11 +227,6 @@ def build_large_network_graph() -> nx.DiGraph:
     return G
 
 
-# ---------------------------------------------------------------------------
-# Tests for low-level helpers
-# ---------------------------------------------------------------------------
-
-
 class TestNormalizePositive(unittest.TestCase):
     def test_normalize_positive_accepts_positive(self) -> None:
         v = np.array([2.0, 3.0, 5.0], dtype=float)
@@ -342,11 +333,6 @@ class TestPositiveLeftKernelSearch(unittest.TestCase):
         self.assertIsNone(m)
 
 
-# ---------------------------------------------------------------------------
-# Tests for public conservativity / consistency API
-# ---------------------------------------------------------------------------
-
-
 class TestConservativityAndConsistency(unittest.TestCase):
     def test_is_conservative_simple_A_to_B_true(self) -> None:
         G = build_simple_A_to_B_graph()
@@ -400,11 +386,6 @@ class TestConservativityAndConsistency(unittest.TestCase):
         self.assertIs(thermo.is_consistent(G2), True)
 
 
-# ---------------------------------------------------------------------------
-# Tests for futile-cycle proxy
-# ---------------------------------------------------------------------------
-
-
 class TestFutileCycleProxy(unittest.TestCase):
     def test_has_irreversible_futile_cycles_cycle_true(self) -> None:
         G = build_cycle_graph()
@@ -417,11 +398,6 @@ class TestFutileCycleProxy(unittest.TestCase):
     def test_has_irreversible_futile_cycles_decay_false(self) -> None:
         G = build_decay_graph()
         self.assertFalse(thermo.has_irreversible_futile_cycles(G))
-
-
-# ---------------------------------------------------------------------------
-# Tests for summary object
-# ---------------------------------------------------------------------------
 
 
 class TestThermoSummary(unittest.TestCase):
@@ -459,11 +435,6 @@ class TestThermoSummary(unittest.TestCase):
         self.assertIs(summary.consistent, False)
         self.assertIs(summary.irreversible_futile_cycles, False)
         self.assertIsNotNone(summary.example_conservation_law)
-
-
-# ---------------------------------------------------------------------------
-# More complex structural tests
-# ---------------------------------------------------------------------------
 
 
 class TestThermoComplex(unittest.TestCase):

@@ -18,15 +18,15 @@ from scipy.linalg import null_space
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from Experiment.CRN.tools.common import environment, source_hashes, write_report
-from Experiment.CRN.studies.representation import execute
-from Experiment.CRN.studies.formose_case_study import expand
-from Experiment.CRN.benchmarks.glycolysis import load_glycolysis
-from synkit.CRN import crnt_summary, integer_conservation_laws
-from synkit.CRN.Props.stoich import build_S_minus_plus
-from Experiment.CRN.benchmarks.networks import BENCHMARK_NETWORKS
-from synkit.CRN.Symmetry.automorphism import CRNAutomorphism
-from synkit.CRN.Symmetry._common import SymmetryConfig
+from Experiment.CRN.tools.common import environment, source_hashes, write_report, native_experiment  # noqa: E402
+from Experiment.CRN.studies.representation import execute  # noqa: E402
+from Experiment.CRN.studies.formose_case_study import expand  # noqa: E402
+from Experiment.CRN.studies.glycolysis import load_glycolysis  # noqa: E402
+from synkit.CRN import crnt_summary, integer_conservation_laws, find_siphons  # noqa: E402
+from synkit.CRN.Props.stoich import build_S_minus_plus  # noqa: E402
+from Experiment.CRN.studies.networks import BENCHMARK_NETWORKS  # noqa: E402
+from synkit.CRN.Symmetry.automorphism import CRNAutomorphism  # noqa: E402
+from synkit.CRN.Symmetry._common import SymmetryConfig  # noqa: E402
 
 
 def numerical_comparison():
@@ -50,12 +50,8 @@ def numerical_comparison():
                 "network": fixture.name,
                 "nullity": numerical.shape[1],
                 "svd_max_abs_residual": float(np.max(np.abs(raw), initial=0)),
-                "rounded_max_abs_residual": int(
-                    np.max(np.abs(rounded_residual), initial=0)
-                ),
-                "rounded_invalid_vectors": int(
-                    np.count_nonzero(np.any(rounded_residual != 0, axis=0))
-                ),
+                "rounded_max_abs_residual": int(np.max(np.abs(rounded_residual), initial=0)),
+                "rounded_invalid_vectors": int(np.count_nonzero(np.any(rounded_residual != 0, axis=0))),
                 "exact_identity_holds": exact_ok,
             }
         )
@@ -83,9 +79,7 @@ def supplementary_report(fixture=None):
     formose = expand(4)
     symmetry = {}
     for name, network in [("glycolysis", crn), ("formose", formose)]:
-        summary = CRNAutomorphism(network, config=SymmetryConfig.topological()).summary(
-            max_count=1024, timeout_sec=30
-        )
+        summary = CRNAutomorphism(network, config=SymmetryConfig.topological()).summary(max_count=1024, timeout_sec=30)
         symmetry[name] = {
             "automorphism_count": summary.automorphism_count,
             "complete": not summary.stopped_early,
@@ -109,9 +103,7 @@ def supplementary_report(fixture=None):
             and {formose.species[s].label: n for s, n in r.rhs.items()} == rhs
         ]
         if len(matches) != 1:
-            raise ValueError(
-                "Expected one generated reaction for each selected formose step"
-            )
+            raise ValueError("Expected one generated reaction for each selected formose step")
         labels.append(matches[0].id)
     for reaction in formose.reactions.values():
         reaction.label = reaction.id
@@ -131,14 +123,24 @@ def supplementary_report(fixture=None):
                 {
                     "pool": name,
                     "target": target,
-                    "outcome": execute(
-                        formose, flow, {"C=O": formaldehyde, "O=CCO": glycolaldehyde}
-                    ),
+                    "glycolaldehyde_required": 2 if target == "T4" else 3,
+                    "formaldehyde_consumed": 0,
+                    "inventory_threshold_holds": glycolaldehyde >= (2 if target == "T4" else 3),
+                    "outcome": execute(formose, flow, {"C=O": formaldehyde, "O=CCO": glycolaldehyde}),
                 }
             )
+    initiator = next(
+        group
+        for group in find_siphons(formose, names="label", strict_limit=True)
+        if {"O=CCO", target4, target6} <= group and "C=O" not in group
+    )
+    siphon_verified = all(
+        not (initiator & {formose.species[s].label for s, _ in reaction.rhs.items()})
+        or bool(initiator & {formose.species[s].label for s, _ in reaction.lhs.items()})
+        for reaction in formose.reactions.values()
+    )
     from synkit.CRN.backend import resolve_backend
     from synkit.CRN.native_analysis import qualitative_path
-    from synkit.CRN.Props.thermo import is_conservative, is_consistent
 
     _, library = resolve_backend()
     qualitative = []
@@ -173,13 +175,9 @@ def supplementary_report(fixture=None):
     }
     numerical = numerical_comparison()
     checks = {
-        "all_discrete_decisions_complete": all(
-            row["outcome"]["decision_complete"] for row in routes + formose_routes
-        ),
+        "all_discrete_decisions_complete": all(row["outcome"]["decision_complete"] for row in routes + formose_routes),
         "feasibility_exact_certificates": all(
-            certificate["exact"]
-            for row in feasibility_certificates.values()
-            for certificate in row.values()
+            certificate["exact"] for row in feasibility_certificates.values() for certificate in row.values()
         ),
         "qualitative_formose_native": library is None
         or (
@@ -187,29 +185,23 @@ def supplementary_report(fixture=None):
             and all(r["outcome"]["status"] == "realizable" for r in qualitative)
         ),
         "expected_feasibility_verdicts": all(
-            r["conservative"] is True and r["consistent"] is False
-            for r in feasibility.values()
+            r["conservative"] is True and r["consistent"] is False for r in feasibility.values()
         ),
-        "expected_network_dimensions": (crn.n_species, crn.n_reactions, report.rank)
-        == (40, 34, 23),
+        "expected_network_dimensions": (crn.n_species, crn.n_reactions, report.rank) == (40, 34, 23),
         "cofactor_controls": [r["outcome"]["status"] for r in routes]
         == ["unrealizable", "realizable", "realizable", "realizable"],
-        "replay": all(
-            r["outcome"]["independent_replay_ok"] is not False for r in routes
-        ),
+        "replay": all(r["outcome"]["independent_replay_ok"] is not False for r in routes),
         "exact_conservation": all(r["exact_identity_holds"] for r in numerical),
-        "numerical_subspace_residual": all(
-            r["svd_max_abs_residual"] < 1e-10 for r in numerical
-        ),
+        "numerical_subspace_residual": all(r["svd_max_abs_residual"] < 1e-10 for r in numerical),
         "symmetry_complete": all(r["complete"] for r in symmetry.values()),
-        "symmetry_counts": [r["automorphism_count"] for r in symmetry.values()]
-        == [2, 512],
+        "symmetry_counts": [r["automorphism_count"] for r in symmetry.values()] == [2, 512],
         "formose_routes": [r["outcome"]["status"] for r in formose_routes]
-        == ["unrealizable"] * 6
-        + ["realizable", "unrealizable", "realizable", "realizable"],
-        "formose_replay": all(
-            r["outcome"]["independent_replay_ok"] is not False for r in formose_routes
+        == ["unrealizable"] * 6 + ["realizable", "unrealizable", "realizable", "realizable"],
+        "formose_replay": all(r["outcome"]["independent_replay_ok"] is not False for r in formose_routes),
+        "formose_fixed_route_thresholds": all(
+            r["outcome"]["realizable"] is r["inventory_threshold_holds"] for r in formose_routes
         ),
+        "formaldehyde_only_initiator_siphon": siphon_verified,
     }
     return {
         "schema": "synkit.crn-supplementary/1",
@@ -223,27 +215,35 @@ def supplementary_report(fixture=None):
         "routes": routes,
         "symmetry": symmetry,
         "formose_routes": formose_routes,
+        "formose_route_scope": (
+            "Two prescribed reaction multisets; neither consumes formaldehyde; not unrestricted " "target reachability"
+        ),
+        "formose_initiator_siphon": {
+            "species": sorted(initiator),
+            "verified": siphon_verified,
+            "empty_for_formaldehyde_only": True,
+            "empty_for_M3_or_M4": False,
+        },
         "qualitative_routes": qualitative,
         "feasibility": feasibility,
         "feasibility_certificates": feasibility_certificates,
-        "numerical_method": "scipy.linalg.null_space(S.T); naive integer reconstruction = rint(1000*basis); exact residual checked on integer matrix",
+        "numerical_method": (
+            "scipy.linalg.null_space(S.T); naive integer reconstruction = rint(1000*basis); exact "
+            "residual checked on integer matrix"
+        ),
         "numerical_comparison": numerical,
     }
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--fixture", type=Path, help="glycolysis input JSON (default: cached fixture)"
-    )
+    parser.add_argument("--fixture", type=Path, help="glycolysis input JSON (default: cached fixture)")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     return write_report(supplementary_report(args.fixture), args.output)
 
 
-from Experiment.CRN.tools.common import native_experiment
-
-main = native_experiment(main)
+main = native_experiment(main, expansion=True)
 
 if __name__ == "__main__":
     raise SystemExit(main())

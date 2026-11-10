@@ -130,16 +130,18 @@ Construct a small CRN and convert it to a NetworkX digraph:
    graph = crn.to_digraph()
    print(graph.number_of_nodes(), graph.number_of_edges())
 
-For an offline biochemical example, load the cached KEGG glycolysis module,
-compute CRNT and Petri-net structure, obtain a replayable pathway certificate,
-and export the network through SBML:
+From a source checkout or unpacked source distribution, the separate research
+suite provides an offline biochemical example. Load the cached KEGG glycolysis
+module, compute CRNT and Petri-net structure, obtain a replayable pathway
+certificate, and export the network through SBML. Runtime wheels omit the
+research suite; run this example from the source root:
 
 .. code-block:: python
 
    from pathlib import Path
 
    from synkit.CRN import crnt_summary, conserved_moieties, find_siphons, write_sbml
-   from synkit.CRN.Benchmark import build_kegg_crn, check_glycolysis_flux
+   from Experiment.CRN.studies import build_kegg_crn, check_glycolysis_flux
 
    crn = build_kegg_crn("M00001")
    summary = crnt_summary(crn)
@@ -154,10 +156,9 @@ and export the network through SBML:
 
    write_sbml(crn, Path("glycolysis.xml"))
 
-The `executable glycolysis notebook
-<https://github.com/TieuLongPhan/SynKit/blob/main/Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb>`_
-explains and independently replays the certificate. See :doc:`crn` for the
-network API and benchmark workflow.
+The CRN studies in ``Experiment/CRN/run_all.py`` check the glycolytic
+certificate and currency-retention control. See :doc:`crn` for the network API
+and study workflow.
 
 Next steps
 ----------

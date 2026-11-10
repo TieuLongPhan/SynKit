@@ -52,6 +52,8 @@ class DPOIssueCode(str, Enum):
     SOURCE_MUTATED = "DPO_SOURCE_MUTATED"
     APPLICATION_CONDITION = "DPO_APPLICATION_CONDITION"
     CLOSED_ISOTOPE = "DPO_CLOSED_ISOTOPE_IMBALANCE"
+    SYMBOLIC_RULE_UNSUPPORTED = "DPO_SYMBOLIC_RULE_UNSUPPORTED"
+    NORMALIZED_RULE_UNSUPPORTED = "DPO_NORMALIZED_RULE_UNSUPPORTED"
 
 
 @dataclass(frozen=True)
@@ -101,17 +103,11 @@ class EnvironmentToken:
         if not self.name.strip():
             raise ValueError("An environment token requires a non-empty name.")
         normalized = tuple(
-            sorted(
-                (str(element), int(count))
-                for element, count in dict(self.element_delta).items()
-                if int(count) != 0
-            )
+            sorted((str(element), int(count)) for element, count in dict(self.element_delta).items() if int(count) != 0)
         )
         object.__setattr__(self, "element_delta", normalized)
         object.__setattr__(self, "electron_delta", float(self.electron_delta))
-        object.__setattr__(
-            self, "isotope_delta", _normalize_isotope_delta(self.isotope_delta)
-        )
+        object.__setattr__(self, "isotope_delta", _normalize_isotope_delta(self.isotope_delta))
 
 
 @dataclass(frozen=True)
@@ -125,11 +121,7 @@ class RuleEmbedding:
     def __post_init__(self) -> None:
         pairs = tuple(self.f.items()) if isinstance(self.f, Mapping) else tuple(self.f)
         object.__setattr__(self, "f", tuple(sorted(pairs, key=repr)))
-        if (
-            self.interface.schema != self.endpoint.schema
-            or not self.interface.partial
-            or self.endpoint.partial
-        ):
+        if self.interface.schema != self.endpoint.schema or not self.interface.partial or self.endpoint.partial:
             raise DPOError(
                 DPOIssue(
                     DPOIssueCode.INTERFACE_SCHEMA,
@@ -168,11 +160,8 @@ class RuleEmbedding:
         for node, image in pairs:
             interface_labels = self.interface.node_labels(node, semantic=True)
             endpoint_labels = self.endpoint.node_labels(image, semantic=True)
-            if not set(self.endpoint.schema.node_identity) <= set(
-                interface_labels
-            ) or any(
-                endpoint_labels.get(key) != value
-                for key, value in interface_labels.items()
+            if not set(self.endpoint.schema.node_identity) <= set(interface_labels) or any(
+                endpoint_labels.get(key) != value for key, value in interface_labels.items()
             ):
                 issues.append(
                     DPOIssue(
@@ -194,11 +183,8 @@ class RuleEmbedding:
                 continue
             interface_labels = self.interface.edge_labels(edge, semantic=True)
             endpoint_labels = self.endpoint.edge_labels(image, semantic=True)
-            if not set(self.endpoint.schema.edge_identity) <= set(
-                interface_labels
-            ) or any(
-                endpoint_labels.get(key) != value
-                for key, value in interface_labels.items()
+            if not set(self.endpoint.schema.edge_identity) <= set(interface_labels) or any(
+                endpoint_labels.get(key) != value for key, value in interface_labels.items()
             ):
                 issues.append(
                     DPOIssue(
@@ -217,10 +203,7 @@ class RuleEmbedding:
     @property
     def edge_mapping(self) -> dict[frozenset[Hashable], frozenset[Hashable]]:
         mapping = self.mapping
-        return {
-            edge: frozenset(mapping[node] for node in edge)
-            for edge in self.interface.edge_keys
-        }
+        return {edge: frozenset(mapping[node] for node in edge) for edge in self.interface.edge_keys}
 
 
 @dataclass(frozen=True)
@@ -243,15 +226,9 @@ def _normalize_isotope_delta(pairs):
             or isinstance(count, bool)
             or not isinstance(count, Integral)
         ):
-            raise ValueError(
-                "Isotope resource deltas need an element, integral mass and integral count."
-            )
+            raise ValueError("Isotope resource deltas need an element, integral mass and integral count.")
     return tuple(
-        sorted(
-            ((str(element), int(mass)), int(count))
-            for (element, mass), count in dict(pairs).items()
-            if count
-        )
+        sorted(((str(element), int(mass)), int(count)) for (element, mass), count in dict(pairs).items() if count)
     )
 
 
@@ -269,9 +246,7 @@ def _isotope_inventory(graph):
     return values
 
 
-def _resource_delta(
-    left: LewisLabelledGraph, right: LewisLabelledGraph
-) -> ResourceDelta:
+def _resource_delta(left: LewisLabelledGraph, right: LewisLabelledGraph) -> ResourceDelta:
     if not is_electron_schema(left.schema) or not is_electron_schema(right.schema):
         raise DPOError(
             DPOIssue(
@@ -295,20 +270,14 @@ def _resource_delta(
                     )
                 )
             elements["H"] += int(hydrogen_count)
-            electrons += (
-                float(labels["valence_electrons"])
-                + float(labels["hcount"])
-                - float(labels["charge"])
-            )
+            electrons += float(labels["valence_electrons"]) + float(labels["hcount"]) - float(labels["charge"])
         return elements, electrons
 
     left_elements, left_electrons = inventory(left)
     right_elements, right_electrons = inventory(right)
     keys = sorted(set(left_elements) | set(right_elements))
     element_delta = tuple(
-        (key, right_elements[key] - left_elements[key])
-        for key in keys
-        if right_elements[key] != left_elements[key]
+        (key, right_elements[key] - left_elements[key]) for key in keys if right_elements[key] != left_elements[key]
     )
     isotope_delta = _isotope_inventory(right)
     isotope_delta.subtract(_isotope_inventory(left))
@@ -483,13 +452,9 @@ class RuleSpan:
                         "A preserved node must exist in both endpoints.",
                     )
                 )
-            left_identity = {
-                key: left.node_labels(left_node, semantic=True)[key]
-                for key in left.schema.node_identity
-            }
+            left_identity = {key: left.node_labels(left_node, semantic=True)[key] for key in left.schema.node_identity}
             right_identity = {
-                key: right.node_labels(right_node, semantic=True)[key]
-                for key in right.schema.node_identity
+                key: right.node_labels(right_node, semantic=True)[key] for key in right.schema.node_identity
             }
             if left_identity != right_identity:
                 raise DPOError(
@@ -502,22 +467,16 @@ class RuleSpan:
             left_values = left.node_labels(left_node, semantic=True)
             right_values = right.node_labels(right_node, semantic=True)
             common = {
-                key: value
-                for key, value in left_values.items()
-                if key in right_values and right_values[key] == value
+                key: value for key, value in left_values.items() if key in right_values and right_values[key] == value
             }
             interface_graph.add_node(interface_node, **common)
 
-        left_to_interface = {
-            left_node: interface_node
-            for interface_node, (left_node, _) in enumerate(pairs)
-        }
+        left_to_interface = {left_node: interface_node for interface_node, (left_node, _) in enumerate(pairs)}
         right_by_left = dict(pairs)
         candidates = {
             edge
             for edge in left.edge_keys
-            if edge <= set(left_to_interface)
-            and frozenset(right_by_left[node] for node in edge) in right.edge_keys
+            if edge <= set(left_to_interface) and frozenset(right_by_left[node] for node in edge) in right.edge_keys
         }
         selected = candidates if preserved_edges is None else set(preserved_edges)
         if not selected <= candidates:
@@ -530,13 +489,9 @@ class RuleSpan:
         for edge in selected:
             left_a, left_b = tuple(edge)
             right_edge = frozenset((right_by_left[left_a], right_by_left[left_b]))
-            left_identity = {
-                key: left.edge_labels(edge, semantic=True)[key]
-                for key in left.schema.edge_identity
-            }
+            left_identity = {key: left.edge_labels(edge, semantic=True)[key] for key in left.schema.edge_identity}
             right_identity = {
-                key: right.edge_labels(right_edge, semantic=True)[key]
-                for key in right.schema.edge_identity
+                key: right.edge_labels(right_edge, semantic=True)[key] for key in right.schema.edge_identity
             }
             if left_identity != right_identity:
                 raise DPOError(
@@ -548,25 +503,13 @@ class RuleSpan:
             left_values = left.edge_labels(edge, semantic=True)
             right_values = right.edge_labels(right_edge, semantic=True)
             common = {
-                key: value
-                for key, value in left_values.items()
-                if key in right_values and right_values[key] == value
+                key: value for key, value in left_values.items() if key in right_values and right_values[key] == value
             }
-            interface_graph.add_edge(
-                left_to_interface[left_a], left_to_interface[left_b], **common
-            )
+            interface_graph.add_edge(left_to_interface[left_a], left_to_interface[left_b], **common)
 
-        interface = LewisLabelledGraph.from_networkx(
-            interface_graph, interface_schema, name=f"{name}:K", partial=True
-        )
-        left_map = {
-            interface_node: left_node
-            for interface_node, (left_node, _) in enumerate(pairs)
-        }
-        right_map = {
-            interface_node: right_node
-            for interface_node, (_, right_node) in enumerate(pairs)
-        }
+        interface = LewisLabelledGraph.from_networkx(interface_graph, interface_schema, name=f"{name}:K", partial=True)
+        left_map = {interface_node: left_node for interface_node, (left_node, _) in enumerate(pairs)}
+        right_map = {interface_node: right_node for interface_node, (_, right_node) in enumerate(pairs)}
         return cls(
             left,
             interface,
@@ -689,7 +632,7 @@ def _validated_match(
             )
         )
     try:
-        return LLGMorphism(rule.left, host, tuple(match.items()))
+        return LLGMorphism(rule.left, host, tuple(match.items()), exact=True)
     except LLGError as error:
         raise _translate_match_error(error) from error
 
@@ -700,22 +643,13 @@ def _deletion_plan(
     match: Mapping[Hashable, Hashable],
 ) -> _DeletionPlan:
     preserved_nodes = set(rule.left_arm.mapping.values())
-    deleted_nodes = frozenset(
-        match[node] for node in set(rule.left.node_ids) - preserved_nodes
-    )
+    deleted_nodes = frozenset(match[node] for node in set(rule.left.node_ids) - preserved_nodes)
     preserved_edges = set(rule.left_arm.edge_mapping.values())
     deleted_edges = frozenset(
-        frozenset(match[node] for node in edge)
-        for edge in set(rule.left.edge_keys) - preserved_edges
+        frozenset(match[node] for node in edge) for edge in set(rule.left.edge_keys) - preserved_edges
     )
-    matched_edges = {
-        frozenset(match[node] for node in edge) for edge in rule.left.edge_keys
-    }
-    dangling = {
-        edge
-        for edge in host.edge_keys
-        if edge & deleted_nodes and edge not in matched_edges
-    }
+    matched_edges = {frozenset(match[node] for node in edge) for edge in rule.left.edge_keys}
+    dangling = {edge for edge in host.edge_keys if edge & deleted_nodes and edge not in matched_edges}
     if dangling:
         raise DPOError(
             DPOIssue(
@@ -764,9 +698,7 @@ def _construct_context(
     for _, _, labels in graph.edges(data=True):
         for key in host.schema.edge_derived:
             labels.pop(key, None)
-    return LewisLabelledGraph.from_networkx(
-        graph, host.schema, name=f"{rule.name}:D", partial=True
-    )
+    return LewisLabelledGraph.from_networkx(graph, host.schema, name=f"{rule.name}:D", partial=True)
 
 
 def _initialize_result(
@@ -862,9 +794,7 @@ def _coherent_result(
                 )
             ) from error
     try:
-        return LewisLabelledGraph.from_networkx(
-            graph, host.schema, name=f"{rule.name}:H"
-        )
+        return LewisLabelledGraph.from_networkx(graph, host.schema, name=f"{rule.name}:H")
     except LLGError as error:
         raise DPOError(
             DPOIssue(
@@ -881,10 +811,7 @@ def _assert_unmutated(
     before: tuple[nx.Graph, nx.Graph, nx.Graph],
 ) -> None:
     observed = (host.to_networkx(), rule.left.to_networkx(), rule.right.to_networkx())
-    if any(
-        not nx.utils.graphs_equal(current, original)
-        for current, original in zip(observed, before)
-    ):
+    if any(not nx.utils.graphs_equal(current, original) for current, original in zip(observed, before)):
         raise DPOError(
             DPOIssue(
                 DPOIssueCode.SOURCE_MUTATED,
@@ -964,13 +891,56 @@ def rule_from_synrule(
     boundary: SystemBoundary | str = SystemBoundary.ABSTRACT,
     environment: EnvironmentToken | None = None,
 ) -> RuleSpan:
-    """Adapt ``SynRule`` endpoints without treating paired ITS as a rule span."""
+    """Adapt the stored absolute representative of a concrete ``SynRule``.
+
+    Saved relative-resource baselines restore the extraction representative;
+    they do not turn relative-demand matching into exact LLG matching. Common
+    hydrogen counts discarded by ``implicit_h=True`` cannot be recovered, so
+    this adapter requires ``implicit_h=False``. Symbolic wildcard contracts
+    require grounding before they can be represented by an exact LLG span.
+    """
     from synkit.Graph.ITS.its_construction import ITSConstruction
     from synkit.Rule.syn_rule import SynRule
 
     if not isinstance(rule, SynRule):
         raise TypeError("rule_from_synrule expects a SynRule instance.")
-    its = ITSConstruction.construct(rule.left.raw, rule.right.raw)
+    symbolic_nodes = tuple(
+        sorted(
+            {
+                repr(node)
+                for graph in (rule.rc.raw, rule.left.raw, rule.right.raw)
+                for node, attrs in graph.nodes(data=True)
+                if attrs.get("element") == "*"
+                or (isinstance(attrs.get("element"), (tuple, list)) and "*" in attrs["element"])
+                or attrs.get("wildcard_role") is not None
+                or attrs.get("_wildcard_constraint") is not None
+            }
+        )
+    )
+    if symbolic_nodes:
+        raise DPOError(
+            DPOIssue(
+                DPOIssueCode.SYMBOLIC_RULE_UNSUPPORTED,
+                "Exact LLG adaptation requires concrete grounded wildcard states.",
+                {"nodes": symbolic_nodes},
+            )
+        )
+    if getattr(rule, "_implicit_h", True):
+        raise DPOError(
+            DPOIssue(
+                DPOIssueCode.NORMALIZED_RULE_UNSUPPORTED,
+                "Absolute LLG endpoints require SynRule(..., implicit_h=False); "
+                "discarded common hydrogen counts cannot be recovered.",
+            )
+        )
+    left, right = rule.left.raw.copy(), rule.right.raw.copy()
+    for node, attrs in rule.rc.raw.nodes(data=True):
+        baselines = attrs.get("_relative_resource_baselines", {})
+        for endpoint in (left, right):
+            if node in endpoint:
+                for resource, baseline in baselines.items():
+                    endpoint.nodes[node][resource] += baseline
+    its = ITSConstruction.construct(left, right)
     return rule_from_its(
         its,
         electron_complete=electron_complete,

@@ -8,6 +8,12 @@ from .native_expand import (
     expander_manifest,
     native_expander,
 )
+from .native_dpo import (
+    build_native_dpo_expander,
+    dpo_expander_manifest,
+    native_dpo_expander,
+    resolve_native_dpo_expander,
+)
 
 __all__ = [
     "CRNExpand",
@@ -21,4 +27,8 @@ __all__ = [
     "build_native_expander",
     "expander_manifest",
     "native_expander",
+    "build_native_dpo_expander",
+    "dpo_expander_manifest",
+    "native_dpo_expander",
+    "resolve_native_dpo_expander",
 ]

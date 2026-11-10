@@ -20,13 +20,9 @@ def _clean_counts(counts: Dict[str, int] | None = None) -> Dict[str, int]:
         if not isinstance(species_id, str):
             raise TypeError(f"Species ids must be str, got {type(species_id).__name__}")
         if not isinstance(coeff, int):
-            raise TypeError(
-                f"Stoichiometric coefficient for {species_id!r} must be int"
-            )
+            raise TypeError(f"Stoichiometric coefficient for {species_id!r} must be int")
         if coeff < 0:
-            raise ValueError(
-                f"Stoichiometric coefficient for {species_id!r} must be >= 0"
-            )
+            raise ValueError(f"Stoichiometric coefficient for {species_id!r} must be >= 0")
         if coeff > 0:
             out[species_id] = coeff
 
@@ -228,10 +224,6 @@ class Reaction:
             "rule_id": self.rule_id,
             "source_attrs": dict(self.source_attrs),
             "metadata": dict(self.metadata),
-            "reactant_edge_attrs": {
-                k: dict(v) for k, v in self.reactant_edge_attrs.items()
-            },
-            "product_edge_attrs": {
-                k: dict(v) for k, v in self.product_edge_attrs.items()
-            },
+            "reactant_edge_attrs": {k: dict(v) for k, v in self.reactant_edge_attrs.items()},
+            "product_edge_attrs": {k: dict(v) for k, v in self.product_edge_attrs.items()},
         }

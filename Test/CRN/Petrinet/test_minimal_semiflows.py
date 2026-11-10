@@ -93,10 +93,7 @@ class TestMinimalSemiflows(unittest.TestCase):
                 [0.0, 0.0, 1.0, -1.0],
             ]
         )
-        supports = [
-            {i for i, v in enumerate(flow) if v != 0}
-            for flow in minimal_semiflows(s, kind="p")
-        ]
+        supports = [{i for i, v in enumerate(flow) if v != 0} for flow in minimal_semiflows(s, kind="p")]
 
         for a in supports:
             for b in supports:
@@ -146,29 +143,21 @@ class TestPersistenceRegression(unittest.TestCase):
     """Networks that the kernel-basis implementation wrongly called transient."""
 
     def _ok(self, rxns: list[str]) -> bool:
-        return siphon_persistence_details(
-            SynCRN.from_reaction_strings(rxns)
-        ).persistence_ok
+        return siphon_persistence_details(SynCRN.from_reaction_strings(rxns)).persistence_ok
 
     def test_disjoint_reversible_pairs_are_persistent(self) -> None:
         """
         Each minimal siphon {A,B}, {C,D}, {E,F} contains a P-semiflow support.
         """
-        self.assertTrue(
-            self._ok(["A>>B", "B>>A", "C>>D", "D>>C", "E>>F", "F>>E"])
-        )
+        self.assertTrue(self._ok(["A>>B", "B>>A", "C>>D", "D>>C", "E>>F", "F>>E"]))
 
     def test_stoichiometric_reversible_block_is_persistent(self) -> None:
         """Non-unit stoichiometry must not change the verdict."""
-        self.assertTrue(
-            self._ok(["A>>B", "B>>A", "C>>D", "D>>C", "E>>2F", "2F>>E"])
-        )
+        self.assertTrue(self._ok(["A>>B", "B>>A", "C>>D", "D>>C", "E>>2F", "2F>>E"]))
 
     def test_reversible_chain_plus_pair_is_persistent(self) -> None:
         """A three-species reversible chain alongside a reversible pair."""
-        self.assertTrue(
-            self._ok(["A>>B", "B>>A", "B>>C", "C>>B", "D>>E", "E>>D"])
-        )
+        self.assertTrue(self._ok(["A>>B", "B>>A", "B>>C", "C>>B", "D>>E", "E>>D"]))
 
     def test_open_network_is_not_persistent(self) -> None:
         """A >> B with no way back leaves siphon {A} uncovered."""

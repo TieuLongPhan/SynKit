@@ -17,7 +17,15 @@ Conversion policies:
 - **Reversible reactions.** SBML marks a reaction ``reversible="true"``; a
   ``SynCRN`` reaction is always directed. On import, a reversible reaction is
   split into a forward and a backward reaction by default (``expand_reversible``),
-  which is what Chemical Reaction Network Theory expects.
+  which is what Chemical Reaction Network Theory expects. An omitted flag is
+  reversible in Level 2. Level 3 requires the flag: omission raises in strict
+  mode and otherwise warns before assuming a forward-only reaction.
+- **Stoichiometry.** Only fixed, integral reaction coefficients are supported.
+  Integer coefficients are parsed and written without floating-point conversion.
+  Fractional coefficients and ``stoichiometryMath`` require explicit model
+  normalization and are rejected instead of silently changing the reaction.
+- **Modifiers.** Modifier references, kinetic laws and rules are not imported.
+  A participant explicitly present on both reaction sides is retained on both.
 - **Identifiers.** SBML ids must match ``[A-Za-z_][A-Za-z0-9_]*``. Species
   labels are chemistry — SMILES strings, KEGG ids — and usually do not. The
   writer therefore uses the internal ``SynCRN`` ids (``s_1``, ``r_1``) as SBML
@@ -42,6 +50,8 @@ from __future__ import annotations
 import re
 import warnings
 import xml.etree.ElementTree as ET
+from fractions import Fraction
+from numbers import Integral
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -187,11 +197,13 @@ def _format_stoich(value: Any) -> str:
         String form without a redundant ``.0`` suffix.
     :rtype: str
     """
+    if isinstance(value, Integral):
+        return str(int(value))
     number = float(value)
     return str(int(number)) if number.is_integer() else repr(number)
 
 
-def _parse_stoich(value: Optional[str]) -> float:
+def _parse_stoich(value: Optional[str]) -> int:
     """Parse an SBML stoichiometry attribute, defaulting to 1.
 
     :param value:
@@ -199,15 +211,22 @@ def _parse_stoich(value: Optional[str]) -> float:
     :type value: Optional[str]
 
     :return:
-        Stoichiometric coefficient.
-    :rtype: float
+        Exact integer stoichiometric coefficient.
+    :rtype: int
+
+    :raises ValueError:
+        If the coefficient is malformed or non-integral. Discrete CRNs do not
+        support fractional stoichiometry without explicit normalization.
     """
     if value is None or value == "":
-        return 1.0
+        return 1
     try:
-        return float(value)
-    except ValueError:
-        return 1.0
+        number = Fraction(value)
+    except (ValueError, ZeroDivisionError) as error:
+        raise ValueError(f"Invalid SBML stoichiometry {value!r}") from error
+    if number.denominator != 1:
+        raise ValueError("Discrete CRN coefficients must be integral; normalize rational " "stoichiometry explicitly")
+    return number.numerator
 
 
 def _is_true(value: Optional[str]) -> bool:
@@ -222,6 +241,28 @@ def _is_true(value: Optional[str]) -> bool:
     :rtype: bool
     """
     return str(value).strip().lower() in {"true", "1"}
+
+
+def _reaction_reversible(reaction: ET.Element, *, level: Optional[int], strict: bool) -> bool:
+    """Read the version-specific reversibility flag without a silent default.
+
+    SBML Level 2 defaults to reversible; Level 3 requires an explicit value.
+    Minimal XML fragments with no declared level retain the forward-only
+    compatibility default.
+    """
+    value = reaction.get("reversible")
+    if value is None and level in {1, 2}:
+        return True
+    if value is None and level is None:
+        return False
+    if value is not None and value.strip().lower() in {"true", "false", "0", "1"}:
+        return _is_true(value)
+    detail = "is missing its required reversible attribute" if value is None else (f"has invalid reversible={value!r}")
+    message = f"SBML reaction {reaction.get('id')!r} {detail}"
+    if strict:
+        raise ValueError(message)
+    warnings.warn(message + "; assuming irreversible.", UserWarning, stacklevel=3)
+    return False
 
 
 # ---------------------------------------------------------------------------
@@ -448,11 +489,7 @@ def crn_to_sbml(
     )
 
     for name in sorted(
-        {
-            sp.source_attrs.get("compartment", compartment_sid)
-            for sp in crn.species.values()
-        }
-        - {compartment_sid}
+        {sp.source_attrs.get("compartment", compartment_sid) for sp in crn.species.values()} - {compartment_sid}
     ):
         ET.SubElement(compartments, "compartment", {"id": name, "constant": "true"})
     species_sids: Dict[str, str] = {}
@@ -610,7 +647,7 @@ def _read_species(
 def _side_references(
     reaction: ET.Element,
     container: str,
-) -> List[Tuple[str, float]]:
+) -> List[Tuple[str, int]]:
     """Collect ``(species id, stoichiometry)`` pairs from one reaction side.
 
     Repeated references to the same species are summed, as SBML allows.
@@ -625,20 +662,20 @@ def _side_references(
 
     :return:
         Species references with their coefficients.
-    :rtype: List[Tuple[str, float]]
+    :rtype: List[Tuple[str, int]]
     """
     listing = _find_child(reaction, container)
     if listing is None:
         return []
 
-    totals: Dict[str, float] = {}
+    totals: Dict[str, int] = {}
     for reference in _find_children(listing, "speciesReference"):
         target = reference.get("species")
         if target is None:
             continue
-        totals[target] = totals.get(target, 0.0) + _parse_stoich(
-            reference.get("stoichiometry")
-        )
+        if _find_child(reference, "stoichiometryMath") is not None:
+            raise ValueError("SBML stoichiometryMath is unsupported; supply fixed integer " "stoichiometry explicitly")
+        totals[target] = totals.get(target, 0) + _parse_stoich(reference.get("stoichiometry"))
     return list(totals.items())
 
 
@@ -647,8 +684,8 @@ def _add_reaction_node(
     *,
     node_id: str,
     label: str,
-    reactants: List[Tuple[str, float]],
-    products: List[Tuple[str, float]],
+    reactants: List[Tuple[str, int]],
+    products: List[Tuple[str, int]],
     known_species: Dict[str, Dict[str, Any]],
     extra: Dict[str, Any],
 ) -> None:
@@ -668,11 +705,11 @@ def _add_reaction_node(
 
     :param reactants:
         Reactant references.
-    :type reactants: List[Tuple[str, float]]
+    :type reactants: List[Tuple[str, int]]
 
     :param products:
         Product references.
-    :type products: List[Tuple[str, float]]
+    :type products: List[Tuple[str, int]]
 
     :param known_species:
         Species definitions keyed by SBML id; references outside this mapping
@@ -708,6 +745,8 @@ def _normalize(coeff: float) -> Union[int, float]:
         Integer or float coefficient.
     :rtype: Union[int, float]
     """
+    if isinstance(coeff, Integral):
+        return int(coeff)
     return int(coeff) if float(coeff).is_integer() else coeff
 
 
@@ -742,8 +781,7 @@ def _warn_no_reactions(model: ET.Element) -> None:
 
     detail = f" ({'; '.join(hints)})" if hints else ""
     warnings.warn(
-        f"SBML model {model.get('id')!r} declares no reactions{detail}; "
-        "the resulting network is empty.",
+        f"SBML model {model.get('id')!r} declares no reactions{detail}; " "the resulting network is empty.",
         UserWarning,
         stacklevel=3,
     )
@@ -760,16 +798,20 @@ def crn_from_sbml(
     """Build a :class:`SynCRN` from an SBML document.
 
     The reader matches elements by local name, so SBML Level 2 and Level 3 files
-    both parse. Kinetic laws, units, parameters, events and rules are ignored:
-    they carry no structural information.
+    both parse. Kinetic laws, units, parameters, events, rules and modifiers are
+    not imported; this is a fixed-integer reaction-topology reader, not an SBML
+    dynamics implementation. ``stoichiometryMath`` and fractional coefficients
+    are rejected rather than approximated.
 
     :param source:
         SBML document text, a path to an SBML file, or a parsed XML element.
     :type source: Union[str, pathlib.Path, xml.etree.ElementTree.Element]
 
     :param expand_reversible:
-        Whether a reaction marked ``reversible="true"`` is split into a forward
-        and a backward reaction. Leave enabled for CRNT analysis.
+        Whether reversible reactions are split into forward and backward
+        reactions with distinct source ids. An omitted flag defaults to true
+        in Level 2. Level 3 requires an explicit flag; omission raises in strict
+        mode and otherwise warns and assumes false. Leave enabled for CRNT.
     :type expand_reversible: bool
 
     :param drop_boundary_species:
@@ -804,6 +846,11 @@ def crn_from_sbml(
         print(crn.n_species, crn.n_reactions)
     """
     root = _resolve_root(source)
+    level_text = root.get("level")
+    if level_text is None:
+        namespace_level = re.search(r"/level([123])(?:/|\})", root.tag)
+        level_text = namespace_level.group(1) if namespace_level else None
+    level = int(level_text) if level_text in {"1", "2", "3"} else None
     model = root if _localname(root.tag) == "model" else _find_child(root, "model")
     if model is None:
         found = _find_descendants(root, "model")
@@ -811,9 +858,7 @@ def crn_from_sbml(
     if model is None:
         raise ValueError("SBML document contains no <model> element")
 
-    species, _dropped = _read_species(
-        model, drop_boundary_species=drop_boundary_species
-    )
+    species, _dropped = _read_species(model, drop_boundary_species=drop_boundary_species)
 
     graph = nx.DiGraph()
     graph.graph["sbml_model_id"] = model.get("id")
@@ -827,14 +872,22 @@ def crn_from_sbml(
     if listing is None or not _find_children(listing, "reaction"):
         _warn_no_reactions(model)
 
-    for index, element in enumerate(
-        [] if listing is None else _find_children(listing, "reaction"), start=1
-    ):
+    reaction_elements = [] if listing is None else _find_children(listing, "reaction")
+    # Reverse copies must not alias an existing SBML id or a source annotation.
+    # SynCRN.to_digraph() uses source ids, so aliases there merge directed steps.
+    reserved_ids = set(species)
+    reserved_ids.update(attrs["source_node_id"] for attrs in species.values())
+    for index, element in enumerate(reaction_elements, start=1):
+        rid = element.get("id") or f"reaction_{index}"
+        reserved_ids.add(rid)
+        reserved_ids.add(_annotation_values(element, "reactionInfo").get("sourceNodeId", rid))
+
+    for index, element in enumerate(reaction_elements, start=1):
         rid = element.get("id") or f"reaction_{index}"
         label = element.get("name") or rid
         reactants = _side_references(element, "listOfReactants")
         products = _side_references(element, "listOfProducts")
-        reversible = _is_true(element.get("reversible"))
+        reversible = _reaction_reversible(element, level=level, strict=strict)
         annotation = _annotation_values(element, "reactionInfo")
 
         extra: Dict[str, Any] = {
@@ -858,14 +911,20 @@ def crn_from_sbml(
         )
 
         if reversible and expand_reversible:
+            reverse_id = f"{rid}_rev"
+            suffix = 2
+            while reverse_id in reserved_ids:
+                reverse_id = f"{rid}_rev_{suffix}"
+                suffix += 1
+            reserved_ids.add(reverse_id)
             _add_reaction_node(
                 graph,
-                node_id=f"{rid}_rev",
+                node_id=reverse_id,
                 label=f"{label}_rev",
                 reactants=products,
                 products=reactants,
                 known_species=species,
-                extra={**extra, "sbml_reverse_of": rid},
+                extra={**extra, "source_node_id": reverse_id, "sbml_reverse_of": rid},
             )
 
     return SynCRN.from_digraph(graph, strict=strict, **syncrn_kwargs)

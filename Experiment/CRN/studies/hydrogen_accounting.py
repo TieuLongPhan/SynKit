@@ -206,13 +206,9 @@ def hydrogen_report(depths=FORMOSE_DEPTHS) -> Dict[str, Any]:
     deepest = formose[-1]
     checks = {
         "formose_identical_at_every_depth": all(row["identical"] for row in formose),
-        "formose_rules_compiled_to_lewis": all(
-            m == "lewis" for row in formose for m in row["lewis"]["rule_models"]
-        ),
+        "formose_rules_compiled_to_lewis": all(m == "lewis" for row in formose for m in row["lewis"]["rule_models"]),
         "lewis_faster_at_deepest_formose": deepest["speedup"] > 1.0,
-        "lewis_reactions_all_balanced": all(
-            c["lewis"]["n_balanced"] == c["lewis"]["n_reactions"] > 0 for c in cases
-        ),
+        "lewis_reactions_all_balanced": all(c["lewis"]["n_balanced"] == c["lewis"]["n_reactions"] > 0 for c in cases),
     }
     return {
         "schema": SCHEMA,
@@ -242,7 +238,7 @@ def main() -> int:
 
 from Experiment.CRN.tools.common import native_experiment  # noqa: E402
 
-main = native_experiment(main)
+main = native_experiment(main, expansion=True)
 
 if __name__ == "__main__":
     raise SystemExit(main())

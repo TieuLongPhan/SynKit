@@ -45,9 +45,7 @@ class TestComplex(unittest.TestCase):
 
     def test_labels_do_not_affect_identity(self):
         self.assertEqual(Complex((1, 0), ("A", "B")), Complex((1, 0), ("X", "Y")))
-        self.assertEqual(
-            len({Complex((1, 0), ("A", "B")), Complex((1, 0), ("X", "Y"))}), 1
-        )
+        self.assertEqual(len({Complex((1, 0), ("A", "B")), Complex((1, 0), ("X", "Y"))}), 1)
 
 
 class TestComplexExtraction(unittest.TestCase):
@@ -56,9 +54,7 @@ class TestComplexExtraction(unittest.TestCase):
         self.assertEqual(found, {"A + B", "C", "D"})
 
     def test_zero_complex_from_outflow(self):
-        found = {str(c) for c in complexes(SynCRN.from_reaction_strings(
-            ["A>>"], strict=False
-        ))}
+        found = {str(c) for c in complexes(SynCRN.from_reaction_strings(["A>>"], strict=False))}
         self.assertEqual(found, {"A", "0"})
 
     def test_complex_graph_has_one_edge_per_reaction(self):
@@ -176,9 +172,7 @@ class TestDeficiency(unittest.TestCase):
         for name, rxns, _, _ in self.CASES:
             with self.subTest(network=name):
                 network = crn(*rxns)
-                self.assertLessEqual(
-                    sum(linkage_class_deficiencies(network)), deficiency(network)
-                )
+                self.assertLessEqual(sum(linkage_class_deficiencies(network)), deficiency(network))
 
     def test_linkage_class_deficiencies_disjoint_blocks(self):
         self.assertEqual(
@@ -206,16 +200,12 @@ class TestDeficiencyZeroTheorem(unittest.TestCase):
 
     def test_applicability_helper_matches_deficiency(self):
         self.assertTrue(is_deficiency_zero_applicable(crn("A>>B", "B>>A")))
-        self.assertFalse(
-            is_deficiency_zero_applicable(crn("A>>2A", "A+B>>C", "C>>A+B", "C>>B"))
-        )
+        self.assertFalse(is_deficiency_zero_applicable(crn("A>>2A", "A+B>>C", "C>>A+B", "C>>B")))
 
 
 class TestDeficiencyOneTheorem(unittest.TestCase):
     def test_horn_jackson_network(self):
-        verdict = deficiency_one_verdict(
-            crn("2A>>A+B", "A+B>>2A", "A+B>>2B", "2B>>A+B", "2B>>2A", "2A>>2B")
-        )
+        verdict = deficiency_one_verdict(crn("2A>>A+B", "A+B>>2A", "A+B>>2B", "2B>>A+B", "2B>>2A", "2A>>2B"))
         self.assertEqual(verdict["deficiency"], 1)
         self.assertTrue(verdict["applicable"])
         self.assertEqual(verdict["conclusion"], "exactly_one_equilibrium")

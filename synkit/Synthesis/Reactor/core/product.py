@@ -171,9 +171,7 @@ def _pair_electron_aware_node_attrs(
     """Store paired attrs, preserving generic relative-query state locally."""
     _, product_types = host_n["typesGH"]
     rc_present = rc_n.get("present")
-    reactant_is_absent = (
-        isinstance(rc_present, tuple) and len(rc_present) == 2 and not rc_present[0]
-    )
+    reactant_is_absent = isinstance(rc_present, tuple) and len(rc_present) == 2 and not rc_present[0]
     legacy_product_values = {
         "element": product_types[0],
         "aromatic": product_types[1],
@@ -189,9 +187,7 @@ def _pair_electron_aware_node_attrs(
 
     for key, product_value in legacy_product_values.items():
         left_value = host_n.get(key)
-        product_is_absent = (
-            isinstance(rc_present, tuple) and len(rc_present) == 2 and not rc_present[1]
-        )
+        product_is_absent = isinstance(rc_present, tuple) and len(rc_present) == 2 and not rc_present[1]
         rc_value = rc_n.get(key)
         if reactant_is_absent and isinstance(rc_value, tuple) and len(rc_value) == 2:
             product_value = rc_value[1]
@@ -208,11 +204,7 @@ def _pair_electron_aware_node_attrs(
             if key in relative_resources:
                 product_value = left_value - rc_value[0] + rc_value[1]
             else:
-                product_value = (
-                    left_value
-                    if preserve_unchanged_state and rc_value[0] == rc_value[1]
-                    else rc_value[1]
-                )
+                product_value = left_value if preserve_unchanged_state and rc_value[0] == rc_value[1] else rc_value[1]
             host_n[key] = (left_value, product_value)
 
     host_n["template_charge"] = (host_n.get("charge"), product_types[3])
@@ -224,6 +216,9 @@ def _pair_electron_aware_node_attrs(
 
     if "atom_map" in host_n:
         host_n["atom_map"] = (host_n["atom_map"], host_n["atom_map"])
+    if host_n.get("element") == ("*", "*"):
+        # A symbolic port is not an atom with zero valence electrons.
+        host_n.pop("valence_electrons", None)
     if isinstance(rc_present, tuple) and len(rc_present) == 2:
         host_n["present"] = (bool(host_n.get("present", True)), rc_present[1])
     else:
@@ -269,9 +264,7 @@ def _refresh_product_electron_fields(
             structural_dirty_nodes.add(node)
         current_charge = its.nodes[node].get("charge")
         left_charge = (
-            current_charge[0]
-            if isinstance(current_charge, tuple) and len(current_charge) == 2
-            else current_charge
+            current_charge[0] if isinstance(current_charge, tuple) and len(current_charge) == 2 else current_charge
         )
         product_charge = _electron_product_charge(its, node, attrs)
         if product_charge is not None:
@@ -279,18 +272,15 @@ def _refresh_product_electron_fields(
 
         template_charge = its.nodes[node].get("template_charge")
         if isinstance(template_charge, tuple) and len(template_charge) == 2:
-            attrs["charge_mismatch"] = template_charge[1] != attrs.get(
-                "recomputed_charge"
-            )
+            # A symbolic root has no asserted electron inventory. Absence of
+            # a recomputed charge is not evidence of a failed Lewis equation.
+            recomputed_charge = attrs.get("recomputed_charge")
+            attrs["charge_mismatch"] = recomputed_charge is not None and template_charge[1] != recomputed_charge
 
         for key in ("bond_order_sum", "recomputed_charge", "charge_mismatch"):
             if key in attrs:
                 current = its.nodes[node].get(key)
-                left_value = (
-                    current[0]
-                    if isinstance(current, tuple) and len(current) == 2
-                    else current
-                )
+                left_value = current[0] if isinstance(current, tuple) and len(current) == 2 else current
                 its.nodes[node][key] = (left_value, attrs[key])
     for u, v, attrs in refreshed.edges(data=True):
         its.edges[u, v].pop("_structural_exact_edge_sig", None)
@@ -300,11 +290,7 @@ def _refresh_product_electron_fields(
             if key not in attrs:
                 continue
             current = its.edges[u, v].get(key)
-            left_value = (
-                current[0]
-                if isinstance(current, tuple) and len(current) == 2
-                else current
-            )
+            left_value = current[0] if isinstance(current, tuple) and len(current) == 2 else current
             its.edges[u, v][key] = (left_value, attrs[key])
     its.graph["_product_electron_fields_current"] = True
 
@@ -331,14 +317,8 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:  # noqa: C90
         return False
 
     refresh_hint = its.graph.get("_product_refresh_nodes")
-    candidate_nodes = (
-        tuple(its)
-        if refresh_hint is None
-        else tuple(node for node in refresh_hint if node in its)
-    )
-    product_nodes = {
-        node for node in candidate_nodes if product_node_exists(its.nodes[node])
-    }
+    candidate_nodes = tuple(its) if refresh_hint is None else tuple(node for node in refresh_hint if node in its)
+    product_nodes = {node for node in candidate_nodes if product_node_exists(its.nodes[node])}
 
     # Every changed edge is incident to a mapped rule node.  Build the exact
     # local edge population once; unchanged edges elsewhere already carry
@@ -374,9 +354,7 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:  # noqa: C90
         bond_sums[right] += bond_order
 
         current = attrs.get("kekule_order")
-        left_value = (
-            current[0] if isinstance(current, tuple) and len(current) == 2 else current
-        )
+        left_value = current[0] if isinstance(current, tuple) and len(current) == 2 else current
         attrs["kekule_order"] = (left_value, bond_order)
 
     for node in product_nodes:
@@ -399,9 +377,7 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:  # noqa: C90
         lone_pairs = float(_product_value(attrs.get("lone_pairs", 0)) or 0)
         radical = float(_product_value(attrs.get("radical", 0)) or 0)
         hcount = float(_product_value(attrs.get("hcount", 0)) or 0)
-        recomputed_charge = (
-            float(valence_electrons) - 2.0 * lone_pairs - radical - hcount - bond_sum
-        )
+        recomputed_charge = float(valence_electrons) - 2.0 * lone_pairs - radical - hcount - bond_sum
         if recomputed_charge.is_integer():
             recomputed_charge = int(recomputed_charge)
 
@@ -428,9 +404,7 @@ def _refresh_product_electron_fields_direct(its: nx.Graph) -> None:  # noqa: C90
 
         current_charge = attrs.get("charge")
         left_charge = (
-            current_charge[0]
-            if isinstance(current_charge, tuple) and len(current_charge) == 2
-            else current_charge
+            current_charge[0] if isinstance(current_charge, tuple) and len(current_charge) == 2 else current_charge
         )
         product_charge = _electron_product_charge(
             its,
@@ -461,17 +435,11 @@ def _product_kekule_phase_is_dirty(its: nx.Graph) -> bool:
         return value, value
 
     refresh_hint = its.graph.get("_product_refresh_nodes")
-    candidate_nodes = (
-        tuple(its)
-        if refresh_hint is None
-        else tuple(node for node in refresh_hint if node in its)
-    )
+    candidate_nodes = tuple(its) if refresh_hint is None else tuple(node for node in refresh_hint if node in its)
     aromatic_nodes = {
         node
         for node in candidate_nodes
-        if any(
-            bool(value) for value in side_values(its.nodes[node].get("aromatic", False))
-        )
+        if any(bool(value) for value in side_values(its.nodes[node].get("aromatic", False)))
     }
     if not aromatic_nodes:
         return False
@@ -527,6 +495,8 @@ def _electron_product_charge(
     model-inconsistent endpoints.
     """
     if node in its:
+        if product_attrs.get("element") == "*":
+            return _product_value(its.nodes[node].get("charge", 0))
         template_charge = its.nodes[node].get("template_charge")
         aromatic = product_attrs.get("aromatic", its.nodes[node].get("aromatic"))
         if isinstance(template_charge, tuple) and len(template_charge) == 2:
@@ -565,9 +535,7 @@ def _reperceive_product_kekule_phase(  # noqa: C901
             prefer_kekule_order=False,
         )
     except Exception as exc:
-        raise ProductStatePerceptionError(
-            "Could not reperceive the dirty aromatic product state."
-        ) from exc
+        raise ProductStatePerceptionError("Could not reperceive the dirty aromatic product state.") from exc
 
     refreshed = product.copy()
     try:
@@ -577,12 +545,8 @@ def _reperceive_product_kekule_phase(  # noqa: C901
         # Kekule bond phase directly from a sanitized RDKit copy instead.
         kekule = Chem.Mol(mol)
         Chem.Kekulize(kekule, clearAromaticFlags=True)
-        node_by_index = tuple(
-            atom.GetAtomMapNum() or atom.GetIdx() + 1 for atom in kekule.GetAtoms()
-        )
-        if len(node_by_index) != len(set(node_by_index)) or set(node_by_index) != set(
-            refreshed
-        ):
+        node_by_index = tuple(atom.GetAtomMapNum() or atom.GetIdx() + 1 for atom in kekule.GetAtoms())
+        if len(node_by_index) != len(set(node_by_index)) or set(node_by_index) != set(refreshed):
             raise ValueError("Sanitized product atom identities are not bijective.")
         for bond in kekule.GetBonds():
             left = node_by_index[bond.GetBeginAtomIdx()]
@@ -602,9 +566,7 @@ def _reperceive_product_kekule_phase(  # noqa: C901
                 use_index_as_atom_map=True,
             )
         except Exception as exc:
-            raise ProductStatePerceptionError(
-                "Could not reperceive the dirty aromatic product state."
-            ) from exc
+            raise ProductStatePerceptionError("Could not reperceive the dirty aromatic product state.") from exc
         for u, v in refreshed.edges():
             if not reperceived.has_edge(u, v):
                 continue
