@@ -275,22 +275,16 @@ class PathwayReachability:
                 reaction="id",
             )
         """
-        vertices, edges, species_token_to_id, reaction_token_to_id, _ = (
-            tokenize_syncrn_incidence(
-                crn,
-                species=species,
-                reaction=reaction,
-            )
+        vertices, edges, species_token_to_id, reaction_token_to_id, _ = tokenize_syncrn_incidence(
+            crn,
+            species=species,
+            reaction=reaction,
         )
         self.load_hypergraph(vertices, edges)
         self.species_token_to_id = species_token_to_id
         self.reaction_token_to_id = reaction_token_to_id
-        self.species_id_to_token = {
-            sid: tok for tok, sid in species_token_to_id.items()
-        }
-        self.reaction_id_to_token = {
-            rid: tok for tok, rid in reaction_token_to_id.items()
-        }
+        self.species_id_to_token = {sid: tok for tok, sid in species_token_to_id.items()}
+        self.reaction_id_to_token = {rid: tok for tok, rid in reaction_token_to_id.items()}
         return self
 
     # ------------------------------------------------------------------
@@ -498,11 +492,7 @@ class PathwayReachability:
         layers: List[ReachabilityLayer] = []
 
         for depth in range(1, max_layers + 1):
-            newly_enabled = [
-                eid
-                for eid in self._enabled_reactions_for_set(reachable)
-                if eid not in seen_reactions
-            ]
+            newly_enabled = [eid for eid in self._enabled_reactions_for_set(reachable) if eid not in seen_reactions]
             produced_this_round: Set[str] = set()
             for eid in newly_enabled:
                 _, head = self.edges[eid]
@@ -626,9 +616,7 @@ class PathwayReachability:
                 break
 
         return ReachabilityResult(
-            initial_species=sorted(
-                self._support(self._normalize_marking(initial_marking))
-            ),
+            initial_species=sorted(self._support(self._normalize_marking(initial_marking))),
             layers=layers,
             species_first_depth=species_first_depth,
             reaction_first_depth=reaction_first_depth,
@@ -638,9 +626,7 @@ class PathwayReachability:
     # export helpers
     # ------------------------------------------------------------------
 
-    def export_layers_json(
-        self, result: ReachabilityResult, fn: str
-    ) -> "PathwayReachability":
+    def export_layers_json(self, result: ReachabilityResult, fn: str) -> "PathwayReachability":
         """Export a reachability result to a JSON file.
 
         The output contains the initial species set, first-depth maps, and the
@@ -727,9 +713,7 @@ def syncrn_to_reachability_inputs(
             reaction="id",
         )
     """
-    vertices, edges, _, _, _ = tokenize_syncrn_incidence(
-        crn, species=species, reaction=reaction
-    )
+    vertices, edges, _, _, _ = tokenize_syncrn_incidence(crn, species=species, reaction=reaction)
     return vertices, edges
 
 

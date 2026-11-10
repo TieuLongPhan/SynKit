@@ -26,9 +26,7 @@ def _freeze(
         if cached is not None and cached[0] is value:
             return cached[1]
     if isinstance(value, dict):
-        result = tuple(
-            sorted((key, _freeze(item, cache)) for key, item in value.items())
-        )
+        result = tuple(sorted((key, _freeze(item, cache)) for key, item in value.items()))
     elif isinstance(value, (list, tuple)):
         shallow = tuple(value)
         try:
@@ -62,21 +60,11 @@ def contextual_electron_pattern_graph(
     decorated = None
     for node, attrs in pattern.nodes(data=True):
         neighbors = attrs.get("neighbors", ())
-        explicit_hydrogens = sum(
-            pattern.nodes[neighbor].get("element") == "H"
-            for neighbor in pattern.neighbors(node)
-        )
-        hidden_hydrogen = (
-            isinstance(neighbors, (list, tuple))
-            and neighbors.count("H") > explicit_hydrogens
-        )
+        explicit_hydrogens = sum(pattern.nodes[neighbor].get("element") == "H" for neighbor in pattern.neighbors(node))
+        hidden_hydrogen = isinstance(neighbors, (list, tuple)) and neighbors.count("H") > explicit_hydrogens
         rc_attrs = reaction_center.nodes.get(node, {})
         radical = rc_attrs.get("radical")
-        radical_changes = (
-            isinstance(radical, tuple)
-            and len(radical) == 2
-            and radical[0] != radical[1]
-        )
+        radical_changes = isinstance(radical, tuple) and len(radical) == 2 and radical[0] != radical[1]
         if not hidden_hydrogen or radical_changes:
             continue
         if decorated is None:
@@ -92,14 +80,10 @@ def has_heavy_cross_component_correlation(
     reaction_center: nx.Graph,
 ) -> bool:
     """Return whether product bonds jointly couple heavy source components."""
-    components = [
-        frozenset(component) for component in nx.connected_components(pattern)
-    ]
+    components = [frozenset(component) for component in nx.connected_components(pattern)]
     if len(components) < 2:
         return False
-    component_index = {
-        node: index for index, component in enumerate(components) for node in component
-    }
+    component_index = {node: index for index, component in enumerate(components) for node in component}
     heavy_components = {
         index
         for index, component in enumerate(components)
@@ -117,12 +101,7 @@ def has_heavy_cross_component_correlation(
         ):
             continue
         order: Any = attrs.get("order")
-        if (
-            isinstance(order, tuple)
-            and len(order) == 2
-            and float(order[0]) == 0.0
-            and float(order[1]) > 0.0
-        ):
+        if isinstance(order, tuple) and len(order) == 2 and float(order[0]) == 0.0 and float(order[1]) > 0.0:
             return True
     return False
 
@@ -243,9 +222,7 @@ def deduplicate_joint_rule_mappings(  # noqa: C901
     # roles already form a discrete partition, every chemical pattern node
     # is fixed. Any later virtual hydrogen-pair nodes can then permute only
     # among themselves and cannot change a mapping orbit.
-    if len(
-        {attrs["_transition_node_role"] for _, attrs in transition.nodes(data=True)}
-    ) == len(transition):
+    if len({attrs["_transition_node_role"] for _, attrs in transition.nodes(data=True)}) == len(transition):
         return mappings
     transition_edge_keys = (
         "order",
@@ -283,9 +260,7 @@ def deduplicate_joint_rule_mappings(  # noqa: C901
         for side, key in (("left", "h_pairs_left"), ("right", "h_pairs_right")):
             for pair_id in attrs.get(key, ()):
                 pair_incidence.setdefault(pair_id, {}).setdefault(node, set()).add(side)
-    for ordinal, (_, incidence) in enumerate(
-        sorted(pair_incidence.items(), key=lambda item: repr(item[0]))
-    ):
+    for ordinal, (_, incidence) in enumerate(sorted(pair_incidence.items(), key=lambda item: repr(item[0]))):
         pair_node = ("_synkit_h_pair_role", ordinal)
         transition.add_node(
             pair_node,
@@ -332,10 +307,7 @@ def deduplicate_joint_rule_mappings(  # noqa: C901
     unique = []
     for mapping in mappings:
         signature = min(
-            (
-                tuple(mapping[automorphism[node]] for node in nodes)
-                for automorphism in automorphisms
-            ),
+            (tuple(mapping[automorphism[node]] for node in nodes) for automorphism in automorphisms),
             key=repr,
         )
         if signature in seen:

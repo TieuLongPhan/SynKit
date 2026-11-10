@@ -24,9 +24,11 @@ def _graph(size, edges, labels=None):
 def _config(**kwargs):
     options = {
         "binary": True,
-        "max_bijections": None,
+        "max_bijections": 24,
         "max_mappings": None,
-        "time_limit_seconds": 5,
+        "time_limit_seconds": None,
+        "structure_timeout_seconds": 5,
+        "symmetry_timeout_seconds": 5,
         "symmetry_pruning": False,
     }
     options.update(kwargs)
@@ -55,7 +57,7 @@ def test_reference_cd_returns_one_representative_per_alternative_its():
         config=_config(),
     )
 
-    assert result.complete is True
+    assert result.complete is True, result.as_dict()
     assert result.target == result.reference_cd == 2
     assert result.shell_representative_mapping_count == 20
     assert result.shell_its_class_count == 2
@@ -80,7 +82,7 @@ def test_arbitrary_and_minimal_cd_can_exclude_reference_class():
             CD=target,
             config=_config(),
         )
-        assert result.complete is True
+        assert result.complete is True, result.as_dict()
         assert result.reference_cd == 2
         assert result.reference_its_class_observed is False
         assert result.shell_its_class_count == 1
@@ -122,6 +124,7 @@ def test_all_three_vertex_numeric_shell_class_sets_match_brute_force():
                     reactant.labels,
                     {},
                     mapping,
+                    timeout_seconds=config.structure_timeout_seconds,
                 )
                 assert reason is None
                 classes_by_distance.setdefault(distance, set()).add(
@@ -133,6 +136,7 @@ def test_all_three_vertex_numeric_shell_class_sets_match_brute_force():
                 reactant.labels,
                 {},
                 reference,
+                timeout_seconds=config.structure_timeout_seconds,
             )
             assert reason is None
             reference_id = _code_identifier(reference_code)
@@ -147,7 +151,9 @@ def test_all_three_vertex_numeric_shell_class_sets_match_brute_force():
                     seed_mode="none",
                     config=config,
                 )
-                assert result.complete is True
+                assert result.complete is True, (
+                    reactant_matrix.tolist(), product_matrix.tolist(), target, result.as_dict()
+                )
                 assert {item.its_class_id for item in result.alternatives} == expected
 
 
@@ -164,7 +170,7 @@ def test_reference_seed_changes_only_search_strategy_not_exact_classes():
         for mode in ("reference", "none")
     ]
 
-    assert all(result.complete for result in results)
+    assert all(result.complete for result in results), [result.as_dict() for result in results]
     assert results[0].seed_applied_to_backend is True
     assert results[1].seed_applied_to_backend is False
     assert results[0].shell_representative_mapping_count == (
@@ -190,6 +196,23 @@ def test_interruption_never_claims_complete_alternative_set():
     assert result.incomplete_reason == "time_limit"
 
 
+def test_classification_timeout_never_claims_complete_alternative_set():
+    graph = _graph(4, ((0, 1),))
+    result = enumerate_exact_its_alternatives(
+        [graph, graph.copy()],
+        [0, 2, 1, 3],
+        CD="minimal",
+        config=_config(structure_timeout_seconds=0),
+    )
+
+    assert result.shell_complete is True, result.as_dict()
+    assert result.classification_complete is False
+    assert result.complete is False
+    assert result.status == "classification_incomplete"
+    assert result.incomplete_reason == "full_its:timeout"
+    assert result.alternative_its_class_count is None
+
+
 def test_symmetry_respects_every_unary_property_used_by_its_classes():
     graph = _graph(4, ())
     graph.set_prop("hcounts", [0, 0, 1, 1])
@@ -209,6 +232,7 @@ def test_symmetry_respects_every_unary_property_used_by_its_classes():
         )
 
     labeled, quotient = results
+    assert all(result.complete for result in results), [result.as_dict() for result in results]
     assert labeled.shell_representative_mapping_count == 24
     assert quotient.shell_representative_mapping_count == 6
     assert quotient.shell_labeled_mapping_count == 24
@@ -232,7 +256,7 @@ def test_mapped_reaction_output_exposes_original_atom_map_correspondence():
         blind_seed="alternative-test",
     )
 
-    assert result.shell.complete is True
+    assert result.shell.complete is True, result.as_dict()
     assert result.shell.alternative_its_class_count == 0
     assert len(result.shell.classes) == 1
     assert result.reaction_sha256

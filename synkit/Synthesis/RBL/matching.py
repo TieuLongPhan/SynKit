@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import networkx as nx
 
-from synkit.Graph.Fusion import graphs_exactly_equivalent
+from synkit.Rule.Fusion import graphs_exactly_equivalent
 from synkit.Rule.syn_rule import SynRule
 from synkit.Synthesis.RBL.validation import WildcardRole
 

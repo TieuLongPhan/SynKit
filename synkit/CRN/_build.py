@@ -37,9 +37,7 @@ def boost_include(explicit=None):
             candidates.append(prefix / "Library/include")
             if prefix.parent.name == "envs":
                 prefix = prefix.parent.parent
-            candidates += sorted(
-                (prefix / "pkgs").glob("libboost-headers-*/include"), reverse=True
-            )
+            candidates += sorted((prefix / "pkgs").glob("libboost-headers-*/include"), reverse=True)
             candidates += sorted(
                 (prefix / "pkgs").glob("libboost-headers-*/Library/include"),
                 reverse=True,

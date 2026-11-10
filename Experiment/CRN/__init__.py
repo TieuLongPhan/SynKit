@@ -1,6 +1,5 @@
-"""Reproducible chemical reaction network studies and benchmarks.
+"""Chemical reaction network experiments.
 
-Study drivers live in :mod:`Experiment.CRN.studies`, fixtures and timing code
-in :mod:`Experiment.CRN.benchmarks`, and verification helpers in
-:mod:`Experiment.CRN.tools`. Run the studies with ``run_all.py``.
+Experiments and shared fixtures live in studies; execution and checking helpers
+live in tools. Run the paper workload with run_all.py.
 """

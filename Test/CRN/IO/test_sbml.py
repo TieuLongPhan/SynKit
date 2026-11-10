@@ -63,11 +63,20 @@ class TestSbmlHelpers(unittest.TestCase):
         self.assertEqual(_format_stoich(2.0), "2")
         self.assertEqual(_format_stoich(0.5), "0.5")
 
+    def test_integer_stoichiometry_does_not_round_through_float(self):
+        coefficient = 2**53 + 1
+        self.assertEqual(_parse_stoich(str(coefficient)), coefficient)
+        self.assertEqual(_format_stoich(coefficient), str(coefficient))
+
     def test_parse_stoich_defaults_to_one(self):
         self.assertEqual(_parse_stoich(None), 1.0)
         self.assertEqual(_parse_stoich(""), 1.0)
-        self.assertEqual(_parse_stoich("junk"), 1.0)
         self.assertEqual(_parse_stoich("3"), 3.0)
+
+    def test_invalid_and_fractional_stoichiometry_is_rejected(self):
+        for value in ["junk", "nan", "inf", "0.5", "1.0000000000000001"]:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                _parse_stoich(value)
 
     def test_is_true(self):
         self.assertTrue(_is_true("true"))
@@ -96,18 +105,12 @@ class TestSbmlExport(unittest.TestCase):
 
     def test_carries_labels_as_names(self):
         root = ET.fromstring(self.xml)
-        names = {
-            e.get("name") for e in root.iter() if e.tag.endswith("}species")
-        }
+        names = {e.get("name") for e in root.iter() if e.tag.endswith("}species")}
         self.assertEqual(names, {"A", "B", "C", "D"})
 
     def test_writes_stoichiometry(self):
         root = ET.fromstring(self.xml)
-        coefficients = {
-            e.get("stoichiometry")
-            for e in root.iter()
-            if e.tag.endswith("}speciesReference")
-        }
+        coefficients = {e.get("stoichiometry") for e in root.iter() if e.tag.endswith("}speciesReference")}
         self.assertIn("2", coefficients)
         self.assertIn("3", coefficients)
 
@@ -169,9 +172,7 @@ class TestSbmlRoundTrip(unittest.TestCase):
     def test_deficiency_is_preserved(self):
         from synkit.CRN.Props import deficiency
 
-        crn = SynCRN.from_reaction_strings(
-            ["A>>2A", "A+B>>C", "C>>A+B", "C>>B"]
-        )
+        crn = SynCRN.from_reaction_strings(["A>>2A", "A+B>>C", "C>>A+B", "C>>B"])
         self.assertEqual(deficiency(crn_from_sbml(crn_to_sbml(crn))), deficiency(crn))
 
     def test_file_roundtrip(self):
@@ -195,6 +196,92 @@ class TestSbmlImport(unittest.TestCase):
             crn.to_equations(species="label", include_id=False),
             ["Glucose + ATP >> 2G6P", "2G6P >> Glucose + ATP"],
         )
+
+    def test_reversible_directions_remain_distinct_in_analysis(self):
+        from synkit.CRN import crnt_summary
+        from synkit.CRN.Petrinet.net import PetriNet
+
+        crn = crn_from_sbml(SBML_L2)
+        self.assertEqual(len({r.source_node_id for r in crn.reactions.values()}), 2)
+        self.assertEqual(crn.to_digraph().number_of_nodes(), 5)
+        self.assertEqual(len(PetriNet.from_syncrn(crn).transitions), 2)
+        summary = crnt_summary(crn, backend="python")
+        self.assertEqual((summary.rank, summary.deficiency), (1, 0))
+        self.assertTrue(summary.is_weakly_reversible)
+
+    def test_generated_reverse_id_does_not_replace_an_existing_reaction(self):
+        root = ET.fromstring(SBML_L2)
+        listing = root.find(".//{*}listOfReactions")
+        original = listing[0]
+        other = ET.fromstring(ET.tostring(original))
+        other.set("id", "hk_rev")
+        other.set("reversible", "false")
+        listing.append(other)
+        crn = crn_from_sbml(root)
+        self.assertEqual(crn.n_reactions, 3)
+        self.assertEqual(
+            {r.source_node_id for r in crn.reactions.values()},
+            {"hk", "hk_rev", "hk_rev_2"},
+        )
+        self.assertEqual(crn.to_digraph().number_of_nodes(), 6)
+
+    def test_level_2_omitted_reversible_defaults_to_true(self):
+        xml = SBML_L2.replace(' reversible="true"', "")
+        self.assertEqual(crn_from_sbml(xml).n_reactions, 2)
+        self.assertEqual(crn_from_sbml(xml, expand_reversible=False).n_reactions, 1)
+        # A parsed model element has no level attribute; its namespace retains it.
+        model = ET.fromstring(xml).find("{*}model")
+        self.assertEqual(crn_from_sbml(model).n_reactions, 2)
+
+    def test_level_2_explicit_irreversible_overrides_default(self):
+        xml = SBML_L2.replace('reversible="true"', 'reversible="false"')
+        self.assertEqual(crn_from_sbml(xml).n_reactions, 1)
+
+    def test_level_3_omitted_reversible_warns_or_raises(self):
+        xml = (
+            SBML_L2.replace("level2/version4", "level3/version2/core")
+            .replace('level="2" version="4"', 'level="3" version="2"')
+            .replace(' reversible="true"', "")
+        )
+        with self.assertWarnsRegex(UserWarning, "required reversible"):
+            self.assertEqual(crn_from_sbml(xml).n_reactions, 1)
+        with self.assertRaisesRegex(ValueError, "required reversible"):
+            crn_from_sbml(xml, strict=True)
+
+    def test_fixed_integer_stoichiometry_round_trips_exactly(self):
+        coefficient = 2**53 + 1
+        xml = SBML_L2.replace('stoichiometry="2"', f'stoichiometry="{coefficient}"')
+        crn = crn_from_sbml(xml)
+        back = crn_from_sbml(crn_to_sbml(crn))
+        for model in [crn, back]:
+            forward = next(iter(model.reactions.values()))
+            self.assertEqual(list(forward.rhs.to_dict().values()), [coefficient])
+
+    def test_fractional_and_dynamic_stoichiometry_are_rejected(self):
+        xml = SBML_L2.replace('stoichiometry="2"', 'stoichiometry="0.5"')
+        with self.assertRaisesRegex(ValueError, "integral"):
+            crn_from_sbml(xml)
+        xml = SBML_L2.replace(
+            '<speciesReference species="Y" stoichiometry="2"/>',
+            '<speciesReference species="Y"><stoichiometryMath>'
+            '<math xmlns="http://www.w3.org/1998/Math/MathML"><cn>2</cn></math>'
+            "</stoichiometryMath></speciesReference>",
+        )
+        with self.assertRaisesRegex(ValueError, "stoichiometryMath"):
+            crn_from_sbml(xml)
+
+    def test_biomodel_637_structural_invariants_after_reversible_import(self):
+        from synkit.CRN import crnt_summary
+
+        path = Path(__file__).resolve().parents[3] / ("Experiment/CRN/data/biomodels/BIOMD0000000637.xml")
+        if not path.is_file():
+            self.skipTest("BioModels XML cache is optional and not distributed")
+        crn = read_sbml(path)
+        summary = crnt_summary(crn, backend="python")
+        self.assertEqual((crn.n_species, crn.n_reactions), (12, 35))
+        self.assertEqual((summary.rank, summary.deficiency), (9, 9))
+        back = crn_from_sbml(crn_to_sbml(crn))
+        self.assertEqual(crnt_summary(back, backend="python").to_dict(), summary.to_dict())
 
     def test_reversible_expansion_can_be_disabled(self):
         crn = crn_from_sbml(SBML_L2, expand_reversible=False)
@@ -253,9 +340,7 @@ class TestSbmlImport(unittest.TestCase):
           </model>
         </sbml>"""
         crn = crn_from_sbml(xml)
-        self.assertEqual(
-            crn.to_equations(species="label", include_id=False), ["2A >> B"]
-        )
+        self.assertEqual(crn.to_equations(species="label", include_id=False), ["2A >> B"])
 
     def test_reaction_free_model_warns(self):
         # An SBML-qual logical model has transitions, not reactions. Returning

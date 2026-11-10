@@ -189,9 +189,7 @@ class IRCanonicalEngine:
             config=self.config,
         )
         self._refine_cache: Dict[Tuple[Tuple[Any, ...], ...], List[List[Any]]] = {}
-        self._sig_cache: Dict[
-            Tuple[Tuple[Tuple[Any, ...], ...], Any], Tuple[Any, ...]
-        ] = {}
+        self._sig_cache: Dict[Tuple[Tuple[Tuple[Any, ...], ...], Any], Tuple[Any, ...]] = {}
         self._node_tok_cache: Dict[Any, Tuple[Any, ...]] = {}
         self._deg_cache: Dict[Any, Tuple[int, int]] = {}
         self._pred_cache: Dict[Any, List[Tuple[Any, Tuple[Any, ...]]]] = {}
@@ -234,12 +232,8 @@ class IRCanonicalEngine:
         for v in G.nodes():
             self._node_tok_cache[v] = node_token(G.nodes[v], self.config)
             self._deg_cache[v] = (G.in_degree(v), G.out_degree(v))
-            self._pred_cache[v] = [
-                (u, edge_token(G[u][v], self.config)) for u in G.predecessors(v)
-            ]
-            self._succ_cache[v] = [
-                (u, edge_token(G[v][u], self.config)) for u in G.successors(v)
-            ]
+            self._pred_cache[v] = [(u, edge_token(G[u][v], self.config)) for u in G.predecessors(v)]
+            self._succ_cache[v] = [(u, edge_token(G[v][u], self.config)) for u in G.successors(v)]
             self._act_cache[v] = len(self._pred_cache[v]) + len(self._succ_cache[v])
 
     @staticmethod
@@ -372,9 +366,7 @@ class IRCanonicalEngine:
             buckets[(self.wl.color_of(v), self._node_tok_cache[v])].append(v)
         part = [
             sorted(vs, key=str)
-            for _, vs in sorted(
-                buckets.items(), key=lambda kv: (str(kv[0]), tuple(map(str, kv[1])))
-            )
+            for _, vs in sorted(buckets.items(), key=lambda kv: (str(kv[0]), tuple(map(str, kv[1]))))
         ]
         return self._refine(part)
 
@@ -403,9 +395,7 @@ class IRCanonicalEngine:
             ),
         )
 
-    def _candidate_order_key(
-        self, v: Any, part: Sequence[Sequence[Any]]
-    ) -> Tuple[Any, ...]:
+    def _candidate_order_key(self, v: Any, part: Sequence[Sequence[Any]]) -> Tuple[Any, ...]:
         """Build a sorting key for candidates within the chosen target cell.
 
         :param v:
@@ -454,9 +444,7 @@ class IRCanonicalEngine:
             return res
         perms = [list(p) for p in res.sample_permutations[:max_count]]
         maps = [dict(m) for m in res.sample_mappings[:max_count]]
-        stopped = (
-            force_stopped or (res.automorphism_count > max_count) or res.stopped_early
-        )
+        stopped = force_stopped or (res.automorphism_count > max_count) or res.stopped_early
         orbits = (
             res.orbits
             if not stopped
@@ -567,9 +555,7 @@ class IRCanonicalEngine:
         count: int,
         max_count: Optional[int],
         stop_after_two: bool,
-    ) -> Tuple[
-        Optional[Tuple[Any, ...]], Optional[List[Any]], List[List[Any]], int, bool
-    ]:
+    ) -> Tuple[Optional[Tuple[Any, ...]], Optional[List[Any]], List[List[Any]], int, bool]:
         """Process a fully individualized partition.
 
         :param part:
@@ -664,9 +650,7 @@ class IRCanonicalEngine:
             Internal result object.
         :rtype: IRInternalResult
         """
-        sample_mappings = [
-            {best_order[i]: p[i] for i in range(len(best_order))} for p in sample_perms
-        ]
+        sample_mappings = [{best_order[i]: p[i] for i in range(len(best_order))} for p in sample_perms]
         orbits = orbits_from_mappings(
             best_order,
             sample_mappings if sample_mappings else [{v: v for v in best_order}],
@@ -733,9 +717,7 @@ class IRCanonicalEngine:
             edge_color=lambda attrs: edge_token(attrs, self.config),
         ).search(timeout_seconds=timeout_sec)
         if isinstance(native, IncompleteCanonicalResult):
-            raise CanonicalSearchIncomplete(
-                "CRN canonicalization did not complete: " f"{native.reason}."
-            )
+            raise CanonicalSearchIncomplete("CRN canonicalization did not complete: " f"{native.reason}.")
         if not isinstance(native, ExactCanonicalResult):
             raise RuntimeError("Native exact canonicalizer returned no result.")
 
@@ -744,16 +726,10 @@ class IRCanonicalEngine:
         stopped = cap is not None and len(full_mappings) > cap
         sample_mappings = full_mappings if cap is None else full_mappings[:cap]
         best_order = list(native.canonical_order)
-        sample_perms = [
-            [mapping[node] for node in best_order] for mapping in sample_mappings
-        ]
+        sample_perms = [[mapping[node] for node in best_order] for mapping in sample_mappings]
         orbits = orbits_from_mappings(
             best_order,
-            (
-                sample_mappings
-                if sample_mappings
-                else [{node: node for node in best_order}]
-            ),
+            (sample_mappings if sample_mappings else [{node: node for node in best_order}]),
         )
         result = IRInternalResult(
             canonical_order=best_order,
@@ -774,9 +750,7 @@ class IRCanonicalEngine:
                 canonical_order=best_order,
                 canonical_key=result.canonical_key,
                 automorphism_count=len(full_mappings),
-                sample_permutations=[
-                    [mapping[node] for node in best_order] for mapping in full_mappings
-                ],
+                sample_permutations=[[mapping[node] for node in best_order] for mapping in full_mappings],
                 sample_mappings=full_mappings,
                 orbits=[set(cell) for cell in native.orbits],
                 elapsed_seconds=native.statistics.elapsed_seconds,
@@ -877,9 +851,7 @@ class IRCanonicalEngine:
             stopped=stopped,
         )
 
-    def canonical_result(
-        self, *, timeout_sec: Optional[float] = None
-    ) -> CanonicalResult:
+    def canonical_result(self, *, timeout_sec: Optional[float] = None) -> CanonicalResult:
         """Compute the exact canonicalization result.
 
         :param timeout_sec:
@@ -892,9 +864,7 @@ class IRCanonicalEngine:
         """
         res = self.run(timeout_sec=timeout_sec)
         if res.stopped_early:
-            raise CanonicalSearchIncomplete(
-                "CRN canonical identity requires a complete search."
-            )
+            raise CanonicalSearchIncomplete("CRN canonical identity requires a complete search.")
         return CanonicalResult(
             canonical_order=res.canonical_order,
             canonical_key=res.canonical_key,
@@ -927,9 +897,7 @@ class IRCanonicalEngine:
             Public automorphism result.
         :rtype: AutomorphismResult
         """
-        res = self.run(
-            max_count=max_count, timeout_sec=timeout_sec, stop_after_two=stop_after_two
-        )
+        res = self.run(max_count=max_count, timeout_sec=timeout_sec, stop_after_two=stop_after_two)
         return AutomorphismResult(
             graph_type=self.graph_type,
             automorphism_count=res.automorphism_count,

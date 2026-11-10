@@ -5,6 +5,9 @@ version: 2
 
 build:
   os: ubuntu-22.04
+  apt_packages:
+    # Required by the native CRN library when pip builds the SynKit wheel.
+    - libboost-dev
   tools:
     python: "3.11"
 

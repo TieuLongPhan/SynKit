@@ -304,10 +304,7 @@ class SynCRN:
             Summary representation string.
         :rtype: str
         """
-        return (
-            f"SynCRN(n_species={self.n_species}, "
-            f"n_reactions={self.n_reactions}, n_rules={self.n_rules})"
-        )
+        return f"SynCRN(n_species={self.n_species}, " f"n_reactions={self.n_reactions}, n_rules={self.n_rules})"
 
     def __str__(self) -> str:
         """Return a human-readable text summary.
@@ -494,12 +491,8 @@ class SynCRN:
 
         for rid in self.reaction_ids:
             rxn = self.reactions[rid]
-            lhs = rxn.format_side(
-                rxn.lhs, lambda sid: self._species_token(sid, species)
-            )
-            rhs = rxn.format_side(
-                rxn.rhs, lambda sid: self._species_token(sid, species)
-            )
+            lhs = rxn.format_side(rxn.lhs, lambda sid: self._species_token(sid, species))
+            rhs = rxn.format_side(rxn.rhs, lambda sid: self._species_token(sid, species))
 
             line = f"  {rxn.id}: {lhs} >> {rhs}"
             if rxn.rule_index is not None:
@@ -606,10 +599,7 @@ class SynCRN:
 
         if dtype is None:
             values = [v for _, _, v in minus_entries] + [v for _, _, v in plus_entries]
-            integral = all(
-                isinstance(v, (int, np.integer)) or float(v).is_integer()
-                for v in values
-            )
+            integral = all(isinstance(v, (int, np.integer)) or float(v).is_integer() for v in values)
             dtype = np.int64 if integral else np.float64
 
         if sparse:
@@ -837,12 +827,8 @@ class SynCRN:
             print(legacy.species_ids)   # ['1', '2', '3']
         """
         if id_style not in ID_STYLES:
-            raise ValueError(
-                f"id_style must be one of {sorted(ID_STYLES)}, got {id_style!r}"
-            )
-        if not isinstance(rxns, (list, tuple)) or not all(
-            isinstance(x, str) for x in rxns
-        ):
+            raise ValueError(f"id_style must be one of {sorted(ID_STYLES)}, got {id_style!r}")
+        if not isinstance(rxns, (list, tuple)) or not all(isinstance(x, str) for x in rxns):
             raise TypeError("rxns must be a list or tuple of reaction strings")
 
         if len(rxns) == 0:
@@ -865,8 +851,7 @@ class SynCRN:
                 raise TypeError("rules must be a list or tuple when provided")
             if len(rules) != len(rxns):
                 raise ValueError(
-                    f"rules must be pairwise with rxns: got {len(rxns)} reactions and "
-                    f"{len(rules)} rules"
+                    f"rules must be pairwise with rxns: got {len(rxns)} reactions and " f"{len(rules)} rules"
                 )
             if not all(r is None or isinstance(r, str) for r in rules):
                 raise TypeError("rules entries must be strings or None")

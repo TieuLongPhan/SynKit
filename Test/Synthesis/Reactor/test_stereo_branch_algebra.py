@@ -101,7 +101,9 @@ def test_branch_limit_fails_typed_and_without_a_partial_result():
 
     assert captured.value.permitted == captured.value.limit == 1
     assert captured.value.requested == captured.value.discovered == 2
-    assert reactor._its == []
+    assert reactor._its is None
+    with pytest.raises(StereoBranchLimitError):
+        _ = reactor.its_list
 
 
 def test_dedup_accumulates_measure_multiplicity_and_branch_provenance():

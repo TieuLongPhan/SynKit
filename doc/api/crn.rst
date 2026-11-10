@@ -3,8 +3,8 @@ CRN
 
 Chemical reaction network construction, structure handling, querying,
 stoichiometry and Chemical Reaction Network Theory, Petri-net analysis, pathway
-analysis, symmetry, SBML interchange, visualization, and the shipped benchmark
-and case-study material.
+analysis, symmetry, SBML interchange, and visualization. Research fixtures and
+case studies live separately under ``Experiment/CRN/`` in the source distribution.
 
 Node kinds
 ----------
@@ -224,25 +224,27 @@ Interchange
    :members:
    :show-inheritance:
 
-Benchmark and case study
-------------------------
+Research benchmarks and case studies (source distribution)
+----------------------------------------------------------
 
-.. automodule:: synkit.CRN.Benchmark.networks
+These modules are outside ``synkit.CRN`` and are not installed by runtime wheels.
+
+.. automodule:: Experiment.CRN.studies.networks
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.CRN.Benchmark.crosschecks
+.. automodule:: Experiment.CRN.studies.crosschecks
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.CRN.Benchmark.validate
+.. automodule:: Experiment.CRN.studies.validation
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.CRN.Benchmark.scaling
+.. automodule:: Experiment.CRN.studies.scaling
    :members:
    :show-inheritance:
 
-.. automodule:: synkit.CRN.Benchmark.kegg
+.. automodule:: Experiment.CRN.studies.kegg
    :members:
    :show-inheritance:

@@ -13,6 +13,7 @@ from enum import Enum
 from functools import cached_property, lru_cache
 from itertools import permutations
 from typing import Any, Hashable, Mapping, Sequence
+from ._geometry_groups import square_images, bipyramid_images, octahedron_images, bond_images
 
 
 def _stable_key(values: Sequence[Hashable]) -> tuple[tuple[str, str], ...]:
@@ -480,131 +481,22 @@ _TETRA_FIXED = _alternating_group("tetrahedral:A4", 5, (1, 2, 3, 4))
 _TETRA_ALL = _symmetric_group("tetrahedral:S4", 5, (1, 2, 3, 4))
 _TETRA_OPPOSITE = Permutation((0, 2, 1, 3, 4))
 
-_SQUARE_FIXED = _group_from_images(
-    "square_planar:D4",
-    (
-        (0, 1, 2, 3, 4),
-        (0, 2, 3, 4, 1),
-        (0, 3, 4, 1, 2),
-        (0, 4, 1, 2, 3),
-        (0, 4, 3, 2, 1),
-        (0, 3, 2, 1, 4),
-        (0, 2, 1, 4, 3),
-        (0, 1, 4, 3, 2),
-    ),
-)
+# The catalogue is generated from geometry and transport-sign definitions.
+_SQUARE_FIXED = _group_from_images("square_planar:D4", square_images())
 _SQUARE_ALL = _symmetric_group("square_planar:S4", 5, (1, 2, 3, 4))
-
-_TBP_FIXED = _group_from_images(
-    "trigonal_bipyramidal:D3",
-    (
-        (0, 1, 2, 3, 4, 5),
-        (0, 1, 2, 5, 3, 4),
-        (0, 1, 2, 4, 5, 3),
-        (0, 2, 1, 3, 5, 4),
-        (0, 2, 1, 5, 4, 3),
-        (0, 2, 1, 4, 3, 5),
-    ),
-)
+_TBP_FIXED = _group_from_images("trigonal_bipyramidal:D3", bipyramid_images())
 _TBP_ALL = _symmetric_group("trigonal_bipyramidal:S5", 6, (1, 2, 3, 4, 5))
-
-_OCT_FIXED = _group_from_images(
-    "octahedral:O",
-    (
-        (0, 1, 2, 3, 4, 5, 6),
-        (0, 1, 2, 6, 3, 4, 5),
-        (0, 1, 2, 5, 6, 3, 4),
-        (0, 1, 2, 4, 5, 6, 3),
-        (0, 2, 1, 4, 3, 6, 5),
-        (0, 2, 1, 5, 4, 3, 6),
-        (0, 2, 1, 6, 5, 4, 3),
-        (0, 2, 1, 3, 6, 5, 4),
-        (0, 3, 5, 2, 4, 1, 6),
-        (0, 3, 5, 6, 2, 4, 1),
-        (0, 3, 5, 1, 6, 2, 4),
-        (0, 3, 5, 4, 1, 6, 2),
-        (0, 5, 3, 1, 4, 2, 6),
-        (0, 5, 3, 6, 1, 4, 2),
-        (0, 5, 3, 2, 6, 1, 4),
-        (0, 5, 3, 4, 2, 6, 1),
-        (0, 4, 6, 3, 2, 5, 1),
-        (0, 4, 6, 1, 3, 2, 5),
-        (0, 4, 6, 5, 1, 3, 2),
-        (0, 4, 6, 2, 5, 1, 3),
-        (0, 6, 4, 3, 1, 5, 2),
-        (0, 6, 4, 2, 3, 1, 5),
-        (0, 6, 4, 5, 2, 3, 1),
-        (0, 6, 4, 1, 5, 2, 3),
-    ),
-)
+_OCT_FIXED = _group_from_images("octahedral:O", octahedron_images())
 _OCT_ALL = _symmetric_group("octahedral:S6", 7, (1, 2, 3, 4, 5, 6))
-
-_PLANAR_BOND_FIXED = _group_from_images(
-    "planar_bond:V4",
-    (
-        (0, 1, 2, 3, 4, 5),
-        (1, 0, 2, 3, 5, 4),
-        (4, 5, 3, 2, 0, 1),
-        (5, 4, 3, 2, 1, 0),
-    ),
-)
-_PLANAR_BOND_ALL = _generated_group(
-    "planar_bond:unknown",
-    6,
-    (
-        Permutation((1, 0, 2, 3, 5, 4)),
-        Permutation((4, 5, 3, 2, 0, 1)),
-        Permutation((1, 0, 2, 3, 4, 5)),
-    ),
-)
+_PLANAR_BOND_FIXED = _group_from_images("planar_bond:V4", bond_images())
+_PLANAR_BOND_ALL = _group_from_images("planar_bond:unknown", bond_images(unspecified=True))
 _BOND_OPPOSITE = Permutation((1, 0, 2, 3, 4, 5))
-
-_ATROP_BOND_FIXED = _group_from_images(
-    "atrop_bond:V4",
-    (
-        (0, 1, 2, 3, 4, 5),
-        (1, 0, 2, 3, 5, 4),
-        (4, 5, 3, 2, 1, 0),
-        (5, 4, 3, 2, 0, 1),
-    ),
-)
-_ATROP_BOND_ALL = _generated_group(
-    "atrop_bond:unknown",
-    6,
-    (
-        Permutation((1, 0, 2, 3, 5, 4)),
-        Permutation((4, 5, 3, 2, 1, 0)),
-        Permutation((1, 0, 2, 3, 4, 5)),
-    ),
-)
-
-_CUMULENE_AXIS_FIXED = _group_from_images(
-    "cumulene_axis:V4",
-    tuple(permutation.image for permutation in _ATROP_BOND_FIXED.elements),
-)
-_CUMULENE_AXIS_ALL = _generated_group(
-    "cumulene_axis:unknown",
-    6,
-    (
-        Permutation((1, 0, 2, 3, 5, 4)),
-        Permutation((4, 5, 3, 2, 1, 0)),
-        Permutation((1, 0, 2, 3, 4, 5)),
-    ),
-)
-
-_EXTENDED_CIS_TRANS_FIXED = _group_from_images(
-    "extended_cis_trans:V4",
-    tuple(permutation.image for permutation in _PLANAR_BOND_FIXED.elements),
-)
-_EXTENDED_CIS_TRANS_ALL = _generated_group(
-    "extended_cis_trans:unknown",
-    6,
-    (
-        Permutation((1, 0, 2, 3, 5, 4)),
-        Permutation((4, 5, 3, 2, 0, 1)),
-        Permutation((1, 0, 2, 3, 4, 5)),
-    ),
-)
+_ATROP_BOND_FIXED = _group_from_images("atrop_bond:V4", bond_images(axial=True))
+_ATROP_BOND_ALL = _group_from_images("atrop_bond:unknown", bond_images(unspecified=True))
+_CUMULENE_AXIS_FIXED = _group_from_images("cumulene_axis:V4", bond_images(axial=True))
+_CUMULENE_AXIS_ALL = _group_from_images("cumulene_axis:unknown", bond_images(unspecified=True))
+_EXTENDED_CIS_TRANS_FIXED = _group_from_images("extended_cis_trans:V4", bond_images())
+_EXTENDED_CIS_TRANS_ALL = _group_from_images("extended_cis_trans:unknown", bond_images(unspecified=True))
 
 
 SHAPE_DEFINITIONS: Mapping[str, ShapeDefinition] = {

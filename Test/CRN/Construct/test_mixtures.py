@@ -33,9 +33,7 @@ class TestMixtures(unittest.TestCase):
                 cap=10,
             )
         )
-        self.assertEqual(
-            out, [tuple(sorted((SEEDS[0], X))), tuple(sorted((SEEDS[1], X)))]
-        )
+        self.assertEqual(out, [tuple(sorted((SEEDS[0], X))), tuple(sorted((SEEDS[1], X)))])
 
     def test_iter_mixtures_arityk_generates_unique_sorted_tuples(self):
         out = list(

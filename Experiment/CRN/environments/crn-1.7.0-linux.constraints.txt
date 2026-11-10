@@ -1,0 +1,21 @@
+# Native CRN evidence environment, Linux x86_64, Python 3.12.12
+# Boost headers 1.90.0; RDKit C++ SDK 2026.03.1; C++17/C++20 toolchain.
+# Install project/test dependencies with pip -c this-file -e ".[test]" sympy
+numpy==2.4.4
+networkx==3.6.1
+scipy==1.17.0
+rdkit==2026.3.1
+sympy==1.14.0
+pytest==9.1.1
+matplotlib==3.10.8
+pandas==2.3.3
+seaborn==0.13.2
+requests==2.33.0
+scikit-learn==1.7.2
+joblib==1.5.3
+pillow==13.0.0
+regex==2026.4.4
+tqdm==4.67.1
+hatchling==1.31.0
+build==1.5.0
+psutil==7.2.2

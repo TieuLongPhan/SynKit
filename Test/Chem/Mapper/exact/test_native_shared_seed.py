@@ -153,13 +153,11 @@ def test_shared_budget_stop_and_published_incumbent_safety(seed_library):
 
 
 @pytest.fixture(scope="module")
-def shared_seed_core(tmp_path_factory):
+def shared_seed_core(request):
     configured = os.environ.get("SYNKIT_CORE_LIBRARY")
     if configured:
         return Path(configured)
-    from synkit.Chem.Mapper._native.build import build_mapper_native
-
-    return build_mapper_native(tmp_path_factory.mktemp("shared-seed-core"))
+    return request.getfixturevalue("mapper_core_library")
 
 
 @pytest.mark.parametrize("reaction", ["CO>>CO", "O>>[OH-]", "O=CC=O>>OC#CO"])

@@ -3,7 +3,6 @@ version: 2
 updates:
   - package-ecosystem: "pip"
     directory: "/"
-    target-branch: "staging"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -42,7 +41,6 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "staging"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -63,7 +61,6 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/"
-    target-branch: "staging"
     schedule:
       interval: "weekly"
       day: "monday"

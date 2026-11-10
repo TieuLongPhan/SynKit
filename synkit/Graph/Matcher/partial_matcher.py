@@ -56,7 +56,7 @@ class PartialMatcher:
     :type partial: bool, optional
     :param threshold: Optional cap on embeddings *per (host, component)* pairing. If
                       exceeded, that pairing is treated as "no valid embeddings" and
-                      skipped. Defaults to :data:`SubgraphSearchEngine.DEFAULT_THRESHOLD`.
+                      skipped. ``None`` disables the cap.
     :type threshold: int | None, optional
     :param pre_filter: If ``True``, enable the cheap Cartesian-product pre-filter in
                        :class:`SubgraphSearchEngine` for each (host, component) pair.
@@ -91,9 +91,7 @@ class PartialMatcher:
         elif isinstance(host, Sequence):
             self.hosts = list(host)
         else:
-            raise TypeError(
-                "host must be a networkx.Graph or a sequence of such graphs"
-            )
+            raise TypeError("host must be a networkx.Graph or a sequence of such graphs")
 
         self.pattern: nx.Graph = pattern
         self.node_attrs: List[str] = node_attrs
@@ -105,11 +103,7 @@ class PartialMatcher:
             raise ValueError("threshold must be non-negative or None")
         self.max_results: Optional[int] = max_results
         self.partial: bool = partial
-        self._threshold: int = (
-            threshold
-            if threshold is not None
-            else SubgraphSearchEngine.DEFAULT_THRESHOLD
-        )
+        self._threshold: Optional[int] = threshold
         self._pre_filter: bool = pre_filter
 
         # WL-1 approximate automorphism pruning settings
@@ -379,10 +373,7 @@ class PartialMatcher:
 
             for emb in mappings:
                 all_mappings.append(emb)
-                if (
-                    self.max_results is not None
-                    and len(all_mappings) >= self.max_results
-                ):
+                if self.max_results is not None and len(all_mappings) >= self.max_results:
                     return all_mappings
 
         return all_mappings
@@ -413,10 +404,7 @@ class PartialMatcher:
                     accum={},
                     out=all_mappings,
                 )
-                if (
-                    self.max_results is not None
-                    and len(all_mappings) >= self.max_results
-                ):
+                if self.max_results is not None and len(all_mappings) >= self.max_results:
                     return all_mappings
 
         return all_mappings
@@ -525,10 +513,7 @@ class PartialMatcher:
             been called.
         """
         if self._approx_embedding_count is None:
-            raise RuntimeError(
-                "Call 'estimate_embeddings_wl()' before accessing "
-                "'approx_embedding_count'."
-            )
+            raise RuntimeError("Call 'estimate_embeddings_wl()' before accessing " "'approx_embedding_count'.")
         return self._approx_embedding_count
 
     # ------------------------------------------------------------------

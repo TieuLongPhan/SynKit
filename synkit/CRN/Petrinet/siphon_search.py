@@ -35,6 +35,7 @@ back into it) and are handled by the same machinery.
 
 from __future__ import annotations
 
+import warnings
 from typing import Dict, FrozenSet, List, Optional, Sequence, Set, Tuple
 
 from .net import PetriNet
@@ -45,15 +46,20 @@ __all__ = [
     "minimal_siphons",
     "minimal_traps",
     "SiphonSearchLimit",
+    "SiphonSearchWarning",
 ]
 
 #: Default ceiling on explored search nodes, so a pathological network degrades
-#: into a truncated result rather than an apparent hang.
+#: into an explicit limit error rather than an apparent hang.
 DEFAULT_MAX_NODES = 200_000
 
 
 class SiphonSearchLimit(RuntimeError):
     """Raised when a siphon or trap search exceeds its exploration budget."""
+
+
+class SiphonSearchWarning(RuntimeWarning):
+    """An explicitly lenient search returned an incomplete family of sets."""
 
 
 def _incidence(
@@ -244,9 +250,7 @@ def _enumerate_minimal(
     places = list(net.place_order)
     order = net.transition_order
 
-    root = _max_closed_within(
-        set(places), trigger=trigger, required=required, transition_order=order
-    )
+    root = _max_closed_within(set(places), trigger=trigger, required=required, transition_order=order)
     if not root:
         return []
 
@@ -289,20 +293,21 @@ def _enumerate_minimal(
         if is_minimal:
             minimal.append(set(current))
 
-    if truncated and strict_limit:
-        raise SiphonSearchLimit(
-            f"Search exceeded {max_nodes} closure evaluations. Raise max_nodes, "
-            f"set max_size, or pass strict_limit=False to accept a partial result."
+    if truncated:
+        message = f"Search exceeded {max_nodes} closure evaluations; enumeration is incomplete."
+        if strict_limit:
+            raise SiphonSearchLimit(
+                message + " Increase max_nodes, or pass strict_limit=False to accept a partial result."
+            )
+        warnings.warn(
+            message + " Returning partial results because strict_limit=False.",
+            SiphonSearchWarning,
+            stacklevel=3,
         )
 
     # The descent can surface a set that strictly contains another minimal one
     # when the budget truncates a branch; filter defensively.
-    result = [
-        s
-        for s in minimal
-        if not any(t < s for t in minimal)
-        and (max_size is None or len(s) <= max_size)
-    ]
+    result = [s for s in minimal if not any(t < s for t in minimal) and (max_size is None or len(s) <= max_size)]
     result.sort(key=lambda s: (len(s), sorted(s)))
     return result
 
@@ -312,7 +317,7 @@ def minimal_siphons(
     *,
     max_size: Optional[int] = None,
     max_nodes: int = DEFAULT_MAX_NODES,
-    strict_limit: bool = False,
+    strict_limit: bool = True,
 ) -> List[Set[str]]:
     """Enumerate the inclusion-minimal siphons of a Petri net.
 
@@ -330,8 +335,9 @@ def minimal_siphons(
     :type max_nodes: int
 
     :param strict_limit:
-        Raise :class:`SiphonSearchLimit` instead of returning a partial result
-        when the budget is exhausted.
+        Raise :class:`SiphonSearchLimit` when the budget is exhausted (default).
+        Explicit ``False`` returns partial results with a
+        :class:`SiphonSearchWarning`; those results do not certify completeness.
     :type strict_limit: bool
 
     :return:
@@ -360,7 +366,7 @@ def minimal_traps(
     *,
     max_size: Optional[int] = None,
     max_nodes: int = DEFAULT_MAX_NODES,
-    strict_limit: bool = False,
+    strict_limit: bool = True,
 ) -> List[Set[str]]:
     """Enumerate the inclusion-minimal traps of a Petri net.
 
@@ -377,8 +383,9 @@ def minimal_traps(
     :type max_nodes: int
 
     :param strict_limit:
-        Raise :class:`SiphonSearchLimit` instead of returning a partial result
-        when the budget is exhausted.
+        Raise :class:`SiphonSearchLimit` when the budget is exhausted (default).
+        Explicit ``False`` returns partial results with a
+        :class:`SiphonSearchWarning`; those results do not certify completeness.
     :type strict_limit: bool
 
     :return:

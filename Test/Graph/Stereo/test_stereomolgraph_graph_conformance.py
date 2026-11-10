@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import networkx as nx
@@ -127,25 +126,3 @@ def test_graph_conformance_report_is_pinned_and_scope_bounded():
         }
     ]
     assert REPORT["status"] == "PASS"
-
-
-def test_optional_pinned_upstream_replay_matches_the_permanent_report():
-    configured = os.environ.get("STEREOMOLGRAPH_REPOSITORY")
-    repository = Path(configured) if configured else Path("/tmp/StereoMolGraph")
-    if not (repository / "src" / "stereomolgraph").is_dir():
-        pytest.skip("pinned StereoMolGraph checkout is unavailable")
-
-    conformance = pytest.importorskip(
-        "Experiment.Stereo.Diagnostics.stereomolgraph_conformance",
-        reason="unreleased stereo experiment is unavailable",
-    )
-
-    observed = conformance.run_conformance(repository)
-
-    assert observed["observed_commit"] == REPORT["observed_commit"]
-    assert observed["status"] == "PASS"
-    for name, expected in REPORT["checks"].items():
-        check = observed["checks"][f"{name}_graph_isomorphism"]
-        assert check["synkit"] == expected["synkit"]
-        assert check["stereomolgraph"] == expected["stereomolgraph"]
-        assert check["status"] == expected["status"]

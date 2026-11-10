@@ -104,9 +104,7 @@ class TestSemiflows(unittest.TestCase):
         ``{3, 4}``.
         """
         crn = SynCRN.from_reaction_strings(["A>>B", "C>>D"])
-        supports = {
-            frozenset(supp) for supp in semiflow_supports(crn, kind="p")
-        }
+        supports = {frozenset(supp) for supp in semiflow_supports(crn, kind="p")}
 
         self.assertEqual(
             supports,

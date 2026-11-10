@@ -12,9 +12,7 @@ from synkit.CRN.Query.kegg_parse import get_compound_ids_from_equations
 
 
 class FakeKEGGClient:
-    def __init__(
-        self, text_by_path: dict[str, str], optional_text_by_path: dict[str, str | None]
-    ):
+    def __init__(self, text_by_path: dict[str, str], optional_text_by_path: dict[str, str | None]):
         self.text_by_path = text_by_path
         self.optional_text_by_path = optional_text_by_path
 
@@ -26,16 +24,12 @@ class FakeKEGGClient:
 
 
 class SuccessfulMapper:
-    def get_attention_guided_atom_maps(
-        self, reactions: list[str]
-    ) -> list[dict[str, str]]:
+    def get_attention_guided_atom_maps(self, reactions: list[str]) -> list[dict[str, str]]:
         return [{"mapped_rxn": f"mapped::{reactions[0]}"}]
 
 
 class FailingMapper:
-    def get_attention_guided_atom_maps(
-        self, reactions: list[str]
-    ) -> list[dict[str, str]]:
+    def get_attention_guided_atom_maps(self, reactions: list[str]) -> list[dict[str, str]]:
         raise RuntimeError("mapping failed")
 
 
@@ -56,15 +50,9 @@ class TestKEGGExtractor(unittest.TestCase):
     def make_extractor(self, mapper_cls=SuccessfulMapper) -> KEGGExtractor:
         text_by_path = {
             "get/hsa00010": (
-                "ENTRY       hsa00010\n"
-                "MODULE      hsa_M00001 core glycolysis\n"
-                "            M00002 branch\n"
+                "ENTRY       hsa00010\n" "MODULE      hsa_M00001 core glycolysis\n" "            M00002 branch\n"
             ),
-            "get/M00001": (
-                "ENTRY       M00001\n"
-                "REACTION    R00001 R00002\n"
-                "            R00002\n"
-            ),
+            "get/M00001": ("ENTRY       M00001\n" "REACTION    R00001 R00002\n" "            R00002\n"),
             "get/M00002": ("ENTRY       M00002\n" "REACTION    R00003\n"),
             "get/M99999": "ENTRY       M99999\n",
             "get/rn:R00001": "ENTRY       R00001\nEQUATION    C00001 + C00002 => C00003\n",
@@ -141,15 +129,11 @@ class TestKEGGExtractor(unittest.TestCase):
         compounds = extractor.build_compound_table(compound_ids)
         _, parsed_by_rid = get_compound_ids_from_equations(equations_by_rid)
 
-        rsmi_by_rid, missing_by_rid = extractor.build_reaction_smiles_dict(
-            parsed_by_rid, compounds
-        )
+        rsmi_by_rid, missing_by_rid = extractor.build_reaction_smiles_dict(parsed_by_rid, compounds)
 
         self.assertEqual(rsmi_by_rid["R00001"], "O.CCO>>CC=O")
         self.assertEqual(missing_by_rid["R00001"], {"reactants": [], "products": []})
-        self.assertEqual(
-            missing_by_rid["R00002"], {"reactants": [], "products": ["C00004"]}
-        )
+        self.assertEqual(missing_by_rid["R00002"], {"reactants": [], "products": ["C00004"]})
 
     def test_atom_map_reactions_handles_success_invalid_and_missing_dependency(
         self,
@@ -192,9 +176,7 @@ class TestKEGGExtractor(unittest.TestCase):
             "C00005": {"name": "Unused Missing", "smiles": None},
         }
 
-        report = extractor.build_missing_compound_report(
-            equations_by_rid, compounds_by_cid
-        )
+        report = extractor.build_missing_compound_report(equations_by_rid, compounds_by_cid)
 
         self.assertEqual(report["missing_compound_ids"], ["C00004", "C00005"])
         self.assertEqual(report["reactions_involving_missing"], ["R00002"])
@@ -271,12 +253,8 @@ class TestKEGGExtractor(unittest.TestCase):
             )
 
             self.assertEqual(data["modules"], ["M00001", "M00002"])
-            self.assertEqual(
-                data["missing"]["missing_compound_ids"], ["C00004", "C00005", "C00006"]
-            )
-            self.assertEqual(
-                data["missing"]["reactions_involving_missing"], ["R00002", "R00003"]
-            )
+            self.assertEqual(data["missing"]["missing_compound_ids"], ["C00004", "C00005", "C00006"])
+            self.assertEqual(data["missing"]["reactions_involving_missing"], ["R00002", "R00003"])
             self.assertIn("M00001", data["by_module"])
             self.assertTrue(out.exists())
             written = json.loads(out.read_text(encoding="utf-8"))

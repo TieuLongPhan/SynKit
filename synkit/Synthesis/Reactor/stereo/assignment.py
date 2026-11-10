@@ -10,8 +10,7 @@ class StereoWildcardAssignmentLimitError(RuntimeError):
         self.permitted = limit
         self.requested = discovered
         super().__init__(
-            "Stereo wildcard assignment search is incomplete: "
-            f"permitted={limit}, requested_at_least={discovered}."
+            "Stereo wildcard assignment search is incomplete: " f"permitted={limit}, requested_at_least={discovered}."
         )
 
 
@@ -24,8 +23,7 @@ class StereoBranchLimitError(RuntimeError):
         self.permitted = permitted
         self.requested = requested
         super().__init__(
-            "Stereo product branch search is incomplete: "
-            f"permitted={permitted}, requested_at_least={requested}."
+            "Stereo product branch search is incomplete: " f"permitted={permitted}, requested_at_least={requested}."
         )
 
 

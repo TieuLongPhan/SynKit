@@ -96,9 +96,7 @@ class KEGGImputer:
                 {"C00001": {"id": "C00001"}, "C00002": {"id": "C00002"}},
             )
         """
-        original_ids = [
-            record[id_key] for record in original_molecules if id_key in record
-        ]
+        original_ids = [record[id_key] for record in original_molecules if id_key in record]
         restored: List[MoleculeRecord] = []
 
         for molecule_id in original_ids:
@@ -215,9 +213,7 @@ class KEGGImputer:
             )
         """
         reactions_by_id = {
-            reaction.get(reaction_id_key): reaction
-            for reaction in reactions
-            if reaction.get(reaction_id_key)
+            reaction.get(reaction_id_key): reaction for reaction in reactions if reaction.get(reaction_id_key)
         }
 
         edited_reaction_ids: Set[str] = set()
@@ -411,20 +407,13 @@ class KEGGImputer:
         if not impacted_reaction_ids:
             return
 
-        molecules_by_id = {
-            molecule[molecule_id_key]: molecule
-            for molecule in molecules
-            if molecule_id_key in molecule
-        }
+        molecules_by_id = {molecule[molecule_id_key]: molecule for molecule in molecules if molecule_id_key in molecule}
         compounds_by_cid = {
-            compound_id: {"smiles": molecules_by_id[compound_id].get("smiles")}
-            for compound_id in molecules_by_id
+            compound_id: {"smiles": molecules_by_id[compound_id].get("smiles")} for compound_id in molecules_by_id
         }
 
         reactions_by_id = {
-            reaction.get(reaction_id_key): reaction
-            for reaction in reactions
-            if reaction.get(reaction_id_key)
+            reaction.get(reaction_id_key): reaction for reaction in reactions if reaction.get(reaction_id_key)
         }
 
         rebuilt_smiles: Dict[str, str] = {}
@@ -539,11 +528,7 @@ class KEGGImputer:
             reaction_rule_key=reaction_rule_key,
         )
 
-        molecules_by_id = {
-            molecule[molecule_id_key]: molecule
-            for molecule in molecules
-            if molecule_id_key in molecule
-        }
+        molecules_by_id = {molecule[molecule_id_key]: molecule for molecule in molecules if molecule_id_key in molecule}
 
         updated_compound_ids = self._apply_molecule_fixes(
             molecules_by_id,
@@ -692,9 +677,7 @@ class KEGGImputer:
         for block in by_module.values():
             missing = block.get("missing", {}) or {}
             missing_compound_ids.update(missing.get("missing_compound_ids", []) or [])
-            missing_reaction_ids.update(
-                missing.get("reactions_involving_missing", []) or []
-            )
+            missing_reaction_ids.update(missing.get("reactions_involving_missing", []) or [])
 
         new_pathway["by_module"] = by_module
         new_pathway["missing"] = {

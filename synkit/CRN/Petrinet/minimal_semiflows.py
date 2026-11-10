@@ -211,9 +211,7 @@ class SemiflowSearchLimit(RuntimeError):
 
     def __init__(self, result):
         self.result = result
-        super().__init__(
-            f"Semiflow enumeration incomplete: {result.termination_reason}"
-        )
+        super().__init__(f"Semiflow enumeration incomplete: {result.termination_reason}")
 
 
 def _integer_stoichiometry(stoich):
@@ -228,13 +226,9 @@ def _integer_stoichiometry(stoich):
         except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError("Stoichiometry must contain finite integers") from exc
         if integer != value:
-            raise ValueError(
-                "Minimal semiflows require an integer stoichiometric matrix"
-            )
+            raise ValueError("Minimal semiflows require an integer stoichiometric matrix")
         if not -(2**63) <= integer < 2**63:
-            raise OverflowError(
-                "Input stoichiometry exceeds int64; exact conversion refused"
-            )
+            raise OverflowError("Input stoichiometry exceeds int64; exact conversion refused")
         integers.append(integer)
     return np.asarray(integers, dtype=np.int64).reshape(s.shape)
 
@@ -299,16 +293,12 @@ def minimal_semiflows(
     if backend == "cpp" or (backend == "auto" and library_path is not None):
         from ..native import enumerate_semiflows
 
-        result = enumerate_semiflows(
-            stoich, kind=kind, library_path=library_path, **native_options
-        )
+        result = enumerate_semiflows(stoich, kind=kind, library_path=library_path, **native_options)
         if not result.complete:
             raise SemiflowSearchLimit(result)
         return result.value["flows"]
     if native_options:
-        raise ValueError(
-            "Search budgets require the native backend; use enumerate_semiflows for structured results"
-        )
+        raise ValueError("Search budgets require the native backend; use enumerate_semiflows for structured results")
     s_int = _integer_stoichiometry(stoich)
     if not s_int.size:
         return []
@@ -379,16 +369,12 @@ def minimal_semiflow_supports(
     else:
         names = [str(x) for x in labels]
         if len(names) != width:
-            raise ValueError(
-                f"labels has length {len(names)}, expected {width} for kind={kind!r}"
-            )
+            raise ValueError(f"labels has length {len(names)}, expected {width} for kind={kind!r}")
 
     return [{names[i]: int(v) for i, v in enumerate(flow) if v != 0} for flow in flows]
 
 
-def is_semiflow(
-    stoich: np.ndarray, vector: Sequence[float], *, kind: str = "p"
-) -> bool:
+def is_semiflow(stoich: np.ndarray, vector: Sequence[float], *, kind: str = "p") -> bool:
     """Check whether a vector is a genuine semiflow.
 
     A semiflow must be non-negative, non-zero, and in the appropriate kernel.

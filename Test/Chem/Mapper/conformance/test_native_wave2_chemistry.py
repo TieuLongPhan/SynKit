@@ -12,12 +12,10 @@ from Test.Chem.Mapper.conformance.oracle import complete_costs, select_query
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
+def library(request):
     if os.environ.get("SYNKIT_MAPPER_OPTIONAL_LIBRARY"):
         return os.environ["SYNKIT_MAPPER_OPTIONAL_LIBRARY"]
-    from synkit.Chem.Mapper._native.build import build_mapper_native
-
-    return build_mapper_native(tmp_path_factory.mktemp("wave2-chemistry"))
+    return request.getfixturevalue("mapper_core_library")
 
 
 @pytest.mark.parametrize(

@@ -12,9 +12,7 @@ class TestReactionDelta(unittest.TestCase):
         self.crn = CRNExpand(rules=[], keep_aam=False)
         for smi in ("CCO", "CC=O", "[Pd]"):
             self.crn._add_species_node(smi)
-        self.ids = {
-            self.crn.graph.nodes[n]["smiles"]: n for n in self.crn.graph.nodes
-        }
+        self.ids = {self.crn.graph.nodes[n]["smiles"]: n for n in self.crn.graph.nodes}
 
     def test_catalyst_is_kept_on_both_sides(self) -> None:
         """
@@ -81,9 +79,7 @@ class TestReactionDelta(unittest.TestCase):
             legacy._add_species_node(smi)
         ids = {legacy.graph.nodes[n]["smiles"]: n for n in legacy.graph.nodes}
 
-        r_side, p_side = legacy._reaction_sides(
-            [ids["CCO"], ids["[Pd]"]], ["CC=O", "[Pd]"]
-        )
+        r_side, p_side = legacy._reaction_sides([ids["CCO"], ids["[Pd]"]], ["CC=O", "[Pd]"])
 
         self.assertEqual(r_side, [ids["CCO"]])
         self.assertEqual(p_side, ["CC=O"])

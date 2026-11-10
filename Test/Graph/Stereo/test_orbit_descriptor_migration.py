@@ -91,7 +91,16 @@ def test_all_bond_encodings_have_exactly_the_legacy_identity_partition(
         for parity in parities
     ]
 
-    _assert_partition_bijection(descriptors)
+    if descriptor_type is AtropBondStereo:
+        # The frozen C4 oracle is historical, not physical axial truth.
+        original = descriptor_type((1, 2, 3, 4, 5, 6), 1)
+        reversed_axis = descriptor_type((5, 6, 4, 3, 1, 2), 1)
+        assert original == reversed_axis
+        assert legacy_canonical_form(original) != legacy_canonical_form(reversed_axis)
+        for value in descriptors:
+            assert stereo_from_dict(value.to_dict()) == value
+    else:
+        _assert_partition_bijection(descriptors)
 
 
 @pytest.mark.parametrize("descriptor_type,arity,parities", ATOM_CASES)

@@ -1,0 +1,4 @@
+#ifndef SYNKIT_EXPERIMENT_RDKIT_PREPARATION_HPP
+#define SYNKIT_EXPERIMENT_RDKIT_PREPARATION_HPP
+#include "synkit_canon/rdkit.hpp"
+#endif

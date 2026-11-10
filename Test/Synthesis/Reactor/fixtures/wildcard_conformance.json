@@ -1,0 +1,116 @@
+{
+  "schema": "synkit.wildcard-conformance/1",
+  "cases": [
+    {
+      "id": "bind_one_atom_and_keep_external_fragment",
+      "substrate": "CCO",
+      "template": "[*:1][OH:2]>>[*:1][O-:2]",
+      "partial": false,
+      "wildcards": {"1": {"role": "attachment_port", "owner": 2, "elements": ["C"], "bond_orders": [1]}},
+      "expected": ["CCO>>CC[O-]"],
+      "mapping_count": 1
+    },
+    {
+      "id": "reject_incompatible_element_domain",
+      "substrate": "CO",
+      "template": "[*:1][OH:2]>>[*:1][O-:2]",
+      "partial": false,
+      "wildcards": {"1": {"role": "attachment_port", "owner": 2, "elements": ["N"]}},
+      "expected": [],
+      "mapping_count": 0
+    },
+    {
+      "id": "reject_incompatible_bond_domain",
+      "substrate": "CO",
+      "template": "[*:1][OH:2]>>[*:1][O-:2]",
+      "partial": false,
+      "wildcards": {"1": {"role": "attachment_port", "owner": 2, "bond_orders": [2]}},
+      "expected": [],
+      "mapping_count": 0
+    },
+    {
+      "id": "distinct_ports_cannot_share_one_neighbor",
+      "substrate": "CO",
+      "template": "[*:1][O:2][*:3]>>[*:1][O:2][*:3]",
+      "partial": false,
+      "wildcards": {"1": {"role": "attachment_port", "owner": 2}, "3": {"role": "attachment_port", "owner": 2}},
+      "expected": [],
+      "mapping_count": 0
+    },
+    {
+      "id": "distinct_ports_bind_distinct_neighbors",
+      "substrate": "COC",
+      "template": "[*:1][O:2][*:3]>>[*:1][O:2][*:3]",
+      "partial": false,
+      "wildcards": {"1": {"role": "attachment_port", "owner": 2}, "3": {"role": "attachment_port", "owner": 2}},
+      "expected": ["COC>>COC"],
+      "mapping_count": 2
+    },
+    {
+      "id": "query_atom_preserves_bridge_topology",
+      "substrate": "COC",
+      "template": "[CH3:1][*:2][CH3:3]>>[CH3:1][*:2][CH3:3]",
+      "partial": false,
+      "wildcards": {"2": {"role": "query_atom", "elements": ["O"]}},
+      "expected": ["COC>>COC"],
+      "mapping_count": 2
+    },
+    {
+      "id": "missing_component_uses_persistent_valence_port",
+      "substrate": "CBr",
+      "template": "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]",
+      "partial": true,
+      "expected": ["CBr.*[O-]>>CO*.[Br-]"],
+      "mapping_count": 1,
+      "port_counts": [1]
+    },
+    {
+      "id": "full_mode_does_not_supply_missing_reagent",
+      "substrate": "CBr",
+      "template": "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]",
+      "partial": false,
+      "expected": [],
+      "mapping_count": 0
+    },
+    {
+      "id": "full_and_proper_component_subsets_coexist",
+      "substrate": "CBr.[OH-]",
+      "template": "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]",
+      "partial": true,
+      "expected": [
+        "CBr.[OH-]>>CO.[Br-]",
+        "CBr.[OH-].*[O-]>>CO*.[OH-].[Br-]",
+        "CBr.[OH-].*C(*)(*)Br>>CBr.*C(*)(*)O.[Br-]"
+      ],
+      "mapping_count": 3,
+      "port_counts": [0, 1, 3]
+    },
+    {
+      "id": "unresolved_declared_wildcard_survives_both_endpoints",
+      "substrate": "CBr",
+      "template": "[CH3:1][Br:2].[*:3][O-:4]>>[CH3:1][O:4][*:3].[Br-:2]",
+      "partial": true,
+      "wildcards": {"3": {"role": "attachment_port", "owner": 4, "elements": ["C", "H"]}},
+      "expected": ["CBr.*[O-]>>CO*.[Br-]"],
+      "mapping_count": 1,
+      "port_counts": [0]
+    },
+    {
+      "id": "created_simple_bond_cannot_collide_with_host_context",
+      "substrate": "[CH2][O]",
+      "template": "[CH3:1].[OH:2]>>[CH3:1][OH:2]",
+      "partial": false,
+      "expected": [],
+      "mapping_count": 0
+    },
+    {
+      "id": "genuine_radicals_are_not_implicit_attachment_ports",
+      "substrate": "[CH3]",
+      "template": "[CH3:1].[OH:2]>>[CH3:1][OH:2]",
+      "partial": true,
+      "expected": ["[CH3].*[O]>>CO*"],
+      "mapping_count": 1,
+      "port_counts": [1]
+    }
+  ]
+}

@@ -70,15 +70,9 @@ class TestPathwayFinderFromSynCRN(unittest.TestCase):
         :rtype: str
         :raises AssertionError: If no unique matching reaction is found.
         """
-        matches = [
-            eid
-            for eid, (t, h) in finder.edges.items()
-            if dict(t) == dict(tail) and dict(h) == dict(head)
-        ]
+        matches = [eid for eid, (t, h) in finder.edges.items() if dict(t) == dict(tail) and dict(h) == dict(head)]
         if len(matches) != 1:
-            raise AssertionError(
-                f"Expected exactly one reaction for {tail} >> {head}, got {matches}"
-            )
+            raise AssertionError(f"Expected exactly one reaction for {tail} >> {head}, got {matches}")
         return matches[0]
 
     def _reaction_tokens(self) -> dict[str, str]:

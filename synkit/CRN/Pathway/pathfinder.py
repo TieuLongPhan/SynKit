@@ -174,22 +174,16 @@ class PathwayFinder:
         :return: The current finder instance.
         :rtype: PathwayFinder
         """
-        vertices, edges, species_token_to_id, reaction_token_to_id, _ = (
-            tokenize_syncrn_incidence(
-                crn,
-                species=species,
-                reaction=reaction,
-            )
+        vertices, edges, species_token_to_id, reaction_token_to_id, _ = tokenize_syncrn_incidence(
+            crn,
+            species=species,
+            reaction=reaction,
         )
         self.load_hypergraph(vertices, edges)
         self.species_token_to_id = species_token_to_id
         self.reaction_token_to_id = reaction_token_to_id
-        self.species_id_to_token = {
-            sid: tok for tok, sid in species_token_to_id.items()
-        }
-        self.reaction_id_to_token = {
-            rid: tok for tok, rid in reaction_token_to_id.items()
-        }
+        self.species_id_to_token = {sid: tok for tok, sid in species_token_to_id.items()}
+        self.reaction_id_to_token = {rid: tok for tok, rid in reaction_token_to_id.items()}
         return self
 
     # ------------------------------------------------------------------
@@ -290,22 +284,12 @@ class PathwayFinder:
             If ``target_species`` is empty.
         """
         if not self.edges:
-            raise RuntimeError(
-                "No network loaded; call load_syncrn() or load_hypergraph()."
-            )
+            raise RuntimeError("No network loaded; call load_syncrn() or load_hypergraph().")
 
         max_depth = self._config.max_depth if max_depth is None else max_depth
         max_paths = self._config.max_paths if max_paths is None else max_paths
-        stop_after_first = (
-            self._config.stop_after_first
-            if stop_after_first is None
-            else stop_after_first
-        )
-        deduplicate_by_flow = (
-            self._config.deduplicate_by_flow
-            if deduplicate_by_flow is None
-            else deduplicate_by_flow
-        )
+        stop_after_first = self._config.stop_after_first if stop_after_first is None else stop_after_first
+        deduplicate_by_flow = self._config.deduplicate_by_flow if deduplicate_by_flow is None else deduplicate_by_flow
 
         source = self._clean_species(source_species)
         target = self._clean_species(target_species)
@@ -491,9 +475,7 @@ def run_pathfinder_from_syncrn(
 
     if verbose:
         for i, cand in enumerate(candidates, start=1):
-            print(
-                f"Path {i}: depth={cand.depth}, reactions={cand.reactions}, flow={cand.flow}"
-            )
+            print(f"Path {i}: depth={cand.depth}, reactions={cand.reactions}, flow={cand.flow}")
             if cand.realizable is not None:
                 print(f"  realizable={cand.realizable}, certificate={cand.certificate}")
 

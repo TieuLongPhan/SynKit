@@ -25,7 +25,6 @@ class TestCRNVisConstruction(unittest.TestCase):
         plt.close("all")
 
     def test_default_construction_succeeds(self):
-        # Regression: the default palette name must actually be registered.
         self.assertIsInstance(CRNVis(graph=chain_graph()).palette, ColorPalette)
 
     def test_palette_name_is_resolved(self):
@@ -189,9 +188,7 @@ class TestCRNVisSave(unittest.TestCase):
 
     def test_save_accepts_draw_kwargs(self):
         with tempfile.TemporaryDirectory() as tmp:
-            out = CRNVis(graph=chain_graph()).save(
-                Path(tmp) / "crn.png", dpi=72, title="t", with_legend=False
-            )
+            out = CRNVis(graph=chain_graph()).save(Path(tmp) / "crn.png", dpi=72, title="t", with_legend=False)
             self.assertTrue(out.exists())
 
 

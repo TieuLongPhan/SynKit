@@ -19,17 +19,12 @@ def load_kegg_cache(path):
     for module_id, entry in data["modules"].items():
         if not isinstance(entry, dict) or not isinstance(entry.get("equations"), dict):
             raise ValueError(f"{module_id}: expected an equations object")
-        if not all(
-            isinstance(k, str) and isinstance(v, str)
-            for k, v in entry["equations"].items()
-        ):
+        if not all(isinstance(k, str) and isinstance(v, str) for k, v in entry["equations"].items()):
             raise ValueError(f"{module_id}: equations must map ids to equation strings")
     return data
 
 
-def build_cached_kegg_crn(
-    cache, module_id, *, drop_compounds=(), expand_reversible=True
-):
+def build_cached_kegg_crn(cache, module_id, *, drop_compounds=(), expand_reversible=True):
     """Convert one cached module; retain all participants by default."""
     data = cache if isinstance(cache, Mapping) else load_kegg_cache(cache)
     entry = data["modules"][module_id]

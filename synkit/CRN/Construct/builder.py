@@ -21,6 +21,14 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class CRNExpand:
+    """Expand a molecular CRN with an explicitly selected reaction engine.
+
+    ``synreactor`` retains the legacy Python facade. ``synreactor-python`` and
+    ``synreactor-cpp`` use the typed implicit-H DPO profile with a Python network
+    controller; ``synreactor-native`` runs that DPO profile and its controller in
+    C++. ``rdkit`` and ``native`` are the distinct RDKit reaction-engine paths.
+    """
+
     rules: List[Any]
     repeats: int = 50
 
@@ -29,6 +37,25 @@ class CRNExpand:
     strategy: Optional[str] = None
     keep_aam: bool = True
     rule_backend: str = "synreactor"
+    #: Shared library for the SynKit DPO kernel.
+    reactor_library: Optional[str] = None
+    #: Typed DPO radical guards; ``ignore`` is an explicit legacy-query policy.
+    dpo_radical_policy: str = "strict"
+    #: Union preserves SynReactor matching; distinct requires one molecule per LHS component.
+    dpo_component_policy: str = "union"
+    #: Full C++ DPO controller executable, or its task-local context.
+    native_dpo_expander: Optional[str] = None
+    #: Native expander executable for ``rule_backend="native"``; ``None`` uses
+    #: the task-local :func:`~synkit.CRN.Construct.native_expand.native_expander`.
+    native_expander: Optional[str] = None
+    #: Native hydrogen model: ``"explicit"`` matches hydrogen atoms as graph
+    #: vertices; ``"lewis"`` keeps hydrogens as per-atom count labels and
+    #: compiles mapped H moves into count deltas (heavy-atom matching).
+    hydrogen_model: str = "explicit"
+    #: Worker threads for native rule application within one step.
+    threads: int = 1
+    #: Wall-clock limit in seconds for a native expansion; ``None`` is unlimited.
+    time_limit: Optional[float] = None
 
     max_components: int = 3
     use_frontier: bool = True
@@ -39,12 +66,7 @@ class CRNExpand:
     skip_no_change: bool = True
     allow_empty_side: bool = False
 
-    # When True, species occurring on both sides of a reaction are removed
-    # before the reaction is written to the graph. This is the pre-1.6.3
-    # behaviour; it deletes catalysts and spectators, making them invisible to
-    # every downstream analysis, and it discards reactions such as
-    # ``2A >> A + B`` whose reactant side then becomes empty. Deduplication
-    # always uses the multiset delta regardless of this flag.
+    # Legacy option: cancel shared participants before recording reaction incidences.
     strip_spectators: bool = False
 
     dedup_delta: bool = True
@@ -58,9 +80,7 @@ class CRNExpand:
     _app_counter: Dict[int, int] = field(init=False)
 
     _seen_attempts: Set[Tuple[int, Tuple[str, ...]]] = field(init=False)
-    _seen_delta: Set[Tuple[Optional[int], Tuple[str, ...], Tuple[str, ...]]] = field(
-        init=False
-    )
+    _seen_delta: Set[Tuple[Optional[int], Tuple[str, ...], Tuple[str, ...]]] = field(init=False)
     _rule_arity_cache: Dict[int, int] = field(init=False)
     _warned_no_rdkit: bool = field(init=False)
     state: DerivationState = field(init=False, repr=False)
@@ -68,16 +88,56 @@ class CRNExpand:
     derivations: DerivationLog = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        if self.rule_backend not in {"synreactor", "rdkit"}:
-            raise ValueError("rule_backend must be synreactor or rdkit")
-        if self.rule_backend == "rdkit" and self.keep_aam:
+        if self.rule_backend not in {
+            "synreactor",
+            "rdkit",
+            "native",
+            "synreactor-python",
+            "synreactor-cpp",
+            "synreactor-native",
+        }:
+            raise ValueError(
+                "rule_backend must be synreactor, synreactor-python, synreactor-cpp, synreactor-native, rdkit or native"
+            )
+        if self.rule_backend in {"rdkit", "native"} and self.keep_aam:
             raise ValueError("RDKit CRN construction requires keep_aam=False")
+        if self.rule_backend == "native" and (self.implicit_temp or self.strategy):
+            raise ValueError("Native CRN expansion does not support SynReactor-specific template strategies")
+        if self.hydrogen_model not in {"explicit", "lewis"}:
+            raise ValueError("hydrogen_model must be explicit or lewis")
+        if self.hydrogen_model == "lewis" and self.rule_backend not in {
+            "native",
+            "synreactor-python",
+            "synreactor-cpp",
+            "synreactor-native",
+        }:
+            raise ValueError("hydrogen_model='lewis' requires rule_backend='native'")
+        self._validate_dpo_options()
+        if self.threads < 1:
+            raise ValueError("threads must be >= 1")
         if self.max_components < 1:
             raise ValueError("max_components must be >= 1")
         self.state = DerivationState()
         self.strategy_engine = FrontierStrategy()
         self.derivations = DerivationLog()
         self.reset()
+
+    def _validate_dpo_options(self) -> None:
+        if self.dpo_radical_policy not in {"strict", "lower_bound", "ignore"}:
+            raise ValueError("dpo_radical_policy must be strict, lower_bound or ignore")
+        if self.dpo_component_policy not in {"union", "distinct"}:
+            raise ValueError("dpo_component_policy must be union or distinct")
+        if self.rule_backend in {"synreactor-python", "synreactor-cpp", "synreactor-native"}:
+            if self.explicit_h:
+                raise ValueError("The typed DPO CRN profile requires explicit_h=False")
+            if self.keep_aam:
+                raise ValueError("The typed DPO CRN profile requires keep_aam=False")
+            if self.time_limit is not None and self.rule_backend != "synreactor-native":
+                raise ValueError(
+                    "The typed DPO kernel has no wall-clock cancellation API; use an external process limit"
+                )
+        if self.rule_backend == "synreactor-native" and (self.strategy or self.threads != 1):
+            raise ValueError("The full native DPO controller currently requires strategy=None and threads=1")
 
     def reset(self) -> None:
         self.graph = nx.DiGraph()
@@ -90,6 +150,9 @@ class CRNExpand:
         self._seen_delta = set()
         self._rule_arity_cache = {}
         self._warned_no_rdkit = False
+        self.native_report: Optional[Dict[str, Any]] = None
+        self.dpo_report: Optional[Dict[str, Any]] = None
+        self._dpo_worker = None
         self.state.set_initial(pool_keys=set(), frontier_keys=set())
         self.derivations.clear()
 
@@ -111,9 +174,7 @@ class CRNExpand:
         self._smiles_cache[smiles] = out
 
         if Chem is None and out is not None and not self._warned_no_rdkit:
-            logger.warning(
-                "RDKit not available; SMILES standardization is a passthrough."
-            )
+            logger.warning("RDKit not available; SMILES standardization is a passthrough.")
             self._warned_no_rdkit = True
 
         return out
@@ -237,9 +298,7 @@ class CRNExpand:
         r_smiles_all = [self.graph.nodes[rid]["smiles"] for rid in reactant_ids]
         unchanged = set(r_smiles_all) & set(products_std_all)
 
-        r_keep_ids = [
-            rid for rid, rs in zip(reactant_ids, r_smiles_all) if rs not in unchanged
-        ]
+        r_keep_ids = [rid for rid, rs in zip(reactant_ids, r_smiles_all) if rs not in unchanged]
         p_keep_smiles = [ps for ps in products_std_all if ps not in unchanged]
 
         return r_keep_ids, p_keep_smiles
@@ -272,10 +331,27 @@ class CRNExpand:
     ) -> nx.DiGraph:
         if reset:
             self.reset()
+        if self.rule_backend == "native":
+            return self._build_native(list(seeds))
+        if self.rule_backend == "synreactor-native":
+            return self._build_native_dpo(list(seeds))
+
+        if self.rule_backend in {"synreactor-python", "synreactor-cpp"} and self._dpo_worker is None:
+            from .dpo_worker import DPOWorker
+
+            self._dpo_worker = DPOWorker(
+                self.rules,
+                backend="cpp" if self.rule_backend == "synreactor-cpp" else "python",
+                library_path=self.reactor_library,
+                radical_policy=self.dpo_radical_policy,
+                component_policy=self.dpo_component_policy,
+            )
 
         pool_keys, frontier_keys = self._init_pool(seeds)
         self.state.set_initial(pool_keys=pool_keys, frontier_keys=frontier_keys)
         if not pool_keys:
+            if self._dpo_worker is not None:
+                self.dpo_report = self._dpo_worker.report()
             return self.graph
 
         for step in range(1, self.repeats + 1):
@@ -295,7 +371,129 @@ class CRNExpand:
             if self.use_frontier and not frontier_keys:
                 break
 
+        if self._dpo_worker is not None:
+            self.dpo_report = self._dpo_worker.report()
         return self.graph
+
+    def _native_options(self) -> Dict[str, Any]:
+        return {
+            "repeats": int(self.repeats),
+            "explicit_h": bool(self.explicit_h),
+            "max_components": int(self.max_components),
+            "use_frontier": bool(self.use_frontier),
+            "max_mixtures_per_rule_step": int(self.max_mixtures_per_rule_step),
+            "max_tasks_per_step": int(self.max_tasks_per_step),
+            "allow_self_mixtures": bool(self.allow_self_mixtures),
+            "skip_no_change": bool(self.skip_no_change),
+            "allow_empty_side": bool(self.allow_empty_side),
+            "strip_spectators": bool(self.strip_spectators),
+            "dedup_delta": bool(self.dedup_delta),
+            "dedup_across_rules": bool(self.dedup_across_rules),
+            "threads": int(self.threads),
+            "hydrogen_model": self.hydrogen_model,
+            "time_limit": None if self.time_limit is None else float(self.time_limit),
+        }
+
+    def _build_native(self, seeds: List[str]) -> nx.DiGraph:
+        """Expand in the native controller and write its events to the graph.
+
+        Species identity comes from the native canonicalization, so the
+        returned keys are written verbatim and never re-standardized here.
+        """
+        from .native_expand import resolve_expander, run_native_expansion
+
+        executable = resolve_expander(self.native_expander)
+        if executable is None:
+            raise ValueError("rule_backend='native' requires native_expander or a " "native_expander(...) context")
+        if not all(isinstance(rule, str) for rule in self.rules):
+            raise TypeError("Native CRN expansion requires reaction SMARTS strings")
+        arities = [self._infer_rule_arity(r, i) for i, r in enumerate(self.rules)]
+        result = run_native_expansion(
+            executable,
+            rules=list(self.rules),
+            arities=arities,
+            seeds=seeds,
+            options=self._native_options(),
+        )
+        if result["status"] != "complete":
+            raise RuntimeError(f"Native CRN expansion stopped early: {result['stop_reason']}")
+        self._populate_native_graph(result, seeds)
+        self.native_report = {
+            name: result[name]
+            for name in (
+                "engine",
+                "rdkit_version",
+                "stop_reason",
+                "steps_run",
+                "steps",
+                "binding_tests",
+                "hydrogen_model",
+                "rules",
+            )
+        }
+        self.native_report["executable"] = str(executable)
+        return self.graph
+
+    def _build_native_dpo(self, seeds: List[str]) -> nx.DiGraph:
+        from .native_dpo import resolve_native_dpo_expander, run_native_dpo_expansion
+
+        executable = resolve_native_dpo_expander(self.native_dpo_expander)
+        if executable is None:
+            raise ValueError("rule_backend='synreactor-native' requires a native_dpo_expander executable or context")
+        result = run_native_dpo_expansion(
+            executable,
+            rules=list(self.rules),
+            seeds=seeds,
+            options={**self._native_options(), "component_policy": self.dpo_component_policy},
+            radical_policy=self.dpo_radical_policy,
+        )
+        if result["status"] != "complete":
+            raise RuntimeError(f"Native DPO expansion stopped early: {result['stop_reason']}")
+        self._populate_native_graph(result, seeds)
+        self.dpo_report = {
+            name: value
+            for name, value in result.items()
+            if name not in {"species", "events", "pool", "frontier", "seed_keys"}
+        }
+        self.dpo_report.update(
+            executable=str(executable),
+            radical_policy=self.dpo_radical_policy,
+            component_policy=self.dpo_component_policy,
+        )
+        return self.graph
+
+    def _populate_native_graph(self, result: Dict[str, Any], seeds: List[str]) -> None:
+        """Integrate an explicitly identified native controller's event stream."""
+        keys: List[str] = result["species"]
+        for key in keys:
+            self._smiles_cache[key] = key
+        for seed, key in zip(seeds, result["seed_keys"]):
+            self._smiles_cache[seed] = key
+
+        pool_keys, _ = self._init_pool(seeds)
+        for event in result["events"]:
+            step = int(event["step"])
+            rule_index = int(event["rule_index"])
+            reactant_ids = [self._species_index[keys[i]] for i in event["reactants"]]
+            product_smiles = [keys[i] for i in event["products"]]
+            eid = self._add_rxn_event_node(step=step, rule_index=rule_index)
+            self._add_reactant_edges(reactant_ids=reactant_ids, eid=eid, step=step, rule_index=rule_index)
+            self._add_product_edges(product_smiles=product_smiles, eid=eid, step=step, rule_index=rule_index)
+            self.derivations.append(
+                event_id=eid,
+                label=str(self.graph.nodes[eid].get("label")),
+                step=step,
+                rule_index=rule_index,
+                reactants=tuple(sorted(keys[i] for i in event["reactants"])),
+                products=tuple(sorted(product_smiles)),
+            )
+            self._update_pool_with_products(
+                products_std_all=[keys[i] for i in event["all_products"]],
+                pool_keys=pool_keys,
+                next_frontier=set(),
+            )
+        self.state.set_initial(pool_keys=set(result["pool"]), frontier_keys=set(result["frontier"]))
+        self.state.step = int(result["steps_run"])
 
     def _init_pool(self, seeds: Iterable[str]) -> Tuple[Set[str], Set[str]]:
         pool_keys: Set[str] = set()
@@ -317,9 +515,7 @@ class CRNExpand:
         frontier_keys: Set[str],
     ) -> List[Tuple[int, Any, str, bool, bool, Optional[str], Tuple[str, ...]]]:
         budget = int(self.max_tasks_per_step)
-        tasks: List[
-            Tuple[int, Any, str, bool, bool, Optional[str], Tuple[str, ...]]
-        ] = []
+        tasks: List[Tuple[int, Any, str, bool, bool, Optional[str], Tuple[str, ...]]] = []
 
         for ridx, rule in enumerate(self.rules):
             if budget <= 0:
@@ -382,6 +578,33 @@ class CRNExpand:
         parallel: bool,
         max_workers: Optional[int],
     ) -> List[Tuple[int, Tuple[str, ...], List[str]]]:
+        if self._dpo_worker is not None:
+            if parallel and len(tasks) > 1:
+                from .dpo_worker import initialize_dpo_worker, apply_dpo_pool_task
+
+                backend = "cpp" if self.rule_backend == "synreactor-cpp" else "python"
+                with ProcessPoolExecutor(
+                    max_workers=max_workers,
+                    initializer=initialize_dpo_worker,
+                    initargs=(
+                        self.rules,
+                        backend,
+                        self.reactor_library,
+                        self.dpo_radical_policy,
+                        self.dpo_component_policy,
+                    ),
+                ) as ex:
+                    results = []
+                    for result, stats, rejected in ex.map(apply_dpo_pool_task, tasks):
+                        results.append(result)
+                        self._dpo_worker.calls += 1
+                        self._dpo_worker.component_rejected += rejected
+                        if stats is not None:
+                            self._dpo_worker.candidates += stats["candidates"]
+                            self._dpo_worker.applications += stats["applications"]
+                            self._dpo_worker.elapsed_ns += stats["elapsed_ns"]
+                return results
+            return [self._dpo_worker(task) for task in tasks]
         runner = apply_rule_worker
         if self.rule_backend == "rdkit":
             from .rdkit_worker import apply_rdkit_rule_worker
@@ -447,8 +670,7 @@ class CRNExpand:
             if not products_std_all:
                 continue
 
-            # The delta identifies the transformation (dedup, no-change test);
-            # the recorded sides are what actually goes into the graph.
+            # Deduplicate by net change; record the original reaction sides.
             r_keep_keys, p_keep_keys = self._reaction_delta(
                 reactant_ids_int,
                 products_std_all,
@@ -494,9 +716,7 @@ class CRNExpand:
                 label=str(nd.get("label")),
                 step=int(step),
                 rule_index=int(rule_index),
-                reactants=tuple(
-                    sorted(self.graph.nodes[rid]["smiles"] for rid in r_keep)
-                ),
+                reactants=tuple(sorted(self.graph.nodes[rid]["smiles"] for rid in r_keep)),
                 products=tuple(sorted(p_keep_smiles)),
             )
 
@@ -585,6 +805,15 @@ def build_crn_from_smarts(
     implicit_temp: bool = False,
     strategy: Optional[str] = None,
     keep_aam: bool = True,
+    rule_backend: str = "synreactor",
+    reactor_library: Optional[str] = None,
+    dpo_radical_policy: str = "strict",
+    dpo_component_policy: str = "union",
+    native_dpo_expander: Optional[str] = None,
+    native_expander: Optional[str] = None,
+    hydrogen_model: str = "explicit",
+    threads: int = 1,
+    time_limit: Optional[float] = None,
     parallel: bool = False,
     max_workers: Optional[int] = None,
     max_components: int = 3,
@@ -605,6 +834,15 @@ def build_crn_from_smarts(
         implicit_temp=implicit_temp,
         strategy=strategy,
         keep_aam=keep_aam,
+        rule_backend=rule_backend,
+        reactor_library=reactor_library,
+        dpo_radical_policy=dpo_radical_policy,
+        dpo_component_policy=dpo_component_policy,
+        native_dpo_expander=native_dpo_expander,
+        native_expander=native_expander,
+        hydrogen_model=hydrogen_model,
+        threads=threads,
+        time_limit=time_limit,
         max_components=max_components,
         use_frontier=use_frontier,
         max_mixtures_per_rule_step=max_mixtures_per_rule_step,

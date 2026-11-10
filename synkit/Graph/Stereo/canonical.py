@@ -26,9 +26,7 @@ from .descriptors import (
 )
 from .orbits import SHAPE_DEFINITIONS
 
-# ``/2`` is the persisted wire-schema revision of the complete configured
-# certificate.  It is deliberately not exposed as a second scientific model.
-STEREOGRAPH_SCHEMA = "synkit.canonical-stereograph/2"
+STEREOGRAPH_SCHEMA = "synkit.canonical-stereograph/3"
 
 _DEFAULT_ATOM_COLOR_KEYS = (
     "element",

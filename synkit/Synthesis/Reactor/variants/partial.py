@@ -9,9 +9,11 @@ class PartialEngine:
     (forward or backward) template transformation, injects radical wildcards,
     and returns a list of intermediate ITS strings.
 
-    :param smi: A reaction SMARTS (rsmi) string in the form
-        "Reactants>>Products" or a simple SMILES string when used for
-        one‐sided synthesis.
+    This compatibility wrapper intentionally interprets reactant radicals as
+    open substituent sites. Use ``WildcardEngine`` for typed attachment ports
+    and preservation of genuine radicals.
+
+    :param smi: A single-sided substrate SMILES string.
     :type smi: str
     :param template: A reaction template SMARTS string, which may
         include explicit H.
@@ -28,10 +30,10 @@ class PartialEngine:
 
         - Removes explicit hydrogens from the given template SMARTS.
         - Parses the cleaned template into an internal template structure (ITS).
-        - Converts the provided SMILES or rsmi string into a NetworkX graph
+        - Converts the provided SMILES string into a NetworkX graph
           to serve as the host for synthesis.
 
-        :param smi: The input SMILES or rsmi string for which to generate intermediates.
+        :param smi: The input substrate SMILES for which to generate intermediates.
         :type smi: str
         :param template: The reaction template SMARTS; explicit H atoms will be stripped.
         :type template: str
@@ -42,8 +44,10 @@ class PartialEngine:
         # Convert cleaned template to internal structure (core atoms only)
         self.rc = rsmi_to_its(template, core=True)
 
-        # Build host graph from the provided SMILES or rsmi
+        # Build host graph from the provided SMILES
         self.host = smiles_to_graph(smi)
+        if self.host is None:
+            raise ValueError("smi must be a valid single-sided substrate SMILES.")
         self.electron_diagnostics = electron_diagnostics
         self._diagnostics = []
 

@@ -80,15 +80,9 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
         :rtype: str
         :raises AssertionError: If no unique matching reaction is found.
         """
-        matches = [
-            eid
-            for eid, (t, h) in pr.edges.items()
-            if dict(t) == dict(tail) and dict(h) == dict(head)
-        ]
+        matches = [eid for eid, (t, h) in pr.edges.items() if dict(t) == dict(tail) and dict(h) == dict(head)]
         if len(matches) != 1:
-            raise AssertionError(
-                f"Expected exactly one reaction for {tail} >> {head}, got {matches}"
-            )
+            raise AssertionError(f"Expected exactly one reaction for {tail} >> {head}, got {matches}")
         return matches[0]
 
     def _reaction_tokens(self) -> dict[str, str]:
@@ -162,7 +156,6 @@ class TestPathwayRealizabilityFromSynCRN(unittest.TestCase):
         self.assertEqual(flow_map[rxn["r8"]], 1)
         self.assertEqual(sum(flow_map.values()), 2)
 
-        # Sanity: same token set as the loaded instance.
         self.assertEqual(set(edges), set(tmp.edges))
 
     def test_build_petri_net_from_flow_creates_aux_places_and_exact_goals(self) -> None:

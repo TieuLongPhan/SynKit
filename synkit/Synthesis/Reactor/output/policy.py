@@ -11,6 +11,4 @@ class RawITSApplicationSerializationWarning(UserWarning):
     def __init__(self, indices: Iterable[int]) -> None:
         self.indices = tuple(indices)
         rendered = ", ".join(map(str, self.indices))
-        super().__init__(
-            "Skipped raw ITS application(s) that could not be serialized: " + rendered
-        )
+        super().__init__("Skipped raw ITS application(s) that could not be serialized: " + rendered)

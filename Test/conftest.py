@@ -62,3 +62,29 @@ def native_wheel_record(monkeypatch):
     yield register
     _native._conda_record_digest.cache_clear()
     _native._wheel_record_digest.cache_clear()
+
+
+@pytest.fixture(scope="session")
+def native_build_cache(tmp_path_factory):
+    """Keep explicit native build outputs together across test modules."""
+    configured = os.environ.get("SYNKIT_TEST_NATIVE_CACHE")
+    directory = Path(configured).expanduser().resolve() if configured else tmp_path_factory.mktemp("native-cache")
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+
+@pytest.fixture(scope="session")
+def reactor_native_library(native_build_cache):
+    from synkit.Synthesis.Reactor import build_native_reactor
+
+    return build_native_reactor(native_build_cache / "reactor")
+
+
+@pytest.fixture(scope="session")
+def canon_native_library(native_build_cache):
+    from synkit.Graph.Canon._native import build_native_canon, bundled_native_canon
+
+    try:
+        return bundled_native_canon()
+    except FileNotFoundError:
+        return build_native_canon(native_build_cache / "canon")

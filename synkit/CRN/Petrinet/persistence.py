@@ -72,19 +72,13 @@ def siphon_persistence_details(
     # supports are exactly what the Angeli-De Leenheer-Sontag condition needs.
     # A real kernel basis would not do: its vectors can be mixed-sign and its
     # supports depend on the arbitrary choice of basis.
-    y = (
-        find_p_semiflows(crn, rtol=rtol)
-        if p_semiflows is None
-        else np.asarray(p_semiflows)
-    )
+    y = find_p_semiflows(crn, rtol=rtol) if p_semiflows is None else np.asarray(p_semiflows)
     if y.size == 0:
         return PersistenceCheckResult(False, siphons, [], list(siphons))
 
     supports: List[Set[str]] = []
     for j in range(y.shape[1]):
-        supp = {
-            species_order[i] for i, val in enumerate(y[:, j]) if abs(val) > support_tol
-        }
+        supp = {species_order[i] for i, val in enumerate(y[:, j]) if abs(val) > support_tol}
         if supp:
             supports.append(supp)
 
