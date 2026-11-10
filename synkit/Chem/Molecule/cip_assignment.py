@@ -5,11 +5,10 @@ descriptor, and their labels are deliberately absent from stereo identity,
 hashing, rule matching, and descriptor serialization.  Ligand priority comes
 only from :mod:`synkit.Chem.Molecule.cip_ranking`.
 
-Axial ``M/P`` projection uses the IUPAC helicity convention: from a witnessed
-viewing direction, the path from the nearer high-priority ligand to the farther
-high-priority ligand is ``P`` for the positive sense and ``M`` for the negative
-sense.  If constitution cannot witness a stable viewing direction, projection
-fails closed instead of using atom indices as a tiebreak.
+Axial ``M/P`` projection uses the near-to-far high-priority twist. Exchanging
+the viewing ends reverses both the axis and terminal-vector order, so the
+helicity is independent of the chosen end. No cross-end priority tiebreak or
+atom-index direction is needed.
 """
 
 from __future__ import annotations
@@ -328,125 +327,36 @@ def _assign_planar(
     )
 
 
-def _axis_direction(
-    ranker: CIPRanker,
-    left_center: int,
-    right_center: int,
-    left: CIPRanking,
-    right: CIPRanking,
-) -> tuple[int | None, tuple[CIPComparison, ...]]:
-    comparisons = []
-    pairs = (
-        (left.ordered_references[0], right.ordered_references[0]),
-        (left.ordered_references[1], right.ordered_references[1]),
-    )
-    for left_reference, right_reference in pairs:
-        left_evidence = ranker.build_evidence(left_center, left_reference)
-        right_evidence = ranker.build_evidence(right_center, right_reference)
-        comparison = ranker.compare(
-            left_center,
-            left_reference,
-            right_reference,
-            left_evidence=left_evidence,
-            right_evidence=right_evidence,
-        )
-        comparisons.append(comparison)
-        if comparison.outcome is CIPComparisonOutcome.LEFT_HIGHER:
-            return 1, tuple(comparisons)
-        if comparison.outcome is CIPComparisonOutcome.RIGHT_HIGHER:
-            return -1, tuple(comparisons)
-        if comparison.outcome is CIPComparisonOutcome.UNSUPPORTED:
-            return None, tuple(comparisons)
-    return None, tuple(comparisons)
-
-
 def _assign_axis(
     original: AtropBondStereo | CumuleneAxisStereo,
     descriptor: AtropBondStereo | CumuleneAxisStereo,
     ranker: CIPRanker,
 ) -> CIPAssignment:
     if descriptor.parity is None:
-        return _result(
-            original,
-            CIPAssignmentStatus.UNSPECIFIED_CONFIGURATION,
-            "Axial orientation is unspecified.",
-        )
-    left_frame = tuple(descriptor.atoms[:2])
-    right_frame = tuple(descriptor.atoms[4:])
+        return _result(original, CIPAssignmentStatus.UNSPECIFIED_CONFIGURATION,
+                       "Axial orientation is unspecified.")
+    left_frame, right_frame = tuple(descriptor.atoms[:2]), tuple(descriptor.atoms[4:])
     left_center, right_center = descriptor.atoms[2:4]
-    left = ranker.rank(left_center, left_frame)
-    right = ranker.rank(right_center, right_frame)
+    left, right = ranker.rank(left_center, left_frame), ranker.rank(right_center, right_frame)
     rankings = left, right
     if not all(ranking.complete for ranking in rankings):
         return _incomplete_result(original, rankings)
-    direction, direction_comparisons = _axis_direction(
-        ranker, left_center, right_center, left, right
-    )
-    if direction is None:
-        if any(
-            comparison.outcome is CIPComparisonOutcome.UNSUPPORTED
-            for comparison in direction_comparisons
-        ):
-            return _incomplete_result(
-                original,
-                rankings,
-                supplemental=direction_comparisons,
-            )
-        return _result(
-            original,
-            CIPAssignmentStatus.UNRESOLVED_PRIORITY,
-            "Constitution cannot witness a relabel-invariant axis direction.",
-            rankings=rankings,
-            supplemental=direction_comparisons,
-        )
     left_factor = 1 if left_frame[0] == left.ordered_references[0] else -1
     right_factor = 1 if right_frame[0] == right.ordered_references[0] else -1
-    sign = descriptor.parity * left_factor * right_factor * direction
+    sign = descriptor.parity * left_factor * right_factor
     label = "P" if sign == 1 else "M"
-    if CIPSequenceRule.RULE_5_REFLECTION_VARIANT in _required_rules(
-        (*_comparisons(rankings), *direction_comparisons)
-    ):
-        reflected_ranker = ranker.reflected()
-        reflected_left = reflected_ranker.rank(left_center, left_frame)
-        reflected_right = reflected_ranker.rank(right_center, right_frame)
-        if reflected_left.complete and reflected_right.complete:
-            reflected_direction, _comparisons_reflected = _axis_direction(
-                reflected_ranker,
-                left_center,
-                right_center,
-                reflected_left,
-                reflected_right,
-            )
-            if reflected_direction is not None:
-                reflected_left_factor = (
-                    1 if left_frame[0] == reflected_left.ordered_references[0] else -1
-                )
-                reflected_right_factor = (
-                    1 if right_frame[0] == reflected_right.ordered_references[0] else -1
-                )
-                reflected_sign = (
-                    -descriptor.parity
-                    * reflected_left_factor
-                    * reflected_right_factor
-                    * reflected_direction
-                )
-                if reflected_sign == sign:
-                    label = label.lower()
-    return _result(
-        original,
-        CIPAssignmentStatus.ASSIGNED,
-        "Axial helicity projected from ranked terminal frames.",
-        label=label,
-        rankings=rankings,
-        supplemental=direction_comparisons,
-        witness=(
-            descriptor.parity,
-            left_factor,
-            right_factor,
-            direction,
-            sign,
-        ),
-    )
+    if CIPSequenceRule.RULE_5_REFLECTION_VARIANT in _required_rules(_comparisons(rankings)):
+        reflected = ranker.reflected()
+        rl, rr = reflected.rank(left_center, left_frame), reflected.rank(right_center, right_frame)
+        if rl.complete and rr.complete:
+            lf = 1 if left_frame[0] == rl.ordered_references[0] else -1
+            rf = 1 if right_frame[0] == rr.ordered_references[0] else -1
+            if -descriptor.parity * lf * rf == sign:
+                label = label.lower()
+    return _result(original, CIPAssignmentStatus.ASSIGNED,
+                   "Axial helicity projected from the high-priority ligand at each end; either viewing end gives the same result.",
+                   label=label, rankings=rankings,
+                   witness=(descriptor.parity, left_factor, right_factor, sign))
 
 
 def _assign_helical(

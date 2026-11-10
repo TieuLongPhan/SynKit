@@ -1,4 +1,6 @@
-"""Algebraic law tests for immutable graph morphisms."""
+"""Law tests for embeddings with guarded wildcard obligations."""
+
+from itertools import permutations, product
 
 import pytest
 
@@ -170,3 +172,101 @@ def test_consistent_relabeling_preserves_canonical_signature() -> None:
 
     assert relabeled.substitutions["left-port"].owner == "left-owner"
     assert relabeled.canonical_signature() == first.canonical_signature()
+
+
+def test_constraints_outside_embedding_image_cannot_disappear() -> None:
+    """An omitted obligation must not hide an intermediate contradiction."""
+    first = GraphMorphism("A", "B", {"a"}, {"b", "c"}, {"a": "b"})
+    second = GraphMorphism(
+        "B", "C", {"b", "c"}, {"x", "y"}, {"b": "x", "c": "y"},
+        {"c": WildcardConstraint(WildcardRole.QUERY_ATOM, elements={"C"})},
+    )
+    third = GraphMorphism(
+        "C", "D", {"x", "y"}, {"p", "q"}, {"x": "p", "y": "q"},
+        {"y": WildcardConstraint(WildcardRole.QUERY_ATOM, elements={"N"})},
+    )
+
+    with pytest.raises(GraphMorphismError) as left:
+        first.then(second).then(third)
+    assert left.value.issues[0].code is MorphismIssueCode.CONSTRAINT_OUTSIDE_IMAGE
+    with pytest.raises(GraphMorphismError) as right:
+        first.then(second.then(third))
+    assert right.value.issues[0].code is MorphismIssueCode.CONSTRAINT_CONTRADICTION
+
+
+def test_proper_embeddings_compose_when_all_obligations_are_representable() -> None:
+    first = GraphMorphism(
+        "A", "B", {1, 2}, {10, 20, 30}, {1: 10, 2: 20},
+        {1: WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=2,
+                               elements={"C", "N", "O"})},
+    )
+    second = GraphMorphism(
+        "B", "C", {10, 20, 30}, {100, 200, 300, 400},
+        {10: 100, 20: 200, 30: 300},
+        {10: WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=20,
+                                elements={"C", "N"})},
+    )
+    third = GraphMorphism(
+        "C", "D", {100, 200, 300, 400}, {1000, 2000, 3000, 4000, 5000},
+        {100: 1000, 200: 2000, 300: 3000, 400: 4000},
+        {100: WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=200,
+                                 elements={"N"})},
+    )
+
+    composed = first.then(second).then(third)
+    assert composed == first.then(second.then(third))
+    assert composed.mapping == {1: 1000, 2: 2000}
+    assert composed.substitutions == {
+        1: WildcardConstraint(WildcardRole.ATTACHMENT_PORT, owner=2, elements={"N"})
+    }
+    assert GraphMorphism.identity("A", {1, 2}).then(composed) == composed
+    assert composed.then(GraphMorphism.identity("D", third.target_nodes)) == composed
+
+
+def test_finite_guarded_composition_associativity_including_definedness() -> None:
+    """Check all 20,216 representative chains, including proper embeddings.
+
+    Each arrow has at most one obligation, with every source position, owner
+    position (or none), and nonempty domain over {C, N}.  Every injective map
+    occurs for the carrier sizes 1 -> 2 -> 2 -> 2.
+    """
+    def arrows(source, target, source_size, target_size):
+        source_nodes, target_nodes = set(range(source_size)), set(range(target_size))
+        environments = [{}]
+        for node, owner, domain in product(
+            source_nodes, (None, *sorted(source_nodes)), ({"C"}, {"N"}, {"C", "N"})
+        ):
+            environments.append({
+                node: WildcardConstraint(WildcardRole.QUERY_ATOM,
+                                         elements=domain, owner=owner)
+            })
+        return tuple(
+            GraphMorphism(source, target, source_nodes, target_nodes,
+                          dict(zip(sorted(source_nodes), image)), environment)
+            for image, environment in product(
+                permutations(sorted(target_nodes), source_size), environments
+            )
+        )
+
+    def outcome(first, second, third, left):
+        try:
+            return (
+                first.then(second).then(third)
+                if left else first.then(second.then(third))
+            )
+        except GraphMorphismError:
+            return None
+
+    checked, successful = 0, 0
+    for first, second, third in product(
+        arrows("A", "B", 1, 2),
+        arrows("B", "C", 2, 2),
+        arrows("C", "D", 2, 2),
+    ):
+        left = outcome(first, second, third, True)
+        right = outcome(first, second, third, False)
+        assert left == right, (first, second, third)
+        checked += 1
+        successful += left is not None
+    assert checked == 20_216
+    assert 0 < successful < checked

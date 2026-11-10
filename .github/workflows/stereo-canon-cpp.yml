@@ -1,4 +1,4 @@
-name: Native stereo canonicalization
+name: Native stereo matching and canonicalization
 
 on:
   pull_request:
@@ -51,7 +51,7 @@ jobs:
           -DSYNKIT_CANON_BUILD_EXAMPLES=ON -DSYNKIT_CANON_BUILD_TESTS=ON
       - run: cmake --build canon-build --config Release --parallel 2
       - run: ctest --test-dir canon-build -C Release --output-on-failure
-      - name: Run the native example without importing SynKit
+      - name: Run the native examples without importing SynKit
         shell: python
         run: |
           from pathlib import Path
@@ -60,6 +60,11 @@ jobs:
           name = 'Release/canonical_graph.exe' if sys.platform == 'win32' else 'canonical_graph'
           result = subprocess.check_output([str((Path('canon-build') / name).resolve())], text=True)
           assert '40 bytes' in result
+          name = 'Release/stereo_compare.exe' if sys.platform == 'win32' else 'stereo_compare'
+          result = subprocess.check_output([str((Path('canon-build') / name).resolve())], text=True)
+          assert 'CH2OH-(CHOH)3-CH2OH: LRL vs RLR = same' in result
+          assert 'CHO-(CHOH)3-CH2OH: LRL vs RLR = different' in result
+          assert 'CHO-(CHOH)3-CH2OH: LRL vs LLL (middle change) = different' in result
       - name: Install Python adapters and test tools
         run: python -m pip install -e . pytest
       - name: Verify native partitions, stereo families and reference regressions

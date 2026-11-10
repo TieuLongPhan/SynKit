@@ -12,7 +12,7 @@ from synkit.IO import its_to_rsmi, rsmi_to_its
 from synkit.Chem.Reaction.radical_wildcard import RadicalWildcardAdder
 from synkit.Synthesis.Reactor import SynReactor
 from synkit.Graph.Wildcard.its_merge import fuse_its_graphs
-from synkit.Graph.Fusion import (
+from synkit.Rule.Fusion import (
     DEFAULT_INTERFACE_EDGE_KEYS,
     DEFAULT_INTERFACE_NODE_KEYS,
     FusionCandidate,

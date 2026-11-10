@@ -38,6 +38,19 @@ build::
    result = map_reaction_implicit("CCO>>COC", library_path=library)
    mapper = Mapper("native", solver="pabs", library_path=library)
 
+A numerical minimum proof can be requested without enumerating its mapping
+classes::
+
+   proof = map_reaction_implicit("CCO>>COC", library_path=library, proof_only=True)
+   assert proof.search_result.status == "minimum_proven"
+   assert proof.search_result.backend_statistics["minimum_proven"]
+   assert not proof.complete  # No complete mapping set was requested.
+
+``minimum_proven`` distinguishes a successful proof-only query from a real
+deadline stop. Proof-only results retain ``truncation_reason="proof_only"``
+to describe the intentionally omitted enumeration. A zero-time or cancelled
+query does not receive a successful proof status.
+
 The old ``exact``, ``slap`` and ``_native`` import paths remain aliases to the
 same implementations. New code uses the ``solvers`` paths. The historical
 ``synkit.Chem.Reaction.Mapper`` namespace is also supported.

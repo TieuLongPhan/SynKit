@@ -22,7 +22,7 @@ from synkit.Chem.Molecule.chirality import (  # noqa: E402
 @pytest.fixture
 def published_dataset():
     published = pytest.importorskip(
-        "Experiment.Stereo.Chirality.published",
+        "Experiment.Stereo.comparison.acs",
         reason="unreleased stereo experiment is unavailable",
     )
     return published.load_dataset()

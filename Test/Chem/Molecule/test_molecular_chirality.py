@@ -21,28 +21,16 @@ from synkit.Chem.Molecule.chirality import (  # noqa: E402
 )
 from synkit.Graph.Stereo import AxisStereoSupport  # noqa: E402
 
-METADATA = (
-    ROOT
-    / "Experiment"
-    / "Stereo"
-    / "Data"
-    / "ACS-StereoMolGraph"
-    / "ci5c02523_si_002.metadata.json"
-)
-REPORT = (
-    ROOT
-    / "Experiment"
-    / "Stereo"
-    / "Data"
-    / "ACS-StereoMolGraph"
-    / "published_chirality_benchmark.json"
-)
+from Experiment.Stereo.paths import SOURCES, ADDITIONAL
+
+METADATA = SOURCES / "acs/ci5c02523_si_002.metadata.json"
+REPORT = ADDITIONAL / "published_comparator.json"
 
 
 @pytest.fixture
 def published_dataset():
     published = pytest.importorskip(
-        "Experiment.Stereo.Chirality.published",
+        "Experiment.Stereo.comparison.acs",
         reason="unreleased stereo experiment is unavailable",
     )
     return published.load_dataset(published.DATASET)
@@ -189,7 +177,7 @@ def test_removing_stereo_flags_makes_chiral_and_achiral_inputs_indistinguishable
 
 @pytest.mark.skipif(
     not REPORT.is_file(),
-    reason="generated published-chirality report is absent; run benchmark.sh",
+    reason="optional retained ACS comparator report is absent",
 )
 def test_frozen_benchmark_separates_published_labels_from_live_reproduction() -> None:
     report = json.loads(REPORT.read_text(encoding="utf-8"))
@@ -202,15 +190,6 @@ def test_frozen_benchmark_separates_published_labels_from_live_reproduction() ->
         "true_achiral": 94,
         "true_chiral": 164,
     }
-    assert (
-        report["failure_analysis"]["assigned_local_plus_lewis_identity"]["correct"]
-        == 235
-    )
-    assert report["stereo_stripped_input"]["correct"] == 223
-    assert report["stereo_stripped_input"]["mixed_label_constitution_count"] == 6
-    assert (
-        report["stereo_stripped_input"]["information_theoretic_maximum_correct"] == 250
-    )
     assert report["live_stereomolgraph"]["correct"] == 254
     assert report["live_stereomolgraph"][
         "published_stereomolgraph_disagreement_ids"

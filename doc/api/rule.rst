@@ -24,10 +24,44 @@ Identity
    :members:
    :show-inheritance:
 
+Composition
+-----------
+
+.. automodule:: synkit.Rule.Compose.composition
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Rule.Compose.search
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Rule.Compose.synrule
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Rule.Compose.laws
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Rule.Compose.resources
+   :members:
+   :show-inheritance:
+
+Rule reconstruction by fusion
+-----------------------------
+
+.. automodule:: synkit.Rule.Fusion
+   :members:
+   :show-inheritance:
+
 Apply
 -----
 
 .. automodule:: synkit.Rule.Apply.rule_matcher
+   :members:
+   :show-inheritance:
+
+.. automodule:: synkit.Rule.Apply.dpo
    :members:
    :show-inheritance:
 

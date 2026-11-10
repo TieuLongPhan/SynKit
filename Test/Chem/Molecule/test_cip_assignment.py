@@ -147,14 +147,14 @@ def test_atrop_axis_reversal_is_stable_and_inversion_changes_m_p() -> None:
     molecule = Chem.MolFromSmiles("C(F)(Cl)C(Br)I")
     assert molecule is not None
     descriptor = AtropBondStereo((1, 2, 0, 3, 4, 5), 1)
-    reversed_axis = AtropBondStereo((4, 5, 3, 0, 2, 1), 1)
+    reversed_axis = AtropBondStereo((4, 5, 3, 0, 1, 2), 1)
 
     original = assign_cip_label(molecule, descriptor)
     reversed_result = assign_cip_label(molecule, reversed_axis)
     inverted = assign_cip_label(molecule, descriptor.invert())
 
-    assert original.label == reversed_result.label == "M"
-    assert inverted.label == "P"
+    assert original.label == reversed_result.label == "P"
+    assert inverted.label == "M"
     assert descriptor.same_configuration(reversed_axis)
 
 
@@ -171,8 +171,8 @@ def test_cumulene_reversal_is_stable_and_inversion_changes_m_p() -> None:
     reversed_result = assign_cip_label(molecule, descriptor.reversed())
     inverted = assign_cip_label(molecule, descriptor.invert())
 
-    assert original.label == reversed_result.label == "M"
-    assert inverted.label == "P"
+    assert original.label == reversed_result.label == "P"
+    assert inverted.label == "M"
     assert descriptor.same_configuration(descriptor.reversed())
 
 
@@ -195,10 +195,10 @@ def test_axis_projection_survives_external_reference_relabeling() -> None:
         reference_to_index=reference_to_index,
     )
 
-    assert direct.label == relabelled.label == "M"
+    assert direct.label == relabelled.label == "P"
 
 
-def test_symmetric_axis_direction_fails_closed_without_index_bias() -> None:
+def test_symmetric_allene_does_not_require_a_preferred_viewing_end() -> None:
     molecule = Chem.MolFromSmiles("FC(Cl)=C=C(F)Cl")
     assert molecule is not None
     descriptor = CumuleneAxisStereo(
@@ -209,9 +209,10 @@ def test_symmetric_axis_direction_fails_closed_without_index_bias() -> None:
 
     assignment = assign_cip_label(molecule, descriptor)
 
-    assert assignment.label is None
-    assert assignment.status is CIPAssignmentStatus.UNRESOLVED_PRIORITY
-    assert "axis direction" in assignment.reason
+    assert assignment.label == "P"
+    assert assignment.status is CIPAssignmentStatus.ASSIGNED
+    assert assign_cip_label(molecule, descriptor.reversed()).label == "P"
+    assert assign_cip_label(molecule, descriptor.invert()).label == "M"
 
 
 def test_helical_projection_binds_parity_and_preserves_path_reversal() -> None:

@@ -112,15 +112,6 @@ libsynkit_partial_*.json
 /Data/USPTO/*
 /Experiment/Lewis/Runs/
 
-# Generated FLOWER intermediates and long-run evidence
-/Experiment/Lewis/FLOWER/batches/
-/Experiment/Lewis/FLOWER/full_reactions/
-/Experiment/Lewis/FLOWER/replay-debug/
-/Experiment/Lewis/FLOWER/replay-results*/
-/Experiment/Lewis/FLOWER/replay-runs/
-!Experiment/Lewis/FLOWER/full-reaction-batches/manifest.json
-!Experiment/Lewis/FLOWER/full-reaction-replay-summary.json
-
 # Resumable local benchmark state
 /Experiment/RBL/*checkpoint*.jsonl
 

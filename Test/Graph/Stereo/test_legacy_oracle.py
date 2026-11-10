@@ -50,7 +50,6 @@ def test_legacy_oracle_matches_every_atom_frame_permutation(
     "descriptor_type,parities",
     (
         (PlanarBondStereo, (0, None)),
-        (AtropBondStereo, (-1, 1, None)),
     ),
 )
 def test_legacy_oracle_matches_every_bond_frame_permutation(
@@ -150,3 +149,11 @@ def test_comparison_contract_never_hides_unregistered_divergence() -> None:
     assert not divergence.registered
     assert registered.registered
     assert registered.to_dict()["orbit_result"] == "RECONFIGURED:class-1"
+
+
+def test_corrected_axial_end_exchange_deliberately_differs_from_legacy():
+    original = AtropBondStereo((1, 2, 3, 4, 5, 6), 1)
+    reversed_axis = AtropBondStereo((5, 6, 4, 3, 1, 2), 1)
+    assert original == reversed_axis
+    assert legacy_canonical_form(original) != legacy_canonical_form(reversed_axis)
+    assert original != AtropBondStereo((5, 6, 4, 3, 2, 1), 1)

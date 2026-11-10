@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from synkit.Graph.Fusion import (
+from synkit.Rule.Fusion import (
     FUSION_PROOF_SCHEMA,
     FusionCandidate,
     graph_identity_digest,
