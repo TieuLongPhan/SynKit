@@ -100,5 +100,3 @@ def small_annotation():
     report = json.loads(json.dumps({"coordination": annotate_coordination(selected)}))
     parsed = {record["id"]: read_coordination(record, ROOT) for record in selected}
     return report, parsed
-
-

@@ -42,7 +42,9 @@ def test_generated_reference_identity_information_and_immutability(constructor, 
     ("TB", "As", ("F", "Cl", "Br", "I", "N"), 20, TrigonalBipyramidalStereo),
     ("OH", "Co", ("F", "Cl", "Br", "I", "N", "P"), 30, OctahedralStereo),
 ))
-def test_generated_coordination_positions_survive_projection_and_renumbering(tag, center, ligands, positions, constructor):
+def test_generated_coordination_positions_survive_projection_and_renumbering(
+    tag, center, ligands, positions, constructor
+):
     seen = set()
     for configuration in range(1, positions + 1):
         branches = "".join(f"({ligand})" for ligand in ligands[:-1]) + ligands[-1]

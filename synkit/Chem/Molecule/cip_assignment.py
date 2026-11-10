@@ -353,10 +353,15 @@ def _assign_axis(
             rf = 1 if right_frame[0] == rr.ordered_references[0] else -1
             if -descriptor.parity * lf * rf == sign:
                 label = label.lower()
-    return _result(original, CIPAssignmentStatus.ASSIGNED,
-                   "Axial helicity projected from the high-priority ligand at each end; either viewing end gives the same result.",
-                   label=label, rankings=rankings,
-                   witness=(descriptor.parity, left_factor, right_factor, sign))
+    return _result(
+        original,
+        CIPAssignmentStatus.ASSIGNED,
+        "Axial helicity projected from the high-priority ligand at each end; "
+        "either viewing end gives the same result.",
+        label=label,
+        rankings=rankings,
+        witness=(descriptor.parity, left_factor, right_factor, sign),
+    )
 
 
 def _assign_helical(
