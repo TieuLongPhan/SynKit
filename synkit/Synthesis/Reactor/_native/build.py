@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 from contextlib import contextmanager
+import errno
 import hashlib
 import json
 import os
@@ -13,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 
 def _digest(path):
@@ -27,11 +29,14 @@ def _build_lock(directory, key):
             import msvcrt
 
             stream.seek(0)
-            if not stream.read(1):
-                stream.write(b"\0")
-                stream.flush()
-            stream.seek(0)
-            msvcrt.locking(stream.fileno(), msvcrt.LK_LOCK, 1)
+            while True:
+                try:
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError as error:
+                    if error.errno not in (errno.EACCES, errno.EAGAIN):
+                        raise
+                    time.sleep(0.05)
         else:
             import fcntl
 

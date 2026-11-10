@@ -25,10 +25,10 @@ from time import perf_counter
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
-from rdkit import Chem, RDLogger, rdBase
-from synkit.IO.chem_converter import rsmi_to_its
-from synkit.Rule import SynRule
-from synkit.Synthesis.Reactor import (
+from rdkit import Chem, RDLogger, rdBase  # noqa: E402
+from synkit.IO.chem_converter import rsmi_to_its  # noqa: E402
+from synkit.Rule import SynRule  # noqa: E402
+from synkit.Synthesis.Reactor import (  # noqa: E402
     NativeReactorUnsupportedError, WildcardCompletionError, WildcardEngine,
     WildcardSearchLimitError, build_native_reactor,
 )
@@ -48,6 +48,13 @@ def _alarm(_signum, _frame):
 
 @contextmanager
 def deadline(seconds):
+    """Interrupt on POSIX; otherwise reject work that finishes over budget."""
+    if not all(hasattr(signal, name) for name in ("SIGALRM", "ITIMER_REAL", "setitimer")):
+        started = perf_counter()
+        yield
+        if perf_counter() - started >= seconds:
+            _alarm(None, None)
+        return
     previous = signal.signal(signal.SIGALRM, _alarm)
     signal.setitimer(signal.ITIMER_REAL, seconds)
     try:
@@ -207,7 +214,7 @@ def process(item):
             record["status"] = "attempted"
             record["runs"] = {
                 variant: {direction: run_direction(rule, inputs[direction], targets[direction],
-                                                  strict_targets[direction], direction, variant)
+                                                   strict_targets[direction], direction, variant)
                           for direction in DIRECTIONS}
                 for variant in VARIANTS
             }
@@ -323,7 +330,8 @@ def main():
     source_hashes = {str(p.relative_to(ROOT)): digest(p) for p in sorted(sources)}
     metadata = {"schema": "synkit.uspto-partial-replay/1", "command": sys.argv,
                 "source": {"path": str(args.dataset.resolve()), "sha256": digest(args.dataset),
-                           "selected_rows": len(rows), "selection": "prefix in stored row order; all if limit is absent"},
+                           "selected_rows": len(rows),
+                           "selection": "prefix in stored row order; all if limit is absent"},
                 "settings": settings, "workers": args.workers,
                 "execution_contract": {
                     "rule": "own reaction-center, paired Lewis fields, unchanged edges between center atoms retained",

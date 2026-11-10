@@ -1,6 +1,10 @@
 """Check replay scoring and observed/withheld input boundaries independently."""
 
+from types import SimpleNamespace
+
 import pytest
+
+from Experiment.Lewis.partial_replay import benchmark
 
 from Experiment.Lewis.partial_replay.benchmark import (
     canonical_fragments, contains_fragments, initialize, prepare, process, summarize,
@@ -70,3 +74,30 @@ def test_absolute_and_relative_hydrogen_policies_are_distinct():
     relative, *_ = prepare(REACTION, "relative")
     assert absolute.rc.raw.nodes[3]["hcount"] == (1, 1)
     assert relative.rc.raw.nodes[3]["hcount"] == (0, 0)
+
+
+@pytest.fixture
+def without_interval_timer(monkeypatch):
+    monkeypatch.setattr(benchmark, "signal", SimpleNamespace(signal=benchmark.signal.signal))
+
+
+def test_replay_preparation_and_execution_without_posix_timers(without_interval_timer):
+    initialize({"backend": "python", "library": None, "candidate_limit": 2048,
+                "seconds": 10, "hydrogen_policy": "absolute"})
+    balanced = process((0, {"aam": REACTION}))
+    omitted = process((1, {"aam": REACTION.split(".[Br-:2]")[0]}))
+
+    assert balanced["status"] == "attempted"
+    assert all(run["status"] == "complete" and run["exact"]
+               for runs in balanced["runs"].values() for run in runs.values())
+    assert omitted["status"] == "unsupported_atom_carrier"
+    assert omitted["left_only_maps"] == [2]
+
+
+def test_replay_without_posix_timers_rejects_completed_work_over_budget(without_interval_timer, monkeypatch):
+    readings = iter((10.0, 12.0))
+    monkeypatch.setattr(benchmark, "perf_counter", lambda: next(readings))
+
+    with pytest.raises(benchmark.ReplayTimeout, match="time budget"):
+        with benchmark.deadline(1.0):
+            pass
