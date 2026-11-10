@@ -19,8 +19,8 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install release check tools
@@ -113,9 +113,9 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set up Conda build tools
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniconda-version: "latest"
           channels: conda-forge
@@ -217,7 +217,7 @@ jobs:
           print(json.dumps(manifest, indent=2))
           PY
       - name: Upload the built and tested native package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: synkit-conda-build-${{ matrix.platform.subdir }}-py${{ matrix.python-version }}
           path: ${{ runner.temp }}/synkit-conda-validated/
@@ -229,7 +229,7 @@ jobs:
     needs: [release-check, build-check]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: synkit-conda-build-*
           merge-multiple: true
@@ -265,7 +265,7 @@ jobs:
               raise SystemExit(f"Incomplete native artifact matrix: {sorted(expected - observed)}")
           print(f"Validated all {len(packages)} native platform/Python packages without rebuilding")
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: synkit-conda-release-packages
           path: conda-packages/
@@ -278,11 +278,11 @@ jobs:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: synkit-conda-release-packages
           path: conda-packages
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install Anaconda client
