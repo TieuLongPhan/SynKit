@@ -15,9 +15,7 @@ def load_glycolysis(path=None):
     if payload.get("schema") != "synkit.crn-glycolysis-input/1":
         raise ValueError(f"{path}: unsupported glycolysis input schema")
     equations = payload["equations"]
-    if not equations or not all(
-        isinstance(e, str) and ">>" in e for e in equations.values()
-    ):
+    if not equations or not all(isinstance(e, str) and ">>" in e for e in equations.values()):
         raise ValueError(f"{path}: expected nonempty directed reaction equations")
     model = SynCRN.from_reaction_strings(list(equations.values()))
     if len(model.reactions) != len(equations):

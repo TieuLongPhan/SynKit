@@ -40,6 +40,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
 from Experiment.CRN.tools.common import (  # noqa: E402
+    native_experiment,
     DATA_DIR,
     environment,
     timed,
@@ -53,14 +54,12 @@ from synkit.CRN import (  # noqa: E402
     find_siphons,
     siphon_persistence_details,
 )
-from synkit.CRN.Petrinet.siphon_search import DEFAULT_MAX_NODES  # noqa: E402
 
 SCHEMA = "synkit.crn-biomodels/1"
+DEFAULT_SIPHON_MAX_NODES = 1_000_000
 
 CACHE_DIR = DATA_DIR / "biomodels"
-_DOWNLOAD_URL = (
-    "https://www.ebi.ac.uk/biomodels/model/download/{mid}?filename={mid}_url.xml"
-)
+_DOWNLOAD_URL = "https://www.ebi.ac.uk/biomodels/model/download/{mid}?filename={mid}_url.xml"
 
 #: A size-varied sample of curated models, from a dozen species to several
 #: hundred. ``BIOMD0000000562`` is included deliberately: it is an SBML-``qual``
@@ -141,39 +140,28 @@ def fetch(model_id: str, *, offline: bool, timeout: float = 60.0) -> Path:
     :raises FileNotFoundError: If the model is absent and ``offline`` is set.
     """
     path = CACHE_DIR / f"{model_id}.xml"
-    manifest = json.loads(
-        (DATA_DIR / "biomodels_manifest.json").read_text(encoding="utf-8")
-    )
+    manifest = json.loads((DATA_DIR / "biomodels_manifest.json").read_text(encoding="utf-8"))
     expected = manifest["models"].get(model_id)
 
     def verify(payload):
-        if (
-            expected is not None
-            and hashlib.sha256(payload).hexdigest() != expected["sha256"]
-        ):
-            raise ValueError(
-                f"{model_id}: SBML checksum differs from the declared input snapshot"
-            )
+        if expected is not None and hashlib.sha256(payload).hexdigest() != expected["sha256"]:
+            raise ValueError(f"{model_id}: SBML checksum differs from the declared input snapshot")
 
     if path.exists():
         verify(path.read_bytes())
         return path
     if offline:
-        raise FileNotFoundError(
-            f"{model_id} is not cached at {path} and --offline was requested"
-        )
+        raise FileNotFoundError(f"{model_id} is not cached at {path} and --offline was requested")
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(
-        _DOWNLOAD_URL.format(mid=model_id), timeout=timeout
-    ) as response:
+    with urllib.request.urlopen(_DOWNLOAD_URL.format(mid=model_id), timeout=timeout) as response:
         payload = response.read()
     verify(payload)
     path.write_bytes(payload)
     return path
 
 
-def analyse(path: Path, *, budget: float) -> Dict[str, Any]:
+def analyse(path: Path, *, budget: float, siphon_max_nodes: int = DEFAULT_SIPHON_MAX_NODES) -> Dict[str, Any]:
     """Import one SBML model and run the structural stack over it.
 
     :param path: Cached SBML file.
@@ -232,7 +220,7 @@ def analyse(path: Path, *, budget: float) -> Dict[str, Any]:
         record["moiety_error"] = error
 
     seconds, siphons, error = timed(
-        lambda: find_siphons(crn, names="id", strict_limit=True), budget=budget
+        lambda: find_siphons(crn, names="id", strict_limit=True, max_nodes=siphon_max_nodes), budget=budget
     )
     record["siphon_seconds"] = seconds
     record["n_minimal_siphons"] = None if siphons is None else len(siphons)
@@ -255,18 +243,14 @@ def analyse(path: Path, *, budget: float) -> Dict[str, Any]:
     if error:
         record["persistence_error"] = error
 
-    seconds, roundtrip, error = timed(
-        lambda: crn_from_sbml(crn_to_sbml(crn)), budget=budget
-    )
+    seconds, roundtrip, error = timed(lambda: crn_from_sbml(crn_to_sbml(crn)), budget=budget)
     record["roundtrip_seconds"] = seconds
     record["roundtrip_scope"] = (
         "species ids/labels/SMILES/source ids and directed reaction ids/labels/"
         "stoichiometric multisets/source ids; excludes kinetic laws, events, rules, "
         "and package-specific semantics"
     )
-    record["roundtrip_ok"] = roundtrip is not None and (
-        _structural_signature(roundtrip) == _structural_signature(crn)
-    )
+    record["roundtrip_ok"] = roundtrip is not None and (_structural_signature(roundtrip) == _structural_signature(crn))
     if roundtrip is None:
         record["roundtrip_error"] = error
 
@@ -278,6 +262,7 @@ def biomodels_report(
     *,
     offline: bool,
     budget: float,
+    siphon_max_nodes: int = DEFAULT_SIPHON_MAX_NODES,
 ) -> Dict[str, Any]:
     """Fetch, analyse, and assemble the evidence report.
 
@@ -295,16 +280,15 @@ def biomodels_report(
         try:
             path = fetch(model_id, offline=offline)
         except Exception as exc:
-            records.append(
-                {"model_id": model_id, "error": f"{type(exc).__name__}: {exc}"}
-            )
+            records.append({"model_id": model_id, "error": f"{type(exc).__name__}: {exc}"})
             continue
-        records.append(analyse(path, budget=budget))
+        records.append(analyse(path, budget=budget, siphon_max_nodes=siphon_max_nodes))
 
     reaction_models = [r for r in records if r.get("n_reactions") and "error" not in r]
     empty_models = [r for r in records if r.get("skipped")]
 
     checks = {
+        "requested_models_present": bool(models) and len(records) == len(models) and len(set(models)) == len(models),
         "every_model_parsed": all("error" not in r for r in records),
         "every_structural_analysis_complete": all(
             r.get("n_conserved_moieties") is not None
@@ -313,17 +297,13 @@ def biomodels_report(
             and "deficiency" in r
             for r in reaction_models
         ),
-        "every_reaction_model_round_trips": all(
-            r.get("roundtrip_ok") for r in reaction_models
-        ),
+        "every_reaction_model_round_trips": all(r.get("roundtrip_ok") for r in reaction_models),
         "deficiency_identity_holds": all(
             r["deficiency"] == r["n_complexes"] - r["n_linkage_classes"] - r["rank"]
             for r in reaction_models
             if "deficiency" in r
         ),
-        "reaction_free_models_are_flagged": all(
-            r.get("warnings") for r in empty_models
-        ),
+        "reaction_free_models_are_flagged": all(r.get("warnings") for r in empty_models),
     }
 
     def _largest(key: str) -> Optional[Dict[str, Any]]:
@@ -354,7 +334,7 @@ def biomodels_report(
         "parameters": {
             "budget_seconds": budget,
             "offline": offline,
-            "siphon_max_nodes": DEFAULT_MAX_NODES,
+            "siphon_max_nodes": siphon_max_nodes,
         },
         "selection_protocol": {
             "kind": "predeclared size-varied interoperability probe",
@@ -387,17 +367,24 @@ def main() -> int:
         help="per-analysis wall-clock budget in seconds",
     )
     parser.add_argument("--output", type=Path, help="write the evidence file here")
+    parser.add_argument(
+        "--siphon-max-nodes",
+        type=int,
+        default=DEFAULT_SIPHON_MAX_NODES,
+        help="explicit siphon search budget per model (default: 1000000)",
+    )
     arguments = parser.parse_args()
+    if arguments.siphon_max_nodes < 1:
+        parser.error("--siphon-max-nodes must be positive")
 
     report = biomodels_report(
         arguments.models,
         offline=arguments.offline,
         budget=arguments.budget,
+        siphon_max_nodes=arguments.siphon_max_nodes,
     )
     return write_report(report, arguments.output)
 
-
-from Experiment.CRN.tools.common import native_experiment
 
 main = native_experiment(main)
 

@@ -16,15 +16,15 @@ The set includes these network structures:
 - metabolic motifs (Michaelis-Menten, futile cycle, two-site phosphorylation)
   used in biochemical modelling.
 
-Use :mod:`Experiment.CRN.benchmarks.validate` to run the set and
-:mod:`Experiment.CRN.benchmarks.crosschecks` for the independent recomputation of
+Use :mod:`Experiment.CRN.studies.validation` to run the set and
+:mod:`Experiment.CRN.studies.crosschecks` for the independent recomputation of
 each quantity.
 
 .. rubric:: Example
 
 .. code-block:: python
 
-    from Experiment.CRN.benchmarks import BENCHMARK_NETWORKS, get_network
+    from Experiment.CRN.studies import BENCHMARK_NETWORKS, get_network
 
     print(len(BENCHMARK_NETWORKS))
     entry = get_network("michaelis_menten")
@@ -445,11 +445,8 @@ def get_network(name: str) -> BenchmarkNetwork:
 
         entry = get_network("michaelis_menten")
         print(entry.deficiency)
-        # 0
     """
     for entry in BENCHMARK_NETWORKS:
         if entry.name == name:
             return entry
-    raise KeyError(
-        f"Unknown benchmark network {name!r}. Available: {', '.join(network_names())}"
-    )
+    raise KeyError(f"Unknown benchmark network {name!r}. Available: {', '.join(network_names())}")

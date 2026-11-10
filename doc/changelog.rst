@@ -120,7 +120,7 @@ Version 1.6.3
 - Added ``synkit.CRN.Query.to_syncrn``: build a ``SynCRN`` directly from KEGG
   equations or a KEGG module, with reversible-equation expansion and optional
   currency-metabolite removal.
-- Added ``synkit.CRN.Benchmark``: a validation set with independent
+- Added ``Experiment.CRN.studies``: a validation set with independent
   cross-checks, a scaling benchmark, and a reproducible KEGG case study over
   four cached metabolic modules. ``Experiment/CRN/run_all.py`` regenerates
   every reported result.

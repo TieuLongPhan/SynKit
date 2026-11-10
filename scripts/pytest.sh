@@ -9,4 +9,10 @@ cd "${ROOT_DIR}"
 if (( $# )); then
     exec "${PYTHON_BIN}" -m pytest "$@"
 fi
-exec "${PYTHON_BIN}" -m pytest Test/
+TEST_PATHS=(Test/)
+for EXPERIMENT_TEST_PATH in Experiment/CRN/tests Experiment/atom_map/tests; do
+    if [[ -d "${EXPERIMENT_TEST_PATH}" ]]; then
+        TEST_PATHS+=("${EXPERIMENT_TEST_PATH}")
+    fi
+done
+exec "${PYTHON_BIN}" -m pytest "${TEST_PATHS[@]}"

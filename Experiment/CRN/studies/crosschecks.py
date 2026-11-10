@@ -33,11 +33,10 @@ Brute-force siphon enumeration is exponential, so
 .. code-block:: python
 
     from synkit.CRN import SynCRN
-    from Experiment.CRN.benchmarks.crosschecks import deficiency_by_rank_identity
+    from Experiment.CRN.studies.crosschecks import deficiency_by_rank_identity
 
     crn = SynCRN.from_reaction_strings(["A>>B", "B>>A"])
     print(deficiency_by_rank_identity(crn))
-    # 0
 """
 
 from __future__ import annotations
@@ -148,9 +147,7 @@ def deficiency_by_rank_identity(crn: Any) -> int:
         incidence[src, k] -= 1.0
         incidence[dst, k] += 1.0
 
-    return int(np.linalg.matrix_rank(incidence)) - int(
-        np.linalg.matrix_rank(y @ incidence)
-    )
+    return int(np.linalg.matrix_rank(incidence)) - int(np.linalg.matrix_rank(y @ incidence))
 
 
 def check_conservation_laws(
@@ -257,9 +254,7 @@ def check_semiflows(crn: Any, *, kind: str = "p") -> Dict[str, Any]:
             in_kernel = False
 
     supports = [frozenset(i for i, v in enumerate(vec) if v) for vec in vectors]
-    minimal = all(
-        not any(other < support for other in supports) for support in supports
-    )
+    minimal = all(not any(other < support for other in supports) for support in supports)
 
     checks = {
         "nonnegative": nonnegative,
@@ -366,9 +361,6 @@ def persistence_by_brute_force(
 
     matrix = _net_matrix(crn)
     row_order = _matrix_species_order(crn)
-    supports = [
-        frozenset(row_order[i] for i, v in enumerate(vec) if v)
-        for vec in minimal_semiflows(matrix, kind="p")
-    ]
+    supports = [frozenset(row_order[i] for i, v in enumerate(vec) if v) for vec in minimal_semiflows(matrix, kind="p")]
 
     return all(any(support <= siphon for support in supports) for siphon in siphons)

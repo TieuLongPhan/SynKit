@@ -17,7 +17,6 @@ isolated Python executable while this process remains in the SynKit environment.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import subprocess
 import sys
@@ -29,8 +28,8 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from Experiment.CRN.tools.common import environment, timed, write_report  # noqa: E402
-from Experiment.CRN.benchmarks import BENCHMARK_NETWORKS  # noqa: E402
+from Experiment.CRN.tools.common import environment, timed, write_report, native_experiment  # noqa: E402
+from Experiment.CRN.studies import BENCHMARK_NETWORKS  # noqa: E402
 from synkit.CRN.IO import write_sbml  # noqa: E402
 from synkit.CRN.Props import crnt_summary  # noqa: E402
 
@@ -47,9 +46,7 @@ SHARED_FIELDS = (
 )
 
 
-def compare_payload(
-    synkit_rows: Dict[str, Dict[str, Any]], external: Dict[str, Any]
-) -> Dict[str, Any]:
+def compare_payload(synkit_rows: Dict[str, Dict[str, Any]], external: Dict[str, Any]) -> Dict[str, Any]:
     """Compare a worker payload with SynKit values by network name.
 
     :param synkit_rows: SynKit summaries keyed by benchmark name.
@@ -64,9 +61,7 @@ def compare_payload(
             rows.append({"name": name, "matches": False, "error": "missing row"})
             continue
         if "error" in theirs:
-            rows.append(
-                {"name": name, "matches": False, "error": theirs["error"]}
-            )
+            rows.append({"name": name, "matches": False, "error": theirs["error"]})
             continue
 
         differences = {
@@ -78,7 +73,7 @@ def compare_payload(
             {
                 "name": name,
                 "matches": not differences,
-                "input_sha256": ours.get("input_sha256"),
+                "reactions": ours.get("reactions", []),
                 "differences": differences,
                 "synkit": {field: ours[field] for field in SHARED_FIELDS},
                 "crnt4sbml": {field: theirs[field] for field in SHARED_FIELDS},
@@ -88,9 +83,7 @@ def compare_payload(
     names_match = set(synkit_rows) == set(external_rows)
     checks = {
         "same_network_set": names_match,
-        "all_shared_structural_quantities_agree": (
-            names_match and all(row["matches"] for row in rows)
-        ),
+        "all_shared_structural_quantities_agree": (names_match and all(row["matches"] for row in rows)),
     }
     return {"checks": checks, "networks": rows}
 
@@ -114,16 +107,12 @@ def external_report(python: Path) -> Dict[str, Any]:
             synkit_rows[entry.name] = summary
             path = root / f"{entry.name}.xml"
             write_sbml(crn, path, model_id=entry.name, model_name=entry.description)
-            synkit_rows[entry.name]["input_sha256"] = hashlib.sha256(
-                path.read_bytes()
-            ).hexdigest()
+            synkit_rows[entry.name]["reactions"] = list(entry.reactions)
             manifest["networks"].append({"name": entry.name, "path": str(path)})
 
         manifest_path = root / "manifest.json"
         worker_output = root / "crnt4sbml.json"
-        manifest_path.write_text(
-            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-        )
+        manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
         seconds, completed, error = timed(
             lambda: subprocess.run(
@@ -168,9 +157,7 @@ def external_report(python: Path) -> Dict[str, Any]:
             "name": "CRNT4SBML",
             "version": external.get("environment", {}).get("crnt4sbml"),
             "pypi": "https://pypi.org/project/crnt4sbml/",
-            "repository": (
-                "https://github.com/PNNL-Comp-Mass-Spec/CRNT4SBML"
-            ),
+            "repository": ("https://github.com/PNNL-Comp-Mass-Spec/CRNT4SBML"),
         },
         "seconds": seconds,
         **comparison,
@@ -191,7 +178,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     return write_report(external_report(arguments.crnt4sbml_python), arguments.output)
 
 
-from Experiment.CRN.tools.common import native_experiment
 main = native_experiment(main)
 
 if __name__ == "__main__":

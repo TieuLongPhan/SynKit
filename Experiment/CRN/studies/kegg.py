@@ -1,85 +1,28 @@
-"""End-to-end metabolic case study over cached KEGG modules.
-
-Builds a structural report from a KEGG module using retrieval and parsing
-(:mod:`synkit.CRN.Query`), canonical representation
-(:mod:`synkit.CRN.Structure`), stoichiometry and CRNT
-(:mod:`synkit.CRN.Props`), the Petri-net layer (:mod:`synkit.CRN.Petrinet`) and
-flux realizability (:mod:`synkit.CRN.Pathway`).
-
-Four modules are cached in Experiment/CRN/data, so the study is reproducible offline
-and does not depend on KEGG being reachable or unchanged:
-
-======= ==========================================================
-Module  Pathway
-======= ==========================================================
-M00001  Glycolysis (Embden-Meyerhof), glucose to pyruvate
-M00307  Pyruvate oxidation, pyruvate to acetyl-CoA
-M00009  Citrate cycle (TCA cycle)
-M00004  Pentose phosphate pathway
-======= ==========================================================
-
-What the analysis reports, and how to read it biologically:
-
-**Conserved moieties**
-    Non-negative minimal conservation laws. In a metabolic module these are the
-    cofactor couples that the module cycles rather than consumes — the
-    ATP/ADP/AMP adenylate pool, the NAD+/NADH pool, oxidized/reduced ferredoxin.
-    Finding them confirms the module is balanced on those pools; a missing pool
-    points at a reaction written with an unbalanced cofactor.
-
-**Siphons**
-    Sets of metabolites that, once all absent, can never be produced again. A
-    siphon that contains no conserved moiety marks a metabolite set the module
-    cannot regenerate on its own — in practice, a dependency on an input the
-    module does not itself produce.
-
-**Structural persistence**
-    The Angeli-De Leenheer-Sontag condition: every minimal siphon contains the
-    support of a conservation law. When it holds, no metabolite can be driven to
-    extinction for any kinetics. A linear catabolic module is *not* expected to
-    be persistent — it consumes its substrate by design — so a ``False`` here is
-    information about the module's openness, not a defect.
-
-**Flux realizability**
-    Whether a proposed reaction flux can actually be fired from a given starting
-    marking under integer token semantics, with a firing sequence as
-    certificate. This is the check that distinguishes a flux the stoichiometry
-    permits from one the network can carry out step by step.
-
-Currency metabolites are dropped by default
-(:data:`~synkit.CRN.Query.to_syncrn.CURRENCY_COMPOUNDS`), because otherwise
-every siphon and most semiflows describe cofactor recycling rather than the
-pathway's carbon skeleton. Pass ``drop_currency=False`` to see the full picture.
-
-.. rubric:: Example
-
-.. code-block:: python
-
-    from Experiment.CRN.benchmarks import analyze_kegg_module, kegg_case_study_report
-
-    result = analyze_kegg_module("M00001")
-    print(result.n_species, result.n_reactions, result.deficiency)
-    print(kegg_case_study_report())
-"""
+#!/usr/bin/env python
+"""Analyse cached KEGG metabolic modules end to end."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import sys
 from pathlib import Path
-from synkit.CRN.Query.cache import (
-    load_kegg_cache as read_kegg_cache,
-    build_cached_kegg_crn,
-)
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+import argparse
 
-from synkit.CRN.Petrinet.persistence import siphon_persistence_details
-from synkit.CRN.Petrinet.siphon_search import SiphonSearchLimit
-from synkit.CRN.Petrinet.structure import find_siphons
-from synkit.CRN.Props.deficiency import crnt_summary
-from synkit.CRN.Props.helper import _species_and_rule_order
-from synkit.CRN.Props.stoich import conserved_moieties
-from synkit.CRN.Query.to_syncrn import CURRENCY_COMPOUNDS
-from synkit.CRN.Structure.syncrn import SynCRN
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
+from synkit.CRN.Query.cache import load_kegg_cache as read_kegg_cache, build_cached_kegg_crn  # noqa: E402
+from synkit.CRN.Petrinet.persistence import siphon_persistence_details  # noqa: E402
+from synkit.CRN.Petrinet.siphon_search import SiphonSearchLimit  # noqa: E402
+from synkit.CRN.Petrinet.structure import find_siphons  # noqa: E402
+from synkit.CRN.Props.deficiency import crnt_summary  # noqa: E402
+from synkit.CRN.Props.helper import _species_and_rule_order  # noqa: E402
+from synkit.CRN.Props.stoich import conserved_moieties  # noqa: E402
+from synkit.CRN.Query.to_syncrn import CURRENCY_COMPOUNDS  # noqa: E402
+from synkit.CRN.Structure.syncrn import SynCRN  # noqa: E402
+from Experiment.CRN.tools.common import environment, timed, write_report, native_experiment  # noqa: E402
 
 __all__ = [
     "CASE_STUDY_MODULES",
@@ -114,9 +57,7 @@ def load_kegg_cache() -> Dict[str, Any]:
     """
     global _cache
     if _cache is None:
-        _cache = read_kegg_cache(
-            Path(__file__).resolve().parents[1] / "data" / _CACHE_FILE
-        )
+        _cache = read_kegg_cache(Path(__file__).resolve().parents[1] / "data" / _CACHE_FILE)
     return _cache
 
 
@@ -391,10 +332,7 @@ def analyze_kegg_module(
     lookup = _label_lookup(crn)
 
     raw_moieties = conserved_moieties(crn)
-    moieties = [
-        sorted(label for label, coeff in zip(labels, vector) if coeff)
-        for vector in raw_moieties
-    ]
+    moieties = [sorted(label for label, coeff in zip(labels, vector) if coeff) for vector in raw_moieties]
     moiety_sets = [frozenset(m) for m in moieties]
 
     siphons_complete, siphon_reason = True, "complete"
@@ -406,22 +344,11 @@ def analyze_kegg_module(
         all_siphons = []
         siphons_complete = False
         result = getattr(exc, "result", None)
-        siphon_reason = (
-            result.termination_reason if result is not None else "node_limit"
-        )
-    siphons_raw = [
-        s for s in all_siphons if max_siphon_size is None or len(s) <= max_siphon_size
-    ]
-    siphons = [
-        sorted(lookup.get(str(item), str(item)) for item in siphon)
-        for siphon in siphons_raw
-    ]
+        siphon_reason = result.termination_reason if result is not None else "node_limit"
+    siphons_raw = [s for s in all_siphons if max_siphon_size is None or len(s) <= max_siphon_size]
+    siphons = [sorted(lookup.get(str(item), str(item)) for item in siphon) for siphon in siphons_raw]
 
-    uncovered = [
-        siphon
-        for siphon in siphons
-        if not any(moiety <= frozenset(siphon) for moiety in moiety_sets)
-    ]
+    uncovered = [siphon for siphon in siphons if not any(moiety <= frozenset(siphon) for moiety in moiety_sets)]
 
     try:
         import numpy as np
@@ -577,10 +504,7 @@ def kegg_case_study_report(
     if fmt not in {"text", "markdown"}:
         raise ValueError(f"fmt must be 'text' or 'markdown', got {fmt!r}")
 
-    results = [
-        analyze_kegg_module(module_id, drop_currency=drop_currency)
-        for module_id in modules
-    ]
+    results = [analyze_kegg_module(module_id, drop_currency=drop_currency) for module_id in modules]
 
     if fmt == "text":
         return "\n\n".join(str(result) for result in results)
@@ -612,27 +536,142 @@ def kegg_case_study_report(
             "yes" if result.weakly_reversible else "no",
             str(len(result.moieties)),
             str(len(result.siphons)),
-            (
-                "-"
-                if result.persistent is None
-                else ("yes" if result.persistent else "no")
-            ),
+            ("-" if result.persistent is None else ("yes" if result.persistent else "no")),
         ]
         for result in results
     ]
 
-    widths = [
-        max(len(headers[i]), *(len(row[i]) for row in rows))
-        for i in range(len(headers))
-    ]
+    widths = [max(len(headers[i]), *(len(row[i]) for row in rows)) for i in range(len(headers))]
 
     def line(values: Sequence[str]) -> str:
-        return (
-            "| "
-            + " | ".join(value.ljust(widths[i]) for i, value in enumerate(values))
-            + " |"
-        )
+        return "| " + " | ".join(value.ljust(widths[i]) for i, value in enumerate(values)) + " |"
 
-    return "\n".join(
-        [line(headers), line(["-" * w for w in widths])] + [line(row) for row in rows]
+    return "\n".join([line(headers), line(["-" * w for w in widths])] + [line(row) for row in rows])
+
+
+SCHEMA = "synkit.crn-kegg/1"
+
+#: Findings the study asserts, so that a silent change in KEGG or in the
+#: analysis stack fails the run rather than quietly changing the expected results.
+EXPECTED_GLYCOLYSIS_MOIETY = {
+    "alpha-D-Glucose",
+    "alpha-D-Glucose 6-phosphate",
+    "D-Fructose 6-phosphate",
+    "D-Fructose 1,6-bisphosphate",
+    "Glycerone phosphate",
+    "D-Glyceraldehyde 3-phosphate",
+    "3-Phospho-D-glyceroyl phosphate",
+    "3-Phospho-D-glycerate",
+    "2-Phospho-D-glycerate",
+    "Phosphoenolpyruvate",
+    "Pyruvate",
+}
+
+
+def kegg_report(
+    modules: Sequence[str],
+    *,
+    drop_currency: bool,
+) -> Dict[str, Any]:
+    """Analyse each module and assemble the evidence report.
+
+    :param modules: KEGG module identifiers to analyse.
+    :type modules: Sequence[str]
+    :param drop_currency: Whether currency metabolites are removed.
+    :type drop_currency: bool
+    :return: Report payload.
+    :rtype: Dict[str, Any]
+    """
+    cache = load_kegg_cache()
+
+    analyses = []
+    for module_id in modules:
+        seconds, result, error = timed(lambda mid=module_id: analyze_kegg_module(mid, drop_currency=drop_currency))
+        if result is None:
+            analyses.append({"module_id": module_id, "error": error})
+            continue
+        payload = result.to_dict()
+        payload["seconds"] = seconds
+        analyses.append(payload)
+
+    flux_seconds, flux, flux_error = timed(check_glycolysis_flux)
+    flux_payload: Dict[str, Any] = {"error": flux_error} if flux is None else dict(flux)
+    flux_payload["seconds"] = flux_seconds
+
+    glycolysis = next((a for a in analyses if a.get("module_id") == "M00001"), {})
+    moieties = [set(m) for m in glycolysis.get("moieties", [])]
+    siphons = [set(s) for s in glycolysis.get("siphons", [])]
+
+    fired: Dict[str, int] = {}
+    for reaction in flux_payload.get("certificate") or []:
+        fired[reaction] = fired.get(reaction, 0) + 1
+
+    checks = {
+        "every_module_analysed": all("error" not in a for a in analyses),
+        "all_enumerations_complete": all(
+            a.get("siphons_complete") is True and a.get("persistent") is not None for a in analyses
+        ),
+        "deficiency_identity_holds": all(
+            a["deficiency"] == a["n_complexes"] - a["n_linkage_classes"] - a["rank"]
+            for a in analyses
+            if "error" not in a
+        ),
+        "glycolysis_carbon_backbone_recovered": EXPECTED_GLYCOLYSIS_MOIETY in moieties,
+        "glucose_is_a_minimal_siphon": {"alpha-D-Glucose"} in siphons,
+        "ferredoxin_couple_recovered": {
+            "Oxidized ferredoxin",
+            "Reduced ferredoxin",
+        }
+        in moieties,
+        "glycolytic_flux_is_realizable": bool(flux_payload.get("realizable")),
+        "certificate_matches_requested_flux": fired == dict(GLYCOLYSIS_FLUX),
+    }
+
+    return {
+        "schema": SCHEMA,
+        "status": "PASS" if all(checks.values()) else "FAIL",
+        "claim_boundary": (
+            "Conserved moieties, siphons and persistence are structural "
+            "properties of the stoichiometry as curated by KEGG. They describe "
+            "the module as written, not the in vivo pathway, and say nothing "
+            "about flux magnitude, regulation or kinetics."
+        ),
+        "environment": environment(),
+        "source": {
+            "database": cache.get("source"),
+            "retrieved": cache.get("retrieved"),
+            "drop_currency": drop_currency,
+        },
+        "checks": checks,
+        "modules": analyses,
+        "glycolysis_flux": flux_payload,
+    }
+
+
+def main() -> int:
+    """Parse arguments, run the study, and write the evidence file.
+
+    :return: Process exit status.
+    :rtype: int
+    """
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--modules", nargs="+", default=list(CASE_STUDY_MODULES))
+    parser.add_argument(
+        "--keep-currency",
+        action="store_true",
+        help="retain ATP/NAD(H)/water and the other currency metabolites",
     )
+    parser.add_argument("--output", type=Path, help="write the evidence file here")
+    arguments = parser.parse_args()
+
+    report = kegg_report(
+        arguments.modules,
+        drop_currency=not arguments.keep_currency,
+    )
+    return write_report(report, arguments.output)
+
+
+main = native_experiment(main)
+
+if __name__ == "__main__":
+    raise SystemExit(main())
