@@ -52,7 +52,8 @@ for name in ('semiflows', 'algebra', 'pathway', 'symmetry'):
 """
     result = subprocess.run(
         [sys.executable, "-c", script, str(library), str(int(exact))],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     if result.returncode:
         raise RuntimeError("Native CRN library has an incompatible ABI:\n" + result.stderr[-3000:])
@@ -70,8 +71,15 @@ def _configure(work, source, compiler, boost):
     cmake = shutil.which("cmake")
     if cmake is None:
         raise RuntimeError("CMake is required for an explicit native CRN build")
-    command = [cmake, "-S", str(source), "-B", str(work), "-DCMAKE_BUILD_TYPE=Release",
-               "-DSYNKIT_CRN_EXACT=" + ("ON" if boost is not None else "OFF")]
+    command = [
+        cmake,
+        "-S",
+        str(source),
+        "-B",
+        str(work),
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DSYNKIT_CRN_EXACT=" + ("ON" if boost is not None else "OFF"),
+    ]
     if compiler is not None:
         resolved = shutil.which(compiler)
         if resolved is None:
@@ -80,15 +88,26 @@ def _configure(work, source, compiler, boost):
     if boost is not None:
         command.append("-DSYNKIT_CRN_BOOST_INCLUDE_DIR=" + str(boost))
     _run(command)
-    prefixes = ("CMAKE_CXX_COMPILER", "CMAKE_CXX_FLAGS", "CMAKE_SHARED_LINKER_FLAGS", "CMAKE_GENERATOR",
-                "CMAKE_BUILD_TYPE", "CMAKE_OSX_", "CMAKE_VS_PLATFORM_TOOLSET")
+    prefixes = (
+        "CMAKE_CXX_COMPILER",
+        "CMAKE_CXX_FLAGS",
+        "CMAKE_SHARED_LINKER_FLAGS",
+        "CMAKE_GENERATOR",
+        "CMAKE_BUILD_TYPE",
+        "CMAKE_OSX_",
+        "CMAKE_VS_PLATFORM_TOOLSET",
+    )
     cache = {}
     for line in (work / "CMakeCache.txt").read_text().splitlines():
         key, separator, value = line.partition("=")
         if separator and key.startswith(prefixes):
             cache[key] = value
-    return {"cmake": _run([cmake, "--version"]), "cmake_path": cmake, "cache": cache,
-            "compiler": json.loads((work / "crn-build.json").read_text())}
+    return {
+        "cmake": _run([cmake, "--version"]),
+        "cmake_path": cmake,
+        "cache": cache,
+        "compiler": json.loads((work / "crn-build.json").read_text()),
+    }
 
 
 def _reuse(library, manifest, configuration, exact):
@@ -97,9 +116,13 @@ def _reuse(library, manifest, configuration, exact):
     except (OSError, ValueError) as exc:
         raise RuntimeError("Existing immutable CRN library has no valid manifest") from exc
     expected_capabilities = list(CAPABILITIES if exact else CAPABILITIES[:4])
-    if (saved.get("configuration") != configuration or saved.get("library_sha256") != _digest(library)
-            or saved.get("abi") != 1 or saved.get("semiflows_abi") != (1 if exact else None)
-            or saved.get("capabilities") != expected_capabilities):
+    if (
+        saved.get("configuration") != configuration
+        or saved.get("library_sha256") != _digest(library)
+        or saved.get("abi") != 1
+        or saved.get("semiflows_abi") != (1 if exact else None)
+        or saved.get("capabilities") != expected_capabilities
+    ):
         raise RuntimeError("Existing immutable CRN library checksum or configuration mismatch")
     _verify(library, exact)
     return library
@@ -158,16 +181,36 @@ def build_native(output_dir, compiler=None, *, boost_include_dir=None, with_semi
             path.write_bytes(payload)
         build = work / "build"
         configuration = {
-            "abi": 1, "builder_sha256": _digest(__file__),
+            "abi": 1,
+            "builder_sha256": _digest(__file__),
             "support_sha256": _digest(Path(__file__).with_name("_build.py")),
             "sources": {name: hashlib.sha256(data).hexdigest() for name, data in payloads.items()},
-            "boost_headers_sha256": _boost_digest(boost), "platform": sys.platform, "machine": platform.machine(),
+            "boost_headers_sha256": _boost_digest(boost),
+            "platform": sys.platform,
+            "machine": platform.machine(),
             "environment": {
-                name: os.environ.get(name) for name in (
-                    "CXX", "CXXFLAGS", "CPPFLAGS", "LDFLAGS", "CL", "_CL_", "INCLUDE", "LIB", "LIBPATH",
-                    "SDKROOT", "MACOSX_DEPLOYMENT_TARGET", "CMAKE_GENERATOR", "CMAKE_GENERATOR_PLATFORM",
-                    "CMAKE_GENERATOR_TOOLSET", "VCToolsInstallDir", "VCToolsVersion", "WindowsSdkDir",
-                    "WindowsSDKVersion", "UniversalCRTSdkDir", "UCRTVersion",
+                name: os.environ.get(name)
+                for name in (
+                    "CXX",
+                    "CXXFLAGS",
+                    "CPPFLAGS",
+                    "LDFLAGS",
+                    "CL",
+                    "_CL_",
+                    "INCLUDE",
+                    "LIB",
+                    "LIBPATH",
+                    "SDKROOT",
+                    "MACOSX_DEPLOYMENT_TARGET",
+                    "CMAKE_GENERATOR",
+                    "CMAKE_GENERATOR_PLATFORM",
+                    "CMAKE_GENERATOR_TOOLSET",
+                    "VCToolsInstallDir",
+                    "VCToolsVersion",
+                    "WindowsSdkDir",
+                    "WindowsSDKVersion",
+                    "UniversalCRTSdkDir",
+                    "UCRTVersion",
                 )
             },
             "toolchain": _configure(build, snapshot, compiler, boost),

@@ -124,9 +124,7 @@ def _coerce_side_counts(obj: Any) -> Dict[str, int]:
     if hasattr(obj, "items"):
         return {str(k): int(v) for k, v in obj.items()}
 
-    raise TypeError(
-        "Parsed side must be a mapping, or expose to_dict(), or expose items()."
-    )
+    raise TypeError("Parsed side must be a mapping, or expose to_dict(), or expose items().")
 
 
 def _normalize_side_counts(
@@ -167,22 +165,18 @@ def _normalize_side_counts(
             n = int(coeff)
         except Exception as exc:
             raise TypeError(
-                f"Reaction at index {rxn_index} has non-integer coefficient on "
-                f"{side_name}: {sp!r} -> {coeff!r}"
+                f"Reaction at index {rxn_index} has non-integer coefficient on " f"{side_name}: {sp!r} -> {coeff!r}"
             ) from exc
 
         if not label:
             if strict:
-                raise ValueError(
-                    f"Reaction at index {rxn_index} has blank species label on {side_name}"
-                )
+                raise ValueError(f"Reaction at index {rxn_index} has blank species label on {side_name}")
             continue
 
         if n <= 0:
             if strict:
                 raise ValueError(
-                    f"Reaction at index {rxn_index} has non-positive coefficient on "
-                    f"{side_name}: {sp!r} -> {n}"
+                    f"Reaction at index {rxn_index} has non-positive coefficient on " f"{side_name}: {sp!r} -> {n}"
                 )
             continue
 
@@ -234,9 +228,7 @@ def _parse_reaction_string_entry(
     pieces = _REACTION_SPLIT_RE.split(text, maxsplit=1)
 
     if len(pieces) != 2:
-        raise ValueError(
-            f"Reaction string at index {rxn_index} must contain exactly one '>>': {rxn_text!r}"
-        )
+        raise ValueError(f"Reaction string at index {rxn_index} must contain exactly one '>>': {rxn_text!r}")
 
     lhs_text, rhs_text = pieces[0].strip(), pieces[1].strip()
 
@@ -347,9 +339,7 @@ def _mint_reaction_string_ids(
 
     if id_style == "numeric":
         species_ids = [str(i) for i in range(1, n_species + 1)]
-        reaction_ids = [
-            str(i) for i in range(n_species + 1, n_species + n_reactions + 1)
-        ]
+        reaction_ids = [str(i) for i in range(n_species + 1, n_species + n_reactions + 1)]
         rule_ids = [str(i) for i in range(1, n_reactions + 1)]
         return {
             "species_ids": species_ids,
@@ -504,12 +494,8 @@ def _build_reactions_from_parsed_strings(
         if has_rules:
             rule_id = rule_ids[i]
 
-        lhs = RXNSide(
-            {label_to_sid[sp]: coeff for sp, coeff in item["lhs_counts"].items()}
-        )
-        rhs = RXNSide(
-            {label_to_sid[sp]: coeff for sp, coeff in item["rhs_counts"].items()}
-        )
+        lhs = RXNSide({label_to_sid[sp]: coeff for sp, coeff in item["lhs_counts"].items()})
+        rhs = RXNSide({label_to_sid[sp]: coeff for sp, coeff in item["rhs_counts"].items()})
 
         reactions[rid] = Reaction(
             id=rid,
@@ -532,12 +518,10 @@ def _build_reactions_from_parsed_strings(
             },
             metadata={},
             reactant_edge_attrs={
-                label_to_sid[sp]: {"role": "reactant", "stoich": coeff}
-                for sp, coeff in item["lhs_counts"].items()
+                label_to_sid[sp]: {"role": "reactant", "stoich": coeff} for sp, coeff in item["lhs_counts"].items()
             },
             product_edge_attrs={
-                label_to_sid[sp]: {"role": "product", "stoich": coeff}
-                for sp, coeff in item["rhs_counts"].items()
+                label_to_sid[sp]: {"role": "product", "stoich": coeff} for sp, coeff in item["rhs_counts"].items()
             },
         )
 

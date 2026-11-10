@@ -353,9 +353,7 @@ def freeze(x: Any) -> Hashable:
         freeze({"b": [2, 1], "a": {"x", "y"}})
     """
     if isinstance(x, dict):
-        return tuple(
-            (k, freeze(v)) for k, v in sorted(x.items(), key=lambda kv: str(kv[0]))
-        )
+        return tuple((k, freeze(v)) for k, v in sorted(x.items(), key=lambda kv: str(kv[0])))
     if isinstance(x, (list, tuple)):
         return tuple(freeze(v) for v in x)
     if isinstance(x, set):
@@ -465,9 +463,7 @@ def _product_factorials_capped(values: Iterable[int], cap: int) -> int:
     return out
 
 
-def approx_automorphism_count_from_cells(
-    cells: Iterable[Sequence[Any]], *, cap: int = 10**18
-) -> int:
+def approx_automorphism_count_from_cells(cells: Iterable[Sequence[Any]], *, cap: int = 10**18) -> int:
     """Approximate automorphism count from unresolved cell sizes.
 
     This estimate assumes each cell can be permuted independently.
@@ -567,9 +563,7 @@ def prepare_graph(
     if isinstance(source, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)):
         return _copy_as_digraph(source), "bipartite" if include_rule else "species"
     if hasattr(source, "to_digraph") and callable(source.to_digraph):
-        return _copy_as_digraph(source.to_digraph()), (
-            "bipartite" if include_rule else "species"
-        )
+        return _copy_as_digraph(source.to_digraph()), ("bipartite" if include_rule else "species")
     raise TypeError("Expected a NetworkX graph or an object with to_digraph().")
 
 
@@ -691,9 +685,7 @@ def _append_selected_attrs(
             out.append((k, freeze(attrs.get(k, None))))
 
 
-def _species_node_token(
-    attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
-) -> None:
+def _species_node_token(attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]) -> None:
     """Append species-specific token components.
 
     :param attrs:
@@ -721,9 +713,7 @@ def _species_node_token(
     )
 
 
-def _rule_node_token(
-    attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
-) -> None:
+def _rule_node_token(attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]) -> None:
     """Append rule-specific token components.
 
     :param attrs:
@@ -751,9 +741,7 @@ def _rule_node_token(
     )
 
 
-def _other_node_token(
-    attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
-) -> None:
+def _other_node_token(attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]) -> None:
     """Append generic token components for non-species, non-rule nodes.
 
     :param attrs:
@@ -780,9 +768,7 @@ def _other_node_token(
     )
 
 
-def _append_generic_node_attrs(
-    attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]
-) -> None:
+def _append_generic_node_attrs(attrs: Mapping[str, Any], config: SymmetryConfig, out: List[Any]) -> None:
     """Append generic node attributes shared across all node kinds.
 
     :param attrs:
@@ -966,9 +952,7 @@ def build_fast_signature(
     )
 
 
-def graph_key_from_order(
-    G: nx.DiGraph, order: Sequence[Any], config: SymmetryConfig
-) -> Tuple[Any, ...]:
+def graph_key_from_order(G: nx.DiGraph, order: Sequence[Any], config: SymmetryConfig) -> Tuple[Any, ...]:
     """Build a canonical graph key from a node order.
 
     :param G:
@@ -1010,9 +994,7 @@ def invert_mapping(mapping: Dict[Any, Any]) -> Dict[Any, Any]:
     return {v: k for k, v in mapping.items()}
 
 
-def orbits_from_mappings(
-    nodes: Sequence[Any], mappings: Iterable[Dict[Any, Any]]
-) -> List[Set[Any]]:
+def orbits_from_mappings(nodes: Sequence[Any], mappings: Iterable[Dict[Any, Any]]) -> List[Set[Any]]:
     """Build orbit classes from a collection of automorphism mappings.
 
     :param nodes:

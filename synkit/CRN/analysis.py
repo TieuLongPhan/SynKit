@@ -66,9 +66,7 @@ class CRNAnalysis:
 
     def __init__(self, crn: Any, scenario: Scenario | None = None):
         self.scenario = deepcopy(scenario or Scenario())
-        self._original = deepcopy(
-            crn if isinstance(crn, SynCRN) else SynCRN.from_digraph(crn)
-        )
+        self._original = deepcopy(crn if isinstance(crn, SynCRN) else SynCRN.from_digraph(crn))
         self._crn = deepcopy(self._original)
         dropped = {self._resolve(x) for x in self.scenario.drop_species}
         self.chemostats = {self._resolve(x) for x in self.scenario.chemostats}
@@ -98,25 +96,16 @@ class CRNAnalysis:
         if token in records:
             return token
         matches = [
-            key
-            for key, record in records.items()
-            if str(token) in {str(record.label), str(record.source_node_id)}
+            key for key, record in records.items() if str(token) in {str(record.label), str(record.source_node_id)}
         ]
         if len(matches) != 1:
-            raise ValueError(
-                f"Unknown or ambiguous {'reaction' if reaction else 'species'}: {token!r}"
-            )
+            raise ValueError(f"Unknown or ambiguous {'reaction' if reaction else 'species'}: {token!r}")
         return matches[0]
 
     @staticmethod
     def _counts(values):
-        if any(
-            isinstance(v, bool) or not isinstance(v, (int, np.integer)) or v < 0
-            for v in values.values()
-        ):
-            raise ValueError(
-                "Discrete inventories and flows require nonnegative integers"
-            )
+        if any(isinstance(v, bool) or not isinstance(v, (int, np.integer)) or v < 0 for v in values.values()):
+            raise ValueError("Discrete inventories and flows require nonnegative integers")
         return {k: int(v) for k, v in values.items() if v}
 
     def _species_compositions(self):
@@ -160,9 +149,7 @@ class CRNAnalysis:
             signatures[sig] = rid
             if not reaction.lhs or not reaction.rhs:
                 empty.append(rid)
-            participants = set(dict(reaction.lhs.items())) | set(
-                dict(reaction.rhs.items())
-            )
+            participants = set(dict(reaction.lhs.items())) | set(dict(reaction.rhs.items()))
             involved |= participants
             if not participants <= compositions.keys():
                 unknown.append(rid)
@@ -171,9 +158,7 @@ class CRNAnalysis:
             for sign, side in ((-1, reaction.lhs), (1, reaction.rhs)):
                 for sid, coeff in side.items():
                     for element, count in compositions[sid].items():
-                        balance[element] = (
-                            balance.get(element, 0) + sign * coeff * count
-                        )
+                        balance[element] = balance.get(element, 0) + sign * coeff * count
             if any(balance.values()):
                 unbalanced.append(
                     {
@@ -205,11 +190,7 @@ class CRNAnalysis:
         s = self._matrices["S"]
         order = tuple(sid for sid in self.species_order if sid not in self.chemostats)
         s = s[
-            [
-                i
-                for i, sid in enumerate(self.species_order)
-                if sid not in self.chemostats
-            ],
+            [i for i, sid in enumerate(self.species_order) if sid not in self.chemostats],
             :,
         ]
         laws = _exact_null_space(s.T.tolist(), len(order))
@@ -273,16 +254,8 @@ class CRNAnalysis:
         """
         if time_limit <= 0:
             raise ValueError("time_limit must be positive")
-        bounds = (
-            {}
-            if bounds is None
-            else {self._resolve(k, reaction=True): v for k, v in bounds.items()}
-        )
-        required = (
-            {}
-            if required is None
-            else {self._resolve(k, reaction=True): v for k, v in required.items()}
-        )
+        bounds = {} if bounds is None else {self._resolve(k, reaction=True): v for k, v in bounds.items()}
+        required = {} if required is None else {self._resolve(k, reaction=True): v for k, v in required.items()}
         limits = []
         for rid in self.reaction_order:
             lo, hi = bounds.get(rid, (0, None))
@@ -296,9 +269,7 @@ class CRNAnalysis:
             limits.append((lo, hi))
         if not limits:
             return AnalysisResult(True, certificate={}, assumptions=self._assumptions())
-        internal = [
-            i for i, sid in enumerate(self.species_order) if sid not in self.chemostats
-        ]
+        internal = [i for i, sid in enumerate(self.species_order) if sid not in self.chemostats]
         s = self._matrices["S"][internal, :]
         answer = linprog(
             np.zeros(len(limits)),
@@ -309,14 +280,11 @@ class CRNAnalysis:
             options={"time_limit": time_limit},
         )
         if answer.status == 2:
-            return AnalysisResult(
-                False, method="HiGHS numerical LP", assumptions=self._assumptions()
-            )
+            return AnalysisResult(False, method="HiGHS numerical LP", assumptions=self._assumptions())
         valid = answer.success and np.max(np.abs(s @ answer.x), initial=0) <= 1e-7
         if valid:
             valid = all(
-                x >= (lo * (1 - 1e-7) if lo > 0 else lo - 1e-7)
-                and (hi is None or x <= hi + 1e-7)
+                x >= (lo * (1 - 1e-7) if lo > 0 else lo - 1e-7) and (hi is None or x <= hi + 1e-7)
                 for x, (lo, hi) in zip(answer.x, limits)
             )
         return AnalysisResult(
@@ -338,17 +306,11 @@ class CRNAnalysis:
         for rid in self.reaction_order:
             remaining = deadline - monotonic()
             result = (
-                self.flux_feasibility(
-                    bounds=bounds, required={rid: threshold}, time_limit=remaining
-                )
+                self.flux_feasibility(bounds=bounds, required={rid: threshold}, time_limit=remaining)
                 if remaining > 0
                 else AnalysisResult(None)
             )
-            (
-                blocked
-                if result.value is False
-                else active if result.value is True else unknown
-            ).append(rid)
+            (blocked if result.value is False else active if result.value is True else unknown).append(rid)
         return AnalysisResult(
             {"blocked": blocked, "active": active, "unknown": unknown},
             "inconclusive" if unknown else "complete",
@@ -357,17 +319,9 @@ class CRNAnalysis:
             {**self._assumptions(), "threshold": threshold},
         )
 
-    def verify_pathway(
-        self, flow, initial_marking=None, *, max_states=100000, max_depth=10000
-    ):
-        flow = {
-            self._resolve(k, reaction=True): v for k, v in self._counts(flow).items()
-        }
-        marking = (
-            self.scenario.initial_marking
-            if initial_marking is None
-            else initial_marking
-        )
+    def verify_pathway(self, flow, initial_marking=None, *, max_states=100000, max_depth=10000):
+        flow = {self._resolve(k, reaction=True): v for k, v in self._counts(flow).items()}
+        marking = self.scenario.initial_marking if initial_marking is None else initial_marking
         marking = {self._resolve(k): v for k, v in self._counts(marking).items()}
         model = deepcopy(self._crn)
         for reaction in model.reactions.values():
@@ -378,9 +332,7 @@ class CRNAnalysis:
             model, flow=flow, initial_marking=marking, species="id", reaction="id"
         )
         checker.build_petri_net_from_flow()
-        outcome = checker.realizability_result(
-            max_states=max_states, max_depth=max_depth
-        ).to_dict()
+        outcome = checker.realizability_result(max_states=max_states, max_depth=max_depth).to_dict()
         inventory = dict(marking)
         trajectory = [dict(inventory)]
         counts = {}
@@ -462,21 +414,13 @@ class CRNAnalysis:
         try:
             import cobra
         except ImportError as exc:
-            raise ImportError(
-                "Install cobra separately to use the optional COBRApy bridge"
-            ) from exc
+            raise ImportError("Install cobra separately to use the optional COBRApy bridge") from exc
         bounds = {self._resolve(k, reaction=True): value for k, value in bounds.items()}
         if set(bounds) != set(self.reaction_order):
             raise ValueError("Explicit bounds are required for every directed reaction")
-        exchanges = (
-            {}
-            if exchange_bounds is None
-            else {self._resolve(k): value for k, value in exchange_bounds.items()}
-        )
+        exchanges = {} if exchange_bounds is None else {self._resolve(k): value for k, value in exchange_bounds.items()}
         if set(exchanges) != self.chemostats:
-            raise ValueError(
-                "Explicit exchange bounds are required for every chemostat"
-            )
+            raise ValueError("Explicit exchange bounds are required for every chemostat")
         model = cobra.Model("synkit_crn")
         metabolites = {}
         for sid, sp in self._crn.species.items():
@@ -492,9 +436,7 @@ class CRNAnalysis:
             counts = {}
             for sign, side in ((-1, record.lhs), (1, record.rhs)):
                 for sid, coefficient in side.items():
-                    counts[metabolites[sid]] = (
-                        counts.get(metabolites[sid], 0) + sign * coefficient
-                    )
+                    counts[metabolites[sid]] = counts.get(metabolites[sid], 0) + sign * coefficient
             reaction.add_metabolites(counts)
             model.add_reactions([reaction])
         for sid, limits in exchanges.items():
@@ -540,11 +482,7 @@ class CRNAnalysis:
                 "bounded exhaustive supplementation",
                 termination_reason="candidate_limit",
             )
-        base = (
-            self.scenario.initial_marking
-            if initial_marking is None
-            else initial_marking
-        )
+        base = self.scenario.initial_marking if initial_marking is None else initial_marking
         base = {self._resolve(s): n for s, n in self._counts(base).items()}
         candidates = sorted(
             product(range(max_added + 1), repeat=len(ids)),
@@ -560,9 +498,7 @@ class CRNAnalysis:
             marking = dict(base)
             for s, n in added.items():
                 marking[s] = marking.get(s, 0) + n
-            outcome = self.verify_pathway(
-                flow, marking, max_states=max_states, max_depth=max_depth
-            )
+            outcome = self.verify_pathway(flow, marking, max_states=max_states, max_depth=max_depth)
             if outcome["status"] == "realizable":
                 optimal = not any(c < score for c in uncertain)
                 return AnalysisResult(
@@ -587,9 +523,7 @@ class CRNAnalysis:
             not uncertain,
             "bounded exhaustive supplementation",
             self._assumptions(),
-            termination_reason=(
-                "search_limit" if uncertain else "no_solution_within_bounds"
-            ),
+            termination_reason=("search_limit" if uncertain else "no_solution_within_bounds"),
         )
 
     def compare(self, other):
@@ -601,9 +535,7 @@ class CRNAnalysis:
 
         def aligned(analysis, name):
             a = np.zeros((len(species), len(reactions)))
-            si, ri = {s: i for i, s in enumerate(species)}, {
-                r: i for i, r in enumerate(reactions)
-            }
+            si, ri = {s: i for i, s in enumerate(species)}, {r: i for i, r in enumerate(reactions)}
             for i, s in enumerate(analysis.species_order):
                 for j, r in enumerate(analysis.reaction_order):
                     a[si[s], ri[r]] = analysis._matrices[name][i, j]
@@ -611,15 +543,9 @@ class CRNAnalysis:
 
         return AnalysisResult(
             {
-                "same_net_matrix": bool(
-                    np.array_equal(aligned(self, "S"), aligned(other, "S"))
-                ),
-                "same_reactants": bool(
-                    np.array_equal(aligned(self, "S_minus"), aligned(other, "S_minus"))
-                ),
-                "same_products": bool(
-                    np.array_equal(aligned(self, "S_plus"), aligned(other, "S_plus"))
-                ),
+                "same_net_matrix": bool(np.array_equal(aligned(self, "S"), aligned(other, "S"))),
+                "same_reactants": bool(np.array_equal(aligned(self, "S_minus"), aligned(other, "S_minus"))),
+                "same_products": bool(np.array_equal(aligned(self, "S_plus"), aligned(other, "S_plus"))),
                 "before": self.structure().value,
                 "after": other.structure().value,
                 "conservation_before": self.conservation().value,

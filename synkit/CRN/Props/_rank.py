@@ -20,9 +20,7 @@ def full_row_rank_modular(matrix, prime=1000003):
         for i in range(rank + 1, len(rows)):
             factor = rows[i][col]
             if factor:
-                rows[i] = [
-                    (x - factor * y) % prime for x, y in zip(rows[i], rows[rank])
-                ]
+                rows[i] = [(x - factor * y) % prime for x, y in zip(rows[i], rows[rank])]
         rank += 1
         if rank == len(rows):
             return True

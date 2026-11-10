@@ -131,9 +131,7 @@ class TestKEGGParsing(unittest.TestCase):
             "C00003": {"smiles": "CC=O"},
         }
 
-        reaction_smiles, missing = reaction_smiles_from_equation(
-            parsed, compounds_by_cid
-        )
+        reaction_smiles, missing = reaction_smiles_from_equation(parsed, compounds_by_cid)
 
         self.assertEqual(reaction_smiles, "O.O.CCO>>CC=O")
         self.assertEqual(missing, {"reactants": [], "products": []})
@@ -150,9 +148,7 @@ class TestKEGGParsing(unittest.TestCase):
             "C00004": {},
         }
 
-        reaction_smiles, missing = reaction_smiles_from_equation(
-            parsed, compounds_by_cid
-        )
+        reaction_smiles, missing = reaction_smiles_from_equation(parsed, compounds_by_cid)
 
         self.assertEqual(reaction_smiles, "O>>CC=O")
         self.assertEqual(missing["reactants"], ["C00002", "C00002"])

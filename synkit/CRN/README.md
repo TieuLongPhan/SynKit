@@ -20,6 +20,11 @@ SBML boundary flags, compartments and initial values are retained in species
 `source_attrs`; initial concentrations are **not** converted to integer tokens.
 Nonintegral stoichiometry is rejected rather than silently truncated. Explicit
 normalization is required before using discrete reaction semantics.
+Fixed integer coefficients are parsed and exported without floating-point
+rounding. SBML modifiers, kinetic laws, rules and package extensions are not
+imported. Reversible steps retain distinct forward and backward source ids.
+An omitted `reversible` flag defaults to true in SBML Level 2. Level 3 requires
+the flag; omission raises with `strict=True`, or warns before assuming false.
 
 `Scenario(chemostats=('ATP',))` declares an unlimited external reservoir.
 `Scenario(drop_species=('ATP',))` changes the reaction equations by deleting
@@ -107,6 +112,11 @@ remaining choice. Returned sets use stable species ids. `max_nodes` counts
 search states plus closure-minimization calls. Set `max_nodes=None`,
 `time_limit=None`, or `max_results=None` to disable that individual limit on
 structural enumeration; this requires a newly built structural ABI 2 library.
+The list-returning `find_siphons`, `find_traps`, `minimal_siphons` and
+`minimal_traps` functions raise `SiphonSearchLimit` when the search is incomplete
+by default. Explicit `strict_limit=False` returns partial results with a
+`SiphonSearchWarning`. Partial results cannot certify enumeration counts or
+persistence.
 
 `backend='auto'` uses C++ when an explicit `library_path` is supplied; otherwise
 it retains Python. `backend='python'` selects the reference implementation.
@@ -117,7 +127,7 @@ the Boost header tree and configured toolchain. Installed wheels verify library
 bytes against the wheel's final `RECORD`, including changes made by wheel repair.
 Native Conda packages verify the installed library hashes recorded in
 `conda-meta`, including prefix relocation and code signing performed by Conda
-or Mamba. These packages include the same three native libraries and need no
+or Mamba. These packages include the bundled native libraries and need no
 compiler or Boost headers at runtime.
 
 Source native builds require CMake 3.20 or newer, a C++17 compiler, and installed
@@ -158,14 +168,17 @@ blocked-reaction and deletion analyses. No physiological capacities are inferred
 Benchmarks, reference networks, independent cross-checks and biochemical case
 studies belong to `Experiment/CRN/`, not the runtime analysis package:
 
-- `Experiment.CRN.benchmarks`: reference fixtures, independent checks, validation,
+- `Experiment.CRN.studies`: reference fixtures, independent checks, validation,
   KEGG case studies, synthetic generators and timing harnesses;
 - `Experiment/CRN/data/kegg_modules.json`: the reviewed four-module dataset.
 
-These are included in the source distribution, not the wheel. The deprecated
-`synkit.CRN.Benchmark` namespace contains only forwarding shims for existing
-source-checkout consumers. It imports no research code until accessed; consumers
-of these old names must migrate and have the experiment source available.
+These are included in the source distribution, not the wheel. Import research
+helpers directly from `Experiment.CRN.studies` when working from the source
+root. There is no benchmark forwarding package inside `synkit.CRN`.
+The BioModels experiment records an explicit 1,000,000-node search budget;
+the runtime list APIs retain their strict 200,000-node default. Reports with
+incomplete enumeration leave persistence undecided and fail the completeness
+check.
 
 For a reusable offline KEGG workflow, supply your own cache explicitly:
 

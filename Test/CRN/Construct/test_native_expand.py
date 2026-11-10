@@ -90,8 +90,7 @@ def test_formose_size_and_pruning(expander):
 
 
 def test_threads_are_deterministic(expander):
-    common = dict(rules=FORMOSE, repeats=5, keep_aam=False, rule_backend="native",
-                  native_expander=str(expander))
+    common = dict(rules=FORMOSE, repeats=5, keep_aam=False, rule_backend="native", native_expander=str(expander))
     one = CRNExpand(threads=1, **common).build(["C=O", "OCC=O"])
     four = CRNExpand(threads=4, **common).build(["C=O", "OCC=O"])
     assert _signature(one) == _signature(four)
@@ -141,8 +140,7 @@ def _sets(graph):
 
 @pytest.mark.parametrize("repeats", [4, 5])
 def test_lewis_hydrogens_reproduce_explicit_formose(expander, repeats):
-    common = dict(rules=FORMOSE, repeats=repeats, keep_aam=False, rule_backend="native",
-                  native_expander=str(expander))
+    common = dict(rules=FORMOSE, repeats=repeats, keep_aam=False, rule_backend="native", native_expander=str(expander))
     explicit = CRNExpand(hydrogen_model="explicit", **common).build(["C=O", "OCC=O"])
     builder = CRNExpand(hydrogen_model="lewis", **common)
     lewis = builder.build(["C=O", "OCC=O"])
@@ -161,8 +159,14 @@ def test_lewis_hydrogens_reproduce_explicit_formose(expander, repeats):
     ],
 )
 def test_lewis_hydrogens_conserve_atoms_and_charge(expander, rules, seeds, expected):
-    builder = CRNExpand(rules=rules, repeats=1, keep_aam=False, rule_backend="native",
-                        native_expander=str(expander), hydrogen_model="lewis")
+    builder = CRNExpand(
+        rules=rules,
+        repeats=1,
+        keep_aam=False,
+        rule_backend="native",
+        native_expander=str(expander),
+        hydrogen_model="lewis",
+    )
     graph = builder.build(seeds)
     species = {d["smiles"] for _, d in graph.nodes(data=True) if d["kind"] == "species"}
     assert expected <= species
@@ -170,16 +174,21 @@ def test_lewis_hydrogens_conserve_atoms_and_charge(expander, rules, seeds, expec
 
 
 def test_lewis_never_fabricates_hydrogen_for_incomplete_rules(expander):
-    common = dict(rules=CATALYSIS[:2], repeats=3, keep_aam=False, rule_backend="native",
-                  native_expander=str(expander))
+    common = dict(rules=CATALYSIS[:2], repeats=3, keep_aam=False, rule_backend="native", native_expander=str(expander))
     assert not _balanced(CRNExpand(hydrogen_model="explicit", **common).build(["C=CC=O", "[Pd]"]))
     assert _balanced(CRNExpand(hydrogen_model="lewis", **common).build(["C=CC=O", "[Pd]"]))
 
 
 def test_lewis_falls_back_for_uncompilable_rules(expander):
     rules = ["[C:1]=[C:2].[H:3][H:4]>>[C:1]([H:3])[C:2][H:4]"]
-    builder = CRNExpand(rules=rules, repeats=1, keep_aam=False, rule_backend="native",
-                        native_expander=str(expander), hydrogen_model="lewis")
+    builder = CRNExpand(
+        rules=rules,
+        repeats=1,
+        keep_aam=False,
+        rule_backend="native",
+        native_expander=str(expander),
+        hydrogen_model="lewis",
+    )
     builder.build(["C=C", "[H][H]"])
     (rule,) = builder.native_report["rules"]
     assert rule["hydrogen_model"] == "explicit" and rule["note"]

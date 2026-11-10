@@ -62,11 +62,7 @@ def validate_crn_graph(graph: nx.DiGraph, *, strict: bool = True) -> CRNGraphInf
     if not isinstance(graph, nx.DiGraph):
         raise TypeError("CRNVis expects a networkx.DiGraph.")
 
-    invalid_kind_nodes = [
-        n
-        for n, d in graph.nodes(data=True)
-        if not (is_species_node(d) or is_reaction_node(d))
-    ]
+    invalid_kind_nodes = [n for n, d in graph.nodes(data=True) if not (is_species_node(d) or is_reaction_node(d))]
     if invalid_kind_nodes:
         msg = (
             "Found nodes with invalid or missing 'kind': "
@@ -101,10 +97,7 @@ def validate_crn_graph(graph: nx.DiGraph, *, strict: bool = True) -> CRNGraphInf
             unknown_roles.append((u, v, role))
 
     if invalid_edges:
-        msg = (
-            "Found edges whose direction is inconsistent with their role: "
-            f"{invalid_edges!r}."
-        )
+        msg = "Found edges whose direction is inconsistent with their role: " f"{invalid_edges!r}."
         if strict:
             raise ValueError(msg)
         logger.warning(msg)

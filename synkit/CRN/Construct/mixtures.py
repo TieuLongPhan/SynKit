@@ -41,11 +41,7 @@ def iter_mixtures_arity2(
 
     n = 0
     if not use_frontier:
-        iterator = (
-            combinations_with_replacement(pool_u, 2)
-            if allow_self_mixtures
-            else combinations(pool_u, 2)
-        )
+        iterator = combinations_with_replacement(pool_u, 2) if allow_self_mixtures else combinations(pool_u, 2)
         for tup in iterator:
             yield tuple(sorted(tup))
             n += 1
@@ -84,11 +80,7 @@ def iter_mixtures_arityk(
 
     n = 0
     if not use_frontier:
-        iterator = (
-            combinations_with_replacement(pool_u, arity)
-            if allow_self_mixtures
-            else combinations(pool_u, arity)
-        )
+        iterator = combinations_with_replacement(pool_u, arity) if allow_self_mixtures else combinations(pool_u, arity)
         for tup in iterator:
             yield tuple(sorted(tup))
             n += 1

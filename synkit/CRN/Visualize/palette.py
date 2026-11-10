@@ -283,9 +283,7 @@ def get_palette(name: str = "paper_sage", **overrides) -> ColorPalette:
     try:
         palette = _PALETTES[name]
     except KeyError as exc:
-        raise ValueError(
-            f"Unknown palette {name!r}. Available: {', '.join(palette_names())}"
-        ) from exc
+        raise ValueError(f"Unknown palette {name!r}. Available: {', '.join(palette_names())}") from exc
 
     if overrides:
         return palette.with_overrides(**overrides)

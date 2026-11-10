@@ -52,9 +52,7 @@ class TestBuildNodeLabels(unittest.TestCase):
             species_nodes=info.species_nodes,
             rule_nodes=info.rule_nodes,
         )
-        self.assertEqual(
-            {labels[n] for n in info.species_nodes}, {"A", "B", "C"}
-        )
+        self.assertEqual({labels[n] for n in info.species_nodes}, {"A", "B", "C"})
 
     def test_hiding_labels_falls_back_to_node_ids(self):
         graph, info = graph_and_info()
@@ -65,9 +63,7 @@ class TestBuildNodeLabels(unittest.TestCase):
             show_species_labels=False,
             show_rule_labels=False,
         )
-        self.assertEqual(
-            {labels[n] for n in info.species_nodes}, {"s_1", "s_2", "s_3"}
-        )
+        self.assertEqual({labels[n] for n in info.species_nodes}, {"s_1", "s_2", "s_3"})
         self.assertEqual({labels[n] for n in info.rule_nodes}, {"r_1", "r_2"})
 
     def test_max_chars_is_respected(self):
