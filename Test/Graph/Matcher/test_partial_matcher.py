@@ -75,11 +75,11 @@ class TestPartialMatcher(unittest.TestCase):
     # ------------------------------------------------------------------
     # Behaviour for partial=True
     # ------------------------------------------------------------------
-    def test_partial_mode_excludes_full_pattern_in_auto(self) -> None:
+    def test_partial_mode_includes_full_and_proper_subsets_in_auto(self) -> None:
         """
-        partial=True, k=None → strict partials only.
+        partial=True, k=None → full and proper component subsets.
 
-        Any mapping must match strictly fewer nodes than the full pattern.
+        A feasible full match does not suppress smaller component matches.
         """
         host = self._make_host_path(5)
         pattern = self._make_simple_pattern()
@@ -94,8 +94,7 @@ class TestPartialMatcher(unittest.TestCase):
             partial=True,
         )
         mappings = matcher.get_mappings()
-        for mapping in mappings:
-            self.assertLessEqual(len(mapping), pattern.number_of_nodes())
+        self.assertEqual({len(mapping) for mapping in mappings}, {2, 4})
 
     def test_partial_mode_still_allows_single_component_matches(self) -> None:
         """

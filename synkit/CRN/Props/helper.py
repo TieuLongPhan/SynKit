@@ -49,9 +49,7 @@ def _as_graph(crn: Any) -> nx.Graph:
             if isinstance(G, _GRAPH_TYPES):
                 return G
 
-        raise TypeError(
-            "`crn.to_digraph()` was found, but it did not return a NetworkX graph."
-        )
+        raise TypeError("`crn.to_digraph()` was found, but it did not return a NetworkX graph.")
 
     raise TypeError(
         "stoich expects either a NetworkX graph or a SynCRN-like object "

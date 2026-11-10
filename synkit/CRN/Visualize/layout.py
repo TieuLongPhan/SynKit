@@ -276,9 +276,7 @@ def bipartite_layout(
     pos: Pos = {}
 
     if orientation == "vertical":
-        pos.update(
-            _stack_vertical(graph, species_nodes, x=0.0, node_spacing=node_spacing)
-        )
+        pos.update(_stack_vertical(graph, species_nodes, x=0.0, node_spacing=node_spacing))
         pos.update(
             _stack_vertical(
                 graph,
@@ -290,9 +288,7 @@ def bipartite_layout(
         return pos
 
     if orientation == "horizontal":
-        pos.update(
-            _stack_horizontal(graph, species_nodes, y=0.0, node_spacing=node_spacing)
-        )
+        pos.update(_stack_horizontal(graph, species_nodes, y=0.0, node_spacing=node_spacing))
         pos.update(
             _stack_horizontal(
                 graph,
@@ -693,9 +689,7 @@ def compute_layout(
         layout_func = _LAYOUT_REGISTRY[resolved_layout]
     except KeyError as exc:
         supported = ", ".join(repr(name) for name in available_layouts())
-        raise ValueError(
-            f"Unsupported layout {layout!r}. Use one of: {supported}."
-        ) from exc
+        raise ValueError(f"Unsupported layout {layout!r}. Use one of: {supported}.") from exc
 
     return layout_func(
         graph,

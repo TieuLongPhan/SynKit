@@ -36,9 +36,7 @@ class TestStrategy(unittest.TestCase):
                 max_components=3,
             )
         )
-        self.assertEqual(
-            out, [tuple(sorted((SEEDS[0], X))), tuple(sorted((SEEDS[1], X)))]
-        )
+        self.assertEqual(out, [tuple(sorted((SEEDS[0], X))), tuple(sorted((SEEDS[1], X)))])
 
     def test_frontier_strategy_dispatches_arityk(self):
         strat = FrontierStrategy()

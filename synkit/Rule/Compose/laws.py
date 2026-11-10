@@ -370,7 +370,7 @@ def find_llg_isomorphism(
     )
     if not matcher.is_isomorphic():
         return None
-    morphism = LLGMorphism(source, target, matcher.mapping)
+    morphism = LLGMorphism(source, target, matcher.mapping, exact=True)
     return morphism if morphism.is_isomorphism else None
 
 

@@ -421,9 +421,7 @@ def _basis_column_support(
         supp = _basis_column_support(vec, order, support_tol=1e-8)
         print(supp)
     """
-    return {
-        order[i]: float(vec[i]) for i in range(len(order)) if abs(vec[i]) > support_tol
-    }
+    return {order[i]: float(vec[i]) for i in range(len(order)) if abs(vec[i]) > support_tol}
 
 
 def semiflow_supports(

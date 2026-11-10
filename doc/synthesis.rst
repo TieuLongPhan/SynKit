@@ -337,6 +337,69 @@ LLG rewrite policy:
        pi-electron valence. Stored sigma/pi values remain authoritative during
        rewriting; partial aromatic-system morphisms remain phase-sensitive.
 
+Typed wildcard and partial application
+--------------------------------------
+
+``WildcardEngine`` provides injective typed atom/attachment-port matching and
+symbolic completion of missing rule components. The mathematical definition,
+supported boundary model, examples, and Python-to-C++ conformance contract
+are developed in the manuscript at ``paper/partial/main.tex``.
+
+``WildcardRuleExtractor`` defaults to atom-preserving paired rules from complete
+mapped reaction endpoints. An unchanged external component attached by one
+single bond becomes a persistent attachment variable, with the observed root
+element, charge and radical domains. Shared ring context and multiple-bond
+attachments remain concrete. Missing observed atoms are reported as extraction
+refusals; the extractor does not invent their unobserved endpoint states.
+
+For patent reactions with unreported product-side material, select the
+observation policy explicitly::
+
+    from synkit.Rule import WildcardRuleExtractor
+    from synkit.Synthesis.Reactor import WildcardEngine
+
+    extracted = WildcardRuleExtractor(endpoint_policy="observed").extract(mapped_reaction)
+    forward = WildcardEngine(reactants, extracted.rule, backend="cpp", library_path=library)
+    backward = WildcardEngine(products, extracted.rule, invert=True,
+                              backend="cpp", library_path=library)
+
+The policy follows the rule through inversion. Unreported source atoms are
+excluded from matching; their known opposite-side states can be restored.
+An unreported endpoint is not a material wildcard or a zero-electron atom.
+Wildcard roots and their owner bonds remain persistent read-only predicates.
+This transforms observed endpoints and does not certify a complete balanced
+chemical reaction. Source replay can reuse omitted fragments saved in the rule.
+
+Wholly unreported input components match complete host components. Internal
+automorphisms and permutations of such components with equal host-image
+populations are quotiented exactly for target observations. Reacting components
+retain every embedding. Mapping counts in this policy count representatives,
+not every raw atom permutation. Supplied electronic states outside the local
+Lewis model retain their declared charges and remain uncertified as complete
+Lewis states. The native observation entry point has no Python execution fallback.
+
+For a single constructible full-source application, set ``partial=False`` and
+``first_application=True`` on an observed-policy rule with ``backend="cpp"``.
+The result exposes ``native_statistics["search_complete"] == False`` when it
+stops at a witness. This proves existence of that application, not exhaustive
+enumeration. The corpus runner's ``--recovery-only`` mode scores that first
+native result and retries full native search only when it misses the recorded
+endpoint. The matcher itself never receives the GT target.
+
+The C++ backend performs matching, completion and rewriting natively, including
+declared aromaticity changes. It finds integral product pi occupancies on the
+declared aromatic bond set while keeping charges and electron populations
+fixed. This chooses a Kekule representative and is separate from exact LLG
+morphisms and DPO composition. It does not perform general aromaticity
+perception. Search limits raise an incomplete-search error without returning a
+partial batch.
+
+Corpus replay commands and the distinction between full recorded input and
+genuinely withheld components are documented in
+``Experiment/Lewis/partial_replay/README.rst``. Recovery scores exclude atom maps
+and stereochemistry. An unresolved attachment variable does not count as the
+concrete ground-truth molecule.
+
 Radical-based linking
 ---------------------
 

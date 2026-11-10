@@ -12,8 +12,6 @@ from synkit.CRN.Petrinet import (
     extract_syncrn_incidence,
 )
 
-# Private helpers are reached through their defining module rather than the
-# package API, which exports only the public surface.
 from synkit.CRN.Petrinet.net import (
     _accumulate_incidence_from_edges,
     _build_pre_post_from_graph,
@@ -104,9 +102,7 @@ class TestSynCRNIncidenceExtraction(unittest.TestCase):
 
         self.assertIsInstance(inc, SynCRNIncidence)
         self.assertEqual(set(inc.species_order), set(map(str, self.syn.species.keys())))
-        self.assertEqual(
-            set(inc.reaction_order), set(map(str, self.syn.reactions.keys()))
-        )
+        self.assertEqual(set(inc.reaction_order), set(map(str, self.syn.reactions.keys())))
         self.assertEqual(len(inc.pre), len(self.syn.reactions))
         self.assertEqual(len(inc.post), len(self.syn.reactions))
 
@@ -158,8 +154,8 @@ class TestSynCRNIncidenceExtraction(unittest.TestCase):
 
     def test_build_species_index(self) -> None:
         species_nodes, _ = _partition_syncrn_nodes(self.g)
-        species_order, species_labels, species_source_node_ids, species_node_to_id = (
-            _build_species_index(self.g, species_nodes)
+        species_order, species_labels, species_source_node_ids, species_node_to_id = _build_species_index(
+            self.g, species_nodes
         )
 
         self.assertEqual(len(species_order), len(species_nodes))
@@ -409,12 +405,8 @@ class TestPetriNet(unittest.TestCase):
 
         tid = net.transition_order[0]
 
-        pre_labeled = {
-            net.place_name(p): w for p, w in net.transitions[tid].pre.items()
-        }
-        post_labeled = {
-            net.place_name(p): w for p, w in net.transitions[tid].post.items()
-        }
+        pre_labeled = {net.place_name(p): w for p, w in net.transitions[tid].pre.items()}
+        post_labeled = {net.place_name(p): w for p, w in net.transitions[tid].post.items()}
 
         self.assertEqual(pre_labeled, {"A": 2})
         self.assertEqual(post_labeled, {"B": 1, "C": 3})

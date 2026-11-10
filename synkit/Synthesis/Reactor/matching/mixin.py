@@ -27,6 +27,13 @@ from .symmetry import (
     deduplicate_port_witness_mappings,
     deduplicate_pure_coupling_mappings,
 )
+from .wildcard import (
+    WildcardSearchLimitError,
+    prepare_wildcard_pattern,
+    wildcard_mapping_matches,
+    creation_is_collision_free,
+    radical_resources_available,
+)
 from ..core.strategy import Strategy
 
 NodeId = Any
@@ -50,8 +57,7 @@ class ReactorMatchingMixin:
             mapping
             for mapping in mappings
             if all(
-                int(host.nodes[host_node].get("radical", 0))
-                >= int(pattern.nodes[pattern_node].get("radical", 0))
+                int(host.nodes[host_node].get("radical", 0)) >= int(pattern.nodes[pattern_node].get("radical", 0))
                 for pattern_node, host_node in mapping.items()
             )
         ]
@@ -76,18 +82,48 @@ class ReactorMatchingMixin:
                 full_pattern_graph = h_to_implicit(full_pattern_graph)
             pattern_graph = full_pattern_graph
             # Handle wildcard‑node patterns
-            if has_wildcard_node(pattern_graph):
+            if self.wildcard_mode == "typed":
+                pattern_graph = prepare_wildcard_pattern(pattern_graph)
+            elif has_wildcard_node(pattern_graph):
                 pattern_graph = remove_wildcard_nodes(pattern_graph, inplace=False)
+            self._matching_pattern_nodes = frozenset(pattern_graph)
 
             matching_host = self._matching_host_graph()
+            if self.wildcard_mode == "typed" and (
+                matching_host.is_directed()
+                or matching_host.is_multigraph()
+                or nx.number_of_selfloops(matching_host)
+                or has_wildcard_node(matching_host)
+            ):
+                raise ValueError("Typed matching requires a concrete simple undirected host.")
+            if self.wildcard_mode == "typed" and any(
+                attrs.get("isotope", 0) for _, attrs in matching_host.nodes(data=True)
+            ):
+                raise ValueError("Isotope-aware typed wildcard application is not in this profile.")
             node_attrs, edge_attrs = resolve_template_match_attrs(pattern_graph)
+            if self.wildcard_mode == "typed":
+                node_attrs.append("valence_electrons")
             if self.radical_policy in {"lower_bound", "ignore"}:
                 node_attrs = [attr for attr in node_attrs if attr != "radical"]
 
             # --- Choose matcher ------------------------------------------------
-            if self.partial:
+            if self.rule.rc.raw.graph.get("endpoint_policy") == "observed":
+                from .observation import observation_mappings
+
+                raw_maps = observation_mappings(
+                    matching_host,
+                    pattern_graph,
+                    self.rule.rc.raw,
+                    node_attrs,
+                    edge_attrs,
+                    partial=self.partial,
+                    limit=self.embed_threshold,
+                )
+            elif self.partial:
                 max_results = (
-                    self.embed_threshold / 100 if self.embed_threshold else None
+                    (self.embed_threshold + 1 if self.embed_threshold is not None else None)
+                    if self.wildcard_mode == "typed"
+                    else (self.embed_threshold / 100 if self.embed_threshold else None)
                 )
                 matcher = PartialMatcher(
                     host=matching_host,
@@ -95,7 +131,7 @@ class ReactorMatchingMixin:
                     node_attrs=node_attrs,
                     edge_attrs=edge_attrs,
                     strategy=Strategy.from_string(self.strategy),
-                    threshold=self.embed_threshold,
+                    threshold=None if self.wildcard_mode == "typed" else self.embed_threshold,
                     pre_filter=self.embed_pre_filter,
                     max_results=max_results,
                     # WL colour classes are not automorphism orbits in
@@ -111,9 +147,27 @@ class ReactorMatchingMixin:
                     node_attrs=node_attrs,
                     edge_attrs=edge_attrs,
                     strategy=Strategy.from_string(self.strategy),
-                    threshold=self.embed_threshold,
+                    threshold=None if self.wildcard_mode == "typed" else self.embed_threshold,
+                    max_results=(
+                        self.embed_threshold + 1
+                        if self.wildcard_mode == "typed" and self.embed_threshold is not None
+                        else None
+                    ),
                     pre_filter=self.embed_pre_filter,
                 )
+
+            if self.wildcard_mode == "typed":
+                if self.embed_threshold is not None and len(raw_maps) > self.embed_threshold:
+                    raise WildcardSearchLimitError(
+                        f"Wildcard search exceeded {self.embed_threshold} candidate mappings."
+                    )
+                raw_maps = [
+                    mapping
+                    for mapping in raw_maps
+                    if wildcard_mapping_matches(mapping, pattern_graph, matching_host)
+                    and creation_is_collision_free(mapping, self.rule.rc.raw, matching_host)
+                    and radical_resources_available(mapping, self.rule.rc.raw, matching_host)
+                ]
 
             raw_maps.sort(
                 key=lambda candidate: self._mapping_atom_map_alignment(
@@ -124,12 +178,8 @@ class ReactorMatchingMixin:
                 reverse=True,
             )
 
-            stereo_substitutions = self._typed_stereo_wildcard_substitutions(
-                full_pattern_graph
-            )
-            certified_generic = bool(
-                self.rule.rc.raw.graph.get("generic_stereo_extraction")
-            )
+            stereo_substitutions = self._typed_stereo_wildcard_substitutions(full_pattern_graph)
+            certified_generic = bool(self.rule.rc.raw.graph.get("generic_stereo_extraction"))
             raw_maps = self._expand_stereo_wildcard_mappings(
                 raw_maps,
                 full_pattern_graph,
@@ -138,16 +188,12 @@ class ReactorMatchingMixin:
             )
 
             if self.radical_policy == "lower_bound":
-                raw_maps = self._filter_radical_lower_bound(
-                    raw_maps, pattern_graph, matching_host
-                )
+                raw_maps = self._filter_radical_lower_bound(raw_maps, pattern_graph, matching_host)
             if self.stereo_mode in {"require", "strict"}:
                 from synkit.Graph.Stereo import candidate_mapping_stereo_matches
 
                 presence_mode = (
-                    "require"
-                    if self.stereo_mode == "strict" and self.rule.stereo_couplings
-                    else self.stereo_mode
+                    "require" if self.stereo_mode == "strict" and self.rule.stereo_couplings else self.stereo_mode
                 )
                 raw_maps = [
                     mapping
@@ -242,19 +288,12 @@ class ReactorMatchingMixin:
                 # Build transition roles only when a nontrivial mapping
                 # population can actually benefit from the exact quotient.
                 automorphism_pattern = self._automorphism_pattern_graph(pattern_graph)
-                components = [
-                    frozenset(component)
-                    for component in nx.connected_components(automorphism_pattern)
-                ]
+                components = [frozenset(component) for component in nx.connected_components(automorphism_pattern)]
                 correlated = has_heavy_cross_component_correlation(
                     automorphism_pattern,
                     self.rule.rc.raw,
                 )
-                fixed_nodes = (
-                    frozenset()
-                    if correlated or len(components) < 2
-                    else max(components, key=len)
-                )
+                fixed_nodes = frozenset() if correlated or len(components) < 2 else max(components, key=len)
                 self._mappings = deduplicate_joint_rule_mappings(
                     raw_maps,
                     automorphism_pattern,
@@ -296,10 +335,7 @@ class ReactorMatchingMixin:
                     bool(self.rule.stereo_effects)
                     and not self.rule.stereo_guards
                     and not self.rule.stereo_couplings
-                    and all(
-                        change.before is None
-                        for change in self.rule.stereo_effects.values()
-                    )
+                    and all(change.before is None for change in self.rule.stereo_effects.values())
                 )
                 pattern_unique = (
                     deduplicate_exact_pattern_mappings(
@@ -325,8 +361,7 @@ class ReactorMatchingMixin:
                     edge_attrs=edge_attrs,
                 )
                 log.debug(
-                    "Stereo witness/exact symmetry: %d → %d → %d → %d "
-                    "→ %d mapping(s)",
+                    "Stereo witness/exact symmetry: %d → %d → %d → %d " "→ %d mapping(s)",
                     len(raw_maps),
                     len(port_unique),
                     len(pattern_unique),
@@ -354,11 +389,7 @@ class ReactorMatchingMixin:
         parity propagation. Only wildcards referenced by stored stereo state
         are expanded; ordinary wildcard regions retain their legacy behavior.
         """
-        wildcard_nodes = {
-            node
-            for node, attrs in pattern.nodes(data=True)
-            if attrs.get("element") == "*"
-        }
+        wildcard_nodes = {node for node, attrs in pattern.nodes(data=True) if attrs.get("element") == "*"}
         if not mappings or not wildcard_nodes:
             return mappings
 
@@ -417,15 +448,12 @@ class ReactorMatchingMixin:
             partials = [dict(mapping)]
             for wildcard in stereo_wildcards:
                 next_partials: List[MappingDict] = []
-                anchors = [
-                    neighbor
-                    for neighbor in pattern.neighbors(wildcard)
-                    if neighbor not in wildcard_nodes
-                ]
+                anchors = [neighbor for neighbor in pattern.neighbors(wildcard) if neighbor not in wildcard_nodes]
                 for partial in partials:
-                    mapped_anchors = [
-                        partial[anchor] for anchor in anchors if anchor in partial
-                    ]
+                    if wildcard in partial:
+                        next_partials.append(partial)
+                        continue
+                    mapped_anchors = [partial[anchor] for anchor in anchors if anchor in partial]
                     if len(mapped_anchors) != len(anchors) or not mapped_anchors:
                         continue
                     candidates = set(host.neighbors(mapped_anchors[0]))
@@ -436,17 +464,9 @@ class ReactorMatchingMixin:
                         constraint = substitutions.get(wildcard)
                         if constraint is not None:
                             owner = constraint.owner
-                            owner_node = (
-                                owner if owner in pattern else by_map.get(owner)
-                            )
-                            target_owner = (
-                                partial.get(owner_node)
-                                if owner_node is not None
-                                else None
-                            )
-                            if target_owner is None or not host.has_edge(
-                                target_owner, candidate
-                            ):
+                            owner_node = owner if owner in pattern else by_map.get(owner)
+                            target_owner = partial.get(owner_node) if owner_node is not None else None
+                            if target_owner is None or not host.has_edge(target_owner, candidate):
                                 reject(
                                     StereoMorphismIssueCode.PORT_OWNER_MISMATCH,
                                     "A typed stereo port owner is absent from the candidate mapping.",
@@ -456,18 +476,12 @@ class ReactorMatchingMixin:
                                 continue
                             attrs = host.nodes[candidate]
                             element = attrs.get("element")
-                            virtual_kind = (
-                                "H"
-                                if element == "H"
-                                else ("LP" if element in {"LP", "Lp", "lp"} else None)
-                            )
+                            virtual_kind = "H" if element == "H" else ("LP" if element in {"LP", "Lp", "lp"} else None)
                             concrete = {
                                 "element": element,
                                 "charge": attrs.get("charge", 0),
                                 "radical": attrs.get("radical", 0),
-                                "bond_order": host.edges[target_owner, candidate].get(
-                                    "order"
-                                ),
+                                "bond_order": host.edges[target_owner, candidate].get("order"),
                                 "owner": constraint.owner,
                                 "side": "reactant",
                                 "stereo_slot": constraint.stereo_slot,
@@ -475,18 +489,12 @@ class ReactorMatchingMixin:
                                 "mapped_identity": attrs.get("atom_map", candidate),
                                 "materialization": attrs.get(
                                     "materialization",
-                                    (
-                                        "virtual"
-                                        if virtual_kind is not None
-                                        else "concrete"
-                                    ),
+                                    ("virtual" if virtual_kind is not None else "concrete"),
                                 ),
                                 "capacity": 1,
                                 "resource_usage": 1,
                             }
-                            if constraint.virtual_kind is not None and (
-                                virtual_kind != constraint.virtual_kind
-                            ):
+                            if constraint.virtual_kind is not None and (virtual_kind != constraint.virtual_kind):
                                 reject(
                                     StereoMorphismIssueCode.PORT_VIRTUAL_KIND_MISMATCH,
                                     "A stereo port candidate has the wrong virtual kind.",
@@ -495,8 +503,7 @@ class ReactorMatchingMixin:
                                 )
                                 continue
                             if constraint.capacity < 1 or (
-                                constraint.resource_budget is not None
-                                and constraint.resource_budget < 1
+                                constraint.resource_budget is not None and constraint.resource_budget < 1
                             ):
                                 reject(
                                     StereoMorphismIssueCode.PORT_CAPACITY_MISMATCH,
@@ -518,10 +525,7 @@ class ReactorMatchingMixin:
                         next_partials.append(branch)
                 partials = next_partials
             assignment_count += len(partials)
-            if (
-                self.stereo_assignment_limit is not None
-                and assignment_count > self.stereo_assignment_limit
-            ):
+            if self.stereo_assignment_limit is not None and assignment_count > self.stereo_assignment_limit:
                 raise StereoWildcardAssignmentLimitError(
                     self.stereo_assignment_limit,
                     assignment_count,
@@ -542,9 +546,7 @@ class ReactorMatchingMixin:
 
         substitutions: Dict[NodeId, Any] = {}
         for node, attrs in pattern.nodes(data=True):
-            if attrs.get("element") not in {"*", ("*", "*")} or (
-                "wildcard_role" not in attrs
-            ):
+            if attrs.get("element") not in {"*", ("*", "*")} or ("wildcard_role" not in attrs):
                 continue
             state = adapt_legacy_node_state(attrs)
             if (
@@ -640,10 +642,9 @@ class ReactorMatchingMixin:
             "neighbors",
             "_query_attribute_policies",
             "_rewrite_role",
+            "_wildcard_constraint",
         ):
-            if attr not in attrs and any(
-                attr in data for _, data in pattern.nodes(data=True)
-            ):
+            if attr not in attrs and any(attr in data for _, data in pattern.nodes(data=True)):
                 attrs.append(attr)
         return attrs
 
@@ -674,9 +675,7 @@ class ReactorMatchingMixin:
         def node_transition(attrs: Mapping[str, Any]) -> Any:
             types = attrs.get("typesGH")
             if isinstance(types, tuple) and len(types) == 2:
-                return tuple(
-                    freeze(self._chemical_rewrite_role(side)) for side in types
-                )
+                return tuple(freeze(self._chemical_rewrite_role(side)) for side in types)
             return freeze(
                 tuple(
                     (key, attrs.get(key))
@@ -751,19 +750,13 @@ class ReactorMatchingMixin:
                     continue
                 for position, atom_map in enumerate(descriptor.atoms):
                     if isinstance(atom_map, int) and atom_map in by_map:
-                        roles[by_map[atom_map]].append(
-                            (key, state_name, role_position(descriptor, position))
-                        )
+                        roles[by_map[atom_map]].append((key, state_name, role_position(descriptor, position)))
         for key, descriptor in self.rule.stereo_guards.items():
             for position, atom_map in enumerate(descriptor.atoms):
                 if isinstance(atom_map, int) and atom_map in by_map:
-                    roles[by_map[atom_map]].append(
-                        (key, "guard", role_position(descriptor, position))
-                    )
+                    roles[by_map[atom_map]].append((key, "guard", role_position(descriptor, position)))
         for node in decorated.nodes:
-            decorated.nodes[node]["_stereo_role"] = tuple(
-                sorted(set(roles.get(node, [])))
-            )
+            decorated.nodes[node]["_stereo_role"] = tuple(sorted(set(roles.get(node, []))))
         return decorated
 
     @staticmethod
@@ -824,12 +817,8 @@ class ReactorMatchingMixin:
                     "layer": certificate.layer,
                     "status": certificate.status.value,
                     "information_policy": certificate.information_policy.value,
-                    "source": self._configuration_provenance(
-                        certificate.source_configuration
-                    ),
-                    "target": self._configuration_provenance(
-                        certificate.target_configuration
-                    ),
+                    "source": self._configuration_provenance(certificate.source_configuration),
+                    "target": self._configuration_provenance(certificate.target_configuration),
                     "relation": (
                         None
                         if relation is None
@@ -839,9 +828,7 @@ class ReactorMatchingMixin:
                             "class_id": relation.class_id,
                         }
                     ),
-                    "witness": (
-                        None if witness is None else tuple(witness.permutation.image)
-                    ),
+                    "witness": (None if witness is None else tuple(witness.permutation.image)),
                 }
             )
         return {
@@ -864,9 +851,7 @@ class ReactorMatchingMixin:
 
         anchor = anchor or frozenset()
         free_components = [
-            frozenset(component)
-            for component in nx.connected_components(pattern)
-            if not set(component) & set(anchor)
+            frozenset(component) for component in nx.connected_components(pattern) if not set(component) & set(anchor)
         ]
         if len(free_components) < 2:
             return mappings
@@ -890,26 +875,13 @@ class ReactorMatchingMixin:
         if not swappable_groups:
             return mappings
 
-        swappable_nodes = set().union(
-            *[set().union(*group) for group in swappable_groups]
-        )
+        swappable_nodes = set().union(*[set().union(*group) for group in swappable_groups])
         seen = set()
         unique: List[MappingDict] = []
         for mapping in mappings:
-            fixed = tuple(
-                sorted(
-                    (node, host)
-                    for node, host in mapping.items()
-                    if node not in swappable_nodes
-                )
-            )
+            fixed = tuple(sorted((node, host) for node, host in mapping.items() if node not in swappable_nodes))
             component_bags = tuple(
-                tuple(
-                    sorted(
-                        tuple(sorted(mapping[node] for node in component))
-                        for component in group
-                    )
-                )
+                tuple(sorted(tuple(sorted(mapping[node] for node in component)) for component in group))
                 for group in swappable_groups
             )
             signature = (fixed, component_bags)

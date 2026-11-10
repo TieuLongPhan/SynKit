@@ -449,9 +449,7 @@ class TestIntegerHelpers(unittest.TestCase):
             self.assertTrue(all(isinstance(x, int) for x in law))
             self.assertFalse(all(x == 0 for x in law))
             # A conservation law must actually be one: y^T S == 0 exactly.
-            self.assertTrue(
-                np.allclose(np.array(law, dtype=float) @ S, 0.0, atol=1e-9)
-            )
+            self.assertTrue(np.allclose(np.array(law, dtype=float) @ S, 0.0, atol=1e-9))
 
     def test_integer_conservation_laws_known_cycle(self) -> None:
         G = build_conserved_cycle_graph()
@@ -463,9 +461,7 @@ class TestIntegerHelpers(unittest.TestCase):
         law = np.array(laws[0], dtype=float).reshape(-1, 1)
         self.assertEqual(law.shape, (2, 1))
         self.assertTrue(np.allclose(S.T @ law, 0.0, atol=1e-8))
-        self.assertTrue(
-            np.array_equal(np.abs(law.flatten()).astype(int), np.array([1, 1]))
-        )
+        self.assertTrue(np.array_equal(np.abs(law.flatten()).astype(int), np.array([1, 1])))
 
 
 # ---------------------------------------------------------------------------

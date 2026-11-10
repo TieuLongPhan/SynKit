@@ -42,9 +42,54 @@ Package layout
 
 Rule utilities are organized into native graph-based subpackages:
 
-- :py:mod:`synkit.Rule.Compose` — native rule identity and clustering helpers
-- :py:mod:`synkit.Rule.Apply` — native rule matching
+- :py:mod:`synkit.Rule.Compose` — concrete DPO rule composition, overlap
+  search, certificates, identity and clustering
+- :py:mod:`synkit.Rule.Apply` — rule matching and concrete DPO application
 - :py:mod:`synkit.Rule.Modify` — editing / normalization (e.g., hydrogen handling, context tuning)
+- :py:mod:`synkit.Rule.Fusion` — reconstruction of reaction rules from
+  compatible forward/backward ITS graphs, with interfaces and certificates
+
+Fusion and sequential composition have distinct APIs. ``Rule.Fusion``
+reconciles forward/backward constructions of a reaction. ``Rule.Compose``
+combines consecutive transformations. General graph identity helpers live in
+``synkit.Graph.identity``. Historical ``synkit.Graph.Fusion`` imports remain
+compatibility aliases of the new modules.
+
+Concrete rule composition
+-------------------------
+
+``SynRule.compose(other, overlap)`` composes two admitted concrete rules
+along a supplied overlap. ``SynRule.composition_candidates(other, limits=...)``
+searches for overlaps and retains witnesses and rejected candidates. The
+concrete adapter requires non-stereo, grounded rules constructed with
+``implicit_h=False``; it restores saved lone-pair baselines. Symbolic wildcard
+rules are refused until a symbolic composition semantics is implemented.
+
+Composites retain a sequential application condition, which checks the two
+steps on the host. Carrier-span isomorphism groups spans without comparing
+those conditions, so such a group does not establish equivalence of guarded
+rules. The composition implementation is Python; the C++ Reactor backend
+currently provides application rather than rule composition.
+
+Persistent resource composition
+-------------------------------
+
+``Rule.Compose.ResourceUpdate(demand, supply)`` represents the partial map
+``x -> x - demand + supply``, with domain ``x >= demand``. Its ``then``
+method preserves the exact sequential domain. For example::
+
+   from synkit.Rule.Compose import ResourceUpdate
+
+   consume = ResourceUpdate(1, 0)
+   restore = ResourceUpdate(0, 1)
+   composite = consume.then(restore)
+   assert composite == ResourceUpdate(1, 1)
+
+The result has zero net change but still requires an initial population of
+one. Cancelling demand against supply would erase that condition. These
+updates compose resources on an already aligned persistent carrier;
+graph overlaps, completion baselines and observation projections require
+their own semantics.
 
 Proof-bearing generic stereo rules
 ----------------------------------

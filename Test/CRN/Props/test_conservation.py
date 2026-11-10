@@ -38,24 +38,16 @@ def labels_of(crn):
 
 class TestPrimitiveIntegerVector(unittest.TestCase):
     def test_clears_denominators(self):
-        self.assertEqual(
-            _primitive_integer_vector([Fraction(1, 2), Fraction(1, 3)]), [3, 2]
-        )
+        self.assertEqual(_primitive_integer_vector([Fraction(1, 2), Fraction(1, 3)]), [3, 2])
 
     def test_reduces_by_gcd(self):
-        self.assertEqual(
-            _primitive_integer_vector([Fraction(4), Fraction(6)]), [2, 3]
-        )
+        self.assertEqual(_primitive_integer_vector([Fraction(4), Fraction(6)]), [2, 3])
 
     def test_normalizes_leading_sign(self):
-        self.assertEqual(
-            _primitive_integer_vector([Fraction(-1), Fraction(2)]), [1, -2]
-        )
+        self.assertEqual(_primitive_integer_vector([Fraction(-1), Fraction(2)]), [1, -2])
 
     def test_zero_vector(self):
-        self.assertEqual(
-            _primitive_integer_vector([Fraction(0), Fraction(0)]), [0, 0]
-        )
+        self.assertEqual(_primitive_integer_vector([Fraction(0), Fraction(0)]), [0, 0])
 
 
 class TestExactNullSpace(unittest.TestCase):
@@ -93,9 +85,7 @@ class TestIntegerConservationLaws(unittest.TestCase):
                 crn = SynCRN.from_reaction_strings(rxns)
                 matrix = stoichiometric_matrix(crn)
                 for law in integer_conservation_laws(crn):
-                    np.testing.assert_allclose(
-                        np.array(law, dtype=float) @ matrix, 0.0, atol=1e-12
-                    )
+                    np.testing.assert_allclose(np.array(law, dtype=float) @ matrix, 0.0, atol=1e-12)
 
     def test_laws_are_integers(self):
         for name, rxns in self.NETWORKS.items():
@@ -123,9 +113,7 @@ class TestIntegerConservationLaws(unittest.TestCase):
         self.assertEqual(integer_conservation_laws(crn), [[2, 1]])
 
     def test_empty_network(self):
-        self.assertEqual(
-            integer_conservation_laws(SynCRN.from_reaction_strings([])), []
-        )
+        self.assertEqual(integer_conservation_laws(SynCRN.from_reaction_strings([])), [])
 
 
 class TestConservedMoieties(unittest.TestCase):
@@ -133,8 +121,7 @@ class TestConservedMoieties(unittest.TestCase):
         crn = SynCRN.from_reaction_strings(TWO_SITE)
         labels = labels_of(crn)
         pools = {
-            frozenset(label for label, coeff in zip(labels, moiety) if coeff)
-            for moiety in conserved_moieties(crn)
+            frozenset(label for label, coeff in zip(labels, moiety) if coeff) for moiety in conserved_moieties(crn)
         }
         self.assertEqual(
             pools,
@@ -154,16 +141,13 @@ class TestConservedMoieties(unittest.TestCase):
         crn = SynCRN.from_reaction_strings(TWO_SITE)
         matrix = stoichiometric_matrix(crn)
         for moiety in conserved_moieties(crn):
-            np.testing.assert_allclose(
-                np.array(moiety, dtype=float) @ matrix, 0.0, atol=1e-12
-            )
+            np.testing.assert_allclose(np.array(moiety, dtype=float) @ matrix, 0.0, atol=1e-12)
 
     def test_michaelis_menten_pools(self):
         crn = SynCRN.from_reaction_strings(["E+S>>ES", "ES>>E+S", "ES>>E+P"])
         labels = labels_of(crn)
         pools = {
-            frozenset(label for label, coeff in zip(labels, moiety) if coeff)
-            for moiety in conserved_moieties(crn)
+            frozenset(label for label, coeff in zip(labels, moiety) if coeff) for moiety in conserved_moieties(crn)
         }
         self.assertIn(frozenset({"E", "ES"}), pools)
         self.assertIn(frozenset({"S", "ES", "P"}), pools)

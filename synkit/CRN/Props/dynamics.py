@@ -49,8 +49,7 @@ def _require_sympy() -> None:
     """
     if not _SYMPY_AVAILABLE or sp is None:
         raise ImportError(
-            "sympy is required for symbolic CRN dynamics helpers. "
-            "Please install it, e.g. `pip install sympy`."
+            "sympy is required for symbolic CRN dynamics helpers. " "Please install it, e.g. `pip install sympy`."
         )
 
 
@@ -394,9 +393,7 @@ class StructuralSingularitySummary:
             "has_perfect_matching": self.has_perfect_matching,
             "pattern_singular": self.pattern_singular,
             "determinant_checked": self.determinant_checked,
-            "determinant_expr": (
-                None if self.determinant_expr is None else str(self.determinant_expr)
-            ),
+            "determinant_expr": (None if self.determinant_expr is None else str(self.determinant_expr)),
             "determinant_is_zero": self.determinant_is_zero,
             "classification": self.classification,
         }
@@ -706,9 +703,7 @@ def species_influence_graph(
     species_order, P = jacobian_sign_pattern(crn, tol=tol)
 
     label_map: Dict[Any, Any] = {}
-    if use_labels and isinstance(
-        crn, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)
-    ):
+    if use_labels and isinstance(crn, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)):
         for s in species_order:
             label_map[s] = crn.nodes[s].get("label", s)
     else:

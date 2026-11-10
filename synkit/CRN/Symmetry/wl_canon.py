@@ -527,18 +527,10 @@ class WLCanonicalizer:
             parts: List[str] = [colors[v]]
 
             if self.include_in_neighbors:
-                parts.append(
-                    "IN["
-                    + "|".join(self._neighbors_items(colors, v, direction="in"))
-                    + "]"
-                )
+                parts.append("IN[" + "|".join(self._neighbors_items(colors, v, direction="in")) + "]")
 
             if self.include_out_neighbors:
-                parts.append(
-                    "OUT["
-                    + "|".join(self._neighbors_items(colors, v, direction="out"))
-                    + "]"
-                )
+                parts.append("OUT[" + "|".join(self._neighbors_items(colors, v, direction="out")) + "]")
 
             new_colors[v] = hash_text("||".join(parts), digest_size=self.digest_size)
 

@@ -354,6 +354,9 @@ extern "C" void *synkit_canon_cancel_create() {
 extern "C" void synkit_canon_cancel_request(void *p) {
   if (p) static_cast<Cancel *>(p)->requested.store(true, std::memory_order_relaxed);
 }
+extern "C" int synkit_canon_cancelled(const void *p) {
+  return p && static_cast<const Cancel *>(p)->requested.load(std::memory_order_relaxed);
+}
 extern "C" void synkit_canon_cancel_free(void *p) { delete static_cast<Cancel *>(p); }
 extern "C" int synkit_canon_search(const SynkitCanonRequest *r, SynkitCanonResult **result) {
   if (!result) return -1;

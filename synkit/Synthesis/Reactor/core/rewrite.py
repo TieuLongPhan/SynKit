@@ -15,6 +15,7 @@ from synkit.Graph.Matcher.subgraph_matcher import SubgraphSearchEngine
 from synkit.IO.chem_converter import ITSFormat, detect_its_format
 from . import product as _product_state
 from .strategy import Strategy
+from .completion import complete_rule_host
 
 MappingDict = Dict[Any, Any]
 _EMBEDDING_ANCHOR = "_synkit_explicit_h_embedding_anchor"
@@ -31,9 +32,7 @@ def _implicit_heavy_hydrogens(
         if attrs.get("element") != "H":
             continue
         neighbors = list(graph.neighbors(node))
-        heavy_neighbors = [
-            nbr for nbr in neighbors if graph.nodes[nbr].get("element") != "H"
-        ]
+        heavy_neighbors = [nbr for nbr in neighbors if graph.nodes[nbr].get("element") != "H"]
         if heavy_neighbors and len(heavy_neighbors) == len(neighbors):
             removable.append((node, heavy_neighbors))
 
@@ -55,9 +54,7 @@ def _implicit_heavy_hydrogens(
                 stored = list(normalized.nodes[heavy].get("_implicit_h_atom_maps", ()))
                 stored.append(atom_map)
                 normalized.nodes[heavy]["_implicit_h_atom_maps"] = tuple(stored)
-            normalized.nodes[heavy]["hcount"] = (
-                normalized.nodes[heavy].get("hcount", 0) + 1
-            )
+            normalized.nodes[heavy]["hcount"] = normalized.nodes[heavy].get("hcount", 0) + 1
         normalized.remove_node(h)
     return normalized
 
@@ -71,11 +68,16 @@ def _invert_template(
     if resolved_format == "tuple":
         reverter = ITSReverter(tpl)
         left, right = reverter.to_reactant_graph(), reverter.to_product_graph()
-        return ITSConstruction().construct(
+        result = ITSConstruction().construct(
             right,
             left,
             balance_its=balance_its,
         )
+        for node in result:
+            baseline = tpl.nodes[node].get("_relative_resource_baselines")
+            if baseline is not None:
+                result.nodes[node]["_relative_resource_baselines"] = dict(baseline)
+        return result
     left, right = its_decompose(tpl)
     return ITSConstruction().ITSGraph(right, left, balance_its=balance_its)
 
@@ -83,9 +85,7 @@ def _invert_template(
 # ==================================================================
 # Aux – glue, explicit‑H, SMARTS
 # ==================================================================
-def _node_glue(
-    host_n: Dict[str, Any], pat_n: Dict[str, Any], key: str = "typesGH"
-) -> None:
+def _node_glue(host_n: Dict[str, Any], pat_n: Dict[str, Any], key: str = "typesGH") -> None:
     host_r, host_p = host_n[key]
     pat_r, pat_p = pat_n[key]
     delta = pat_r[2] - pat_p[2]
@@ -129,9 +129,7 @@ def _get_explicit_map(
     expand_nodes = [v for _, v in mapping.items()]
     original_nodes = set(host)
     cache_key = frozenset(expand_nodes)
-    cached_host = (
-        expanded_host_cache.get(cache_key) if expanded_host_cache is not None else None
-    )
+    cached_host = expanded_host_cache.get(cache_key) if expanded_host_cache is not None else None
     if cached_host is None:
         host_explicit = h_to_explicit(host, expand_nodes)
         for node in set(host_explicit) - original_nodes:
@@ -229,9 +227,7 @@ def _restore_unmatched_pattern_hydrogens(
     """Fold unmatched temporary H expansions back into heavy-atom hcount."""
     matched_nodes = set(mapping.values())
     removable = [
-        node
-        for node, attrs in graph.nodes(data=True)
-        if attrs.get("_pattern_expanded_h") and node not in matched_nodes
+        node for node, attrs in graph.nodes(data=True) if attrs.get("_pattern_expanded_h") and node not in matched_nodes
     ]
     for hydrogen in removable:
         neighbors = list(graph.neighbors(hydrogen))
@@ -240,12 +236,7 @@ def _restore_unmatched_pattern_hydrogens(
         heavy = neighbors[0]
         graph.nodes[heavy]["hcount"] = graph.nodes[heavy].get("hcount", 0) + 1
         types = graph.nodes[heavy].get("typesGH")
-        if (
-            isinstance(types, tuple)
-            and len(types) == 2
-            and isinstance(types[0], tuple)
-            and len(types[0]) >= 3
-        ):
+        if isinstance(types, tuple) and len(types) == 2 and isinstance(types[0], tuple) and len(types[0]) >= 3:
             graph.nodes[heavy]["typesGH"] = (
                 types[0][:2] + (types[0][2] + 1,) + types[0][3:],
                 types[1],
@@ -289,9 +280,7 @@ def _prepare_rewrite_batch_host(
     seed_structural_signatures: bool = False,
 ) -> Tuple[nx.Graph, bool]:
     """Return a reusable prepared host when every application is total."""
-    if pattern_has_explicit_h or any(
-        not set(reaction_center).issubset(mapping) for mapping in mappings
-    ):
+    if pattern_has_explicit_h or any(not set(reaction_center).issubset(mapping) for mapping in mappings):
         return host, False
     prepared = _prepare_rewrite_host(host, electron_aware=electron_aware)
     if seed_structural_signatures and len(mappings) >= 2:
@@ -327,6 +316,8 @@ def _glue_graph(
     host_prepared: bool = False,
     expanded_host_cache: Dict[frozenset[Any], nx.Graph] | None = None,
     consume_prepared_host: bool = False,
+    wildcard_mode: str = "legacy",
+    partial_application: bool = False,
 ) -> List[nx.Graph]:
     list_its: List[nx.Graph] = []
     # NetworkX copies node/edge attribute dictionaries.  Rewrite values
@@ -337,11 +328,7 @@ def _glue_graph(
     # once more; earlier applications have already received independent
     # copies.  Explicit-H expansion may branch and therefore keeps the
     # conservative copy path.
-    host_g = (
-        host
-        if consume_prepared_host and host_prepared and not pattern_has_explicit_H
-        else host.copy()
-    )
+    host_g = host if consume_prepared_host and host_prepared and not pattern_has_explicit_H else host.copy()
     if electron_aware is None:
         electron_aware = _is_electron_aware_template(rc)
 
@@ -362,10 +349,23 @@ def _glue_graph(
             _product_state._ensure_host_atom_maps(host_g)
 
     if pattern_has_explicit_H:
+        if wildcard_mode == "typed":
+            from ..matching.wildcard import prepare_wildcard_pattern
+
+            pattern_explicit = prepare_wildcard_pattern(pattern_explicit)
+        # Only matched input components need explicit-H extensions. Asking
+        # for the full pattern here would reject every missing reagent before
+        # the completion kernel can introduce it.
+        extension_pattern = pattern_explicit
+        if partial_application:
+            selected = set().union(
+                *(component for component in nx.connected_components(pattern_explicit) if set(component) & set(mapping))
+            )
+            extension_pattern = pattern_explicit.subgraph(selected).copy()
         mappings, host_g = _get_explicit_map(
             host_g,
             mapping,
-            pattern_explicit,
+            extension_pattern,
             strategy,
             embed_threshold,
             embed_pre_filter,
@@ -377,13 +377,8 @@ def _glue_graph(
     else:
         mappings = [mapping]
 
-    relative_pi_centers = {
-        node for edge in (relative_pi_edges or set()) for node in edge
-    }
-    relative_node_resources = (
-        frozenset(rc.graph.get("relative_node_resources", ()))
-        | relative_match_resources
-    )
+    relative_pi_centers = {node for edge in (relative_pi_edges or set()) for node in edge}
+    relative_node_resources = frozenset(rc.graph.get("relative_node_resources", ())) | relative_match_resources
 
     # Iterate over remappings --------------------------------------
     reuse_prepared_host = len(mappings) == 1
@@ -401,13 +396,15 @@ def _glue_graph(
             _restore_unmatched_pattern_hydrogens(its, m)
         # Materialize wildcard nodes for partial mappings.
         if len(m.keys()) < rc.number_of_nodes():
-            its, m = add_wildcard_subgraph_for_unmapped(
-                its,
-                rc,
-                m,
-                inplace=True,
-                tuple_mode=electron_aware,
-            )
+            if electron_aware:
+                its, m = complete_rule_host(its, rc, m, componentwise=(wildcard_mode == "typed"))
+            else:
+                its, m = add_wildcard_subgraph_for_unmapped(
+                    its,
+                    rc,
+                    m,
+                    inplace=True,
+                )
 
         if not host_prepared:
             for _, _, data in its.edges(data=True):
@@ -433,16 +430,12 @@ def _glue_graph(
                 if electron_aware:
                     rc_element = rc.nodes[rc_n].get("element")
                     wildcard_context = (
-                        isinstance(rc_element, tuple)
-                        and len(rc_element) == 2
-                        and rc_element[0] == rc_element[1] == "*"
+                        isinstance(rc_element, tuple) and len(rc_element) == 2 and rc_element[0] == rc_element[1] == "*"
                     )
                     _product_state._pair_electron_aware_node_attrs(
                         its.nodes[host_n],
                         rc.nodes[rc_n],
-                        preserve_unchanged_state=(
-                            rc_n in relative_pi_centers or wildcard_context
-                        ),
+                        preserve_unchanged_state=(rc_n in relative_pi_centers or wildcard_context),
                         relative_resources=relative_node_resources,
                     )
 
@@ -510,10 +503,7 @@ def _glue_graph(
                         if isinstance(rule_value, tuple) and len(rule_value) == 2:
                             host_value = host_attr.get(key)
                             host_left = (
-                                host_value[0]
-                                if isinstance(host_value, tuple)
-                                and len(host_value) == 2
-                                else host_value
+                                host_value[0] if isinstance(host_value, tuple) and len(host_value) == 2 else host_value
                             )
                             host_attr[key] = (host_left, rule_value[1])
                         else:
@@ -524,16 +514,12 @@ def _glue_graph(
             # mapped write nodes plus boundary neighbors whose incident edge
             # state actually changes. Consumers that receive an ITS without
             # this proof hint retain the conservative whole-graph path.
-            its.graph["_product_refresh_nodes"] = (
-                _product_state._electron_refresh_support(
-                    its,
-                    m.values(),
-                )
+            its.graph["_product_refresh_nodes"] = _product_state._electron_refresh_support(
+                its,
+                m.values(),
             )
             its.graph["_product_electron_fields_current"] = False
-            its.graph["_product_kekule_phase_dirty"] = (
-                _product_state._product_kekule_phase_is_dirty(its)
-            )
+            its.graph["_product_kekule_phase_dirty"] = _product_state._product_kekule_phase_is_dirty(its)
             if refresh_electrons:
                 _product_state._refresh_product_electron_fields(its)
         list_its.append(its)
@@ -547,14 +533,9 @@ def _is_electron_aware_template(rc: nx.Graph) -> bool:
     :class:`SynRule`.  Radical or lone-pair changes on the remaining nodes
     still require the electron-aware tuple rewrite path in that case.
     """
-    edge_state = any(
-        "sigma_order" in data and "pi_order" in data
-        for _, _, data in rc.edges(data=True)
-    )
+    edge_state = any("sigma_order" in data and "pi_order" in data for _, _, data in rc.edges(data=True))
     node_state = any(
-        isinstance(data.get(key), tuple)
-        and len(data[key]) == 2
-        and data[key][0] != data[key][1]
+        isinstance(data.get(key), tuple) and len(data[key]) == 2 and data[key][0] != data[key][1]
         for _, data in rc.nodes(data=True)
         for key in ("radical", "lone_pairs", "valence_electrons")
     )

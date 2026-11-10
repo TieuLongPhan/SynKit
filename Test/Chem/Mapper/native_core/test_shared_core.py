@@ -3,27 +3,23 @@
 import hashlib
 import json
 import os
-import shutil
 import tarfile
 from pathlib import Path
 
 import pytest
 
 from synkit.Chem.Mapper import Mapper
-from synkit.Chem.Mapper._native.build import build_mapper_native
 from synkit.Chem.Mapper._native.core import enumerate_core_mappings, map_reaction_core
 from synkit.Chem.Mapper._native.runtime import load_core
 from synkit.Chem.Mapper.graph.labeled_graph import LabeledGraph
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
+def library(request):
     override = os.environ.get("SYNKIT_CORE_LIBRARY")
     if override:
         return Path(override)
-    if not shutil.which("g++"):
-        pytest.skip("C++17 compiler unavailable")
-    return build_mapper_native(tmp_path_factory.mktemp("common-core"))
+    return request.getfixturevalue("mapper_core_library")
 
 
 def pair():

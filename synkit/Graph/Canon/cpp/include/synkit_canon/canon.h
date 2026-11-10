@@ -67,6 +67,7 @@ SYNKIT_CANON_API int synkit_canon_abi(void);
 SYNKIT_CANON_API const char *synkit_canon_error(void);
 SYNKIT_CANON_API void *synkit_canon_cancel_create(void);
 SYNKIT_CANON_API void synkit_canon_cancel_request(void *);
+SYNKIT_CANON_API int synkit_canon_cancelled(const void *);
 SYNKIT_CANON_API void synkit_canon_cancel_free(void *);
 /* Returns 0 for complete or explicitly stopped work, -1 for malformed input
  * or runtime error. On -1, *result is NULL. Always free a non-NULL result.

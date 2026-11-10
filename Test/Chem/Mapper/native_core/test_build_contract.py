@@ -64,6 +64,8 @@ def test_distribution_cannot_omit_native_support_files(tmp_path, monkeypatch, om
         "synkit/__init__.py",
         "synkit/CRN/_build.py",
         "synkit/CRN/_native_build.py",
+        "synkit/CRN/Construct/native_dpo.py",
+        "synkit/CRN/Construct/dpo_worker.py",
         "synkit/Chem/Mapper/mapper.py",
         "synkit/Chem/Mapper/solvers/exact/native_build.py",
         "synkit/Chem/Mapper/solvers/exact/native/build.py",
@@ -87,10 +89,15 @@ def test_distribution_cannot_omit_native_support_files(tmp_path, monkeypatch, om
         check_package_artifacts._assert_member_suffixes(members, artifact)
 
 
-@pytest.mark.parametrize("omitted", check_package_artifacts.GUIDE_DOCS)
-def test_source_distribution_cannot_omit_mapper_documentation(omitted):
+@pytest.mark.parametrize(
+    "omitted", check_package_artifacts.GUIDE_DOCS + check_package_artifacts.CRN_EXPERIMENT_FILES
+)
+def test_source_distribution_cannot_omit_documentation_or_crn_experiments(omitted):
     prefix = f"synkit-{__version__}/"
-    members = {prefix + name for name in check_package_artifacts.GUIDE_DOCS}
+    members = {
+        prefix + name
+        for name in check_package_artifacts.GUIDE_DOCS + check_package_artifacts.CRN_EXPERIMENT_FILES
+    }
     artifact = Path("test.tar.gz")
     check_package_artifacts._assert_source_documentation(members, artifact)
     members.remove(prefix + omitted)

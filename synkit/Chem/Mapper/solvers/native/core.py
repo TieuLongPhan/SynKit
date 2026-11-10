@@ -279,6 +279,7 @@ def enumerate_core_mappings(  # noqa: C901
         library_path=str(Path(library_path).resolve()),
         CD_mode=CD_mode,
         proof_only=proof_only,
+        enumeration_requested=not proof_only,
         cost_scale=2,
         requested_symmetry=symmetry,
         domain_restricted=domain_mask is not None,
@@ -327,7 +328,9 @@ def enumerate_core_mappings(  # noqa: C901
         visited_nodes=stats.nodes,
         elapsed_seconds=time.perf_counter() - started,
         status=(
-            ("complete" if stats.candidate_count else "no_solutions")
+            "minimum_proven"
+            if proof_only and stats.minimum_proven and reason is None
+            else ("complete" if stats.candidate_count else "no_solutions")
             if complete
             else "unsupported" if stats.status == 2 else "timeout"
         ),

@@ -108,10 +108,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         name = DEFAULT_MODULES.get(module_id, module_id)
         entry = fetch_module(extractor, module_id, name)
         modules[module_id] = entry
-        print(
-            f"{module_id}: {len(entry['equations'])} reactions, "
-            f"{len(entry['compound_names'])} named compounds"
-        )
+        print(f"{module_id}: {len(entry['equations'])} reactions, " f"{len(entry['compound_names'])} named compounds")
 
     payload = {
         "source": "KEGG MODULE (https://www.kegg.jp/kegg/module.html)",

@@ -7,7 +7,6 @@ from itertools import permutations
 import numpy as np
 import pytest
 
-from synkit.Chem.Mapper._native.build import build_mapper_native
 from synkit.Chem.Mapper._native.runtime import (
     CALLBACK,
     INT,
@@ -20,10 +19,8 @@ from synkit.Chem.Mapper._native.runtime import (
 
 
 @pytest.fixture(scope="module")
-def orbit_library(tmp_path_factory):
-    return os.environ.get("SYNKIT_CORE_LIBRARY") or build_mapper_native(
-        tmp_path_factory.mktemp("pabs-endpoint-orbits")
-    )
+def orbit_library(request):
+    return os.environ.get("SYNKIT_CORE_LIBRARY") or request.getfixturevalue("mapper_core_library")
 
 
 @pytest.mark.parametrize("query", [0, 1, 2, 3])

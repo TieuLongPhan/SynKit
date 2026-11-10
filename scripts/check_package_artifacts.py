@@ -42,8 +42,39 @@ PACKAGE_DATA = tuple(
         "write_manifest.cmake",
     )
 )
+PACKAGE_DATA += tuple(
+    ("CRN/Construct/" + directory, filename)
+    for directory in ("cpp", "dpo_cpp")
+    for filename in ("expand.cpp", "CMakeLists.txt")
+)
+
+CRN_EXPERIMENT_FILES = (
+    "Experiment/CRN/__init__.py",
+    "Experiment/CRN/run_all.py",
+    "Experiment/CRN/studies/__init__.py",
+    "Experiment/CRN/studies/networks.py",
+    "Experiment/CRN/studies/crosschecks.py",
+    "Experiment/CRN/studies/validation.py",
+    "Experiment/CRN/studies/scaling.py",
+    "Experiment/CRN/studies/kegg.py",
+    "Experiment/CRN/studies/glycolysis.py",
+    "Experiment/CRN/tools/backends.py",
+    "Experiment/CRN/studies/sbml_reference.py",
+    "Experiment/CRN/studies/participant_conventions.py",
+    "Experiment/CRN/studies/formose_dpo.py",
+    "Experiment/CRN/studies/formose_case_study.py",
+    "Experiment/CRN/tools/formose_dpo_worker.py",
+    "Experiment/CRN/tools/reports.py",
+    "Experiment/CRN/environments/formose-dpo.rst",
+    "Experiment/CRN/environments/molfoundry-requirements.txt",
+    "Experiment/CRN/environments/mod-environment.yml",
+    "Experiment/CRN/environments/crn-1.7.0-linux.constraints.txt",
+    "Experiment/CRN/environments/crnt4sbml-requirements.txt",
+)
 
 GUIDE_DOCS = (
+    "doc/crn.rst",
+    "doc/api/crn.rst",
     "doc/chem.rst",
     "doc/chem/reaction.rst",
     "doc/chem/molecule.rst",
@@ -54,15 +85,15 @@ GUIDE_DOCS = (
 
 
 def _assert_source_documentation(members: set[str], artifact: Path) -> None:
-    """Require the Chem guides and mapper references in a source distribution."""
+    """Require guides and runnable CRN research sources in a source distribution."""
     missing = [
         name
-        for name in GUIDE_DOCS
+        for name in GUIDE_DOCS + CRN_EXPERIMENT_FILES
         if not any(member.endswith("/" + name) for member in members)
     ]
     if missing:
         raise RuntimeError(
-            f"{artifact.name} is missing documentation: {', '.join(missing)}"
+            f"{artifact.name} is missing research sources or documentation: {', '.join(missing)}"
         )
 
 
@@ -99,6 +130,8 @@ def _assert_member_suffixes(members: set[str], artifact: Path) -> None:
         + [
             "synkit/CRN/_build.py",
             "synkit/CRN/_native_build.py",
+            "synkit/CRN/Construct/native_dpo.py",
+            "synkit/CRN/Construct/dpo_worker.py",
             "synkit/Chem/Mapper/mapper.py",
             "synkit/Chem/Mapper/solvers/exact/native_build.py",
             "synkit/Chem/Mapper/solvers/exact/native/build.py",
@@ -144,6 +177,13 @@ def inspect_archives(wheel: Path, sdist: Path) -> None:
     """
     with zipfile.ZipFile(wheel) as archive:
         members = set(archive.namelist())
+        if any(
+            name.startswith(("Experiment/", "Experiments/", "synkit/CRN/Benchmark/"))
+            for name in members
+        ):
+            raise RuntimeError(
+                "Research experiments or the removed benchmark package leaked into the runtime wheel"
+            )
         _assert_member_suffixes(members, wheel)
         libraries = [
             name
@@ -223,16 +263,16 @@ def inspect_archives(wheel: Path, sdist: Path) -> None:
             raise RuntimeError(
                 f"{wheel.name} incorrectly labels a binary wheel as portable"
             )
+    with tarfile.open(sdist, "r:gz") as archive:
+        members = set(archive.getnames())
         if any(
-            name.startswith("Experiment/CRN/")
-            or name.endswith("Benchmark/data/kegg_modules.json")
+            "/synkit/CRN/Benchmark/" in "/" + name
+            or "/Experiments/" in "/" + name
             for name in members
         ):
             raise RuntimeError(
-                "Research experiments or fixtures leaked into the runtime wheel"
+                "Source distribution contains a removed CRN benchmark package or obsolete experiment path"
             )
-    with tarfile.open(sdist, "r:gz") as archive:
-        members = set(archive.getnames())
         if any(
             "/Experiment/CRN/results/" in name
             or "/Experiment/CRN/data/biomodels/" in name
@@ -257,9 +297,10 @@ def inspect_archives(wheel: Path, sdist: Path) -> None:
         for suffix in (
             "scripts/check_package_artifacts.py",
             "scripts/smoke_native_wheel.py",
-            "Experiment/CRN/benchmarks/networks.py",
-            "Experiment/CRN/benchmarks/scaling.py",
-            "Experiment/CRN/benchmarks/glycolysis.py",
+            "Experiment/__init__.py",
+            "Experiment/CRN/studies/networks.py",
+            "Experiment/CRN/studies/scaling.py",
+            "Experiment/CRN/studies/glycolysis.py",
             "Experiment/CRN/data/kegg_modules.json",
             "Experiment/CRN/data/glycolysis_routes.json",
             "Experiment/CRN/data/biomodels_manifest.json",
@@ -315,6 +356,8 @@ import synkit
 expected = {expected_version!r}
 if synkit.__version__ != expected:
     raise SystemExit("version mismatch: %s != %s" % (synkit.__version__, expected))
+if files("synkit").joinpath("CRN", "Benchmark").is_dir():
+    raise SystemExit("removed benchmark package is present in the runtime installation")
 for filename in {DATA_FILES!r}:
     resource = files("synkit").joinpath("Data", filename)
     if not resource.is_file():

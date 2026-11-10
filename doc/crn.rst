@@ -24,10 +24,8 @@ Key CRN submodules include:
 - **Pathway** — reachability, path-finding, and realizability analysis
 - **Symmetry** — canonicalization and isomorphism for CRN comparison
 - **IO** — SBML import and export
-- **Benchmark** — the shipped validation set, scaling benchmark and KEGG case
-  study
 
-Everything in the list above is importable from the top level::
+Common analysis entry points are importable from the top level::
 
     from synkit.CRN import SynCRN, crnt_summary, conserved_moieties, crn_to_sbml
 
@@ -462,11 +460,22 @@ and needs no ``libsbml`` installation.
    back = crn_from_sbml(crn_to_sbml(syn))
    print(back.to_equations(species="label", include_id=False))
 
-Benchmark, validation and case study
-------------------------------------
+The structural reader preserves fixed integer coefficients and participants
+listed on both reaction sides. It does not import modifier references, kinetic
+laws, rules, or package extensions. Fractional coefficients and
+``stoichiometryMath`` require explicit normalization before discrete analysis.
+Reversible reactions have distinct forward and backward source ids. An omitted
+``reversible`` flag defaults to true in Level 2; Level 3 requires the flag, so
+omission raises with ``strict=True`` and otherwise warns before assuming false.
 
-``synkit.CRN.Benchmark`` ships the material behind the package's published
-results, all reproducible offline:
+Research benchmarks, validation and case studies
+------------------------------------------------
+
+``Experiment/CRN/`` contains the reference fixtures, timing harnesses and
+case studies separately from the runtime package. It is included in the source
+distribution and available from a source checkout; runtime wheels do not contain
+the experiments. Run the examples below from the checkout or unpacked source
+distribution root:
 
 - a **validation set** of literature and regression networks, where every
   quantity is additionally recomputed by an independent route (deficiency via a
@@ -479,16 +488,27 @@ results, all reproducible offline:
    :caption: Reproduce the validation table and the case study
    :linenos:
 
-   from synkit.CRN.Benchmark import (
+   from Experiment.CRN.studies import (
        analyze_kegg_module, run_validation, validation_table,
    )
 
    print(validation_table(run_validation()))
    print(analyze_kegg_module("M00001"))
 
-The same artifacts are produced from the command line by::
+The offline reference and cached-KEGG studies can also be run from the command
+line. Rule expansion requires the RDKit C++ SDK documented in
+``Experiment/CRN/environments/formose-dpo.rst``::
 
-    python Experiment/CRN/run_all.py
+    python Experiment/CRN/run_all.py --quick --offline \
+        --output-dir /tmp/crn-results --summary /tmp/crn-results/summary.json
+
+BioModels XML inputs are excluded from the distribution. The separate
+``--with-biomodels`` study requires those inputs to be cached or downloaded;
+the manifest records the selected model identifiers and input hashes.
+The BioModels study declares a 1,000,000-node siphon-search budget. This is an
+experiment setting; the runtime list APIs retain their strict 200,000-node
+default. A limit-exhausted enumeration cannot certify a siphon count or
+persistence condition.
 
 Recommended workflow
 --------------------

@@ -11,7 +11,7 @@ from typing import Any, Mapping
 
 import networkx as nx
 
-from synkit.Graph.Fusion import (
+from synkit.Rule.Fusion import (
     DEFAULT_INTERFACE_EDGE_KEYS,
     DEFAULT_INTERFACE_NODE_KEYS,
     FusionInterface,

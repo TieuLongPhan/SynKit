@@ -18,8 +18,6 @@ missing inputs, unless the caller requires its local cache.
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import logging
 import os
 import sys
@@ -35,12 +33,14 @@ from Experiment.CRN.studies import (  # noqa: E402
     external_crnt4sbml,
     formose_case_study,
     glycolysis_donors,
+    hydrogen_accounting,
     representation,
     supplementary,
 )
-from Experiment.CRN.studies import kegg_case_study  # noqa: E402
+from Experiment.CRN.studies import kegg  # noqa: E402
 from Experiment.CRN.studies import scaling, validation  # noqa: E402
-from Experiment.CRN.tools.common import (
+from Experiment.CRN.tools.common import (  # noqa: E402
+    native_experiment,
     environment,
     source_hashes,
     write_report,
@@ -95,10 +95,7 @@ def _run(
     if output_dir is not None:
         path = output_dir / f"crn-{name}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(report, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+        write_report(report, path)
 
     status = report.get("status", "UNKNOWN")
     failed = [k for k, v in report.get("checks", {}).items() if not v]
@@ -111,9 +108,6 @@ def _run(
         "checks": report.get("checks", {}),
         "error": report.get("error"),
         "path": None if path is None else str(path.resolve()),
-        "sha256": (
-            None if path is None else hashlib.sha256(path.read_bytes()).hexdigest()
-        ),
     }
 
 
@@ -144,10 +138,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser.add_argument(
         "--crnt4sbml-python",
         type=Path,
-        help=(
-            "also cross-check the validation set with the supplied isolated "
-            "CRNT4SBML Python executable"
-        ),
+        help=("also cross-check the validation set with the supplied isolated " "CRNT4SBML Python executable"),
     )
     parser.add_argument(
         "--summary",
@@ -159,15 +150,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="keep the rule-expansion INFO logging from the formose study",
     )
-    parser.add_argument(
-        "--offline", action="store_true", help="require cached BioModels inputs"
-    )
+    parser.add_argument("--offline", action="store_true", help="require cached BioModels inputs")
     arguments = parser.parse_args(argv)
 
     if not arguments.verbose:
         logging.disable(logging.INFO)
 
     sizes = QUICK_SIZES if arguments.quick else scaling.DEFAULT_SIZES
+    initial_sources = source_hashes()
 
     studies: List[Dict[str, Any]] = [
         _run("validation", validation.validation_report, arguments.output_dir),
@@ -185,9 +175,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         ),
         _run(
             "kegg",
-            lambda: kegg_case_study.kegg_report(
-                kegg_case_study.CASE_STUDY_MODULES, drop_currency=True
-            ),
+            lambda: kegg.kegg_report(kegg.CASE_STUDY_MODULES, drop_currency=True),
             arguments.output_dir,
         ),
         _run(
@@ -207,22 +195,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         _run("glycolysis-donors", glycolysis_donors.donor_report, arguments.output_dir),
     ]
 
+    from synkit.CRN.Construct.native_expand import resolve_expander
+
+    if resolve_expander() is not None:
+        studies.append(_run("hydrogen", hydrogen_accounting.hydrogen_report, arguments.output_dir))
+
     omitted = {}
 
     if arguments.with_biomodels:
         studies.append(
             _run(
                 "biomodels",
-                lambda: biomodels.biomodels_report(
-                    biomodels.DEFAULT_MODELS, offline=arguments.offline, budget=120.0
-                ),
+                lambda: biomodels.biomodels_report(biomodels.DEFAULT_MODELS, offline=arguments.offline, budget=120.0),
                 arguments.output_dir,
             )
         )
     else:
-        omitted["biomodels"] = (
-            "enable with --with-biomodels; requires cached XML or network"
-        )
+        omitted["biomodels"] = "enable with --with-biomodels; requires cached XML or network"
 
     if arguments.crnt4sbml_python is not None:
         studies.append(
@@ -233,26 +222,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
         )
     else:
-        omitted["external-crnt4sbml"] = (
-            "requires --crnt4sbml-python in an isolated environment"
-        )
+        omitted["external-crnt4sbml"] = "requires --crnt4sbml-python in an isolated environment"
 
     if arguments.summary is not None:
         for study in studies:
             if study["path"] is not None:
-                study["path"] = os.path.relpath(
-                    study["path"], arguments.summary.resolve().parent
-                )
+                study["path"] = os.path.relpath(study["path"], arguments.summary.resolve().parent)
 
+    sources_unchanged = initial_sources == source_hashes()
     summary = {
         "schema": "synkit.crn-experiments/2",
-        "status": "PASS" if all(s["status"] == "PASS" for s in studies) else "FAIL",
-        "complete": all(s["status"] == "PASS" for s in studies),
+        "status": "PASS" if sources_unchanged and all(s["status"] == "PASS" for s in studies) else "FAIL",
+        "complete": sources_unchanged and all(s["status"] == "PASS" for s in studies),
+        "sources_unchanged_during_run": sources_unchanged,
         "profile": "quick" if arguments.quick else "default",
         "all_studies_included": not omitted,
         "omitted_studies": omitted,
         "environment": environment(),
-        "source_sha256": source_hashes(),
         "result_semantics": {
             "structural_arithmetic": "exact integer and rational arithmetic",
             "positive_discrete_decisions": "verified firing certificate",
@@ -264,9 +250,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     return write_report(summary, arguments.summary)
 
 
-from Experiment.CRN.tools.common import native_experiment
-
-main = native_experiment(main)
+main = native_experiment(main, expansion=True)
 
 if __name__ == "__main__":
     raise SystemExit(main())

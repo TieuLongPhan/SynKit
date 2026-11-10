@@ -57,9 +57,7 @@ def _freeze_typed_identity(
         )
     elif isinstance(value, list):
         item_type = type(value[0]) if value else None
-        if item_type in _PRIMITIVE_IDENTITY_TYPES and all(
-            type(item) is item_type for item in value
-        ):
+        if item_type in _PRIMITIVE_IDENTITY_TYPES and all(type(item) is item_type for item in value):
             identity = (list, item_type, tuple(value))
         else:
             identity = (
@@ -68,9 +66,7 @@ def _freeze_typed_identity(
             )
     elif isinstance(value, tuple):
         item_type = type(value[0]) if value else None
-        if item_type in _PRIMITIVE_IDENTITY_TYPES and all(
-            type(item) is item_type for item in value
-        ):
+        if item_type in _PRIMITIVE_IDENTITY_TYPES and all(type(item) is item_type for item in value):
             # This is exactly the same typed equality as recursively encoding
             # each primitive item, but avoids two Python calls for the common
             # paired endpoint representation.
@@ -131,9 +127,7 @@ def _merge_application_orbits(
                 "weight": float(member.graph.get("stereo_branch_weight", 1.0)),
                 "branch_path": deepcopy(member.graph.get("stereo_branch_path", ())),
                 "branch": deepcopy(member.graph.get("stereo_branch", {})),
-                "coupling_branch": deepcopy(
-                    member.graph.get("stereo_coupling_branch", {})
-                ),
+                "coupling_branch": deepcopy(member.graph.get("stereo_coupling_branch", {})),
                 "application": deepcopy(member.graph.get("application_provenance")),
             }
         )
@@ -191,9 +185,7 @@ def _rewrite_locus_nodes(reaction_center: nx.Graph) -> frozenset[Any]:
             active.add(node)
             continue
         if any(
-            isinstance(attrs.get(key), tuple)
-            and len(attrs[key]) == 2
-            and attrs[key][0] != attrs[key][1]
+            isinstance(attrs.get(key), tuple) and len(attrs[key]) == 2 and attrs[key][0] != attrs[key][1]
             for key in node_state_keys
         ):
             active.add(node)
@@ -207,9 +199,7 @@ def _rewrite_locus_nodes(reaction_center: nx.Graph) -> frozenset[Any]:
     )
     for left, right, attrs in reaction_center.edges(data=True):
         if any(
-            isinstance(attrs.get(key), tuple)
-            and len(attrs[key]) == 2
-            and attrs[key][0] != attrs[key][1]
+            isinstance(attrs.get(key), tuple) and len(attrs[key]) == 2 and attrs[key][0] != attrs[key][1]
             for key in edge_state_keys
         ):
             active.update((left, right))
@@ -297,15 +287,9 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
 
     components = [
         frozenset(component)
-        for component in (
-            nx.weakly_connected_components(host)
-            if host.is_directed()
-            else nx.connected_components(host)
-        )
+        for component in (nx.weakly_connected_components(host) if host.is_directed() else nx.connected_components(host))
     ]
-    component_index = {
-        node: index for index, component in enumerate(components) for node in component
-    }
+    component_index = {node: index for index, component in enumerate(components) for node in component}
     node_attrs = (
         "element",
         "aromatic",
@@ -372,10 +356,7 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
         edge_colour_attr="_rewrite_mapping_edge_colour",
     )
     for index, base in base_components.items():
-        colours = {
-            node: attrs["_rewrite_mapping_node_colour"]
-            for node, attrs in base.nodes(data=True)
-        }
+        colours = {node: attrs["_rewrite_mapping_node_colour"] for node, attrs in base.nodes(data=True)}
         node_colours[index] = colours
         component_keys[index] = (
             base.is_directed(),
@@ -384,10 +365,7 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
             tuple(sorted(colours.values())),
             tuple(
                 sorted(
-                    (
-                        attrs["_rewrite_mapping_edge_colour"]
-                        for _, _, attrs in base.edges(data=True)
-                    ),
+                    (attrs["_rewrite_mapping_edge_colour"] for _, _, attrs in base.edges(data=True)),
                 )
             ),
         )
@@ -422,9 +400,7 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
                         edge,
                     )
                 )
-            component_placements.append(
-                (component_keys[index], roles, tuple(pair_edges))
-            )
+            component_placements.append((component_keys[index], roles, tuple(pair_edges)))
         fast_keys.append(tuple(sorted(component_placements, key=repr)))
 
     fast_counts = Counter(fast_keys)
@@ -450,11 +426,9 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
 
         decorated = base_components[index].copy()
         for pattern_node, host_node in placements:
-            decorated.nodes[host_node]["_rewrite_mapping_node_sig"] = (
-                _freeze_typed_identity(
-                    base_node_values[index][host_node] + (pattern_node,),
-                    identity_cache,
-                )
+            decorated.nodes[host_node]["_rewrite_mapping_node_sig"] = _freeze_typed_identity(
+                base_node_values[index][host_node] + (pattern_node,),
+                identity_cache,
             )
 
         certificate = _canonical_attributed_graph_certificate(
@@ -474,14 +448,8 @@ def _deduplicate_rewrite_equivalent_mappings(  # noqa: C901
             cache[cache_key] = component_class
             return component_class
 
-        node_labels = [
-            attrs["_rewrite_mapping_node_sig"]
-            for _, attrs in decorated.nodes(data=True)
-        ]
-        edge_labels = [
-            attrs["_rewrite_mapping_edge_sig"]
-            for _, _, attrs in decorated.edges(data=True)
-        ]
+        node_labels = [attrs["_rewrite_mapping_node_sig"] for _, attrs in decorated.nodes(data=True)]
+        edge_labels = [attrs["_rewrite_mapping_edge_sig"] for _, _, attrs in decorated.edges(data=True)]
         environments = []
         for node, attrs in decorated.nodes(data=True):
             incident = Counter(
@@ -578,8 +546,7 @@ def _deduplicate_structural_its(its_graphs: List[nx.Graph]) -> List[nx.Graph]:
         return its_graphs
 
     has_deferred_electrons = any(
-        its.graph.get("electron_aware_rewrite", False)
-        and not its.graph.get("_product_electron_fields_current", False)
+        its.graph.get("electron_aware_rewrite", False) and not its.graph.get("_product_electron_fields_current", False)
         for its in its_graphs
     )
     if not has_deferred_electrons:
@@ -624,9 +591,7 @@ def _deduplicate_coupling_face_products(
     representatives: List[Tuple[nx.Graph, nx.Graph, nx.Graph, nx.Graph]] = []
     unique = []
     for its in its_graphs:
-        if not its.graph.get("stereo_coupling_branch") or its.graph.get(
-            "stereo_outcomes"
-        ):
+        if not its.graph.get("stereo_coupling_branch") or its.graph.get("stereo_outcomes"):
             unique.append(its)
             continue
         reverter = ITSReverter(its)
@@ -650,9 +615,7 @@ def _deduplicate_coupling_face_products(
                 edge_match=categorical_edge_match(_EXACT_EDGE_SIG, ()),
             ):
                 continue
-            if stereo_isomorphic(reactant, other_reactant) and stereo_isomorphic(
-                product, other_product
-            ):
+            if stereo_isomorphic(reactant, other_reactant) and stereo_isomorphic(product, other_product):
                 retained = other_its.graph.get("stereo_coupling_branch", {})
                 duplicate_metadata = its.graph.get("stereo_coupling_branch", {})
                 for target, metadata in duplicate_metadata.items():

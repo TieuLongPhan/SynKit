@@ -47,6 +47,10 @@ Variants
    :members:
    :show-inheritance:
 
+.. automodule:: synkit.Synthesis.Reactor.variants.wildcard
+   :members:
+   :show-inheritance:
+
 Radical-based linking
 ---------------------
 

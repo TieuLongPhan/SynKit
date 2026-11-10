@@ -328,11 +328,7 @@ class PathwayRealizability:
             )
             for eid, (tail, head) in edges.items()
         }
-        self.flow = {
-            str(eid): int(flow.get(eid, 0))
-            for eid in self.edges
-            if int(flow.get(eid, 0)) >= 0
-        }
+        self.flow = {str(eid): int(flow.get(eid, 0)) for eid in self.edges if int(flow.get(eid, 0)) >= 0}
         self.species_token_to_id = {v: v for v in self.vertices}
         self.reaction_token_to_id = {eid: eid for eid in self.edges}
         self.species_id_to_token = {v: v for v in self.vertices}
@@ -494,13 +490,11 @@ class PathwayRealizability:
                 reaction="id",
             )
         """
-        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = (
-            tokenize_syncrn_incidence(crn, species=species, reaction=reaction)
+        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = tokenize_syncrn_incidence(
+            crn, species=species, reaction=reaction
         )
 
-        provided_flow = (
-            {} if flow is None else {str(k): int(v) for k, v in flow.items()}
-        )
+        provided_flow = {} if flow is None else {str(k): int(v) for k, v in flow.items()}
         flow_map = self._resolve_flow_tokens(
             incidence.reaction_order,
             reaction_token_to_id,
@@ -509,11 +503,7 @@ class PathwayRealizability:
             provided_flow,
         )
 
-        provided_marking = (
-            {}
-            if initial_marking is None
-            else {str(k): int(v) for k, v in initial_marking.items()}
-        )
+        provided_marking = {} if initial_marking is None else {str(k): int(v) for k, v in initial_marking.items()}
         marking_map = self._resolve_species_marking_tokens(
             incidence.species_order,
             species_token_to_id,
@@ -530,12 +520,8 @@ class PathwayRealizability:
         )
         self.species_token_to_id = species_token_to_id
         self.reaction_token_to_id = reaction_token_to_id
-        self.species_id_to_token = {
-            sid: tok for tok, sid in species_token_to_id.items()
-        }
-        self.reaction_id_to_token = {
-            rid: tok for tok, rid in reaction_token_to_id.items()
-        }
+        self.species_id_to_token = {sid: tok for tok, sid in species_token_to_id.items()}
+        self.reaction_id_to_token = {rid: tok for tok, rid in reaction_token_to_id.items()}
         return self
 
     # ------------------------------------------------------------------
@@ -597,9 +583,7 @@ class PathwayRealizability:
             print(pr.goal_exact)
         """
         if not self.edges:
-            raise RuntimeError(
-                "No pathway data loaded; call load_syncrn_and_flow() or load_hypergraph_and_flow()."
-            )
+            raise RuntimeError("No pathway data loaded; call load_syncrn_and_flow() or load_hypergraph_and_flow().")
 
         net = PetriNet()
         m0: Dict[Place, int] = defaultdict(int)
@@ -823,9 +807,7 @@ class PathwayRealizability:
                 self.goal_exact,
                 self.goal_atleast,
                 library_path=library_path,
-                max_states=(
-                    self._config.max_states if max_states is None else max_states
-                ),
+                max_states=(self._config.max_states if max_states is None else max_states),
                 max_depth=self._config.max_depth if max_depth is None else max_depth,
                 time_limit=time_limit,
             )
@@ -994,9 +976,7 @@ class PathwayRealizability:
             if pr.is_realizable_via_konig():
                 print("Guaranteed realizable by sufficient test")
         """
-        active_edges = {
-            eid: self.edges[eid] for eid, fval in self.flow.items() if int(fval) > 0
-        }
+        active_edges = {eid: self.edges[eid] for eid, fval in self.flow.items() if int(fval) > 0}
         vertices: Set[str] = set()
         for tail, head in active_edges.values():
             vertices.update(tail.keys())
@@ -1086,9 +1066,7 @@ class PathwayRealizability:
             borrow = {s: comb[i] for i, s in enumerate(species) if comb[i] > 0}
             self._provided_initial_marking = dict(saved_initial)
             for s, val in borrow.items():
-                self._provided_initial_marking[s] = (
-                    self._provided_initial_marking.get(s, 0) + val
-                )
+                self._provided_initial_marking[s] = self._provided_initial_marking.get(s, 0) + val
             self.build_petri_net_from_flow()
             self._goal_atleast = dict(borrow)
             ok, _ = self.is_realizable()
@@ -1129,10 +1107,7 @@ class PathwayRealizability:
         net = self.petri
         data = {
             "places": net.place_order,
-            "transitions": {
-                tid: {"pre": t.pre, "post": t.post}
-                for tid, t in net.transitions.items()
-            },
+            "transitions": {tid: {"pre": t.pre, "post": t.post} for tid, t in net.transitions.items()},
             "initial_marking": self.initial_marking,
             "goal_exact": self._goal_exact,
             "goal_atleast": self._goal_atleast,
@@ -1148,10 +1123,7 @@ class PathwayRealizability:
             Readable summary string.
         :rtype: str
         """
-        return (
-            f"<PathwayRealizability species={len(self.vertices)} "
-            f"reactions={len(self.edges)}>"
-        )
+        return f"<PathwayRealizability species={len(self.vertices)} " f"reactions={len(self.edges)}>"
 
 
 def syncrn_to_pr_inputs(
@@ -1198,12 +1170,10 @@ def syncrn_to_pr_inputs(
             reaction="id",
         )
     """
-    vertices, edges, species_token_to_id, reaction_token_to_id, incidence = (
-        tokenize_syncrn_incidence(
-            crn,
-            species=species,
-            reaction=reaction,
-        )
+    vertices, edges, species_token_to_id, reaction_token_to_id, incidence = tokenize_syncrn_incidence(
+        crn,
+        species=species,
+        reaction=reaction,
     )
 
     dummy = PathwayRealizability()
@@ -1215,11 +1185,7 @@ def syncrn_to_pr_inputs(
         incidence.reaction_source_node_ids,
         provided_flow,
     )
-    provided_marking = (
-        {}
-        if initial_marking is None
-        else {str(k): int(v) for k, v in initial_marking.items()}
-    )
+    provided_marking = {} if initial_marking is None else {str(k): int(v) for k, v in initial_marking.items()}
     marking_map = dummy._resolve_species_marking_tokens(
         incidence.species_order,
         species_token_to_id,

@@ -1,6 +1,6 @@
 """Opt-in native certificates on the existing faithful configured expansion.
 
-The experimental sparse convention is independent of the reference /2 JSON
+The experimental sparse convention is independent of the reference JSON
 format. Input is an already prepared attributed constitution and registry;
 this module does not infer missing carriers or perform resonance normalization.
 """
@@ -20,7 +20,7 @@ from .canonical import (
 from .configured import CONFIGURED_DESCRIPTOR_TYPES, expand_configured_stereograph, mirror_configured_descriptor
 from .orbits import StereoSpecification
 
-NATIVE_STEREOGRAPH_SCHEMA = "synkit.native-sparse-stereograph/1"
+NATIVE_STEREOGRAPH_SCHEMA = "synkit.native-sparse-stereograph/2"
 
 
 @dataclass(frozen=True)

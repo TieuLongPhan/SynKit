@@ -308,9 +308,7 @@ class CRNVis:
             wrap_at=self.wrap_label_at,
         )
 
-    def edge_labels(
-        self, *, mode: str = "none"
-    ) -> dict[tuple[Hashable, Hashable], str]:
+    def edge_labels(self, *, mode: str = "none") -> dict[tuple[Hashable, Hashable], str]:
         """Build edge labels for the current graph.
 
         :param mode: Labeling mode passed to :func:`build_edge_labels`.
@@ -415,9 +413,7 @@ class CRNVis:
                     stoich_val = float(stoich)
                 except Exception:
                     stoich_val = 1.0
-                base = (
-                    base + max(0.0, stoich_val - 1.0) * self.style.stoich_width_factor
-                )
+                base = base + max(0.0, stoich_val - 1.0) * self.style.stoich_width_factor
             widths.append(base)
         return widths
 
@@ -480,15 +476,11 @@ class CRNVis:
 
         if mode == "attribute":
             if not attr:
-                raise ValueError(
-                    f"{kind}_color_attr must be provided when "
-                    f"{kind}_color_mode='attribute'."
-                )
+                raise ValueError(f"{kind}_color_attr must be provided when " f"{kind}_color_mode='attribute'.")
             values = [self.graph.nodes[n].get(attr, "<missing>") for n in nodes]
             lut = self._categorical_colors(values, cmap_name)
             return [
-                c if c is not None else lut[self.graph.nodes[n].get(attr, "<missing>")]
-                for c, n in zip(colors, nodes)
+                c if c is not None else lut[self.graph.nodes[n].get(attr, "<missing>")] for c, n in zip(colors, nodes)
             ]
 
         if kind == "rule" and mode in {"rule_index", "step"}:
@@ -496,8 +488,7 @@ class CRNVis:
             values = [self.graph.nodes[n].get(key, "<missing>") for n in nodes]
             lut = self._categorical_colors(values, cmap_name)
             return [
-                c if c is not None else lut[self.graph.nodes[n].get(key, "<missing>")]
-                for c, n in zip(colors, nodes)
+                c if c is not None else lut[self.graph.nodes[n].get(key, "<missing>")] for c, n in zip(colors, nodes)
             ]
 
         if kind == "species" and mode == "component":
@@ -508,10 +499,7 @@ class CRNVis:
                     comp_map[n] = comp_idx
             values = [comp_map.get(n, -1) for n in nodes]
             lut = self._categorical_colors(values, cmap_name)
-            return [
-                c if c is not None else lut[comp_map.get(n, -1)]
-                for c, n in zip(colors, nodes)
-            ]
+            return [c if c is not None else lut[comp_map.get(n, -1)] for c, n in zip(colors, nodes)]
 
         raise ValueError(
             f"Unsupported {kind}_color_mode={mode!r}. "
@@ -655,9 +643,7 @@ class CRNVis:
         """
         if not self.style.show_node_outline:
             return "none"
-        return (
-            self.palette.species_edge if kind == "species" else self.palette.rule_edge
-        )
+        return self.palette.species_edge if kind == "species" else self.palette.rule_edge
 
     def _draw_node_group(
         self,
@@ -694,23 +680,11 @@ class CRNVis:
             self.graph,
             pos,
             nodelist=list(nodes),
-            node_shape=(
-                self.style.species_node_shape
-                if is_species
-                else self.style.rule_node_shape
-            ),
-            node_size=(
-                self.style.species_node_size
-                if is_species
-                else self.style.rule_node_size
-            ),
+            node_shape=(self.style.species_node_shape if is_species else self.style.rule_node_shape),
+            node_size=(self.style.species_node_size if is_species else self.style.rule_node_size),
             node_color=list(node_color),
             edgecolors=self._node_edgecolors(kind=kind),
-            linewidths=(
-                self.style.highlight_linewidths
-                if highlighted
-                else self.style.linewidths
-            ),
+            linewidths=(self.style.highlight_linewidths if highlighted else self.style.linewidths),
             alpha=self.style.node_alpha,
             ax=ax,
         )
@@ -778,9 +752,7 @@ class CRNVis:
         :return: Effective font size after applying dense-graph adjustment.
         :rtype: int
         """
-        effective_font = (
-            self.style.font_size if self.font_size is None else self.font_size
-        )
+        effective_font = self.style.font_size if self.font_size is None else self.font_size
         if self.style.auto_reduce_labels_when_dense and self.dense_graph():
             effective_font = min(effective_font, self.style.dense_font_size)
         return effective_font
@@ -1017,11 +989,9 @@ class CRNVis:
             highlight_cycles=highlight_cycles,
         )
 
-        species_normal, rule_normal, species_highlight, rule_highlight = (
-            self._partition_node_groups(highlight_node_set)
-        )
-        reactant_normal, product_normal, other_normal, highlighted_edges = (
-            self._partition_highlighted_edges(highlight_edge_set)
+        species_normal, rule_normal, species_highlight, rule_highlight = self._partition_node_groups(highlight_node_set)
+        reactant_normal, product_normal, other_normal, highlighted_edges = self._partition_highlighted_edges(
+            highlight_edge_set
         )
 
         self._draw_node_group(

@@ -269,7 +269,7 @@ def _full_h_costs_by_heavy_map(endpoints):
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
+def library(request):
     for name in (
         "SYNKIT_MAPPER_OPTIONAL_LIBRARY",
         "SYNKIT_WAVE2_LIBRARY",
@@ -277,9 +277,7 @@ def library(tmp_path_factory):
     ):
         if os.environ.get(name):
             return os.environ[name]
-    from synkit.Chem.Mapper._native.build import build_mapper_native
-
-    return build_mapper_native(tmp_path_factory.mktemp("implicit-heavy-oracle"))
+    return request.getfixturevalue("mapper_core_library")
 
 
 REACTIONS = [

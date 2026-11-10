@@ -1,0 +1,7 @@
+name: synkit-crn-mod
+channels:
+  - jakobandersen
+  - conda-forge
+dependencies:
+  - python=3.12
+  - mod=1.0.0.75

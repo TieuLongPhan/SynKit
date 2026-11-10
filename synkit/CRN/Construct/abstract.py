@@ -217,9 +217,7 @@ class AbstractReactionNetwork:
             "label_to_molecule": dict(self.label_to_molecule),
         }
 
-    def to_json_payload(
-        self, name: str = "abstract_reaction_network"
-    ) -> Dict[str, Any]:
+    def to_json_payload(self, name: str = "abstract_reaction_network") -> Dict[str, Any]:
         """Convert the abstract network into a SynKit-style JSON payload.
 
         :param name:
@@ -425,9 +423,7 @@ class AbstractReactionExtractor:
             )
         """
         reaction_id_keys = list(reaction_id_keys or ["id", "kegg_id"])
-        reaction_smiles_keys = list(
-            reaction_smiles_keys or ["smiles", "reaction", "rxn_smiles"]
-        )
+        reaction_smiles_keys = list(reaction_smiles_keys or ["smiles", "reaction", "rxn_smiles"])
         template_keys = list(template_keys or ["rule", "template", "smirks"])
 
         reaction_list = list(reactions or [])
@@ -632,19 +628,13 @@ class AbstractReactionExtractor:
         )
 
         parsed_reactions: List[ReactionSides] = [
-            _split_reaction_smiles(reaction_smiles)
-            for reaction_smiles in full_reactions
+            _split_reaction_smiles(reaction_smiles) for reaction_smiles in full_reactions
         ]
 
         molecule_pool = self.build_molecule_pool(parsed_reactions, order=order)
 
-        molecule_to_label = {
-            molecule: _excel_label(index)
-            for index, molecule in enumerate(molecule_pool)
-        }
-        label_to_molecule = {
-            label: molecule for molecule, label in molecule_to_label.items()
-        }
+        molecule_to_label = {molecule: _excel_label(index) for index, molecule in enumerate(molecule_pool)}
+        label_to_molecule = {label: molecule for molecule, label in molecule_to_label.items()}
 
         abstracted_reactions: List[str] = []
         for reactants, products in parsed_reactions:

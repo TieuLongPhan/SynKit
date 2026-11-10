@@ -39,6 +39,14 @@ def electron_aware_node_match(
 
     ``radical`` otherwise remains exact whenever the caller includes it.
     """
+    constraint = pattern_data.get("_wildcard_constraint")
+    if constraint is not None:
+        from synkit.Synthesis.Reactor.matching.wildcard import wildcard_node_matches
+
+        anchor = "_synkit_explicit_h_embedding_anchor"
+        return (
+            anchor not in node_attrs or host_data.get(anchor) == pattern_data.get(anchor)
+        ) and wildcard_node_matches(host_data, constraint)
     for attr in node_attrs:
         policy = pattern_data.get("_query_attribute_policies", {}).get(
             attr,
@@ -46,12 +54,8 @@ def electron_aware_node_match(
         )
         if policy == "unknown":
             continue
-        host_value = host_data.get(
-            attr, 0 if attr in {"hcount", "lone_pairs"} else None
-        )
-        pattern_value = pattern_data.get(
-            attr, 0 if attr in {"hcount", "lone_pairs"} else None
-        )
+        host_value = host_data.get(attr, 0 if attr in {"hcount", "lone_pairs"} else None)
+        pattern_value = pattern_data.get(attr, 0 if attr in {"hcount", "lone_pairs"} else None)
         if attr in {"hcount", "lone_pairs"}:
             if host_value < pattern_value:
                 return False
@@ -88,11 +92,7 @@ def electron_aware_edge_match(
     for attr in edge_attrs:
         if minimum_pi is not None and attr in {"order", "pi_order"}:
             continue
-        if (
-            attr in {"sigma_order", "pi_order"}
-            and host_is_aromatic
-            and pattern_is_aromatic
-        ):
+        if attr in {"sigma_order", "pi_order"} and host_is_aromatic and pattern_is_aromatic:
             continue
         if host_data.get(attr) != pattern_data.get(attr):
             return False
@@ -113,12 +113,8 @@ def explain_node_mismatch(
         )
         if policy == "unknown":
             continue
-        host_value = host_data.get(
-            attr, 0 if attr in {"hcount", "lone_pairs"} else None
-        )
-        pattern_value = pattern_data.get(
-            attr, 0 if attr in {"hcount", "lone_pairs"} else None
-        )
+        host_value = host_data.get(attr, 0 if attr in {"hcount", "lone_pairs"} else None)
+        pattern_value = pattern_data.get(attr, 0 if attr in {"hcount", "lone_pairs"} else None)
         if attr in {"hcount", "lone_pairs"}:
             if host_value < pattern_value:
                 reasons.append(f"{attr}: host {host_value} < pattern {pattern_value}")
@@ -220,16 +216,10 @@ class SubgraphMatch:
                     return False
 
             if edge_attribute:
-                parent_edge_values = [
-                    data.get(edge_attribute)
-                    for _, _, data in parent_graph.edges(data=True)
-                ]
+                parent_edge_values = [data.get(edge_attribute) for _, _, data in parent_graph.edges(data=True)]
                 for _, _, child_data in child_graph.edges(data=True):
                     child_value = child_data.get(edge_attribute)
-                    if not any(
-                        edge_comparator(parent_value, child_value)
-                        for parent_value in parent_edge_values
-                    ):
+                    if not any(edge_comparator(parent_value, child_value) for parent_value in parent_edge_values):
                         return False
 
         node_comparator = node_comparator or eq
@@ -246,14 +236,8 @@ class SubgraphMatch:
             return False
         if child_graph.is_multigraph() or parent_graph.is_multigraph():
             raise NotImplementedError("SubgraphMatch does not support multigraphs")
-        matcher_cls = (
-            nx.algorithms.isomorphism.DiGraphMatcher
-            if parent_graph.is_directed()
-            else GraphMatcher
-        )
-        matcher = matcher_cls(
-            parent_graph, child_graph, node_match=node_match, edge_match=edge_match
-        )
+        matcher_cls = nx.algorithms.isomorphism.DiGraphMatcher if parent_graph.is_directed() else GraphMatcher
+        matcher = matcher_cls(parent_graph, child_graph, node_match=node_match, edge_match=edge_match)
 
         if check_type == "induced":
             return matcher.subgraph_is_isomorphic()
@@ -323,8 +307,7 @@ class SubgraphSearchEngine:
             count = sum(
                 1
                 for _, host_data in host.nodes(data=True)
-                if electron_aware_node_match(host_data, pat_data, node_attrs)
-                and host.degree(_) >= pat_deg
+                if electron_aware_node_match(host_data, pat_data, node_attrs) and host.degree(_) >= pat_deg
             )
             # if no candidates; impossible match
             if count == 0:
@@ -391,11 +374,7 @@ class SubgraphSearchEngine:
             host_domains[host_node] = domain_id
 
         allowed_domains = {
-            pattern_node: tuple(
-                domain_id
-                for domain, domain_id in domain_ids.items()
-                if pattern_node in domain
-            )
+            pattern_node: tuple(domain_id for domain, domain_id in domain_ids.items() if pattern_node in domain)
             for pattern_node in pattern_nodes
         }
         if any(not domains for domains in allowed_domains.values()):
@@ -444,10 +423,7 @@ class SubgraphSearchEngine:
 
         results = []
         for match in matches:
-            mapping = {
-                pattern_nodes[index]: host_nodes[host_atom_index]
-                for index, host_atom_index in enumerate(match)
-            }
+            mapping = {pattern_nodes[index]: host_nodes[host_atom_index] for index, host_atom_index in enumerate(match)}
             if all(
                 electron_aware_edge_match(
                     host.edges[mapping[left], mapping[right]],
@@ -496,9 +472,7 @@ class SubgraphSearchEngine:
         if host.is_directed() != pattern.is_directed():
             return []
         if host.is_multigraph() or pattern.is_multigraph():
-            raise NotImplementedError(
-                "SubgraphSearchEngine does not support multigraphs"
-            )
+            raise NotImplementedError("SubgraphSearchEngine does not support multigraphs")
         if max_results is not None and max_results < 0:
             raise ValueError("max_results must be non-negative or None")
         if threshold is not None and threshold < 0:
@@ -531,17 +505,13 @@ class SubgraphSearchEngine:
             return compiled_results
 
         # quick pre-filter
-        if pre_filter and SubgraphSearchEngine._quick_pre_filter(
-            host, pattern, node_attrs
-        ):
+        if pre_filter and SubgraphSearchEngine._quick_pre_filter(host, pattern, node_attrs):
             return []
 
         # dispatch
         if strat is Strategy.ALL:
             components = list(
-                nx.weakly_connected_components(pattern)
-                if pattern.is_directed()
-                else nx.connected_components(pattern)
+                nx.weakly_connected_components(pattern) if pattern.is_directed() else nx.connected_components(pattern)
             )
             if len(components) > 1:
                 results = SubgraphSearchEngine._find_disconnected_all_mappings(
@@ -598,11 +568,7 @@ class SubgraphSearchEngine:
         def edge_match(eh: EdgeAttr, ep: EdgeAttr) -> bool:
             return electron_aware_edge_match(eh, ep, edge_attrs)
 
-        matcher_cls = (
-            nx.algorithms.isomorphism.DiGraphMatcher
-            if host.is_directed()
-            else GraphMatcher
-        )
+        matcher_cls = nx.algorithms.isomorphism.DiGraphMatcher if host.is_directed() else GraphMatcher
         gm = matcher_cls(host, pattern, node_match=node_match, edge_match=edge_match)
         results: List[MappingDict] = []
         for iso in gm.subgraph_monomorphisms_iter():
@@ -683,20 +649,12 @@ class SubgraphSearchEngine:
         threshold: Optional[int],
     ) -> List[MappingDict]:
         """Component-aware VF2 split by connected components."""
-        host_components = (
-            nx.weakly_connected_components(host)
-            if host.is_directed()
-            else nx.connected_components(host)
-        )
+        host_components = nx.weakly_connected_components(host) if host.is_directed() else nx.connected_components(host)
         pattern_components = (
-            nx.weakly_connected_components(pattern)
-            if pattern.is_directed()
-            else nx.connected_components(pattern)
+            nx.weakly_connected_components(pattern) if pattern.is_directed() else nx.connected_components(pattern)
         )
         host_ccs = [host.subgraph(component).copy() for component in host_components]
-        pat_ccs = [
-            pattern.subgraph(component).copy() for component in pattern_components
-        ]
+        pat_ccs = [pattern.subgraph(component).copy() for component in pattern_components]
         hcc, pcc = len(host_ccs), len(pat_ccs)
         if pcc == 0:
             return [{}]
@@ -721,14 +679,8 @@ class SubgraphSearchEngine:
                 return []
             maps: List[Tuple[int, MappingDict]] = []
             for i in cand:
-                matcher_cls = (
-                    nx.algorithms.isomorphism.DiGraphMatcher
-                    if host.is_directed()
-                    else GraphMatcher
-                )
-                gm = matcher_cls(
-                    host_ccs[i], pc, node_match=node_match, edge_match=edge_match
-                )
+                matcher_cls = nx.algorithms.isomorphism.DiGraphMatcher if host.is_directed() else GraphMatcher
+                gm = matcher_cls(host_ccs[i], pc, node_match=node_match, edge_match=edge_match)
                 # ``max_results`` bounds complete joined embeddings, not the
                 # number of candidate host components considered here.  Keep
                 # up to that many local embeddings *per component pair* so a

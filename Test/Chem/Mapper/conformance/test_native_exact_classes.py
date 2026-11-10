@@ -20,14 +20,12 @@ if os.environ.get("SYNKIT_MAPPER_OPTIONAL_LIBRARY"):
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
+def library(request):
     if os.environ.get("SYNKIT_MAPPER_OPTIONAL_LIBRARY"):
         return os.environ["SYNKIT_MAPPER_OPTIONAL_LIBRARY"]
     if os.environ.get("SYNKIT_WAVE2_LIBRARY"):
         return os.environ["SYNKIT_WAVE2_LIBRARY"]
-    from synkit.Chem.Mapper._native.build import build_mapper_native
-
-    return build_mapper_native(tmp_path_factory.mktemp("conformance-native"))
+    return request.getfixturevalue("mapper_core_library")
 
 
 def graph(matrix2, types, attributes):

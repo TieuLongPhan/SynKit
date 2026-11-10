@@ -31,34 +31,19 @@ def _freeze_cache_value(value: Any, active: set[int] | None = None) -> Any:
             for key, item in value.items():
                 frozen_key = _freeze_cache_value(key, active)
                 frozen_item = _freeze_cache_value(item, active)
-                if (
-                    frozen_key is _UNSUPPORTED_CACHE_VALUE
-                    or frozen_item is _UNSUPPORTED_CACHE_VALUE
-                ):
+                if frozen_key is _UNSUPPORTED_CACHE_VALUE or frozen_item is _UNSUPPORTED_CACHE_VALUE:
                     return _UNSUPPORTED_CACHE_VALUE
                 records.append((frozen_key, frozen_item))
             return dict, frozenset(records)
         if isinstance(value, list):
             records = tuple(_freeze_cache_value(item, active) for item in value)
-            return (
-                _UNSUPPORTED_CACHE_VALUE
-                if _UNSUPPORTED_CACHE_VALUE in records
-                else (list, records)
-            )
+            return _UNSUPPORTED_CACHE_VALUE if _UNSUPPORTED_CACHE_VALUE in records else (list, records)
         if isinstance(value, tuple):
             records = tuple(_freeze_cache_value(item, active) for item in value)
-            return (
-                _UNSUPPORTED_CACHE_VALUE
-                if _UNSUPPORTED_CACHE_VALUE in records
-                else (tuple, records)
-            )
+            return _UNSUPPORTED_CACHE_VALUE if _UNSUPPORTED_CACHE_VALUE in records else (tuple, records)
         if isinstance(value, (set, frozenset)):
             records = tuple(_freeze_cache_value(item, active) for item in value)
-            return (
-                _UNSUPPORTED_CACHE_VALUE
-                if _UNSUPPORTED_CACHE_VALUE in records
-                else (value_type, frozenset(records))
-            )
+            return _UNSUPPORTED_CACHE_VALUE if _UNSUPPORTED_CACHE_VALUE in records else (value_type, frozenset(records))
         # A lossy repr or identity token could conflate states after object-id
         # reuse. Failing open preserves correctness for third-party objects.
         return _UNSUPPORTED_CACHE_VALUE
@@ -73,10 +58,7 @@ def _graph_cache_state(graph: nx.Graph) -> Any:
     for node, attrs in graph.nodes(data=True):
         frozen_node = _freeze_cache_value(node)
         frozen_attrs = _freeze_cache_value(attrs)
-        if (
-            frozen_node is _UNSUPPORTED_CACHE_VALUE
-            or frozen_attrs is _UNSUPPORTED_CACHE_VALUE
-        ):
+        if frozen_node is _UNSUPPORTED_CACHE_VALUE or frozen_attrs is _UNSUPPORTED_CACHE_VALUE:
             return _UNSUPPORTED_CACHE_VALUE
         node_records.append((frozen_node, frozen_attrs))
 
@@ -84,14 +66,10 @@ def _graph_cache_state(graph: nx.Graph) -> Any:
     edges = (
         graph.edges(keys=True, data=True)
         if graph.is_multigraph()
-        else (
-            (left, right, None, attrs) for left, right, attrs in graph.edges(data=True)
-        )
+        else ((left, right, None, attrs) for left, right, attrs in graph.edges(data=True))
     )
     for left, right, key, attrs in edges:
-        frozen = tuple(
-            _freeze_cache_value(value) for value in (left, right, key, attrs)
-        )
+        frozen = tuple(_freeze_cache_value(value) for value in (left, right, key, attrs))
         if _UNSUPPORTED_CACHE_VALUE in frozen:
             return _UNSUPPORTED_CACHE_VALUE
         edge_records.append(frozen)
@@ -148,9 +126,7 @@ def _apply_rule_raw(
         return list(getattr(reactor, "smarts_list", getattr(reactor, "smarts", [])))
 
     except Exception as exc:  # pragma: no cover
-        logging.getLogger(__name__).debug(
-            "SynReactor failed (invert=%s): %s", invert, exc
-        )
+        logging.getLogger(__name__).debug("SynReactor failed (invert=%s): %s", invert, exc)
         return []
 
 
@@ -197,9 +173,7 @@ class _RuleApplier:
         self._strategy = strategy
         self._explicit_h = explicit_h
         self._implicit_temp = implicit_temp
-        self._cache = (  # type: ignore[var-annotated]
-            {} if cache_enabled and cache_maxsize > 0 else None
-        )
+        self._cache = {} if cache_enabled and cache_maxsize > 0 else None  # type: ignore[var-annotated]
         self._cache_max = max(0, int(cache_maxsize))
 
     def _execute(
@@ -238,10 +212,7 @@ class _RuleApplier:
         entry = self._cache.get(key)
         substrate_state = _graph_cache_state(substrate)
         rule_state = _graph_cache_state(rule)
-        cacheable = (
-            substrate_state is not _UNSUPPORTED_CACHE_VALUE
-            and rule_state is not _UNSUPPORTED_CACHE_VALUE
-        )
+        cacheable = substrate_state is not _UNSUPPORTED_CACHE_VALUE and rule_state is not _UNSUPPORTED_CACHE_VALUE
         if entry is not None and cacheable:
             substrate_ref, rule_ref, old_substrate_state, old_rule_state, result = entry
             if (
@@ -519,9 +490,7 @@ class BatchReactor:
                 raise TypeError("Rules must be str or nx.Graph")
         return out
 
-    def _apply_bulk(
-        self, g: nx.Graph, rules: List[nx.Graph], invert: bool
-    ) -> List[str]:
+    def _apply_bulk(self, g: nx.Graph, rules: List[nx.Graph], invert: bool) -> List[str]:
         """Apply a list of rule graphs to a substrate graph.
 
         :param g: Substrate graph.
@@ -534,11 +503,7 @@ class BatchReactor:
         :rtype: list of str
         """
         jobs = 1
-        if (
-            self._parallel_rules
-            and self._rule_jobs > 1
-            and (self._allow_nested or self._entry_jobs == 1)
-        ):
+        if self._parallel_rules and self._rule_jobs > 1 and (self._allow_nested or self._entry_jobs == 1):
             jobs = self._rule_jobs
         if jobs == 1:
             nested = [self._apply_rule(g, r, invert) for r in rules]

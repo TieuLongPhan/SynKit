@@ -10,7 +10,7 @@ from numbers import Real
 from typing import Literal
 
 DistanceTarget = Literal["minimal"] | float
-EnumerationStatus = Literal["complete", "no_solutions", "timeout", "unsupported"]
+EnumerationStatus = Literal["complete", "no_solutions", "minimum_proven", "timeout", "unsupported"]
 
 
 class ExactEnumerationLimitError(ValueError):
@@ -155,7 +155,11 @@ class DistanceEnumerationCertificate:
 
 @dataclass
 class DistanceEnumerationResult:
-    """Complete mappings and search metadata for one exact-CD query."""
+    """Mappings and search metadata for one distance query.
+
+    ``status='minimum_proven'`` identifies a successful proof-only query. Its
+    ``complete`` flag stays false because no complete mapping set was requested.
+    """
 
     target: DistanceTarget
     cost: float | None

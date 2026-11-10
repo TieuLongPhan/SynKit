@@ -32,20 +32,13 @@ def _target_form(target: str, resolver: ReferenceResolver) -> tuple[Any, ...]:
 
 
 def _descriptor_form(descriptor: Any, resolver: ReferenceResolver) -> Any:
-    return (
-        descriptor_relative_form(descriptor, resolver)
-        if descriptor is not None
-        else None
-    )
+    return descriptor_relative_form(descriptor, resolver) if descriptor is not None else None
 
 
 def _coupling_form(coupling: Any, resolver: ReferenceResolver) -> tuple[Any, ...]:
     pairs = tuple(
         sorted(
-            (
-                (resolver(center), resolver(ligand))
-                for center, ligand in zip(coupling.centers, coupling.ligands)
-            ),
+            ((resolver(center), resolver(ligand)) for center, ligand in zip(coupling.centers, coupling.ligands)),
             key=repr,
         )
     )
@@ -60,10 +53,7 @@ def _reaction_relation_form(
     alignment = change.alignment
     mapping = tuple(
         sorted(
-            (
-                (reactant(source), product(target))
-                for source, target in change.reference_mapping
-            ),
+            ((reactant(source), product(target)) for source, target in change.reference_mapping),
             key=repr,
         )
     )
@@ -75,11 +65,7 @@ def _reaction_relation_form(
         None if relation is None else relation.kind.value,
         None if relation is None else relation.shape,
         None if relation is None else relation.class_id,
-        (
-            None
-            if relation is None or relation.witness is None
-            else relation.witness.permutation.image
-        ),
+        (None if relation is None or relation.witness is None else relation.witness.permutation.image),
     )
 
 
@@ -105,11 +91,7 @@ def _wildcard_contract_form(
                 if owner
                 in (
                     data.get("atom_map"),
-                    *(
-                        data.get("atom_map")
-                        if isinstance(data.get("atom_map"), (tuple, list))
-                        else ()
-                    ),
+                    *(data.get("atom_map") if isinstance(data.get("atom_map"), (tuple, list)) else ()),
                 )
             ]
             if len(candidates) == 1:
@@ -143,11 +125,7 @@ def _rule_metadata_form(
     )
     effects = []
     for target, change in rule.stereo_effects.items():
-        target_resolver = (
-            reactant
-            if change.before is not None
-            else product if change.after is not None else transition
-        )
+        target_resolver = reactant if change.before is not None else product if change.after is not None else transition
         effects.append(
             (
                 _target_form(target, target_resolver),
@@ -184,10 +162,7 @@ def _rule_metadata_form(
     )
     query_policies = tuple(
         sorted(
-            [
-                (_target_form(target, reactant), policy)
-                for target, policy in rule.stereo_query_policies.items()
-            ],
+            [(_target_form(target, reactant), policy) for target, policy in rule.stereo_query_policies.items()],
             key=repr,
         )
     )
@@ -218,6 +193,15 @@ def _rule_metadata_form(
         reverse_outcomes,
         reverse_queries,
         _wildcard_contract_form(rule, node_mapping),
+        tuple(
+            sorted(
+                (
+                    repr((node_mapping or {}).get(node, node)),
+                    tuple(sorted(attrs.get("_relative_resource_baselines", {}).items())),
+                )
+                for node, attrs in graph.nodes(data=True)
+            )
+        ),
     )
 
 
@@ -241,9 +225,7 @@ def _matcher_type(graph: nx.Graph) -> type:
             else nx.algorithms.isomorphism.DiGraphMatcher
         )
     return (
-        nx.algorithms.isomorphism.MultiGraphMatcher
-        if graph.is_multigraph()
-        else nx.algorithms.isomorphism.GraphMatcher
+        nx.algorithms.isomorphism.MultiGraphMatcher if graph.is_multigraph() else nx.algorithms.isomorphism.GraphMatcher
     )
 
 
