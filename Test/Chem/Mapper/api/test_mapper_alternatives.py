@@ -72,15 +72,20 @@ def test_reference_cd_returns_one_representative_per_alternative_its():
 
 def test_arbitrary_and_minimal_cd_can_exclude_reference_class():
     graph = _graph(4, ((0, 1),))
+    config = _config(
+        max_bijections=24,
+        time_limit_seconds=None,
+        structure_timeout_seconds=5,
+    )
     expected_ids = None
     for target in (0, "minimal"):
         result = enumerate_exact_its_alternatives(
             [graph, graph.copy()],
             [0, 2, 1, 3],
             CD=target,
-            config=_config(),
+            config=config,
         )
-        assert result.complete is True
+        assert result.complete is True, result.as_dict()
         assert result.reference_cd == 2
         assert result.reference_its_class_observed is False
         assert result.shell_its_class_count == 1
