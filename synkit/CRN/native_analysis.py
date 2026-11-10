@@ -136,13 +136,10 @@ def crnt_summary_native(crn, *, library_path, time_limit=30.0):
     result.pop("termination_reason")
     labels = tuple(_species_labels(crn))
     result["complexes"] = [
-        str(Complex(coefficients=tuple(c), species_labels=labels))
-        for c in result.pop("complex_coefficients")
+        str(Complex(coefficients=tuple(c), species_labels=labels)) for c in result.pop("complex_coefficients")
     ]
     terminals = result.pop("terminal_counts")
-    result["deficiency_zero"] = _deficiency_zero_values(
-        result["deficiency"], result["is_weakly_reversible"]
-    )
+    result["deficiency_zero"] = _deficiency_zero_values(result["deficiency"], result["is_weakly_reversible"])
     result["deficiency_one"] = _deficiency_one_values(
         result["deficiency"],
         result["linkage_class_deficiencies"],
@@ -216,9 +213,7 @@ def petri_reachability(
         marking = dict(initial)
         for t in certificate:
             if qualitative:
-                if not set(net.transitions[t].pre) <= {
-                    s for s, n in marking.items() if n > 0
-                }:
+                if not set(net.transitions[t].pre) <= {s for s, n in marking.items() if n > 0}:
                     raise RuntimeError("Invalid native qualitative certificate")
                 marking.update({s: 1 for s in net.transitions[t].post})
             else:
@@ -233,9 +228,7 @@ def petri_reachability(
     return result
 
 
-def graph_symmetry(
-    crn, *, library_path, time_limit=30.0, max_states=1000000, max_count=1000000
-):
+def graph_symmetry(crn, *, library_path, time_limit=30.0, max_states=1000000, max_count=1000000):
     from .Petrinet.net import extract_syncrn_incidence
     import hashlib
 
@@ -271,14 +264,9 @@ def graph_symmetry(
         order = result["order"]
         # Sparse canonical certificate avoids storing an n*n matrix in evidence.
         inverse = {v: i for i, v in enumerate(order)}
-        edges = sorted(
-            (inverse[int(i)], inverse[int(j)], int(adjacency[i, j]))
-            for i, j in zip(*adjacency.nonzero())
-        )
+        edges = sorted((inverse[int(i)], inverse[int(j)], int(adjacency[i, j])) for i, j in zip(*adjacency.nonzero()))
         certificate = ([int(kinds[i]) for i in order], edges)
-        result["canonical_key"] = hashlib.sha256(
-            json.dumps(certificate, separators=(",", ":")).encode()
-        ).hexdigest()
+        result["canonical_key"] = hashlib.sha256(json.dumps(certificate, separators=(",", ":")).encode()).hexdigest()
         result["canonical_order"] = [nodes[i] for i in order]
         result["orbits"] = [[nodes[i] for i in group] for group in result["orbits"]]
     else:
@@ -398,14 +386,10 @@ def positive_kernel_certificate(crn, *, kind="p", include_problem=False):
     )
     if result.success:
         try:
-            witness = _primitive_integer_vector(
-                [Fraction(float(v)).limit_denominator(10**6) for v in result.x]
-            )
+            witness = _primitive_integer_vector([Fraction(float(v)).limit_denominator(10**6) for v in result.x])
         except (ValueError, OverflowError):
             return unknown
-        if all(v > 0 for v in witness) and all(
-            sum(int(x) * v for x, v in zip(row, witness)) == 0 for row in a
-        ):
+        if all(v > 0 for v in witness) and all(sum(int(x) * v for x, v in zip(row, witness)) == 0 for row in a):
             return {
                 **problem,
                 "holds": True,
@@ -433,9 +417,7 @@ def positive_kernel_certificate(crn, *, kind="p", include_problem=False):
         witness = [Fraction(float(v)).limit_denominator(10**6) for v in dual.x]
     except (ValueError, OverflowError):
         return unknown
-    image = [
-        sum(int(a[i, j]) * witness[i] for i in range(rows)) for j in range(columns)
-    ]
+    image = [sum(int(a[i, j]) * witness[i] for i in range(rows)) for j in range(columns)]
     if all(v >= 0 for v in image) and any(v > 0 for v in image):
         return {
             **problem,

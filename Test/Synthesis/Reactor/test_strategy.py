@@ -4,19 +4,16 @@ from synkit.Synthesis.Reactor import Strategy
 
 class TestStrategy(unittest.TestCase):
     def test_from_string_with_enum(self):
-        # Passing through an existing Strategy returns it unchanged
         self.assertIs(Strategy.from_string(Strategy.ALL), Strategy.ALL)
         self.assertIs(Strategy.from_string(Strategy.COMPONENT), Strategy.COMPONENT)
         self.assertIs(Strategy.from_string(Strategy.BACKTRACK), Strategy.BACKTRACK)
 
     def test_from_string_valid_codes(self):
-        # Lower-case codes
         self.assertIs(Strategy.from_string("all"), Strategy.ALL)
         self.assertIs(Strategy.from_string("comp"), Strategy.COMPONENT)
         self.assertIs(Strategy.from_string("bt"), Strategy.BACKTRACK)
 
     def test_from_string_case_insensitive(self):
-        # Mixed-case codes should still work
         self.assertIs(Strategy.from_string("All"), Strategy.ALL)
         self.assertIs(Strategy.from_string("COMP"), Strategy.COMPONENT)
         self.assertIs(Strategy.from_string("Bt"), Strategy.BACKTRACK)

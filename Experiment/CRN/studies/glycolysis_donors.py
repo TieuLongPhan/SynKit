@@ -12,9 +12,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
-from Experiment.CRN.tools.common import environment, write_report, source_hashes
-from Experiment.CRN.studies.representation import execute
-from Experiment.CRN.benchmarks.glycolysis import load_glycolysis
+from Experiment.CRN.tools.common import environment, write_report, source_hashes, native_experiment  # noqa: E402
+from Experiment.CRN.studies.representation import execute  # noqa: E402
+from Experiment.CRN.studies.glycolysis import load_glycolysis  # noqa: E402
 
 
 def donor_report(fixture=None):
@@ -29,9 +29,7 @@ def donor_report(fixture=None):
     ):
         for name, step in (("ATP-dependent", "r3"), ("ADP-dependent", "r12")):
             flux = {"r10": 1, "r15": 1, step: 1, "r7": 1}
-            rows.append(
-                {"pool": pool, "name": name, "outcome": execute(crn, flux, marking)}
-            )
+            rows.append({"pool": pool, "name": name, "outcome": execute(crn, flux, marking)})
     from synkit.CRN.backend import resolve_backend
     from synkit.CRN.native_analysis import qualitative_path
 
@@ -44,9 +42,7 @@ def donor_report(fixture=None):
         for name, step in [("ATP-dependent", "r3"), ("ADP-dependent", "r12")]:
             selected = deepcopy(crn)
             selected.reactions = {
-                rid: r
-                for rid, r in selected.reactions.items()
-                if r.label in {"r10", "r15", step, "r7"}
+                rid: r for rid, r in selected.reactions.items() if r.label in {"r10", "r15", step, "r7"}
             }
             outcome = qualitative_path(
                 selected,
@@ -62,16 +58,12 @@ def donor_report(fixture=None):
                 }
             )
     checks = {
-        "all_decisions_complete": all(
-            row["outcome"]["decision_complete"] for row in rows
-        ),
+        "all_decisions_complete": all(row["outcome"]["decision_complete"] for row in rows),
         "qualitative_routes_native": library is None
         or (
             len(qualitative) == 2
             and all(
-                r["outcome"]["status"] == "realizable"
-                and len(r["outcome"]["certificate"]) == 4
-                for r in qualitative
+                r["outcome"]["status"] == "realizable" and len(r["outcome"]["certificate"]) == 4 for r in qualitative
             )
         ),
         "network_size": (crn.n_species, crn.n_reactions) == (40, 34),
@@ -85,14 +77,10 @@ def donor_report(fixture=None):
             "realizable",
         ],
         "positive_replays": all(
-            r["outcome"]["independent_replay_ok"]
-            for r in rows
-            if r["outcome"]["status"] == "realizable"
+            r["outcome"]["independent_replay_ok"] for r in rows if r["outcome"]["status"] == "realizable"
         ),
         "negative_searches_exhaustive": all(
-            r["outcome"]["exhaustive"]
-            for r in rows
-            if r["outcome"]["status"] == "unrealizable"
+            r["outcome"]["exhaustive"] for r in rows if r["outcome"]["status"] == "unrealizable"
         ),
     }
     report = {
@@ -110,15 +98,11 @@ def donor_report(fixture=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--fixture", type=Path, help="glycolysis input JSON (default: cached fixture)"
-    )
+    parser.add_argument("--fixture", type=Path, help="glycolysis input JSON (default: cached fixture)")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     return write_report(donor_report(args.fixture), args.output)
 
-
-from Experiment.CRN.tools.common import native_experiment
 
 main = native_experiment(main)
 

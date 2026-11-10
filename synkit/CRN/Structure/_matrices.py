@@ -74,9 +74,7 @@ def _sparse_from_entries(
     try:
         from scipy import sparse as sp
     except ImportError as exc:  # pragma: no cover - scipy is a core dependency
-        raise ImportError(
-            "sparse=True requires SciPy; install it or use sparse=False"
-        ) from exc
+        raise ImportError("sparse=True requires SciPy; install it or use sparse=False") from exc
 
     rows = [i for i, _, _ in entries]
     cols = [j for _, j, _ in entries]

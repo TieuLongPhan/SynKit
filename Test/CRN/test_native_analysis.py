@@ -23,8 +23,8 @@ from synkit.CRN.native_analysis import (
 )
 from synkit.CRN.Props.stoich import _exact_null_space
 from synkit.CRN.Props.thermo import is_consistent
-from Experiment.CRN.benchmarks.networks import BENCHMARK_NETWORKS
-from Experiment.CRN.benchmarks.crosschecks import brute_force_siphons
+from Experiment.CRN.studies.networks import BENCHMARK_NETWORKS
+from Experiment.CRN.studies.crosschecks import brute_force_siphons
 from Experiment.CRN.studies.formose_case_study import expand
 
 
@@ -49,11 +49,8 @@ def test_native_fixture_analysis_agrees_with_independent_references(exact_librar
             # The reference returns source graph node ids; align by labels.
             label = {sid: s.label for sid, s in c.species.items()}
             source = {s.source_node_id: s.label for s in c.species.values()}
-            checks["exhaustive_" + fixture.name] = {
-                frozenset(label.get(s, s) for s in group) for group in native
-            } == {
-                frozenset(source.get(s, s) for s in group)
-                for group in brute_force_siphons(c, max_species=14)
+            checks["exhaustive_" + fixture.name] = {frozenset(label.get(s, s) for s in group) for group in native} == {
+                frozenset(source.get(s, s) for s in group) for group in brute_force_siphons(c, max_species=14)
             }
     _assert_agreement(checks)
 
@@ -65,9 +62,9 @@ def test_native_matrix_analysis_agrees_with_independent_references(exact_library
     for i in range(30):
         s = rng.integers(-3, 4, size=(int(rng.integers(1, 6)), int(rng.integers(1, 6))))
         got = matrix_analysis(s, library_path=library, kernels="both")
-        checks[f"algebra_{i}"] = got["left"] == _exact_null_space(
-            s.T.tolist(), s.shape[0]
-        ) and got["right"] == _exact_null_space(s.tolist(), s.shape[1])
+        checks[f"algebra_{i}"] = got["left"] == _exact_null_space(s.T.tolist(), s.shape[0]) and got[
+            "right"
+        ] == _exact_null_space(s.tolist(), s.shape[1])
     _assert_agreement(checks)
 
 
@@ -79,7 +76,7 @@ def test_sbml_persistence_preserves_coordinate_alignment():
         '<speciesReference species="B"/></listOfProducts></reaction>'
         '<reaction id="r"><listOfReactants><speciesReference species="B"/>'
         '</listOfReactants><listOfProducts><speciesReference species="A"/>'
-        '</listOfProducts></reaction></listOfReactions></model></sbml>'
+        "</listOfProducts></reaction></listOfReactions></model></sbml>"
     )
     assert siphon_persistence_details(crn_from_sbml(xml)).persistence_ok is True
 
@@ -103,15 +100,12 @@ def test_native_symmetry_and_pathways_agree_with_independent_references(exact_li
             edge_match=nx.algorithms.isomorphism.categorical_edge_match("stoich", 1),
         )
         symmetry = graph_symmetry(c, library_path=library)
-        checks[f"symmetry_{i}"] = symmetry.complete and symmetry.value[
-            "automorphism_count"
-        ] == sum(1 for _ in matcher.isomorphisms_iter())
-        permuted = nx.relabel_nodes(
-            g, {node: "renamed_" + str(j) for j, node in enumerate(reversed(list(g)))}
+        checks[f"symmetry_{i}"] = symmetry.complete and symmetry.value["automorphism_count"] == sum(
+            1 for _ in matcher.isomorphisms_iter()
         )
+        permuted = nx.relabel_nodes(g, {node: "renamed_" + str(j) for j, node in enumerate(reversed(list(g)))})
         checks[f"canonical_{i}"] = (
-            graph_symmetry(permuted, library_path=library).value["canonical_key"]
-            == symmetry.value["canonical_key"]
+            graph_symmetry(permuted, library_path=library).value["canonical_key"] == symmetry.value["canonical_key"]
         )
         flow = {r: 1 for r in c.reactions}
         for marking in ({}, {sid: 2 for sid in c.species}):
@@ -121,9 +115,7 @@ def test_native_symmetry_and_pathways_agree_with_independent_references(exact_li
             search.build_petri_net_from_flow()
             a = search.realizability_result(backend="python")
             b = search.realizability_result(backend="cpp", library_path=library)
-            checks[f"pathway_{i}_{len(marking)}"] = (
-                a.status == b.status and a.exhaustive == b.exhaustive
-            )
+            checks[f"pathway_{i}_{len(marking)}"] = a.status == b.status and a.exhaustive == b.exhaustive
     _assert_agreement(checks)
 
 
@@ -140,34 +132,23 @@ def test_native_formose_agrees_with_independent_references(exact_library):
         species = sorted(s.smiles for s in model.species.values())
         reactions = sorted(
             (
-                tuple(
-                    sorted((model.species[sid].smiles, n) for sid, n in r.lhs.items())
-                ),
-                tuple(
-                    sorted((model.species[sid].smiles, n) for sid, n in r.rhs.items())
-                ),
+                tuple(sorted((model.species[sid].smiles, n) for sid, n in r.lhs.items())),
+                tuple(sorted((model.species[sid].smiles, n) for sid, n in r.rhs.items())),
             )
             for r in model.reactions.values()
         )
         return species, reactions
 
-    checks["native_input_generation_matches_reference"] = signatures(
-        formose
-    ) == signatures(reference)
+    checks["native_input_generation_matches_reference"] = signatures(formose) == signatures(reference)
     symmetry = graph_symmetry(formose, library_path=library, max_count=1024)
-    checks["formose_group_512"] = (
-        symmetry.complete and symmetry.value["automorphism_count"] == 512
-    )
-    checks["formose_18_paired_orbits"] = (
-        sum(len(o) == 2 for o in symmetry.value["orbits"]) == 18
-    )
+    checks["formose_group_512"] = symmetry.complete and symmetry.value["automorphism_count"] == 512
+    checks["formose_18_paired_orbits"] = sum(len(o) == 2 for o in symmetry.value["orbits"]) == 18
 
     # Every singleton trap dominates all larger sets containing that species.
     # Exhaust only the remaining species to independently check completeness.
     def is_trap(group):
         return all(
-            not (set(reaction.lhs.counts) & group)
-            or bool(set(reaction.rhs.counts) & group)
+            not (set(reaction.lhs.counts) & group) or bool(set(reaction.rhs.counts) & group)
             for reaction in formose.reactions.values()
         )
 
@@ -202,11 +183,7 @@ def test_native_limits_and_positive_flux_bounds_are_sound(exact_library):
         library_path=library,
         max_count=1,
     )
-    checks["canonical_limit_no_key"] = (
-        not limited.complete and limited.value["canonical_key"] is None
-    )
+    checks["canonical_limit_no_key"] = not limited.complete and limited.value["canonical_key"] is None
     with native_backend(library):
-        checks["positive_flux_bounds_sound"] = (
-            is_consistent(SynCRN.from_reaction_strings(["A>>B", "2A>>2B"])) is False
-        )
+        checks["positive_flux_bounds_sound"] = is_consistent(SynCRN.from_reaction_strings(["A>>B", "2A>>2B"])) is False
     _assert_agreement(checks)

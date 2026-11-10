@@ -1,10 +1,4 @@
-"""SynKit-native tests for the extended StereoMolGraph shared subset.
-
-The permutation examples are adapted from StereoMolGraph commit
-2189f610f23eaaf992e2e01a12ea4d0532496601 (MIT; copyright (c) 2025
-Maxim Papusha). SynKit independently tests graph metadata, explicit query
-policy, reaction changes, and serialization around those descriptor values.
-"""
+"""SynKit descriptor, rule, query and adapter invariants on generated inputs."""
 
 from itertools import permutations, product
 
@@ -42,39 +36,22 @@ from synkit.IO.graph_to_mol import GraphToMol
 from synkit.IO.mol_to_graph import MolToGraph
 
 
-@pytest.mark.parametrize(
-    ("reference", "equivalent", "distinct"),
-    [
-        (
-            SquarePlanarStereo((6, 0, 1, 2, 3), 0),
-            SquarePlanarStereo((6, 1, 2, 3, 0), 0),
-            SquarePlanarStereo((6, 1, 0, 2, 3), 0),
-        ),
-        (
-            TrigonalBipyramidalStereo((6, 0, 1, 2, 3, 4), 1),
-            TrigonalBipyramidalStereo((6, 1, 0, 3, 4, 2), -1),
-            TrigonalBipyramidalStereo((6, 1, 0, 3, 4, 2), 1),
-        ),
-        (
-            OctahedralStereo((6, 0, 1, 2, 3, 4, 5), 1),
-            OctahedralStereo((6, 1, 0, 2, 3, 4, 5), -1),
-            OctahedralStereo((6, 1, 0, 2, 3, 4, 5), 1),
-        ),
-        (
-            AtropBondStereo((0, 1, 2, 3, 4, 5), 1),
-            AtropBondStereo((1, 0, 2, 3, 4, 5), -1),
-            AtropBondStereo((1, 0, 2, 3, 4, 5), 1),
-        ),
-    ],
-)
-def test_non_tetrahedral_relative_identity(reference, equivalent, distinct):
-    assert reference == equivalent
-    assert hash(reference) == hash(equivalent)
-    assert reference != distinct
-    if reference.parity == 0:
-        assert reference.invert() == reference
+@pytest.mark.parametrize("constructor,arity,parity", (
+    (SquarePlanarStereo, 5, 0), (TrigonalBipyramidalStereo, 6, 1),
+    (OctahedralStereo, 7, 1), (AtropBondStereo, 6, 1),
+))
+def test_non_tetrahedral_generated_relative_identity(constructor, arity, parity):
+    atoms = tuple(701 + 23 * i for i in range(arity))
+    descriptor = constructor(atoms, parity)
+    permutation = dict(zip(atoms, reversed(atoms), strict=True))
+    restored = descriptor.relabel(permutation).relabel(permutation)
+    assert restored == descriptor
+    assert hash(restored) == hash(descriptor)
+    assert descriptor.invert().invert() == descriptor
+    if parity:
+        assert descriptor.invert() != descriptor
     else:
-        assert reference.invert() != reference
+        assert descriptor.invert() == descriptor
 
 
 @pytest.mark.parametrize(

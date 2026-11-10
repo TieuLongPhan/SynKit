@@ -131,11 +131,7 @@ class Complex:
             Species labels with a nonzero coefficient.
         :rtype: Tuple[str, ...]
         """
-        return tuple(
-            label
-            for label, coeff in zip(self.species_labels, self.coefficients)
-            if coeff
-        )
+        return tuple(label for label, coeff in zip(self.species_labels, self.coefficients) if coeff)
 
     def to_dict(self) -> Dict[str, int]:
         """Return the complex as a ``species label -> coefficient`` mapping.
@@ -144,11 +140,7 @@ class Complex:
             Nonzero coefficients keyed by species label.
         :rtype: Dict[str, int]
         """
-        return {
-            label: int(coeff)
-            for label, coeff in zip(self.species_labels, self.coefficients)
-            if coeff
-        }
+        return {label: int(coeff) for label, coeff in zip(self.species_labels, self.coefficients) if coeff}
 
     def __str__(self) -> str:
         """Return the usual chemical rendering, such as ``2A + B``.
@@ -222,10 +214,7 @@ def _complex_columns(crn: Any) -> Tuple[List[Complex], List[Tuple[int, int]]]:
     index: Dict[Tuple[int, ...], int] = {}
 
     def _intern(column: np.ndarray) -> int:
-        key = tuple(
-            int(v) if float(v).is_integer() else float(v)  # type: ignore[misc]
-            for v in column
-        )
+        key = tuple(int(v) if float(v).is_integer() else float(v) for v in column)  # type: ignore[misc]
         if key not in index:
             index[key] = len(order)
             order.append(Complex(coefficients=key, species_labels=labels))
@@ -316,10 +305,7 @@ def _exact_rank(rows: Sequence[Sequence[Any]]) -> int:
         Exact rank.
     :rtype: int
     """
-    work = [
-        [Fraction(str(v)) if not isinstance(v, int) else Fraction(v) for v in row]
-        for row in rows
-    ]
+    work = [[Fraction(str(v)) if not isinstance(v, int) else Fraction(v) for v in row] for row in rows]
     if not work or not work[0]:
         return 0
 
@@ -365,10 +351,7 @@ def _reaction_vectors(crn: Any) -> List[List[Any]]:
     """
     _, _, s_minus, s_plus = build_S_minus_plus(crn)
     net = s_plus - s_minus
-    return [
-        [int(v) if float(v).is_integer() else float(v) for v in net[:, j]]
-        for j in range(net.shape[1])
-    ]
+    return [[int(v) if float(v).is_integer() else float(v) for v in net[:, j]] for j in range(net.shape[1])]
 
 
 # ---------------------------------------------------------------------------
@@ -440,11 +423,7 @@ def terminal_strong_linkage_classes(crn: Any) -> List[List[int]]:
     terminal: List[List[int]] = []
 
     for component in nx.strongly_connected_components(graph):
-        leaves = any(
-            successor not in component
-            for node in component
-            for successor in graph.successors(node)
-        )
+        leaves = any(successor not in component for node in component for successor in graph.successors(node))
         if not leaves:
             terminal.append(sorted(component))
 
@@ -630,8 +609,7 @@ def _deficiency_zero_values(delta, weakly_reversible):
             "weakly_reversible": weakly_reversible,
             "conclusion": "inconclusive",
             "statement": (
-                f"Deficiency is {delta}, not zero; the Deficiency Zero Theorem "
-                "says nothing about this network."
+                f"Deficiency is {delta}, not zero; the Deficiency Zero Theorem " "says nothing about this network."
             ),
         }
 
@@ -737,11 +715,7 @@ def _deficiency_one_values(delta, per_class, weakly_reversible, terminal_counts)
     if not applicable:
         failed = [name for name, ok in hypotheses.items() if not ok]
         result["conclusion"] = "inconclusive"
-        result["statement"] = (
-            "The Deficiency One Theorem does not apply; failed hypotheses: "
-            + ", ".join(failed)
-            + "."
-        )
+        result["statement"] = "The Deficiency One Theorem does not apply; failed hypotheses: " + ", ".join(failed) + "."
         return result
 
     if weakly_reversible:
@@ -885,9 +859,7 @@ class CRNTSummary:
             "n_reactions": self.n_reactions,
             "n_complexes": self.n_complexes,
             "n_linkage_classes": self.n_linkage_classes,
-            "n_terminal_strong_linkage_classes": (
-                self.n_terminal_strong_linkage_classes
-            ),
+            "n_terminal_strong_linkage_classes": (self.n_terminal_strong_linkage_classes),
             "rank": self.rank,
             "deficiency": self.deficiency,
             "linkage_class_deficiencies": list(self.linkage_class_deficiencies),
@@ -906,13 +878,11 @@ class CRNTSummary:
         :rtype: str
         """
         lines = [
-            f"CRNT summary: {self.n_species} species, "
-            f"{self.n_reactions} reactions, {self.n_complexes} complexes",
+            f"CRNT summary: {self.n_species} species, " f"{self.n_reactions} reactions, {self.n_complexes} complexes",
             f"  linkage classes n={self.n_linkage_classes} "
             f"(terminal strong: {self.n_terminal_strong_linkage_classes})",
             f"  rank s={self.rank}, deficiency delta={self.deficiency}",
-            f"  weakly reversible: {self.is_weakly_reversible}, "
-            f"reversible: {self.is_reversible}",
+            f"  weakly reversible: {self.is_weakly_reversible}, " f"reversible: {self.is_reversible}",
         ]
         if self.deficiency_zero.get("applicable"):
             lines.append(f"  deficiency-zero: {self.deficiency_zero['conclusion']}")
@@ -921,9 +891,7 @@ class CRNTSummary:
         return "\n".join(lines)
 
 
-def crnt_summary(
-    crn: Any, *, backend="auto", library_path=None, time_limit=30.0
-) -> CRNTSummary:
+def crnt_summary(crn: Any, *, backend="auto", library_path=None, time_limit=30.0) -> CRNTSummary:
     """Compute the full structural CRNT report for a network.
 
     :param crn:
@@ -947,7 +915,5 @@ def crnt_summary(
     if backend == "cpp":
         from ..native_analysis import crnt_summary_native
 
-        return crnt_summary_native(
-            crn, library_path=library_path, time_limit=time_limit
-        )
+        return crnt_summary_native(crn, library_path=library_path, time_limit=time_limit)
     return CRNTSummary.from_crn(crn)

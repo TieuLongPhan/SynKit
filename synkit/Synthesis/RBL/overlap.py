@@ -8,7 +8,7 @@ from typing import Any, Hashable, Mapping, Sequence
 
 import networkx as nx
 
-from synkit.Graph.Fusion import (
+from synkit.Rule.Fusion import (
     FusionInterface,
     FusionInterfaceError,
     FusionInterfaceIssueCode,

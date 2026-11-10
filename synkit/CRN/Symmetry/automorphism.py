@@ -317,9 +317,7 @@ class CRNAutomorphism:
         for m in res.sample_mappings:
             yield dict(m)
 
-    def has_nontrivial_automorphism(
-        self, *, timeout_sec: Optional[float] = 5.0
-    ) -> bool:
+    def has_nontrivial_automorphism(self, *, timeout_sec: Optional[float] = 5.0) -> bool:
         """Check whether the graph has a nontrivial automorphism.
 
         A fast WL-based orbit test is used first. If WL leaves no ambiguous
@@ -337,9 +335,7 @@ class CRNAutomorphism:
         """
         if all(len(cell) == 1 for cell in self.wl.orbits()):
             return False
-        res = self._engine.run(
-            max_count=2, timeout_sec=timeout_sec, stop_after_two=True
-        )
+        res = self._engine.run(max_count=2, timeout_sec=timeout_sec, stop_after_two=True)
         return res.automorphism_count > 1
 
     def summary(
@@ -369,12 +365,8 @@ class CRNAutomorphism:
             from ..native_analysis import graph_symmetry, NativeSearchLimit
             from time import monotonic
 
-            if self.config != SymmetryConfig.topological() or not all(
-                self._native_options
-            ):
-                raise NotImplementedError(
-                    "Native automorphisms currently require topological semantics"
-                )
+            if self.config != SymmetryConfig.topological() or not all(self._native_options):
+                raise NotImplementedError("Native automorphisms currently require topological semantics")
             started = monotonic()
             result = graph_symmetry(
                 self._native_source,
@@ -392,9 +384,7 @@ class CRNAutomorphism:
                 elapsed_seconds=monotonic() - started,
                 stopped_early=False,
             )
-        return self._engine.automorphism_result(
-            max_count=max_count, timeout_sec=timeout_sec
-        )
+        return self._engine.automorphism_result(max_count=max_count, timeout_sec=timeout_sec)
 
     def orbits(
         self,
@@ -467,6 +457,4 @@ def detect_automorphisms(
         print(result.automorphism_count)
         print(result.orbits)
     """
-    return CRNAutomorphism(source, **kwargs).summary(
-        max_count=max_count, timeout_sec=timeout_sec
-    )
+    return CRNAutomorphism(source, **kwargs).summary(max_count=max_count, timeout_sec=timeout_sec)

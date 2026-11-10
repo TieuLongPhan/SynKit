@@ -202,9 +202,7 @@ class CRNIsomorphism:
             wl_color_hist=self.wl._run().color_hist,
         )
 
-    def _make_matcher(
-        self, other_graph: nx.DiGraph, this_graph: nx.DiGraph
-    ) -> DiGraphMatcher:
+    def _make_matcher(self, other_graph: nx.DiGraph, this_graph: nx.DiGraph) -> DiGraphMatcher:
         """Build a directed graph matcher for exact isomorphism checks.
 
         :param other_graph:
@@ -292,10 +290,7 @@ class CRNIsomorphism:
             print(result.isomorphic)
         """
         start = perf_counter()
-        if (
-            self.graph_type != other.graph_type
-            or self._signature() != other._signature()
-        ):
+        if self.graph_type != other.graph_type or self._signature() != other._signature():
             return self._result(False, None, start, True, "vf2")
 
         gm = self._make_matcher(self.G, other.G)
@@ -372,11 +367,7 @@ def are_isomorphic(a: Any, b: Any, **kwargs: Any) -> bool:
         ok = are_isomorphic(crn_a, crn_b, include_rule=True)
         print(ok)
     """
-    return (
-        CRNIsomorphism(a, **kwargs)
-        .isomorphic_to(CRNIsomorphism(b, **kwargs))
-        .isomorphic
-    )
+    return CRNIsomorphism(a, **kwargs).isomorphic_to(CRNIsomorphism(b, **kwargs)).isomorphic
 
 
 def are_subhypergraph_isomorphic(pattern: Any, host: Any, **kwargs: Any) -> bool:
@@ -405,8 +396,4 @@ def are_subhypergraph_isomorphic(pattern: Any, host: Any, **kwargs: Any) -> bool
         ok = are_subhypergraph_isomorphic(pattern_crn, host_crn)
         print(ok)
     """
-    return (
-        CRNIsomorphism(pattern, **kwargs)
-        .subgraph_isomorphic_to(CRNIsomorphism(host, **kwargs))
-        .isomorphic
-    )
+    return CRNIsomorphism(pattern, **kwargs).subgraph_isomorphic_to(CRNIsomorphism(host, **kwargs)).isomorphic

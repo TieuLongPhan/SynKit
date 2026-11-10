@@ -197,11 +197,7 @@ class KEGGExtractor:
         module_text = self.client.get_text(f"get/{module_id}")
         directions = parse_module_reaction_directions(module_text)
 
-        reaction_ids = (
-            list(directions.keys())
-            if directions
-            else self.get_reaction_ids_from_module(module_id)
-        )
+        reaction_ids = list(directions.keys()) if directions else self.get_reaction_ids_from_module(module_id)
 
         equations_by_rid: ReactionEquationMap = {}
 
@@ -218,9 +214,7 @@ class KEGGExtractor:
             left_ids, right_ids, module_arrow = directions[reaction_id]
             parsed = parse_equation(equation)
             oriented = orient_equation_to_module(parsed, left_ids, right_ids)
-            equations_by_rid[reaction_id] = equation_to_text(
-                oriented, arrow=module_arrow
-            )
+            equations_by_rid[reaction_id] = equation_to_text(oriented, arrow=module_arrow)
 
         return equations_by_rid
 
@@ -245,9 +239,7 @@ class KEGGExtractor:
             nested = extractor.get_pathway_equations("hsa00010")
         """
         modules = self.get_modules_from_pathway(pathway_id)
-        return {
-            module_id: self.get_module_equations(module_id) for module_id in modules
-        }
+        return {module_id: self.get_module_equations(module_id) for module_id in modules}
 
     def get_compound_name(self, compound_id: str) -> Optional[str]:
         """Retrieve the primary KEGG compound name.
@@ -401,11 +393,7 @@ class KEGGExtractor:
         mapped_by_id: dict[str, Optional[str]] = {}
 
         for reaction_id, reaction_smiles in reaction_smiles_by_id.items():
-            if (
-                ">>" not in reaction_smiles
-                or reaction_smiles.startswith(">>")
-                or reaction_smiles.endswith(">>")
-            ):
+            if ">>" not in reaction_smiles or reaction_smiles.startswith(">>") or reaction_smiles.endswith(">>"):
                 mapped_by_id[reaction_id] = None
                 continue
 
@@ -589,21 +577,13 @@ class KEGGExtractor:
         equations_by_rid = self.get_module_equations(module_id)
         compound_ids, parsed_by_rid = get_compound_ids_from_equations(equations_by_rid)
 
-        compounds_by_cid = (
-            self.build_compound_table(compound_ids) if with_compounds else {}
-        )
+        compounds_by_cid = self.build_compound_table(compound_ids) if with_compounds else {}
 
         reaction_smiles_by_rid, _ = (
-            self.build_reaction_smiles_dict(parsed_by_rid, compounds_by_cid)
-            if with_compounds
-            else ({}, {})
+            self.build_reaction_smiles_dict(parsed_by_rid, compounds_by_cid) if with_compounds else ({}, {})
         )
 
-        rules_by_rid = (
-            self.atom_map_reactions(reaction_smiles_by_rid)
-            if (with_compounds and with_atom_maps)
-            else {}
-        )
+        rules_by_rid = self.atom_map_reactions(reaction_smiles_by_rid) if (with_compounds and with_atom_maps) else {}
 
         data: JSONDict = {"module_id": module_id}
         data.update(
@@ -690,12 +670,8 @@ class KEGGExtractor:
             by_module[module_id] = module_block
 
             if with_compounds and "missing" in module_block:
-                aggregate_missing_ids.update(
-                    module_block["missing"].get("missing_compound_ids", [])
-                )
-                aggregate_reaction_ids.update(
-                    module_block["missing"].get("reactions_involving_missing", [])
-                )
+                aggregate_missing_ids.update(module_block["missing"].get("missing_compound_ids", []))
+                aggregate_reaction_ids.update(module_block["missing"].get("reactions_involving_missing", []))
 
         data: JSONDict = {
             "pathway_id": pathway_id,

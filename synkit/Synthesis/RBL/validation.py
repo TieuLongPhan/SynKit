@@ -20,7 +20,7 @@ from synkit.Graph.Morphism.constraints import (
     WildcardRole,
     adapt_legacy_node_state,
 )
-from synkit.Graph.Fusion.identity import (
+from synkit.Graph.identity import (
     graph_identity_digest,
     graphs_exactly_equivalent,
 )

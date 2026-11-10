@@ -9,17 +9,14 @@ import pytest
 
 from synkit.Chem.Mapper import Mapper
 from synkit.Chem.Mapper._native.assignment import kernel_domains
-from synkit.Chem.Mapper._native.build import build_mapper_native
 from synkit.Chem.Mapper._native.core import enumerate_core_mappings
 from synkit.Chem.Mapper._native.runtime import CancellationToken
 from synkit.Chem.Mapper.graph.labeled_graph import LabeledGraph
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
-    return os.environ.get("SYNKIT_CORE_LIBRARY") or build_mapper_native(
-        tmp_path_factory.mktemp("assignment")
-    )
+def library(request):
+    return os.environ.get("SYNKIT_CORE_LIBRARY") or request.getfixturevalue("mapper_core_library")
 
 
 def graphs():

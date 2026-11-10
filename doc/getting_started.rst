@@ -49,6 +49,19 @@ SynKit requires Python 3.10 or later. Install optional general dependencies,
 including the kernel MILP solver, with ``python -m pip install 'synkit[all]'``.
 For the MILP solver alone, use ``python -m pip install 'synkit[milp]'``.
 
+Python 3.11 and later use Pillow 13 or newer for its security fixes. Python
+3.10 remains supported with Pillow 12.3 or newer, but the 12.x series still
+has known image-decoding and PDF-processing vulnerabilities fixed only in
+Pillow 13. See the `Pillow 13 release notes
+<https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html>`_.
+
+The optional CRNT4SBML research comparison uses a separate Python 3.7
+environment. Its NumPy, SciPy, pip, setuptools and wheel pins still have
+reported vulnerabilities; fully patched versions conflict with that
+interpreter or CRNT4SBML's dependency requirements. The compatible mpmath
+1.3.0 and pandas 1.0.4 updates pass the twelve-network comparison. These
+legacy dependencies are excluded from SynKit's runtime installation.
+
 Platform wheels include the C++ atom mapper. See :doc:`mapper` for native
 solver availability, hydrogen models and source builds. Optional Python
 extras do not enable the C++ solver SDKs.
@@ -130,16 +143,18 @@ Construct a small CRN and convert it to a NetworkX digraph:
    graph = crn.to_digraph()
    print(graph.number_of_nodes(), graph.number_of_edges())
 
-For an offline biochemical example, load the cached KEGG glycolysis module,
-compute CRNT and Petri-net structure, obtain a replayable pathway certificate,
-and export the network through SBML:
+From a source checkout or unpacked source distribution, the separate research
+suite provides an offline biochemical example. Load the cached KEGG glycolysis
+module, compute CRNT and Petri-net structure, obtain a replayable pathway
+certificate, and export the network through SBML. Runtime wheels omit the
+research suite; run this example from the source root:
 
 .. code-block:: python
 
    from pathlib import Path
 
    from synkit.CRN import crnt_summary, conserved_moieties, find_siphons, write_sbml
-   from synkit.CRN.Benchmark import build_kegg_crn, check_glycolysis_flux
+   from Experiment.CRN.studies import build_kegg_crn, check_glycolysis_flux
 
    crn = build_kegg_crn("M00001")
    summary = crnt_summary(crn)
@@ -154,10 +169,9 @@ and export the network through SBML:
 
    write_sbml(crn, Path("glycolysis.xml"))
 
-The `executable glycolysis notebook
-<https://github.com/TieuLongPhan/SynKit/blob/main/Experiment/CRN/notebooks/crn_glycolysis_case_study.ipynb>`_
-explains and independently replays the certificate. See :doc:`crn` for the
-network API and benchmark workflow.
+The CRN studies in ``Experiment/CRN/run_all.py`` check the glycolytic
+certificate and currency-retention control. See :doc:`crn` for the network API
+and study workflow.
 
 Next steps
 ----------

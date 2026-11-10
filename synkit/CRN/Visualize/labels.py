@@ -28,9 +28,7 @@ def _species_text(graph: nx.DiGraph, node: Hashable, mode: str) -> str:
         return str(data.get("label", node))
     if mode == "smiles":
         return str(data.get("smiles", data.get("label", node)))
-    raise ValueError(
-        f"Unsupported species_label={mode!r}. Use 'index', 'label', or 'smiles'."
-    )
+    raise ValueError(f"Unsupported species_label={mode!r}. Use 'index', 'label', or 'smiles'.")
 
 
 def _rule_text(graph: nx.DiGraph, node: Hashable, mode: str) -> str:
@@ -44,13 +42,9 @@ def _rule_text(graph: nx.DiGraph, node: Hashable, mode: str) -> str:
     if mode == "rule_app":
         return f"r@{data.get('rule_index', node)}@{data.get('app_index', '?')}"
     if mode == "step_rule_app":
-        return (
-            f"s{data.get('step', '?')}:"
-            f"r@{data.get('rule_index', node)}@{data.get('app_index', '?')}"
-        )
+        return f"s{data.get('step', '?')}:" f"r@{data.get('rule_index', node)}@{data.get('app_index', '?')}"
     raise ValueError(
-        f"Unsupported rule_label={mode!r}. "
-        "Use 'index', 'label', 'rule_index', 'rule_app', or 'step_rule_app'."
+        f"Unsupported rule_label={mode!r}. " "Use 'index', 'label', 'rule_index', 'rule_app', or 'step_rule_app'."
     )
 
 
@@ -70,15 +64,11 @@ def build_node_labels(
 
     for node in species_nodes:
         mode = species_label if show_species_labels else "index"
-        labels[node] = _wrap(
-            _truncate(_species_text(graph, node, mode), max_chars), wrap_at
-        )
+        labels[node] = _wrap(_truncate(_species_text(graph, node, mode), max_chars), wrap_at)
 
     for node in rule_nodes:
         mode = rule_label if show_rule_labels else "index"
-        labels[node] = _wrap(
-            _truncate(_rule_text(graph, node, mode), max_chars), wrap_at
-        )
+        labels[node] = _wrap(_truncate(_rule_text(graph, node, mode), max_chars), wrap_at)
 
     return labels
 

@@ -424,9 +424,13 @@ def is_consistent(crn: Any, *, eps: float = 1e-8) -> Optional[bool]:
             residual = S @ v
             max_v = float(np.max(np.abs(v))) or 1.0
             rel_err = np.linalg.norm(residual, ord=np.inf) / max_v
-            return bool(rel_err <= 1e-8 and np.all(v >= 1.0 - 1e-7))
-        return False
-    except Exception:
+            if rel_err <= 1e-8 and np.all(v >= 1.0 - 1e-7):
+                return True
+            # A solver witness that fails its own residual check is unverified.
+            return None
+        # HiGHS status 2 is a proven infeasibility; other failures are undecided.
+        return False if getattr(res, "status", None) == 2 else None
+    except ImportError:
         pass
 
     B = right_nullspace(crn)
@@ -512,9 +516,7 @@ def has_stoichiometric_dependencies(crn: Any, *, rtol: float = 1e-12) -> bool:
     return right_nullspace(crn, rtol=rtol).shape[1] > 0
 
 
-def compute_thermo_summary(
-    crn: Any, *, rtol: float = 1e-12, eps: float = 1e-8
-) -> ThermoSummary:
+def compute_thermo_summary(crn: Any, *, rtol: float = 1e-12, eps: float = 1e-8) -> ThermoSummary:
     """Compute a composite :class:`ThermoSummary` describing key thermodynamic-like
     and structural stoichiometric properties of a chemical reaction network.
 

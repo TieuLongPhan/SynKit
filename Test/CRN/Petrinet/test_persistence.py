@@ -78,9 +78,7 @@ class TestSiphonPersistence(unittest.TestCase):
         net = PetriNet.from_syncrn(syn)
 
         siphon_sets = {frozenset(net.place_name(p) for p in s) for s in details.siphons}
-        support_sets = {
-            frozenset(net.place_name(p) for p in s) for s in details.semiflow_supports
-        }
+        support_sets = {frozenset(net.place_name(p) for p in s) for s in details.semiflow_supports}
 
         self.assertIn(frozenset({"A", "B"}), siphon_sets)
         self.assertIn(frozenset({"A", "B"}), support_sets)

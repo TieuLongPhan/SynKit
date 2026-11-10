@@ -1,6 +1,7 @@
 """Native proof-bearing rule identity and composition."""
 
 from ._identity import cluster_rule_objects, rule_objects_isomorphic
+from .resources import ResourceUpdate
 from .composition import (
     CompositionCertificate,
     CompositionError,
@@ -56,6 +57,7 @@ from .synrule import (
 )
 
 __all__ = [
+    "ResourceUpdate",
     "CompositionCertificate",
     "CompositionClass",
     "CompositionError",

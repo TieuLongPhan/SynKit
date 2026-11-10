@@ -6,10 +6,6 @@ import networkx as nx
 
 from synkit.CRN.Props import helper
 
-# ---------------------------------------------------------------------------
-# Small helper wrapper classes for _as_graph tests
-# ---------------------------------------------------------------------------
-
 
 class WrapperWithG:
     def __init__(self, G: nx.Graph) -> None:
@@ -64,11 +60,6 @@ class WrapperWithTypeErrorThenWorks:
         return self._G
 
 
-# ---------------------------------------------------------------------------
-# Graph factory
-# ---------------------------------------------------------------------------
-
-
 def build_test_graph() -> nx.DiGraph:
     G = nx.DiGraph()
 
@@ -79,11 +70,6 @@ def build_test_graph() -> nx.DiGraph:
     G.add_edge("A", "r1", role="reactant", stoich=2.0)
     G.add_edge("r1", "B", role="product", stoich=1.0)
     return G
-
-
-# ---------------------------------------------------------------------------
-# Tests for _as_graph
-# ---------------------------------------------------------------------------
 
 
 class TestAsGraph(unittest.TestCase):
@@ -149,11 +135,6 @@ class TestAsGraph(unittest.TestCase):
             helper._as_graph(NoGraph())
 
 
-# ---------------------------------------------------------------------------
-# Tests for node-kind helpers
-# ---------------------------------------------------------------------------
-
-
 class TestNodeKindHelpers(unittest.TestCase):
     def test_node_kind_normalization(self) -> None:
         self.assertEqual(helper._node_kind({"kind": "species"}), "species")
@@ -174,11 +155,6 @@ class TestNodeKindHelpers(unittest.TestCase):
         self.assertFalse(helper._is_rule_node({}))
 
 
-# ---------------------------------------------------------------------------
-# Tests for role normalization
-# ---------------------------------------------------------------------------
-
-
 class TestNormalizeRole(unittest.TestCase):
     def test_normalize_role_reactant_aliases(self) -> None:
         for role in ["reactant", "Reactant", " lhs ", "educt", "substrate"]:
@@ -193,11 +169,6 @@ class TestNormalizeRole(unittest.TestCase):
         self.assertIsNone(helper._normalize_role("catalyst"))
         self.assertIsNone(helper._normalize_role("agent"))
         self.assertIsNone(helper._normalize_role(""))
-
-
-# ---------------------------------------------------------------------------
-# Tests for edge coefficient parsing
-# ---------------------------------------------------------------------------
 
 
 class TestEdgeCoeff(unittest.TestCase):
@@ -218,11 +189,6 @@ class TestEdgeCoeff(unittest.TestCase):
 
     def test_edge_coeff_casts_to_float(self) -> None:
         self.assertEqual(helper._edge_coeff({"stoich": "2"}), 2.0)
-
-
-# ---------------------------------------------------------------------------
-# Tests for node sorting
-# ---------------------------------------------------------------------------
 
 
 class TestNodeSortKey(unittest.TestCase):
@@ -253,18 +219,11 @@ class TestNodeSortKey(unittest.TestCase):
         self.assertEqual(out, ["node1", "node2"])
 
 
-# ---------------------------------------------------------------------------
-# Tests for species/rule ordering
-# ---------------------------------------------------------------------------
-
-
 class TestSpeciesAndRuleOrder(unittest.TestCase):
     def test_species_and_rule_order_basic(self) -> None:
         G = build_test_graph()
 
-        species_nodes, rule_nodes, species_index, rule_index = (
-            helper._species_and_rule_order(G)
-        )
+        species_nodes, rule_nodes, species_index, rule_index = helper._species_and_rule_order(G)
 
         self.assertEqual(species_nodes, ["A", "B"])
         self.assertEqual(rule_nodes, ["r1"])
@@ -275,9 +234,7 @@ class TestSpeciesAndRuleOrder(unittest.TestCase):
         G = build_test_graph()
         G.add_node("x1", kind="other", label="x1")
 
-        species_nodes, rule_nodes, species_index, rule_index = (
-            helper._species_and_rule_order(G)
-        )
+        species_nodes, rule_nodes, species_index, rule_index = helper._species_and_rule_order(G)
 
         self.assertEqual(species_nodes, ["A", "B"])
         self.assertEqual(rule_nodes, ["r1"])
@@ -294,9 +251,7 @@ class TestSpeciesAndRuleOrder(unittest.TestCase):
         G.add_node("r1", kind="rule", label="r1", step=0, rule_index=0, app_index=0)
         G.add_node("r3", kind="rule", label="r3", step=1, rule_index=1, app_index=0)
 
-        species_nodes, rule_nodes, species_index, rule_index = (
-            helper._species_and_rule_order(G)
-        )
+        species_nodes, rule_nodes, species_index, rule_index = helper._species_and_rule_order(G)
 
         self.assertEqual(species_nodes, ["A", "B"])
         self.assertEqual(rule_nodes, ["r1", "r2", "r3"])
@@ -310,9 +265,7 @@ class TestSpeciesAndRuleOrder(unittest.TestCase):
         G = build_test_graph()
         wrapped = WrapperWithG(G)
 
-        species_nodes, rule_nodes, species_index, rule_index = (
-            helper._species_and_rule_order(wrapped)
-        )
+        species_nodes, rule_nodes, species_index, rule_index = helper._species_and_rule_order(wrapped)
 
         self.assertEqual(species_nodes, ["A", "B"])
         self.assertEqual(rule_nodes, ["r1"])

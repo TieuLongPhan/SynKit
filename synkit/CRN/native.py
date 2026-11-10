@@ -40,9 +40,7 @@ def _library_manifest(library_file):
     manifest = json.loads(library_file.with_suffix(".json").read_text())
     if manifest.get("integrity") == "wheel-record":
         if library_file != bundled_native_library():
-            raise RuntimeError(
-                "Wheel-record verification requires the installed bundled CRN library"
-            )
+            raise RuntimeError("Wheel-record verification requires the installed bundled CRN library")
         from synkit._native import verify_wheel_library
 
         actual = verify_wheel_library(library_file)
@@ -95,22 +93,14 @@ def enumerate_semiflows(
     if not np.isfinite(time_limit) or not 0 < time_limit <= 1e9:
         raise ValueError("time_limit must be finite and between zero and 1e9 seconds")
     limits = (max_candidates, max_rows, max_results, max_coefficient_bits)
-    if any(
-        isinstance(n, bool) or not isinstance(n, int) or n < 1 or n >= 2**63
-        for n in limits
-    ):
+    if any(isinstance(n, bool) or not isinstance(n, int) or n < 1 or n >= 2**63 for n in limits):
         raise ValueError("Native search limits must be positive integers below 2**63")
     started = monotonic()
     s = _integer_stoichiometry(stoich)
     matrix = np.ascontiguousarray(s if kind == "p" else s.T, dtype=np.int64)
     library = _load_library(library_path)
-    if (
-        not hasattr(library, "synkit_crn_semiflows_abi")
-        or library.synkit_crn_semiflows_abi() != 1
-    ):
-        raise RuntimeError(
-            "This library has no exact semiflow backend; rebuild with with_semiflows=True"
-        )
+    if not hasattr(library, "synkit_crn_semiflows_abi") or library.synkit_crn_semiflows_abi() != 1:
+        raise RuntimeError("This library has no exact semiflow backend; rebuild with with_semiflows=True")
     from .backend import record_operation
 
     record_operation("semiflows")
@@ -153,10 +143,7 @@ def enumerate_semiflows(
             raise RuntimeError("Invalid native semiflow")
         if reduce(gcd, row, 0) != 1:
             raise RuntimeError("Native semiflow is not primitive")
-        if any(
-            sum(row[i] * int(matrix[i, j]) for i in range(len(row)))
-            for j in range(matrix.shape[1])
-        ):
+        if any(sum(row[i] * int(matrix[i, j]) for i in range(len(row))) for j in range(matrix.shape[1])):
             raise RuntimeError("Native semiflow fails exact kernel verification")
     flows.sort(key=lambda row: (sum(v != 0 for v in row), row))
     complete = payload["termination_reason"] == "complete"
@@ -197,15 +184,10 @@ def enumerate_structural_sets(
     backend, library_path = resolve_backend(backend, library_path)
     if kind not in {"siphon", "trap"} or backend not in {"auto", "python", "cpp"}:
         raise ValueError("Invalid kind or backend")
-    if time_limit is not None and (
-        not np.isfinite(time_limit) or not 0 < time_limit <= 1e9
-    ):
-        raise ValueError(
-            "time_limit must be None or finite and between zero and 1e9 seconds"
-        )
+    if time_limit is not None and (not np.isfinite(time_limit) or not 0 < time_limit <= 1e9):
+        raise ValueError("time_limit must be None or finite and between zero and 1e9 seconds")
     if any(
-        v is not None
-        and (isinstance(v, bool) or not isinstance(v, int) or not 0 < v < 2**63)
+        v is not None and (isinstance(v, bool) or not isinstance(v, int) or not 0 < v < 2**63)
         for v in (max_nodes, max_results)
     ):
         raise ValueError("Search limits must be positive integers below 2**63")
@@ -261,9 +243,7 @@ def _structural_closure(allowed, trigger, required):
     return frozenset(i for i in allowed if int(current[i // 64]) & (1 << (i % 64)))
 
 
-def _enumerate_structural_python(
-    places, trigger, required, *, time_limit, max_nodes, max_results
-):
+def _enumerate_structural_python(places, trigger, required, *, time_limit, max_nodes, max_results):
     def closure(allowed):
         return _structural_closure(allowed, trigger, required)
 
@@ -278,11 +258,7 @@ def _enumerate_structural_python(
             if (max_nodes is not None and nodes >= max_nodes) or (
                 time_limit is not None and monotonic() - started >= time_limit
             ):
-                reason = (
-                    "node_limit"
-                    if max_nodes is not None and nodes >= max_nodes
-                    else "time_limit"
-                )
+                reason = "node_limit" if max_nodes is not None and nodes >= max_nodes else "time_limit"
                 break
             nodes += 1
             child = closure(current - {p})
@@ -316,22 +292,12 @@ def _enumerate_structural_python(
     )
 
 
-def _enumerate_structural_native(
-    places, trigger, required, *, library_path, time_limit, max_nodes, max_results
-):
+def _enumerate_structural_native(places, trigger, required, *, library_path, time_limit, max_nodes, max_results):
     library = _load_library(library_path)
-    if not hasattr(
-        library, "synkit_crn_structural_abi"
-    ) or library.synkit_crn_structural_abi() not in (1, 2):
-        raise RuntimeError(
-            "Rebuild the CRN library to enable full native structural enumeration"
-        )
-    if library.synkit_crn_structural_abi() < 2 and any(
-        value is None for value in (time_limit, max_nodes, max_results)
-    ):
-        raise RuntimeError(
-            "Rebuild the CRN library to disable structural search limits"
-        )
+    if not hasattr(library, "synkit_crn_structural_abi") or library.synkit_crn_structural_abi() not in (1, 2):
+        raise RuntimeError("Rebuild the CRN library to enable full native structural enumeration")
+    if library.synkit_crn_structural_abi() < 2 and any(value is None for value in (time_limit, max_nodes, max_results)):
+        raise RuntimeError("Rebuild the CRN library to disable structural search limits")
     from .backend import record_operation
 
     record_operation("structural_sets")
@@ -369,9 +335,7 @@ def _enumerate_structural_native(
     finally:
         if output.value:
             library.synkit_crn_free_text(output)
-    payload["sets"] = sorted(
-        sorted(places[i] for i in group) for group in payload["sets"]
-    )
+    payload["sets"] = sorted(sorted(places[i] for i in group) for group in payload["sets"])
     payload.update(
         backend="cpp",
         closure_backend="cpp",

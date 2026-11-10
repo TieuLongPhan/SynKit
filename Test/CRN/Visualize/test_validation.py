@@ -11,9 +11,7 @@ from synkit.CRN.Visualize.validation import (
 
 
 def linear_graph(reaction_kind="rule"):
-    return SynCRN.from_reaction_strings(["A>>B", "B>>C"]).to_digraph(
-        reaction_kind=reaction_kind
-    )
+    return SynCRN.from_reaction_strings(["A>>B", "B>>C"]).to_digraph(reaction_kind=reaction_kind)
 
 
 class TestValidateCrnGraph(unittest.TestCase):
@@ -48,9 +46,7 @@ class TestValidateCrnGraph(unittest.TestCase):
 
     def test_strict_rejects_edge_contradicting_its_role(self):
         graph = linear_graph()
-        species = next(
-            n for n, d in graph.nodes(data=True) if d.get("kind") == "species"
-        )
+        species = next(n for n, d in graph.nodes(data=True) if d.get("kind") == "species")
         graph.add_edge("bogus", species, role="reactant")
         graph.nodes["bogus"]["kind"] = "species"
         with self.assertRaises(ValueError):
@@ -73,15 +69,9 @@ class TestNodeSortKey(unittest.TestCase):
 
     def test_species_rank_before_reactions(self):
         graph = linear_graph("reaction")
-        species = next(
-            n for n, d in graph.nodes(data=True) if d.get("kind") == "species"
-        )
-        reaction = next(
-            n for n, d in graph.nodes(data=True) if d.get("kind") == "reaction"
-        )
-        self.assertLess(
-            node_sort_key(graph, species)[0], node_sort_key(graph, reaction)[0]
-        )
+        species = next(n for n, d in graph.nodes(data=True) if d.get("kind") == "species")
+        reaction = next(n for n, d in graph.nodes(data=True) if d.get("kind") == "reaction")
+        self.assertLess(node_sort_key(graph, species)[0], node_sort_key(graph, reaction)[0])
 
     def test_is_deterministic(self):
         graph = linear_graph()

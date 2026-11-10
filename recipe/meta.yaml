@@ -1,6 +1,6 @@
 package:
   name: synkit
-  version: "1.6.5"
+  version: "1.7.0"
 
 source:
   path: ..
@@ -29,19 +29,20 @@ requirements:
     - libboost-headers
   run:
     - {{ pin_compatible('python', min_pin='x.x', max_pin='x.x') }}
-    - scikit-learn >=1.4.2
+    - scikit-learn >=1.5.0
     - pandas >=2.2.2
     - rdkit >=2025.3.1
     - networkx >=3.3
     - scipy >=1.14.0
     - seaborn >=0.13.2
-    - requests >=2.32.3
+    - requests >=2.33.0
     - regex >=2024.11.6
     - numpy >=2.2.0
     - sympy >=1.13.1
     - joblib >=1.2.0
     - matplotlib-base >=3.9
-    - pillow
+    - pillow >=12.3.0  # [py < 311]
+    - pillow >=13.0.0  # [py >= 311]
     - tqdm
     - tomli >=2.0  # [py < 311]
     - typing_extensions >=4.4  # [py < 311]

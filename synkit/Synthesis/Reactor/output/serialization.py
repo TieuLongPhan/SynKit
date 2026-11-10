@@ -114,20 +114,16 @@ def _explicit_h_tuple(rc: nx.Graph) -> nx.Graph:
         value
         for _, data in rc.nodes(data=True)
         for atom_map in [data.get("atom_map")]
-        for value in (
-            atom_map
-            if isinstance(atom_map, tuple)
-            else (() if atom_map in (None, 0) else (atom_map,))
-        )
+        for value in (atom_map if isinstance(atom_map, tuple) else (() if atom_map in (None, 0) else (atom_map,)))
     }
     for pair_id in explicit_pairs:
         src = pair_left[pair_id]
         dst = pair_right[pair_id]
         h = next_id
         next_id += 1
-        preferred_map = rc.nodes[src].get("h_pair_atom_maps", {}).get(
-            pair_id
-        ) or rc.nodes[dst].get("h_pair_atom_maps", {}).get(pair_id)
+        preferred_map = rc.nodes[src].get("h_pair_atom_maps", {}).get(pair_id) or rc.nodes[dst].get(
+            "h_pair_atom_maps", {}
+        ).get(pair_id)
         atom_map = preferred_map if preferred_map not in used_maps else h
         while atom_map in used_maps:
             atom_map += 1
@@ -240,11 +236,7 @@ def _tuple_preserved_hydrogen_maps(its: nx.Graph) -> List[int]:
         return element == "H" or (isinstance(element, (tuple, list)) and "H" in element)
 
     def pair_changed(value: Any) -> bool:
-        return (
-            isinstance(value, (tuple, list))
-            and len(value) == 2
-            and value[0] != value[1]
-        )
+        return isinstance(value, (tuple, list)) and len(value) == 2 and value[0] != value[1]
 
     reaction_center_nodes = set()
     for node, attrs in its.nodes(data=True):
@@ -275,17 +267,12 @@ def _tuple_preserved_hydrogen_maps(its: nx.Graph) -> List[int]:
     preserved_nodes = reaction_center_nodes | {
         node
         for node, attrs in its.nodes(data=True)
-        if is_hydrogen(attrs)
-        and all(is_hydrogen(its.nodes[neighbor]) for neighbor in its.neighbors(node))
+        if is_hydrogen(attrs) and all(is_hydrogen(its.nodes[neighbor]) for neighbor in its.neighbors(node))
     }
     for node in preserved_nodes:
         attrs = its.nodes[node]
         element = attrs.get("element")
-        elements = (
-            element
-            if isinstance(element, (tuple, list)) and len(element) == 2
-            else (element,)
-        )
+        elements = element if isinstance(element, (tuple, list)) and len(element) == 2 else (element,)
         if "H" not in elements:
             continue
         atom_map = attrs.get("atom_map")
@@ -334,9 +321,7 @@ def _tuple_endpoint_graphs(
                 exists = side_values(attrs.get("element"))[1] not in (None, "")
             if not exists:
                 continue
-            projected = {
-                key: side_values(attrs[key])[1] for key in node_keys if key in attrs
-            }
+            projected = {key: side_values(attrs[key])[1] for key in node_keys if key in attrs}
             product.add_node(node, **projected)
 
         for left, right, attrs in its.edges(data=True):
@@ -346,9 +331,7 @@ def _tuple_endpoint_graphs(
             )
             if left not in product or right not in product or not exists:
                 continue
-            projected = {
-                key: side_values(attrs[key])[1] for key in edge_keys if key in attrs
-            }
+            projected = {key: side_values(attrs[key])[1] for key in edge_keys if key in attrs}
             product.add_edge(left, right, **projected)
 
         stereo = its.graph.get("stereo_descriptors", {})
@@ -426,9 +409,7 @@ def _to_smarts(
         if reactant_smiles is None:
             left, right = _tuple_endpoint_graphs(its)
             preserved_hydrogens = list(
-                preserved_hydrogen_maps
-                if preserved_hydrogen_maps is not None
-                else _tuple_preserved_hydrogen_maps(its)
+                preserved_hydrogen_maps if preserved_hydrogen_maps is not None else _tuple_preserved_hydrogen_maps(its)
             )
         else:
             (right,) = _tuple_endpoint_graphs(its, sides=(1,))
@@ -437,9 +418,11 @@ def _to_smarts(
     else:
         left, right = its_decompose(its)
         preserved_hydrogens = []
-    if left is not None:
-        left = remove_wildcard_nodes(left)
-    right = remove_wildcard_nodes(right)
+    preserve_wildcards = its.graph.get("wildcard_mode") == "typed" or bool(its.graph.get("partial_completion"))
+    if not preserve_wildcards:
+        if left is not None:
+            left = remove_wildcard_nodes(left)
+        right = remove_wildcard_nodes(right)
     r_smi = reactant_smiles or graph_to_smi(
         left,
         preserve_atom_maps=preserved_hydrogens,
@@ -447,14 +430,8 @@ def _to_smarts(
     if electron_aware:
         p_smi = None
         for candidate_index in range(2):
-            product = (
-                right
-                if candidate_index == 0
-                else _product_state._prepared_electron_product_graph(its)
-            )
-            if candidate_index or not its.graph.get(
-                "_product_electron_fields_current", False
-            ):
+            product = right if candidate_index == 0 else _product_state._prepared_electron_product_graph(its)
+            if candidate_index or not its.graph.get("_product_electron_fields_current", False):
                 product = refresh_electron_fields(product)
             for node, attrs in product.nodes(data=True):
                 product_charge = _product_state._electron_product_charge(
@@ -464,9 +441,7 @@ def _to_smarts(
                 )
                 if product_charge is not None:
                     attrs["charge"] = product_charge
-            if any(
-                attrs.get("order") == 1.5 for _, _, attrs in product.edges(data=True)
-            ):
+            if any(attrs.get("order") == 1.5 for _, _, attrs in product.edges(data=True)):
                 # Product connectivity may have changed while its retained
                 # Kekule phase still reflects the substrate. Re-perceive
                 # from the authoritative aromatic presentation here.

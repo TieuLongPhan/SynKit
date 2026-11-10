@@ -18,7 +18,6 @@ import pytest
 from synkit.Graph.Canon._native import (
     CancellationToken,
     build_native_canon,
-    bundled_native_canon,
     canonicalize_native_graph,
 )
 from synkit.Graph.Canon._native.runtime import Request, load_library
@@ -26,12 +25,8 @@ from synkit.Graph.Canon.exact import CanonicalSearchIncomplete, ExactColoredGrap
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
-    try:
-        return bundled_native_canon()
-    except FileNotFoundError:
-        pass
-    return build_native_canon(tmp_path_factory.mktemp("native-canon"))
+def library(canon_native_library):
+    return canon_native_library
 
 
 def brute(graph):

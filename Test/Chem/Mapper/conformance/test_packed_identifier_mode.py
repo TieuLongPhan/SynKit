@@ -34,13 +34,11 @@ from Test.Chem.Mapper.conformance.test_implicit_heavy_oracle import (
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
+def library(request):
     override = os.environ.get("SYNKIT_CORE_LIBRARY")
     if override:
         return Path(override)
-    from synkit.Chem.Mapper._native.build import build_mapper_native
-
-    return build_mapper_native(tmp_path_factory.mktemp("packed-identifiers"))
+    return request.getfixturevalue("mapper_core_library")
 
 
 def _fixture(kind="weighted"):

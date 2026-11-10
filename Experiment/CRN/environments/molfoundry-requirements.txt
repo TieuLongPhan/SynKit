@@ -1,0 +1,3 @@
+# Independent formose DPO comparison; install in its own interpreter.
+--extra-index-url https://py.molfoundry.de/dl/
+molfoundry==0.1.11

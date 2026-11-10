@@ -86,6 +86,16 @@ def test_adapter_refuses_to_erase_stereo_semantics() -> None:
     assert error.value.issues[0].code is SynRuleCompositionIssueCode.STEREO_UNSUPPORTED
 
 
+@pytest.mark.parametrize("element", ["*", ("*", "*"), ("C", "*")])
+def test_adapter_refuses_symbolic_elements_even_without_explicit_role(element) -> None:
+    first, _ = _rules()
+    first.rc.raw.nodes[1]["element"] = element
+
+    with pytest.raises(SynRuleCompositionError) as error:
+        synrule_to_span(first)
+    assert error.value.issues[0].code is SynRuleCompositionIssueCode.WILDCARD_UNSUPPORTED
+
+
 def test_native_compose_submodule_has_no_mod_import() -> None:
     root = Path(__file__).resolve().parents[3]
     imported_roots = set()

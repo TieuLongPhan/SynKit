@@ -20,6 +20,7 @@ Quick start
 """
 
 from __future__ import annotations
+import re
 from numbers import Real
 from typing import Any, Mapping, Optional, Tuple
 
@@ -39,6 +40,7 @@ from synkit.Graph.Stereo import (
 )
 from synkit.Rule.stereo_identity import stereo_rule_isomorphic
 from synkit.IO.chem_converter import (
+    DEFAULT_NODE_ATTRS,
     ITSFormat,
     detect_its_format,
     rsmi_to_its,
@@ -99,7 +101,6 @@ class SynRule:
     :vartype canonical_smiles: Optional[Tuple[str,str]]
     """
 
-    # Alternate constructors
     @classmethod
     def from_smart(
         cls,
@@ -110,16 +111,18 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
         format: ITSFormat = "typesGH",
-        stereo_outcomes: Optional[
-            Mapping[str, StereoOutcome | str | Mapping[str, Any]]
-        ] = None,
-        stereo_couplings: Optional[
-            Mapping[str, StereoCoupling | str | Mapping[str, Any]]
-        ] = None,
+        stereo_outcomes: Optional[Mapping[str, StereoOutcome | str | Mapping[str, Any]]] = None,
+        stereo_couplings: Optional[Mapping[str, StereoCoupling | str | Mapping[str, Any]]] = None,
     ) -> "SynRule":
         """Instantiate from a SMARTS string."""
         return cls(
-            rsmi_to_its(smart, format=format),
+            rsmi_to_its(
+                smart,
+                format=format,
+                node_attrs=(
+                    (*DEFAULT_NODE_ATTRS, "isotope") if format == "tuple" and re.search(r"\[\d", smart) else None
+                ),
+            ),
             name=name,
             canonicaliser=canonicaliser,
             canon=canon,
@@ -138,9 +141,7 @@ class SynRule:
         *,
         canon: bool = True,
         implicit_h: bool = True,
-        stereo_couplings: Optional[
-            Mapping[str, StereoCoupling | str | Mapping[str, Any]]
-        ] = None,
+        stereo_couplings: Optional[Mapping[str, StereoCoupling | str | Mapping[str, Any]]] = None,
     ) -> "SynRule":
         """Instantiate from a GML string."""
         return cls(
@@ -152,7 +153,6 @@ class SynRule:
             stereo_couplings=stereo_couplings,
         )
 
-    # Initializer
     def __init__(
         self,
         rc: nx.Graph,
@@ -162,27 +162,19 @@ class SynRule:
         canon: bool = True,
         implicit_h: bool = True,
         format: Optional[ITSFormat] = None,
-        stereo_outcomes: Optional[
-            Mapping[str, StereoOutcome | str | Mapping[str, Any]]
-        ] = None,
-        stereo_couplings: Optional[
-            Mapping[str, StereoCoupling | str | Mapping[str, Any]]
-        ] = None,
+        stereo_outcomes: Optional[Mapping[str, StereoOutcome | str | Mapping[str, Any]]] = None,
+        stereo_couplings: Optional[Mapping[str, StereoCoupling | str | Mapping[str, Any]]] = None,
     ) -> None:
         self._name = name
         self._canon_enabled = canon
         self._implicit_h = implicit_h
         self._canonicaliser = canonicaliser or GraphCanonicaliser()
-
-        # Fragment decomposition
         rc_graph = rc.copy()
         self._format = format or detect_its_format(rc_graph)
         if self._implicit_h:
             rc_graph = normalize_h_pair_graph(rc_graph)
 
         left_graph, right_graph = self._decompose(rc_graph, self._format)
-
-        # Optional H-stripping
         if self._implicit_h and self._format == "typesGH":
             self._strip_explicit_h(rc_graph, left_graph, right_graph)
             # Update typesGH tuples with new hcount.
@@ -214,31 +206,17 @@ class SynRule:
         stereo_sides = rc_graph.graph.get("stereo_descriptors", {})
         self.stereo_guards = dict(stereo_sides.get("reactant", {}))
         self.stereo_effects = dict(rc_graph.graph.get("stereo_changes", {}))
-        raw_outcomes = (
-            stereo_outcomes
-            if stereo_outcomes is not None
-            else rc_graph.graph.get("stereo_outcomes", {})
-        )
-        self.stereo_outcomes = {
-            key: StereoOutcome.from_value(value) for key, value in raw_outcomes.items()
-        }
-        raw_couplings = (
-            stereo_couplings
-            if stereo_couplings is not None
-            else rc_graph.graph.get("stereo_couplings", {})
-        )
+        raw_outcomes = stereo_outcomes if stereo_outcomes is not None else rc_graph.graph.get("stereo_outcomes", {})
+        self.stereo_outcomes = {key: StereoOutcome.from_value(value) for key, value in raw_outcomes.items()}
+        raw_couplings = stereo_couplings if stereo_couplings is not None else rc_graph.graph.get("stereo_couplings", {})
         self.stereo_couplings = self._normalize_stereo_couplings(
             raw_couplings,
             left_graph,
             right_graph,
         )
-        self.stereo_query_policies = dict(
-            rc_graph.graph.get("stereo_query_policies", {})
-        )
+        self.stereo_query_policies = dict(rc_graph.graph.get("stereo_query_policies", {}))
         invalid_query_policies = {
-            value
-            for value in self.stereo_query_policies.values()
-            if value not in {"exact", "wildcard", "either"}
+            value for value in self.stereo_query_policies.values() if value not in {"exact", "wildcard", "either"}
         }
         if invalid_query_policies:
             raise ValueError(
@@ -249,28 +227,17 @@ class SynRule:
             key: StereoOutcome.from_value(value)
             for key, value in rc_graph.graph.get("stereo_reverse_outcomes", {}).items()
         }
-        self._reverse_stereo_query_policies = dict(
-            rc_graph.graph.get("stereo_reverse_query_policies", {})
-        )
+        self._reverse_stereo_query_policies = dict(rc_graph.graph.get("stereo_reverse_query_policies", {}))
         self._validate_stereo_outcomes()
         self._validate_stereo_couplings(rc_graph)
-        rc_graph.graph["stereo_outcomes"] = {
-            key: outcome.to_dict() for key, outcome in self.stereo_outcomes.items()
-        }
+        rc_graph.graph["stereo_outcomes"] = {key: outcome.to_dict() for key, outcome in self.stereo_outcomes.items()}
         rc_graph.graph["stereo_query_policies"] = dict(self.stereo_query_policies)
-        rc_graph.graph["stereo_couplings"] = {
-            key: coupling.relation for key, coupling in self.stereo_couplings.items()
-        }
+        rc_graph.graph["stereo_couplings"] = {key: coupling.relation for key, coupling in self.stereo_couplings.items()}
         if self._reverse_stereo_outcomes:
             rc_graph.graph["stereo_reverse_outcomes"] = {
-                key: outcome.to_dict()
-                for key, outcome in self._reverse_stereo_outcomes.items()
+                key: outcome.to_dict() for key, outcome in self._reverse_stereo_outcomes.items()
             }
-            rc_graph.graph["stereo_reverse_query_policies"] = dict(
-                self._reverse_stereo_query_policies
-            )
-
-        # Wrap graphs.
+            rc_graph.graph["stereo_reverse_query_policies"] = dict(self._reverse_stereo_query_policies)
         self.rc = SynGraph(rc_graph, self._canonicaliser, canon=canon)
         self.left = SynGraph(left_graph, self._canonicaliser, canon=canon)
         self.right = SynGraph(right_graph, self._canonicaliser, canon=canon)
@@ -281,7 +248,6 @@ class SynRule:
             (self.left.signature, self.right.signature) if canon else None
         )
 
-    # Private utilities
     def _validate_stereo_outcomes(self) -> None:
         """Require explicit branching declarations to match stored effects."""
         for key, outcome in self.stereo_outcomes.items():
@@ -290,14 +256,9 @@ class SynRule:
             change = self.stereo_effects[key]
             if outcome.kind == "SINGLE":
                 continue
-            if (
-                change.change != "FORMED"
-                or change.after is None
-                or change.after.parity not in (-1, 1)
-            ):
+            if change.change != "FORMED" or change.after is None or change.after.parity not in (-1, 1):
                 raise ValueError(
-                    f"{outcome.kind} outcome is only valid for a specified, "
-                    "newly formed chiral descriptor."
+                    f"{outcome.kind} outcome is only valid for a specified, " "newly formed chiral descriptor."
                 )
 
     @staticmethod
@@ -331,13 +292,9 @@ class SynRule:
             prefix, values = target.split(":", 1)
             centers = tuple(int(value) for value in values.split("-"))
         except (TypeError, ValueError) as error:
-            raise ValueError(
-                f"Compact stereo coupling target {target!r} must be 'bond:i-j'."
-            ) from error
+            raise ValueError(f"Compact stereo coupling target {target!r} must be 'bond:i-j'.") from error
         if prefix != "bond" or len(centers) != 2:
-            raise ValueError(
-                f"Compact stereo coupling target {target!r} must be 'bond:i-j'."
-            )
+            raise ValueError(f"Compact stereo coupling target {target!r} must be 'bond:i-j'.")
 
         added_by_center = []
         removed_by_center = []
@@ -351,14 +308,10 @@ class SynRule:
             added_by_center.append(added)
             removed_by_center.append(removed)
 
-        if all(len(values) == 1 for values in added_by_center) and all(
-            not values for values in removed_by_center
-        ):
+        if all(len(values) == 1 for values in added_by_center) and all(not values for values in removed_by_center):
             kind = "VICINAL_ADDITION"
             ligand_sets = added_by_center
-        elif all(len(values) == 1 for values in removed_by_center) and all(
-            not values for values in added_by_center
-        ):
+        elif all(len(values) == 1 for values in removed_by_center) and all(not values for values in added_by_center):
             kind = "VICINAL_ELIMINATION"
             ligand_sets = removed_by_center
         else:
@@ -397,31 +350,21 @@ class SynRule:
         for node, attrs in rc_graph.nodes(data=True):
             atom_map = attrs.get("atom_map", node)
             if isinstance(atom_map, tuple):
-                atom_maps.update(
-                    value for value in atom_map if isinstance(value, int) and value > 0
-                )
+                atom_maps.update(value for value in atom_map if isinstance(value, int) and value > 0)
             elif isinstance(atom_map, int) and atom_map > 0:
                 atom_maps.add(atom_map)
 
         for key, coupling in self.stereo_couplings.items():
             if key != coupling.target:
-                raise ValueError(
-                    f"Stereo coupling key {key!r} must equal its center target "
-                    f"{coupling.target!r}."
-                )
+                raise ValueError(f"Stereo coupling key {key!r} must equal its center target " f"{coupling.target!r}.")
             missing = set(coupling.dependencies) - atom_maps
             if missing:
-                raise ValueError(
-                    f"Stereo coupling {key!r} references absent atom maps "
-                    f"{sorted(missing)!r}."
-                )
+                raise ValueError(f"Stereo coupling {key!r} references absent atom maps " f"{sorted(missing)!r}.")
             coupled_targets = {
                 key,
                 *(f"atom:{center}" for center in coupling.centers),
             }
-            redundant = coupled_targets & (
-                set(self.stereo_guards) | set(self.stereo_effects)
-            )
+            redundant = coupled_targets & (set(self.stereo_guards) | set(self.stereo_effects))
             if redundant:
                 raise ValueError(
                     f"Stereo coupling {key!r} derives endpoint stereo; remove "
@@ -448,13 +391,13 @@ class SynRule:
                 if not (
                     isinstance(value, tuple)
                     and len(value) == 2
-                    and all(
-                        isinstance(endpoint, Real) and not isinstance(endpoint, bool)
-                        for endpoint in value
-                    )
+                    and all(isinstance(endpoint, Real) and not isinstance(endpoint, bool) for endpoint in value)
                 ):
                     continue
                 reactant, product = value
+                baselines = dict(attrs.get("_relative_resource_baselines", {}))
+                baselines.setdefault(resource, min(reactant, product))
+                attrs["_relative_resource_baselines"] = baselines
                 consumed = max(reactant - product, 0)
                 produced = max(product - reactant, 0)
                 attrs[resource] = (consumed, produced)
@@ -472,9 +415,7 @@ class SynRule:
     ) -> None:
         """Preserve additive typed-wildcard metadata on rule endpoints."""
         for node, attrs in rc.nodes(data=True):
-            contract = {
-                key: attrs[key] for key in _WILDCARD_CONTRACT_KEYS if key in attrs
-            }
+            contract = {key: attrs[key] for key in _WILDCARD_CONTRACT_KEYS if key in attrs}
             if not contract:
                 continue
             for endpoint in (left, right):
@@ -497,9 +438,7 @@ class SynRule:
 
         def binding(descriptor: Any, reference: Any) -> tuple[Any, int] | None:
             frame = descriptor.configuration.frame
-            positions = [
-                index for index, candidate in enumerate(frame) if candidate == reference
-            ]
+            positions = [index for index, candidate in enumerate(frame) if candidate == reference]
             if len(positions) != 1:
                 return None
             position = positions[0]
@@ -514,9 +453,7 @@ class SynRule:
         for node, attrs in original.nodes(data=True):
             if "wildcard_role" not in attrs or node not in reversed_graph:
                 continue
-            contract = {
-                key: attrs[key] for key in _WILDCARD_CONTRACT_KEYS if key in attrs
-            }
+            contract = {key: attrs[key] for key in _WILDCARD_CONTRACT_KEYS if key in attrs}
             side = contract.get("side")
             if side == "reactant":
                 contract["side"] = "product"
@@ -530,9 +467,7 @@ class SynRule:
                 for descriptor in reactant_descriptors.values()
                 if (result := binding(descriptor, atom_map)) is not None
             ]
-            if contract.get("wildcard_role") == "stereo_ligand_port" and (
-                len(bindings) == 1
-            ):
+            if contract.get("wildcard_role") == "stereo_ligand_port" and (len(bindings) == 1):
                 contract["owner"], contract["stereo_slot"] = bindings[0]
             reversed_graph.nodes[node].update(contract)
 
@@ -572,9 +507,7 @@ class SynRule:
 
         # 2) shared H: only those removable on both sides
         shared = sorted(
-            n
-            for n, d in left.nodes(data=True)
-            if d.get("element") == "H" and right.has_node(n) and _fully_removable(n)
+            n for n, d in left.nodes(data=True) if d.get("element") == "H" and right.has_node(n) and _fully_removable(n)
         )
 
         pair_id = 1
@@ -631,11 +564,7 @@ class SynRule:
 
         for _, data in rc.nodes(data=True):
             element = data.get("element")
-            is_h = (
-                isinstance(element, tuple)
-                and len(element) == 2
-                and all(value == "H" for value in element)
-            )
+            is_h = isinstance(element, tuple) and len(element) == 2 and all(value == "H" for value in element)
             if not is_h:
                 data.setdefault("h_pairs", [])
                 data.setdefault("h_pairs_left", [])
@@ -645,9 +574,7 @@ class SynRule:
         removable = sorted(
             node
             for node, attrs in left.nodes(data=True)
-            if attrs.get("element") == "H"
-            and right.has_node(node)
-            and _fully_removable(node)
+            if attrs.get("element") == "H" and right.has_node(node) and _fully_removable(node)
         )
 
         for pair_id, h in enumerate(removable, start=1):
@@ -657,12 +584,8 @@ class SynRule:
                     if graph.nodes[nbr].get("element") != "H":
                         graph.nodes[nbr]["hcount"] += 1
                         graph.nodes[nbr].setdefault("h_pairs", []).append(pair_id)
-                        graph.nodes[nbr].setdefault(f"h_pairs_{side}", []).append(
-                            pair_id
-                        )
-                        graph.nodes[nbr].setdefault("h_pair_atom_maps", {})[
-                            pair_id
-                        ] = atom_map
+                        graph.nodes[nbr].setdefault(f"h_pairs_{side}", []).append(pair_id)
+                        graph.nodes[nbr].setdefault("h_pair_atom_maps", {})[pair_id] = atom_map
                 graph.remove_node(h)
             if rc.has_node(h):
                 rc.remove_node(h)
@@ -676,8 +599,7 @@ class SynRule:
             right_h = right.nodes[node].get("hcount", 0)
             attrs["hcount"] = (left_h, right_h)
             attrs["h_pairs"] = sorted(
-                set(left.nodes[node].get("h_pairs", []))
-                | set(right.nodes[node].get("h_pairs", []))
+                set(left.nodes[node].get("h_pairs", [])) | set(right.nodes[node].get("h_pairs", []))
             )
             attrs["h_pairs_left"] = sorted(left.nodes[node].get("h_pairs_left", []))
             attrs["h_pairs_right"] = sorted(right.nodes[node].get("h_pairs_right", []))
@@ -693,7 +615,6 @@ class SynRule:
                     tuple(list(prod_attr[:2]) + [right_h] + list(prod_attr[3:])),
                 )
 
-    # Dunder methods
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, SynRule)
@@ -707,31 +628,12 @@ class SynRule:
 
     def _stereo_signature(self) -> tuple:
         """Return a coarse map-invariant prefilter for exact rule equality."""
-        guards = tuple(
-            sorted(
-                descriptor.descriptor_class
-                for descriptor in self.stereo_guards.values()
-            )
-        )
-        effects = tuple(
-            sorted(change.change for change in self.stereo_effects.values())
-        )
-        outcomes = tuple(
-            sorted(outcome.signature() for outcome in self.stereo_outcomes.values())
-        )
-        couplings = tuple(
-            sorted(
-                (coupling.kind, coupling.relation)
-                for coupling in self.stereo_couplings.values()
-            )
-        )
+        guards = tuple(sorted(descriptor.descriptor_class for descriptor in self.stereo_guards.values()))
+        effects = tuple(sorted(change.change for change in self.stereo_effects.values()))
+        outcomes = tuple(sorted(outcome.signature() for outcome in self.stereo_outcomes.values()))
+        couplings = tuple(sorted((coupling.kind, coupling.relation) for coupling in self.stereo_couplings.values()))
         query_policies = tuple(sorted(self.stereo_query_policies.values()))
-        reverse_outcomes = tuple(
-            sorted(
-                outcome.signature()
-                for outcome in self._reverse_stereo_outcomes.values()
-            )
-        )
+        reverse_outcomes = tuple(sorted(outcome.signature() for outcome in self._reverse_stereo_outcomes.values()))
         reverse_queries = tuple(sorted(self._reverse_stereo_query_policies.values()))
         wildcard_contracts = []
         for _, attrs in self.rc.raw.nodes(data=True):
@@ -752,6 +654,12 @@ class SynRule:
             reverse_outcomes,
             reverse_queries,
             tuple(sorted(wildcard_contracts, key=repr)),
+            tuple(
+                sorted(
+                    tuple(sorted(attrs.get("_relative_resource_baselines", {}).items()))
+                    for _, attrs in self.rc.raw.nodes(data=True)
+                )
+            ),
         )
 
     def __str__(self) -> str:
@@ -838,9 +746,7 @@ class SynRule:
         counts: dict[str, int] = {}
         for value in values:
             counts[value] = counts.get(value, 0) + 1
-        return (
-            "{" + ",".join(f"{value}:{counts[value]}" for value in sorted(counts)) + "}"
-        )
+        return "{" + ",".join(f"{value}:{counts[value]}" for value in sorted(counts)) + "}"
 
     def _stereo_repr(self) -> str:
         """Summarize active rule-level stereochemical semantics for ``repr``."""
@@ -861,25 +767,15 @@ class SynRule:
         ]
         if self.stereo_outcomes:
             parts.append(
-                "outcomes="
-                + self._repr_counts(
-                    tuple(outcome.kind for outcome in self.stereo_outcomes.values())
-                )
+                "outcomes=" + self._repr_counts(tuple(outcome.kind for outcome in self.stereo_outcomes.values()))
             )
         if self.stereo_couplings:
             parts.append(
                 "couplings="
-                + self._repr_counts(
-                    tuple(
-                        coupling.relation for coupling in self.stereo_couplings.values()
-                    )
-                )
+                + self._repr_counts(tuple(coupling.relation for coupling in self.stereo_couplings.values()))
             )
         if self.stereo_query_policies:
-            parts.append(
-                "queries="
-                + self._repr_counts(tuple(self.stereo_query_policies.values()))
-            )
+            parts.append("queries=" + self._repr_counts(tuple(self.stereo_query_policies.values())))
         return "(" + ",".join(parts) + ")"
 
     def __repr__(self) -> str:
@@ -900,7 +796,6 @@ class SynRule:
             f"stereo={self._stereo_repr()})"
         )
 
-    # Public API
     def to_rule_span(
         self,
         *,
@@ -908,7 +803,11 @@ class SynRule:
         boundary: str = "abstract",
         environment: Any = None,
     ) -> Any:
-        """Return the native non-stereo LLG/DPO view of this rule."""
+        """Return the stored absolute non-stereo LLG/DPO representative.
+
+        Requires grounded atoms and construction with ``implicit_h=False``.
+        Saved lone-pair baselines are restored for the exact endpoint labels.
+        """
         from synkit.Rule.Compose import synrule_to_span
 
         return synrule_to_span(
@@ -954,13 +853,7 @@ class SynRule:
 
     def non_invertible_stereo_targets(self) -> tuple[str, ...]:
         """Return targets whose stereo relation has no unique inverse."""
-        return tuple(
-            sorted(
-                target
-                for target, change in self.stereo_effects.items()
-                if change.non_invertible
-            )
-        )
+        return tuple(sorted(target for target, change in self.stereo_effects.items() if change.non_invertible))
 
     @property
     def is_stereo_reversible(self) -> bool:
@@ -996,6 +889,9 @@ class SynRule:
                 balance_its=balance_its,
             )
             for node in reversed_graph:
+                baseline = self.rc.raw.nodes[node].get("_relative_resource_baselines")
+                if baseline is not None:
+                    reversed_graph.nodes[node]["_relative_resource_baselines"] = dict(baseline)
                 consistency = self.rc.raw.nodes[node].get("charge_model_consistent")
                 if isinstance(consistency, tuple) and len(consistency) == 2:
                     reversed_graph.nodes[node]["charge_model_consistent"] = (
@@ -1008,6 +904,9 @@ class SynRule:
                 left_graph,
                 balance_its=balance_its,
             )
+
+        if "endpoint_policy" in self.rc.raw.graph:
+            reversed_graph.graph["endpoint_policy"] = self.rc.raw.graph["endpoint_policy"]
 
         reversed_graph.graph["stereo_changes"] = {
             key: change.reverse(
@@ -1025,9 +924,7 @@ class SynRule:
             "product": dict(sides.get("reactant", {})),
         }
         if "transition" in sides:
-            reversed_graph.graph["stereo_descriptors"]["transition"] = dict(
-                sides["transition"]
-            )
+            reversed_graph.graph["stereo_descriptors"]["transition"] = dict(sides["transition"])
         self._reverse_wildcard_contracts(
             self.rc.raw,
             reversed_graph,
@@ -1037,12 +934,9 @@ class SynRule:
         if self._reverse_stereo_outcomes:
             # This rule is already the reverse view of a branching rule.
             reversed_graph.graph["stereo_outcomes"] = {
-                key: outcome.to_dict()
-                for key, outcome in self._reverse_stereo_outcomes.items()
+                key: outcome.to_dict() for key, outcome in self._reverse_stereo_outcomes.items()
             }
-            reversed_graph.graph["stereo_query_policies"] = dict(
-                self._reverse_stereo_query_policies
-            )
+            reversed_graph.graph["stereo_query_policies"] = dict(self._reverse_stereo_query_policies)
         else:
             reversed_graph.graph["stereo_outcomes"] = {}
             reverse_policies = dict(self.stereo_query_policies)
@@ -1052,12 +946,9 @@ class SynRule:
             reversed_graph.graph["stereo_query_policies"] = reverse_policies
             if self.stereo_outcomes:
                 reversed_graph.graph["stereo_reverse_outcomes"] = {
-                    key: outcome.to_dict()
-                    for key, outcome in self.stereo_outcomes.items()
+                    key: outcome.to_dict() for key, outcome in self.stereo_outcomes.items()
                 }
-                reversed_graph.graph["stereo_reverse_query_policies"] = dict(
-                    self.stereo_query_policies
-                )
+                reversed_graph.graph["stereo_reverse_query_policies"] = dict(self.stereo_query_policies)
 
         return SynRule(
             reversed_graph,

@@ -61,13 +61,9 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         :return: Internal species id.
         :rtype: str
         """
-        matches = [
-            sid for sid, lab in incidence.species_labels.items() if str(lab) == label
-        ]
+        matches = [sid for sid, lab in incidence.species_labels.items() if str(lab) == label]
         if len(matches) != 1:
-            raise AssertionError(
-                f"Expected exactly one species with label {label!r}, got {matches}"
-            )
+            raise AssertionError(f"Expected exactly one species with label {label!r}, got {matches}")
         return matches[0]
 
     @staticmethod
@@ -89,21 +85,13 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         """
         matches = []
         for rid in incidence.reaction_order:
-            tail = {
-                incidence.species_labels[sid]: int(v)
-                for sid, v in incidence.pre.get(rid, {}).items()
-            }
-            head = {
-                incidence.species_labels[sid]: int(v)
-                for sid, v in incidence.post.get(rid, {}).items()
-            }
+            tail = {incidence.species_labels[sid]: int(v) for sid, v in incidence.pre.get(rid, {}).items()}
+            head = {incidence.species_labels[sid]: int(v) for sid, v in incidence.post.get(rid, {}).items()}
             if tail == tail_labels and head == head_labels:
                 matches.append(rid)
 
         if len(matches) != 1:
-            raise AssertionError(
-                f"Expected exactly one reaction for {tail_labels} >> {head_labels}, got {matches}"
-            )
+            raise AssertionError(f"Expected exactly one reaction for {tail_labels} >> {head_labels}, got {matches}")
         return matches[0]
 
     def test_species_token_modes(self) -> None:
@@ -266,17 +254,13 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         """
         syn = self._build_syn()
 
-        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = (
-            tokenize_syncrn_incidence(
-                syn,
-                species="label",
-                reaction="id",
-            )
+        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = tokenize_syncrn_incidence(
+            syn,
+            species="label",
+            reaction="id",
         )
 
-        self.assertEqual(
-            vertices, ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]
-        )
+        self.assertEqual(vertices, ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"])
         self.assertEqual(len(edges), 11)
         self.assertEqual(
             set(species_token_to_id),
@@ -312,12 +296,10 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         """
         syn = self._build_syn()
 
-        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = (
-            tokenize_syncrn_incidence(
-                syn,
-                species="id",
-                reaction="id",
-            )
+        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = tokenize_syncrn_incidence(
+            syn,
+            species="id",
+            reaction="id",
         )
 
         self.assertEqual(vertices, incidence.species_order)
@@ -338,24 +320,20 @@ class TestPathwayAdapterFromSynCRN(unittest.TestCase):
         """
         syn = self._build_syn()
 
-        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = (
-            tokenize_syncrn_incidence(
-                syn,
-                species="source",
-                reaction="source",
-            )
+        vertices, edges, species_token_to_id, reaction_token_to_id, incidence = tokenize_syncrn_incidence(
+            syn,
+            species="source",
+            reaction="source",
         )
 
         self.assertEqual(len(vertices), 11)
         self.assertEqual(len(edges), 11)
 
         expected_species_tokens = {
-            str(incidence.species_source_node_ids.get(sid, sid))
-            for sid in incidence.species_order
+            str(incidence.species_source_node_ids.get(sid, sid)) for sid in incidence.species_order
         }
         expected_reaction_tokens = {
-            str(incidence.reaction_source_node_ids.get(rid, rid))
-            for rid in incidence.reaction_order
+            str(incidence.reaction_source_node_ids.get(rid, rid)) for rid in incidence.reaction_order
         }
 
         self.assertEqual(set(vertices), expected_species_tokens)

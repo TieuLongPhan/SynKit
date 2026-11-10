@@ -83,9 +83,7 @@ def parse_kegg_field_blocks(text: str, field: str) -> list[str]:
             j = i + 1
             continuation: list[str] = []
 
-            while j < len(lines) and (
-                lines[j].startswith(" ") or lines[j].startswith("\t")
-            ):
+            while j < len(lines) and (lines[j].startswith(" ") or lines[j].startswith("\t")):
                 continuation.append(lines[j].strip())
                 j += 1
 

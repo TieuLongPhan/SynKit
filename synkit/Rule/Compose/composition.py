@@ -206,8 +206,8 @@ class RuleOverlap:
         try:
             return cls(
                 interface,
-                LLGMorphism(interface, first_right, first_map),
-                LLGMorphism(interface, second_left, second_map),
+                LLGMorphism(interface, first_right, first_map, exact=True),
+                LLGMorphism(interface, second_left, second_map, exact=True),
             )
         except LLGError as error:
             raise CompositionError(

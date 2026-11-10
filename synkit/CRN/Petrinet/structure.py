@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, List, Optional, Set
 
 from .net import PetriNet
-from .siphon_search import DEFAULT_MAX_NODES, minimal_siphons, minimal_traps
+from .siphon_search import (
+    DEFAULT_MAX_NODES,
+    SiphonSearchLimit,
+    SiphonSearchWarning,
+    minimal_siphons,
+    minimal_traps,
+)
 
 
 def _as_petri(crn: Any) -> PetriNet:
@@ -128,7 +135,7 @@ def find_siphons(
     max_size: Optional[int] = None,
     names: str = "label",
     max_nodes: int = DEFAULT_MAX_NODES,
-    strict_limit: bool = False,
+    strict_limit: bool = True,
 ) -> List[Set[str]]:
     """Enumerate inclusion-minimal siphons of a SynCRN Petri-net view.
 
@@ -150,7 +157,8 @@ def find_siphons(
     :type max_nodes: int
     :param strict_limit:
         Raise :class:`~synkit.CRN.Petrinet.siphon_search.SiphonSearchLimit`
-        instead of returning a partial result when the budget is exhausted.
+        when the budget is exhausted (default). Explicit ``False`` returns
+        partial results with a :class:`~synkit.CRN.Petrinet.siphon_search.SiphonSearchWarning`.
     :type strict_limit: bool
     :return: Inclusion-minimal siphons.
     :rtype: List[Set[str]]
@@ -160,21 +168,21 @@ def find_siphons(
     backend, library = resolve_backend()
     if backend == "cpp":
         from ..native import enumerate_structural_sets
-        from .siphon_search import SiphonSearchLimit
 
         net = _as_petri(crn)
-        result = enumerate_structural_sets(
-            net, kind="siphon", backend="cpp", library_path=library, max_nodes=max_nodes
-        )
+        result = enumerate_structural_sets(net, kind="siphon", backend="cpp", library_path=library, max_nodes=max_nodes)
         if not result.complete:
-            error = SiphonSearchLimit(result.termination_reason)
-            error.result = result
-            raise error
-        sets_ = [
-            set(group)
-            for group in result.value["sets"]
-            if max_size is None or len(group) <= max_size
-        ]
+            message = f"Siphon enumeration is incomplete: {result.termination_reason}"
+            if strict_limit:
+                error = SiphonSearchLimit(message)
+                error.result = result
+                raise error
+            warnings.warn(
+                message + "; returning partial results because strict_limit=False.",
+                SiphonSearchWarning,
+                stacklevel=2,
+            )
+        sets_ = [set(group) for group in result.value["sets"] if max_size is None or len(group) <= max_size]
         return _render_place_sets(net, sets_, names=names)
     net = _as_petri(crn)
     sets_ = minimal_siphons(
@@ -192,7 +200,7 @@ def find_traps(
     max_size: Optional[int] = None,
     names: str = "label",
     max_nodes: int = DEFAULT_MAX_NODES,
-    strict_limit: bool = False,
+    strict_limit: bool = True,
 ) -> List[Set[str]]:
     """Enumerate inclusion-minimal traps of a SynCRN Petri-net view.
 
@@ -214,7 +222,8 @@ def find_traps(
     :type max_nodes: int
     :param strict_limit:
         Raise :class:`~synkit.CRN.Petrinet.siphon_search.SiphonSearchLimit`
-        instead of returning a partial result when the budget is exhausted.
+        when the budget is exhausted (default). Explicit ``False`` returns
+        partial results with a :class:`~synkit.CRN.Petrinet.siphon_search.SiphonSearchWarning`.
     :type strict_limit: bool
     :return: Inclusion-minimal traps.
     :rtype: List[Set[str]]
@@ -224,21 +233,21 @@ def find_traps(
     backend, library = resolve_backend()
     if backend == "cpp":
         from ..native import enumerate_structural_sets
-        from .siphon_search import SiphonSearchLimit
 
         net = _as_petri(crn)
-        result = enumerate_structural_sets(
-            net, kind="trap", backend="cpp", library_path=library, max_nodes=max_nodes
-        )
+        result = enumerate_structural_sets(net, kind="trap", backend="cpp", library_path=library, max_nodes=max_nodes)
         if not result.complete:
-            error = SiphonSearchLimit(result.termination_reason)
-            error.result = result
-            raise error
-        sets_ = [
-            set(group)
-            for group in result.value["sets"]
-            if max_size is None or len(group) <= max_size
-        ]
+            message = f"Trap enumeration is incomplete: {result.termination_reason}"
+            if strict_limit:
+                error = SiphonSearchLimit(message)
+                error.result = result
+                raise error
+            warnings.warn(
+                message + "; returning partial results because strict_limit=False.",
+                SiphonSearchWarning,
+                stacklevel=2,
+            )
+        sets_ = [set(group) for group in result.value["sets"] if max_size is None or len(group) <= max_size]
         return _render_place_sets(net, sets_, names=names)
     net = _as_petri(crn)
     sets_ = minimal_traps(

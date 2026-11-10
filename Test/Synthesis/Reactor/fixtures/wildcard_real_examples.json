@@ -1,0 +1,77 @@
+{
+  "schema": "synkit.partial-real-examples/1",
+  "cases": [
+    {
+      "id": "phenethyl_substitution_partial",
+      "name": "Phenethyl bromide, missing oxygen nucleophile",
+      "substrate": "c1ccccc1CCBr",
+      "template": "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]",
+      "partial": true,
+      "mapping_count": 1,
+      "expected": ["c1ccccc1CCBr.*[O-]>>c1ccccc1CCO*.[Br-]"],
+      "ports": 1
+    },
+    {
+      "id": "phenethyl_explicit_boundary",
+      "name": "Phenethyl substitution with declared boundary and hydroxide",
+      "substrate": "c1ccccc1CCBr",
+      "template": "[CH2:1]([*:4])[Br:2].[OH-:3]>>[CH2:1]([*:4])[OH:3].[Br-:2]",
+      "hydrogen_policy": "absolute",
+      "wildcards": {"4": {"role": "attachment_port", "owner": 1, "elements": ["C"]}},
+      "partial": true,
+      "mapping_count": 1,
+      "expected": ["c1ccccc1CCBr.[OH-]>>c1ccccc1CCO.[Br-]"],
+      "ports": 0
+    },
+    {
+      "id": "phenethyl_substitution_grounded",
+      "name": "Phenethyl bromide with hydroxide",
+      "substrate": "c1ccccc1CCBr.[OH-]",
+      "template": "[CH3:1][Br:2].[OH-:3]>>[CH3:1][OH:3].[Br-:2]",
+      "partial": false,
+      "mapping_count": 1,
+      "expected": ["c1ccccc1CCBr.[OH-]>>c1ccccc1CCO.[Br-]"],
+      "ports": 0
+    },
+    {
+      "id": "ester_acyl_exchange",
+      "name": "Ethyl propionate, missing oxygen nucleophile",
+      "substrate": "CCC(=O)OCC",
+      "template": "[CH3:1][C:2](=[O:3])[O:4][CH3:5].[OH-:6]>>[CH3:1][C:2](=[O:3])[OH:6].[O-:4][CH3:5]",
+      "partial": true,
+      "mapping_count": 1,
+      "expected": ["CCC(=O)OCC.*[O-]>>CCC(=O)O*.[O-]CC"],
+      "ports": 1
+    },
+    {
+      "id": "acylammonium_partial",
+      "name": "Acetyl chloride, missing amine",
+      "substrate": "CC(=O)Cl",
+      "template": "[CH3:1][C:2](=[O:3])[Cl:4].[NH2:5][CH3:6]>>[CH3:1][C:2](=[O:3])[NH2+:5][CH3:6].[Cl-:4]",
+      "partial": true,
+      "mapping_count": 1,
+      "expected": ["CC(=O)Cl.N(C(*)(*)*)(*)*>>CC(=O)[N+](C(*)(*)*)(*)*.[Cl-]"],
+      "ports": 5
+    },
+    {
+      "id": "acylammonium_grounded",
+      "name": "Acetyl chloride with methylamine",
+      "substrate": "CC(=O)Cl.CN",
+      "template": "[CH3:1][C:2](=[O:3])[Cl:4].[NH2:5][CH3:6]>>[CH3:1][C:2](=[O:3])[NH2+:5][CH3:6].[Cl-:4]",
+      "partial": false,
+      "mapping_count": 1,
+      "expected": ["CC(=O)Cl.CN>>CC(=O)[NH2+]C.[Cl-]"],
+      "ports": 0
+    },
+    {
+      "id": "carbonyl_protonation",
+      "name": "Acetone, missing proton",
+      "substrate": "CC(=O)C",
+      "template": "[CH3:1][C:2](=[O:3])[CH3:4].[H+:5]>>[CH3:1][C:2](=[O+:3][H:5])[CH3:4]",
+      "partial": true,
+      "mapping_count": 2,
+      "expected": ["CC(=O)C.[H+]>>CC(=[OH+])C"],
+      "ports": 0
+    }
+  ]
+}

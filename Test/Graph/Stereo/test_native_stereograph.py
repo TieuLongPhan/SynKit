@@ -5,7 +5,6 @@ from itertools import permutations
 import networkx as nx
 import pytest
 
-from synkit.Graph.Canon._native import build_native_canon, bundled_native_canon
 from synkit.Graph.Stereo import (
     AtropBondStereo, CumuleneAxisStereo, ExtendedCisTransStereo,
     FrameworkFrame, FrameworkStereo, HelicalStereo, OctahedralStereo,
@@ -18,12 +17,8 @@ from synkit.Graph.Stereo.native import canonicalize_native_stereograph, classify
 
 
 @pytest.fixture(scope="module")
-def library(tmp_path_factory):
-    try:
-        return bundled_native_canon()
-    except FileNotFoundError:
-        pass
-    return build_native_canon(tmp_path_factory.mktemp("stereo-native"))
+def library(canon_native_library):
+    return canon_native_library
 
 
 def cases():

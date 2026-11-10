@@ -12,68 +12,58 @@ from enum import Enum
 from types import SimpleNamespace
 from typing import Any, Hashable, Sequence
 
-_SQUARE_PERMUTATIONS = (
-    (0, 1, 2, 3, 4),
-    (0, 2, 3, 4, 1),
-    (0, 3, 4, 1, 2),
-    (0, 4, 1, 2, 3),
-    (0, 4, 3, 2, 1),
-    (0, 3, 2, 1, 4),
-    (0, 2, 1, 4, 3),
-    (0, 1, 4, 3, 2),
-)
+from itertools import permutations, product
+
+
+def _legacy_sign(image):
+    return -1 if sum(a > b for i, a in enumerate(image) for b in image[i + 1 :]) % 2 else 1
+
+
+def _legacy_octahedral_actions():
+    points = ((0, 0, 0), (0, 0, 1), (0, 0, -1), (1, 0, 0), (0, 1, 0), (-1, 0, 0), (0, -1, 0))
+
+    def dot(a, b):
+        return sum(x * y for x, y in zip(points[a], points[b]))
+
+    result = []
+    for tail in permutations(range(1, 7)):
+        image = (0, *tail)
+        if any(dot(i, j) != dot(image[i], image[j]) for i in range(1, 7) for j in range(1, 7)):
+            continue
+        x, y, z = (points[image[i]] for i in (3, 4, 1))
+        det = (
+            x[0] * (y[1] * z[2] - y[2] * z[1]) - x[1] * (y[0] * z[2] - y[2] * z[0]) + x[2] * (y[0] * z[1] - y[1] * z[0])
+        )
+        if det == 1:
+            result.append(image)
+    return tuple(result)
+
+
+def _legacy_terminal_actions(axial):
+    # Historical viewing-sign convention, intentionally retained for comparison.
+    # This is not the physical axial group; spatial model 2 uses proper V4.
+    return tuple(
+        (left + a, left + 1 - a, 2 + e, 3 - e, right + b, right + 1 - b)
+        for e, a, b in product((0, 1), repeat=3)
+        if (a + b + (e if axial else 0)) % 2 == 0
+        for left, right in (((4, 0) if e else (0, 4)),)
+    )
+
+
+_SQUARE_PERMUTATIONS = tuple((0, *(1 + (o + d * i) % 4 for i in range(4))) for d in (-1, 1) for o in range(4))
 _TBP_INVERSION = (0, 1, 2, 3, 5, 4)
-_TBP_PERMUTATIONS = (
-    (0, 1, 2, 3, 4, 5),
-    (0, 1, 2, 5, 3, 4),
-    (0, 1, 2, 4, 5, 3),
-    (0, 2, 1, 3, 5, 4),
-    (0, 2, 1, 5, 4, 3),
-    (0, 2, 1, 4, 3, 5),
+_TBP_PERMUTATIONS = tuple(
+    (0, *axis, *eq)
+    for axis in ((1, 2), (2, 1))
+    for eq in permutations((3, 4, 5))
+    if (1 if axis[0] == 1 else -1) == _legacy_sign(eq)
 )
 _OCT_INVERSION = (0, 2, 1, 3, 4, 5, 6)
-_OCT_PERMUTATIONS = (
-    (0, 1, 2, 3, 4, 5, 6),
-    (0, 1, 2, 6, 3, 4, 5),
-    (0, 1, 2, 5, 6, 3, 4),
-    (0, 1, 2, 4, 5, 6, 3),
-    (0, 2, 1, 4, 3, 6, 5),
-    (0, 2, 1, 5, 4, 3, 6),
-    (0, 2, 1, 6, 5, 4, 3),
-    (0, 2, 1, 3, 6, 5, 4),
-    (0, 3, 5, 2, 4, 1, 6),
-    (0, 3, 5, 6, 2, 4, 1),
-    (0, 3, 5, 1, 6, 2, 4),
-    (0, 3, 5, 4, 1, 6, 2),
-    (0, 5, 3, 1, 4, 2, 6),
-    (0, 5, 3, 6, 1, 4, 2),
-    (0, 5, 3, 2, 6, 1, 4),
-    (0, 5, 3, 4, 2, 6, 1),
-    (0, 4, 6, 3, 2, 5, 1),
-    (0, 4, 6, 1, 3, 2, 5),
-    (0, 4, 6, 5, 1, 3, 2),
-    (0, 4, 6, 2, 5, 1, 3),
-    (0, 6, 4, 3, 1, 5, 2),
-    (0, 6, 4, 2, 3, 1, 5),
-    (0, 6, 4, 5, 2, 3, 1),
-    (0, 6, 4, 1, 5, 2, 3),
-)
-_BOND_PERMUTATIONS = (
-    (0, 1, 2, 3, 4, 5),
-    (1, 0, 2, 3, 5, 4),
-    (4, 5, 3, 2, 0, 1),
-    (5, 4, 3, 2, 1, 0),
-)
+_OCT_PERMUTATIONS = _legacy_octahedral_actions()
+_BOND_PERMUTATIONS = _legacy_terminal_actions(False)
 _ATROP_INVERSION = (1, 0, 2, 3, 4, 5)
-_ATROP_PERMUTATIONS = (
-    (0, 1, 2, 3, 4, 5),
-    (1, 0, 2, 3, 5, 4),
-    (4, 5, 3, 2, 1, 0),
-    (5, 4, 3, 2, 0, 1),
-)
-_ATOM_CLASSES = frozenset(
-    {"tetrahedral", "square_planar", "trigonal_bipyramidal", "octahedral"}
-)
+_ATROP_PERMUTATIONS = _legacy_terminal_actions(True)
+_ATOM_CLASSES = frozenset({"tetrahedral", "square_planar", "trigonal_bipyramidal", "octahedral"})
 
 
 def _reference_sort_key(value: Hashable) -> tuple[str, str]:

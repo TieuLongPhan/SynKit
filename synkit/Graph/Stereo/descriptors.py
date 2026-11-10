@@ -1,17 +1,16 @@
-"""Relative stereodescriptors adapted for mapped SynKit Lewis-labelled graphs.
+"""Relative stereodescriptors for mapped SynKit Lewis-labelled graphs.
 
 Stereo identity is relative and permutation-aware; CIP labels are
-intentionally outside descriptor identity.  The non-tetrahedral permutation
-groups are adapted from StereoMolGraph commit
-``2189f610f23eaaf992e2e01a12ea4d0532496601`` (MIT, copyright (c) 2025
-Maxim Papusha); the corresponding notice is shipped in
-``synkit/Graph/Stereo/LICENSES/StereoMolGraph-MIT.txt``.
+intentionally outside descriptor identity. Local actions are generated from
+exact geometry and frame-transport signs in ``_geometry_groups.py``.
 
 SynKit keeps its own descriptor values because they participate in executable
 reaction rules and retain Lewis/electron state in the surrounding graph.
 """
 
 from __future__ import annotations
+
+from ._geometry_groups import square_images, bipyramid_images, octahedron_images, bond_images
 
 import re
 from dataclasses import dataclass
@@ -236,16 +235,7 @@ class SquarePlanarStereo(_OrbitDescriptorMixin, AtomCenteredStereo):
     provenance: str | None = None
 
     descriptor_class = "square_planar"
-    _PERMUTATIONS = (
-        (0, 1, 2, 3, 4),
-        (0, 2, 3, 4, 1),
-        (0, 3, 4, 1, 2),
-        (0, 4, 1, 2, 3),
-        (0, 4, 3, 2, 1),
-        (0, 3, 2, 1, 4),
-        (0, 2, 1, 4, 3),
-        (0, 1, 4, 3, 2),
-    )
+    _PERMUTATIONS = square_images()
 
     def __post_init__(self) -> None:
         if len(self.atoms) != 5:
@@ -311,14 +301,7 @@ class TrigonalBipyramidalStereo(_OrbitDescriptorMixin, AtomCenteredStereo):
 
     descriptor_class = "trigonal_bipyramidal"
     _INVERSION = (0, 1, 2, 3, 5, 4)
-    _PERMUTATIONS = (
-        (0, 1, 2, 3, 4, 5),
-        (0, 1, 2, 5, 3, 4),
-        (0, 1, 2, 4, 5, 3),
-        (0, 2, 1, 3, 5, 4),
-        (0, 2, 1, 5, 4, 3),
-        (0, 2, 1, 4, 3, 5),
-    )
+    _PERMUTATIONS = bipyramid_images()
 
     def __post_init__(self) -> None:
         if len(self.atoms) != 6:
@@ -390,32 +373,7 @@ class OctahedralStereo(_OrbitDescriptorMixin, AtomCenteredStereo):
 
     descriptor_class = "octahedral"
     _INVERSION = (0, 2, 1, 3, 4, 5, 6)
-    _PERMUTATIONS = (
-        (0, 1, 2, 3, 4, 5, 6),
-        (0, 1, 2, 6, 3, 4, 5),
-        (0, 1, 2, 5, 6, 3, 4),
-        (0, 1, 2, 4, 5, 6, 3),
-        (0, 2, 1, 4, 3, 6, 5),
-        (0, 2, 1, 5, 4, 3, 6),
-        (0, 2, 1, 6, 5, 4, 3),
-        (0, 2, 1, 3, 6, 5, 4),
-        (0, 3, 5, 2, 4, 1, 6),
-        (0, 3, 5, 6, 2, 4, 1),
-        (0, 3, 5, 1, 6, 2, 4),
-        (0, 3, 5, 4, 1, 6, 2),
-        (0, 5, 3, 1, 4, 2, 6),
-        (0, 5, 3, 6, 1, 4, 2),
-        (0, 5, 3, 2, 6, 1, 4),
-        (0, 5, 3, 4, 2, 6, 1),
-        (0, 4, 6, 3, 2, 5, 1),
-        (0, 4, 6, 1, 3, 2, 5),
-        (0, 4, 6, 5, 1, 3, 2),
-        (0, 4, 6, 2, 5, 1, 3),
-        (0, 6, 4, 3, 1, 5, 2),
-        (0, 6, 4, 2, 3, 1, 5),
-        (0, 6, 4, 5, 2, 3, 1),
-        (0, 6, 4, 1, 5, 2, 3),
-    )
+    _PERMUTATIONS = octahedron_images()
 
     def __post_init__(self) -> None:
         if len(self.atoms) != 7:
@@ -474,12 +432,7 @@ class PlanarBondStereo(_OrbitDescriptorMixin, BondCenteredStereo):
     provenance: str | None = None
 
     descriptor_class = "planar_bond"
-    _PERMUTATIONS = (
-        (0, 1, 2, 3, 4, 5),
-        (1, 0, 2, 3, 5, 4),
-        (4, 5, 3, 2, 0, 1),
-        (5, 4, 3, 2, 1, 0),
-    )
+    _PERMUTATIONS = bond_images()
 
     def __post_init__(self) -> None:
         if len(self.atoms) != 6:
@@ -554,12 +507,7 @@ class AtropBondStereo(_OrbitDescriptorMixin, AxisStereo):
 
     descriptor_class = "atrop_bond"
     _INVERSION = (1, 0, 2, 3, 4, 5)
-    _PERMUTATIONS = (
-        (0, 1, 2, 3, 4, 5),
-        (1, 0, 2, 3, 5, 4),
-        (4, 5, 3, 2, 1, 0),
-        (5, 4, 3, 2, 0, 1),
-    )
+    _PERMUTATIONS = bond_images(axial=True)
 
     def __post_init__(self) -> None:
         if len(self.atoms) != 6:
@@ -755,7 +703,7 @@ class CumuleneAxisStereo(_OrbitDescriptorMixin, AxisStereo):
         left, right = self.terminal_frames
         return CumuleneAxisStereo(
             tuple(reversed(self.axis_path)),
-            (right, tuple(reversed(left))),
+            (right, left),
             self.parity,
             self.provenance,
         )

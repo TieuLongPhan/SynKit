@@ -21,11 +21,11 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from Experiment.CRN.tools.common import environment, write_report, source_hashes
-from synkit.CRN import PathwayRealizability, crnt_summary, find_siphons
-from Experiment.CRN.benchmarks import build_kegg_crn, GLYCOLYSIS_FLUX
-from Experiment.CRN.benchmarks.crosschecks import brute_force_siphons
-from Experiment.CRN.benchmarks.scaling import generate_network
+from Experiment.CRN.tools.common import environment, write_report, source_hashes, native_experiment  # noqa: E402
+from synkit.CRN import PathwayRealizability, SynCRN, crnt_summary, find_siphons  # noqa: E402
+from Experiment.CRN.studies import build_kegg_crn, GLYCOLYSIS_FLUX  # noqa: E402
+from Experiment.CRN.studies.crosschecks import brute_force_siphons  # noqa: E402
+from Experiment.CRN.studies.scaling import generate_network  # noqa: E402
 
 
 def execute(crn, flow, marking):
@@ -48,20 +48,27 @@ def execute(crn, flow, marking):
             replay[s] += n
         valid &= all(n >= 0 for n in replay.values())
         counts[label] = counts.get(label, 0) + 1
-    outcome["independent_replay_ok"] = (
-        valid and counts == flow if outcome["status"] == "realizable" else None
-    )
+    outcome["independent_replay_ok"] = valid and counts == flow if outcome["status"] == "realizable" else None
     outcome["initial_marking"] = marking
     outcome["requested_flux"] = flow
-    outcome["decision_complete"] = (
-        outcome["status"] == "realizable" and outcome["independent_replay_ok"] is True
-    ) or (outcome["status"] == "unrealizable" and outcome["exhaustive"] is True)
+    outcome["final_marking"] = (
+        {crn.species[sid].label: int(n) for sid, n in replay.items() if n}
+        if outcome["status"] == "realizable" and valid and counts == flow
+        else None
+    )
+    outcome["decision_complete"] = (outcome["status"] == "realizable" and outcome["independent_replay_ok"] is True) or (
+        outcome["status"] == "unrealizable" and outcome["exhaustive"] is True
+    )
     return outcome
 
 
 def sensitivity():
     """Compare intact/cancelled incidence and retained/removed currencies."""
-    intact = build_kegg_crn("M00001", drop_currency=True)
+    # KEGG's generic polyphosphate identifier conflates two polymer lengths.
+    # An explicit catalyst avoids interpreting a phosphoryl donor as a catalyst.
+    intact = SynCRN.from_reaction_strings(["A+C>>B+C"])
+    for reaction in intact.reactions.values():
+        reaction.label = "catalysed_conversion"
     cancelled = deepcopy(intact)
     changes = []
     for reaction in cancelled.reactions.values():
@@ -83,7 +90,7 @@ def sensitivity():
     for name, crn in (("intact", intact), ("cancelled", cancelled)):
         summary = crnt_summary(crn)
         for catalyst in (0, 1):
-            marking = {"alpha-D-Glucose": 1, "Polyphosphate": catalyst}
+            marking = {"A": 1, "C": catalyst}
             arms.append(
                 {
                     "arm": name,
@@ -91,7 +98,7 @@ def sensitivity():
                     "deficiency": summary.deficiency,
                     "n_complexes": summary.n_complexes,
                     "n_linkage_classes": summary.n_linkage_classes,
-                    "outcome": execute(crn, {"R02189": 1}, marking),
+                    "outcome": execute(crn, {"catalysed_conversion": 1}, marking),
                 }
             )
     currency = []
@@ -108,16 +115,73 @@ def sensitivity():
             }
         )
     return {
+        "participant_control": "A+C -> B+C; both isolated networks have deficiency zero",
         "cancelled_incidences": changes,
-        "species_order_unchanged": matrices[0]["species_order"]
-        == matrices[1]["species_order"],
-        "reaction_order_unchanged": matrices[0]["reaction_order"]
-        == matrices[1]["reaction_order"],
-        "net_matrix_unchanged": bool(
-            np.array_equal(matrices[0]["S"], matrices[1]["S"])
-        ),
+        "species_order_unchanged": matrices[0]["species_order"] == matrices[1]["species_order"],
+        "reaction_order_unchanged": matrices[0]["reaction_order"] == matrices[1]["reaction_order"],
+        "net_matrix_unchanged": bool(np.array_equal(matrices[0]["S"], matrices[1]["S"])),
         "catalyst_arms": arms,
         "currency_arms": currency,
+    }
+
+
+def inventory_controls():
+    """Separate ATP initiation, redox supply and phosphate for the fixed flux.
+
+    The full KEGG model is closed to replenishment during firing. A successful
+    initial inventory therefore supplies two NAD+, two orthophosphates and two
+    ADP as well as two ATP. No ferredoxin or polyphosphate bypass is requested.
+    """
+    crn = build_kegg_crn("M00001", drop_currency=False)
+    labels = {sid: species.label for sid, species in crn.species.items()}
+    # These species form a siphon on the prescribed transitions: ATP production
+    # consumes ADP, and ADP production consumes ATP. Other module reactions are
+    # deliberately outside this fixed-route claim.
+    adenylates = {"ATP", "ADP"}
+    transitions = [r for r in crn.reactions.values() if r.label in GLYCOLYSIS_FLUX]
+    siphon_valid = all(
+        not (adenylates & {labels[s] for s, _ in r.rhs.items()})
+        or bool(adenylates & {labels[s] for s, _ in r.lhs.items()})
+        for r in transitions
+    )
+    cases = [
+        ("glucose_only", {}),
+        ("one_atp_only", {"ATP": 1}),
+        ("two_atp_only", {"ATP": 2}),
+        ("two_atp_and_redox", {"ATP": 2, "NAD+": 2}),
+        ("two_atp_with_redox_and_phosphate", {"ATP": 2, "NAD+": 2, "Orthophosphate": 2}),
+        ("one_atp_with_adp_redox_and_phosphate", {"ATP": 1, "ADP": 2, "NAD+": 2, "Orthophosphate": 2}),
+        ("two_atp_with_adp_redox_and_phosphate", {"ATP": 2, "ADP": 2, "NAD+": 2, "Orthophosphate": 2}),
+    ]
+    rows = []
+    for name, supply in cases:
+        marking = {"alpha-D-Glucose": 1, **supply}
+        outcome = execute(crn, dict(GLYCOLYSIS_FLUX), marking)
+        net_final = {sid: marking.get(label, 0) for sid, label in labels.items()}
+        for reaction in transitions:
+            count = GLYCOLYSIS_FLUX[reaction.label]
+            for sid, coefficient in reaction.lhs.items():
+                net_final[sid] -= count * coefficient
+            for sid, coefficient in reaction.rhs.items():
+                net_final[sid] += count * coefficient
+        rows.append(
+            {
+                "name": name,
+                "outcome": outcome,
+                "net_inventory_feasible": all(n >= 0 for n in net_final.values()),
+                "net_inventory_deficits": {labels[sid]: -int(n) for sid, n in net_final.items() if n < 0},
+            }
+        )
+    return {
+        "scope": (
+            "Prescribed KEGG glycolysis reaction multiset; fixed initial inventory; no replenishment " "during firing"
+        ),
+        "adenylate_siphon": {
+            "species": sorted(adenylates),
+            "valid_on_prescribed_transitions": siphon_valid,
+            "initially_empty_for_glucose_only": True,
+        },
+        "cases": rows,
     }
 
 
@@ -139,11 +203,7 @@ def paired_timings(sizes, repeats):
         samples = {"closure": [], "exhaustive": []}
         for repeat in range(repeats):
             outputs = {}
-            order = (
-                ("closure", "exhaustive")
-                if repeat % 2 == 0
-                else ("exhaustive", "closure")
-            )
+            order = ("closure", "exhaustive") if repeat % 2 == 0 else ("exhaustive", "closure")
             for algorithm in order:
                 crn = generate_network("reversible_chain", size)
                 start = time.perf_counter()
@@ -154,9 +214,7 @@ def paired_timings(sizes, repeats):
                 )
                 samples[algorithm].append(time.perf_counter() - start)
                 labels = {sid: s.label for sid, s in crn.species.items()}
-                outputs[algorithm] = {
-                    frozenset(labels.get(p, p) for p in s) for s in result
-                }
+                outputs[algorithm] = {frozenset(labels.get(p, p) for p in s) for s in result}
             if outputs["closure"] != outputs["exhaustive"]:
                 raise AssertionError(f"Siphon disagreement at size {size}")
         for algorithm, values in samples.items():
@@ -181,6 +239,7 @@ def representation_report(sizes=(10, 14, 18, 20), repeats=5):
     if repeats < 3 or not sizes or any(size < 1 or size > 21 for size in sizes):
         raise ValueError("use at least 3 repeats and sizes from 1 to 21")
     representation = sensitivity()
+    inventory = inventory_controls()
     rows = paired_timings(sizes, repeats)
     statuses = [r["outcome"]["status"] for r in representation["catalyst_arms"]]
     checks = {
@@ -189,19 +248,26 @@ def representation_report(sizes=(10, 14, 18, 20), repeats=5):
             for row in representation["catalyst_arms"] + representation["currency_arms"]
         ),
         "net_matrix_preserved": representation["net_matrix_unchanged"],
-        "orders_preserved": representation["species_order_unchanged"]
-        and representation["reaction_order_unchanged"],
-        "catalyst_control": statuses
-        == ["unrealizable", "realizable", "realizable", "realizable"],
-        "currency_control": [
-            r["outcome"]["status"] for r in representation["currency_arms"]
-        ]
+        "orders_preserved": representation["species_order_unchanged"] and representation["reaction_order_unchanged"],
+        "catalyst_control": statuses == ["unrealizable", "realizable", "realizable", "realizable"],
+        "currency_control": [r["outcome"]["status"] for r in representation["currency_arms"]]
         == ["unrealizable", "realizable"],
         "all_certificates_replayed": all(
             r["outcome"]["independent_replay_ok"] is not False
             for r in representation["catalyst_arms"] + representation["currency_arms"]
         ),
         "paired_outputs_agree": all(r["outputs_agree"] for r in rows),
+        "inventory_controls_complete": all(r["outcome"]["decision_complete"] for r in inventory["cases"]),
+        "inventory_supply_threshold": [r["outcome"]["status"] for r in inventory["cases"]]
+        == ["unrealizable"] * 6 + ["realizable"],
+        "one_atp_is_balanced_but_order_blocked": inventory["cases"][-2]["net_inventory_feasible"]
+        and inventory["cases"][-2]["outcome"]["status"] == "unrealizable",
+        "empty_adenylate_siphon_verified": inventory["adenylate_siphon"]["valid_on_prescribed_transitions"],
+        "supplied_flux_yields_two_pyruvates": (
+            inventory["cases"][-1]["outcome"]["final_marking"].get("Pyruvate") == 2
+            if inventory["cases"][-1]["outcome"]["final_marking"] is not None
+            else False
+        ),
     }
     report = {
         "schema": "synkit.crn-representation/1",
@@ -217,6 +283,7 @@ def representation_report(sizes=(10, 14, 18, 20), repeats=5):
         },
         "claim_boundary": "Controlled model edits and small reversible chains; no biological or asymptotic inference.",
         "representation": representation,
+        "glycolysis_inventory_controls": inventory,
         "paired_siphon_timings": rows,
     }
     return report
@@ -230,8 +297,6 @@ def main(argv=None):
     args = parser.parse_args(argv)
     return write_report(representation_report(args.sizes, args.repeats), args.output)
 
-
-from Experiment.CRN.tools.common import native_experiment
 
 main = native_experiment(main)
 

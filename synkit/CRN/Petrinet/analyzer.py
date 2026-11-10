@@ -176,12 +176,8 @@ class PetriAnalyzer:
         return {
             "persistence_ok": self._persistence_details.persistence_ok,
             "siphons": [sorted(x) for x in self._persistence_details.siphons],
-            "semiflow_supports": [
-                sorted(x) for x in self._persistence_details.semiflow_supports
-            ],
-            "uncovered_siphons": [
-                sorted(x) for x in self._persistence_details.uncovered_siphons
-            ],
+            "semiflow_supports": [sorted(x) for x in self._persistence_details.semiflow_supports],
+            "uncovered_siphons": [sorted(x) for x in self._persistence_details.uncovered_siphons],
         }
 
     def _summary_ready(self) -> bool:
@@ -214,12 +210,8 @@ class PetriAnalyzer:
             print(analyzer.p_semiflows)
             print(analyzer.t_semiflows)
         """
-        self._p_semiflows = find_p_semiflows(
-            self._crn, rtol=self._rtol, **self._backend_options
-        )
-        self._t_semiflows = find_t_semiflows(
-            self._crn, rtol=self._rtol, **self._backend_options
-        )
+        self._p_semiflows = find_p_semiflows(self._crn, rtol=self._rtol, **self._backend_options)
+        self._t_semiflows = find_t_semiflows(self._crn, rtol=self._rtol, **self._backend_options)
         return self
 
     def compute_siphons_traps(self) -> "PetriAnalyzer":
@@ -238,18 +230,14 @@ class PetriAnalyzer:
             print(analyzer.traps)
         """
         backend = self._backend_options["backend"]
-        use_cpp = backend == "cpp" or (
-            backend == "auto" and self._backend_options["library_path"] is not None
-        )
+        use_cpp = backend == "cpp" or (backend == "auto" and self._backend_options["library_path"] is not None)
         if use_cpp:
             from ..native import enumerate_structural_sets
             from .siphon_search import SiphonSearchLimit
 
             groups = []
             for kind in ("siphon", "trap"):
-                result = enumerate_structural_sets(
-                    self._petri, kind=kind, **self._backend_options
-                )
+                result = enumerate_structural_sets(self._petri, kind=kind, **self._backend_options)
                 if not result.complete:
                     error = SiphonSearchLimit(result.termination_reason)
                     error.result = result
@@ -292,9 +280,7 @@ class PetriAnalyzer:
         if self._siphon_ids is None:
             self.compute_siphons_traps()
         if self._p_semiflows is None:
-            self._p_semiflows = find_p_semiflows(
-                self._crn, rtol=self._rtol, **self._backend_options
-            )
+            self._p_semiflows = find_p_semiflows(self._crn, rtol=self._rtol, **self._backend_options)
         self._persistence_details = siphon_persistence_details(
             self._crn,
             rtol=self._rtol,
@@ -426,15 +412,9 @@ class PetriAnalyzer:
         return {
             "place_order": places,
             "transition_order": transitions,
-            "p_semiflows": (
-                None if self._p_semiflows is None else self._p_semiflows.tolist()
-            ),
-            "t_semiflows": (
-                None if self._t_semiflows is None else self._t_semiflows.tolist()
-            ),
-            "siphons": (
-                None if self._siphons is None else [sorted(x) for x in self._siphons]
-            ),
+            "p_semiflows": (None if self._p_semiflows is None else self._p_semiflows.tolist()),
+            "t_semiflows": (None if self._t_semiflows is None else self._t_semiflows.tolist()),
+            "siphons": (None if self._siphons is None else [sorted(x) for x in self._siphons]),
             "traps": None if self._traps is None else [sorted(x) for x in self._traps],
             "persistence_ok": self._persistence_ok,
             "persistence_details": self._persistence_details_as_dict(),
@@ -456,10 +436,7 @@ class PetriAnalyzer:
             print(analyzer.explain())
         """
         if not self._ensure_persistence_computed():
-            return (
-                "No Petri computations performed yet. "
-                "Call compute_all() or individual compute_* methods."
-            )
+            return "No Petri computations performed yet. " "Call compute_all() or individual compute_* methods."
 
         n_siph = 0 if self._siphons is None else len(self._siphons)
         n_trap = 0 if self._traps is None else len(self._traps)
@@ -478,9 +455,5 @@ class PetriAnalyzer:
             String representation of the analyzer status.
         :rtype: str
         """
-        status = (
-            "NA"
-            if self._persistence_ok is None
-            else ("True" if self._persistence_ok else "False")
-        )
+        status = "NA" if self._persistence_ok is None else ("True" if self._persistence_ok else "False")
         return f"<PetriAnalyzer persistence_ok={status}>"

@@ -24,7 +24,7 @@ if (
 
 
 @pytest.fixture(scope="session")
-def native_library(tmp_path_factory):
+def native_library(native_build_cache):
     """Compile the optional kernel once, or use an explicitly supplied artifact."""
     verified = os.environ.get("SYNKIT_TEST_NATIVE_LIBRARY")
     if verified:
@@ -35,11 +35,11 @@ def native_library(tmp_path_factory):
         pytest.skip("optional native kernel requires a C++17 compiler")
     from synkit.Chem.Mapper.exact.native_build import build_native
 
-    return build_native(tmp_path_factory.mktemp("synkit-native"))
+    return build_native(native_build_cache / "distance")
 
 
 @pytest.fixture(scope="session")
-def mapper_core_library(tmp_path_factory):
+def mapper_core_library(native_build_cache):
     """Use an explicit shared core or build the current shipped sources once."""
     configured = os.environ.get("SYNKIT_CORE_LIBRARY") or os.environ.get(
         "SYNKIT_MAPPER_OPTIONAL_LIBRARY"
@@ -53,13 +53,13 @@ def mapper_core_library(tmp_path_factory):
     from synkit.Chem.Mapper._native.build import build_mapper_native
 
     return build_mapper_native(
-        tmp_path_factory.mktemp("synkit-core"),
+        native_build_cache / "mapper",
         ortools_dir=os.environ.get("SYNKIT_ORTOOLS_DIR"),
     )
 
 
 @pytest.fixture(scope="session")
-def mapper_core_test_library(tmp_path_factory):
+def mapper_core_test_library(native_build_cache):
     """Build oracle-only exports explicitly, apart from production artifacts."""
     configured = os.environ.get("SYNKIT_CORE_TEST_LIBRARY")
     if configured:
@@ -71,7 +71,7 @@ def mapper_core_test_library(tmp_path_factory):
     from synkit.Chem.Mapper._native.build import build_mapper_native
 
     return build_mapper_native(
-        tmp_path_factory.mktemp("synkit-core-oracles"),
+        native_build_cache / "mapper-oracles",
         ortools_dir=os.environ.get("SYNKIT_ORTOOLS_DIR"),
         test_hooks=True,
     )

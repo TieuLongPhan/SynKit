@@ -144,9 +144,7 @@ def _build_species_token_map(
         Mapping ``internal_species_id -> exported_species_token``.
     :rtype: Dict[str, str]
     """
-    return {
-        sid: _species_token(incidence, sid, species) for sid in incidence.species_order
-    }
+    return {sid: _species_token(incidence, sid, species) for sid in incidence.species_order}
 
 
 def _build_reaction_token_map(
@@ -168,10 +166,7 @@ def _build_reaction_token_map(
         Mapping ``internal_reaction_id -> exported_reaction_token``.
     :rtype: Dict[str, str]
     """
-    return {
-        rid: _reaction_token(incidence, rid, reaction)
-        for rid in incidence.reaction_order
-    }
+    return {rid: _reaction_token(incidence, rid, reaction) for rid in incidence.reaction_order}
 
 
 def _tokenize_reaction_multiset(

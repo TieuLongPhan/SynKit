@@ -52,9 +52,7 @@ class TestSynCRNFromReactionStrings(unittest.TestCase):
 
     def test_species_labels_follow_first_appearance(self):
         labels = [self.syn.species[sid].label for sid in self.syn.species_ids]
-        self.assertEqual(
-            labels, ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]
-        )
+        self.assertEqual(labels, ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"])
 
     def test_species_token_modes(self):
         self.assertEqual(self.syn._species_token("s_1", "id"), "s_1")

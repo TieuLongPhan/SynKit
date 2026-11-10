@@ -13,8 +13,8 @@ from synkit.CRN import (
 )
 from synkit.CRN.Petrinet.minimal_semiflows import minimal_semiflows
 from synkit.CRN.Props.stoich import _exact_null_space
-from Experiment.CRN.benchmarks.networks import BENCHMARK_NETWORKS
-from Experiment.CRN.benchmarks.scaling import generate_network
+from Experiment.CRN.studies.networks import BENCHMARK_NETWORKS
+from Experiment.CRN.studies.scaling import generate_network
 
 
 def oracle(s, kind):
@@ -51,10 +51,7 @@ def test_native_against_independent_support_oracle(exact_library, kind):
         s = rng.integers(-2, 3, size=(int(rng.integers(1, 6)), int(rng.integers(1, 6))))
         expected = oracle(s, kind)
         assert minimal_semiflows(s, kind=kind) == expected
-        assert (
-            enumerate_semiflows(s, kind=kind, library_path=exact_library).value["flows"]
-            == expected
-        )
+        assert enumerate_semiflows(s, kind=kind, library_path=exact_library).value["flows"] == expected
 
 
 def test_large_exact_coefficients(exact_library):
@@ -62,14 +59,10 @@ def test_large_exact_coefficients(exact_library):
     s = np.array([[-k, 0], [1, -k], [0, 1]], dtype=np.int64)
     result = enumerate_semiflows(s, library_path=exact_library)
     assert result.complete and result.value["flows"] == [[1, k, k * k]]
-    assert minimal_semiflows(s, backend="cpp", library_path=exact_library) == [
-        [1, k, k * k]
-    ]
+    assert minimal_semiflows(s, backend="cpp", library_path=exact_library) == [[1, k, k * k]]
     n = 2**53 + 1
     s = np.array([[n], [-(n + 1)]], dtype=np.int64)
-    assert enumerate_semiflows(s, library_path=exact_library).value["flows"] == [
-        [n + 1, n]
-    ]
+    assert enumerate_semiflows(s, library_path=exact_library).value["flows"] == [[n + 1, n]]
 
 
 @pytest.mark.parametrize(
@@ -99,24 +92,18 @@ def test_result_limit_and_validation(exact_library):
         with pytest.raises(ValueError):
             enumerate_semiflows(bad, library_path=exact_library)
     with pytest.raises(OverflowError):
-        enumerate_semiflows(
-            np.array([[2**63]], dtype=np.uint64), library_path=exact_library
-        )
+        enumerate_semiflows(np.array([[2**63]], dtype=np.uint64), library_path=exact_library)
 
 
 def test_public_pool_api_and_complete_native_structural_search(exact_library):
     c = generate_network("reversible_chain", 66)
     assert conserved_moieties(c, library_path=exact_library) == [[1] * 67]
     for kind in ["siphon", "trap"]:
-        a = enumerate_structural_sets(
-            c, kind=kind, backend="cpp", library_path=exact_library
-        )
+        a = enumerate_structural_sets(c, kind=kind, backend="cpp", library_path=exact_library)
         b = enumerate_structural_sets(c, kind=kind)
         assert a.complete and a.value["sets"] == b.value["sets"]
         assert a.value["enumeration_backend"] == "cpp"
-        limited = enumerate_structural_sets(
-            c, kind=kind, backend="cpp", library_path=exact_library, max_nodes=1
-        )
+        limited = enumerate_structural_sets(c, kind=kind, backend="cpp", library_path=exact_library, max_nodes=1)
         assert not limited.complete and limited.termination_reason == "node_limit"
 
 
@@ -151,24 +138,16 @@ def test_native_structural_enumeration_against_exhaustive_subsets(exact_library)
                     closed = True
                     for transition in net.transitions.values():
                         trigger, required = (
-                            (transition.post, transition.pre)
-                            if kind == "siphon"
-                            else (transition.pre, transition.post)
+                            (transition.post, transition.pre) if kind == "siphon" else (transition.pre, transition.post)
                         )
-                        if group.intersection(trigger) and not group.intersection(
-                            required
-                        ):
+                        if group.intersection(trigger) and not group.intersection(required):
                             closed = False
                             break
                     if closed:
                         minimal.append(group)
-            result = enumerate_structural_sets(
-                net, kind=kind, backend="cpp", library_path=exact_library
-            )
+            result = enumerate_structural_sets(net, kind=kind, backend="cpp", library_path=exact_library)
             assert result.complete
-            assert {frozenset(s) for s in result.value["sets"]} == {
-                frozenset(s) for s in minimal
-            }
+            assert {frozenset(s) for s in result.value["sets"]} == {frozenset(s) for s in minimal}
 
 
 def test_native_structural_deadlines_and_result_limits(exact_library):
@@ -188,9 +167,7 @@ def test_closure_only_build_declares_missing_exact_backend(tmp_path):
     library = build_native(tmp_path, with_semiflows=False)
     from synkit.CRN import SynCRN
 
-    assert enumerate_structural_sets(
-        SynCRN.from_reaction_strings(["A>>B"]), library_path=library
-    ).complete
+    assert enumerate_structural_sets(SynCRN.from_reaction_strings(["A>>B"]), library_path=library).complete
     with pytest.raises(RuntimeError, match="no exact semiflow backend"):
         enumerate_semiflows(np.array([[-1], [1]]), library_path=library)
 
@@ -214,9 +191,7 @@ def test_complete_random_family_siphons(exact_library, size, expected):
     net = PetriNet.from_syncrn(model)
     pre, post = _incidence(net)
     for group in groups:
-        assert group and all(
-            not (group & post[t]) or group & pre[t] for t in net.transition_order
-        )
+        assert group and all(not (group & post[t]) or group & pre[t] for t in net.transition_order)
         for place in group:
             assert not _max_closed_within(
                 set(group) - {place},
@@ -245,9 +220,7 @@ def test_positive_kernel_exact_primal_and_dual_certificates():
     assert dual["problem_matrix"] == s.tolist()
     assert dual["holds"] is False and dual["exact"]
     y = list(map(Fraction, dual["dual_witness"]))
-    image = [
-        sum(int(s[i, j]) * y[i] for i in range(s.shape[0])) for j in range(s.shape[1])
-    ]
+    image = [sum(int(s[i, j]) * y[i] for i in range(s.shape[0])) for j in range(s.shape[1])]
     assert all(v >= 0 for v in image) and any(v > 0 for v in image)
     assert image == list(map(Fraction, dual["dual_image"]))
 

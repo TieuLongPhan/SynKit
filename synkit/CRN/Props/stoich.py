@@ -234,9 +234,7 @@ def stoichiometric_matrix(crn: Any) -> np.ndarray:
     return S
 
 
-def stoichiometric_rank(
-    crn: Any, *, tol: float = 1e-10, backend="auto", library_path=None
-) -> int:
+def stoichiometric_rank(crn: Any, *, tol: float = 1e-10, backend="auto", library_path=None) -> int:
     """Compute the numerical rank of the stoichiometric matrix.
 
     :param crn: A NetworkX bipartite graph or a SynCRN-like object containing one.
@@ -252,9 +250,7 @@ def stoichiometric_rank(
     if backend == "cpp":
         from ..native_analysis import matrix_analysis
 
-        return matrix_analysis(
-            stoichiometric_matrix(crn), library_path=library_path, kernels="none"
-        )["rank"]
+        return matrix_analysis(stoichiometric_matrix(crn), library_path=library_path, kernels="none")["rank"]
     S = stoichiometric_matrix(crn)
     return int(np.linalg.matrix_rank(S, tol=tol))
 
@@ -395,12 +391,7 @@ def _vector_to_minimal_integer(vec: np.ndarray, *, tol: float = 1e-12) -> List[i
     if scale <= tol:
         return [0] * len(values)
     fractions = [
-        (
-            Fraction(0)
-            if abs(v / scale) <= tol
-            else Fraction(float(v / scale)).limit_denominator(10**6)
-        )
-        for v in values
+        (Fraction(0) if abs(v / scale) <= tol else Fraction(float(v / scale)).limit_denominator(10**6)) for v in values
     ]
     result = _primitive_integer_vector(fractions)
     sign = next((v for v in fractions if v), Fraction(0))
@@ -458,11 +449,7 @@ def _exact_null_space(rows: Sequence[Sequence[Any]], n_cols: int) -> List[List[i
         return []
 
     mat: List[List[Fraction]] = [
-        [
-            Fraction(str(value)) if not isinstance(value, int) else Fraction(value)
-            for value in row
-        ]
-        for row in rows
+        [Fraction(str(value)) if not isinstance(value, int) else Fraction(value) for value in row] for row in rows
     ]
 
     pivot_cols: List[int] = []
@@ -470,9 +457,7 @@ def _exact_null_space(rows: Sequence[Sequence[Any]], n_cols: int) -> List[List[i
     for col in range(n_cols):
         if pivot_row >= len(mat):
             break
-        candidate = next(
-            (r for r in range(pivot_row, len(mat)) if mat[r][col] != 0), None
-        )
+        candidate = next((r for r in range(pivot_row, len(mat)) if mat[r][col] != 0), None)
         if candidate is None:
             continue
 
@@ -552,16 +537,11 @@ def integer_conservation_laws(
         return []
 
     n_species, _ = S.shape
-    rows = [
-        [int(v) if float(v).is_integer() else float(v) for v in S[:, j]]
-        for j in range(S.shape[1])
-    ]
+    rows = [[int(v) if float(v).is_integer() else float(v) for v in S[:, j]] for j in range(S.shape[1])]
     return _exact_null_space(rows, n_species)
 
 
-def conserved_moieties(
-    crn: Any, *, backend="auto", library_path=None, **native_options
-) -> List[List[int]]:
+def conserved_moieties(crn: Any, *, backend="auto", library_path=None, **native_options) -> List[List[int]]:
     """Return the minimal non-negative integer conservation laws.
 
     These are the P-semiflows of the network's Petri-net view: vectors ``y >= 0``
@@ -592,9 +572,7 @@ def conserved_moieties(
     S = stoichiometric_matrix(crn)
     if S.size == 0:
         return []
-    return minimal_semiflows(
-        S, kind="p", backend=backend, library_path=library_path, **native_options
-    )
+    return minimal_semiflows(S, kind="p", backend=backend, library_path=library_path, **native_options)
 
 
 # ---------------------------------------------------------------------------
