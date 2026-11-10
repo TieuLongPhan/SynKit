@@ -25,6 +25,8 @@ ITS_STRUCTURAL_NODE_ATTRS = [
     "valence_electrons",
     "present",
     "_legacy_typesgh_sig",
+    "wildcard_role",
+    "_wildcard_constraint",
 ]
 ITS_STRUCTURAL_EDGE_ATTRS = ["order", "kekule_order", "sigma_order", "pi_order"]
 _EXACT_NODE_SIG = "_structural_exact_node_sig"
@@ -59,9 +61,7 @@ def _attach_exact_structural_signatures(  # noqa: C901
         # The prepared host already carries exact labels. Every subsequent
         # mutation records its support, so evaluating the same label function
         # on that support is equivalent to rescanning the complete graph.
-        node_records = (
-            (node, graph.nodes[node]) for node in dirty_nodes if node in graph
-        )
+        node_records = ((node, graph.nodes[node]) for node in dirty_nodes if node in graph)
         edge_records = (
             (left, right, graph.edges[left, right])
             for edge in dirty_edges
@@ -72,19 +72,13 @@ def _attach_exact_structural_signatures(  # noqa: C901
         aromatic_nodes = {
             node
             for node in dirty_nodes
-            if node in adjacency
-            and any(
-                attrs.get("order") == (1.5, 1.5) for attrs in adjacency[node].values()
-            )
+            if node in adjacency and any(attrs.get("order") == (1.5, 1.5) for attrs in adjacency[node].values())
         }
     else:
         node_records = graph.nodes(data=True)
         edge_records = graph.edges(data=True)
         aromatic_nodes = {
-            node
-            for u, v, attrs in graph.edges(data=True)
-            if attrs.get("order") == (1.5, 1.5)
-            for node in (u, v)
+            node for u, v, attrs in graph.edges(data=True) if attrs.get("order") == (1.5, 1.5) for node in (u, v)
         }
     electron_aware = bool(graph.graph.get("electron_aware_rewrite", False))
     for node, attrs in node_records:
@@ -210,14 +204,8 @@ def _refine_structural_colours_in_place(  # noqa: C901
         return len(palette)
 
     labels_are_interned_integers = all(
-        type(attrs[node_signature_attr]) is int
-        for graph in graphs
-        for _, attrs in graph.nodes(data=True)
-    ) and all(
-        type(attrs[edge_signature_attr]) is int
-        for graph in graphs
-        for _, _, attrs in graph.edges(data=True)
-    )
+        type(attrs[node_signature_attr]) is int for graph in graphs for _, attrs in graph.nodes(data=True)
+    ) and all(type(attrs[edge_signature_attr]) is int for graph in graphs for _, _, attrs in graph.edges(data=True))
     if labels_are_interned_integers:
         node_colours = set()
         for graph in graphs:
@@ -240,11 +228,7 @@ def _refine_structural_colours_in_place(  # noqa: C901
                 attrs[edge_colour_attr] = colour
 
         colour_count = assign(
-            [
-                (graph, node, attrs[node_signature_attr])
-                for graph in graphs
-                for node, attrs in graph.nodes(data=True)
-            ]
+            [(graph, node, attrs[node_signature_attr]) for graph in graphs for node, attrs in graph.nodes(data=True)]
         )
     for _ in range(iterations):
         signatures = []
@@ -304,16 +288,8 @@ def _exact_inventory_key(graph: nx.Graph) -> Any:
         graph.is_multigraph(),
         graph.number_of_nodes(),
         graph.number_of_edges(),
-        frozenset(
-            Counter(
-                attrs[_EXACT_NODE_SIG] for _, attrs in graph.nodes(data=True)
-            ).items()
-        ),
-        frozenset(
-            Counter(
-                attrs[_EXACT_EDGE_SIG] for _, _, attrs in graph.edges(data=True)
-            ).items()
-        ),
+        frozenset(Counter(attrs[_EXACT_NODE_SIG] for _, attrs in graph.nodes(data=True)).items()),
+        frozenset(Counter(attrs[_EXACT_EDGE_SIG] for _, _, attrs in graph.edges(data=True)).items()),
     )
 
 
@@ -338,9 +314,7 @@ def _active_neighbourhood_invariant(
     nodes = graph._node
     adjacency = graph._adj
     roots = {
-        node
-        for node, attrs in nodes.items()
-        if isinstance(attrs.get("present"), tuple) and len(attrs["present"]) == 2
+        node for node, attrs in nodes.items() if isinstance(attrs.get("present"), tuple) and len(attrs["present"]) == 2
     }
     if not roots:
         return None
@@ -457,9 +431,7 @@ def _order_prepared_its_for_vf2(prepared: nx.Graph) -> nx.Graph:
     # VF2 selects pattern nodes in insertion order.  Put rare refined
     # environments first so a small reaction locus anchors the match
     # before traversal enters a large symmetric scaffold.
-    frequencies = Counter(
-        attrs[_REFINED_NODE_COLOUR] for _, attrs in prepared.nodes(data=True)
-    )
+    frequencies = Counter(attrs[_REFINED_NODE_COLOUR] for _, attrs in prepared.nodes(data=True))
     node_order = sorted(
         prepared.nodes,
         key=lambda node: (
@@ -472,24 +444,15 @@ def _order_prepared_its_for_vf2(prepared: nx.Graph) -> nx.Graph:
     ordered.graph.update(prepared.graph)
     ordered.add_nodes_from((node, prepared.nodes[node].copy()) for node in node_order)
     if prepared.is_multigraph():
-        ordered.add_edges_from(
-            (u, v, key, attrs.copy())
-            for u, v, key, attrs in prepared.edges(keys=True, data=True)
-        )
+        ordered.add_edges_from((u, v, key, attrs.copy()) for u, v, key, attrs in prepared.edges(keys=True, data=True))
     else:
-        ordered.add_edges_from(
-            (u, v, attrs.copy()) for u, v, attrs in prepared.edges(data=True)
-        )
+        ordered.add_edges_from((u, v, attrs.copy()) for u, v, attrs in prepared.edges(data=True))
     return ordered
 
 
 def _attributed_tree_code(component: nx.Graph) -> Any | None:
     """Return a complete canonical code for an undirected attributed tree."""
-    if (
-        component.is_directed()
-        or component.is_multigraph()
-        or component.number_of_edges() + 1 != len(component)
-    ):
+    if component.is_directed() or component.is_multigraph() or component.number_of_edges() + 1 != len(component):
         return None
     neighbours = {node: set(component.neighbors(node)) for node in component}
     remaining = set(component)
@@ -529,18 +492,12 @@ def _component_inventory(  # noqa: C901
     """Classify disconnected non-stereo ITS components exactly."""
     tree_classes: Dict[Any, int] = {}
     representatives: Dict[Any, List[List[Any]]] = defaultdict(list)
-    multigraph_representatives: Dict[Any, List[Tuple[int, nx.Graph]]] = defaultdict(
-        list
-    )
+    multigraph_representatives: Dict[Any, List[Tuple[int, nx.Graph]]] = defaultdict(list)
     literal_classes: Dict[Any, int] = {}
     inventories: List[Tuple[int, ...]] = []
     next_class = 0
     for graph in graphs:
-        components = (
-            nx.weakly_connected_components(graph)
-            if graph.is_directed()
-            else nx.connected_components(graph)
-        )
+        components = nx.weakly_connected_components(graph) if graph.is_directed() else nx.connected_components(graph)
         classes = []
         for nodes in components:
             component = graph.subgraph(nodes)
@@ -587,12 +544,7 @@ def _component_inventory(  # noqa: C901
                 fingerprint = (
                     component.number_of_nodes(),
                     component.number_of_edges(),
-                    tuple(
-                        sorted(
-                            attrs[_REFINED_NODE_COLOUR]
-                            for _, attrs in component.nodes(data=True)
-                        )
-                    ),
+                    tuple(sorted(attrs[_REFINED_NODE_COLOUR] for _, attrs in component.nodes(data=True))),
                 )
                 for class_id, representative in multigraph_representatives[fingerprint]:
                     if nx.is_isomorphic(
@@ -606,25 +558,15 @@ def _component_inventory(  # noqa: C901
                 if component_class is None:
                     component_class = next_class
                     next_class += 1
-                    multigraph_representatives[fingerprint].append(
-                        (component_class, component)
-                    )
+                    multigraph_representatives[fingerprint].append((component_class, component))
             else:
                 fingerprint = (
                     component.number_of_nodes(),
                     component.number_of_edges(),
+                    tuple(sorted(attrs[_REFINED_NODE_COLOUR] for _, attrs in component.nodes(data=True))),
                     tuple(
                         sorted(
-                            attrs[_REFINED_NODE_COLOUR]
-                            for _, attrs in component.nodes(data=True)
-                        )
-                    ),
-                    tuple(
-                        sorted(
-                            (
-                                attrs[_EXACT_EDGE_SIG]
-                                for _, _, attrs in component.edges(data=True)
-                            ),
+                            (attrs[_EXACT_EDGE_SIG] for _, _, attrs in component.edges(data=True)),
                             key=repr,
                         )
                     ),
@@ -668,18 +610,10 @@ def _cluster_prepared_structural_its(
             prepared.is_multigraph(),
             prepared.number_of_nodes(),
             prepared.number_of_edges(),
+            tuple(sorted(attrs[_REFINED_NODE_COLOUR] for _, attrs in prepared.nodes(data=True))),
             tuple(
                 sorted(
-                    attrs[_REFINED_NODE_COLOUR]
-                    for _, attrs in prepared.nodes(data=True)
-                )
-            ),
-            tuple(
-                sorted(
-                    (
-                        attrs[_EXACT_EDGE_SIG]
-                        for _, _, attrs in prepared.edges(data=True)
-                    ),
+                    (attrs[_EXACT_EDGE_SIG] for _, _, attrs in prepared.edges(data=True)),
                     key=repr,
                 )
             ),
@@ -739,11 +673,7 @@ def _cluster_structural_its(  # noqa: C901
     comparison as the unsupported-graph fallback.
     """
     if len(its_graphs) < 2:
-        if any(
-            _EXACT_NODE_SIG in attrs
-            for graph in its_graphs
-            for _, attrs in graph.nodes(data=True)
-        ):
+        if any(_EXACT_NODE_SIG in attrs for graph in its_graphs for _, attrs in graph.nodes(data=True)):
             _remove_structural_signatures(its_graphs)
         return its_graphs
 
@@ -803,29 +733,18 @@ def _cluster_structural_its(  # noqa: C901
         # placements without traversing the complete molecular graph. If any
         # candidate lacks that intrinsic root, retain the full exact 1-WL
         # invariant. Neither path is allowed to authorize a merge.
-        local_invariants = [
-            _active_neighbourhood_invariant(graph) for graph in its_graphs
-        ]
-        use_local_invariant = all(
-            invariant is not None for invariant in local_invariants
-        )
+        local_invariants = [_active_neighbourhood_invariant(graph) for graph in its_graphs]
+        use_local_invariant = all(invariant is not None for invariant in local_invariants)
         if not use_local_invariant:
             _refine_structural_colours_in_place(its_graphs, iterations=1)
         coarse_buckets: Dict[Any, List[Tuple[int, nx.Graph]]] = defaultdict(list)
-        for index, (graph, local_invariant) in enumerate(
-            zip(its_graphs, local_invariants)
-        ):
+        for index, (graph, local_invariant) in enumerate(zip(its_graphs, local_invariants)):
             structural_invariant = (
                 local_invariant
                 if use_local_invariant
                 else (
                     graph.number_of_edges(),
-                    tuple(
-                        sorted(
-                            attrs[_REFINED_NODE_COLOUR]
-                            for _, attrs in graph.nodes(data=True)
-                        )
-                    ),
+                    tuple(sorted(attrs[_REFINED_NODE_COLOUR] for _, attrs in graph.nodes(data=True))),
                 )
             )
             coarse_buckets[
@@ -883,9 +802,7 @@ def _cluster_structural_its(  # noqa: C901
                 its_graphs,
                 fallback_records,
             )
-            representative_indices.extend(
-                its_graphs.index(graph) for graph in fallback_representatives
-            )
+            representative_indices.extend(its_graphs.index(graph) for graph in fallback_representatives)
 
         representative_indices.sort()
         return [its_graphs[index] for index in representative_indices]

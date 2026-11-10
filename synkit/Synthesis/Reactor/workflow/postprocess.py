@@ -28,9 +28,7 @@ class _TqdmJoblib:
                     self.tqdm_obj.update(n=self_inner.batch_size)
                 except Exception:
                     pass
-                return super(TqdmBatchCompletionCallback, self_inner).__call__(
-                    *args, **kwargs
-                )
+                return super(TqdmBatchCompletionCallback, self_inner).__call__(*args, **kwargs)
 
         joblib.parallel.BatchCompletionCallBack = TqdmBatchCompletionCallback  # type: ignore[attr-defined]
         return self.tqdm_obj
@@ -89,9 +87,7 @@ class PostSyn:
         else:
             self.logger.setLevel(logging.ERROR)
 
-    def clean_aam(
-        self, list_aam: Iterable[str], remove_radical: bool = True
-    ) -> List[str]:
+    def clean_aam(self, list_aam: Iterable[str], remove_radical: bool = True) -> List[str]:
         """
         Remove atom-atom mappings, optionally clean radicals, deduplicate while preserving order.
         """
@@ -135,9 +131,7 @@ class PostSyn:
         # Standardize reaction
         raw_rxn = value.get(self.reaction_key)
         if raw_rxn is None:
-            self.logger.warning(
-                "Missing reaction key '%s' in value: %r", self.reaction_key, value
-            )
+            self.logger.warning("Missing reaction key '%s' in value: %r", self.reaction_key, value)
             result["std_rxn"] = None
         else:
             try:
@@ -178,9 +172,7 @@ class PostSyn:
 
         return result
 
-    def _run_serial(
-        self, seq: List[Dict[str, Any]], progress: bool
-    ) -> List[Dict[str, Any]]:
+    def _run_serial(self, seq: List[Dict[str, Any]], progress: bool) -> List[Dict[str, Any]]:
         results = []
         iterator = seq
         if progress:
@@ -192,24 +184,20 @@ class PostSyn:
             results.append(self._process_single(v))
         return results
 
-    def _run_parallel(
-        self, seq: List[Dict[str, Any]], progress: bool
-    ) -> List[Dict[str, Any]]:
+    def _run_parallel(self, seq: List[Dict[str, Any]], progress: bool) -> List[Dict[str, Any]]:
         if progress and tqdm:
             try:
                 with _TqdmJoblib(tqdm(total=len(seq), desc="PostSyn", unit="item")):
-                    return Parallel(
-                        n_jobs=self.n_jobs, backend="loky", verbose=self.verbose
-                    )(delayed(self._process_single)(v) for v in seq)
+                    return Parallel(n_jobs=self.n_jobs, backend="loky", verbose=self.verbose)(
+                        delayed(self._process_single)(v) for v in seq
+                    )
             except Exception as e:
                 self.logger.warning(
                     "Progress-wrapped parallel execution failed (%s); falling back to normal Parallel.",
                     e,
                 )
         elif progress and not tqdm:
-            self.logger.info(
-                "tqdm not installed; running parallel without progress bar."
-            )
+            self.logger.info("tqdm not installed; running parallel without progress bar.")
         return Parallel(n_jobs=self.n_jobs, backend="loky", verbose=self.verbose)(
             delayed(self._process_single)(v) for v in seq
         )
@@ -225,13 +213,9 @@ class PostSyn:
                 dropped_fw = len(fw) - len(filtered_fw)
                 dropped_bw = len(bw) - len(filtered_bw)
                 if dropped_fw:
-                    self.logger.debug(
-                        "Dropped %d incomplete fw entries for record %r", dropped_fw, fw
-                    )
+                    self.logger.debug("Dropped %d incomplete fw entries for record %r", dropped_fw, fw)
                 if dropped_bw:
-                    self.logger.debug(
-                        "Dropped %d incomplete bw entries for record %r", dropped_bw, bw
-                    )
+                    self.logger.debug("Dropped %d incomplete bw entries for record %r", dropped_bw, bw)
             value[self.fw_key] = filtered_fw
             value[self.bw_key] = filtered_bw
 

@@ -37,14 +37,21 @@ libsynkit_mapper_*.json
 *.txt
 !synkit/Chem/Mapper/solvers/native/cpp/CMakeLists.txt
 !synkit/Graph/Canon/cpp/CMakeLists.txt
+!synkit/Synthesis/Reactor/cpp/CMakeLists.txt
+libsynkit_partial_*.so
+libsynkit_partial_*.dylib
+libsynkit_partial_*.dll
+libsynkit_partial_*.json
 !synkit/CRN/cpp/CMakeLists.txt
+!synkit/CRN/Construct/cpp/CMakeLists.txt
+!synkit/CRN/Construct/dpo_cpp/CMakeLists.txt
 !synkit/Chem/Mapper/solvers/native/cpp/**/CMakeLists.txt
 !synkit/Chem/Mapper/solvers/native/cpp/src/symmetry/vendor/nauty/LICENSE-2.0.txt
 
 # Package resources and repository evidence retained despite the broad rules
 !/CMakeLists.txt
 !Experiment/CRN/LICENSES/*.txt
-!synkit/CRN/Benchmark/data/kegg_modules.json
+!Experiment/CRN/environments/*.txt
 !Data/Conformance/stereomolgraph_graph_conformance.json
 !Data/Mech/polar.json
 !Data/Mech/radical.json
@@ -53,6 +60,11 @@ libsynkit_mapper_*.json
 !Data/Schema/attribute_propagation_v1_5.json
 !/scripts/python_file_size_baseline.json
 !Test/Synthesis/Reactor/fixtures/small_rewrite_conformance.json
+!Test/Synthesis/Reactor/fixtures/wildcard_conformance.json
+!Test/Synthesis/Reactor/fixtures/wildcard_real_examples.json
+!Test/Synthesis/Reactor/fixtures/wildcard_observed_examples.json
+!Test/Synthesis/Reactor/fixtures/wildcard_symbolic_example.json
+!Test/Synthesis/Reactor/fixtures/wildcard_aromatic_examples.json
 
 # Lewis benchmark inputs and reviewed evidence
 !Experiment/Lewis/Data/all.csv

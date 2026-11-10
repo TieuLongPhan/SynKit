@@ -19,6 +19,7 @@ NATIVE_PACKAGES = {
     "mapper": "synkit/Chem/Mapper/solvers/native/lib",
     "crn": "synkit/CRN/lib",
     "canon": "synkit/Graph/Canon/_native/lib",
+    "partial": "synkit/Synthesis/Reactor/_native/lib",
 }
 
 

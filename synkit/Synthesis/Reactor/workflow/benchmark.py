@@ -87,9 +87,7 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
         )
 
     @staticmethod
-    def _get_host(
-        data: List[Dict[str, Any]], reaction_key: str = "reactions"
-    ) -> List[Dict[str, Any]]:
+    def _get_host(data: List[Dict[str, Any]], reaction_key: str = "reactions") -> List[Dict[str, Any]]:
         """Populate 'r' and 'p' SMILES fields for each dict entry.
 
         :param data: List of dict entries.
@@ -103,9 +101,7 @@ class Benchmark(BatchReactor):  # pylint: disable=too-many-arguments
         for entry in data:
             rxn = entry.get(reaction_key)
             if not isinstance(rxn, str) or ">>" not in rxn:
-                raise ValueError(
-                    f"Invalid reaction string for key '{reaction_key}': {rxn!r}"
-                )
+                raise ValueError(f"Invalid reaction string for key '{reaction_key}': {rxn!r}")
             r, p = rxn.split(">>", 1)
             entry["r"], entry["p"] = r, p
         return data

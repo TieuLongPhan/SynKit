@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from .core.strategy import Strategy
     from .variants.imbalanced import ImbaEngine
     from .variants.partial import PartialEngine
+    from .variants.wildcard import WildcardEngine
     from .workflow.batch import BatchReactor
     from .workflow.benchmark import Benchmark
     from .workflow.postprocess import PostSyn
@@ -34,6 +35,11 @@ _LAZY_EXPORTS = {
     "RuleFilter": ("workflow.rule_filter", "RuleFilter"),
     "ImbaEngine": ("variants.imbalanced", "ImbaEngine"),
     "PartialEngine": ("variants.partial", "PartialEngine"),
+    "WildcardEngine": ("variants.wildcard", "WildcardEngine"),
+    "WildcardCompletionError": ("core.completion", "WildcardCompletionError"),
+    "WildcardSearchLimitError": ("matching.wildcard", "WildcardSearchLimitError"),
+    "build_native_reactor": ("_native.build", "build_native_reactor"),
+    "NativeReactorUnsupportedError": ("_native.runtime", "NativeReactorUnsupportedError"),
 }
 
 __all__ = [

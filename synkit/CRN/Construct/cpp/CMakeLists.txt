@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(synkit_crn_expand VERSION 1.6.5 LANGUAGES CXX)
+project(synkit_crn_expand VERSION 1.7.0 LANGUAGES CXX)
 
 # Native rule-based CRN expansion against an RDKit C++ SDK.
 find_package(rdkit CONFIG REQUIRED)
