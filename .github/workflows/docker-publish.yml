@@ -26,7 +26,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Read project version and validate release tag
         id: version
         env:
@@ -72,7 +72,7 @@ jobs:
       SYNKIT_DOCKER_CREDENTIALS_CONFIGURED: ${{ secrets.DOCKERHUB_USER != '' && secrets.DOCKERHUB_TOKEN != '' }}
       DOCKER_BUILD_RECORD_UPLOAD: "false"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify native runner architecture
         run: |
           python3 - <<'PY'
@@ -163,7 +163,7 @@ jobs:
           PY
       - name: Retain the exact tested image
         if: github.event_name == 'release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: synkit-docker-${{ matrix.arch }}
           path: ${{ runner.temp }}/synkit-docker-${{ matrix.arch }}/
@@ -180,7 +180,7 @@ jobs:
       SYNKIT_VERSION: ${{ needs.metadata.outputs.version }}
       SYNKIT_PRERELEASE: ${{ github.event.release.prerelease }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: synkit-docker-*
           path: ${{ runner.temp }}/tested-images
