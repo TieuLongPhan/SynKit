@@ -1,5 +1,5 @@
 # Build the package wheel.
-FROM docker.io/library/python:3.11-slim AS builder
+FROM docker.io/library/python:3.15-slim AS builder
 
 # Install system build tools.
 RUN apt-get update \
@@ -19,7 +19,7 @@ COPY synkit/ ./synkit
 RUN python -m build --wheel --no-isolation
 
 # Create the runtime image.
-FROM docker.io/library/python:3.11-slim
+FROM docker.io/library/python:3.15-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libstdc++6 \
